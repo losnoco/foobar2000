@@ -34,7 +34,7 @@
 int a52_downmix_init (int input, int flags, sample_t * level,
 		      sample_t clev, sample_t slev)
 {
-    static uint8_t table[11][8] = {
+    static const uint8_t table[11][8] = {
 	{A52_CHANNEL,	A52_DOLBY,	A52_STEREO,	A52_STEREO,
 	 A52_STEREO,	A52_STEREO,	A52_STEREO,	A52_STEREO},
 	{A52_MONO,	A52_MONO,	A52_MONO,	A52_MONO,

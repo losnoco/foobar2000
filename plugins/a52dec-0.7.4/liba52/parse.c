@@ -49,7 +49,7 @@ typedef struct {
     int q4_ptr;
 } quantizer_t;
 
-static uint8_t halfrate[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3};
+static const uint8_t halfrate[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3};
 
 a52_state_t * a52_init (uint32_t mm_accel)
 {
@@ -86,10 +86,10 @@ sample_t * a52_samples (a52_state_t * state)
 int a52_syncinfo (uint8_t * buf, int * flags,
 		  int * sample_rate, int * bit_rate)
 {
-    static int rate[] = { 32,  40,  48,  56,  64,  80,  96, 112,
+    static const int rate[] = { 32,  40,  48,  56,  64,  80,  96, 112,
 			 128, 160, 192, 224, 256, 320, 384, 448,
 			 512, 576, 640};
-    static uint8_t lfeon[8] = {0x10, 0x10, 0x04, 0x04, 0x04, 0x01, 0x04, 0x01};
+    static const uint8_t lfeon[8] = {0x10, 0x10, 0x04, 0x04, 0x04, 0x01, 0x04, 0x01};
     int frmsizecod;
     int bitrate;
     int half;
@@ -131,8 +131,8 @@ int a52_syncinfo (uint8_t * buf, int * flags,
 int a52_frame (a52_state_t * state, uint8_t * buf, int * flags,
 	       sample_t * level, sample_t bias)
 {
-    static sample_t clev[4] = {LEVEL_3DB, LEVEL_45DB, LEVEL_6DB, LEVEL_45DB};
-    static sample_t slev[4] = {LEVEL_3DB, LEVEL_6DB, 0, LEVEL_6DB};
+    static const sample_t clev[4] = {LEVEL_3DB, LEVEL_45DB, LEVEL_6DB, LEVEL_45DB};
+    static const sample_t slev[4] = {LEVEL_3DB, LEVEL_6DB, 0, LEVEL_6DB};
     int chaninfo;
     int acmod;
 
@@ -522,7 +522,7 @@ static void coeff_get_coupling (a52_state_t * state, int nfchans,
 int a52_block (a52_state_t * state)
 {
     static const uint8_t nfchans_tbl[] = {2, 1, 2, 3, 3, 4, 4, 5, 1, 1, 2};
-    static int rematrix_band[4] = {25, 37, 61, 253};
+    static const int rematrix_band[4] = {25, 37, 61, 253};
     int i, nfchans, chaninfo;
     uint8_t cplexpstr, chexpstr[5], lfeexpstr, do_bit_alloc, done_cpl;
     uint8_t blksw[5], dithflag[5];
@@ -560,7 +560,7 @@ int a52_block (a52_state_t * state)
     if (bitstream_get (state, 1)) {	/* cplstre */
 	state->chincpl = 0;
 	if (bitstream_get (state, 1)) {	/* cplinu */
-	    static uint8_t bndtab[16] = {31, 35, 37, 39, 41, 42, 43, 44,
+	    static const uint8_t bndtab[16] = {31, 35, 37, 39, 41, 42, 43, 44,
 					 45, 45, 46, 46, 47, 47, 48, 48};
 	    int cplbegf;
 	    int cplendf;
