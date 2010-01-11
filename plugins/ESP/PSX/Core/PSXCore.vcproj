@@ -56,6 +56,7 @@
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="true"
+				FloatingPointModel="2"
 				PrecompiledHeaderFile=".\Release/PSXCore.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
