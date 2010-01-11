@@ -1,7 +1,13 @@
-#define MYVERSION "1.67"
+#define MYVERSION "1.68"
 
 /*
 	change log
+
+2009-08-05 04:13 UTC - kode54
+- Implemented VGM YM2413 support based on MAME's YM2413 emulator
+- Fixed NSFE playlist editor for when user cancels all editor dialogs
+- Implemented missing NSFE playlist loading
+- Version is now 1.68
 
 2009-08-04 08:47 UTC - kode54
 - Updated NSFE and SPC context menu tagging functions to the new metadb_io_v2 API

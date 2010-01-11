@@ -121,6 +121,7 @@ static void rename_file(const char * src, const char * ext, pfc::string_base & o
 class input_nsf : public input_gep
 {
 	CNSFFile nsf;
+	bool ignore_nsfe_playlist;
 
 public:
 	static bool g_is_our_path( const char * p_path, const char * p_extension )
@@ -142,11 +143,20 @@ public:
 		nsf.LoadFile(m_file, true, p_abort);
 
 		if ( p_reason != input_open_info_write ) m_file.release();
+
+		ignore_nsfe_playlist = !! cfg_nsfe_ignore_playlists;
 	}
 
 	unsigned get_subsong_count()
 	{
+		if ( ! ignore_nsfe_playlist && nsf.pPlaylist ) return nsf.nPlaylistSize;
 		return nsf.nTrackCount;
+	}
+
+	t_uint32 get_subsong( unsigned p_index )
+	{
+		if ( ! ignore_nsfe_playlist && nsf.pPlaylist && p_index < nsf.nPlaylistSize ) return nsf.pPlaylist[ p_index ];
+		return p_index;
 	}
 
 	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
@@ -758,10 +768,13 @@ public:
 				files_count++;
 			}
 
-			static_api_ptr_t<metadb_io_v2> p_imgr;
-			service_ptr_t<playlist_info_filter> p_filter = new service_impl_t< playlist_info_filter >( update_files, playlists );
+			if ( files_count )
+			{
+				static_api_ptr_t<metadb_io_v2> p_imgr;
+				service_ptr_t<playlist_info_filter> p_filter = new service_impl_t< playlist_info_filter >( update_files, playlists );
 
-			p_imgr->update_info_async( data, p_filter, core_api::get_main_window(), 0, 0 );
+				p_imgr->update_info_async( data, p_filter, core_api::get_main_window(), 0, 0 );
+			}
 		}
 	}
 };
