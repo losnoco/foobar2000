@@ -1,3 +1,18 @@
+#define MY_VERSION "1.1"
+
+/*
+	changelog
+
+2006-09-19 16:37 UTC - kode54
+- Added extra checks to LHA header parsers so padding skip functions don't
+  run almost endlessly on files which look like LHA. (Likely only passed to
+  unpacker service.)
+- Version is now 1.1
+
+- Initial release
+
+*/
+
 #include <foobar2000.h>
 
 #include "file_cached.h"
@@ -464,4 +479,4 @@ public:
 static archive_factory_t < archive_lha >  g_archive_lha_factory;
 static unpacker_factory_t< unpacker_lha > g_unpacker_lha_factory;
 
-DECLARE_COMPONENT_VERSION( "LHA unpacker", "1.0", (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "LHA unpacker", MY_VERSION, (const char*)NULL );

@@ -276,6 +276,9 @@ BOOL CLhaArchive::get_header_level0( LzHeader *hdr, char *data )
 
 	hdr->size_field_length = 2; /* in bytes */
 	hdr->header_size = header_size = get_byte();
+	if ( header_size < COMMON_HEADER_SIZE )
+		return FALSE;
+
 	checksum = get_byte();
 
 	if ( lharead( data + COMMON_HEADER_SIZE, header_size + 2 - COMMON_HEADER_SIZE, 1 ) == 0 )
@@ -385,6 +388,9 @@ BOOL CLhaArchive::get_header_level1( LzHeader *hdr, char *data )
 
 	hdr->size_field_length = 2; /* in bytes */
 	hdr->header_size = header_size = get_byte();
+	if ( header_size < COMMON_HEADER_SIZE )
+		return FALSE;
+
 	checksum = get_byte();
 
 	if ( lharead( data + COMMON_HEADER_SIZE, header_size + 2 - COMMON_HEADER_SIZE, 1 ) == 0 )
@@ -469,6 +475,8 @@ BOOL CLhaArchive::get_header_level2( LzHeader *hdr, char *data )
 
 	hdr->size_field_length = 2; /* in bytes */
 	hdr->header_size = header_size = get_word();
+	if ( header_size < I_LEVEL2_HEADER_SIZE )
+		return FALSE;
 
 	if ( lharead( data + COMMON_HEADER_SIZE, I_LEVEL2_HEADER_SIZE - COMMON_HEADER_SIZE, 1 ) == 0 )
 		return FALSE;   /* finish */
@@ -489,6 +497,8 @@ BOOL CLhaArchive::get_header_level2( LzHeader *hdr, char *data )
 	hdr->crc = get_word();
 	hdr->extend_type = get_byte();
 	extend_size = get_word();
+	if ( header_size < I_LEVEL2_HEADER_SIZE + extend_size )
+		return FALSE;
 
 	INITIALIZE_CRC( hcrc );
 	hcrc = calccrc( hcrc, data, get_ptr - data );
@@ -563,6 +573,8 @@ BOOL CLhaArchive::get_header_level3( LzHeader *hdr, char *data )
 	hdr->extend_type = get_byte();
 	hdr->header_size = header_size = get_longword();
 	extend_size = get_longword();
+	if ( header_size < I_LEVEL3_HEADER_SIZE + extend_size )
+		return FALSE;
 
 	INITIALIZE_CRC( hcrc );
 	hcrc = calccrc( hcrc, data, get_ptr - data );
