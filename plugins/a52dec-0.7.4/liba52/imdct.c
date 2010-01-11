@@ -70,8 +70,8 @@ static complex_t post2[32];
 
 static sample_t a52_imdct_window[256];
 
-static void (* ifft128) (complex_t * buf);
-static void (* ifft64) (complex_t * buf);
+/*static void (* ifft128) (complex_t * buf);
+static void (* ifft64) (complex_t * buf);*/
 
 static inline void ifft2 (complex_t * buf)
 {
@@ -178,7 +178,7 @@ static inline void ifft8 (complex_t * buf)
     BUTTERFLY_HALF (buf[1], buf[3], buf[5], buf[7], roots16[1]);
 }
 
-static void ifft_pass (complex_t * buf, sample_t * weight, int n)
+static void ifft_pass (complex_t * buf, const sample_t * weight, int n)
 {
     complex_t * buf1;
     complex_t * buf2;
@@ -221,7 +221,7 @@ static void ifft32 (complex_t * buf)
     ifft_pass (buf, roots32 - 8, 8);
 }
 
-static void ifft64_c (complex_t * buf)
+static void ifft64 (complex_t * buf)
 {
     ifft32 (buf);
     ifft16 (buf + 32);
@@ -229,7 +229,7 @@ static void ifft64_c (complex_t * buf)
     ifft_pass (buf, roots64 - 16, 16);
 }
 
-static void ifft128_c (complex_t * buf)
+static void ifft128 (complex_t * buf)
 {
     ifft32 (buf);
     ifft16 (buf + 32);
@@ -362,7 +362,7 @@ static double besselI0 (double x)
     return bessel;
 }
 
-void a52_imdct_init (uint32_t mm_accel)
+void a52_imdct_init (/*uint32_t mm_accel*/)
 {
     int i, k;
     double sum;
@@ -417,6 +417,7 @@ void a52_imdct_init (uint32_t mm_accel)
 	post2[i].imag = sin ((M_PI / 128) * (i + 0.5));
     }
 
+#if 0
 #ifdef LIBA52_DJBFFT
     if (mm_accel & MM_ACCEL_DJBFFT) {
 //	fprintf (stderr, "Using djbfft for IMDCT transform\n");
@@ -429,4 +430,5 @@ void a52_imdct_init (uint32_t mm_accel)
 	ifft128 = ifft128_c;
 	ifft64 = ifft64_c;
     }
+#endif
 }

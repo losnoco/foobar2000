@@ -52,11 +52,13 @@ typedef struct a52_state_s a52_state_t;
 extern "C" {
 #endif
 
-a52_state_t * a52_init (uint32_t mm_accel);
+void a52_imdct_init(/*uint32_t mm_accel*/);
+
+a52_state_t * a52_init (/*uint32_t mm_accel*/);
 sample_t * a52_samples (a52_state_t * state);
 int a52_syncinfo (uint8_t * buf, int * flags,
 		  int * sample_rate, int * bit_rate);
-int a52_frame (a52_state_t * state, uint8_t * buf, int * flags,
+int a52_frame (a52_state_t * state, const uint8_t * buf, int * flags,
 	       sample_t * level, sample_t bias);
 void a52_dynrng (a52_state_t * state,
 		 sample_t (* call) (sample_t, void *), void * data);

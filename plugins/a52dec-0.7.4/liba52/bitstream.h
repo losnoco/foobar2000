@@ -46,7 +46,7 @@
 #	endif
 #endif
 
-void a52_bitstream_set_ptr (a52_state_t * state, uint8_t * buf);
+void a52_bitstream_set_ptr (a52_state_t * state, const uint8_t * buf);
 uint32_t a52_bitstream_get_bh (a52_state_t * state, uint32_t num_bits);
 int32_t a52_bitstream_get_bh_2 (a52_state_t * state, uint32_t num_bits);
 

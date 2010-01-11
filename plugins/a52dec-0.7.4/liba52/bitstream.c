@@ -31,12 +31,12 @@
 
 #define BUFFER_SIZE 4096
 
-void a52_bitstream_set_ptr (a52_state_t * state, uint8_t * buf)
+void a52_bitstream_set_ptr (a52_state_t * state, const uint8_t * buf)
 {
     int align;
 
     align = (long)buf & 3;
-    state->buffer_start = (uint32_t *) (buf - align);
+    state->buffer_start = (const uint32_t *) (buf - align);
     state->bits_left = 0;
     bitstream_get (state, align * 8);
 }

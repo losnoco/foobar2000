@@ -51,7 +51,7 @@ typedef struct {
 
 static const uint8_t halfrate[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3};
 
-a52_state_t * a52_init (uint32_t mm_accel)
+a52_state_t * a52_init (/*uint32_t mm_accel*/)
 {
     a52_state_t * state;
     int i;
@@ -73,7 +73,7 @@ a52_state_t * a52_init (uint32_t mm_accel)
 
     state->lfsr_state = 1;
 
-    a52_imdct_init (mm_accel);
+    /*a52_imdct_init (mm_accel);*/
 
     return state;
 }
@@ -128,7 +128,7 @@ int a52_syncinfo (uint8_t * buf, int * flags,
     }
 }
 
-int a52_frame (a52_state_t * state, uint8_t * buf, int * flags,
+int a52_frame (a52_state_t * state, const uint8_t * buf, int * flags,
 	       sample_t * level, sample_t bias)
 {
     static const sample_t clev[4] = {LEVEL_3DB, LEVEL_45DB, LEVEL_6DB, LEVEL_45DB};

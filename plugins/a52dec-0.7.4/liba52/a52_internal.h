@@ -66,7 +66,7 @@ struct a52_state_s {
 
     uint16_t bai;		/* bit allocation information */
 
-    uint32_t * buffer_start;
+    uint32_t const* buffer_start;
     uint16_t lfsr_state;	/* dither state */
     uint32_t bits_left;
     uint32_t current_word;
