@@ -1,3 +1,14 @@
+#define MY_VERSION "1.1"
+
+/*
+	changelog
+
+2009-04-21 21:40 UTC - kode54
+- Attempts to query missing files now correctly throws exception_io_not_found
+- Version is now 1.1
+
+*/
+
 #include <foobar2000.h>
 
 #include <fex/Zip7_Extractor.h>
@@ -35,7 +46,7 @@ public:
 			if ( ! strcmp( ex.name(), p_file ) ) break;
 			handle_error( ex.next() );
 		}
-		if ( ex.done() ) throw exception_io_data();
+		if ( ex.done() ) throw exception_io_not_found();
 		t_filestats ret;
 		ret.m_size = ex.size();
 		ret.m_timestamp = dostime_to_timestamp( ex.dos_date() );
@@ -54,7 +65,7 @@ public:
 			if ( ! strcmp( ex.name(), p_file ) ) break;
 			handle_error( ex.next() );
 		}
-		if ( ex.done() ) throw exception_io_data();
+		if ( ex.done() ) throw exception_io_not_found();
 		filesystem::g_open_tempmem( p_out, p_abort );
 		foobar_Data_Writer out( p_out, p_abort );
 		handle_error( ex.extract( out ) );
@@ -135,4 +146,4 @@ public:
 static archive_factory_t < archive_7z >  g_archive_7z_factory;
 static unpacker_factory_t< unpacker_7z > g_unpacker_7z_factory;
 
-DECLARE_COMPONENT_VERSION( "7-Zip unpacker", "1.0", (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "7-Zip unpacker", MY_VERSION, (const char*)NULL );

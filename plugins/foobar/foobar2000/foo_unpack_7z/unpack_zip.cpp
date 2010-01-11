@@ -46,7 +46,7 @@ public:
 			if ( ! strcmp( string_fixer( ex.name() ), p_file ) ) break;
 			handle_error( ex.next() );
 		}
-		if ( ex.done() ) throw exception_io_data();
+		if ( ex.done() ) throw exception_io_not_found();
 		t_filestats ret;
 		ret.m_size = ex.size();
 		ret.m_timestamp = dostime_to_timestamp( ex.dos_date() );
@@ -65,7 +65,7 @@ public:
 			if ( ! strcmp( string_fixer( ex.name() ), p_file ) ) break;
 			handle_error( ex.next() );
 		}
-		if ( ex.done() ) throw exception_io_data();
+		if ( ex.done() ) throw exception_io_not_found();
 		filesystem::g_open_tempmem( p_out, p_abort );
 		foobar_Data_Writer out( p_out, p_abort );
 		handle_error( ex.extract( out ) );

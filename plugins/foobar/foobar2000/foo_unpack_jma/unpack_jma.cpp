@@ -1,3 +1,14 @@
+#define MY_VERSION "1.1"
+
+/*
+	changelog
+
+2009-04-21 21:39 UTC - kode54
+- Attempts to query missing files now correctly throws exception_io_not_found
+- Version is now 1.1
+
+*/
+
 #include <foobar2000.h>
 
 #include "jma/jma.h"
@@ -94,4 +105,4 @@ public:
 static archive_factory_t < archive_jma >  g_archive_jma_factory;
 static unpacker_factory_t< unpacker_jma > g_unpacker_jma_factory;
 
-DECLARE_COMPONENT_VERSION( "JMA unpacker", "1.0", (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "JMA unpacker", MY_VERSION, (const char*)NULL );

@@ -43,7 +43,7 @@ namespace JMA
   PFC_DECLARE_EXCEPTION( exception_jma_unsupported_version, exception_io_data, "JMA version not supported" );
   PFC_DECLARE_EXCEPTION( exception_jma_compress_failed, exception_io_data, "JMA compression failed" );
   PFC_DECLARE_EXCEPTION( exception_jma_decompress_failed, exception_io_data, "JMA decompression failed" );
-  PFC_DECLARE_EXCEPTION( exception_jma_file_not_found, exception_io_data, "File not found in JMA" );
+  PFC_DECLARE_EXCEPTION( exception_jma_file_not_found, exception_io_not_found, "File not found in JMA" );
   
   struct jma_file_info_base
   {

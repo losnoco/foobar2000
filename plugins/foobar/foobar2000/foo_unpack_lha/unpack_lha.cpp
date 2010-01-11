@@ -1,7 +1,11 @@
-#define MY_VERSION "1.3"
+#define MY_VERSION "1.4"
 
 /*
 	changelog
+
+2009-04-21 21:37 UTC - kode54
+- Attempts to query missing files now correctly throws exception_io_not_found
+- Version is now 1.4
 
 2007-02-06 20:01 UTC - kode54
 - Minor changes to unlha code.
@@ -198,7 +202,7 @@ protected:
 			}
 		}
 
-		throw exception_io_data();
+		throw exception_io_not_found();
 	}
 
 	//! Must be called immediately after successful call to walk_to_file or get_header
