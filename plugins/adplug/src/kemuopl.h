@@ -24,6 +24,7 @@
 #define H_ADPLUG_KEMUOPL
 
 #include "opl.h"
+#include <stdlib.h>
 extern "C" {
 #include "adlibemu.h"
 }
@@ -31,31 +32,88 @@ extern "C" {
 class CKemuopl: public Copl
 {
 public:
-  CKemuopl(int rate, bool bit16, bool usestereo)
-    : use16bit(bit16), stereo(usestereo)
-    {
-      adlibinit(rate, usestereo ? 2 : 1, bit16 ? 2 : 1);
-      currType = TYPE_OPL2;
-    };
+	CKemuopl(int rate, bool bit16, bool usestereo)
+		: use16bit(bit16), stereo(usestereo)
+	{
+		opl[0] = adlibinit(rate, usestereo ? 2 : 1, bit16 ? 2 : 1);
+		opl[1] = adlibinit(rate, usestereo ? 2 : 1, bit16 ? 2 : 1);
+		currType = TYPE_OPL2;
+		mixbuf = 0;
+		mixbufSize = 0;
+	};
 
-  void update(short *buf, int samples)
-    {
-      if(use16bit) samples *= 2;
-      if(stereo) samples *= 2;
-      adlibgetsample(buf, samples);
-    }
+	~CKemuopl()
+	{
+		adlibfree(opl[0]);
+		adlibfree(opl[1]);
+		if (mixbuf) free(mixbuf);
+	}
 
-  // template methods
-  void write(int reg, int val)
-    {
-      if(currChip == 0)
-	adlib0(reg, val);
-    };
+	void update(short *buf, int samples)
+	{
+		if(use16bit) samples *= 2;
+		if(stereo) samples *= 2;
 
-  void init() {};
+		switch (currType)
+		{
+		case TYPE_OPL2:
+			adlibgetsample(opl[0], buf, samples);
+			break;
+
+		case TYPE_DUAL_OPL2:
+			if (samples > mixbufSize)
+			{
+				mixbufSize = samples;
+				mixbuf = realloc( mixbuf, mixbufSize );
+			}
+			adlibgetsample(opl[0], buf, samples);
+			adlibgetsample(opl[1], mixbuf, samples);
+			if (use16bit)
+			{
+				short * temp_s = (short *) mixbuf;
+				for (unsigned i = 0, j = samples / 2; i < j; i++)
+				{
+					int sample = buf [i] + temp_s [i];
+					if ( ( short ) sample != sample )
+						sample = 0x7FFF ^ ( sample >> 31 );
+					buf [i] = ( short ) sample;
+				}
+			}
+			else
+			{
+				unsigned char * buf_s = (unsigned char *) buf;
+				unsigned char * temp_s = (unsigned char *) mixbuf;
+				for (unsigned i = 0; i < samples; i++)
+				{
+					unsigned sample = ( ( buf_s [i] ^ 0x80 ) + ( temp_s [i] ^ 0x80 ) ) ^ 0x80;
+					if ( sample < 0 )
+						sample = 0;
+					else if ( sample > 255 )
+						sample = 255;
+					buf_s [i] = sample;
+				}
+			}
+		}
+	}
+
+	// template methods
+	void write(int reg, int val)
+	{
+		adlib0(opl[currChip], reg, val);
+	};
+
+	void init() {};
+
+	void settype(ChipType type)
+	{
+		currType = type;
+	}
 
 private:
-  bool	use16bit,stereo;
+	bool   use16bit,stereo;
+    void  *mixbuf;
+	int    mixbufSize;
+	void  *opl[2];
 };
 
 #endif

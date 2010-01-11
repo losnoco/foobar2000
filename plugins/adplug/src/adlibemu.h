@@ -18,9 +18,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-void adlibinit(long dasamplerate,long danumspeakers,long dabytespersample);
-void adlib0(long i,long v);
-void adlibgetsample(void *sndptr,long numbytes);
-void adlibsetvolume(int i);
-void randoinsts();
-extern float lvol[9],rvol[9],lplc[9],rplc[9];
+void * adlibinit(long dasamplerate,long danumspeakers,long dabytespersample);
+void adlibfree(void *);
+void adlib0(void *,long i,long v);
+void adlibgetsample(void *,void *sndptr,long numbytes);
+void adlibsetvolume(void *,int i);
+//void randoinsts();
+//extern float lvol[9],rvol[9],lplc[9],rplc[9];
