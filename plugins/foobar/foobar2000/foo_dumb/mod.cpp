@@ -1,7 +1,36 @@
-#define MYVERSION "0.9.7.3"
+#define MYVERSION "0.9.7.4"
 
 /*
 	changelog
+
+2006-06-01 00:47 UTC - kode54
+- STM reader reads effects properly now.
+
+2006-05-31 23:15 UTC - kode54
+- Implemented STM support.
+- Version is now 0.9.7.4
+
+2006-05-31 20:12 UTC - kode54
+- Finished implementing working fading support.
+
+2006-05-31 19:09 UTC - kode54
+- Implemented fading support.
+
+2006-05-31 18:31 UTC - kode54
+- Removed context dialog from resources.
+
+2006-05-30 03:57 UTC - kode54
+- IT reader works around a broken file that has several of the instruments
+  offset by two bytes from their indicated file offsets. Since the hack
+  only checks for offset by two null bytes, it also assumes that the two
+  bytes it can't read from the end are also zero. (bz_ult9.it)
+- IT reader treats null instrument/sample/pattern offsets as empty items.
+  (flight2.it, sherri.it)
+
+2006-05-30 00:04 UTC - kode54
+- XM reader now truncates instrument envelope lengths to 12, and performs
+  some basic envelope loop checking, similar to Open ModPlug Tracker.
+  (revive_nimnone.xm)
 
 2006-05-27 22:40 UTC - kode54
 - S3M reader defaults to maximum (128) global volume when the header value is
@@ -565,6 +594,7 @@ static const char * exts[]=
 	// Original set copied from foo_mod, perhaps most frequently used types
 	"MOD","MDZ",
 	"S3M","S3Z",
+	"STM","STZ",
 	"IT","ITZ",
 	"XM","XMZ",
 	"PTM","PTZ",
@@ -615,9 +645,18 @@ static const GUID guid_cfg_dynamic_info =
 // {44C7D5DE-A1E3-413e-945A-05BA9C8DECD9}
 static const GUID guid_cfg_history_rate = 
 { 0x44c7d5de, 0xa1e3, 0x413e, { 0x94, 0x5a, 0x5, 0xba, 0x9c, 0x8d, 0xec, 0xd9 } };
+// {7309341C-A28C-4b7e-85F3-EEF04BE93AF6}
+static const GUID guid_cfg_fade = 
+{ 0x7309341c, 0xa28c, 0x4b7e, { 0x85, 0xf3, 0xee, 0xf0, 0x4b, 0xe9, 0x3a, 0xf6 } };
+// {43242592-6ED4-4983-968B-39B09DCC464D}
+static const GUID guid_cfg_fade_time = 
+{ 0x43242592, 0x6ed4, 0x4983, { 0x96, 0x8b, 0x39, 0xb0, 0x9d, 0xcc, 0x46, 0x4d } };
+
 
 static cfg_int cfg_samplerate(guid_cfg_samplerate,44100);
 static cfg_int cfg_interp(guid_cfg_interp,2);
+static cfg_int cfg_fade(guid_cfg_fade,0);
+static cfg_int cfg_fade_time(guid_cfg_fade_time,10000);
 static cfg_int cfg_volramp(guid_cfg_volramp, 0);
 
 static cfg_int cfg_autochip(guid_cfg_autochip, 0);
@@ -904,7 +943,14 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 		for (n = 0, l = pfc::byteswap_if_be_t(pifh->smpnum); n < l; n++, offset++)
 		{
 			t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
-			if ((!offset_n) || (offset_n >= size)) continue;
+			if ((!offset_n) || (offset_n + 0x14 + 26 + 2 >= size)) continue;
+			// XXX
+			if (ptr[offset_n] == 0 && ptr[offset_n + 1] == 0 &&
+				ptr[offset_n + 2] == 'I' && ptr[offset_n + 3] == 'M' &&
+				ptr[offset_n + 4] == 'P' && ptr[offset_n + 5] == 'S')
+			{
+				offset_n += 2;
+			}
 			if (*(ptr + offset_n + 0x14))
 			{
 				name = field_sample;
@@ -919,7 +965,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 		for (n = 0, l = pfc::byteswap_if_be_t(pifh->insnum); n < l; n++, offset++)
 		{
 			t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
-			if ((!offset_n) || (offset_n >= size)) continue;
+			if ((!offset_n) || (offset_n + 0x20 + 26 >= size)) continue;
 			if (*(ptr + offset_n + 0x20))
 			{
 				name = field_instrument;
@@ -1338,6 +1384,14 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 	{
 		duh = dumb_read_s3m(f);
 	}
+	else if (size >= 1168 &&
+		ptr[28] == 0x1A && ptr[29] == 2 &&
+		( ! strnicmp( ( const char * ) ptr + 20, "!Scream!", 8 ) ||
+		! strnicmp( ( const char * ) ptr + 20, "BMOD2STM", 8 ) ||
+		! strnicmp( ( const char * ) ptr + 20, "WUZAMOD!", 8 ) ) )
+	{
+		duh = dumb_read_stm(f);
+	}
 	else if (size >= 2 &&
 		((ptr[0] == 0x69 && ptr[1] == 0x66) ||
 		(ptr[0] == 0x4A && ptr[1] == 0x4E)))
@@ -1573,9 +1627,33 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 	return duh;
 }
 
+struct callback_limit_info
+{
+	bool fade, fading;
+	int loop_count;
+};
+
 static int dumb_it_callback_limit_int(void * data)
 {
-	if ((*((int *)data))-- > 0) return 0;
+	callback_limit_info * info = ( callback_limit_info * ) data;
+	if ( info->fade )
+	{
+		if ( info->fading ) return 0;
+		if ( info->loop_count < 0 )
+		{
+			info->fading = true;
+			return 0;
+		}
+	}
+	if ( -- info->loop_count == 0 )
+	{
+		if ( info->fade )
+		{
+			info->fading = true;
+			return 0;
+		}
+		else return 1;
+	}
 	return 1;
 }
 
@@ -1877,7 +1955,8 @@ class input_mod
 	bool no_loop, eof, dynamic_info;
 	int dyn_order, dyn_row, dyn_speed, dyn_tempo, dyn_channels, dyn_max_channels;
 	int written;
-	int loop_count;
+	callback_limit_info limit_info;
+	int fade_time, fade_time_left;
 	DUH *duh;
 	DUH_SIGRENDERER *sr;
 	sample_t **buf;
@@ -2067,8 +2146,12 @@ public:
 
 		interp = cfg_interp;
 		volramp = cfg_volramp;
-		loop_count = cfg_loop - 1;
-		no_loop = ( p_flags & input_flag_no_looping ) || ( loop_count < 0 );
+		limit_info.loop_count = cfg_loop - 1;
+		limit_info.fade = cfg_fade && limit_info.loop_count != 0;
+		limit_info.fading = false;
+		fade_time = MulDiv( cfg_fade_time, srate, 1000 );
+		fade_time_left = fade_time;
+		no_loop = ( p_flags & input_flag_no_looping ) || ( limit_info.loop_count < 0 );
 		start_order = p_subsong;
 
 		{
@@ -2103,10 +2186,10 @@ private:
 		DUMB_IT_SIGRENDERER * itsr = duh_get_it_sigrenderer( sr );
 		dumb_it_set_resampling_quality( itsr, interp );
 		dumb_it_set_ramp_style( itsr, volramp );
-		if ( no_loop )
+		if ( no_loop && ! limit_info.fade )
 			dumb_it_set_loop_callback( itsr, & dumb_it_callback_terminate, NULL );
-		else if ( loop_count > 0 )
-			dumb_it_set_loop_callback( itsr, & dumb_it_callback_limit_int, & loop_count );
+		else if ( limit_info.loop_count != 0 )
+			dumb_it_set_loop_callback( itsr, & dumb_it_callback_limit_int, & limit_info );
 		dumb_it_set_xm_speed_zero_callback( itsr, & dumb_it_callback_terminate, NULL );
 		dumb_it_set_global_volume_zero_callback( itsr, & dumb_it_callback_terminate, NULL );
 
@@ -2117,6 +2200,8 @@ public:
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 	{
 		if (eof) return false;
+
+		if ( limit_info.fading && fade_time_left == 0 ) return false;
 
 		/*int*/ written=0;
 
@@ -2145,24 +2230,31 @@ retry:
 				eof = true;
 			else
 			{
-				if ( loop_count < 0 ) eof = true;
-				else if ( loop_count > 0 )
+				if ( limit_info.loop_count <= 0 )
 				{
-					if ( --loop_count == 0 ) eof = true;
+					eof = true;
 				}
-
-				if ( ! eof )
+				else
 				{
-					duh_end_sigrenderer( sr );
-					sr = NULL;
-					if ( open2() )
+					if ( --limit_info.loop_count == 0 )
 					{
-						if ( ! written )
-							goto retry;
-					}
-					else
-					{
-						eof = true;
+						duh_end_sigrenderer( sr );
+						sr = NULL;
+						if ( open2() )
+						{
+							if ( limit_info.fade )
+							{
+								fade_time_left = fade_time + written;
+								dumb_it_set_loop_callback( itsr, 0, 0 );
+								limit_info.fading = true;
+							}
+							if ( ! written )
+								goto retry;
+						}
+						else
+						{
+							eof = true;
+						}
 					}
 				}
 			}
@@ -2171,15 +2263,36 @@ retry:
 		if      ( written == 0 )  return false;
 		else if ( written == -1 ) throw exception_io_data();
 
+		if ( limit_info.fading )
+		{
+			fade_time_left -= written;
+			if ( fade_time_left < 0 )
+			{
+				written += fade_time_left;
+				fade_time_left = 0;
+			}
+		}
+
 		p_chunk.set_data_size( written * 2 );
 
 		sample_t * in_l = buf[0];
 		sample_t * in_r = buf[1];
 		sample_t * out = ( sample_t * ) p_chunk.get_data(); //dbuf.get_ptr();
-		for ( unsigned i = 0; i < written; ++i )
+		if ( limit_info.fading && fade_time_left < fade_time )
 		{
-			*out++ = *in_l++;
-			*out++ = *in_r++;
+			for ( unsigned i = 0; i < written; ++i )
+			{
+				*out++ = MulDiv( *in_l++, fade_time_left + written - i, fade_time );
+				*out++ = MulDiv( *in_r++, fade_time_left + written - i, fade_time );
+			}
+		}
+		else
+		{
+			for ( unsigned i = 0; i < written; ++i )
+			{
+				*out++ = *in_l++;
+				*out++ = *in_r++;
+			}
 		}
 		//p_chunk.check_data_size( written * 2 );
 		audio_math::convert_from_int32( ( const t_int32 * ) p_chunk.get_data() /*dbuf.get_ptr()*/, written * 2, p_chunk.get_data(), 1 << 8 );
@@ -2325,6 +2438,104 @@ static cfg_dropdown_history cfg_history_rate(guid_cfg_history_rate,16);
 
 static const int srate_tab[]={8000,11025,16000,22050,24000,32000,44100,48000,64000,88200,96000};
 
+static const long BORK_TIME = 0xC0CAC01A;
+
+unsigned long parse_time_crap(const char *input)
+{
+	if (!input) return BORK_TIME;
+	int len = strlen(input);
+	if (!len) return BORK_TIME;
+	int value = 0;
+	{
+		int i;
+		for (i = len - 1; i >= 0; i--)
+		{
+			if ((input[i] < '0' || input[i] > '9') && input[i] != ':' && input[i] != ',' && input[i] != '.')
+			{
+				return BORK_TIME;
+			}
+		}
+	}
+	pfc::string8 foo = input;
+	char *bar = (char *)foo.get_ptr();
+	char *strs = bar + foo.length() - 1;
+	while (strs > bar && (*strs >= '0' && *strs <= '9'))
+	{
+		strs--;
+	}
+	if (*strs == '.' || *strs == ',')
+	{
+		// fraction of a second
+		strs++;
+		if (strlen(strs) > 3) strs[3] = 0;
+		value = atoi(strs);
+		switch (strlen(strs))
+		{
+		case 1:
+			value *= 100;
+			break;
+		case 2:
+			value *= 10;
+			break;
+		}
+		strs--;
+		*strs = 0;
+		strs--;
+	}
+	while (strs > bar && (*strs >= '0' && *strs <= '9'))
+	{
+		strs--;
+	}
+	// seconds
+	if (*strs < '0' || *strs > '9') strs++;
+	value += atoi(strs) * 1000;
+	if (strs > bar)
+	{
+		strs--;
+		*strs = 0;
+		strs--;
+		while (strs > bar && (*strs >= '0' && *strs <= '9'))
+		{
+			strs--;
+		}
+		if (*strs < '0' || *strs > '9') strs++;
+		value += atoi(strs) * 60000;
+		if (strs > bar)
+		{
+			strs--;
+			*strs = 0;
+			strs--;
+			while (strs > bar && (*strs >= '0' && *strs <= '9'))
+			{
+				strs--;
+			}
+			value += atoi(strs) * 3600000;
+		}
+	}
+	return value;
+}
+
+void print_time_crap(int ms, char *out)
+{
+	char frac[8];
+	int i,h,m,s;
+	if (ms % 1000)
+	{
+		sprintf(frac, ".%3.3d", ms % 1000);
+		for (i = 3; i > 0; i--)
+			if (frac[i] == '0') frac[i] = 0;
+		if (!frac[1]) frac[0] = 0;
+	}
+	else
+		frac[0] = 0;
+	h = ms / (60*60*1000);
+	m = (ms % (60*60*1000)) / (60*1000);
+	s = (ms % (60*1000)) / 1000;
+	if (h) sprintf(out, "%d:%2.2d:%2.2d%s",h,m,s,frac);
+	else if (m) sprintf(out, "%d:%2.2d%s",m,s,frac);
+	else sprintf(out, "%d%s",s,frac);
+}
+
 class preferences_page_mod : public preferences_page
 {
 	static void enable_chip(HWND wnd, bool status)
@@ -2340,6 +2551,13 @@ class preferences_page_mod : public preferences_page
 		EnableWindow(GetDlgItem(wnd, IDC_CHIP_TEXT_3), status);
 		EnableWindow(GetDlgItem(wnd, IDC_CHIP_TEXT_4), status);
 		EnableWindow(GetDlgItem(wnd, IDC_CHIP_TEXT_5), status);
+	}
+
+	static void enable_fade(HWND wnd, bool status)
+	{
+		EnableWindow(GetDlgItem(wnd, IDC_FADE), status);
+		EnableWindow(GetDlgItem(wnd, IDC_FADE_TIME), status);
+		EnableWindow(GetDlgItem(wnd, IDC_FADE_TEXT), status);
 	}
 
 	static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
@@ -2379,6 +2597,11 @@ class preferences_page_mod : public preferences_page
 					uSendMessageText(w, CB_ADDSTRING, 0, temp);
 				}
 				uSendMessage(w, CB_SETCURSEL, cfg_loop, 0);
+
+				enable_fade( wnd, cfg_loop != 1 );
+				uSendDlgItemMessage( wnd, IDC_FADE, BM_SETCHECK, cfg_fade, 0 );
+				print_time_crap( cfg_fade_time, ( char * ) &temp );
+				uSetDlgItemText( wnd, IDC_FADE_TIME, ( char * ) &temp );
 
 				w = GetDlgItem(wnd, IDC_VOLRAMP);
 				uSendMessageText(w, CB_ADDSTRING, 0, "none");
@@ -2429,6 +2652,7 @@ class preferences_page_mod : public preferences_page
 				break;
 			case (CBN_SELCHANGE<<16)|IDC_LOOPS:
 				cfg_loop = uSendMessage((HWND)lp,CB_GETCURSEL,0,0);
+				enable_fade( wnd, cfg_loop != 1 );
 				break;
 			case (CBN_SELCHANGE<<16)|IDC_VOLRAMP:
 				cfg_volramp = uSendMessage((HWND)lp,CB_GETCURSEL,0,0);
@@ -2448,6 +2672,24 @@ class preferences_page_mod : public preferences_page
 
 			case IDC_CHIP:
 				cfg_autochip = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
+				break;
+
+			case IDC_FADE:
+				cfg_fade = uSendMessage( ( HWND ) lp, BM_GETCHECK, 0, 0 );
+				break;
+
+			case ( EN_CHANGE << 16 ) | IDC_FADE_TIME:
+				{
+					int meh = parse_time_crap( string_utf8_from_window( ( HWND ) lp ) );
+					if ( meh != BORK_TIME ) cfg_fade_time = meh;
+				}
+				break;
+			case ( EN_KILLFOCUS << 16 ) | IDC_FADE_TIME:
+				{
+					char temp[16];
+					print_time_crap( cfg_fade_time, ( char * ) &temp );
+					uSetWindowText( ( HWND ) lp, temp );
+				}
 				break;
 
 			case (EN_CHANGE<<16)|IDC_CHIP_FORCE:
@@ -2530,6 +2772,8 @@ public:
 	{
 		cfg_samplerate = 44100;
 		cfg_interp = 2;
+		cfg_fade = 0;
+		cfg_fade_time = 10000;
 		cfg_volramp = 0;
 
 		cfg_autochip = 0;
