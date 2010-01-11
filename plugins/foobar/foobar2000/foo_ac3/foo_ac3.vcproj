@@ -346,6 +346,22 @@
 			RelativePath="ac3.rc"
 			>
 		</File>
+		<File
+			RelativePath=".\ac3_parser.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\ac3_parser.h"
+			>
+		</File>
+		<File
+			RelativePath=".\crc16.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\crc16.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
