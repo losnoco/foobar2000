@@ -1733,4 +1733,5 @@ static converter_factory<converter_xa> g_converter_xa_factory;
 static config_factory<config_brr> g_config_brr_factory;
 #endif
 
-DECLARE_COMPONENT_VERSION("BRR decoder and converter", MY_VERSION, "Plays and encodes .BRR files, which are a custom\ncontainer for PSX or SNES ADPCM data.\nNow encodes .XA files. (18900/37800Hz mono/stereo)");
+//DECLARE_COMPONENT_VERSION("BRR decoder and converter", MY_VERSION, "Plays and encodes .BRR files, which are a custom\ncontainer for PSX or SNES ADPCM data.\nNow encodes .XA files. (18900/37800Hz mono/stereo)");
+DECLARE_COMPONENT_VERSION("BRR decoder and converter", MY_VERSION, "Plays .BRR files, which are a custom\ncontainer for PSX or SNES ADPCM data.");
