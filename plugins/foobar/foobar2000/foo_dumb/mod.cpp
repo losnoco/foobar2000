@@ -1,7 +1,35 @@
-#define MYVERSION "0.9.8.2"
+#define MYVERSION "0.9.8.3"
 
 /*
 	changelog
+
+2007-01-24 09:37 UTC - kode54
+- Version is now 0.9.8.3
+
+2007-01-24 08:34 UTC - kode54
+- Implemented 669 running effects correctly.
+
+2007-01-23 17:42 UTC - kode54
+- Fixed IT reader decompression to support compression+delta on files created
+  with 2.15 or newer.
+
+2007-01-22 18:54 UTC - kode54
+- Implemented 669 running effects, nasty stuff.
+
+2007-01-22 16:40 UTC - kode54
+- Fixed MOD loading step in case any files fall through another loader first.
+  (if asked twice.mod)
+
+2007-01-21 19:47 UTC - kode54
+- Implemented crappy fixed end of sample volume ramping.
+
+2007-01-21 17:43 UTC - kode54
+- XM reader now ignores sample header length, as Sk@le Tracker fills this with
+  nonsense.
+
+2007-01-21 14:21 UTC - kode54
+- Fixed a bug in IT renderer / get_true_pan that caused it to crash on IT files
+  with instruments enabled upon hitting an invalid instrument change.
 
 2006-12-26 06:41 UTC - kode54
 - Fixed sample rate reporting for when extra dynamic info is turned off.
@@ -1617,10 +1645,130 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 	if ( ! duh )
 	{
 		is_dos = false;
+		memdata.offset = 0;
 		duh = dumb_read_mod_quick(f, ( ! stricmp( ext, exts[ 0 ] ) || ! stricmp( ext, exts[ 1 ] ) ) ? 0 : 1 );
 	}
 
 	dumbfile_close(f);
+
+	// XXX test
+	if (duh)
+	{
+		int ramp_mode = cfg_volramp;
+		if (ramp_mode)
+		{
+			DUMB_IT_SIGDATA * itsd = duh_get_it_sigdata(duh);
+			if (itsd)
+			{
+				if (ramp_mode > 2)
+				{
+					if ( ( itsd->flags & ( IT_WAS_AN_XM | IT_WAS_A_MOD ) ) == IT_WAS_AN_XM )
+						ramp_mode = 2;
+					else
+						ramp_mode = 1;
+				}
+				for (int i = 0, j = itsd->n_samples; i < j; i++)
+				{
+					IT_SAMPLE * sample = &itsd->sample[i];
+					if ( sample->flags & IT_SAMPLE_EXISTS && !( sample->flags & IT_SAMPLE_LOOP ) )
+					{
+						double rate = 1. / double( sample->C5_speed );
+						double length = double( sample->length ) * rate;
+						if ( length >= .1 )
+						{
+							int k, l = sample->length;
+							if ( ramp_mode == 1 && ( ( rate * 16. ) < .01 ) )
+							{
+								if (sample->flags & IT_SAMPLE_16BIT)
+								{
+									k = l - 15;
+									signed short * data = (signed short *) sample->data;
+									if (sample->flags & IT_SAMPLE_STEREO)
+									{
+										for (int shift = 1; k < l; k++, shift++)
+										{
+											data [k * 2] >>= shift;
+											data [k * 2 + 1] >>= shift;
+										}
+									}
+									else
+									{
+										for (int shift = 1; k < l; k++, shift++)
+										{
+											data [k] >>= shift;
+										}
+									}
+								}
+								else
+								{
+									k = l - 7;
+									signed char * data = (signed char *) sample->data;
+									if (sample->flags & IT_SAMPLE_STEREO)
+									{
+										for (int shift = 1; k < l; k++, shift++)
+										{
+											data [k * 2] >>= shift;
+											data [k * 2 + 1] >>= shift;
+										}
+									}
+									else
+									{
+										for (int shift = 1; k < l; k++, shift++)
+										{
+											data [k] >>= shift;
+										}
+									}
+								}
+							}
+							else
+							{
+								int m = int( .01 * double( sample->C5_speed ) + .5 );
+								k = l - m;
+								if (sample->flags & IT_SAMPLE_16BIT)
+								{
+									signed short * data = (signed short *) sample->data;
+									if (sample->flags & IT_SAMPLE_STEREO)
+									{
+										for (; k < l; k++)
+										{
+											data [k * 2] =     MulDiv( data [k * 2],     l - k, m );
+											data [k * 2 + 1] = MulDiv( data [k * 2 + 1], l - k, m );
+										}
+									}
+									else
+									{
+										for (; k < l; k++)
+										{
+											data [k] =     MulDiv( data [k],     l - k, m );
+										}
+									}
+								}
+								else
+								{
+									signed char * data = (signed char *) sample->data;
+									if (sample->flags & IT_SAMPLE_STEREO)
+									{
+										for (; k < l; k++)
+										{
+											data [k * 2] =     MulDiv( data [k * 2],     l - k, m );
+											data [k * 2 + 1] = MulDiv( data [k * 2 + 1], l - k, m );
+										}
+									}
+									else
+									{
+										for (; k < l; k++)
+										{
+											data [k] =     MulDiv( data [k],     l - k, m );
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 
 	if (duh && cfg_autochip)
 	{

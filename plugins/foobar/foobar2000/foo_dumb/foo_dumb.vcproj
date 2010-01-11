@@ -255,7 +255,7 @@
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\"
-				WarningLevel="4"
+				WarningLevel="3"
 				SuppressStartupBanner="true"
 				CompileAs="0"
 			/>
