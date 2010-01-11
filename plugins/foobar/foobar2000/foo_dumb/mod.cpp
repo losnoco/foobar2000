@@ -19,6 +19,8 @@
 - g_open_module now supports other files misnamed as .MOD (hilse.mod .it)
 
 2006-05-22 18:43 UTC - kode54
+- XM reader now ignores when instrument header contains a sample header size
+  of 0, when it should be 0x28. (neptune_*.xm)
 - S3M reader was using the incorrect index into component for sample packing
   when reading sample data. Was using n, should have been m.
 
