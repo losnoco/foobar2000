@@ -1,3 +1,4 @@
+// #included by unpack.cpp
 #ifdef RAR_COMMON_HPP
 /****************************************************************************
  *  This file is part of PPMd project                                       *
@@ -262,7 +263,7 @@ inline void ModelPPM::UpdateModel()
 	}
 	if ( !OrderFall )
 	{
-		MinContext=MaxContext=FoundState->Successor=CreateSuccessors(TRUE,p);
+		MinContext=MaxContext=FoundState->Successor=CreateSuccessors(true,p);
 		if ( !MinContext )
 			goto RESTART_MODEL;
 		return;
@@ -274,7 +275,7 @@ inline void ModelPPM::UpdateModel()
 	if ( fs.Successor )
 	{
 		if ((byte*) fs.Successor <= SubAlloc.pText &&
-				(fs.Successor=CreateSuccessors(FALSE,p)) == NULL)
+				(fs.Successor=CreateSuccessors(false,p)) == NULL)
 			goto RESTART_MODEL;
 		if ( !--OrderFall )
 		{
@@ -542,6 +543,7 @@ bool ModelPPM::DecodeInit(Unpack *UnpackRead,int &EscChar)
 	bool Reset=MaxOrder & 0x20;
 
 	int MaxMB;
+	MaxMB = 0; // avoids warning of being uninitialized
 	if (Reset)
 		MaxMB=UnpackRead->GetChar();
 	else

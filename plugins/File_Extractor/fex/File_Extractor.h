@@ -1,153 +1,191 @@
-// Compressed file archive interface (C++)
+// Compressed file archive interface
 
-// File_Extractor 0.4.3
+// File_Extractor 1.0.0
 #ifndef FILE_EXTRACTOR_H
 #define FILE_EXTRACTOR_H
 
-#include "fex.h"
 #include "blargg_common.h"
-#include "abstract_file.h"
+#include "Data_Reader.h"
+#include "fex.h"
 
-struct File_Extractor : private Data_Reader {
+struct fex_t : private Data_Reader {
 public:
+	virtual ~fex_t();
+	
 // Open/close
 
-	// Opens archive
-	blargg_err_t open( const char* path );
-
-	// Opens archive from custom data source. Keeps pointer to input
-	// until close(), but does not delete reader at close() unless you
-	// call own_file() before then.
-	blargg_err_t open( File_Reader* input );
-
-	// Transfers ownership of current input file passed to open() so that
-	// it will be deleted on close()
-	void own_file() { own_file_ = true; }
-
-	// Closes archive and frees memory
+	// Opens archive from custom data source. Keeps pointer until close().
+	blargg_err_t open( File_Reader* input, const char* path = NULL );
+	
+	// Takes ownership of File_Reader* passed to open(), so that close()
+	// will delete it.
+	void own_file()                     { own_file_ = reader_; }
+	
+	// See fex.h
+	blargg_err_t open( const char path [] );
+	fex_type_t type() const             { return type_; }
 	void close();
 
 // Scanning
 
-	// True if end of archive has been reached
-	bool done() const           { return done_; }
-
-	// Path of current file in archive, using '/' as directory separator
-	const char* name() const    { return name_; }
-
-	// Size of current file, in bytes
-	long size() const           { return size_; }
-
-	// Modification date of file, in MS-DOS format (0 if unavailable).
-	unsigned long dos_date() const  { return date_; }
-
-	// Goes to next file (skips directories)
+	// See fex.h
+	bool done() const                   { return done_; }
 	blargg_err_t next();
-
-	// Goes back to first file in archive
 	blargg_err_t rewind();
+	fex_pos_t tell_arc() const;
+	blargg_err_t seek_arc( fex_pos_t );
 
-// Data extraction
+// Info
 
-	// Read exactly n bytes and returns error if they couldn't ALL be read.
-	// Reading past end of file results in eof_error.
-	blargg_err_t read( void* out, long n );
+	// See fex.h
+	const char* name() const            { return name_; }
+	const wchar_t* wname() const        { return wname_; }
+	blargg_err_t stat();
+	BOOST::uint64_t size() const                    { assert( stat_called ); return size_; }
+	unsigned int dos_date() const       { return date_; }
+	unsigned int crc32() const          { return crc32_; }
+	
+// Extraction
 
-	// Reads at most n bytes and returns number actually read, or negative if error.
-	// Trying to read past end of file is NOT considered an error.
-	long read_avail( void* out, long n );
+	// Data_Reader to current file's data, so standard Data_Reader interface can
+	// be used, rather than having to treat archives specially. stat() must have
+	// been called.
+	Data_Reader& reader()               { assert( stat_called ); return *this; }
 
-	// Number of bytes remaining until end of current file
-	uint64_t remain() const;
+	// See fex.h
+	blargg_err_t data( const void** data_out );
+	BOOST::uint64_t tell() const                    { return size_ - remain(); }
+	
+// Derived interface
+protected:
+	
+	// Sets type of object
+	fex_t( fex_type_t );
+	
+	// Path to archive file, or "" if none supplied
+	const char* arc_path() const                    { return path_.begin(); }
+	
+	// Opens archive file if it's not already. If unbuffered is true, opens file
+	// without any buffering.
+	blargg_err_t open_arc_file( bool unbuffered = false );
+	
+	// Archive file
+	File_Reader& arc() const                        { return *reader_; }
+	
+	// Sets current file name
+	void set_name( const char name [], const wchar_t* wname = NULL );
+	
+	// Sets current file information
+	void set_info( BOOST::uint64_t size, unsigned date = 0, unsigned crc = 0 );
+	
+// User overrides
 
-	// Reads and discards n bytes. Skipping past end of file results in eof_error.
-	blargg_err_t skip( uint64_t n ) { return Data_Reader::skip( n ); }
-
-	// Data_Reader to current file's data, so you can use standard Data_Reader
-	// interface and not have to treat archives specially.
-	Data_Reader& reader() { return *this; }
-
-	// Alternate ways of extracting file. Only one method may be used
-	// once before calling next() or rewind().
-
-	// Extracts first n bytes and ignores rest.  Faster than a normal read since it
-	// doesn't have to be prepared to read/decompress more data.
-	virtual blargg_err_t read_once( void* out, long n );
-
-	// Extracts all data and writes it to out
-	virtual blargg_err_t extract( Data_Writer& out );
-
-	// Gets pointer to file's data. Returned pointer is valid until next call to
-	// next(), rewind(), close(), or open(). Sets *error_out to error. OK to call
-	// more than once in a row; returns same pointer in that case.
-	typedef unsigned char byte;
-	byte const* data( blargg_err_t* error_out );
-
-// Other features
-
-	// Type of this extractor (fex_zip_type, etc.)
-	fex_type_t type() const             { return type_; }
-
-	// Hints that archive will either be only scanned (true), or might be extracted
-	// from (false), improving performance on solid archives. Calling rewind()
-	// resets this to the best default.
-	void scan_only( bool b = true )     { scan_only_ = b; }
-
-	// Sets/gets pointer to data you want to associate with this object.
-	// You can use this for whatever you want.
-	void set_user_data( void* p )       { user_data_ = p; }
-	void* user_data() const             { return user_data_; }
-
-	// Registers cleanup function to be called when deleting this object. Passes
-	// user_data to cleanup function. Pass NULL to clear any cleanup function.
-	void set_user_cleanup( fex_user_cleanup_t func ) { user_cleanup_ = func; }
-
-	virtual ~File_Extractor();
-
+	// Overrides must do indicated task. Non-pure functions have reasonable default
+	// implementation. Overrides should avoid calling public functions like
+	// next() and rewind().
+	
+	// Open archive using file_path(). OK to delay actual file opening until later.
+	// Default just calls open_arc_file(), then open_v().
+	virtual blargg_err_t open_path_v();
+	
+	// Open archive using file() for source data. If unsupported, return error.
+	virtual blargg_err_t open_v()                   BLARGG_PURE( ; )
+	
+	// Go to next file in archive and call set_name() and optionally set_info()
+	virtual blargg_err_t next_v()                   BLARGG_PURE( ; )
+	
+	// Go back to first file in archive
+	virtual blargg_err_t rewind_v()                 BLARGG_PURE( ; )
+	
+	// Close archive. Called even if open_path_v() or open_v() return unsuccessfully.
+	virtual void         close_v()                  BLARGG_PURE( ; )
+	
+	// Clear any fields related to current file
+	virtual void         clear_file_v()             { }
+	
+	// Call set_info() if not already called by next_v()
+	virtual blargg_err_t stat_v()                   { return blargg_ok; }
+	
+	// Return value that allows later return to this file. Result must be >= 0.
+	virtual fex_pos_t tell_arc_v() const;
+	
+	// Return to previously saved position
+	virtual blargg_err_t seek_arc_v( fex_pos_t );
+	
+	// One or both of the following must be overridden
+	
+	// Provide pointer to data for current file in archive
+	virtual blargg_err_t data_v( const void** out );
+	
+	// Extract next n bytes
+	virtual blargg_err_t extract_v( void* out, int n );
+	
+// Implementation
 public:
 	BLARGG_DISABLE_NOTHROW
-	File_Extractor( fex_type_t );
-	Data_Reader::eof_error;
-protected:
-	// Services for extractors
-	File_Reader& file() const                       { return *reader_; }
-	void set_done()                                 { done_ = true; }
-	void set_info( long size, const char* name, unsigned long date = 0 );
-	bool is_scan_only() const                       { return scan_only_; }
 
-	// Overridden by extractors
-	virtual void open_filter_( const char* path, Std_File_Reader* );
-	virtual blargg_err_t open_()                    BLARGG_PURE( { return 0; } )
-	virtual blargg_err_t next_()                    BLARGG_PURE( { return 0; } )
-	virtual blargg_err_t rewind_()                  BLARGG_PURE( { return 0; } )
-	virtual void         close_()                   BLARGG_PURE( { } )
-	virtual void         clear_file_()              { }
-	virtual blargg_err_t data_( byte const*& out );
 private:
 	fex_type_t const type_;
+	
+	// Archive file
+	blargg_vector<char> path_;
 	File_Reader* reader_;
-	bool own_file_;
-	bool scan_only_;
-	bool done_;
-
+	File_Reader* own_file_;
+	bool         opened_;
+	
+	// Position in archive
+	fex_pos_t tell_;    // only used by default implementation of tell/seek
+	bool      done_;
+	
+	// Info for current file in archive
 	const char* name_;
-	unsigned long date_;
-	long size_;
-	long data_pos_; // current position in data
-	byte const* data_ptr_;
-	byte* own_data_; // memory we allocated for data
+	const wchar_t* wname_;
+	unsigned    date_;
+	unsigned    crc32_;
+	BOOST::uint64_t size_;
+	bool        stat_called;
+	
+	// Current file contents
+	void const* data_ptr_; // NULL if not read into memory
+	blargg_vector<char> own_data_;
 
-	void* user_data_;
-	fex_user_cleanup_t user_cleanup_;
-
-	void init_state();
+	bool opened() const                         { return opened_; }
 	void clear_file();
-	void free_data();
+	void close_();
+	blargg_err_t set_path( const char* path );
+	blargg_err_t rewind_file();
+	blargg_err_t next_();
+	
+	// Data_Reader overrides
+	// TODO: override skip_v?
+	virtual blargg_err_t read_v( void* out, int n );
 };
+
+struct fex_type_t_
+{
+	const char* extension;
+	File_Extractor* (*new_fex)();
+	const char* name;
+	blargg_err_t (*init)(); // Called by fex_init(). Can be NULL.
+};
+
+extern const fex_type_t_
+	fex_7z_type  [1],
+	fex_gz_type  [1],
+	fex_rar_type [1],
+	fex_zip_type [1],
+	fex_bin_type [1];
+
+inline blargg_err_t File_Extractor::open_v()    { return blargg_ok; }
+inline blargg_err_t File_Extractor::next_v()    { return blargg_ok; }
+inline blargg_err_t File_Extractor::rewind_v()  { return blargg_ok; }
+inline void         File_Extractor::close_v()   { }
 
 // Default to Std_File_Reader for archive access
 #ifndef FEX_FILE_READER
 	#define FEX_FILE_READER Std_File_Reader
+#elif defined (FEX_FILE_READER_INCLUDE)
+	#include FEX_FILE_READER_INCLUDE
 #endif
 
 #endif

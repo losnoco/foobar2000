@@ -1,3 +1,4 @@
+// #included by unpack.cpp
 #ifdef RAR_COMMON_HPP
 
 inline unsigned int RangeCoder::GetChar()

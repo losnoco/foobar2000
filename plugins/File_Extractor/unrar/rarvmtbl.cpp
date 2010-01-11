@@ -1,3 +1,4 @@
+// #included by rarvm.cpp
 #ifdef RAR_COMMON_HPP
 #define VMCF_OP0             0
 #define VMCF_OP1             1
@@ -9,6 +10,7 @@
 #define VMCF_USEFLAGS       32
 #define VMCF_CHFLAGS        64
 
+const
 static byte VM_CmdFlags[]=
 {
 	/* VM_MOV   */ VMCF_OP2 | VMCF_BYTEMODE                                ,

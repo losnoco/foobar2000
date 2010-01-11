@@ -5,6 +5,7 @@
  *  Contents: memory allocation routines                                    *
  ****************************************************************************/
 
+// #included by unpack.cpp
 #ifdef RAR_COMMON_HPP
 SubAllocator::SubAllocator()
 {
@@ -79,7 +80,7 @@ bool SubAllocator::StartSubAllocator(int SASize)
 {
 	uint t=SASize << 20;
 	if (SubAllocatorSize == t)
-		return TRUE;
+		return true;
 	StopSubAllocator();
 	uint AllocSize=t/FIXED_UNIT_SIZE*UNIT_SIZE+UNIT_SIZE;
 #ifdef STRICT_ALIGNMENT_REQUIRED
@@ -88,11 +89,11 @@ bool SubAllocator::StartSubAllocator(int SASize)
 	if ((HeapStart=(byte *)rarmalloc(AllocSize)) == NULL)
 	{
 		ErrHandler->MemoryError();
-		return FALSE;
+		return false;
 	}
 	HeapEnd=HeapStart+AllocSize-UNIT_SIZE;
 	SubAllocatorSize=t;
-	return TRUE;
+	return true;
 }
 
 

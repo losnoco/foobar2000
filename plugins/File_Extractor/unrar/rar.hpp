@@ -1,10 +1,12 @@
-// File_Extractor 0.4.3
 // This source code is a heavily modified version based on the unrar package.
-// It may not be used to develop a RAR (WinRAR) compatible archiver.
-// See unrar/license.txt for copyright and licensing.
+// It may NOT be used to develop a RAR (WinRAR) compatible archiver.
+// See license.txt for copyright and licensing.
 
+// unrar_core 3.8.5
 #ifndef RAR_COMMON_HPP
 #define RAR_COMMON_HPP
+
+#include "unrar.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -13,19 +15,36 @@
 
 //// Glue
 
+// One goal is to keep source code as close to original as possible, so
+// that changes to the original can be found and merged more easily.
+
+// These names are too generic and might clash (or have already, hmpf)
+#define Array               Rar_Array
+#define uint32              rar_uint32
+#define sint32              rar_sint32
+#define Unpack              Rar_Unpack
+#define Archive             Rar_Archive
+#define RawRead             Rar_RawRead
+#define BitInput            Rar_BitInput
+#define ModelPPM            Rar_ModelPPM
+#define RangeCoder          Rar_RangeCoder
+#define SubAllocator        Rar_SubAllocator
+#define UnpackFilter        Rar_UnpackFilter
+#define VM_PreparedProgram  Rar_VM_PreparedProgram
+#define CRCTab              Rar_CRCTab
+
+// original source used rar* names for these as well
 #define rarmalloc   malloc
 #define rarrealloc  realloc
 #define rarfree     free
 
-// Renaming to avoid collisions, since they are such generic names
-#define Array       Rar_Array
-#define uint32      rar_uint32
-#define sint32      rar_sint32
-
-// Must NOT be defined (left in source to keep it closer to original)
+// Internal flags, possibly set later
 #undef SFX_MODULE
+#undef VM_OPTIMIZE
+#undef VM_STANDARDFILTERS
+#undef NORARVM
 
-// During debugging, if expr is false, prints message then continues execution
+// During debugging if expr is false, prints message then continues execution
 #ifndef check
 	#define check( expr ) ((void) 0)
 #endif
@@ -33,31 +52,30 @@
 struct Rar_Error_Handler
 {
 	jmp_buf jmp_env;
+	
 	void MemoryError();
+	void ReportError( unrar_err_t );
 };
+
+// throw spec is mandatory in ISO C++ if operator new can return NULL
+#if __cplusplus >= 199711 || __GNUC__ >= 3
+	#define UNRAR_NOTHROW throw ()
+#else
+	#define UNRAR_NOTHROW
+#endif
 
 struct Rar_Allocator
 {
 	// provides allocator that doesn't throw an exception on failure
 	static void operator delete ( void* p ) { free( p ); }
-	static void* operator new ( size_t s )
-// throw spec mandatory in ISO C++ if operator new can return NULL
-#if __cplusplus >= 199711 || __GNUC__ >= 3
-	throw ()
-#endif
-	{
-		return malloc( s );
-	}
+	static void* operator new ( size_t s ) UNRAR_NOTHROW { return malloc( s ); }
+	static void* operator new ( size_t, void* p ) UNRAR_NOTHROW { return p; }
 };
 
 //// os.hpp
-#define FALSE 0
-#define TRUE  1
-#define NM  1024
-#define CPATHDIVIDER '/'
-
 #undef STRICT_ALIGNMENT_REQUIRED
 #undef LITTLE_ENDIAN
+#define  NM  1024
 
 #if defined (__i386__) || defined (__x86_64__) || defined (_M_IX86) || defined (_M_X64)
 	// Optimizations mostly only apply to x86
@@ -78,10 +96,11 @@ struct Rar_Allocator
 	#define PRESENT_INT32
 #endif
 
-//// rartypes.hpp
 typedef unsigned char    byte;   //8 bits
 typedef unsigned short   ushort; //preferably 16 bits, but can be more
 typedef unsigned int     uint;   //32 bits or more
+
+typedef wchar_t wchar;
 
 #define SHORT16(x) (sizeof(ushort)==2 ? (ushort)(x):((x)&0xffff))
 #define UINT32(x)  (sizeof(uint  )==4 ? (uint  )(x):((x)&0xffffffff))
@@ -90,95 +109,20 @@ typedef unsigned int     uint;   //32 bits or more
 #define  Min(x,y) (((x)<(y)) ? (x):(y))
 #define  Max(x,y) (((x)>(y)) ? (x):(y))
 
-#define  ASIZE(x) (sizeof(x)/sizeof(x[0]))
-
-//// unicode.hpp
-#define charnext(s) ((s)+1)
-
 //// int64.hpp
-#if defined(__BORLANDC__) || defined(_MSC_VER)
-#define NATIVE_INT64
-typedef __int64 Int64;
-#endif
-
-#if defined(__GNUC__) || defined(__HP_aCC) || defined(__SUNPRO_CC)
-#define NATIVE_INT64
-typedef long long Int64;
-#endif
-
-#ifdef NATIVE_INT64
+typedef unrar_long_long Int64;
 
 #define int64to32(x) ((uint)(x))
-#define int32to64(high,low) ((((Int64)(high))<<32)+(low))
+#define int32to64(high,low) ((((Int64)(high))<<31<<1)+(low))
 #define is64plus(x) (x>=0)
 
-#else
-
-class Int64
-{
-  public:
-    Int64();
-    Int64(uint n);
-    Int64(uint HighPart,uint LowPart);
-
-//    Int64 operator = (Int64 n);
-    Int64 operator << (int n);
-    Int64 operator >> (int n);
-
-    friend Int64 operator / (Int64 n1,Int64 n2);
-    friend Int64 operator * (Int64 n1,Int64 n2);
-    friend Int64 operator % (Int64 n1,Int64 n2);
-    friend Int64 operator + (Int64 n1,Int64 n2);
-    friend Int64 operator - (Int64 n1,Int64 n2);
-    friend Int64 operator += (Int64 &n1,Int64 n2);
-    friend Int64 operator -= (Int64 &n1,Int64 n2);
-    friend Int64 operator *= (Int64 &n1,Int64 n2);
-    friend Int64 operator /= (Int64 &n1,Int64 n2);
-    friend Int64 operator | (Int64 n1,Int64 n2);
-    friend Int64 operator & (Int64 n1,Int64 n2);
-    inline friend void operator -= (Int64 &n1,unsigned int n2)
-    {
-      if (n1.LowPart<n2)
-        n1.HighPart--;
-      n1.LowPart-=n2;
-    }
-    inline friend void operator ++ (Int64 &n)
-    {
-      if (++n.LowPart == 0)
-        ++n.HighPart;
-    }
-    inline friend void operator -- (Int64 &n)
-    {
-      if (n.LowPart-- == 0)
-        n.HighPart--;
-    }
-    friend bool operator == (Int64 n1,Int64 n2);
-    friend bool operator > (Int64 n1,Int64 n2);
-    friend bool operator < (Int64 n1,Int64 n2);
-    friend bool operator != (Int64 n1,Int64 n2);
-    friend bool operator >= (Int64 n1,Int64 n2);
-    friend bool operator <= (Int64 n1,Int64 n2);
-
-    void Set(uint HighPart,uint LowPart);
-    uint GetLowPart() {return(LowPart);}
-
-    uint LowPart;
-    uint HighPart;
-};
-
-inline uint int64to32(Int64 n) {return(n.GetLowPart());}
-#define int32to64(high,low) (Int64((high),(low)))
-#define is64plus(x) ((int)(x).HighPart>=0)
-
-#endif
-
-#define INT64ERR int32to64(0x80000000,0)
 #define INT64MAX int32to64(0x7fffffff,0)
 
 //// crc.hpp
+extern uint CRCTab[256];
 void InitCRC();
-uint CRC(uint StartCRC,const void *Addr,uint Size);
-ushort OldCRC(ushort StartCRC,const void *Addr,uint Size);
+uint CRC(uint StartCRC,const void *Addr,size_t Size);
+ushort OldCRC(ushort StartCRC,const void *Addr,size_t Size);
 
 //// rartime.hpp
 struct RarTime
@@ -192,9 +136,11 @@ class ComprDataIO
 		: public Rar_Error_Handler
 {
 public:
-	class File_Reader* reader;
-	class Data_Writer* writer;
-	const char* write_error; // once write error occurs, no more writes are made
+	unrar_read_func  user_read;
+	unrar_write_func user_write;
+	void* user_read_data;
+	void* user_write_data;
+	unrar_err_t write_error; // once write error occurs, no more writes are made
  	Int64 Tell_;
 	bool OldFormat;
 
@@ -210,42 +156,54 @@ public:
 
 	uint UnpFileCRC;
 
-	const char* Seek( Int64, int ignored = 0 );
+	void Seek(Int64 Offset, int Method = 0 ) { (void)Method; Tell_ = Offset; }
 	Int64 Tell() { return Tell_; }
-	long Read( void*, long );
+	int Read( void* p, int n );
 };
 
 //// rar.hpp
 class Unpack;
-#include "unicode.hpp"
 #include "array.hpp"
 #include "headers.hpp"
 #include "getbits.hpp"
 #include "archive.hpp"
-#include "encname.hpp"
 #include "rawread.hpp"
+#include "encname.hpp"
 #include "compress.hpp"
 #include "rarvm.hpp"
 #include "model.hpp"
 #include "unpack.hpp"
 
 //// extract.hpp
-class CmdExtract
+/** RAR archive */
+struct unrar_t
 	: public Rar_Allocator
 {
-private:
-	Unpack Unp;
+	unrar_info_t info;
+ 	unrar_pos_t begin_pos;
+	unrar_pos_t solid_pos;
+	unrar_pos_t first_file_pos;
+	void const* data_;
+	void* own_data_;
+	void (*close_file)( void* ); // func ptr to avoid linking fclose() in unnecessarily
+	bool done;
 	long FileCount;
- 	Array<byte> Buffer;
-
-	const char* ExtractCurrentFile( Data_Writer&, bool SkipSolid = 0 );
-
-	CmdExtract( File_Reader* in );
-	void UnstoreFile( Int64 );
-
-public:
+ 	Unpack* Unp;
+	Array<byte> Buffer;
+	// large items last
 	Archive Arc;
-	friend class Rar_Extractor;
+ 	
+	unrar_t();
+	~unrar_t();
+	void UnstoreFile( Int64 );
+	unrar_err_t ExtractCurrentFile( bool SkipSolid = false, bool check_compatibility_only = false );
+	void update_first_file_pos()
+	{
+		if ( FileCount == 0 )
+			first_file_pos = Arc.CurBlockPos;
+	}
 };
+
+typedef unrar_t CmdExtract;
 
 #endif

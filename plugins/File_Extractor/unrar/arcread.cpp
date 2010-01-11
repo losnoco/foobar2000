@@ -1,9 +1,11 @@
 #include "rar.hpp"
 
-static const char rar_corrupt [] = "Corrupt RAR file";
+#include "unrar.h"
+#include "unicode.hpp"
+#include "encname.hpp"
 
 // arcread.cpp
-const char* Archive::ReadHeader()
+unrar_err_t Archive::ReadHeader()
 {
 	CurBlockPos=Tell();
 
@@ -13,12 +15,12 @@ const char* Archive::ReadHeader()
 		ReadOldHeader();
 
 		if ( Raw.Size() == 0 )
-			return ""; // right at end of file
+			return unrar_err_arc_eof; // right at end of file
 
 		if ( Raw.PaddedSize() > 0 ) // added check
-			return rar_corrupt; // missing data
+			return unrar_err_corrupt; // missing data
 
-		return NULL;
+		return unrar_ok;
 	}
 #endif
 
@@ -28,8 +30,10 @@ const char* Archive::ReadHeader()
 
 	Raw.Read(SIZEOF_SHORTBLOCKHEAD);
 	if (Raw.Size()==0)
-		return ""; // right at end of file
-
+	{
+		return unrar_err_arc_eof; // right at end of file
+	}
+	
 	Raw.Get(ShortBlock.HeadCRC);
 	byte HeadType;
 	Raw.Get(HeadType);
@@ -37,8 +41,10 @@ const char* Archive::ReadHeader()
 	Raw.Get(ShortBlock.Flags);
 	Raw.Get(ShortBlock.HeadSize);
 	if (ShortBlock.HeadSize<SIZEOF_SHORTBLOCKHEAD)
-		return rar_corrupt; // invalid HeadSize
-
+	{
+		return unrar_err_corrupt; // invalid HeadSize
+	}
+	
 	// catches unknown block types and reading something that isn't even a header
 	check( MARK_HEAD <= ShortBlock.HeadType && ShortBlock.HeadType <= ENDARC_HEAD );
 
@@ -50,8 +56,8 @@ const char* Archive::ReadHeader()
 		else
 			Raw.Read(ShortBlock.HeadSize-SIZEOF_SHORTBLOCKHEAD);
 
-	if ( Raw.PaddedSize() > 0 ) // added check
-		return rar_corrupt; // missing data
+	if ( Raw.PaddedSize() > 0 ) // fewer than requested bytes read above?
+		return unrar_err_corrupt; // missing data
 
 	NextBlockPos=CurBlockPos+ShortBlock.HeadSize;
 
@@ -85,15 +91,20 @@ const char* Archive::ReadHeader()
 			else
 			{
 				hd->HighPackSize=hd->HighUnpSize=0;
+				if (hd->UnpSize==0xffffffff)
+				{
+					// TODO: what the heck is this for anyway?
+					hd->UnpSize=0;
+					hd->HighUnpSize=0x7fffffff;
+				}
 			}
-			check( hd->UnpSize != 0xFFFFFFFF);
-			hd->FullPackSize=hd->PackSize;
-			hd->FullUnpSize=hd->UnpSize;
+			hd->FullPackSize=int32to64(hd->HighPackSize,hd->PackSize);
+			hd->FullUnpSize=int32to64(hd->HighUnpSize,hd->UnpSize);
 
-			if ( hd->HighPackSize || hd->HighUnpSize )
-				return "Huge RAR files not supported";
+			if ( int32to64( 1, 0 ) == 0 && (hd->HighPackSize || hd->HighUnpSize) )
+				return unrar_err_huge;
 
-			char (&FileName) [NM*4] = hd->FileName; // eliminated local buffer
+			char (&FileName) [sizeof hd->FileName] = hd->FileName; // eliminated local buffer
 			int NameSize=Min(hd->NameSize,sizeof(FileName)-1);
 			Raw.Get((byte *)FileName,NameSize);
 			FileName[NameSize]=0;
@@ -113,28 +124,23 @@ const char* Archive::ReadHeader()
 						int Length=strlen(FileName);
 						if (Length==hd->NameSize)
 						{
-							/*UtfToWide(FileName,hd->FileNameW,sizeof(hd->FileNameW)/sizeof(hd->FileNameW[0])-1);
+							UtfToWide(FileName,hd->FileNameW,sizeof(hd->FileNameW)/sizeof(hd->FileNameW[0])-1);
 							WideToChar(hd->FileNameW,hd->FileName,sizeof(hd->FileName)/sizeof(hd->FileName[0])-1);
-							ExtToInt(hd->FileName,hd->FileName);*/
+							ExtToInt(hd->FileName,hd->FileName);
 						}
 						else
 						{
-							wchar_t FileNameW[NM*4];
 							Length++;
 							NameCoder.Decode(FileName,(byte *)FileName+Length,
-								hd->NameSize-Length,FileNameW,
-								sizeof(FileNameW)/sizeof(FileNameW[0]));
-							WideToUtf( FileNameW, hd->FileName, sizeof(hd->FileName)/sizeof(hd->FileName[0]) );
+									hd->NameSize-Length,hd->FileNameW,
+									sizeof(hd->FileNameW)/sizeof(hd->FileNameW[0]));
 						}
+						if (*hd->FileNameW==0)
+							hd->Flags &= ~LHD_UNICODE;
 					}
 					else
-					{
-						// Local codepage to UTF-8 conversion
-						wchar_t FileNameW[NM*4];
-						CharToWide( FileName, FileNameW, sizeof(FileNameW)/sizeof(FileNameW[0]) );
-						WideToUtf( FileNameW, hd->FileName, sizeof(hd->FileName)/sizeof(hd->FileName[0]) );
-					}
-
+						*hd->FileNameW=0;
+					
 					ConvertUnknownHeader();
 				}
 			if (hd->Flags & LHD_SALT)
@@ -169,7 +175,7 @@ const char* Archive::ReadHeader()
 			bool CRCProcessedOnly=(hd->Flags & LHD_COMMENT)!=0;
 			HeaderCRC=~Raw.GetCRC(CRCProcessedOnly)&0xffff;
 			if (hd->HeadCRC!=HeaderCRC)
-				return rar_corrupt;
+				return unrar_err_corrupt;
 			check( CRCProcessedOnly == false ); // I need to test on archives where this doesn't hold
 			check( Raw.ReadPos == Raw.DataSize ); // we should have read all fields
 		}
@@ -199,11 +205,16 @@ const char* Archive::ReadHeader()
 	// (removed decryption)
 
 	if (NextBlockPos<CurBlockPos+Raw.Size())
-		return rar_corrupt; // next block isn't past end of current block's header
-
-	return NULL;
+		return unrar_err_corrupt; // next block isn't past end of current block's header
+	
+	// If pos went negative, then unrar_pos_t is only 32 bits and it overflowed
+	if ( NextBlockPos < 0 )
+		return unrar_err_huge;
+	
+	return unrar_ok;
 }
 
+// Rar.Read()s are checked by caller of ReadOldHeader() (see above)
 #ifndef SFX_MODULE
 int Archive::ReadOldHeader()
 {
@@ -249,6 +260,7 @@ int Archive::ReadOldHeader()
 		Raw.Get((byte *)NewLhd.FileName,OldLhd.NameSize);
 		NewLhd.FileName[OldLhd.NameSize]=0;
 		// (removed name case conversion)
+		*NewLhd.FileNameW=0;
 
 		if (Raw.Size()!=0)
 			NextBlockPos=CurBlockPos+NewLhd.HeadSize+NewLhd.PackSize;
@@ -259,6 +271,21 @@ int Archive::ReadOldHeader()
 #endif
 
 // (removed name case and attribute conversion)
+
+bool Archive::IsArcDir()
+{
+	return((NewLhd.Flags & LHD_WINDOWMASK)==LHD_DIRECTORY);
+}
+
+
+bool Archive::IsArcLabel()
+{
+	return(NewLhd.HostOS<=HOST_WIN32 && (NewLhd.FileAttr & 8));
+}
+
+// TODO: use '\\' on Windows?
+char const CPATHDIVIDER = '/';
+#define charnext(s) ((s)+1)
 
 void Archive::ConvertUnknownHeader()
 {
@@ -271,10 +298,17 @@ void Archive::ConvertUnknownHeader()
 		else
 			NewLhd.FileAttr=0x20;
 	}
-	for (char *s=NewLhd.FileName;*s!=0;s=charnext(s))
+	{
+		for (char *s=NewLhd.FileName;*s!=0;s=charnext(s))
+		{
+			if (*s=='/' || *s=='\\')
+				*s=CPATHDIVIDER;
+		}
+	}
+	// (removed Apple Unicode handling)
+	for (wchar *s=NewLhd.FileNameW;*s!=0;s++)
 	{
 		if (*s=='/' || *s=='\\')
 			*s=CPATHDIVIDER;
 	}
-	// (removed Apple and Unicode handling)
 }

@@ -1,7 +1,4 @@
-// File_Extractor 0.4.3
-// This source code is a heavily modified version based on the unrar package.
-// It may not be used to develop a RAR (WinRAR) compatible archiver.
-// See unrar/license.txt for copyright and licensing.
+// File_Extractor 1.0.0. http://www.slack.net/~ant/
 
 #include "blargg_common.h"
 
@@ -9,233 +6,192 @@
 
 #include "Rar_Extractor.h"
 
-#include "unrar/rar.hpp"
+/* Copyright (C) 2009 Shay Green. This module is free software; you
+can redistribute it and/or modify it under the terms of the GNU Lesser
+General Public License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version. This
+module is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+details. You should have received a copy of the GNU Lesser General Public
+License along with this module; if not, write to the Free Software Foundation,
+Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA */
 
 #include "blargg_source.h"
 
-Rar_Extractor::Rar_Extractor() : File_Extractor( fex_rar_type )
+static blargg_err_t init_rar()
 {
-	impl = 0;
+	unrar_init();
+	return blargg_ok;
 }
 
-extern "C" {
-	static File_Extractor* new_rar() { return BLARGG_NEW Rar_Extractor; }
+static File_Extractor* new_rar()
+{
+	return BLARGG_NEW Rar_Extractor;
 }
 
-fex_type_t_ const fex_rar_type [1] = {{ "RAR", &new_rar }};
+fex_type_t_ const fex_rar_type [1] = {{
+	".rar",
+	&new_rar,
+	"RAR archive",
+	&init_rar
+}};
 
-void Rar_Extractor::close_()
+blargg_err_t Rar_Extractor::convert_err( unrar_err_t err )
 {
-	delete impl;
-	impl = 0;
-}
-
-Rar_Extractor::~Rar_Extractor() { close(); }
-
-blargg_err_t Rar_Extractor::open_()
-{
-	RETURN_ERR( file().seek( 0 ) );
-
-	CHECK_ALLOC( impl = BLARGG_NEW CmdExtract( &file() ) );
-
-	CHECK_ALLOC( !setjmp( impl->Arc.jmp_env ) );
-
-	impl->Unp.Init( 0 );
-
-	if ( !impl->Arc.IsArchive() )
-		return fex_wrong_file_type;
-
-	RETURN_ERR( impl->Arc.IsArchive2() );
-
-	index       = -1;
-	can_extract = true;
-
-	return next_item();
-}
-
-blargg_err_t Rar_Extractor::rewind_()
-{
-	assert( impl );
-	close_();
-	return open_();
-}
-
-blargg_err_t Rar_Extractor::next_item()
-{
-	CHECK_ALLOC( !setjmp( impl->Arc.jmp_env ) );
-
-	index++;
-	for (;;)
+	blargg_err_t reader_err = reader.err;
+	reader.err = blargg_ok;
+	if ( reader_err )
+		check( err == unrar_next_err );
+	
+	switch ( err )
 	{
-		RETURN_ERR( impl->Arc.SeekToNext() );
-		blargg_err_t err = impl->Arc.ReadHeader();
+	case unrar_ok:              return blargg_ok;
+	case unrar_err_memory:      return blargg_err_memory;
+	case unrar_err_open:        return blargg_err_file_read;
+	case unrar_err_not_arc:     return blargg_err_file_type;
+	case unrar_err_corrupt:     return blargg_err_file_corrupt;
+	case unrar_err_io:          return blargg_err_file_io;
+	case unrar_err_arc_eof:     return blargg_err_internal;
+	case unrar_err_encrypted:   return BLARGG_ERR( BLARGG_ERR_FILE_FEATURE, "RAR encryption not supported" );
+	case unrar_err_segmented:   return BLARGG_ERR( BLARGG_ERR_FILE_FEATURE, "RAR segmentation not supported" );
+	case unrar_err_huge:        return BLARGG_ERR( BLARGG_ERR_FILE_FEATURE, "Huge RAR files not supported" );
+	case unrar_err_old_algo:    return BLARGG_ERR( BLARGG_ERR_FILE_FEATURE, "Old RAR compression not supported" );
+	case unrar_err_new_algo:    return BLARGG_ERR( BLARGG_ERR_FILE_FEATURE, "RAR uses unknown newer compression" );
+	case unrar_next_err:        break;
+	default:
+		check( false ); // unhandled RAR error
+	}
+	
+	if ( reader_err )
+		return reader_err;
+	
+	check( false );
+	return BLARGG_ERR( BLARGG_ERR_INTERNAL, "RAR archive" );
+}
+
+static inline unrar_err_t handle_err( Rar_Extractor::read_callback_t* h, blargg_err_t err )
+{
+	if ( !err )
+		return unrar_ok;
+	
+	h->err = err;
+	return unrar_next_err;
+}
+
+extern "C"
+{
+	static unrar_err_t my_unrar_read( void* data, void* out, int* count, unrar_pos_t pos )
+	{
+		// TODO: 64-bit file support
+		
+		Rar_Extractor::read_callback_t* h = STATIC_CAST(Rar_Extractor::read_callback_t*,data);
+		if ( h->pos != pos )
+		{
+			blargg_err_t err = h->in->seek( pos );
+			if ( err )
+				return handle_err( h, err );
+			
+			h->pos = pos;
+		}
+		
+		blargg_err_t err = h->in->read_avail( out, count );
 		if ( err )
-		{
-			if ( *err )
-				return err;
-
-			dprintf( "RAR: Didn't end with ENDARC_HEAD\n" ); // rar -en causes this
-			set_done();
-			break;
-		}
-
-		HEADER_TYPE type = (HEADER_TYPE) impl->Arc.GetHeaderType();
-		if ( type == ENDARC_HEAD )
-		{
-			// no files beyond this point
-			set_done();
-			break;
-		}
-
-		// skip non-files
-		if ( type != FILE_HEAD )
-		{
-			if ( type != NEWSUB_HEAD && type != PROTECT_HEAD && type != SIGN_HEAD && type != SUB_HEAD )
-				dprintf( "RAR: Skipping unknown block type: %X\n", (int) type );
-			continue;
-		}
-
-		// skip labels
-		if ( impl->Arc.NewLhd.HostOS <= HOST_WIN32 && (impl->Arc.NewLhd.FileAttr & 8) )
-		{
-			dprintf( "RAR: Skipping label\n" );
-			continue;
-		}
-
-		// skip links
-		if ( (impl->Arc.NewLhd.FileAttr & 0xF000) == 0xA000 )
-		{
-			dprintf( "RAR: Skipping link\n" );
-			continue;
-		}
-
-		// skip directories
-		if ( (impl->Arc.NewLhd.Flags & LHD_WINDOWMASK) == LHD_DIRECTORY )
-		{
-			dprintf( "RAR: Skipping directory\n" );
-			continue;
-		}
-
-		set_info( impl->Arc.NewLhd.UnpSize, impl->Arc.NewLhd.FileName,
-				impl->Arc.NewLhd.mtime.time );
-		break;
+			return handle_err( h, err );
+		
+		h->pos += *count;
+		
+		return unrar_ok;
 	}
-
-	extracted = false;
-	return 0;
 }
 
-blargg_err_t Rar_Extractor::next_()
+Rar_Extractor::Rar_Extractor() :
+	File_Extractor( fex_rar_type )
 {
-	CHECK_ALLOC( !setjmp( impl->Arc.jmp_env ) );
+	unrar = NULL;
+}
 
-	if ( !extracted && impl->Arc.Solid )
+Rar_Extractor::~Rar_Extractor()
+{
+	close();
+}
+
+blargg_err_t Rar_Extractor::open_v()
+{
+	reader.pos = 0;
+	reader.in  = &arc();
+	reader.err = blargg_ok;
+	
+	RETURN_ERR( arc().seek( 0 ) );
+	RETURN_ERR( convert_err( unrar_open_custom( &unrar, &my_unrar_read, &reader ) ) );
+	return skip_unextractables();
+}
+
+void Rar_Extractor::close_v()
+{
+	unrar_close( unrar );
+	
+	unrar     = NULL;
+	reader.in = NULL;
+}
+
+blargg_err_t Rar_Extractor::skip_unextractables()
+{
+	while ( !unrar_done( unrar ) && unrar_try_extract( unrar ) )
+		RETURN_ERR( next_raw() );
+	
+	if ( !unrar_done( unrar ) )
 	{
-		if ( is_scan_only() )
-		{
-			can_extract = false;
-		}
-		else
-		{
-			// must (usually) extract every file in a solid archive
-			Null_Writer out;
-			RETURN_ERR( impl->ExtractCurrentFile( out, true ) );
-		}
+		unrar_info_t const* info = unrar_info( unrar );
+		
+		set_name( info->name, (info->name_w && *info->name_w) ? info->name_w : NULL );
+		set_info( info->size, info->dos_date, (info->is_crc32 ? info->crc : 0) );
 	}
-
-	return next_item();
+	
+	return blargg_ok;
 }
 
-blargg_err_t Rar_Extractor::extract( Data_Writer& out )
+blargg_err_t Rar_Extractor::next_raw()
 {
-	if ( !impl || extracted )
-		return eof_error;
-
-	CHECK_ALLOC( !setjmp( impl->Arc.jmp_env ) );
-
-	if ( !can_extract )
-	{
-		// We skipped some files in solid archive, so we need to
-		// go back and extract every one before current
-		int saved_index = index;
-
-		RETURN_ERR( rewind_() );
-		scan_only( false );
-		while ( index < saved_index )
-		{
-			if ( done() )
-				return "Corrupt RAR archive";
-			RETURN_ERR( next_() );
-		}
-		assert( can_extract );
-	}
-	extracted = true;
-
-	impl->Arc.write_error = 0;
-	RETURN_ERR( impl->ExtractCurrentFile( out ) );
-	return impl->Arc.write_error;
+	return convert_err( unrar_next( unrar ) );
 }
 
-// Rar_Extractor_Impl
-
-const char* ComprDataIO::Seek( Int64 n, int )
+blargg_err_t Rar_Extractor::next_v()
 {
-	if ( n != Tell_ )
-	{
-		RETURN_ERR( reader->seek( n ) );
-		Tell_ = n;
-	}
-	return 0;
+	RETURN_ERR( next_raw() );
+	return skip_unextractables();
 }
 
-long ComprDataIO::Read( void* p, long n )
+blargg_err_t Rar_Extractor::rewind_v()
 {
-	long result = reader->read_avail( p, n );
-	if ( result < 0 )
-		result = 0;
-	Tell_ += result;
-	return result;
+	RETURN_ERR( convert_err( unrar_rewind( unrar ) ) );
+	return skip_unextractables();
 }
 
-void ComprDataIO::UnpWrite( byte* out, uint count )
+fex_pos_t Rar_Extractor::tell_arc_v() const
 {
-	if ( !write_error )
-		write_error = writer->write( out, count );
-
-	if ( !SkipUnpCRC )
-	{
-		if ( OldFormat )
-			UnpFileCRC = OldCRC( (ushort) UnpFileCRC, out, count );
-		else
-			UnpFileCRC = CRC( UnpFileCRC, out, count );
-	}
+	return unrar_tell( unrar );
 }
 
-int ComprDataIO::UnpRead( byte* out, uint count )
+blargg_err_t Rar_Extractor::seek_arc_v( fex_pos_t pos )
 {
-	if ( count <= 0 )
-		return 0;
-
-	if ( count > (uint) UnpPackedSize )
-		count = UnpPackedSize;
-
-	long result = Read( out, count );
-	UnpPackedSize -= result;
-	return result;
+	RETURN_ERR( convert_err( unrar_seek( unrar, pos ) ) );
+	return skip_unextractables();
 }
 
-CmdExtract::CmdExtract( File_Reader* in ) :
-	Unp( &Arc ),
-	Buffer( &Arc )
+blargg_err_t Rar_Extractor::data_v( void const** out )
 {
-	Arc.reader = in;
-	Arc.Tell_  = 0;
-	FileCount = 0;
-	InitCRC();
+	return convert_err( unrar_extract_mem( unrar, out ) );
 }
 
-void Rar_Error_Handler::MemoryError()
+blargg_err_t Rar_Extractor::extract_v( void* out, int count )
 {
-	longjmp( jmp_env, 1 );
+	// We can read entire file directly into user buffer
+	if ( count == size() )
+		return convert_err( unrar_extract( unrar, out, count ) );
+	
+	// This will call data_v() and copy from that buffer for us
+	return File_Extractor::extract_v( out, count );
 }
+
 #endif

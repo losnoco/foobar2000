@@ -1,119 +1,106 @@
 #include "rar.hpp"
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
+#include "unicode.hpp"
 
-#if defined(_EMX) && !defined(_DJGPP)
-#include "unios2.cpp"
-#endif
-
-bool CharToWide(const char *Src,wchar_t *Dest,int DestSize)
+bool WideToChar(const wchar *Src,char *Dest,int DestSize)
 {
-  bool RetCode=true;
-#ifdef _WIN32
-  if (MultiByteToWideChar(CP_ACP,0,Src,-1,Dest,DestSize)==0)
-    RetCode=false;
+	bool RetCode=true;
+#ifdef _WIN_32
+	if (WideCharToMultiByte(CP_ACP,0,Src,-1,Dest,DestSize,NULL,NULL)==0)
+		RetCode=false;
 #else
 #ifdef _APPLE
-  UtfToWide(Src,Dest,DestSize);
+	WideToUtf(Src,Dest,DestSize);
 #else
 #ifdef MBFUNCTIONS
 
-  size_t ResultingSize=mbstowcs(Dest,Src,DestSize);
-  if (ResultingSize==(size_t)-1)
-    RetCode=false;
-  if (ResultingSize==0 && *Src!=0)
-    RetCode=false;
+	size_t ResultingSize=wcstombs(Dest,Src,DestSize);
+	if (ResultingSize==(size_t)-1)
+		RetCode=false;
+	if (ResultingSize==0 && *Src!=0)
+		RetCode=false;
 
-  if ((!RetCode || *Dest==0 && *Src!=0) && DestSize>NM && strlen(Src)<NM)
-  {
-    /* Workaround for strange Linux Unicode functions bug.
-       Some of wcstombs and mbstowcs implementations in some situations
-       (we are yet to find out what it depends on) can return an empty
-       string and success code if buffer size value is too large.
-    */
-    return(CharToWide(Src,Dest,NM));
-  }
+	if ((!RetCode || *Dest==0 && *Src!=0) && DestSize>NM && strlenw(Src)<NM)
+	{
+		/* Workaround for strange Linux Unicode functions bug.
+			 Some of wcstombs and mbstowcs implementations in some situations
+			 (we are yet to find out what it depends on) can return an empty
+			 string and success code if buffer size value is too large.
+		*/
+		return(WideToChar(Src,Dest,NM));
+	}
+
 #else
-  if (UnicodeEnabled())
-  {
-#if defined(_EMX) && !defined(_DJGPP)
-    int len=Min(strlen(Src)+1,DestSize-1);
-    if (uni_toucs((char*)Src,len,(UniChar*)Dest,(size_t*)&DestSize)==-1 ||
-        DestSize>len)
-      DestSize=0;
-    RetCode=false;
-#endif
-  }
-  else
-    for (int I=0;I<DestSize;I++)
-    {
-      Dest[I]=(wchar_t)Src[I];
-      if (Src[I]==0)
-        break;
-    }
+	// TODO: convert to UTF-8? Would need conversion routine. Ugh.
+	for (int I=0;I<DestSize;I++)
+	{
+		Dest[I]=(char)Src[I];
+		if (Src[I]==0)
+			break;
+	}
 #endif
 #endif
 #endif
-  return(RetCode);
+	return(RetCode);
 }
 
-void WideToUtf(const wchar_t *Src,char *Dest,int DestSize)
+void UtfToWide(const char *Src,wchar *Dest,int DestSize)
 {
-  DestSize--;
-  while (*Src!=0 && --DestSize>=0)
-  {
-    uint c=*(Src++);
-	if (c >= 0xD800 && c <= 0xDBFF &&
-		*Src >= 0xDC00 && *Src <= 0xDFFF)
+	DestSize--;
+	while (*Src!=0)
 	{
-		c = (( c & 0x3FF ) << 10) |
-			(*Src & 0x3FF);
-		Src++;
+		uint c=(byte)*(Src++),d;
+		if (c<0x80)
+			d=c;
+		else
+			if ((c>>5)==6)
+			{
+				if ((*Src&0xc0)!=0x80)
+					break;
+				d=((c&0x1f)<<6)|(*Src&0x3f);
+				Src++;
+			}
+			else
+				if ((c>>4)==14)
+				{
+					if ((Src[0]&0xc0)!=0x80 || (Src[1]&0xc0)!=0x80)
+						break;
+					d=((c&0xf)<<12)|((Src[0]&0x3f)<<6)|(Src[1]&0x3f);
+					Src+=2;
+				}
+				else
+					if ((c>>3)==30)
+					{
+						if ((Src[0]&0xc0)!=0x80 || (Src[1]&0xc0)!=0x80 || (Src[2]&0xc0)!=0x80)
+							break;
+						d=((c&7)<<18)|((Src[0]&0x3f)<<12)|((Src[1]&0x3f)<<6)|(Src[2]&0x3f);
+						Src+=3;
+					}
+					else
+						break;
+		if (--DestSize<0)
+			break;
+		if (d>0xffff)
+		{
+			if (--DestSize<0 || d>0x10ffff)
+				break;
+			*(Dest++)=((d-0x10000)>>10)+0xd800;
+			*(Dest++)=(d&0x3ff)+0xdc00;
+		}
+		else
+			*(Dest++)=d;
 	}
-    if (c<0x80 && --DestSize>=0)
-      *(Dest++)=c;
-    else
-      if (c<0x800 && (DestSize-=2)>=0)
-      {
-        *(Dest++)=(0xc0|(c>>6));
-        *(Dest++)=(0x80|(c&0x3f));
-      }
-      else
-        if (c<0x10000 && (DestSize-=3)>=0)
-        {
-          *(Dest++)=(0xe0|(c>>12));
-          *(Dest++)=(0x80|((c>>6)&0x3f));
-          *(Dest++)=(0x80|(c&0x3f));
-        }
-        else
-          if (c < 0x200000 && (DestSize-=4)>=0)
-          {
-            *(Dest++)=(0xf0|(c>>18));
-            *(Dest++)=(0x80|((c>>12)&0x3f));
-            *(Dest++)=(0x80|((c>>6)&0x3f));
-            *(Dest++)=(0x80|(c&0x3f));
-          }
-          else
-            if (c < 0x4000000 && (DestSize-=5)>=0)
-            {
-              *(Dest++)=(0xf8|(c>>24));
-              *(Dest++)=(0x80|((c>>18)&0x3f));
-              *(Dest++)=(0x80|((c>>12)&0x3f));
-              *(Dest++)=(0x80|((c>>6)&0x3f));
-              *(Dest++)=(0x80|(c&0x3f));
-            }
-            else
-              if (c <= 0x7fffffff && (DestSize-=6)>=0)
-              {
-                *(Dest++)=(0xFC|(c>>30));
-                *(Dest++)=(0x80|((c>>24)&0x3f));
-                *(Dest++)=(0x80|((c>>18)&0x3f));
-                *(Dest++)=(0x80|((c>>12)&0x3f));
-                *(Dest++)=(0x80|((c>>6)&0x3f));
-                *(Dest++)=(0x80|(c&0x3f));
-              }
-  }
-  *Dest=0;
+	*Dest=0;
+}
+
+
+// strfn.cpp
+void ExtToInt(const char *Src,char *Dest)
+{
+#if defined(_WIN_32)
+	CharToOem(Src,Dest);
+#else
+	if (Dest!=Src)
+		strcpy(Dest,Src);
+#endif
 }

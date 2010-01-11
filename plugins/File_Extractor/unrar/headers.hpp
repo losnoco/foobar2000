@@ -115,7 +115,8 @@ struct FileHeader:BlockHeader
 	uint HighPackSize;
 	uint HighUnpSize;
 /* names */
-	char FileName[NM*4];
+	char FileName[NM*4]; // *4 to avoid using lots of stack in arcread
+	wchar FileNameW[NM];
 /* optional */
 	byte Salt[SALT_SIZE];
 
@@ -125,6 +126,8 @@ struct FileHeader:BlockHeader
 	Int64 FullUnpSize;
 };
 
+// SubBlockHeader and its successors were used in RAR 2.x format.
+// RAR 3.x uses FileHeader with NEWSUB_HEAD HeadType for subblocks.
 struct SubBlockHeader:BlockHeader
 {
 	ushort SubType;

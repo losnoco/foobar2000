@@ -1,12 +1,8 @@
-// File_Extractor 0.4.3. http://www.slack.net/~ant/
+// File_Extractor 1.0.0. http://www.slack.net/~ant/
 
 #include "File_Extractor.h"
 
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-
-/* Copyright (C) 2005-2007 Shay Green. This module is free software; you
+/* Copyright (C) 2005-2009 Shay Green. This module is free software; you
 can redistribute it and/or modify it under the terms of the GNU Lesser
 General Public License as published by the Free Software Foundation; either
 version 2.1 of the License, or (at your option) any later version. This
@@ -19,229 +15,327 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA */
 
 #include "blargg_source.h"
 
-const char fex_wrong_file_type [] = "Archive format not supported";
-
-File_Extractor::File_Extractor( fex_type_t t ) :
+File_Extractor::fex_t( fex_type_t t ) :
 	type_( t )
 {
-	user_data_    = 0;
-	user_cleanup_ = 0;
-	init_state();
+	own_file_ = NULL;
+	
+	close_();
 }
 
 // Open
 
-void File_Extractor::open_filter_( const char*, Std_File_Reader* ) { }
-
-blargg_err_t File_Extractor::open( const char* path )
+blargg_err_t File_Extractor::set_path( const char* path )
 {
-	Std_File_Reader* in = BLARGG_NEW Std_File_Reader;
+	if ( !path )
+		path = "";
+	
+	RETURN_ERR( path_.resize( strlen( path ) + 1 ) );
+	memcpy( path_.begin(), path, path_.size() );
+	return blargg_ok;
+}
+
+blargg_err_t File_Extractor::open( const char path [] )
+{
+	close();
+	
+	RETURN_ERR( set_path( path ) );
+	
+	blargg_err_t err = open_path_v();
+	if ( err )
+		close();
+	else
+		opened_ = true;
+	
+	return err;
+}
+
+blargg_err_t File_Extractor::open_path_v()
+{
+	RETURN_ERR( open_arc_file() );
+	
+	return open_v();
+}
+
+inline
+static void make_unbuffered( Std_File_Reader* r )
+{
+	r->make_unbuffered();
+}
+
+inline
+static void make_unbuffered( void* )
+{ }
+
+blargg_err_t File_Extractor::open_arc_file( bool unbuffered )
+{
+	if ( reader_ )
+		return blargg_ok;
+	
+	FEX_FILE_READER* in = BLARGG_NEW FEX_FILE_READER;
 	CHECK_ALLOC( in );
-
-	blargg_err_t err = in->open( path );
-	if ( !err )
-	{
-		open_filter_( path, in );
-		err = this->open( in );
-	}
-
+	
+	blargg_err_t err = in->open( arc_path() );
 	if ( err )
 	{
 		delete in;
-		return err;
 	}
-
-	own_file();
-	return 0;
+	else
+	{
+		reader_ = in;
+		own_file();
+		if ( unbuffered )
+			make_unbuffered( in );
+	}
+	
+	return err;
 }
 
-blargg_err_t File_Extractor::open( File_Reader* input )
+blargg_err_t File_Extractor::open( File_Reader* input, const char* path )
 {
-	require( input->tell() == 0 ); // needs to be at beginning
 	close();
+	
+	RETURN_ERR( set_path( path ) );
+	
+	RETURN_ERR( input->seek( 0 ) );
+	
 	reader_ = input;
-	blargg_err_t err = open_();
-	if ( !err )
-		done_ = false;
-	else
+	blargg_err_t err = open_v();
+	if ( err )
 		close();
+	else
+		opened_ = true;
+	
 	return err;
 }
 
 // Close
 
-void File_Extractor::init_state()
-{
-	done_      = true;
-	scan_only_ = false;
-	reader_    = 0;
-	own_file_  = false;
-	own_data_  = 0;
-	clear_file();
-}
-
 void File_Extractor::close()
 {
+	close_v();
 	close_();
-	if ( own_file_ && reader_ )
-		delete reader_;
-	clear_file();
-	init_state();
 }
 
-File_Extractor::~File_Extractor()
+void File_Extractor::close_()
 {
-	// fails if derived class didn't call close() in its destructor
-	check( !own_file_ && !reader_ );
-	if ( user_cleanup_ )
-		user_cleanup_( user_data_ );
+	delete own_file_;
+	own_file_ = NULL;
+	
+	tell_   = 0;
+	reader_ = NULL;
+	opened_ = false;
+	
+	path_.clear();
+	clear_file();
+}
+
+File_Extractor::~fex_t()
+{
+	check( !opened() ); // fails if derived destructor didn't call close()
+	
+	delete own_file_;
 }
 
 // Scanning
 
-void File_Extractor::free_data()
-{
-	data_ptr_ = 0;
-	free( own_data_ );
-	own_data_ = 0;
-}
-
 void File_Extractor::clear_file()
 {
-	set_info( 0, 0 );
-	data_pos_ = 0;
-	free_data();
-	clear_file_();
+	name_       = NULL;
+	wname_      = NULL;
+	done_       = true;
+	stat_called = false;
+	data_ptr_   = NULL;
+	
+	set_info( 0 );
+	own_data_.clear();
+	clear_file_v();
 }
 
-void File_Extractor::set_info( long size, const char* name, unsigned long date )
+void File_Extractor::set_name( const char new_name [], const wchar_t* new_wname )
 {
-	size_ = size;
-	name_ = name;
-	date_ = (date != 0xFFFFFFFF ? date : 0);
+	name_  = new_name;
+	wname_ = new_wname;
+	done_  = false;
+}
+
+void File_Extractor::set_info( BOOST::uint64_t new_size, unsigned date, unsigned crc )
+{
+	size_  = new_size;
+	date_  = (date != 0xFFFFFFFF ? date : 0);
+	crc32_ = crc;
+	set_remain( new_size );
+}
+
+blargg_err_t File_Extractor::next_()
+{
+	tell_++;
+	clear_file();
+	
+	blargg_err_t err = next_v();
+	if ( err )
+		clear_file();
+	
+	return err;
 }
 
 blargg_err_t File_Extractor::next()
 {
-	if ( done() )
-		return "End of archive";
-
-	clear_file();
-	blargg_err_t err = next_();
-	if ( err )
-		done_ = true;
-	if ( done_ )
-		clear_file();
-	return err;
+	assert( !done() );
+	return next_();
 }
 
 blargg_err_t File_Extractor::rewind()
 {
-	if ( !reader_ )
-		return "No open archive";
+	assert( opened() );
 
-	done_      = false;
-	scan_only_ = false;
+	tell_ = 0;
 	clear_file();
 
-	blargg_err_t err = rewind_();
+	blargg_err_t err = rewind_v();
 	if ( err )
-	{
-		done_ = true;
 		clear_file();
-	}
+	
 	return err;
 }
 
-// Full extraction
-
-blargg_err_t File_Extractor::data_( byte const*& out )
+blargg_err_t File_Extractor::stat()
 {
-	if ( !own_data_ )
-		CHECK_ALLOC( own_data_ = (byte*) malloc( size_ ? size_ : 1 ) );
-
-	out = own_data_;
-	return read_once( own_data_, size_ );
-}
-
-unsigned char const* File_Extractor::data( blargg_err_t* error_out )
-{
-	const char* error = 0;
-	if ( !reader_ )
+	assert( !done() );
+	
+	if ( !stat_called )
 	{
-		error = eof_error;
+		RETURN_ERR( stat_v() );
+		stat_called = true;
 	}
-	else if ( !data_ptr_ )
-	{
-		error = data_( data_ptr_ );
-		if ( error )
-			free_data();
-	}
-
-	if ( error_out )
-		*error_out = error;
-
-	return data_ptr_;
+	return blargg_ok;
 }
 
-blargg_err_t File_Extractor::extract( Data_Writer& out )
-{
-	blargg_err_t error;
-	byte const* p = data( &error );
-	RETURN_ERR( error );
+// Tell/seek
 
-	return out.write( p, size_ );
+int const pos_offset = 1;
+
+fex_pos_t File_Extractor::tell_arc() const
+{
+	assert( opened() );
+	
+	fex_pos_t pos = tell_arc_v();
+	assert( pos >= 0 );
+	
+	return pos + pos_offset;
 }
 
-blargg_err_t File_Extractor::read_once( void* out, long count )
+blargg_err_t File_Extractor::seek_arc( fex_pos_t pos )
 {
-	Mem_Writer mem( out, count, 1 );
-	return extract( mem );
+	assert( opened() );
+	assert( pos != 0 );
+	
+	clear_file();
+	
+	blargg_err_t err = seek_arc_v( pos - pos_offset );
+	if ( err )
+		clear_file();
+	
+	return err;
 }
 
-// Data_Reader functions
-
-uint64_t File_Extractor::remain() const { return size_ - data_pos_; }
-
-long File_Extractor::read_avail( void* out, long count )
+fex_pos_t File_Extractor::tell_arc_v() const
 {
-	if ( count )
-	{
-		uint64_t r = remain();
-		if ( count > r )
-			count = r;
-
-		if ( read( out, count ) )
-			count = -1;
-	}
-	return count;
+	return tell_;
 }
 
-blargg_err_t File_Extractor::read( void* out, long count )
+blargg_err_t File_Extractor::seek_arc_v( fex_pos_t pos )
 {
-	if ( count > remain() )
-		return "End of file";
-
-	if ( count == size_ && !data_ptr_ )
+	// >= because seeking to current file should always reset read pointer etc.
+	if ( tell_ >= pos )
+		RETURN_ERR( rewind() );
+	
+	while ( tell_ < pos )
 	{
-		// avoid temporary buffer when reading entire file in one call
-		assert( data_pos_ == 0 );
-		RETURN_ERR( read_once( out, count ) );
-	}
-	else
-	{
-		if ( count && !data_ptr_ )
+		RETURN_ERR( next_() );
+		
+		if ( done() )
 		{
-			blargg_err_t err;
-			data( &err ); // sets data_ptr_
-			RETURN_ERR( err );
+			assert( false );
+			return blargg_err_caller;
 		}
-
-		memcpy( out, data_ptr_ + data_pos_, count );
 	}
-	data_pos_ += count;
-	if ( data_pos_ == size_ )
-		free_data();
+	
+	assert( tell_ == pos );
+	
+	return blargg_ok;
+}
 
-	return 0;
+// Extraction
+
+blargg_err_t File_Extractor::rewind_file()
+{
+	RETURN_ERR( stat() );
+	
+	if ( tell() > 0 )
+	{
+		if ( data_ptr_ )
+		{
+			set_remain( size() );
+		}
+		else
+		{
+			RETURN_ERR( seek_arc( tell_arc() ) );
+			RETURN_ERR( stat() );
+		}
+	}
+	
+	return blargg_ok;
+}
+
+blargg_err_t File_Extractor::data( const void** data_out )
+{
+	assert( !done() );
+	
+	*data_out = NULL;
+	if ( !data_ptr_ )
+	{
+		BOOST::uint64_t old_tell = tell();
+		
+		RETURN_ERR( rewind_file() );
+		
+		void const* ptr;
+		RETURN_ERR( data_v( &ptr ) );
+		data_ptr_ = ptr;
+		
+		// Now that data is in memory, we can seek by simply setting remain
+		set_remain( size() - old_tell );
+	}
+	
+	*data_out = data_ptr_;
+	return blargg_ok;
+}
+
+blargg_err_t File_Extractor::data_v( void const** out )
+{
+	RETURN_ERR( own_data_.resize( size() ) );
+	*out = own_data_.begin();
+	
+	blargg_err_t err = extract_v( own_data_.begin(), own_data_.size() );
+	if ( err )
+		own_data_.clear();
+	
+	return err;
+}
+
+blargg_err_t File_Extractor::extract_v( void* out, int count )
+{
+	void const* p;
+	RETURN_ERR( data( &p ) );
+	memcpy( out, STATIC_CAST(char const*,p) + (size() - remain()), count );
+	
+	return blargg_ok;
+}
+
+blargg_err_t File_Extractor::read_v( void* out, int count )
+{
+	if ( data_ptr_ )
+		return File_Extractor::extract_v( out, count );
+	
+	return extract_v( out, count );
 }

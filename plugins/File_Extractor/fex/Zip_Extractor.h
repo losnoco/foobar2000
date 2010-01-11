@@ -1,6 +1,6 @@
 // ZIP archive extractor. Only supports deflation and store (no compression).
 
-// File_Extractor 0.4.3
+// File_Extractor 1.0.0
 #ifndef ZIP_EXTRACTOR_H
 #define ZIP_EXTRACTOR_H
 
@@ -10,33 +10,36 @@
 class Zip_Extractor : public File_Extractor {
 public:
 	Zip_Extractor();
-	~Zip_Extractor();
-	blargg_err_t read( void*, long );
-	blargg_err_t read_once( void*, long );
-	uint64_t remain() const;
+	virtual ~Zip_Extractor();
+
 protected:
-	void open_filter_( const char*, Std_File_Reader* );
-	blargg_err_t open_();
-	blargg_err_t next_();
-	blargg_err_t rewind_();
-	void clear_file_();
-	void close_();
+	virtual blargg_err_t open_path_v();
+	virtual blargg_err_t open_v();
+	virtual void         close_v();
+	
+	virtual void         clear_file_v();
+	virtual blargg_err_t next_v();
+	virtual blargg_err_t rewind_v();
+	virtual fex_pos_t    tell_arc_v() const;
+	virtual blargg_err_t seek_arc_v( fex_pos_t );
+	
+	virtual blargg_err_t extract_v( void*, int );
+
 private:
 	blargg_vector<char> catalog;
-	long file_size;
-	long catalog_begin; // offset of first catalog entry in file (to detect corruption)
-	long catalog_pos;   // position in catalog data
-	long raw_remain;    // bytes remaining in raw data for current file
-	long remain_;       // byres remaining to be extracted
-	unsigned long crc;
-	unsigned long correct_crc;
-	int method;
+	int catalog_begin;  // offset of first catalog entry in file (to detect corruption)
+	int catalog_pos;    // position of current entry in catalog
+	BOOST::uint64_t raw_remain;     // bytes remaining to be read from zip file for current file
+	unsigned crc;       // ongoing CRC of extracted bytes
+	unsigned correct_crc;
+	bool file_deflated;
 	Zlib_Inflater buf;
 
-	blargg_err_t fill_buf( long offset, long buf_size, long initial_read );
+	blargg_err_t fill_buf( int offset, int buf_size, int initial_read );
 	blargg_err_t update_info( bool advance_first );
-	blargg_err_t first_read( long count );
-	static blargg_err_t inflater_read( void* data, void* out, long* count );
+	blargg_err_t first_read( int count );
+	void reorder_entry_header( int offset );
+	static blargg_err_t inflater_read( void* data, void* out, int* count );
 };
 
 #endif

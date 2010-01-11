@@ -30,10 +30,12 @@ template <class T> void Array<T>::CleanData()
 	AllocSize=0;
 }
 
+
 template <class T> Array<T>::Array(Rar_Error_Handler* eh) : ErrHandler( *eh )
 {
 	CleanData();
 }
+
 
 template <class T> Array<T>::Array(int Size, Rar_Error_Handler* eh) : ErrHandler( *eh )
 {
@@ -66,18 +68,23 @@ template <class T> inline int Array<T>::Size()
 
 template <class T> void Array<T>::Add(int Items)
 {
+	int BufSize = this->BufSize; // don't change actual vars until alloc succeeds
+	T*  Buffer  = this->Buffer;
+	
 	BufSize+=Items;
 	if (BufSize>AllocSize)
 	{
 		int Suggested=AllocSize+AllocSize/4+32;
 		int NewSize=Max(BufSize,Suggested);
 
-		T* NewBuffer=(T *)rarrealloc(Buffer,NewSize*sizeof(T));
-		if (NewBuffer==NULL)
+		Buffer=(T *)rarrealloc(Buffer,NewSize*sizeof(T));
+		if (Buffer==NULL)
 			ErrHandler.MemoryError();
-		Buffer=NewBuffer;
 		AllocSize=NewSize;
 	}
+	
+	this->Buffer  = Buffer;
+	this->BufSize = BufSize;
 }
 
 
@@ -92,6 +99,14 @@ template <class T> void Array<T>::Alloc(int Items)
 
 template <class T> void Array<T>::Reset()
 {
+	// Keep memory allocated if it's small
+	// Eliminates constant reallocation when scanning archive
+	if ( AllocSize < 1024/sizeof(T) )
+	{
+		BufSize = 0;
+		return;
+	}
+	
 	if (Buffer!=NULL)
 	{
 		rarfree(Buffer);

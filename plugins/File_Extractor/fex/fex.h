@@ -1,137 +1,203 @@
-/* Compressed file archive C interface (also usable from C++) */
+/** Uniform access to zip, gzip, 7-zip, and RAR compressed archives \file */
 
-/* File_Extractor 0.4.3 */
+/* File_Extractor 1.0.0 */
 #ifndef FEX_H
 #define FEX_H
+
+#include <stddef.h>
 
 #ifdef __cplusplus
 	extern "C" {
 #endif
 
-/* Error string returned by library functions, or NULL if no error (success).
-If function takes fex_err_t* err_out, it sets *err_out to NULL on success,
-otherwise error string, or you can pass NULL if you don't care about exact
-cause of error (these functions still report error by returning NULL). */
-typedef const char* fex_err_t;
 
-/* First parameter of most extractor_ functions is a pointer to the
-File_Extractor being acted on. */
-typedef struct File_Extractor File_Extractor;
+/** First parameter of most functions is fex_t*, or const fex_t* if nothing is
+changed. Once one of these functions returns an error, the archive should not
+be used any further, other than to close it. One exception is
+fex_error_file_eof; the archive may still be used after this. */
+typedef struct fex_t fex_t;
 
-
-/**** Basics ****/
-
-/* Opens archive and returns pointer to it, or NULL if error. */
-File_Extractor* fex_open( const char* path, fex_err_t* err_out );
-
-/* True if at end of archive. */
-int fex_done( File_Extractor const* );
-
-/* Name of current file. */
-const char* fex_name( File_Extractor const* );
-
-/* Size of current file. */
-long fex_size( File_Extractor const* );
-
-/* Extracts n bytes and writes them to *out. Returns error if all n
-bytes couldn't be extracted (due to end of file or read error). */
-fex_err_t fex_read( File_Extractor*, void* out, long n );
-
-/* Goes to next file in archive (skips directories). */
-fex_err_t fex_next( File_Extractor* );
-
-/* Closes archive and frees memory. */
-void fex_close( File_Extractor* );
+/** Pointer to error, or NULL if function was successful. See error functions
+below. */
+#ifndef fex_err_t /* (#ifndef allows better testing of library) */
+	typedef const char* fex_err_t;
+#endif
 
 
-/**** Advanced ****/
+/**** File types ****/
 
-/* Goes back to first file in archive. */
-fex_err_t fex_rewind( File_Extractor* );
+/** Archive file type identifier. Can also hold NULL. */
+typedef const struct fex_type_t_* fex_type_t;
 
-/* Hints to fex_next() that no file extraction will occur, speeding scanning
-of some archive types. */
-void fex_scan_only( File_Extractor* );
+/** Array of supported types, with NULL at end */
+const fex_type_t* fex_type_list( void );
 
-/* Modification date of current file (MS-DOS format). */
-unsigned long fex_dos_date( File_Extractor const* );
+/** Name of this archive type, e.g. "ZIP archive", "file" */
+const char* fex_type_name( fex_type_t );
 
-/* Number of bytes remaining to be read from current file. */
-long fex_remain( File_Extractor const* );
-
-/* Reads at most n bytes and returns number actually read, or negative if error. */
-long fex_read_avail( File_Extractor*, void* out, long n );
-
-/* Extracts first n bytes and ignores rest. Faster than a normal read since it
-doesn't need to read any more data. Must not be called twice in a row. */
-fex_err_t fex_read_once( File_Extractor*, void* out, long n );
-
-/* Loads file data into memory (if not already) and returns pointer to it, or
-NULL if error. Pointer is valid until fex_next(), fex_rewind(), or fex_close() are
-called. Will return same pointer if called more than once. */
-const unsigned char* fex_data( File_Extractor*, fex_err_t* err_out );
+/** Usual file extension for type, e.g. ".zip", ".7z". For binary file type,
+returns "", since it can open any file. */
+const char* fex_type_extension( fex_type_t );
 
 
-/**** Archive types ****/
+/**** Wide-character file paths (Windows only) ****/
 
-/* fex_type_t is a pointer to this structure. For example, fex_zip_type->extension is
-"ZIP" and ex_zip_type->new_fex() is equilvant to 'new Zip_Extractor' (in C++). */
-struct fex_type_t_
-{
-	const char* extension;      /* file extension/type */
-	File_Extractor* (*new_fex)();
+/** Converts wide-character path to form suitable for use with fex functions.
+Only supported when BLARGG_UTF8_PATHS is defined and building on Windows. */
+char* fex_wide_to_path( const wchar_t* wide );
+
+/** Frees converted path. OK to pass NULL. Only supported when BLARGG_UTF8_PATHS
+is defined and building on Windows */
+void fex_free_path( char* );
+
+
+/**** Identification ****/
+
+/** True if str ends in extension. If extension is "", always returns true.
+Converts str to lowercase before comparison, so extension should ALREADY be
+lowercase (i.e. pass ".zip", NOT ".ZIP"). */
+int fex_has_extension( const char str [], const char extension [] );
+
+/** Determines type based on first fex_identify_header_size bytes of file.
+Returns usual file extension this should have (e.g. ".zip", ".gz", etc.).
+Returns "" if file header is not recognized. */
+const char* fex_identify_header( const void* header );
+enum { fex_identify_header_size = 16 };
+
+/** Determines type based on extension of a file path, or just a lone extension
+(must include '.', e.g. ".zip", NOT just "zip"). Returns NULL if extension is
+for an unsupported type (e.g. ".lzh"). */
+fex_type_t fex_identify_extension( const char path_or_extension [] );
+
+/** Determines type based on filename extension and/or file header. Sets *out
+to determined type, or NULL if type is not supported. */
+fex_err_t fex_identify_file( fex_type_t* out, const char path [] );
+
+/** Type of an already-opened archive */
+fex_type_t fex_type( const fex_t* );
+
+
+/**** Open/close ****/
+
+/** Initializes static tables used by library. Automatically called by
+fex_open(). OK to call more than once. */
+fex_err_t fex_init( void );
+
+/** Opens archive and points *out at it. If error, sets *out to NULL. */
+fex_err_t fex_open( fex_t** out, const char path [] );
+
+/** Opens archive of specified type and sets *out. Returns error if file is not
+of that archive type. If error, sets *out to NULL. */
+fex_err_t fex_open_type( fex_t** out, const char path [], fex_type_t );
+
+/** Closes archive and frees memory. OK to pass NULL. */
+void fex_close( fex_t* );
+
+
+/**** Scanning ****/
+
+/** True if at end of archive. Must be called after fex_open() or fex_rewind(),
+as an archive might contain no files. */
+int fex_done( const fex_t* );
+
+/** Goes to next file in archive. If there are no more files, fex_done() will
+now return true. */
+fex_err_t fex_next( fex_t* );
+
+/** Goes back to first file in archive, as if it were just opened with
+fex_open() */
+fex_err_t fex_rewind( fex_t* );
+
+/** Saved position in archive. Can also store zero. */
+typedef __int64 fex_pos_t;
+
+/** Position of current file in archive. Never returns zero. */
+fex_pos_t fex_tell_arc( const fex_t* );
+
+/** Returns to file at previously-saved position */
+fex_err_t fex_seek_arc( fex_t*, fex_pos_t );
+
+
+/**** Info ****/
+
+/** Name of current file */
+const char* fex_name( const fex_t* );
+
+/** Wide-character name of current file, or NULL if unavailable */
+const wchar_t* fex_wname( const fex_t* );
+
+/** Makes further information available for file */
+fex_err_t fex_stat( fex_t* );
+
+/** Size of current file. fex_stat() or fex_data() must have been called. */
+__int64 fex_size( const fex_t* );
+
+/** Modification date of current file (MS-DOS format), or 0 if unavailable.
+fex_stat() must have been called. */
+unsigned int fex_dos_date( const fex_t* );
+
+/** CRC-32 checksum of current file's contents, or 0 if unavailable. Doesn't
+require calculation; simply gets it from file's header. fex_stat() must have
+been called. */
+unsigned int fex_crc32( const fex_t* );
+
+
+/**** Extraction ****/
+
+/** Reads n bytes from current file. Reading past end of file results in
+fex_err_file_eof. */
+fex_err_t fex_read( fex_t*, void* out, int n );
+
+/** Number of bytes read from current file */
+__int64 fex_tell( const fex_t* );
+
+/** Points *out at current file's data in memory. Pointer is valid until
+fex_next(), fex_rewind(), fex_seek_arc(), or fex_close() is called. Pointer
+must NOT be freed(); library frees it automatically. If error, sets *out to
+NULL. */
+fex_err_t fex_data( fex_t*, const void** out );
+
+
+/**** Errors ****/
+
+/** Error string associated with err. Returns "" if err is NULL. Returns err
+unchanged if it isn't a fex_err_t returned by library. */
+const char* fex_err_str( fex_err_t err );
+
+/** Details of error beyond main cause, or "" if none or err is NULL. Returns
+err unchanged if it isn't a fex_err_t returned by library. */
+const char* fex_err_details( fex_err_t err );
+
+/** Numeric code corresponding to err. Returns fex_ok if err is NULL. Returns
+fex_err_generic if err isn't a fex_err_t returned by library. */
+int fex_err_code( fex_err_t err );
+
+enum {
+	fex_ok               =    0,/**< Successful call. Guaranteed to be zero. */
+	fex_err_generic      = 0x01,/**< Error of unspecified type */
+	fex_err_memory       = 0x02,/**< Out of memory */
+	fex_err_caller       = 0x03,/**< Caller called function with bad args */
+	fex_err_internal     = 0x04,/**< Internal problem, bug, etc. */
+	fex_err_limitation   = 0x05,/**< Exceeded program limit */
+	
+	fex_err_file_missing = 0x20,/**< File not found at specified path */
+	fex_err_file_read    = 0x21,/**< Couldn't open file for reading */
+	fex_err_file_io      = 0x23,/**< Read/write error */
+	fex_err_file_eof     = 0x25,/**< Tried to read past end of file */
+	
+	fex_err_file_type    = 0x30,/**< File is of wrong type */
+	fex_err_file_feature = 0x32,/**< File requires unsupported feature */
+	fex_err_file_corrupt = 0x33 /**< File is corrupt */
 };
 
-/* Archive type constants for each supported file type */
-extern struct fex_type_t_ const
-		fex_7z_type  [1],   /* .7z (7-zip) */
-		fex_gz_type  [1],   /* .gz (gzip) */
-		fex_rar_type [1],   /* .rar */
-		fex_zip_type [1],   /* .zip */
-		fex_bin_type [1];   /* binary file, possibly gzipped */
-typedef struct fex_type_t_ const* fex_type_t;
-
-/* Array of supported archive types, with NULL entry at end. */
-fex_type_t const* fex_type_list();
-
-/* Type of archive this extractor handles. */
-fex_type_t fex_type( File_Extractor const* );
+/** fex_err_t corresponding to numeric code. Note that this might not recover
+the original fex_err_t before it was converted to a numeric code; in
+particular, fex_err_details(fex_code_to_err(code)) will be "" in most cases. */
+fex_err_t fex_code_to_err( int code );
 
 
-/******** Advanced opening ********/
-
-/* Error returned if file is wrong type */
-extern const char fex_wrong_file_type [29];
-
-/* Determines likely archive type based on first four bytes of file. Returns string
-containing proper file suffix (i.e. "ZIP", "GZ", etc.) or "" (empty string) if file
-header is not recognized. */
-const char* fex_identify_header( void const* header );
-
-/* Gets corresponding archive type for file path or extension passed in. Returns NULL
-if type isn't recognized. */
-fex_type_t fex_identify_extension( const char* path_or_extension );
-
-/* Determines file type based on filename extension, or file header (if extension
-isn't recognized). Returns NULL if unrecognized or error. */
-fex_type_t fex_identify_file( const char* path, fex_err_t* err_out );
-
-/* Opens archive of specific type and returns pointer to it, or NULL if error. */
-File_Extractor* fex_open_type( fex_type_t, const char* path, fex_err_t* err_out );
-
-
-/******** User data ********/
-
-/* Sets/gets pointer to data you want to associate with this extractor.
-You can use this for whatever you want. */
-void  fex_set_user_data( File_Extractor*, void* new_user_data );
-void* fex_user_data( File_Extractor const* );
-
-/* Registers cleanup function to be called when closing extractor, or NULL to
-clear it. Passes user_data (see above) to cleanup function. */
-typedef void (*fex_user_cleanup_t)( void* user_data );
-void fex_set_user_cleanup( File_Extractor*, fex_user_cleanup_t func );
-
+/* Deprecated */
+typedef fex_t File_Extractor;
 
 #ifdef __cplusplus
 	}

@@ -42,7 +42,7 @@ static void uncompressStream( const service_ptr_t< file > & src_fd, service_ptr_
 	{
 		unsigned char buffer[1024];
 
-		uint64_t to_read = ingz.remain();
+		BOOST::uint64_t to_read = ingz.remain();
 		if ( to_read > 1024 ) to_read = 1024;
 		handle_error( ingz.read( buffer, (long)to_read ) );
 		dst_fd->write( buffer, (t_size)to_read, p_abort );

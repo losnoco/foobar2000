@@ -2,6 +2,7 @@
 #define _RAR_GETBITS_
 
 class BitInput
+	: public Rar_Allocator
 {
 public:
 	enum BufferSize {MAX_SIZE=0x8000};

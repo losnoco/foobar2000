@@ -1,6 +1,7 @@
+#include <stdio.h>
 #include "rar.hpp"
 
-#include <stdio.h>
+#include "unrar.h"
 
 Archive::Archive() : Raw( this )
 {
@@ -36,23 +37,27 @@ bool Archive::IsSignature(byte *D)
 	return(Valid);
 }
 
-int Archive::IsArchive()
+
+unrar_err_t Archive::IsArchive()
 {
 	if (Read(MarkHead.Mark,SIZEOF_MARKHEAD)!=SIZEOF_MARKHEAD)
-		return(false);
+		return unrar_err_not_arc;
 
-	OldFormat = false;
-	return IsSignature( MarkHead.Mark );
-}
+	if (IsSignature(MarkHead.Mark))
+	{
+		if (OldFormat)
+			Seek(0,SEEK_SET);
+	}
+	else
+	{
+		if (SFXSize==0)
+			return unrar_err_not_arc;
+	}
 
-const char* Archive::IsArchive2()
-{
-	if (OldFormat)
-		Seek(0,SEEK_SET);
-
-	bool Volume,Encrypted;
-	const char* error = ReadHeader();
-	if ( error )
+	unrar_err_t error =
+	ReadHeader();
+	// (no need to seek to next)
+	if ( error != unrar_ok )
 		return error;
 
 #ifndef SFX_MODULE
@@ -65,25 +70,28 @@ const char* Archive::IsArchive2()
 #endif
 	{
 		if (HeaderCRC!=NewMhd.HeadCRC)
-			return "Corrupt RAR file";
+		{
+			return unrar_err_corrupt;
+		}
 	}
+	bool
 	Volume=(NewMhd.Flags & MHD_VOLUME);
 	Solid=(NewMhd.Flags & MHD_SOLID)!=0;
+	bool
 	Encrypted=(NewMhd.Flags & MHD_PASSWORD)!=0;
 
 	// (removed decryption and volume handling)
 
 	if ( Encrypted )
-		return "Encrypted RAR file not supported";
+		return unrar_err_encrypted;
 
 	if ( Volume )
-		return "Segmented RAR file not supported";
+		return unrar_err_segmented;
 
-	return NULL;
+	return unrar_ok;
 }
 
-const char* Archive::SeekToNext()
+void Archive::SeekToNext()
 {
-	return
-		Seek(NextBlockPos,SEEK_SET);
+	Seek(NextBlockPos,SEEK_SET);
 }

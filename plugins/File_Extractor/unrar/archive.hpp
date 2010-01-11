@@ -20,10 +20,11 @@ private:
 
 public:
 	Archive();
-	int IsArchive();
-	const char* IsArchive2();
-	const char* ReadHeader();
-    const char* SeekToNext();
+	unrar_err_t IsArchive();
+	unrar_err_t ReadHeader();
+	void SeekToNext();
+    bool IsArcDir();
+    bool IsArcLabel();
 	int GetHeaderType() {return(CurHeaderType);};
 
 	BaseBlock ShortBlock;
@@ -37,8 +38,6 @@ public:
 	Int64 NextBlockPos;
 
 	bool Solid;
-    bool Volume;
-    bool Encrypted;
 	enum { SFXSize = 0 }; // self-extracting not supported
 	ushort HeaderCRC;
 };

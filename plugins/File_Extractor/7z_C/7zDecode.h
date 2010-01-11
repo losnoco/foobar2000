@@ -1,21 +1,13 @@
-/* 7zDecode.h */
+/* 7zDecode.h -- Decoding from 7z folder
+2008-11-23 : Igor Pavlov : Public domain */
 
 #ifndef __7Z_DECODE_H
 #define __7Z_DECODE_H
 
 #include "7zItem.h"
-#include "7zAlloc.h"
-#ifdef _LZMA_IN_CB
-#include "7zIn.h"
-#endif
 
-SZ_RESULT SzDecode(const CFileSize *packSizes, const CFolder *folder,
-		#ifdef _LZMA_IN_CB
-		ISzInStream *stream,
-		#else
-		const Byte *inBuffer,
-		#endif
-		Byte *outBuffer, size_t outSize,
-		size_t *outSizeProcessed, ISzAlloc *allocMain);
+SRes SzDecode(const UInt64 *packSizes, const CSzFolder *folder,
+    ILookInStream *stream, UInt64 startPos,
+    Byte *outBuffer, size_t outSize, ISzAlloc *allocMain);
 
 #endif

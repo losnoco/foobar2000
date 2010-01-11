@@ -1,22 +1,14 @@
-// File_Extractor 0.4.3. http://www.slack.net/~ant/
+// File_Extractor 1.0.0. http://www.slack.net/~ant/
 
 #include "Zip7_Extractor.h"
 
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
+#include "7z_C/7zExtract.h"
+#include "7z_C/7zAlloc.h"
+#include "7z_C/7zCrc.h"
+
 #include <time.h>
 
-extern "C" {
-	#include "7z_C/LzmaTypes.h"
-}
-#include "7z_C/7zTypes.h"
-extern "C" {
-	#include "7z_C/7zExtract.h"
-	#include "7z_C/7zCrc.h"
-}
-
-/* Copyright (C) 2005-2007 Shay Green. This module is free software; you
+/* Copyright (C) 2005-2009 Shay Green. This module is free software; you
 can redistribute it and/or modify it under the terms of the GNU Lesser
 General Public License as published by the Free Software Foundation; either
 version 2.1 of the License, or (at your option) any later version. This
@@ -29,144 +21,204 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA */
 
 #include "blargg_source.h"
 
-static ISzAlloc alloc = { SzAlloc, SzFree };
-static ISzAlloc alloc_temp = { SzAllocTemp, SzFreeTemp };
+static ISzAlloc zip7_alloc      = { SzAlloc,     SzFree     };
+static ISzAlloc zip7_alloc_temp = { SzAllocTemp, SzFreeTemp };
 
-struct Zip7_Extractor_Impl
+struct Zip7_Extractor_Impl :
+	ISeekInStream
 {
-	ISzInStream         stream; // must be first
-	CArchiveDatabaseEx  db;
-
+	CLookToRead look;
+	CSzArEx db;
+	
 	// SzExtract state
 	UInt32  block_index;
 	Byte*   buf;
 	size_t  buf_size;
 
 	File_Reader* in;
-
-#ifdef _LZMA_IN_CB
-	enum { read_buf_size = 32 * 1024L };
-	char read_buf [read_buf_size];
-#endif
+	const char* in_err;
 };
 
 extern "C"
 {
-#ifdef _LZMA_IN_CB
-	static SZ_RESULT zip7_read_( void* data, void** out, size_t size, size_t* size_out )
+	// 7-zip callbacks pass an ISeekInStream* for data, so we must cast it
+	// back to ISeekInStream* FIRST, then cast to our Impl structure
+	
+	static SRes zip7_read_( void* vstream, void* out, size_t* size )
 	{
-		assert( out && size_out );
-		Zip7_Extractor_Impl* impl = (Zip7_Extractor_Impl*) data;
-		if ( size > impl->read_buf_size )
-			size = impl->read_buf_size;
-		*out = impl->read_buf;
-		*size_out = impl->in->read_avail( impl->read_buf, size );
+		assert( out && size );
+		ISeekInStream* stream = STATIC_CAST(ISeekInStream*,vstream);
+		Zip7_Extractor_Impl* impl = STATIC_CAST(Zip7_Extractor_Impl*,stream);
+		
+		long lsize = *size;
+		blargg_err_t err = impl->in->read_avail( out, &lsize );
+		if ( err )
+		{
+			*size = 0;
+			impl->in_err = err;
+			return SZ_ERROR_READ;
+		}
+		
+		*size = lsize;
 		return SZ_OK;
 	}
-#else
-	static SZ_RESULT zip7_read_( void* data, void* out, size_t size, size_t* size_out )
-	{
-		assert( out && size_out );
-		Zip7_Extractor_Impl* impl = (Zip7_Extractor_Impl*) data;
-		*size_out = impl->in->read_avail( out, size );
-		return SZ_OK;
-	}
-#endif
 
-	static SZ_RESULT zip7_seek_( void* data, CFileSize offset )
+	static SRes zip7_seek_( void* vstream, Int64* pos, ESzSeek mode )
 	{
-		Zip7_Extractor_Impl* impl = (Zip7_Extractor_Impl*) data;
-		if ( impl->in->seek( offset ) )
-			return SZE_FAIL;
+		ISeekInStream* stream = STATIC_CAST(ISeekInStream*,vstream);
+		Zip7_Extractor_Impl* impl = STATIC_CAST(Zip7_Extractor_Impl*,stream);
+		
+		assert( mode != SZ_SEEK_CUR ); // never used
+		
+		if ( mode == SZ_SEEK_END )
+		{
+			assert( *pos == 0 ); // only used to find file length
+			*pos = impl->in->size();
+			return SZ_OK;
+		}
+		
+		assert( mode == SZ_SEEK_SET );
+		blargg_err_t err = impl->in->seek( *pos );
+		if ( err )
+		{
+			// don't set in_err in this case, since it might be benign
+			if ( err == blargg_err_file_eof )
+				return SZ_ERROR_INPUT_EOF;
+			
+			impl->in_err = err;
+			return SZ_ERROR_READ;
+		}
+		
 		return SZ_OK;
 	}
 }
 
-Zip7_Extractor::Zip7_Extractor() : File_Extractor( fex_7z_type )
+blargg_err_t Zip7_Extractor::zip7_err( int err )
 {
-	impl = 0;
-}
-
-extern "C" {
-	static File_Extractor* new_7z() { return BLARGG_NEW Zip7_Extractor; }
-}
-
-fex_type_t_ const fex_7z_type [1] = {{ "7Z", &new_7z }};
-
-Zip7_Extractor::~Zip7_Extractor() { close(); }
-
-static const char* zip7_err( int err )
-{
+	// TODO: ignore in_err in some cases? unsure about which error to use
+	blargg_err_t in_err = impl->in_err;
+	impl->in_err = NULL;
+	if ( in_err )
+	{
+		check( err != SZ_OK );
+		return in_err;
+	}
+	
 	switch ( err )
 	{
-		case SZ_OK:           return 0;
-		case SZE_OUTOFMEMORY: return "Out of memory";
-		case SZE_CRC_ERROR:   return "Corrupt 7-zip file";
-		case SZE_NOTIMPL:     return "Unsupported 7-zip feature";
-		//case SZE_FAIL:
-		//case SZE_DATA_ERROR:
-		//case SZE_ARCHIVE_ERROR:
+	case SZ_OK:                 return blargg_ok;
+	case SZ_ERROR_MEM:          return blargg_err_memory;
+	case SZ_ERROR_READ:         return blargg_err_file_io;
+	case SZ_ERROR_CRC:
+	case SZ_ERROR_DATA:
+	case SZ_ERROR_INPUT_EOF:
+	case SZ_ERROR_ARCHIVE:      return blargg_err_file_corrupt;
+	case SZ_ERROR_UNSUPPORTED:  return blargg_err_file_feature;
+	case SZ_ERROR_NO_ARCHIVE:   return blargg_err_file_type;
 	}
-	return "7-zip error";
+	
+	return blargg_err_generic;
 }
 
-blargg_err_t Zip7_Extractor::open_()
+static blargg_err_t init_7z()
 {
+	static bool inited;
+	if ( !inited )
+	{
+		inited = true;
+		CrcGenerateTable();
+	}
+	return blargg_ok;
+}
+
+static File_Extractor* new_7z()
+{
+	return BLARGG_NEW Zip7_Extractor;
+}
+
+fex_type_t_ const fex_7z_type [1] = {{
+	".7z",
+	&new_7z,
+	"7-zip archive",
+	&init_7z
+}};
+
+Zip7_Extractor::Zip7_Extractor() :
+	File_Extractor( fex_7z_type )
+{
+	impl = NULL;
+}
+
+Zip7_Extractor::~Zip7_Extractor()
+{
+	close();
+}
+
+blargg_err_t Zip7_Extractor::open_v()
+{
+	RETURN_ERR( init_7z() );
+	
 	if ( !impl )
-		CHECK_ALLOC( impl = (Zip7_Extractor_Impl*) malloc( sizeof *impl ) );
-	impl->stream.Read = zip7_read_;
-	impl->stream.Seek = zip7_seek_;
-	impl->in          = &file();
-	impl->block_index = (unsigned) -1;
-	impl->buf         = 0;
+	{
+		impl = (Zip7_Extractor_Impl*) malloc( sizeof *impl );
+		CHECK_ALLOC( impl );
+	}
+	
+	impl->in          = &arc();
+	impl->block_index = (UInt32) -1;
+	impl->buf         = NULL;
 	impl->buf_size    = 0;
 
-	InitCrcTable();
-	SzArDbExInit( &impl->db );
-	int code = SzArchiveOpen( &impl->stream, &impl->db, &alloc, &alloc_temp );
-	RETURN_ERR( (code == SZE_ARCHIVE_ERROR ? fex_wrong_file_type : zip7_err( code )) );
-	return rewind();
+	LookToRead_CreateVTable( &impl->look, false );
+	impl->ISeekInStream::Read = zip7_read_;
+	impl->ISeekInStream::Seek = zip7_seek_;
+	impl->look.realStream     = impl;
+	LookToRead_Init( &impl->look );
+	
+	SzArEx_Init( &impl->db );
+	
+	impl->in_err = NULL;
+	RETURN_ERR( zip7_err( SzArEx_Open( &impl->db, &impl->look.s,
+			&zip7_alloc, &zip7_alloc_temp ) ) );
+	
+	return seek_arc_v( 0 );
 }
 
-blargg_err_t Zip7_Extractor::rewind_()
-{
-	index = -1;
-	return next();
-}
-
-void Zip7_Extractor::close_()
+void Zip7_Extractor::close_v()
 {
 	if ( impl )
 	{
 		if ( impl->in )
 		{
-			impl->in = 0;
-			SzArDbExFree( &impl->db, alloc.Free );
+			impl->in = NULL;
+			SzArEx_Free( &impl->db, &zip7_alloc );
 		}
-		alloc.Free( impl->buf );
+		IAlloc_Free( &zip7_alloc, impl->buf );
 		free( impl );
-		impl = 0;
+		impl = NULL;
 	}
 }
 
-blargg_err_t Zip7_Extractor::next_()
+blargg_err_t Zip7_Extractor::next_v()
 {
-	while ( ++index < (int) impl->db.Database.NumFiles )
+	while ( ++index < (int) impl->db.db.NumFiles )
 	{
-		CFileItem const& item = impl->db.Database.Files [index];
-		if ( !item.IsDirectory )
+		CSzFileItem const& item = impl->db.db.Files [index];
+		if ( !item.IsDir )
 		{
 			unsigned long date = 0;
-			if ( item.IsLastWriteTimeDefined )
+			if ( item.MTimeDefined )
 			{
-				uint64_t epoch = ((uint64_t)0x019db1de << 32) + 0xd53e8000;
+				const UInt64 epoch = ((UInt64)0x019db1de << 32) + 0xd53e8000;
 				/* 0x019db1ded53e8000ULL: 1970-01-01 00:00:00 (UTC) */
 				struct tm tm;
-				
-				time_t time = item.LastWriteTime - epoch;
+
+				UInt64 time = ((UInt64)item.MTime.High << 32) + item.MTime.Low - epoch;
 				time /= 1000000;
+
+				time_t _time = time;
 				
-				localtime_s( &tm, &time );
+				localtime_s( &tm, &_time );
 
 				date = ( tm.tm_sec >> 1 ) & 0x1F |
 					(( tm.tm_min & 0x3F ) << 5 ) |
@@ -175,25 +227,44 @@ blargg_err_t Zip7_Extractor::next_()
 					(( ( tm.tm_mon + 1 ) & 0x0F ) << 21 ) |
 					(( ( tm.tm_year - 80 ) & 0x7F ) << 25 );
 			}
-			set_info( item.Size, item.Name, date );
-			return 0;
+
+			set_name( item.Name );
+			set_info( item.Size, 0, (item.FileCRCDefined ? item.FileCRC : 0) );
+			break;
 		}
 	}
-	set_done();
-	return 0;
+	
+	return blargg_ok;
 }
 
-blargg_err_t Zip7_Extractor::data_( byte const*& out )
+blargg_err_t Zip7_Extractor::rewind_v()
 {
-	if ( !impl )
-		return "Archive not open";
+	return seek_arc_v( 0 );
+}
 
+fex_pos_t Zip7_Extractor::tell_arc_v() const
+{
+	return index;
+}
+
+blargg_err_t Zip7_Extractor::seek_arc_v( fex_pos_t pos )
+{
+	assert( 0 <= pos && pos <= (int) impl->db.db.NumFiles );
+	
+	index = pos - 1;
+	return next_v();
+}
+
+blargg_err_t Zip7_Extractor::data_v( void const** out )
+{
+	impl->in_err = NULL;
 	size_t offset = 0;
-	size_t size = 0;
-	RETURN_ERR( zip7_err( SzExtract( &impl->stream, &impl->db, index,
+	size_t count  = 0;
+	RETURN_ERR( zip7_err( SzAr_Extract( &impl->db, &impl->look.s, index,
 			&impl->block_index, &impl->buf, &impl->buf_size,
-			&offset, &size, &alloc, &alloc_temp ) ) );
-	assert( size == (size_t) this->size() );
-	out = impl->buf + offset;
-	return 0;
+			&offset, &count, &zip7_alloc, &zip7_alloc_temp ) ) );
+	assert( count == (size_t) size() );
+	
+	*out = impl->buf + offset;
+	return blargg_ok;
 }

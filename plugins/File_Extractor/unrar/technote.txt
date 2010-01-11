@@ -1,5 +1,5 @@
 
-               RAR version 3.71 - Technical information
+               RAR version 3.80 - Technical information
                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
  THE ARCHIVE FORMAT DESCRIBED BELOW IS ONLY VALID FOR VERSIONS SINCE 1.50

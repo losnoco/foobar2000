@@ -11,7 +11,7 @@ EncodeFileName::EncodeFileName()
 
 
 
-void EncodeFileName::Decode(char *Name,byte *EncName,int EncSize,wchar_t *NameW,
+void EncodeFileName::Decode(char *Name,byte *EncName,int EncSize,wchar *NameW,
                             int MaxDecSize)
 {
   int EncPos=0,DecPos=0;

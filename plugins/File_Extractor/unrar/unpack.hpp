@@ -88,7 +88,8 @@ struct AudioVariables
 /***************************** Unpack v 2.0 *********************************/
 
 
-class Unpack:private BitInput
+// public so operator new/delete will be accessible, argh 
+class Unpack:public BitInput
 {
 private:
     friend class Pack;
@@ -121,7 +122,9 @@ private:
 	BitInput Inp; // here to avoid leaks
 
 	RarVM VM;
-
+	
+	UnpackFilter* LastStackFilter; // avoids leak for stack-based filter
+	
     /* Filters code, one entry per filter */
 	Array<UnpackFilter*> Filters;
 
@@ -159,7 +162,7 @@ private:
 
 	Int64 DestUnpSize;
 
-	bool Suspended;
+	enum { Suspended = false }; // original source could never set to true
 	bool UnpAllBuf;
 	bool UnpSomeRead;
 	Int64 WrittenFileSize;
@@ -178,7 +181,7 @@ private:
 	void CorrHuff(unsigned int *CharSet,unsigned int *NumToPlace);
 	void OldCopyString(unsigned int Distance,unsigned int Length);
 	unsigned int DecodeNum(int Num,unsigned int StartPos,
-	  unsigned int *DecTab,unsigned int *PosTab);
+	  const unsigned int *DecTab,const unsigned int *PosTab);
 	void OldUnpWriteBuf();
 
 	unsigned int ChSet[256],ChSetA[256],ChSetB[256],ChSetC[256];
@@ -204,13 +207,14 @@ private:
 
 public:
 	Rar_Error_Handler& ErrHandler;
+	byte const* window_wrptr() const { return &Window [WrPtr & MAXWINMASK]; }
+	
+	static void init_tables();
 	Unpack(ComprDataIO *DataIO);
 	~Unpack();
 	void Init(byte *Window=NULL);
 	void DoUnpack(int Method,bool Solid);
-	bool IsFileExtracted() {return(FileExtracted);}
 	void SetDestSize(Int64 DestSize) {DestUnpSize=DestSize;FileExtracted=false;}
-	void SetSuspended(bool Suspended) {Unpack::Suspended=Suspended;}
 
 	unsigned int GetChar()
 	{

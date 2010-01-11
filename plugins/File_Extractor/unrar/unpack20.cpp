@@ -1,39 +1,61 @@
+// #included by unpack.cpp
 #ifdef RAR_COMMON_HPP
 #include "rar.hpp"
 
+// Presumably these optimizations give similar speedup as those for CopyString in unpack.cpp
 void Unpack::CopyString20(unsigned int Length,unsigned int Distance)
 {
 	LastDist=OldDist[OldDistPtr++ & 3]=Distance;
 	LastLength=Length;
 	DestUnpSize-=Length;
 
+	unsigned    UnpPtr = this->UnpPtr; // cache in register
+	byte* const Window = this->Window; // cache in register
+	
 	unsigned int DestPtr=UnpPtr-Distance;
-	if (DestPtr<MAXWINSIZE-300 && UnpPtr<MAXWINSIZE-300)
+	if (UnpPtr<MAXWINSIZE-300 && DestPtr<MAXWINSIZE-300)
 	{
-		Window[UnpPtr++]=Window[DestPtr++];
-		Window[UnpPtr++]=Window[DestPtr++];
-		while (Length>2)
+		this->UnpPtr += Length;
+		if ( Distance < Length ) // can't use memcpy when source and dest overlap
 		{
-			Length--;
 			Window[UnpPtr++]=Window[DestPtr++];
+			Window[UnpPtr++]=Window[DestPtr++];
+			while (Length>2)
+			{
+				Length--;
+				Window[UnpPtr++]=Window[DestPtr++];
+			}
+		}
+		else
+		{
+			memcpy( &Window[UnpPtr], &Window[DestPtr], Length );
 		}
 	}
 	else
+	{
 		while (Length--)
 		{
 			Window[UnpPtr]=Window[DestPtr++ & MAXWINMASK];
 			UnpPtr=(UnpPtr+1) & MAXWINMASK;
 		}
+		this->UnpPtr = UnpPtr;
+	}
 }
 
 
 void Unpack::Unpack20(bool Solid)
 {
+	const
 	static unsigned char LDecode[]={0,1,2,3,4,5,6,7,8,10,12,14,16,20,24,28,32,40,48,56,64,80,96,112,128,160,192,224};
+	const
 	static unsigned char LBits[]=  {0,0,0,0,0,0,0,0,1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4,  4,  5,  5,  5,  5};
+	const
 	static int DDecode[]={0,1,2,3,4,6,8,12,16,24,32,48,64,96,128,192,256,384,512,768,1024,1536,2048,3072,4096,6144,8192,12288,16384,24576,32768U,49152U,65536,98304,131072,196608,262144,327680,393216,458752,524288,589824,655360,720896,786432,851968,917504,983040};
+	const
 	static unsigned char DBits[]=  {0,0,0,0,1,1,2, 2, 3, 3, 4, 4, 5, 5,  6,  6,  7,  7,  8,  8,   9,   9,  10,  10,  11,  11,  12,   12,   13,   13,    14,    14,   15,   15,    16,    16,    16,    16,    16,    16,    16,    16,    16,    16,    16,    16,    16,    16};
+	const
 	static unsigned char SDDecode[]={0,4,8,16,32,64,128,192};
+	const
 	static unsigned char SDBits[]=  {2,2,3, 4, 5, 6,  6,  6};
 	unsigned int Bits;
 

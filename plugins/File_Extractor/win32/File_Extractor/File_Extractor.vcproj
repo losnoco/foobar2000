@@ -155,7 +155,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\fex\abstract_file.cpp"
+				RelativePath="..\..\fex\Binary_Extractor.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\fex\blargg_common.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\fex\blargg_errors.cpp"
 				>
 			</File>
 			<File
@@ -171,23 +179,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\fex\Gzip_Extractor.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\fex\Gzip_Reader.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\fex\Rar_Extractor.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\fex\Single_File_Extractor.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\fex\unrarlib.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\fex\unzip.cpp"
 				>
 			</File>
 			<File
@@ -209,7 +209,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\fex\abstract_file.h"
+				RelativePath="..\..\fex\Binary_Extractor.h"
 				>
 			</File>
 			<File
@@ -222,6 +222,10 @@
 			</File>
 			<File
 				RelativePath="..\..\fex\blargg_endian.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\fex\blargg_errors.h"
 				>
 			</File>
 			<File
@@ -241,23 +245,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\fex\Gzip_Extractor.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\fex\Gzip_Reader.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\fex\Rar_Extractor.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\fex\Single_File_Extractor.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\fex\unrarlib.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\fex\unzip.h"
 				>
 			</File>
 			<File
@@ -288,6 +284,10 @@
 				RelativePath="..\..\7z_C\lzma.txt"
 				>
 			</File>
+			<File
+				RelativePath="..\..\7z_C\readme.txt"
+				>
+			</File>
 			<Filter
 				Name="Header Files"
 				Filter="h;hpp;hxx;hm;inl;inc;xsd"
@@ -297,7 +297,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\7z_C\7zBuffer.h"
+					RelativePath="..\..\7z_C\7zBuf.h"
 					>
 				</File>
 				<File
@@ -325,19 +325,31 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\7z_C\7zMethodID.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\7z_C\7zTypes.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\7z_C\LzmaDecode.h"
+					RelativePath="..\..\7z_C\Bcj2.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\7z_C\Bra.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\7z_C\CpuArch.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\7z_C\LzmaDec.h"
 					>
 				</File>
 				<File
 					RelativePath="..\..\7z_C\LzmaTypes.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\7z_C\Types.h"
 					>
 				</File>
 			</Filter>
@@ -350,7 +362,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\7z_C\7zBuffer.c"
+					RelativePath="..\..\7z_C\7zBuf.c"
 					>
 				</File>
 				<File
@@ -378,11 +390,19 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\7z_C\7zMethodID.c"
+					RelativePath="..\..\7z_C\7zStream.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\7z_C\LzmaDecode.c"
+					RelativePath="..\..\7z_C\Bcj2.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\7z_C\Bra86.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\7z_C\LzmaDec.c"
 					>
 				</File>
 			</Filter>
@@ -404,6 +424,10 @@
 			</File>
 			<File
 				RelativePath="..\..\unrar\technote.txt"
+				>
+			</File>
+			<File
+				RelativePath="..\..\unrar\whatsnew.txt"
 				>
 			</File>
 			<Filter
@@ -463,6 +487,10 @@
 				</File>
 				<File
 					RelativePath="..\..\unrar\unpack.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\unrar\unrar.h"
 					>
 				</File>
 			</Filter>
@@ -531,6 +559,18 @@
 				</File>
 				<File
 					RelativePath="..\..\unrar\unpack20.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\unrar\unrar.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\unrar\unrar_misc.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\unrar\unrar_open.cpp"
 					>
 				</File>
 			</Filter>

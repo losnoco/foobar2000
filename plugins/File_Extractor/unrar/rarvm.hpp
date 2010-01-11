@@ -101,6 +101,7 @@ class RarVM:private BitInput
 		~RarVM();
 		void Init();
 		void handle_mem_error( Rar_Error_Handler& );
+		friend class Unpack;
 		void Prepare(byte *Code,int CodeSize,VM_PreparedProgram *Prg);
 		void Execute(VM_PreparedProgram *Prg);
 		void SetLowEndianValue(uint *Addr,uint Value);

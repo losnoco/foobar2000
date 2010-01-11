@@ -13,8 +13,8 @@ class EncodeFileName
     int DestSize;
   public:
     EncodeFileName();
-    int Encode(char *Name,wchar_t *NameW,byte *EncName);
-    void Decode(char *Name,byte *EncName,int EncSize,wchar_t *NameW,int MaxDecSize);
+    int Encode(char *Name,wchar *NameW,byte *EncName);
+    void Decode(char *Name,byte *EncName,int EncSize,wchar *NameW,int MaxDecSize);
 };
 
 #endif

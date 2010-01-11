@@ -1,4 +1,4 @@
-#define MY_VERSION "1.1"
+#define MY_VERSION "1.2"
 
 /*
 	changelog
@@ -19,6 +19,18 @@
 static void handle_error( const char * str )
 {
 	if ( str ) throw exception_io_data( str );
+}
+
+static void transfer_file( Data_Reader & in, service_ptr_t<file> & out, abort_callback & p_abort )
+{
+	char buffer[1024];
+	int read;
+	for (;;)
+	{
+		in.read_avail( buffer, &read );
+		out->write_object( buffer, read, p_abort );
+		if ( read < 1024 ) break;
+	}
 }
 
 class archive_7z : public archive_impl
@@ -43,6 +55,7 @@ public:
 		handle_error( ex.open( &in ) );
 		while ( ! ex.done() )
 		{
+			handle_error( ex.stat() );
 			if ( ! strcmp( ex.name(), p_file ) ) break;
 			handle_error( ex.next() );
 		}
@@ -62,13 +75,13 @@ public:
 		handle_error( ex.open( &in ) );
 		while ( ! ex.done() )
 		{
+			handle_error( ex.stat() );
 			if ( ! strcmp( ex.name(), p_file ) ) break;
 			handle_error( ex.next() );
 		}
 		if ( ex.done() ) throw exception_io_not_found();
 		filesystem::g_open_tempmem( p_out, p_abort );
-		foobar_Data_Writer out( p_out, p_abort );
-		handle_error( ex.extract( out ) );
+		transfer_file( ex.reader(), p_out, p_abort );
 		p_out->reopen( p_abort );
 	}
 
@@ -90,14 +103,14 @@ public:
 		t_filestats m_stats;
 		while ( ! ex.done() )
 		{
+			handle_error( ex.stat() );
 			make_unpack_path( m_path, path, ex.name() );
 			m_stats.m_size = ex.size();
 			m_stats.m_timestamp = dostime_to_timestamp( ex.dos_date() );
 			if ( p_want_readers )
 			{
 				filesystem::g_open_tempmem( m_out_file, p_out );
-				foobar_Data_Writer out( m_out_file, p_out );
-				handle_error( ex.extract( out ) );
+				transfer_file( ex.reader(), m_out_file, p_out );
 				m_out_file->reopen( p_out );
 			}
 			if ( ! p_out.on_entry( this, m_path, m_stats, m_out_file ) ) break;
@@ -129,11 +142,11 @@ public:
 		handle_error( ex.open( &in ) );
 		while ( ! ex.done() )
 		{
+			handle_error( ex.stat() );
 			if ( ! skip_ext( ex.name() ) )
 			{
 				filesystem::g_open_tempmem( p_out, p_abort );
-				foobar_Data_Writer out( p_out, p_abort );
-				ex.extract( out );
+				transfer_file( ex.reader(), p_out, p_abort );
 				p_out->reopen( p_abort );
 				return;
 			}

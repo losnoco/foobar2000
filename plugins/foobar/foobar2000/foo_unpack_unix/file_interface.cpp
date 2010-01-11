@@ -1,72 +1,48 @@
 #include "file_interface.h"
 
-long foobar_File_Reader::read_avail( void* p, long n )
+#include <fex/blargg_errors.h>
+
+foobar_File_Reader::foobar_File_Reader( const service_ptr_t<file> & p_file, abort_callback & p_abort ) : m_file( p_file ), m_abort( p_abort )
 {
-	try
-	{
-		return m_file->read( p, n, m_abort );
-	}
-	catch (...)
-	{
-		return -1;
-	}
-}
-	
-uint64_t foobar_File_Reader::remain() const
-{
-	t_filesize remain = 0;
-	try
-	{
-		remain = m_file->get_size_ex( m_abort ) - m_file->get_position( m_abort );
-	}
-	catch (...) {}
-	return remain;
+	set_size( p_file->get_size_ex( p_abort ) );
+	set_tell( p_file->get_position( p_abort ) );
 }
 
-uint64_t foobar_File_Reader::size() const
-{
-	t_filesize size = 0;
-	try
-	{
-		size = m_file->get_size_ex( m_abort );
-	}
-	catch (...) {}
-	return size;
-}
-	
-uint64_t foobar_File_Reader::tell() const
-{
-	t_filesize position = 0;
-	try
-	{
-		position = m_file->get_position( m_abort );
-	}
-	catch (...) {}
-	return position;
-}
-	
-File_Reader::error_t foobar_File_Reader::seek( uint64_t offset )
+blargg_err_t foobar_File_Reader::read_v( void* p, int n )
 {
 	try
 	{
-		m_file->seek( offset, m_abort );
+		m_file->read_object( p, n, m_abort );
 		return 0;
 	}
 	catch (...)
 	{
-		return "Seek error";
+		return blargg_err_file_read;
 	}
 }
-
-Data_Writer::error_t foobar_Data_Writer::write( const void* p, long n )
+	
+blargg_err_t foobar_File_Reader::skip_v( int n )
 {
 	try
 	{
-		m_file->write( p, n, m_abort );
+		m_file->seek_ex( n, foobar2000_io::file::seek_from_current, m_abort );
 		return 0;
 	}
 	catch (...)
 	{
-		return "Write error";
+		return blargg_err_file_io;
+	}
+}
+
+blargg_err_t foobar_File_Reader::seek_v( BOOST::uint64_t n )
+{
+	try
+	{
+		m_file->seek( n, m_abort );
+		return 0;
+	}
+	catch (...)
+	{
+		return blargg_err_file_io;
 	}
 }
