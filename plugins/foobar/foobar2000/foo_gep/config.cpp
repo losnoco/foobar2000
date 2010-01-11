@@ -1,7 +1,12 @@
-#define MYVERSION "1.64"
+#define MYVERSION "1.65"
 
 /*
 	change log
+
+2009-07-21 06:28 UTC - kode54
+- Implemented surround removal into the accurate SPC DSP core. Whoops.
+- Implemented cubic interpolation into the accurate SPC DSP core.
+- Version is now 1.65
 
 2009-04-21 21:35 UTC - kode54
 - Fixed a bug in Gb_Emu that would lead to crashes reading from 0xFF40
@@ -90,7 +95,7 @@ static const GUID guid_cfg_write = { 0x477ac718, 0xaf, 0x4873, { 0xa0, 0xce, 0x8
 static const GUID guid_cfg_write_nsfe = { 0x3d33ee75, 0x5abc, 0x4e41, { 0x91, 0x66, 0x4d, 0x5a, 0xd9, 0x9d, 0xe, 0xb5 } };
 static const GUID guid_cfg_nsfe_ignore_playlists = { 0xc219de94, 0xcbd1, 0x45d4, { 0xa3, 0x21, 0xd, 0xee, 0xc4, 0x99, 0x82, 0x86 } };
 static const GUID guid_cfg_spc_anti_surround = { 0x5d2b2962, 0x6c57, 0x4303, { 0xb9, 0xde, 0xd6, 0x97, 0x9c, 0x0, 0x45, 0x7a } };
-//static const GUID guid_cfg_spc_interpolation = { 0xf3f5df07, 0x7b49, 0x462a, { 0x8a, 0xd5, 0x9c, 0xd5, 0x79, 0x66, 0x31, 0x97 } };
+static const GUID guid_cfg_spc_interpolation = { 0xf3f5df07, 0x7b49, 0x462a, { 0x8a, 0xd5, 0x9c, 0xd5, 0x79, 0x66, 0x31, 0x97 } };
 static const GUID guid_cfg_history_rate = { 0xce4842e1, 0x5707, 0x4e43, { 0xaa, 0x56, 0x48, 0xc8, 0x1d, 0xce, 0x5c, 0xac } };
 static const GUID guid_cfg_vgm_gd3_prefers_japanese = { 0x54ad3715, 0x5491, 0x45a8, { 0x9b, 0x11, 0xc3, 0x9d, 0x65, 0x2b, 0x15, 0x2f } };
 static const GUID guid_cfg_format_enable = { 0xaeda04b5, 0x7b72, 0x4784, { 0xab, 0xda, 0xdf, 0xc8, 0x2f, 0xae, 0x20, 0x9 } };
@@ -117,7 +122,7 @@ cfg_int cfg_write_nsfe(guid_cfg_write_nsfe, 0);
 cfg_int cfg_nsfe_ignore_playlists(guid_cfg_nsfe_ignore_playlists, 0);
 
 cfg_int cfg_spc_anti_surround(guid_cfg_spc_anti_surround, 0);
-//cfg_int cfg_spc_interpolation(guid_cfg_spc_interpolation, 0);
+cfg_int cfg_spc_interpolation(guid_cfg_spc_interpolation, 0);
 
 cfg_int cfg_vgm_loop_count(guid_cfg_vgm_loop_count, 1);
 cfg_int cfg_vgm_gd3_prefers_japanese(guid_cfg_vgm_gd3_prefers_japanese, 0);
@@ -300,10 +305,10 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 
 			enable_vgm_loop_count( wnd, !cfg_indefinite );
 
-			/*w = GetDlgItem(wnd, IDC_INTERPOLATION);
+			w = GetDlgItem(wnd, IDC_INTERPOLATION);
 			uSendMessageText(w, CB_ADDSTRING, 0, "Gaussian");
 			uSendMessageText(w, CB_ADDSTRING, 0, "Cubic");
-			uSendMessage(w, CB_SETCURSEL, cfg_spc_interpolation, 0);*/
+			uSendMessage(w, CB_SETCURSEL, cfg_spc_interpolation, 0);
 
 			union
 			{
@@ -387,9 +392,9 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 				else if (t>96000) t=96000;
 				cfg_sample_rate = t;
 			}
-		/*case (CBN_SELCHANGE<<16)|IDC_INTERPOLATION:
+		case (CBN_SELCHANGE<<16)|IDC_INTERPOLATION:
 			cfg_spc_interpolation = uSendMessage((HWND)lp,CB_GETCURSEL,0,0);
-			break;*/
+			break;
 		}
 		break;
 	case WM_HSCROLL:
@@ -450,6 +455,7 @@ public:
 		cfg_nsfe_ignore_playlists = 0;
 
 		cfg_spc_anti_surround = 0;
+		cfg_spc_interpolation = 0;
 
 		cfg_vgm_gd3_prefers_japanese = 0;
 		cfg_vgm_loop_count = 1;
