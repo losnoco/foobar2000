@@ -11,6 +11,7 @@ public:
 		stop_reason_user = 0,
 		stop_reason_eof,
 		stop_reason_starting_another,
+		stop_reason_shutting_down,
 	};
 
 
@@ -30,9 +31,9 @@ public:
 	//! Starts playback. If playback is already active, existing process is stopped first.
 	//! @param p_command Specifies what track to start playback from. See t_track_Command enum for more info.
 	//! @param p_paused Specifies whether playback should be started as paused.
-	virtual void play_start(t_track_command p_command = track_command_play,bool p_paused = false) = 0;
+	virtual void start(t_track_command p_command = track_command_play,bool p_paused = false) = 0;
 	//! Stops playback.
-	virtual void play_stop() = 0;
+	virtual void stop() = 0;
 	//! Returns whether playback is active.
 	virtual bool is_playing() = 0;
 	//! Returns whether playback is active and in paused state.
@@ -104,6 +105,12 @@ public:
 
 	void toggle_stop_after_current() {set_stop_after_current(!get_stop_after_current());}
 	void toggle_pause() {pause(!is_paused());}
+	void play_or_pause() {if (is_playing()) toggle_pause(); else start();}
+
+	//deprecated
+	inline void play_start(t_track_command p_command = track_command_play,bool p_paused = false) {start();}
+	//deprecated
+	inline void play_stop() {stop();}
 
 	static bool g_get(service_ptr_t<playback_control> & p_out);
 

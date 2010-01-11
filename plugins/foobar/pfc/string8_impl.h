@@ -42,11 +42,6 @@ void string8_t<t_alloc>::fix_filename_chars(char def,char leave)//replace "bad" 
 }
 
 template<template<typename> class t_alloc>
-void string8_t<t_alloc>::fix_dir_separator(char c) {
-	if (used==0 || m_data[used-1]!=c) add_char(c);
-}
-
-template<template<typename> class t_alloc>
 void string8_t<t_alloc>::remove_chars(t_size first,t_size count)
 {
 	if (first>used) first = used;
@@ -134,7 +129,7 @@ t_size string8_t<t_alloc>::replace_nontext_chars(char p_replace)
 template<template<typename> class t_alloc>
 t_size string8_t<t_alloc>::replace_byte(char c1,char c2,t_size start)
 {
-	assert(c1 != 0); assert(c2 != 0);
+	PFC_ASSERT(c1 != 0); PFC_ASSERT(c2 != 0);
 	t_size n, ret = 0;
 	for(n=start;n<used;n++)
 	{

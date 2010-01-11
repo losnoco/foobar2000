@@ -514,6 +514,14 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\metadb_io_hintlist.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\mp3_utils.cpp"
+				>
+			</File>
+			<File
 				RelativePath="preload_info_helper.cpp"
 				>
 				<FileConfiguration
@@ -690,6 +698,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\win32_misc.cpp"
+				>
+			</File>
+			<File
 				RelativePath="window_placement_helper.cpp"
 				>
 				<FileConfiguration
@@ -716,6 +728,10 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl"
 			>
+			<File
+				RelativePath=".\bitreader_helper.h"
+				>
+			</File>
 			<File
 				RelativePath=".\cfg_guidlist.h"
 				>
@@ -789,6 +805,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\metadb_io_hintlist.h"
+				>
+			</File>
+			<File
+				RelativePath=".\mp3_utils.h"
+				>
+			</File>
+			<File
 				RelativePath="preload_info_helper.h"
 				>
 			</File>
@@ -809,6 +833,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\string_filter.h"
+				>
+			</File>
+			<File
 				RelativePath="text_file_loader.h"
 				>
 			</File>
@@ -818,6 +846,10 @@
 			</File>
 			<File
 				RelativePath="win32_dialog.h"
+				>
+			</File>
+			<File
+				RelativePath=".\win32_misc.h"
 				>
 			</File>
 			<File

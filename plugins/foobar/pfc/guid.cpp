@@ -139,3 +139,6 @@ PFC_DLL_EXPORT void print_hex_raw(const void * buffer,unsigned bytes,char * p_ou
 
 }
 
+
+
+const GUID pfc::guid_null = { 0, 0, 0, { 0, 0, 0, 0, 0, 0, 0, 0 } };

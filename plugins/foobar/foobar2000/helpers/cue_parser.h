@@ -45,7 +45,7 @@ namespace cue_parser
 					m_cue_data.remove_all();
 					try {
 						cue_parser::parse(cue,m_cue_data);
-					} catch(exception_bad_cuesheet) {m_cue_data.remove_all();}
+					} catch(exception_bad_cuesheet const & e) {console::info(e.what());m_cue_data.remove_all();}
 				}
 			}
 		}

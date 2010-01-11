@@ -36,7 +36,7 @@ namespace pfc {
 	template<typename t_type> void __unsafe__in_place_constructor_t(t_type & p_item) {
 		if (traits_t<t_type>::needs_constructor) {
 			t_type * ret = new(&p_item) t_type;
-			assert(ret == &p_item);
+			PFC_ASSERT(ret == &p_item);
 		}
 	}
 
@@ -69,7 +69,7 @@ namespace pfc {
 	template<typename t_type,typename t_copy> void __unsafe__in_place_constructor_copy_t(t_type & p_item,const t_copy & p_copyfrom) {
 		if (traits_t<t_type>::needs_constructor) {
 			t_type * ret = new(&p_item) t_type(p_copyfrom);
-			assert(ret == &p_item);
+			PFC_ASSERT(ret == &p_item);
 		} else {
 			p_item = p_copyfrom;
 		}
@@ -131,17 +131,33 @@ namespace pfc {
 	PFC_DECLARE_EXCEPTION(exception_overflow,exception,"Overflow");
 	PFC_DECLARE_EXCEPTION(exception_bug_check,exception,"Bug check");
 	PFC_DECLARE_EXCEPTION(exception_not_implemented,exception_bug_check,"Feature not implemented");
+	PFC_DECLARE_EXCEPTION(exception_dynamic_assert,exception_bug_check,"dynamic_assert failure");
 
+	//deprecated
 	inline void bug_check_assert(bool p_condition, const char * p_msg) {
 		if (!p_condition) {
-			assert(0);
+			PFC_ASSERT(0);
 			throw exception_bug_check(p_msg);
 		}
 	}
+	//deprecated
 	inline void bug_check_assert(bool p_condition) {
 		if (!p_condition) {
-			assert(0);
+			PFC_ASSERT(0);
 			throw exception_bug_check();
+		}
+	}
+
+	inline void dynamic_assert(bool p_condition, const char * p_msg) {
+		if (!p_condition) {
+			PFC_ASSERT(0);
+			throw exception_dynamic_assert(p_msg);
+		}
+	}
+	inline void dynamic_assert(bool p_condition) {
+		if (!p_condition) {
+			PFC_ASSERT(0);
+			throw exception_dynamic_assert();
 		}
 	}
 
@@ -214,6 +230,8 @@ namespace pfc {
 		else if (item1>item2) return 1;
 		else return 0;
 	}
+
+	
 
 	template<typename t_array,typename T>
 	inline t_size append_t(t_array & p_array,const T & p_item)
@@ -404,7 +422,7 @@ namespace pfc {
 	t_size msize_t(const T * p_ptr) throw() {
 		static_assert_t<sizeof(T) != 0>();
 		t_size size = ::_msize(const_cast<void*>(reinterpret_cast<const void*>(p_ptr)));
-		assert( size % sizeof(T) == 0);
+		PFC_ASSERT( size % sizeof(T) == 0);
 		return size / sizeof(T);
 	}
 
@@ -577,8 +595,10 @@ namespace pfc {
 		typedef void t_assert_failed;
 	};
 
-	template<bool p_val>
-	typename __static_assert_switcher_t<p_val>::t_assert_failed static_assert_t() {}
+	//depreacted
+	template<bool p_val> typename __static_assert_switcher_t<p_val>::t_assert_failed static_assert_t() {}
+
+	template<bool p_val> typename __static_assert_switcher_t<p_val>::t_assert_failed static_assert() {}
 
 	template<typename t_type>
 	void assert_raw_type() {static_assert_t< !traits_t<t_type>::needs_constructor && !traits_t<t_type>::needs_destructor >();}
@@ -587,6 +607,18 @@ namespace pfc {
 	inline bool is_ptr_aligned_t(const void * p_ptr) {
 		static_assert_t< (p_size_pow2 & (p_size_pow2 - 1)) == 0 >();
 		return ( ((t_size)p_ptr) & (p_size_pow2-1) ) == 0;
+	}
+
+
+	template<typename t_array>
+	void array_rangecheck_t(const t_array & p_array,t_size p_index) {
+		if (p_index >= pfc::array_size_t(p_array)) throw pfc::exception_overflow();
+	}
+
+	template<typename t_array>
+	void array_rangecheck_t(const t_array & p_array,t_size p_from,t_size p_to) {
+		if (p_from > p_to) throw pfc::exception_overflow();
+		array_rangecheck_t(p_array,p_from); array_rangecheck_t(p_array,p_to);
 	}
 
 };

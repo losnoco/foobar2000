@@ -26,5 +26,10 @@
 #include "file_move_helper.h"
 #include "file_cached.h"
 #include "seekabilizer.h"
+#include "string_filter.h"
+#include "bitreader_helper.h"
+#include "mp3_utils.h"
+#include "win32_misc.h"
+#include "metadb_io_hintlist.h"
 
 #endif //_FOOBAR2000_SDK_HELPERS_H_

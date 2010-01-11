@@ -55,6 +55,9 @@ protected:
 	~play_callback() {}
 };
 
+//! Standard API (always present); manages registrations of dynamic play_callbacks.
+//! Usage: use static_api_ptr_t<play_callback_manager>.
+//! Do not reimplement.
 class NOVTABLE play_callback_manager : public service_base
 {
 public:
@@ -78,8 +81,11 @@ protected:
 	~play_callback_manager() {}
 };
 
+
+//! Static (autoregistered) version of play_callback. Use play_callback_static_factory_t to register.
 class play_callback_static : public service_base, public play_callback {
 public:
+	//! Controls which methods your callback wants called; returned value should not change in run time, you should expect it to be queried only once (on startup). See play_callback::flag_* constants.
 	virtual unsigned get_flags() = 0;
 
 	static const GUID class_guid;
@@ -96,4 +102,24 @@ protected:
 template<class T>
 class play_callback_static_factory_t : public service_factory_single_t<play_callback_static,T> {};
 
+
+//! Gets notified about tracks being played. Notification occurs when at least 60s of the track has been played, or the track has reached its end after at least 1/3 of it has been played through.
+//! Use playback_statistics_collector_factory_t to register.
+class NOVTABLE playback_statistics_collector : public service_base {
+public:
+	virtual void on_item_played(metadb_handle_ptr p_item) = 0;
+
+	static const GUID class_guid;
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	playback_statistics_collector() {}
+	~playback_statistics_collector() {}
+};
+
+template<typename T>
+class playback_statistics_collector_factory_t : public service_factory_single_t<playback_statistics_collector,T> {};
 #endif

@@ -237,6 +237,11 @@ bool filesystem::g_is_remote_safe(const char * p_path) {
 	else return false;
 }
 
+bool filesystem::g_is_remote_or_unrecognized(const char * p_path) {
+	service_ptr_t<filesystem> fs;
+	if (g_get_interface(fs,p_path)) return fs->is_remote(p_path);
+	else return true;
+}
 
 bool filesystem::g_relative_path_create(const char * file_path,const char * playlist_path,pfc::string_base & out)
 {
@@ -710,4 +715,11 @@ void file::ensure_seekable() {
 
 bool filesystem::g_is_recognized_path(const char * p_path) {
 	return g_get_interface(service_ptr_t<filesystem>(),p_path);
+}
+
+t_filesize file::get_remaining(abort_callback & p_abort) {
+	t_filesize length = get_size_ex(p_abort);
+	t_filesize position = get_position(p_abort);
+	pfc::dynamic_assert(position <= length);
+	return length - position;
 }

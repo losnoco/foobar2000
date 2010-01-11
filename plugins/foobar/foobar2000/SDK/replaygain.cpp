@@ -43,7 +43,7 @@ audio_sample t_replaygain_config::query_scale(const file_info & p_info) const
 
 	if (m_processing_mode == processing_mode_gain || m_processing_mode == processing_mode_gain_and_peak)
 	{
-		scale *= (audio_sample) pow(10.0,gain / 20.0);
+		scale *= audio_math::gain_to_scale(gain);
 	}
 
 	if (m_processing_mode == processing_mode_peak || m_processing_mode == processing_mode_gain_and_peak)

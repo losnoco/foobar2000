@@ -11,8 +11,8 @@ private:
 	static cfg_var * list;
 	cfg_var * next;
 
-	cfg_var(const cfg_var& ) {pfc::crash();}
-	const cfg_var & operator=(const cfg_var& ) {pfc::crash();return *this;}
+	cfg_var(const cfg_var& ) {throw pfc::exception_not_implemented();}
+	const cfg_var & operator=(const cfg_var& ) {throw pfc::exception_not_implemented();}
 
 protected:
 	explicit inline cfg_var(const GUID & p_guid) : m_guid(p_guid) {next=list;list=this;};

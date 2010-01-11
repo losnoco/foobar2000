@@ -170,10 +170,6 @@ void config_object::get_data_string(pfc::string_base & p_out) {
 
 //config_object_impl stuff
 
-GUID config_object_impl::get_guid() const
-{
-	return m_guid;
-}
 
 void config_object_impl::get_data(stream_writer * p_stream,abort_callback & p_abort) const {
 	insync(m_sync);
@@ -204,7 +200,7 @@ void config_object_impl::set_data(stream_reader * p_stream,abort_callback & p_ab
 	if (p_notify) config_object_notify_manager::g_on_changed(this);
 }
 
-config_object_impl::config_object_impl(const GUID & p_guid,const void * p_data,t_size p_bytes) : m_guid(p_guid)
+config_object_impl::config_object_impl(const GUID & p_guid,const void * p_data,t_size p_bytes) : cfg_var(p_guid)
 {
 	m_data.set_data_fromptr((const t_uint8*)p_data,p_bytes);
 }

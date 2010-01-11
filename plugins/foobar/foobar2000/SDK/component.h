@@ -8,7 +8,7 @@ class NOVTABLE foobar2000_client
 public:
 	typedef service_factory_base* pservice_factory_base;
 
-	enum {FOOBAR2000_CLIENT_VERSION_COMPATIBLE = 68, FOOBAR2000_CLIENT_VERSION = 68};	//changes everytime global compatibility is broken
+	enum {FOOBAR2000_CLIENT_VERSION_COMPATIBLE = 69, FOOBAR2000_CLIENT_VERSION = 69};	//changes everytime global compatibility is broken
 	virtual t_uint32 FB2KAPI get_version() = 0;
 	virtual pservice_factory_base FB2KAPI get_service_list() = 0;
 

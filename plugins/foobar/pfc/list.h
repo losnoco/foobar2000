@@ -61,7 +61,7 @@ class list_single_ref_t : public list_base_const_t<T>
 public:
 	list_single_ref_t(const T & p_item,t_size p_count = 1) : m_item(p_item), m_count(p_count) {}
 	t_size get_count() const {return m_count;}
-	void get_item_ex(T& p_out,t_size n) const {assert(n<m_count); p_out = m_item;}
+	void get_item_ex(T& p_out,t_size n) const {PFC_ASSERT(n<m_count); p_out = m_item;}
 private:
 	const T & m_item;
 	t_size m_count;
@@ -74,7 +74,7 @@ public:
 	list_partial_ref_t(const list_base_const_t<T> & p_list,t_size p_base,t_size p_count)
 		: m_list(p_list), m_base(p_base), m_count(p_count)
 	{
-		assert(m_base + m_count <= m_list.get_count());
+		PFC_ASSERT(m_base + m_count <= m_list.get_count());
 	}
 
 private:
@@ -288,22 +288,22 @@ public:
 
 	inline void get_item_ex(T& p_out,t_size n) const
 	{
-		assert(n>=0);
-		assert(n<get_count());
+		PFC_ASSERT(n>=0);
+		PFC_ASSERT(n<get_count());
 		p_out = m_buffer[n];
 	}
 
 	inline const T& get_item_ref(t_size n) const
 	{
-		assert(n>=0);
-		assert(n<get_count());
+		PFC_ASSERT(n>=0);
+		PFC_ASSERT(n<get_count());
 		return m_buffer[n];
 	}
 
 	inline T get_item(t_size n) const
 	{
-		assert(n >= 0);
-		assert(n < get_count() );
+		PFC_ASSERT(n >= 0);
+		PFC_ASSERT(n < get_count() );
 		return m_buffer[n];
 	};
 
@@ -311,8 +311,8 @@ public:
 
 	inline const T & operator[](t_size n) const
 	{
-		assert(n>=0);
-		assert(n<get_count());
+		PFC_ASSERT(n>=0);
+		PFC_ASSERT(n<get_count());
 		return m_buffer[n];
 	}
 
@@ -376,8 +376,8 @@ public:
 
 	void replace_item(t_size idx,const T& item)
 	{
-		assert(idx>=0);
-		assert(idx<get_count());
+		PFC_ASSERT(idx>=0);
+		PFC_ASSERT(idx<get_count());
 		m_buffer[idx] = item;
 	}
 
@@ -402,7 +402,7 @@ public:
 	}
 	inline void reorder_partial(t_size p_base,const t_size * p_order,t_size p_count)
 	{
-		assert(p_base+p_count<=get_count());
+		PFC_ASSERT(p_base+p_count<=get_count());
 		pfc::reorder_partial_t(m_buffer,p_base,p_order,p_count);
 	}
 
@@ -464,14 +464,14 @@ public:
 
 	void swap_item_with(t_size p_index,T & p_item)
 	{
-		assert(p_index < get_count());
+		PFC_ASSERT(p_index < get_count());
 		pfc::swap_t(m_buffer[p_index],p_item);
 	}
 
 	void swap_items(t_size p_index1,t_size p_index2) 
 	{
-		assert(p_index1 < get_count());
-		assert(p_index1 < get_count());
+		PFC_ASSERT(p_index1 < get_count());
+		PFC_ASSERT(p_index1 < get_count());
 		pfc::swap_t(m_buffer[p_index1],m_buffer[p_index2]);
 	}
 
@@ -537,7 +537,7 @@ public:
 	list_permutation_t(const list_base_const_t<T> & p_base,const t_size * p_order,t_size p_count)
 		: m_base(p_base), m_order(p_order), m_count(p_count)
 	{
-		assert(m_base.get_count() >= m_count);
+		PFC_ASSERT(m_base.get_count() >= m_count);
 	}
 private:
 	const list_base_const_t<T> & m_base;

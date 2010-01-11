@@ -24,37 +24,37 @@ static void fix_ampersand(const char * src,pfc::string_base & out)
 static unsigned flags_to_win32(unsigned flags)
 {
 	unsigned ret = 0;
-	if (flags & menu_item_node::FLAG_CHECKED) ret |= MF_CHECKED;
-	if (flags & menu_item_node::FLAG_DISABLED) ret |= MF_DISABLED;
-	if (flags & menu_item_node::FLAG_GRAYED) ret |= MF_GRAYED;
+	if (flags & contextmenu_item_node::FLAG_CHECKED) ret |= MF_CHECKED;
+	if (flags & contextmenu_item_node::FLAG_DISABLED) ret |= MF_DISABLED;
+	if (flags & contextmenu_item_node::FLAG_GRAYED) ret |= MF_GRAYED;
 	return ret;
 }
 
-void menu_manager::win32_build_menu(HMENU menu,menu_node * parent,int base_id,int max_id)//menu item identifiers are base_id<=N<base_id+max_id (if theres too many items, they will be clipped)
+void contextmenu_manager::win32_build_menu(HMENU menu,contextmenu_node * parent,int base_id,int max_id)//menu item identifiers are base_id<=N<base_id+max_id (if theres too many items, they will be clipped)
 {
-	if (parent!=0 && parent->get_type()==menu_item_node::TYPE_POPUP)
+	if (parent!=0 && parent->get_type()==contextmenu_item_node::TYPE_POPUP)
 	{
 		string8_fastalloc temp;
 		t_size child_idx,child_num = parent->get_num_children();
 		for(child_idx=0;child_idx<child_num;child_idx++)
 		{
-			menu_node * child = parent->get_child(child_idx);
+			contextmenu_node * child = parent->get_child(child_idx);
 			if (child)
 			{
 				const char * name = child->get_name();
 				if (strchr(name,'&')) {fix_ampersand(name,temp);name=temp;}
-				menu_item_node::t_type type = child->get_type();
-				if (type==menu_item_node::TYPE_POPUP)
+				contextmenu_item_node::t_type type = child->get_type();
+				if (type==contextmenu_item_node::TYPE_POPUP)
 				{
 					HMENU new_menu = CreatePopupMenu();
 					uAppendMenu(menu,MF_STRING|MF_POPUP | flags_to_win32(child->get_display_flags()),(UINT_PTR)new_menu,name);
 					win32_build_menu(new_menu,child,base_id,max_id);
 				}
-				else if (type==menu_item_node::TYPE_SEPARATOR)
+				else if (type==contextmenu_item_node::TYPE_SEPARATOR)
 				{
 					uAppendMenu(menu,MF_SEPARATOR,0,0);
 				}
-				else if (type==menu_item_node::TYPE_COMMAND)
+				else if (type==contextmenu_item_node::TYPE_COMMAND)
 				{
 					int id = child->get_id();
 					if (id>=0 && (max_id<0 || id<max_id))
@@ -69,17 +69,17 @@ void menu_manager::win32_build_menu(HMENU menu,menu_node * parent,int base_id,in
 
 #endif
 
-bool menu_manager::execute_by_id(unsigned id)
+bool contextmenu_manager::execute_by_id(unsigned id)
 {
 	bool rv = false;
-	menu_node * ptr = find_by_id(id);
+	contextmenu_node * ptr = find_by_id(id);
 	if (ptr) {rv=true;ptr->execute();}
 	return rv;
 }
 
 #ifdef WIN32
 
-void menu_manager::win32_run_menu_popup(HWND parent,const POINT * pt)
+void contextmenu_manager::win32_run_menu_popup(HWND parent,const POINT * pt)
 {
 	enum {ID_CUSTOM_BASE = 1};
 
@@ -89,12 +89,15 @@ void menu_manager::win32_run_menu_popup(HWND parent,const POINT * pt)
 		POINT p;
 		if (pt) p = *pt;
 		else GetCursorPos(&p);
+		
 		HMENU hmenu = CreatePopupMenu();
+		try {
+		
+			win32_build_menu(hmenu,ID_CUSTOM_BASE,-1);
+			menu_helpers::win32_auto_mnemonics(hmenu);
 
-		win32_build_menu(hmenu,ID_CUSTOM_BASE,-1);
-		win32_auto_mnemonics(hmenu);
-
-		cmd = TrackPopupMenu(hmenu,TPM_RIGHTBUTTON|TPM_NONOTIFY|TPM_RETURNCMD,p.x,p.y,0,parent,0);
+			cmd = TrackPopupMenu(hmenu,TPM_RIGHTBUTTON|TPM_NONOTIFY|TPM_RETURNCMD,p.x,p.y,0,parent,0);
+		} catch(...) {DestroyMenu(hmenu); throw;}
 		
 		DestroyMenu(hmenu);
 	}			
@@ -108,35 +111,22 @@ void menu_manager::win32_run_menu_popup(HWND parent,const POINT * pt)
 	}
 }
 
-void menu_manager::win32_run_menu_context(HWND parent,const list_base_const_t<metadb_handle_ptr> & data,const POINT * pt,unsigned flags)
+void contextmenu_manager::win32_run_menu_context(HWND parent,const list_base_const_t<metadb_handle_ptr> & data,const POINT * pt,unsigned flags)
 {
-	service_ptr_t<menu_manager> p_manager;
-	if (menu_manager::g_create(p_manager))
-	{
-		p_manager->init_context(data,flags);
-		p_manager->win32_run_menu_popup(parent,pt);
-	}
+	service_ptr_t<contextmenu_manager> manager;
+	contextmenu_manager::g_create(manager);
+	manager->init_context(data,flags);
+	manager->win32_run_menu_popup(parent,pt);
 }
 
-void menu_manager::win32_run_menu_context_playlist(HWND parent,const POINT * pt,unsigned flags)
+void contextmenu_manager::win32_run_menu_context_playlist(HWND parent,const POINT * pt,unsigned flags)
 {
-	service_ptr_t<menu_manager> p_manager;
-	if (menu_manager::g_create(p_manager))
-	{
-		p_manager->init_context_playlist(flags);
-		p_manager->win32_run_menu_popup(parent,pt);
-	}
+	service_ptr_t<contextmenu_manager> manager;
+	contextmenu_manager::g_create(manager);
+	manager->init_context_playlist(flags);
+	manager->win32_run_menu_popup(parent,pt);
 }
 
-void menu_manager::win32_run_menu_main(HWND parent,const char * path,const POINT * pt,unsigned flags)
-{
-	service_ptr_t<menu_manager> p_manager;
-	if (menu_manager::g_create(p_manager))
-	{
-		p_manager->init_main(path,flags);
-		p_manager->win32_run_menu_popup(parent,pt);
-	}
-}
 
 namespace {
 	class mnemonic_manager
@@ -222,7 +212,7 @@ namespace {
 	};
 }
 
-void menu_manager::win32_auto_mnemonics(HMENU menu)
+void menu_helpers::win32_auto_mnemonics(HMENU menu)
 {
 	mnemonic_manager mgr;
 	unsigned n, m = GetMenuItemCount(menu);
@@ -307,7 +297,7 @@ bool keyboard_shortcut_manager::on_keydown_auto_playlist(WPARAM wp)
 	service_ptr_t<playlist_manager> api;
 	if (!playlist_manager::g_get(api)) return false;
 	api->activeplaylist_get_selected_items(data);
-	return on_keydown_auto_context(data,wp,menu_item::caller_playlist);
+	return on_keydown_auto_context(data,wp,contextmenu_item::caller_playlist);
 }
 
 bool keyboard_shortcut_manager::on_keydown_auto_context(const list_base_const_t<metadb_handle_ptr> & data,WPARAM wp,const GUID & caller)

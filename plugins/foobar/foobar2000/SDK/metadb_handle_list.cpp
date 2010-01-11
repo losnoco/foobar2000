@@ -62,7 +62,7 @@ void metadb_handle_list_helper::sort_by_format_get_order_partial(const list_base
 		data[n].subsong = item->get_subsong_index();
 	}
 
-	pfc::sort_t(data,custom_sort_compare,count);
+	pfc::sort_stable_t(data,custom_sort_compare,count);
 	//qsort(data.get_ptr(),count,sizeof(custom_sort_data),(int (__cdecl *)(const void *elem1, const void *elem2 ))custom_sort_compare);
 
 	for(n=0;n<count;n++)

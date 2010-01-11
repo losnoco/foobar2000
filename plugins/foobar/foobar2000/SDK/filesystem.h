@@ -220,6 +220,9 @@ namespace foobar2000_io
 		//! Helper; retrieves size of the file. If size is not available (get_size() returns filesize_invalid), throws exception_io_no_length.
 		t_filesize get_size_ex(abort_callback & p_abort);
 
+		//! Helper; retrieves amount of bytes between read/write cursor position and end of file. Fails when length can't be determined.
+		t_filesize get_remaining(abort_callback & p_abort);
+
 		//! Helper; throws exception_io_object_not_seekable if file is not seekable.
 		void ensure_seekable();
 
@@ -313,6 +316,7 @@ namespace foobar2000_io
 		static bool g_get_interface(service_ptr_t<filesystem> & p_out,const char * path);//path is AFTER get_canonical_path
 		static bool g_is_remote(const char * p_path);//path is AFTER get_canonical_path
 		static bool g_is_remote_safe(const char * p_path);//path is AFTER get_canonical_path
+		static bool g_is_remote_or_unrecognized(const char * p_path);
 		static bool g_is_recognized_path(const char * p_path);
 		
 		static void g_open(service_ptr_t<file> & p_out,const char * p_path,t_open_mode p_mode,abort_callback & p_abort);

@@ -55,7 +55,7 @@ namespace pfc {
 		
 
 		void set_size(t_size p_size,t_size p_size_total) {
-			assert(p_size <= p_size_total);
+			PFC_ASSERT(p_size <= p_size_total);
 			if (p_size_total == 0) {
 				if (m_buffer != NULL) {
 					__unsafe__in_place_destructor_array_t(m_buffer,m_size);
@@ -128,8 +128,8 @@ namespace pfc {
 
 		t_size get_size() const {return m_size;}
 		t_size get_size_total() const {return m_size_total;}
-		const t_item & operator[](t_size p_index) const {assert(p_index < m_size); return m_buffer[p_index];}
-		t_item & operator[](t_size p_index) {assert(p_index < m_size); return m_buffer[p_index];}
+		const t_item & operator[](t_size p_index) const {PFC_ASSERT(p_index < m_size); return m_buffer[p_index];}
+		t_item & operator[](t_size p_index) {PFC_ASSERT(p_index < m_size); return m_buffer[p_index];}
 		~__array_fast_helper_t() {
 			set_size(0,0);
 		}
@@ -269,13 +269,13 @@ namespace pfc {
 			}
 
 			t_item & operator[](t_size p_index) {
-				assert(p_index < get_size());
+				PFC_ASSERT(p_index < get_size());
 				if (p_index < p_width) return m_fixed[p_index];
 				else return m_variable[p_index - p_width];
 			}
 
 			const t_item & operator[](t_size p_index) const {
-				assert(p_index < get_size());
+				PFC_ASSERT(p_index < get_size());
 				if (p_index < p_width) return m_fixed[p_index];
 				else return m_variable[p_index - p_width];
 			}

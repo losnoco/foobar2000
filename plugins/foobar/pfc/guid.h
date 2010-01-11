@@ -28,8 +28,9 @@ namespace pfc {
 	inline int guid_compare(const GUID & g1,const GUID & g2) {return memcmp(&g1,&g2,sizeof(GUID));}
 
 	inline bool guid_equal(const GUID & g1,const GUID & g2) {return (g1 == g2) ? true : false;}
+	template<> inline int compare_t<GUID>(const GUID & p_item1,const GUID & p_item2) {return guid_compare(p_item1,p_item2);}
 
-	static const GUID guid_null = { 0, 0, 0, { 0, 0, 0, 0, 0, 0, 0, 0 } };
+	extern const GUID guid_null;
 
 	PFC_DLL_EXPORT void print_hex_raw(const void * buffer,unsigned bytes,char * p_out);
 }

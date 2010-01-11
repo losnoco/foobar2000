@@ -139,8 +139,8 @@ namespace pfc {
 		inline T& operator*() {return *m_ptr;}
 		inline const T& operator*() const {return *m_ptr;}
 	private:
-		ptrholder_t(const ptrholder_t<T,t_freefunc> &) {assert(0);}
-		const ptrholder_t<T,t_freefunc> & operator=(const ptrholder_t<T,t_freefunc> & ) {assert(0); return *this;}
+		ptrholder_t(const ptrholder_t<T,t_freefunc> &) {PFC_ASSERT(0);}
+		const ptrholder_t<T,t_freefunc> & operator=(const ptrholder_t<T,t_freefunc> & ) {PFC_ASSERT(0); return *this;}
 
 		T* m_ptr;
 	};
@@ -162,27 +162,10 @@ namespace pfc {
 		inline const ptrholder_t<T,t_freefunc> & operator=(T * p_ptr) {set(p_ptr);return *this;}
 		inline T* detach() {T * temp = m_ptr; m_ptr = 0; return temp;}
 	private:
-		ptrholder_t(const ptrholder_t<T,t_freefunc> &) {assert(0);}
-		const ptrholder_t<T,t_freefunc> & operator=(const ptrholder_t<T,t_freefunc> & ) {assert(0); return *this;}
+		ptrholder_t(const ptrholder_t<T,t_freefunc> &) {PFC_ASSERT(0);}
+		const ptrholder_t<T,t_freefunc> & operator=(const ptrholder_t<T,t_freefunc> & ) {PFC_ASSERT(0); return *this;}
 		T* m_ptr;
 	};
-
-	template<typename T,void t_destructor(T &) >
-	class autodestructor_t : public T
-	{
-	public:
-		autodestructor_t() {}
-		autodestructor_t(const T & p_source) : T(p_source) {}
-		autodestructor_t(const autodestructor_t<T,t_destructor> & p_source) : T(*(T*)&p_source) {}
-		
-		const autodestructor_t<T,t_destructor> & operator=(const autodestructor_t<T,t_destructor> & p_source) {*(T*)this = *(T*)&p_source; return *this;}
-		const autodestructor_t<T,t_destructor> & operator=(const T p_source) {*(T*)this = p_source; return *this;}
-		
-		~autodestructor_t() {t_destructor(*this);}
-	};
-
-
-
 
 
 	void crash();

@@ -2,6 +2,7 @@
 
 #include <intrin.h>
 
+
 void order_helper::g_swap(t_size * data,t_size ptr1,t_size ptr2)
 {
 	t_size temp = data[ptr1];
@@ -32,7 +33,20 @@ void order_helper::g_reverse(t_size * order,t_size base,t_size count)
 }
 
 
-void pfc::crash()
-{
+void pfc::crash() {
 	__debugbreak();
 }
+
+
+void pfc::byteswap_raw(void * p_buffer,const t_size p_bytes) {
+	t_uint8 * ptr = (t_uint8*)p_buffer;
+	t_size n;
+	for(n=0;n<p_bytes>>1;n++) swap_t(ptr[n],ptr[p_bytes-n-1]);
+}
+
+#if defined(_DEBUG) && defined(_WIN32)
+void pfc::myassert(const wchar_t * _Message, const wchar_t *_File, unsigned _Line) { 
+	if (IsDebuggerPresent()) pfc::crash();
+	_wassert(_Message,_File,_Line);
+}
+#endif

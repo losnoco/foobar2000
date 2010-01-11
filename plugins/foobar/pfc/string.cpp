@@ -390,7 +390,7 @@ double pfc::string_to_float(const char * src,t_size max)
 void pfc::string_base::convert_to_lower_ascii(const char * src,char replace)
 {
 	reset();
-	assert(replace>0);
+	PFC_ASSERT(replace>0);
 	while(*src)
 	{
 		unsigned c;
@@ -405,7 +405,7 @@ void pfc::string_base::convert_to_lower_ascii(const char * src,char replace)
 void convert_to_lower_ascii(const char * src,t_size max,char * out,char replace)
 {
 	t_size ptr = 0;
-	assert(replace>0);
+	PFC_ASSERT(replace>0);
 	while(ptr<max && src[ptr])
 	{
 		unsigned c;
@@ -518,7 +518,7 @@ format_float::format_float(double p_val,unsigned p_width,unsigned p_prec)
 
 static char format_hex_char(unsigned p_val)
 {
-	assert(p_val < 16);
+	PFC_ASSERT(p_val < 16);
 	return (p_val < 10) ? p_val + '0' : p_val - 10 + 'A';
 }
 
@@ -546,7 +546,7 @@ format_hex::format_hex(t_uint64 p_val,unsigned p_width)
 
 static char format_hex_char_lowercase(unsigned p_val)
 {
-	assert(p_val < 16);
+	PFC_ASSERT(p_val < 16);
 	return (p_val < 10) ? p_val + '0' : p_val - 10 + 'a';
 }
 
@@ -754,4 +754,10 @@ bool pfc::string_is_numeric(const char * p_string,t_size p_length) {
 		retval = true;
 	}
 	return retval;
+}
+
+
+void pfc::string_base::fix_dir_separator(char p_char) {
+	t_size length = get_length();
+	if (length == 0 || get_ptr()[length-1] != p_char) add_byte(p_char);
 }

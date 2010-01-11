@@ -19,7 +19,7 @@ public:
 	//! Retrieves help URL. Without overriding it, it will redirect to foobar2000 wiki.
 	virtual bool get_help_url(pfc::string_base & p_out);
 	
-	static const GUID guid_root, guid_hidden, guid_components,guid_core,guid_display,guid_playback,guid_visualisations,guid_input,guid_tag_writing,guid_media_library;
+	static const GUID guid_root, guid_hidden, guid_tools,guid_core,guid_display,guid_playback,guid_visualisations,guid_input,guid_tag_writing,guid_media_library;
 
 	static const GUID class_guid;
 
@@ -56,7 +56,22 @@ protected:
 	~preferences_branch() {}
 };
 
-template<class T>
-class preferences_branch_factory_t : public service_factory_single_t<preferences_branch,T> {};
+class preferences_branch_impl : public preferences_branch {
+public:
+	preferences_branch_impl(const GUID & p_guid,const GUID & p_parent,const char * p_name) : m_guid(p_guid), m_parent(p_parent), m_name(p_name) {}
+	const char * get_name() {return m_name;}
+	GUID get_guid() {return m_guid;}
+	GUID get_parent_guid() {return m_parent;}
+private:
+	GUID m_guid,m_parent;
+	string8 m_name;
+};
+
+typedef service_factory_single_t<preferences_branch,preferences_branch_impl> __preferences_branch_factory;
+
+class preferences_branch_factory : public __preferences_branch_factory {
+public:
+	preferences_branch_factory(const GUID & p_guid,const GUID & p_parent,const char * p_name) : __preferences_branch_factory(p_guid,p_parent,p_name) {}
+};
 
 #endif //_FOOBAR2000_SDK_PREFERENCES_PAGE_H_

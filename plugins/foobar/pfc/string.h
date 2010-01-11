@@ -70,13 +70,14 @@ namespace pfc {
 
 		inline operator const char * () const {return get_ptr();}
 
-		t_size scan_filename() {return pfc::scan_filename(get_ptr());}
+		t_size scan_filename() const {return pfc::scan_filename(get_ptr());}
 
 		t_size find_first(char p_char,t_size p_start = 0) {return pfc::string_find_first(get_ptr(),p_char,p_start);}
 		t_size find_last(char p_char,t_size p_start = ~0) {return pfc::string_find_last(get_ptr(),p_char,p_start);}
 		t_size find_first(const char * p_string,t_size p_start = 0) {return pfc::string_find_first(get_ptr(),p_string,p_start);}
 		t_size find_last(const char * p_string,t_size p_start = ~0) {return pfc::string_find_last(get_ptr(),p_string,p_start);}
 
+		void fix_dir_separator(char p_char);
 	protected:
 		string_base() {}
 		~string_base() {}
@@ -139,7 +140,6 @@ public:
 	t_size replace_char(unsigned c1,unsigned c2,t_size start = 0);
 	t_size replace_byte(char c1,char c2,t_size start = 0);
 	void fix_filename_chars(char def = '_',char leave=0);//replace "bad" characters, leave can be used to keep eg. path separators
-	void fix_dir_separator(char c);
 	void remove_chars(t_size first,t_size count); //slow
 	void insert_chars(t_size first,const char * src, t_size count);//slow
 	void insert_chars(t_size first,const char * src);

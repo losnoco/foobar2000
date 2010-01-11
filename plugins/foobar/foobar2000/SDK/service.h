@@ -97,7 +97,7 @@ public:
 	{
 		service_ptr_t<service_base> temp;
 		if (!service_query(temp,T::class_guid)) return false;
-		p_out.set(static_cast<T*>(temp.duplicate_ptr_release()));
+		p_out.set(static_cast<T*>(temp.detach()));
 		return true;
 	}
 
@@ -106,6 +106,12 @@ public:
 	inline void FB2KAPI refcount_add_ref() {service_add_ref();}
 	//! For compatibility with pfc::refcounted_ptr_t<>.
 	inline void FB2KAPI refcount_release() {service_release();}
+protected:
+	service_base() {}
+	~service_base() {}
+private:
+	service_base(const service_base&) {throw pfc::exception_not_implemented();}
+	const service_base & operator=(const service_base&) {throw pfc::exception_not_implemented();}
 };
 
 #include "service_impl.h"
@@ -144,46 +150,68 @@ public:
 
 
 
-template<class T>
-static bool FB2KAPI service_enum_create_t(service_ptr_t<T> & p_out,t_size p_index)
-{
+template<class T> static bool FB2KAPI service_enum_create_t(service_ptr_t<T> & p_out,t_size p_index) {
 	service_ptr_t<service_base> ptr;
-	if (service_factory_base::enum_create(ptr,service_factory_base::enum_find_class(T::class_guid),p_index))
-	{
+	if (service_factory_base::enum_create(ptr,service_factory_base::enum_find_class(T::class_guid),p_index)) {
 		p_out = static_cast<T*>(ptr.get_ptr());
 		return true;
-	}
-	else
-	{
+	} else {
 		p_out.release();
 		return false;
 	}
+}
+
+template<typename T> static service_ptr_t<T> standard_api_create_t() {
+	service_ptr_t<T> temp;
+	if (!service_enum_create_t(temp,0)) throw exception_service_not_found();
+	return temp;
 }
 
 #define service_enum_get_count_t(T) (service_factory_base::enum_get_count(service_factory_base::enum_find_class(T::class_guid)))
 #define service_enum_is_present(g) (service_factory_base::is_service_present(g))
 #define service_enum_is_present_t(T) (service_factory_base::is_service_present(T::class_guid))
 
-template<class T>
-class service_class_helper_t
-{
+template<typename T> class service_class_helper_t {
 public:
 	service_class_helper_t() : m_class(service_factory_base::enum_find_class(T::class_guid)) {}
-	t_size FB2KAPI get_count() const
-	{
+	t_size get_count() const {
 		return service_factory_base::enum_get_count(m_class);
 	}
 
-	bool FB2KAPI create(service_ptr_t<T> & p_out,t_size p_index) const
-	{
+	bool create(service_ptr_t<T> & p_out,t_size p_index) const {
 		service_ptr_t<service_base> temp;
 		if (!service_factory_base::enum_create(temp,m_class,p_index)) return false;
-		p_out.set(static_cast<T*>(temp.duplicate_ptr_release()));
+		p_out.set(static_cast<T*>(temp.detach()));
 		return true;
 	}
 
+	service_ptr_t<T> create(t_size p_index) {
+		service_ptr_t<T> temp;
+		if (!create(temp,p_index)) throw pfc::exception_bug_check();
+		return temp;
+	}
 private:
 	service_class_ref m_class;
+};
+
+//! Helper; simulates array with instance of each available implementation of given service class.
+template<typename T> class service_instance_array_t {
+public:
+	typedef service_ptr_t<T> t_ptr;
+	service_instance_array_t() {
+		service_class_helper_t<T> helper;
+		const t_size count = helper.get_count();
+		m_data.set_size(count);
+		for(t_size n=0;n<count;n++) m_data[n] = helper.create(n);
+	}
+
+	t_size get_size() const {return m_data.get_size();}
+	const t_ptr & operator[](t_size p_index) const {return m_data[p_index];}
+
+	//nonconst version to allow sorting/bsearching; do not abuse
+	t_ptr & operator[](t_size p_index) {return m_data[p_index];}
+private:
+	pfc::array_t<t_ptr> m_data;
 };
 
 template<class B>
@@ -221,6 +249,8 @@ class service_factory_single_t : public service_factory_base_t<B>
 {
 	service_impl_single_t<T> g_instance;
 public:
+	TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(service_factory_single_t,g_instance)
+
 	void FB2KAPI instance_create(service_ptr_t<service_base> & p_out) {
 		p_out = pfc::safe_cast<service_base*>(pfc::safe_cast<B*>(pfc::safe_cast<T*>(&g_instance)));
 	}

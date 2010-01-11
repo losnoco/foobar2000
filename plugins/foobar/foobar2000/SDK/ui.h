@@ -25,6 +25,8 @@ public:
 	virtual void override_statusbar_text(const char * p_text) = 0;
 	virtual void revert_statusbar_text() = 0;
 
+	virtual void show_now_playing() = 0;
+
 	static bool g_find(service_ptr_t<user_interface> & p_out,const GUID & p_guid);
 
 	static const GUID class_guid;

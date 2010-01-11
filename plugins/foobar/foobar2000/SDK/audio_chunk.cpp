@@ -39,12 +39,12 @@ namespace {
 				{
 					temp = 0;
 					memcpy(&temp,src,bytes);
-					if (b_swap) byte_order::swap_order(&temp,bytes);
+					if (b_swap) pfc::byteswap_raw(&temp,bytes);
 				}
 				else
 				{
 					temp = * reinterpret_cast<const T*>(src);
-					if (b_swap) byte_order::swap_t(temp);
+					if (b_swap) temp = pfc::byteswap_t(temp);
 				}
 
 				
@@ -116,7 +116,7 @@ void audio_chunk::set_data_fixedpoint_ex(const void * source,t_size size,unsigne
 	assert( check_exclusive(flags,FLAG_LITTLE_ENDIAN|FLAG_BIG_ENDIAN) );
 
 	bool need_swap = !!(flags & FLAG_BIG_ENDIAN);
-	if (byte_order::machine_is_big_endian()) need_swap = !need_swap;
+	if (pfc::byte_order_is_big_endian) need_swap = !need_swap;
 
 	t_size count = size / (bps/8);
 	set_data_size(count);
@@ -126,18 +126,18 @@ void audio_chunk::set_data_fixedpoint_ex(const void * source,t_size size,unsigne
 	switch(bps)
 	{
 	case 8:
-		msvc6_sucks<char,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
+		msvc6_sucks<t_int8,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
 		break;
 	case 16:
 		if (!need_swap && b_signed) audio_math::convert_from_int16((const t_int16*)source,count,buffer,1.0);
-		else msvc6_sucks<short,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
+		else msvc6_sucks<t_int16,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
 		break;
 	case 24:
-		msvc6_sucks<long,true>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
+		msvc6_sucks<t_int32,true>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
 		break;
 	case 32:
 		if (!need_swap && b_signed) audio_math::convert_from_int32((const t_int32*)source,count,buffer,1.0);
-		else msvc6_sucks<long,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
+		else msvc6_sucks<t_int32,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
 		break;
 	default:
 		//unknown size, cant convert
@@ -161,11 +161,8 @@ template<class t_float>
 static void process_float_multi_swap(audio_sample * p_out,const t_float * p_in,const t_size p_count)
 {
 	t_size n;
-	for(n=0;n<p_count;n++)
-	{
-		t_float temp = p_in[n];
-		byte_order::swap_t(temp);
-		p_out[n] = (audio_sample) temp;
+	for(n=0;n<p_count;n++) {
+		p_out[n] = (audio_sample) pfc::byteswap_t(p_in[n]);
 	}
 }
 
@@ -175,7 +172,7 @@ void audio_chunk::set_data_floatingpoint_ex(const void * ptr,t_size size,unsigne
 	assert( check_exclusive(flags,FLAG_LITTLE_ENDIAN|FLAG_BIG_ENDIAN) );
 	assert( ! (flags & (FLAG_SIGNED|FLAG_UNSIGNED) ) );
 
-	bool use_swap = byte_order::machine_is_big_endian() ? !!(flags & FLAG_LITTLE_ENDIAN) : !!(flags & FLAG_BIG_ENDIAN);
+	bool use_swap = pfc::byte_order_is_big_endian ? !!(flags & FLAG_LITTLE_ENDIAN) : !!(flags & FLAG_BIG_ENDIAN);
 
 	const t_size count = size / (bps/8);
 	set_data_size(count);

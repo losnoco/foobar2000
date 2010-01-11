@@ -129,7 +129,7 @@ public:
 
 	inline static unsigned flags_autoendian()
 	{
-		return byte_order::machine_is_big_endian() ? FLAG_BIG_ENDIAN : FLAG_LITTLE_ENDIAN;
+		return pfc::byte_order_is_big_endian ? FLAG_BIG_ENDIAN : FLAG_LITTLE_ENDIAN;
 	}
 
 	void set_data_fixedpoint_ex(const void * ptr,t_size bytes,unsigned p_sample_rate,unsigned p_channels,unsigned p_bits_per_sample,unsigned p_flags,unsigned p_channel_config);//p_flags - see FLAG_* above

@@ -1,12 +1,18 @@
-struct hasher_md5_state
-{
+struct hasher_md5_state {
 	char m_data[128];
 };
 
-struct hasher_md5_result
-{
+struct hasher_md5_result {
 	char m_data[16];
 };
+
+inline bool operator==(const hasher_md5_result & p_item1,const hasher_md5_result & p_item2) {return memcmp(&p_item1,&p_item2,sizeof(hasher_md5_result)) == 0;}
+inline bool operator!=(const hasher_md5_result & p_item1,const hasher_md5_result & p_item2) {return memcmp(&p_item1,&p_item2,sizeof(hasher_md5_result)) != 0;}
+
+namespace pfc {
+	template<> class traits_t<hasher_md5_state> : public traits_rawobject {};
+	template<> class traits_t<hasher_md5_result> : public traits_rawobject {};
+}
 
 class NOVTABLE hasher_md5 : public service_base
 {

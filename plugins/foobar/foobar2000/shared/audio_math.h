@@ -67,4 +67,7 @@ namespace audio_math
 	inline static t_int32 rint32(audio_sample val) {return (t_int32)floor(val+0.5);}
 #endif
 
+
+	inline audio_sample gain_to_scale(double p_gain) {return (audio_sample) pow(10.0,p_gain / 20.0);}
+
 }

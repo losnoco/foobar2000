@@ -87,6 +87,7 @@ namespace dialog_helper
 		enum {destructor_none,destructor_normal,destructor_fromwindow} m_destructor_status;
 		bool m_is_in_create;
 	};
+
 #pragma deprecated(dialog_modeless)
 
 

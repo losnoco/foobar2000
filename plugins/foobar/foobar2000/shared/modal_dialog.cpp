@@ -26,6 +26,7 @@ void SHARED_EXPORT PokeWindow(HWND p_wnd)
 	{
 //		SetForegroundWindow(p_wnd);
 		SetActiveWindow(p_wnd);
+		FlashWindow(p_wnd,FALSE);
 	}
 	else
 	{
@@ -34,6 +35,7 @@ void SHARED_EXPORT PokeWindow(HWND p_wnd)
 		{
 //			SetForegroundWindow(child);
 			SetActiveWindow(child);
+			FlashWindow(child,FALSE);
 		}
 	}
 }

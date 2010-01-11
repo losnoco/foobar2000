@@ -8,7 +8,7 @@ class NOVTABLE initquit : public service_base
 {
 public:
 	virtual void on_init() {}
-	virtual void on_quit() {}//WARNING: it is possible that on_quit gets called without on_init getting called first, e.g. after user interface init failure.
+	virtual void on_quit() {}
 
 	static const GUID class_guid;
 
@@ -22,24 +22,6 @@ protected:
 };
 
 template<class T>
-class initquit_factory : public service_factory_single_t<initquit,T> {};
-
-class initquit_autoreg : public service_impl_single_t<initquit>
-{
-private:
-	service_factory_single_ref_t<initquit,initquit_autoreg> * p_factory;
-public:
-	initquit_autoreg() {p_factory = new service_factory_single_ref_t<initquit,initquit_autoreg>(*this);}
-	~initquit_autoreg() {delete p_factory;}
-};
-
-class initquit_simple : public initquit_autoreg
-{
-	void (*func)(bool is_init);
-	virtual void on_init() {func(true);}
-	virtual void on_quit() {func(false);}
-public:
-	initquit_simple(void (*p_func)(bool is_init)) {func=p_func;}
-};
+class initquit_factory_t : public service_factory_single_t<initquit,T> {};
 
 #endif

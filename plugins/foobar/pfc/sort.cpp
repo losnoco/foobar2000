@@ -476,7 +476,7 @@ sort_callback_stabilizer::sort_callback_stabilizer(sort_callback & p_chain,t_siz
 int sort_callback_stabilizer::compare(t_size p_index1, t_size p_index2) const
 {
 	int ret = m_chain.compare(p_index1,p_index2);
-	if (ret == 0) ret = pfc::sgn_t(m_order[p_index1] - m_order[p_index2]);
+	if (ret == 0) ret = pfc::sgn_t((t_ssize)m_order[p_index1] - (t_ssize)m_order[p_index2]);
 	return ret;
 }
 

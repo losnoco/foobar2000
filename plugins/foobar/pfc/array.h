@@ -36,14 +36,22 @@ namespace pfc {
 		void set_size(t_size p_size) {m_alloc.set_size(p_size);}
 		t_size get_size() const {return m_alloc.get_size();}
 		
-		const t_item & operator[](t_size p_index) const {assert(p_index < get_size());return m_alloc[p_index];}
-		t_item & operator[](t_size p_index) {assert(p_index < get_size());return m_alloc[p_index];}
+		const t_item & operator[](t_size p_index) const {PFC_ASSERT(p_index < get_size());return m_alloc[p_index];}
+		t_item & operator[](t_size p_index) {PFC_ASSERT(p_index < get_size());return m_alloc[p_index];}
 
 		template<typename t_source>
 		void set_data_fromptr(const t_source * p_buffer,t_size p_count) {
 			set_size(p_count);
 			pfc::memcpy_t(*this,p_buffer,p_count);
 //			for(t_size n=0;n<p_count;n++) m_alloc[n] = p_buffer[n];
+		}
+
+		template<typename t_array>
+		void append(const t_array & p_source) {
+			t_size base = get_size();
+			const t_size source_size = array_size_t(p_source);
+			increase_size(source_size);
+			for(t_size n=0;n<source_size;n++) m_alloc[base+n] = p_source[n];
 		}
 
 		template<typename t_append>

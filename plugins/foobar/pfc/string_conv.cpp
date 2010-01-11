@@ -63,7 +63,7 @@ namespace pfc {
 				unsigned newchar = 0;
 				t_size delta = utf8_decode_char(p_in + inptr,&newchar,insize - inptr);
 				if (delta == 0 || newchar == 0) break;
-				assert(inptr + delta <= insize);
+				PFC_ASSERT(inptr + delta <= insize);
 				inptr += delta;
 				writer.write_as_wide(newchar);
 			}
@@ -80,7 +80,7 @@ namespace pfc {
 				unsigned newchar = 0;
 				t_size delta = utf16_decode_char(p_in + inptr,&newchar,insize - inptr);
 				if (delta == 0 || newchar == 0) break;
-				assert(inptr + delta <= insize);
+				PFC_ASSERT(inptr + delta <= insize);
 				inptr += delta;
 				writer.write_as_utf8(newchar);
 			}
@@ -96,7 +96,7 @@ namespace pfc {
 				unsigned newchar = 0;
 				t_size delta = utf8_decode_char(p_in + inptr,&newchar,insize - inptr);
 				if (delta == 0 || newchar == 0) break;
-				assert(inptr + delta <= insize);
+				PFC_ASSERT(inptr + delta <= insize);
 				inptr += delta;
 				
 				{
@@ -117,7 +117,7 @@ namespace pfc {
 				unsigned newchar = 0;
 				t_size delta = utf16_decode_char(p_in + inptr,&newchar,insize - inptr);
 				if (delta == 0 || newchar == 0) break;
-				assert(inptr + delta <= insize);
+				PFC_ASSERT(inptr + delta <= insize);
 				inptr += delta;
 				
 				{

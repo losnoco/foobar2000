@@ -4,7 +4,7 @@ GUID hasher_md5::guid_from_result(const hasher_md5_result & param)
 {
 	assert(sizeof(GUID) == sizeof(hasher_md5_result));
 	GUID temp = * reinterpret_cast<const GUID*>(&param);
-	byte_order::guid_le_to_native(temp);
+	byte_order::order_le_to_native_t(temp);
 	return temp;
 }
 

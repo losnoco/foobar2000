@@ -1038,6 +1038,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\mainmenu.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\mem_block_container.cpp"
 				>
 			</File>
@@ -2099,6 +2103,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\contextmenu.h"
+				>
+			</File>
+			<File
+				RelativePath=".\contextmenu_manager.h"
+				>
+			</File>
+			<File
 				RelativePath="core_api.h"
 				>
 			</File>
@@ -2183,15 +2195,11 @@
 				>
 			</File>
 			<File
+				RelativePath=".\menu.h"
+				>
+			</File>
+			<File
 				RelativePath="menu_helpers.h"
-				>
-			</File>
-			<File
-				RelativePath="menu_item.h"
-				>
-			</File>
-			<File
-				RelativePath="menu_manager.h"
 				>
 			</File>
 			<File

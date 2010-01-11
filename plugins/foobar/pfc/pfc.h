@@ -18,6 +18,9 @@
 #ifndef _SYS_GUID_OPERATOR_EQ_
 #define _NO_SYS_GUID_OPERATOR_EQ_	//fix retarded warning with operator== on GUID returning int
 #endif
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x500
+#endif
 #include <windows.h>
 
 #ifndef _SYS_GUID_OPERATOR_EQ_
@@ -60,6 +63,18 @@ inline bool operator!=(REFGUID guidOne, REFGUID guidOther) {return !__InlineIsEq
 #include <math.h>
 #include <float.h>
 
+
+#ifndef _DEBUG
+#define PFC_ASSERT(_Expression)     ((void)0)
+#else
+#ifdef _WIN32
+namespace pfc { void myassert(const wchar_t * _Message, const wchar_t *_File, unsigned _Line); }
+#define PFC_ASSERT(_Expression) (void)( (!!(_Expression)) || (pfc::myassert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0) )
+#else
+#define PFC_ASSERT(_Expression) assert(_Expression)
+#endif
+#endif
+
 #ifdef _MSC_VER
 
 #ifdef _DEBUG
@@ -69,7 +84,7 @@ inline bool operator!=(REFGUID guidOne, REFGUID guidOther) {return !__InlineIsEq
 #endif
 
 #ifdef _DEBUG
-#define ASSUME(X) assert(X)
+#define ASSUME(X) PFC_ASSERT(X)
 #else
 #define ASSUME(X) __assume(X)
 #endif

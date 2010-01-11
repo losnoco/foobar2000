@@ -1,7 +1,6 @@
 #include "foobar2000.h"
 
 
-static t_uint32 read_dword_le_fromptr(const void * src) {return byte_order::dword_le_to_native(*(t_uint32*)src);}
 
 cfg_var * cfg_var::list=0;
 

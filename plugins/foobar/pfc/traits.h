@@ -14,18 +14,21 @@ namespace pfc {
 	
 	template<typename T> class traits_t<T*> : public traits_rawobject {};
 
-	template<> class traits_t<t_uint8> : public traits_rawobject {};
-	template<> class traits_t<t_int8> : public traits_rawobject {};
-	template<> class traits_t<t_uint16> : public traits_rawobject {};
-	template<> class traits_t<t_int16> : public traits_rawobject {};
-	template<> class traits_t<t_uint32> : public traits_rawobject {};
-	template<> class traits_t<t_int32> : public traits_rawobject {};
-	template<> class traits_t<t_uint64> : public traits_rawobject {};
-	template<> class traits_t<t_int64> : public traits_rawobject {};
+	template<> class traits_t<char> : public traits_rawobject {};
+	template<> class traits_t<unsigned char> : public traits_rawobject {};
+	template<> class traits_t<wchar_t> : public traits_rawobject {};
+	template<> class traits_t<short> : public traits_rawobject {};
+	template<> class traits_t<unsigned short> : public traits_rawobject {};
+	template<> class traits_t<int> : public traits_rawobject {};
+	template<> class traits_t<unsigned int> : public traits_rawobject {};
+	template<> class traits_t<long> : public traits_rawobject {};
+	template<> class traits_t<unsigned long> : public traits_rawobject {};
+	template<> class traits_t<long long> : public traits_rawobject {};
+	template<> class traits_t<unsigned long long> : public traits_rawobject {};
 	template<> class traits_t<bool> : public traits_rawobject {};
 
-	template<> class traits_t<t_float32> : public traits_rawobject {};
-	template<> class traits_t<t_float64> : public traits_rawobject {};
+	template<> class traits_t<float> : public traits_rawobject {};
+	template<> class traits_t<double> : public traits_rawobject {};
 	
 	template<> class traits_t<GUID> : public traits_rawobject {};
 

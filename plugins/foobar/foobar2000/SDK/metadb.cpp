@@ -176,3 +176,4 @@ bool metadb::g_get_random_handle(metadb_handle_ptr & p_out) {
 	return false;
 }
 
+

@@ -16,8 +16,8 @@ void ogg_stream_handler::g_open(service_ptr_t<ogg_stream_handler> & p_out,servic
 			ptr->open(p_reader,p_reason,p_abort);
 			p_out = ptr;
 			return;
-		} catch(exception_io_data const &) {
-			//do nothing
+		} catch(exception_io_data) {//do nothing
+		} catch(exception_io_object_not_seekable) { 
 		}//other exceptions are caller's problem
 
 		need_reset = true;

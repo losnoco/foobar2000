@@ -78,8 +78,8 @@ class make_playable_location : public playable_location
 	const char * path;
 	t_uint32 num;
 	
-	void set_path(const char*) {assert(0);}
-	void set_subsong(t_uint32) {assert(0);}
+	void set_path(const char*) {throw pfc::exception_not_implemented();}
+	void set_subsong(t_uint32) {throw pfc::exception_not_implemented();}
 
 public:
 	const char * get_path() const {return path;}
