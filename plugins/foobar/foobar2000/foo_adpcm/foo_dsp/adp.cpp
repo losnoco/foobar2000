@@ -3,11 +3,13 @@
   in_cube Gamecube Stream Player for Winamp
   by hcs
 
-  includes work by Destop, bero, El Barto, and Rob
+  includes work by Destop and bero
 
 */
 
-// DLS (a.k.a. ADP)
+// DLS (a.k.a. DTK, TRK, ADP)
+// uses same algorithm as XA, apparently
+
 #include <foobar2000.h>
 #include "cube.h"
 
