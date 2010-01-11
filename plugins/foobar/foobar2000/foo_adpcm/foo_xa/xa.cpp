@@ -3,6 +3,9 @@
 /*
 	changelog
 
+2009-06-13 04:16 UTC - kode54
+- Fixed loop detection.
+
 2009-06-13 01:41 UTC - kode54
 - Implemented support for 2336 byte sector files on hard disk only.
 - Version is now 1.4
@@ -1220,20 +1223,15 @@ public:
 					ptr[ 15 ] == 2 ) ) &&
 					( ptr[ offset + 2 ] & 0x2E ) == 0x24 )
 				{
+					const int block_offset = 128 * 17 + 8;
 					xa_subsong_scanner_loop_info & p_loop_info = m_loop_data[ sector - 1 ];
 					p_loop_info.file_number = ptr[ offset ];
 					p_loop_info.channel = ptr[ offset + 1 ];
-					p_loop_info.scalefactor = ptr[ offset - 16 + 2200 + 8 ];
-					unsigned j = 0;
+					p_loop_info.scalefactor = ptr[ offset + block_offset + 11 ];
 					for ( unsigned i = 0; i < 28; ++i )
 					{
-						j += p_loop_info.data[ i * 2 ]     = ptr[ offset - 16 + 2200 + 18 + i * 4 ];
-						j += p_loop_info.data[ i * 2 + 1 ] = ptr[ offset - 16 + 2200 + 18 + i * 4 + 1 ];
-					}
-					if ( !j )
-					{
-						p_loop_info.file_number = 0xDE;
-						p_loop_info.channel     = 0xAD;
+						p_loop_info.data[ i * 2 ]     = ptr[ offset + block_offset + 18 + i * 4 ];
+						p_loop_info.data[ i * 2 + 1 ] = ptr[ offset + block_offset + 18 + i * 4 + 1 ];
 					}
 
 					xa_subsong_scanner_info * p_info = info[ ptr[ offset + 1 ] ];
@@ -1321,7 +1319,7 @@ public:
 
 				xa_subsong_scanner_loop_info & p_end = m_loop_data[ p_info.sector_offset_end ];
 
-				for ( unsigned k = p_info.sector_offset, l = p_info.sector_offset_end; k < l; ++k )
+				for ( int k = p_info.sector_offset_end - 1, l = p_info.sector_offset; k >= l; --k )
 				{
 					xa_subsong_scanner_loop_info & p_loop_info = m_loop_data[ k ];
 					if ( p_loop_info.file_number != 0xDE &&
@@ -1332,7 +1330,7 @@ public:
 						if ( p_loop_info.scalefactor == p_end.scalefactor &&
 						     ! memcmp( p_loop_info.data, p_end.data, 56 ) )
 						{
-							unsigned next_sector;
+							int next_sector;
 
 							for ( next_sector = k + 1; next_sector < l; ++ next_sector )
 							{
