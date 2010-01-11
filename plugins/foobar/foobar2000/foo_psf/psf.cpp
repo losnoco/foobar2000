@@ -1309,7 +1309,7 @@ public:
 		m_file->seek(16 + reserved_size + exe_size, p_abort);
 		m_file->set_eof(p_abort);
 
-		pfc::string8 tag = "[TAG]utf8=1\r\n";
+		pfc::string8 tag = "[TAG]utf8=1\n";
 
 		int first = 1;
 		// _lib and _refresh tags first
