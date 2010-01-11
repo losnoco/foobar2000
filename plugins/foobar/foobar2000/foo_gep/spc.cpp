@@ -4,6 +4,7 @@
 
 #include <gme/blargg_endian.h>
 #include <gme/Spc_Emu.h>
+#include <gme/SPC_Filter.h>
 
 #include "../helpers/window_placement_helper.h"
 
@@ -284,6 +285,25 @@ static void load_id666(service_ptr_t<file> & p_file, LPID666TAG lpTag, abort_cal
 	else throw exception_tag_not_found();
 }
 
+class Spc_Emu_Filtered : public Spc_Emu
+{
+	SPC_Filter filter;
+
+protected:
+	blargg_err_t start_track_( int track )
+	{
+		filter.clear();
+		return Spc_Emu::start_track_( track );
+	}
+
+	blargg_err_t play_( long count, sample_t* out )
+	{
+		blargg_err_t ret = Spc_Emu::play_( count, out );
+		if ( ! ret ) filter.run( out, count );
+		return ret;
+	}
+};
+
 class input_spc : public input_gep
 {
 	file_info_impl    m_info;
@@ -357,12 +377,12 @@ public:
 				foobar_File_Reader rdr( m_file, p_abort );
 
 				delete emu;
-				if ( p_reason == input_open_info_read )
+				if ( p_reason != input_open_decode )
 					emu = gme_spc_type->new_info();
-				else if ( p_reason == input_open_decode )
+				else
 				{
 					// XXX needs to be in sync with crap in decode_initialize, or something
-					emu = new Spc_Emu;
+					emu = new Spc_Emu_Filtered;
 					static_cast<Spc_Emu *> (this->emu)->disable_surround( !! ( cfg_spc_anti_surround ) );
 					//static_cast<Spc_Emu *> (this->emu)->set_cubic_interpolation( !! ( cfg_spc_interpolation ) );
 				}
@@ -472,7 +492,7 @@ public:
 		Spc_Emu * emu = ( Spc_Emu * ) this->emu;
 		if ( ! emu )
 		{
-			this->emu = emu = new Spc_Emu;
+			this->emu = emu = new Spc_Emu_Filtered;
 
 			try
 			{

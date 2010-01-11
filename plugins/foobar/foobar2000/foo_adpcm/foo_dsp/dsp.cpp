@@ -12,9 +12,19 @@ static inline int get16bit( unsigned char * p )
 	return pfc::byteswap_if_le_t( * ( ( t_uint16 * ) p ) );
 }
 
+static inline int get16bitL( unsigned char * p )
+{
+	return pfc::byteswap_if_be_t( * ( ( t_uint16 * ) p ) );
+}
+
 static inline int get32bit( unsigned char * p )
 {
 	return ( t_int32 ) pfc::byteswap_if_le_t( * ( ( t_uint32 * ) p ) );
+}
+
+static inline int get32bitL( unsigned char * p )
+{
+	return ( t_int32 ) pfc::byteswap_if_be_t( * ( ( t_uint32 * ) p ) );
 }
 
 // standard devkit version
@@ -206,6 +216,87 @@ void get_dspheaderspt(CUBEHEAD *dsp,unsigned char *buf)
 	dsp->lyn2=get16bit(buf+0x4C);
 }
 
+// ish (I_SF) header (no point in two fcns...)
+void get_dspheaderish(CUBEHEAD *dsp1, CUBEHEAD *dsp2, unsigned char * buf) {
+	int i;
+	dsp1->sample_rate=get32bit(buf+0x08);
+	dsp1->num_samples=get32bit(buf+0x0c);
+	dsp1->num_adpcm_nibbles=get32bit(buf+0x10);
+	dsp1->ca=get32bit(buf+0x14);
+	// 0x00008000 at 0x18 might be interleave
+	dsp1->loop_flag=get16bit(buf+0x1E);
+	dsp1->sa=get32bit(buf+0x20);
+	dsp1->ea=get32bit(buf+0x24);
+	//dsp1->ea=get32bit(buf+0x28);
+	memcpy(dsp2,dsp1,sizeof(CUBESTREAM));
+
+	for (i=0;i<16;i++)
+	dsp1->coef[i]=get16bit(buf+0x40+i*2);
+	dsp1->ps=get16bit(buf+0x62);
+	dsp1->yn1=get16bit(buf+0x64);
+	dsp1->yn2=get16bit(buf+0x66);
+	dsp1->lps=get16bit(buf+0x68);
+	dsp1->lyn1=get16bit(buf+0x6A);
+	dsp1->lyn2=get16bit(buf+0x6C);
+
+	for (i=0;i<16;i++)
+	dsp2->coef[i]=get16bit(buf+0x80+i*2);
+	dsp2->ps=get16bit(buf+0xA2);
+	dsp2->yn1=get16bit(buf+0xA4);
+	dsp2->yn2=get16bit(buf+0xA6);
+	dsp2->lps=get16bit(buf+0xA8);
+	dsp2->lyn1=get16bit(buf+0xAA);
+	dsp2->lyn2=get16bit(buf+0xAC);
+}
+
+// ymf
+
+void get_dspheaderymf(CUBEHEAD * dsp, unsigned char * buf) {
+	int i;
+	
+	//memset(dsp,0,sizeof(CUBESTREAM));
+	//dsp->
+	dsp->loop_flag=0;
+	dsp->yn1=dsp->yn2=dsp->lyn1=dsp->lyn2=0;
+	dsp->sample_rate=get32bit(buf+0x08);
+	dsp->num_samples=get32bit(buf+0x3c);
+	dsp->num_adpcm_nibbles=get32bit(buf+0x40);
+	
+	for (i=0;i<16;i++) dsp->coef[i]=get16bit(buf+0x0e+i*2);
+}
+
+
+// rsd (GC ADPCM)
+void get_dspheaderrsd(CUBEHEAD * dsp, unsigned char * buf) {
+	int i;
+	
+	dsp->loop_flag=0;
+
+	dsp->sample_rate=get32bitL(buf+0x10);
+	
+	for (i=0;i<16;i++) dsp->coef[i]=get16bitL(buf+0x1c+2*i);
+	
+	//gain=get16bitL(buf+0x3c);
+	dsp->ps=get16bitL(buf+0x3e);
+	dsp->yn1=get16bitL(buf+0x40);
+	dsp->yn2=get16bitL(buf+0x42);
+
+	dsp->lps=get16bitL(buf+0x44);
+	dsp->lyn1=get16bitL(buf+0x46);
+	dsp->lyn2=get16bitL(buf+0x48);
+}
+
+// GCub
+void get_dspheadergcub(CUBEHEAD * dsp1, CUBEHEAD * dsp2, unsigned char * buf) {
+    int i;
+    dsp1->loop_flag=dsp2->loop_flag=0;
+    dsp1->sample_rate=dsp2->sample_rate=get32bit(buf+8);
+    dsp1->num_adpcm_nibbles=dsp2->num_adpcm_nibbles=get32bit(buf+12)/2*2;
+    dsp1->num_samples=dsp2->num_samples=get32bit(buf+12)/2*14/8;
+    for (i=0;i<16;i++) dsp1->coef[i]=get16bit(buf+0x10+(i*2));
+    for (i=0;i<16;i++) dsp2->coef[i]=get16bit(buf+0x30+(i*2));
+}
+
 long mp2round(long addr) {
 	return (addr%0x8f00)+(addr/0x8f00*2*0x8f00);
 }
@@ -216,10 +307,10 @@ long mp2roundup(long addr) {
 
 // return 1 on failure, 0 on success
 void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
-	unsigned char readbuf[0x100];
+	unsigned char readbuf[0x200];
 	dsp->ch[0].infile->seek( 0, p_abort );
 
-	unsigned read = dsp->ch[0].infile->read( &readbuf, 0x100, p_abort );
+	unsigned read = dsp->ch[0].infile->read( &readbuf, 0x200, p_abort );
 	
 	if ( type == type_spt )
 	{
@@ -233,6 +324,7 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 	t_filesize size = dsp->ch[0].infile->get_size( p_abort );
 
 	bool idsp = false;
+	bool idsp2 = false;
 
 	if ( type == type_spt ) {
 		// SPT+SPD
@@ -247,7 +339,39 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 		dsp->ch[0].chanstart = 0;
 		dsp->ch[0].type = type_spt;
 		dsp->ch[0].bps = 4;
-	} else if (readbuf[0]=='R' && readbuf[1]=='S' && readbuf[2]==0x00 && readbuf[3]==0x03) {
+	} else if ( type == type_ymf ) {
+		// YMF
+
+		get_dspheaderymf(&dsp->ch[0].header,readbuf+get32bit(readbuf+0x34));
+		get_dspheaderymf(&dsp->ch[1].header,readbuf+get32bit(readbuf+0x34)+0x60);
+
+		dsp->NCH=2;
+		dsp->ch[0].interleave=dsp->ch[1].interleave=0x20000;
+		dsp->ch[0].chanstart=get32bit(readbuf+0);
+		dsp->ch[1].chanstart=get32bit(readbuf+0)+dsp->ch[0].interleave;
+		dsp->ch[0].bps=dsp->ch[1].bps=8;
+		dsp->ch[0].type=dsp->ch[1].type=type_ymf;
+	} else if ( type == type_wvs && !memcmp( "\0\0\0\x2", readbuf, 4 ) ) {
+		// WVS
+
+		int i;
+		dsp->ch[1].header.sample_rate=dsp->ch[0].header.sample_rate=32000;
+		dsp->NCH=get32bit(readbuf);
+		dsp->ch[0].interleave=dsp->ch[1].interleave=get32bit(readbuf+0xc);
+		dsp->ch[0].chanstart=0x60;
+		dsp->ch[1].chanstart=0x60+dsp->ch[0].interleave;
+
+		dsp->ch[1].header.loop_flag=dsp->ch[0].header.loop_flag=0;
+
+		dsp->ch[1].header.num_adpcm_nibbles=dsp->ch[0].header.num_adpcm_nibbles=get32bit(readbuf+0x14);
+		dsp->ch[1].header.num_samples=dsp->ch[0].header.num_samples=dsp->ch[0].header.num_adpcm_nibbles*14/8;
+
+		for (i=0;i<16;i++) dsp->ch[0].header.coef[i]=get16bit(readbuf+(0x18)+i*2);
+		for (i=0;i<16;i++) dsp->ch[1].header.coef[i]=get16bit(readbuf+(0x38)+i*2);
+
+		dsp->ch[0].bps=dsp->ch[1].bps=8;
+		dsp->ch[0].type=dsp->ch[1].type=type_wvs;
+	} else if ( !memcmp( "RS\x00\x03", readbuf, 4 ) ) {
 		// Metroid Prime 2 "RS03"
 		if (get16bit(readbuf+6)==2) { // channel count
 			get_dspheadermp2(&dsp->ch[0].header,readbuf);
@@ -284,7 +408,7 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 			dsp->ch[0].type=type_mp2;
 			dsp->ch[0].bps=dsp->ch[1].bps=4;
 		}
-	} else if (readbuf[0]=='C' && readbuf[1]=='s' && readbuf[2]=='t' && readbuf[3]=='r') {
+	} else if ( !memcmp( "Cstr", readbuf, 4 ) ) {
 		// Star Fox Assault "Cstr"
 		get_dspheadersfa(&dsp->ch[0].header,readbuf);
 		get_dspheadersfa(&dsp->ch[1].header,readbuf+0x60);
@@ -304,7 +428,7 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 
 		dsp->ch[0].type=dsp->ch[1].type=type_sfass;
 		dsp->ch[0].bps=dsp->ch[1].bps=8;
-	} else if (readbuf[0]==0x02 && readbuf[1]==0 && readbuf[2]==0x7d && readbuf[3]==0) {
+	} else if ( !memcmp( "\x02\x00", readbuf, 2 ) && !memcmp( readbuf + 2, readbuf + 0x4a, 2) ) {
 		// Paper Mario 2 "STM"
 		get_dspheaderstd(&dsp->ch[0].header,readbuf+0x40);
 		get_dspheaderstd(&dsp->ch[1].header,readbuf+0xa0);
@@ -324,8 +448,7 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 
 		dsp->ch[0].type=dsp->ch[1].type=type_pm2;
 		dsp->ch[0].bps=dsp->ch[1].bps=4;
-	} else if (readbuf[0]==' ' && readbuf[1]=='H' && readbuf[2]=='A' && readbuf[3]=='L' && readbuf[4]=='P' &&
-		readbuf[5]=='S' && readbuf[6]=='T') {
+	} else if ( !memcmp( " HALPST", readbuf, 7) ) {
 		// Super Smash Bros. Melee "HALPST"
 		get_dspheaderhalp(&dsp->ch[0].header,readbuf);
 		get_dspheaderhalp2(&dsp->ch[1].header,readbuf);
@@ -390,6 +513,299 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 				}
 			}
 		}
+	} else if ( !memcmp("I_SF ",readbuf,4) ) {
+		/* moo */
+		throw exception_io_data();
+	} else if ( !memcmp( "RSD3GADP", readbuf, 8 ) ) {
+		// RSD (ADPCM type)
+
+		get_dspheaderrsd(&dsp->ch[0].header,readbuf);
+
+		dsp->ch[0].chanstart=get32bitL(readbuf+0x18);
+
+		dsp->ch[0].header.num_adpcm_nibbles=dsp->ch[1].header.num_adpcm_nibbles=
+			(size-dsp->ch[0].chanstart)*2;
+		dsp->ch[0].header.num_samples=dsp->ch[1].header.num_samples=
+			(size-dsp->ch[0].chanstart)*7/4;
+
+		dsp->ch[0].bps = dsp->ch[1].bps = 4;
+
+		dsp->NCH=1;
+		dsp->ch[0].interleave=0;
+
+		dsp->ch[0].type=type_rsddsp;
+	} else if ( !memcmp( "GCub", readbuf, 4 ) ) {
+		// GCub
+
+        get_dspheadergcub(&dsp->ch[0].header,&dsp->ch[1].header,readbuf);
+
+        dsp->ch[0].chanstart=dsp->ch[1].chanstart=0x60;
+        dsp->ch[0].bps=dsp->ch[1].bps=4;
+        dsp->NCH=2;
+        dsp->ch[0].interleave=dsp->ch[1].interleave=0x8000;
+
+
+        dsp->ch[0].type=dsp->ch[1].type=type_gcub;
+	} else if ( !memcmp( "RIFF", readbuf, 4 ) && !memcmp( "WAVEfmt ", readbuf + 8, 8 ) && !memcmp( "\xfe\xff", readbuf + 0x14, 2 ) ) {
+		int i,l;
+
+		dsp->NCH =get16bitL(readbuf+0x16);
+		dsp->ch[0].header.sample_rate=get32bitL(readbuf+0x18);
+		dsp->ch[0].chanstart=0x5c;
+		dsp->ch[0].header.num_adpcm_nibbles=get32bitL(readbuf+0x2a)/dsp->NCH-0x2a;
+		dsp->ch[0].header.num_samples=get32bitL(readbuf+0x2a)/dsp->NCH*14/8;
+		dsp->ch[0].header.loop_flag=dsp->ch[1].header.loop_flag=1;
+		dsp->ch[1].header.ea=dsp->ch[0].header.ea=dsp->ch[0].header.num_adpcm_nibbles;
+		dsp->ch[1].header.sa=dsp->ch[0].header.sa=0;
+
+		for (i=0;i<16;i++) dsp->ch[0].header.coef[i]=get16bit(readbuf+(0x2e)+i*2);
+
+		if (dsp->NCH==2) {
+			unsigned char coeffs[0x20];
+
+			dsp->ch[1].header.num_adpcm_nibbles=dsp->ch[0].header.num_adpcm_nibbles;
+			dsp->ch[1].header.num_samples=dsp->ch[0].header.num_samples;
+			
+			dsp->ch[1].header.sample_rate=dsp->ch[0].header.sample_rate;
+			dsp->ch[1].chanstart=0x58+get32bitL(readbuf+0x2a)/2+0x32;
+
+			dsp->ch[1].infile->seek( 0x58+get32bitL(readbuf+0x2a)/2+4, p_abort );
+			dsp->ch[1].infile->read( coeffs, 0x20, p_abort );
+
+			for (i=0;i<16;i++) dsp->ch[1].header.coef[i]=get16bit(coeffs+i*2);
+
+		}
+
+		dsp->ch[0].bps=8;
+		dsp->ch[1].bps=8;
+
+		dsp->ch[0].type=type_wam;
+	} else if ( !memcmp( "FSB3", readbuf, 4 ) && get16bitL( readbuf + 0x4A ) == 0x0608 ) {
+		int i;
+
+		dsp->NCH=2;
+		dsp->ch[0].header.sample_rate=get32bitL(readbuf+0x4C);
+		dsp->ch[0].chanstart=dsp->ch[1].chanstart=0xc4;
+		//dsp->ch[0].num_adpcm_nibbles=get32bitL(readbuf+0x2a)/dsp->NCH-0x2a;
+		dsp->ch[0].header.num_samples=get32bitL(readbuf+0x38);
+		dsp->ch[1].header.ea=dsp->ch[0].header.ea=get32bitL(readbuf+0x44)/14*8; //*dsp->NCH;
+		dsp->ch[1].header.sa=dsp->ch[0].header.sa=get32bitL(readbuf+0x40)/14*8;
+		dsp->ch[0].header.loop_flag=dsp->ch[1].header.loop_flag=dsp->ch[0].header.ea!=0;
+		
+
+		for (i=0;i<16;i++) dsp->ch[0].header.coef[i]=get16bit(readbuf+(0x68)+i*2);
+		for (i=0;i<16;i++) dsp->ch[1].header.coef[i]=get16bit(readbuf+(0x96)+i*2);
+
+		dsp->ch[0].bps=8;
+		dsp->ch[1].bps=8;
+
+		dsp->ch[0].type=type_fsb3wii;
+	} else if ( !memcmp( "RWSD", readbuf, 4 ) && !memcmp( "DATA", readbuf + 0x20, 4 ) ) {
+		int i;
+
+		long waveOffset=0;
+		long waveLength=0;
+		long coefOffset=0;
+
+		dsp->ch[0].chanstart=dsp->ch[1].chanstart=get32bit(readbuf+0x08);
+		waveOffset=get32bit(readbuf+0x18);
+		waveLength=get32bit(readbuf+0x1c);
+
+		// DATA Section is useless for the moment ...
+		dsp->ch[0].infile->seek( waveOffset, p_abort );
+		dsp->ch[0].infile->read( &readbuf, waveLength, p_abort );
+		
+		dsp->NCH = get16bit(readbuf+0x1A);
+		
+		if (get32bit(readbuf+0x08)!=1) {
+			throw exception_io_data( "RWSD Multi files not implemented yet !" );
+		}
+
+		dsp->ch[0].header.sample_rate=dsp->ch[1].header.sample_rate=get16bit(readbuf+0x14);
+		dsp->ch[0].header.num_samples=get32bit(readbuf+0x1C)/dsp->NCH*14/8;
+		dsp->ch[0].header.loop_flag=dsp->ch[1].header.loop_flag=0; //(dsp->ch[0].sa!=0);
+
+		dsp->ch[1].chanstart+=get32bit(readbuf+0x50);
+
+		coefOffset = get32bit(readbuf+0x38)+0x10;
+		for (i=0;i<16;i++) dsp->ch[0].header.coef[i]=get16bit(readbuf+coefOffset+i*2);
+		coefOffset = get32bit(readbuf+0x54)+0x10;
+		for (i=0;i<16;i++) dsp->ch[1].header.coef[i]=get16bit(readbuf+coefOffset+i*2);
+
+		dsp->ch[0].bps=8;
+		dsp->ch[1].bps=8;
+
+		dsp->ch[0].type=type_rwsd_wii;
+	} else if ( !memcmp( "RSTM", readbuf, 4 ) ) {
+
+		int coef_pointer,coef_pointer_2,coef_pointer_1;
+		int i;
+
+		long headOffset=0;
+		long headLength=0;
+		long coefOffset=0;
+		long numSamples=0;
+		long fileLength;
+		
+		headOffset=get32bit(readbuf+0x10);
+		headLength=get32bit(readbuf+0x14);
+		fileLength=get32bit(readbuf+0x08);
+
+		dsp->ch[0].infile->seek( headOffset, p_abort );
+		dsp->ch[0].infile->read( &readbuf, headLength, p_abort );
+
+		// 2 = adpcm
+		if (readbuf[0x20]!=2) {
+			throw exception_io_data();
+		}
+
+		dsp->ch[0].chanstart=dsp->ch[1].chanstart=get32bit(readbuf+0x30);
+		dsp->NCH = readbuf[0x22];
+
+		numSamples=(fileLength-dsp->ch[0].chanstart)*14/8/dsp->NCH;
+		
+		dsp->ch[0].header.num_samples=get32bit(readbuf+0x2c);
+		//DisplayError("numSamples from DATA block size=%d\nnumSamples from 0x2c=%d",numSamples,get32bit(readbuf+0x2c));
+		
+		dsp->ch[0].header.sample_rate=dsp->ch[1].header.sample_rate=get16bit(readbuf+0x24);
+		dsp->ch[0].header.loop_flag=dsp->ch[1].header.loop_flag=readbuf[0x21]; 
+
+		if(dsp->NCH==2) {
+			dsp->ch[0].interleave=dsp->ch[1].interleave=get32bit(readbuf+0x38);
+			dsp->ch[1].chanstart+=dsp->ch[0].interleave;
+		}
+
+		dsp->ch[0].header.ea=dsp->ch[1].header.ea=dsp->ch[0].header.num_samples/14*8*dsp->NCH;
+		dsp->ch[0].header.sa=dsp->ch[1].header.sa=get32bit(readbuf+0x28)/14*8*dsp->NCH;
+
+		coef_pointer_1=get32bit(readbuf+0x1c);
+		coef_pointer_2=get32bit(readbuf+0x10+coef_pointer_1);
+		coef_pointer=coef_pointer_2+0x10;
+
+		for (i=0;i<16;i++) dsp->ch[0].header.coef[i]=get16bit(readbuf+coef_pointer+i*2);
+
+		if (dsp->NCH==2) {	
+			for (i=0;i<16;i++) dsp->ch[1].header.coef[i]=get16bit(readbuf+coef_pointer+0x38+i*2);
+		}
+		
+		dsp->ch[0].bps=8;
+		dsp->ch[1].bps=8;
+
+		/* This is a hack to get Super Paper Mario tracks playing at (apparently) the
+		right speed. */
+		if (type == type_spmrstm_wii && dsp->ch[0].header.sample_rate==44100) {
+			dsp->ch[0].header.sample_rate=dsp->ch[1].header.sample_rate=22050;
+			dsp->ch[0].type=type_spmrstm_wii;
+		} else {
+			dsp->ch[0].type=type_rstm_wii;
+		}
+	} else if ( !memcmp( "idsp", readbuf, 4) ) {
+		int i;
+		dsp->ch[0].chanstart=0x1c0;
+		dsp->ch[0].header.num_samples=get32bit(readbuf+0x14)-dsp->ch[0].chanstart;
+
+		dsp->NCH = get32bit(readbuf+0xC4);
+		dsp->ch[0].header.num_samples=(dsp->ch[0].header.num_samples/dsp->NCH*14/8);
+		dsp->ch[0].header.sample_rate=dsp->ch[1].header.sample_rate=get32bit(readbuf+0xc8);
+		
+		dsp->ch[0].interleave=dsp->ch[1].interleave=get32bit(readbuf+0xd8);
+		dsp->ch[1].chanstart=0x1c0+dsp->ch[0].interleave;
+		dsp->ch[0].header.ea=dsp->ch[1].header.ea=get32bit(readbuf+0xd4)/14/2*2*8*dsp->NCH;
+		dsp->ch[0].header.sa=dsp->ch[1].header.sa=get32bit(readbuf+0xd0)/14/2*2*8*dsp->NCH;
+		dsp->ch[0].header.loop_flag=dsp->ch[1].header.loop_flag=dsp->ch[0].header.ea!=0;
+
+		if (dsp->NCH==1)
+		{
+			for (i=0;i<16;i++) dsp->ch[0].header.coef[i]=get16bit(readbuf+0x78+i*2);
+		}
+		else
+		{
+			for (i=0;i<16;i++) dsp->ch[0].header.coef[i]=get16bit(readbuf+0x118+i*2);
+			for (i=0;i<16;i++) dsp->ch[1].header.coef[i]=get16bit(readbuf+0x178+i*2);
+		}
+
+		dsp->ch[0].bps=8;
+		dsp->ch[1].bps=8;
+
+		dsp->ch[0].type=type_idsp_wii;
+	} else if ( !memcmp( "GCA1", readbuf, 4 ) ) {
+
+		int i;
+
+		dsp->NCH=1;
+		dsp->ch[0].header.sample_rate=get16bit(readbuf+0x2C);
+		dsp->ch[0].chanstart=dsp->ch[1].chanstart=0x40;
+		dsp->ch[0].header.num_samples=get32bit(readbuf+0x2E);
+		dsp->ch[0].header.ea=dsp->ch[1].header.ea=dsp->ch[0].header.num_samples/14*8;
+		dsp->ch[0].header.sa=dsp->ch[1].header.sa=get16bit(readbuf+0x32)/14*8;
+		dsp->ch[0].header.loop_flag = dsp->ch[1].header.loop_flag = (dsp->ch[0].header.sa!=0);
+
+		for (i=0;i<16;i++) dsp->ch[0].header.coef[i]=get16bit(readbuf+(0x04)+i*2);
+
+		dsp->ch[0].bps=8;
+		dsp->ch[1].bps=8;
+
+		dsp->ch[0].type=type_gca1;
+	} else if ( !memcmp( "IDSP", readbuf, 4 ) && !memcmp( "\x00\x00\x6B\x40", readbuf + 0x04, 4 ) ) {
+
+		int i;
+
+		dsp->NCH=get32bit(readbuf+0x24);
+		dsp->ch[0].header.sample_rate=get32bit(readbuf+0x14);
+		dsp->ch[0].chanstart=dsp->ch[1].chanstart=0xD4;
+		dsp->ch[0].header.num_samples=get32bit(readbuf+0x20);
+		dsp->ch[0].header.ea=dsp->ch[1].header.ea=dsp->ch[0].header.num_samples;
+		dsp->ch[0].header.sa=dsp->ch[1].header.sa=get32bit(readbuf+0x54)/14*8;
+		dsp->ch[0].header.loop_flag = dsp->ch[1].header.loop_flag = 0; //(dsp->ch[0].sa!=0);
+		dsp->ch[0].interleave=dsp->ch[1].interleave=get32bit(readbuf+0x04);
+		for (i=0;i<16;i++) dsp->ch[0].header.coef[i]=get16bit(readbuf+(0x28)+i*2);
+		for (i=0;i<16;i++) dsp->ch[1].header.coef[i]=get16bit(readbuf+(0x88)+i*2);
+
+		dsp->ch[0].bps=8;
+		dsp->ch[1].bps=8;
+
+		dsp->ch[0].type=type_gca1;
+	} else if ( !memcmp("THP\0", readbuf, 4 ) ) {
+		throw exception_io_data();
+	} else if ( type == type_zwdsp ) {
+		int i;
+
+		dsp->NCH=2;
+		dsp->ch[0].header.sample_rate=get32bit(readbuf+0x8);
+		dsp->ch[0].chanstart=0x90;
+		dsp->ch[1].chanstart=(size-0x90)/2+0x90;
+		dsp->ch[0].header.num_samples=get32bit(readbuf+0x18)/dsp->NCH/8*14;
+		dsp->ch[0].header.ea=dsp->ch[1].header.ea=get32bit(readbuf+0x14)/dsp->NCH;
+		dsp->ch[0].header.sa=dsp->ch[1].header.sa=get32bit(readbuf+0x10)/dsp->NCH;
+		dsp->ch[0].header.loop_flag = dsp->ch[1].header.loop_flag = (dsp->ch[0].header.ea!=0);
+
+		for (i=0;i<16;i++) dsp->ch[0].header.coef[i]=get16bit(readbuf+(0x20)+i*2);
+		for (i=0;i<16;i++) dsp->ch[1].header.coef[i]=get16bit(readbuf+(0x60)+i*2);
+
+		dsp->ch[0].bps=8;
+		dsp->ch[1].bps=8;
+
+		dsp->ch[0].type=type_zwdsp;
+	} else if ( !memcmp( "KNON", readbuf, 4 ) && !memcmp( "KAST", readbuf + 0x20, 4 ) ) {
+		int i;
+
+		dsp->NCH=get16bit(readbuf+0x64);
+		dsp->ch[0].header.sample_rate=get16bit(readbuf+0x42);
+		dsp->ch[0].chanstart=0x800;
+		dsp->ch[1].chanstart=0x810;
+		dsp->ch[0].interleave=dsp->ch[1].interleave=0x10;
+		dsp->ch[0].header.num_samples=get32bit(readbuf+0x3c)/dsp->NCH/8*14;;
+		dsp->ch[0].header.ea=dsp->ch[1].header.ea=get32bit(readbuf+0x48);
+		dsp->ch[0].header.sa=dsp->ch[1].header.sa=get32bit(readbuf+0x44);
+		dsp->ch[0].header.loop_flag = dsp->ch[1].header.loop_flag = (dsp->ch[0].header.ea!=0);
+
+		for (i=0;i<16;i++) dsp->ch[0].header.coef[i]=get16bit(readbuf+(0x8c)+i*2);
+		for (i=0;i<16;i++) dsp->ch[1].header.coef[i]=get16bit(readbuf+(0xec)+i*2);
+
+		dsp->ch[0].bps=8;
+		dsp->ch[1].bps=8;
+
+		dsp->ch[0].type=type_knon_dsp;
 	} else {
 		// assume standard devkit (or other formats without signature)
 
@@ -409,12 +825,31 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 				dsp->ch[0].bps=dsp->ch[1].bps=8;
 		} else { // if MP2 demo*/
 
-			idsp = readbuf[0]=='I' && readbuf[1]=='D' && readbuf[2]=='S' && readbuf[3]=='P';
+			// IDSP in Mario Smash Football
+			if ( !memcmp( "IDSP", readbuf, 4 ) ) idsp = true;
+			// IDSP (no relation) in Harvest Moon - Another Wonderful Life
+			if ( !memcmp( "\x00\x00\x00\x00\x00\x01\x00\x02", readbuf, 8 ) ) idsp2 = true;
 
 			if ( idsp )
 			{
 				get_dspheaderstd(&dsp->ch[0].header,readbuf+0xC);
 				get_dspheaderstd(&dsp->ch[1].header,readbuf+0x6C);
+				if ( dsp->ch[0].header.sample_rate < 1000 || dsp->ch[0].header.sample_rate > 96000 )
+				{
+					get_dspheaderstd(&dsp->ch[0].header,readbuf+0x20);
+					get_dspheaderstd(&dsp->ch[1].header,readbuf+0x80);
+					dsp->NCH=2;
+					dsp->ch[0].interleave=dsp->ch[1].interleave=0x08;
+					dsp->ch[0].chanstart=0xe0;
+					dsp->ch[1].chanstart=0xe8;
+					dsp->ch[0].type=type_std;
+					goto init;
+				}
+			}
+			else if ( idsp2 )
+			{
+				get_dspheaderstd(&dsp->ch[0].header,readbuf+0x40);
+				get_dspheaderstd(&dsp->ch[1].header,readbuf+0xa0);
 			}
 			else
 			{
@@ -423,8 +858,8 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 			}
 
 			// if a valid second header (agrees with first)
-			if (dsp->ch[0].header.num_adpcm_nibbles==dsp->ch[1].header.num_adpcm_nibbles &&
-				dsp->ch[0].header.num_samples==dsp->ch[1].header.num_samples) {
+			if (abs((long)dsp->ch[0].header.num_adpcm_nibbles-(long)dsp->ch[1].header.num_adpcm_nibbles)<=1 &&
+				abs((long)dsp->ch[0].header.num_samples-(long)dsp->ch[1].header.num_samples)<=1) {
 
 				// stereo
 				dsp->NCH=2;
@@ -433,6 +868,11 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 					dsp->ch[0].chanstart=0xcc;
 					dsp->ch[1].chanstart=0xcc+dsp->ch[1].interleave;
 					dsp->ch[0].type = dsp->ch[1].type = type_idsp;
+				} else if ( idsp2 ) {
+					dsp->ch[0].interleave=dsp->ch[1].interleave=get32bit(readbuf+8);
+					dsp->ch[0].chanstart=0x100;
+					dsp->ch[1].chanstart=0x100+dsp->ch[0].interleave;
+					dsp->ch[0].type = dsp->ch[1].type = type_idsp2;
 				} else if (type == type_mss) {
 					dsp->ch[0].interleave=dsp->ch[1].interleave=0x1000;
 					dsp->ch[0].chanstart=0xc0;
@@ -504,7 +944,7 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 
 			} // if valid second header (standard)
 	}
-
+init:
 	dsp->ch[0].offs=dsp->ch[0].chanstart;
 	dsp->ch[1].offs=dsp->ch[1].chanstart;
 	dsp->startinterleave=dsp->ch[0].interleave;
@@ -529,6 +969,17 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 			dsp->ch[0].offs+=0x38;
 			dsp->ch[1].offs+=0x38;
 		}
+	}
+
+	// Disney's Magical Mirror loop oddity (samples instead of nibbles)
+	if (dsp->ch[0].type==type_std && dsp->NCH==2 && !(dsp->ch[0].header.sa&0xf) && !(dsp->ch[0].header.ea&0xf) && !(dsp->ch[1].header.sa&0xf) && !(dsp->ch[1].header.ea&0xf))
+	{
+		dsp->ch[0].header.sa=dsp->ch[0].header.sa*16/14;
+		dsp->ch[0].header.ea=dsp->ch[0].header.ea*16/14;
+		dsp->ch[1].header.sa=dsp->ch[1].header.sa*16/14;
+		dsp->ch[1].header.ea=dsp->ch[1].header.ea*16/14;
+
+		//MessageBox(NULL,"disney","yo",MB_OK);
 	}
 
 	// in case loop end offset is beyond EOF... (MMX:CM)
@@ -733,17 +1184,76 @@ bool fillbufferDSPinterleave(CUBEFILE * dsp, abort_callback & p_abort) {
 	return true;
 }
 
+bool fillbufferDSPfsb3(CUBEFILE * dsp, abort_callback & p_abort) {
+	int i,l,j;
+	short decodebuf1[14];
+	short decodebuf2[14];
+	unsigned char ADPCMbuf[8];
+	unsigned char readbuf[16];
+
+	i=0;
+	do {
+		if (i==0) {
+
+			dsp->ch[0].infile->seek( dsp->ch[0].offs, p_abort );
+				
+			dsp->ch[0].infile->read( readbuf, 16, p_abort );
+				
+			for(i=0, j=0;i<8;) {
+				ADPCMbuf[i++]=readbuf[j++];
+				ADPCMbuf[i++]=readbuf[j++];
+				j+=2;
+			}
+				
+			DSPdecodebuffer(ADPCMbuf,decodebuf1,dsp->ch[0].header.coef,&dsp->ch[0].hist1,&dsp->ch[0].hist2);
+
+			for(i=0, j=2;i<8;) {
+				ADPCMbuf[i++]=readbuf[j++];
+				ADPCMbuf[i++]=readbuf[j++];
+				j+=2;
+			}
+			DSPdecodebuffer(ADPCMbuf,decodebuf2,dsp->ch[1].header.coef,&dsp->ch[1].hist1,&dsp->ch[1].hist2);
+
+			i=14;
+			dsp->ch[0].offs+=16;
+
+			if (dsp->ch[0].header.loop_flag && (
+				(dsp->ch[0].offs-dsp->ch[0].chanstart)>=dsp->ch[0].header.ea*dsp->ch[0].bps/8*2)) {
+			
+				dsp->ch[0].offs=dsp->ch[0].chanstart+(dsp->ch[0].header.sa&(~7))*dsp->ch[0].bps/8*2;
+				dsp->ch[1].offs=dsp->ch[1].chanstart+(dsp->ch[1].header.sa&(~7))*dsp->ch[1].bps/8*2;
+				
+				//DisplayError("loop\nch[1].offs=%08x",dsp->ch[1].offs);
+			}
+		}
+		dsp->ch[0].chanbuf[dsp->ch[0].writeloc++]=decodebuf1[14-i];
+		dsp->ch[1].chanbuf[dsp->ch[1].writeloc++]=decodebuf2[14-i];
+		dsp->ch[0].filled++;
+		dsp->ch[1].filled++;
+		i--;
+		if (dsp->ch[0].writeloc>=0x8000/8*14) dsp->ch[0].writeloc=0;
+		if (dsp->ch[1].writeloc>=0x8000/8*14) dsp->ch[1].writeloc=0;
+	} while (dsp->ch[0].writeloc != dsp->ch[0].readloc);
+	return true;
+}
+
 bool fillbuffers(CUBEFILE * dsp, abort_callback & p_abort) {
-	if (dsp->ch[0].type==type_adp) {
+	switch ( dsp->ch[0].type )
+	{
+	case type_adp:
 		return fillbufferADP(dsp, p_abort);
-	} else if (dsp->ch[0].type==type_halp) {
+	case type_halp:
 		return fillbufferHALP(dsp, p_abort);
-	} else if (dsp->ch[0].interleave) {
-		return fillbufferDSPinterleave(dsp, p_abort);
-	} else {
-		bool ret = fillbufferDSP(&dsp->ch[0], p_abort);
-		if (dsp->NCH==2)
-			ret |= fillbufferDSP(&dsp->ch[1], p_abort);
-		return ret;
+	case type_fsb3wii:
+		return fillbufferDSPfsb3(dsp, p_abort);
+	default:
+		if (dsp->ch[0].interleave) {
+			return fillbufferDSPinterleave(dsp, p_abort);
+		} else {
+			bool ret = fillbufferDSP(&dsp->ch[0], p_abort);
+			if (dsp->NCH==2)
+				ret |= fillbufferDSP(&dsp->ch[1], p_abort);
+			return ret;
+		}
 	}
 }

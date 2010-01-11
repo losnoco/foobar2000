@@ -281,7 +281,9 @@ public:
 			if ( song_len )
 			{
 				//int fade_min = ( 512 * 8 * 1000 / 2 + sample_rate - 1 ) / sample_rate;
-				emu->set_fade( song_len * 10 / 441, 0 /*fade_min*/ );
+				int loop_len = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.loop_duration ) );
+				song_len += loop_len * cfg_vgm_loop_count;
+				emu->set_fade( song_len * 10 / 441, tag_fade_ms );
 			}
 		}
 

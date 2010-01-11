@@ -10,6 +10,9 @@
 #define IDD_MONITOR                     104
 #define IDC_LENGTH                      1001
 #define IDC_FADE                        1002
+#define IDC_LOOPS                       1003
+#define IDC_VGMLOOPCOUNT                1003
+#define IDC_VGMLOOPCOUNT_TEXT           1055
 #define IDC_TRACKLIST                   1101
 #define IDC_ADDALL                      1102
 #define IDC_ADD                         1103
@@ -30,7 +33,7 @@
 #define IDC_GD3JAPANESE                 1210
 #define IDC_FORMAT_NSF                  1211
 #define IDC_FORMAT_SPC                  1212
-#define IDC_FORMAT_VGM                 1213
+#define IDC_FORMAT_VGM                  1213
 #define IDC_FORMAT_AY                   1214
 #define IDC_FORMAT_GBS                  1215
 #define IDC_FORMAT_GYM                  1216
@@ -80,7 +83,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        105
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1055
+#define _APS_NEXT_CONTROL_VALUE         1056
 #define _APS_NEXT_SYMED_VALUE           105
 #endif
 #endif

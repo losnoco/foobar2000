@@ -39,6 +39,8 @@ class input_hvl
 
 	bool first_block, dont_loop;
 
+	pfc::array_t< t_uint8 > file_buffer;
+
 	pfc::array_t< t_int16 > sample_buffer;
 
 public:
@@ -72,9 +74,8 @@ public:
 
 		size = (unsigned) size64;
 
-		pfc::array_t< t_uint8 > buffer;
-		buffer.set_size( size );
-		ptr = buffer.get_ptr();
+		file_buffer.set_size( size );
+		ptr = file_buffer.get_ptr();
 
 		m_file->read_object( ptr, size, p_abort );
 
@@ -95,15 +96,34 @@ public:
 
 	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
+		struct hvl_tune * tune;
+		tune = hvl_LoadTune( file_buffer.get_ptr(), file_buffer.get_size(), srate, 0 );
+		if ( !tune )
+			throw exception_io_data();
+
 		p_info.info_set_int( "channels", 2 );
-		p_info.meta_set( "title", pfc::stringcvt::string_utf8_from_ansi( m_tune->ht_Name, 128 ) );
+		p_info.meta_set( "title", pfc::stringcvt::string_utf8_from_ansi( tune->ht_Name, 128 ) );
 		pfc::string8 temp;
-		for ( unsigned i = 0, j = m_tune->ht_InstrumentNr; i < j; ++i )
+		for ( unsigned i = 1, j = tune->ht_InstrumentNr; i <= j; ++i )
 		{
 			temp = "inst";
 			temp += pfc::format_int( i, 2 );
-			p_info.meta_set( temp, pfc::stringcvt::string_utf8_from_ansi( m_tune->ht_Instruments[ i ].ins_Name, 128 ) );
+			p_info.meta_set( temp, pfc::stringcvt::string_utf8_from_ansi( tune->ht_Instruments[ i ].ins_Name, 128 ) );
 		}
+
+		unsigned safety = 2 * 60 * 60 * 50 * tune->ht_SpeedMultiplier; // 2 hours, just like foo_dumb
+
+		hvl_InitSubsong( tune, p_subsong );
+
+		while ( ! tune->ht_SongEndReached && safety )
+		{
+			hvl_play_irq( tune );
+			--safety;
+		}
+
+		p_info.set_length( (double) tune->ht_PlayingTime / (double) tune->ht_SpeedMultiplier / 50. );
+
+		hvl_FreeTune( tune );
 	}
 
 	t_filestats get_file_stats( abort_callback & p_abort )
@@ -137,11 +157,19 @@ public:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
+		first_block = true;
+
+		unsigned frame = unsigned ( audio_math::time_to_samples( p_seconds, 50 * m_tune->ht_SpeedMultiplier ) );
+		if ( m_tune->ht_PlayingTime > frame )
+			hvl_InitSubsong( m_tune, m_tune->ht_SongNum );
+
+		while ( m_tune->ht_PlayingTime < frame )
+			hvl_play_irq( m_tune );
 	}
 
 	bool decode_can_seek()
 	{
-		return false;
+		return true;
 	}
 
 	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta)

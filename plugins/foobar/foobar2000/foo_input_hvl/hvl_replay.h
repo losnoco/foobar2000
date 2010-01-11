@@ -223,6 +223,8 @@ BOOL hvl_InitSubsong( struct hvl_tune *ht, uint32 nr );
 struct hvl_tune *hvl_LoadTune( uint8 *buf, uint32 buflen, uint32 freq, uint32 defstereo );
 void hvl_FreeTune( struct hvl_tune *ht );
 
+void hvl_play_irq( struct hvl_tune *ht );
+
 #ifdef __cplusplus
 }
 #endif

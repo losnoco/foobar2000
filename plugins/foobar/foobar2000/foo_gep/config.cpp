@@ -74,6 +74,7 @@ static const GUID guid_cfg_spc_anti_surround = { 0x5d2b2962, 0x6c57, 0x4303, { 0
 static const GUID guid_cfg_history_rate = { 0xce4842e1, 0x5707, 0x4e43, { 0xaa, 0x56, 0x48, 0xc8, 0x1d, 0xce, 0x5c, 0xac } };
 static const GUID guid_cfg_vgm_gd3_prefers_japanese = { 0x54ad3715, 0x5491, 0x45a8, { 0x9b, 0x11, 0xc3, 0x9d, 0x65, 0x2b, 0x15, 0x2f } };
 static const GUID guid_cfg_format_enable = { 0xaeda04b5, 0x7b72, 0x4784, { 0xab, 0xda, 0xdf, 0xc8, 0x2f, 0xae, 0x20, 0x9 } };
+static const GUID guid_cfg_vgm_loop_count = { 0xc6690d9, 0x6c36, 0x470e, { 0x93, 0x6f, 0x52, 0x89, 0x4a, 0xe4, 0xd7, 0xe0 } };
 
 
 static const GUID guid_cfg_control_override = { 0x550a107e, 0x8b34, 0x41e5, { 0xae, 0xd6, 0x2, 0x1b, 0xf8, 0x3e, 0x14, 0xe4 } };
@@ -92,6 +93,7 @@ cfg_int cfg_nsfe_ignore_playlists(guid_cfg_nsfe_ignore_playlists, 0);
 cfg_int cfg_spc_anti_surround(guid_cfg_spc_anti_surround, 0);
 //cfg_int cfg_spc_interpolation(guid_cfg_spc_interpolation, 0);
 
+cfg_int cfg_vgm_loop_count(guid_cfg_vgm_loop_count, 1);
 cfg_int cfg_vgm_gd3_prefers_japanese(guid_cfg_vgm_gd3_prefers_japanese, 0);
 
 cfg_int cfg_format_enable(guid_cfg_format_enable, ~0);
@@ -199,6 +201,12 @@ void print_time_crap(int ms, char *out)
 	else sprintf(out, "%d%s",s,frac);
 }
 
+static void enable_vgm_loop_count(HWND wnd, BOOL status)
+{
+	EnableWindow( GetDlgItem( wnd, IDC_VGMLOOPCOUNT_TEXT ), status );
+	EnableWindow( GetDlgItem( wnd, IDC_VGMLOOPCOUNT ), status );
+}
+
 static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
 	switch(msg)
@@ -236,6 +244,17 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			cfg_history_rate.setup_dropdown(w = GetDlgItem(wnd,IDC_SAMPLERATE));
 			uSendMessage(w, CB_SETCURSEL, 0, 0);
 
+			w = GetDlgItem(wnd, IDC_VGMLOOPCOUNT);
+			uSendMessageText(w, CB_ADDSTRING, 0, "none");
+			for (n = 1; n <= 10; n++)
+			{
+				itoa( n, temp, 10 );
+				uSendMessageText(w, CB_ADDSTRING, 0, temp);
+			}
+			uSendMessage(w, CB_SETCURSEL, cfg_vgm_loop_count, 0);
+
+			enable_vgm_loop_count( wnd, !cfg_indefinite );
+
 			/*w = GetDlgItem(wnd, IDC_INTERPOLATION);
 			uSendMessageText(w, CB_ADDSTRING, 0, "Gaussian");
 			uSendMessageText(w, CB_ADDSTRING, 0, "Cubic");
@@ -251,7 +270,7 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			GetClientRect( w, &r );
 			MapWindowPoints( w, wnd, &p [1], 1 );
 
-			CreateLogo( wnd, p [1].x + 2, 72 );
+			CreateLogo( wnd, p [1].x + 2, p [1].y - 181 );
 		}
 		return 1;
 	case WM_COMMAND:
@@ -259,6 +278,7 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		{
 		case IDC_INDEFINITE:
 			cfg_indefinite = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
+			enable_vgm_loop_count( wnd, !cfg_indefinite );
 			break;
 		case IDC_WRITE:
 			cfg_write = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
@@ -308,6 +328,9 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 				print_time_crap(cfg_default_fade, (char *)&temp);
 				uSetWindowText((HWND)lp, temp);
 			}
+			break;
+		case (CBN_SELCHANGE<<16)|IDC_VGMLOOPCOUNT:
+			cfg_vgm_loop_count = uSendMessage((HWND)lp,CB_GETCURSEL,0,0);
 			break;
 		case (CBN_KILLFOCUS<<16)|IDC_SAMPLERATE:
 			{

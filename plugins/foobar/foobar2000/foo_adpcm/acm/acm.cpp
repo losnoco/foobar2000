@@ -22,7 +22,7 @@ class input_acm
 
 	int srate, nch, size;
 
-	int pos, swallow;
+	t_uint64 pos, swallow;
 
 	/* for reader callback */
 	abort_callback            * m_abort;
@@ -155,7 +155,7 @@ public:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-		swallow = int( audio_math::time_to_samples( p_seconds, srate ) ) * nch;
+		swallow = audio_math::time_to_samples( p_seconds, srate ) * nch;
 		if ( swallow >= pos )
 		{
 			swallow -= pos;

@@ -1,7 +1,10 @@
-#define MY_VERSION "1.6"
+#define MY_VERSION "1.7"
 
 /*
 	change log
+
+2008-02-04 03:45 UTC - kode54
+- Filter coefficients calculated correctly from sample rate and cut-off frequency
 
 2006-09-19 12:42 UTC - kode54
 - Fixed loop end sample truncation
@@ -38,6 +41,9 @@
 
 #include <foobar2000.h>
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #ifdef FOO_ADPCM_EXPORTS
 
 #include "../resource.h"
@@ -64,11 +70,14 @@ typedef struct {
 
 //#define    CLIP(s)    if (s>32767) s=32767; else if (s<-32768) s=-32768
 
-static void adx_decode(t_int32 *out,const unsigned char *in,PREV *prev)
+static void adx_decode(t_int32 *out,const unsigned char *in,PREV *prev, const short * coeff)
 {
-	int scale = ((in[0]<<8)|(in[1]));
+	int scale = ((in[0]<<8)|(in[1]))+1;
 	int i;
 	int s0,s1,s2,d;
+
+	int coeff1 = coeff [0];
+	int coeff2 = coeff [1];
 
 	//    printf("%x ",scale);
 
@@ -79,7 +88,7 @@ static void adx_decode(t_int32 *out,const unsigned char *in,PREV *prev)
 		d = (signed char)in[i];
 		// d>>=4; if (d&8) d-=16;
 		d >>= 4;
-		s0 = (BASEVOL*d*scale + SCALE1*s1 - SCALE2*s2)>>14;
+		s0 = d*scale + ( ( coeff1 * s1 + coeff2 * s2 ) >> 12 );
 		//CLIP(s0);
 		*out++=s0;
 		s2 = s1;
@@ -88,7 +97,7 @@ static void adx_decode(t_int32 *out,const unsigned char *in,PREV *prev)
 		d = (signed char)in[i];
 		//d&=15; if (d&8) d-=16;
 		d = (signed char)(d<<4) >> 4;
-		s0 = (BASEVOL*d*scale + SCALE1*s1 - SCALE2*s2)>>14;
+		s0 = d*scale + ( ( coeff1 * s1 + coeff2 * s2 ) >> 12 );
 		//CLIP(s0);
 		*out++=s0;
 		s2 = s1;
@@ -99,13 +108,13 @@ static void adx_decode(t_int32 *out,const unsigned char *in,PREV *prev)
 
 }
 
-static void adx_decode_stereo(t_int32 *out,const unsigned char *in,PREV *prev)
+static void adx_decode_stereo(t_int32 *out,const unsigned char *in,PREV *prev, const short * coeff)
 {
 	t_int32 tmp[32*2];
 	int i;
 
-	adx_decode(tmp   ,in   ,prev);
-	adx_decode(tmp+32,in+18,prev+1);
+	adx_decode(tmp   ,in   ,prev,   coeff);
+	adx_decode(tmp+32,in+18,prev+1, coeff);
 	for(i=0;i<32;i++) {
 		out[i*2]   = tmp[i];
 		out[i*2+1] = tmp[i+32];
@@ -139,7 +148,8 @@ class input_adx
 
 	unsigned srate, nch, size;
 
-	unsigned head_skip, offset, pos, swallow;
+	unsigned head_skip, offset;
+	t_uint64 pos, swallow;
 
 	/*
 	unsigned pos, filled, swallow;
@@ -155,6 +165,8 @@ class input_adx
 	unsigned                   loop_end;
 	unsigned                   loop_swallow;
 	ADXContext               * loop_context;
+
+	short                      coeff [2];
 
 public:
 	input_adx() : context(0), loop_context(0), srate(0) {}
@@ -243,6 +255,18 @@ private:
 		}
 
 		if ( ! srate || ! size ) throw exception_io_data();
+
+		double x,y,a,b,c;
+
+		x = 500;
+		y = srate;
+
+		a = M_SQRT2 - cos( 2.0 * M_PI * x / y );
+		b = M_SQRT2 - 1.0;
+		c = ( a - sqrt( ( a + b ) * ( a - b ) ) ) / b;
+
+		coeff [0] = floor( c * 8192.0 );
+		coeff [1] = floor( c * c * -4096.0 );
 	}
 
 public:
@@ -334,8 +358,8 @@ more:
 						if (pos >= loop_end) break;
 					}
 
-					if (nch == 1) adx_decode( out + done, in + n, context->prev );
-					else adx_decode_stereo( out + done * 2, in + n, context->prev );
+					if (nch == 1) adx_decode( out + done, in + n, context->prev, coeff );
+					else adx_decode_stereo( out + done * 2, in + n, context->prev, coeff );
 					done += 32; //, dprintf(_T("output\n"));
 				}
 				if (swallow)
@@ -414,9 +438,7 @@ more:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-		t_uint64 swallow64 = audio_math::time_to_samples( p_seconds, srate );
-		if ( swallow64 > infinite32 ) swallow = infinite32;
-		else swallow = ( unsigned int ) swallow64;
+		swallow = audio_math::time_to_samples( p_seconds, srate );
 		if ( swallow > pos )
 		{
 			swallow -= pos;
@@ -463,7 +485,7 @@ more:
 	}
 };
 
-DECLARE_FILE_TYPE("Dreamcast ADX files", "*.ADX");
+DECLARE_FILE_TYPE("CRI ADX files", "*.ADX");
 
 #ifndef FOO_ADPCM_EXPORTS
 

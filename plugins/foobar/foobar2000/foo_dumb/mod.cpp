@@ -3,6 +3,12 @@
 /*
 	changelog
 
+2008-03-22 23:45 UTC - kode54
+- Implemented PTM volume curve.
+
+2008-03-19 23:31 UTC - kode54
+- Fixed finite looping.
+
 2007-01-26 23:42 UTC - kode54
 - Added CPUID specialization for it_filter() so I can release it.
 
@@ -2014,7 +2020,7 @@ static int dumb_it_callback_limit_int(void * data)
 		}
 		else return 1;
 	}
-	return 1;
+	return 0;
 }
 
 struct dumb_subsong_info

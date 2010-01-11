@@ -73,4 +73,4 @@ bool fillbufferADP(CUBEFILE * adp, abort_callback & p_abort) {
 	return true;
 }
 
-DECLARE_FILE_TYPE("GCN ADP audio files", "*.ADP");
+//DECLARE_FILE_TYPE("GCN ADP audio files", "*.ADP");

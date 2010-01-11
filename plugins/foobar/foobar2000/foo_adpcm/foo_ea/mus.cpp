@@ -268,7 +268,7 @@ class input_ea_mus
 		}
 	}
 
-	void seek( unsigned sample_offset )
+	void seek( t_uint64 sample_offset )
 	{
 		current_chunk = 0;
 		samples_decoded = 0;
@@ -728,7 +728,7 @@ public:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-		seek( unsigned ( audio_math::time_to_samples( p_seconds, sample_rate ) ) );
+		seek( audio_math::time_to_samples( p_seconds, sample_rate ) );
 	}
 
 	bool decode_can_seek()

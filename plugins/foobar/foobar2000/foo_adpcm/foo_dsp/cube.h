@@ -22,6 +22,23 @@ typedef enum {
 	type_mss,   // MSS (DSP)
 	type_gcm,   // GCM (DSP)
 	type_mpdsp, // MPDSP (Monopoly Party, single header stereo)
+	type_ish,   // ISH+ISD (DSP)
+	type_ymf,   // YMF (DSP)
+	type_rsddsp,// RSD (DSP)
+	type_idsp2, // IDSP (Harvest Moon - Another Wonderful Life) (DSP)
+	type_gcub,  // GCub (DSP)
+	type_wam,   // WAM (RIFF) (DSP)
+	type_wvs,   // WVS (DSP)
+	type_fsb3wii,
+	type_rwsd_wii,
+	type_rstm_wii,
+	type_spmrstm_wii, // Super Paper Mario 44khz->22khz hack
+	type_idsp_wii,
+	type_gca1,
+	type_thp,
+	type_zwdsp,
+	type_knon_dsp,
+	type_knon_pcm,
 	type_adp	// ADP
 } headertype;
 

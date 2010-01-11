@@ -120,7 +120,8 @@ public:
 		if ( length )
 		{
 			tag_song_ms = length;
-			dlength = double(length) * .001;
+			tag_fade_ms = i.fade_length;
+			dlength = double(tag_song_ms + tag_fade_ms) * .001;
 		}
 
 		HEADER_STRING( p_info, "system", i.system );
@@ -132,6 +133,27 @@ public:
 		HEADER_STRING( p_info, "dumper", i.dumper );
 
 		p_info.set_length(dlength);
+	}
+
+	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
+	{
+		track_info_t i;
+		ERRCHK( emu->track_info( &i, p_subsong ) );
+
+		int length = 0;
+		double dlength = double(tag_song_ms + tag_fade_ms) * .001;
+		if ( i.intro_length != -1 && i.loop_length != -1 )
+			length = i.intro_length + i.loop_length;
+		else if ( i.length != -1 )
+			length = i.length;
+		if ( length )
+		{
+			tag_song_ms = length;
+			tag_fade_ms = i.fade_length;
+			dlength = double(tag_song_ms + tag_fade_ms) * .001;
+		}
+
+		input_gep::decode_initialize( p_subsong, p_flags, p_abort );
 	}
 };
 

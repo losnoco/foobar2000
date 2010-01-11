@@ -12,6 +12,8 @@ extern cfg_int cfg_spc_anti_surround; //, cfg_spc_interpolation;
 
 extern cfg_int cfg_vgm_gd3_prefers_japanese;
 
+extern cfg_int cfg_vgm_loop_count;
+
 extern cfg_int cfg_control_override, cfg_control_tempo;
 
 extern cfg_int cfg_format_enable;

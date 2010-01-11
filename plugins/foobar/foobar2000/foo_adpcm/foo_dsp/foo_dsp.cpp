@@ -27,15 +27,141 @@
 
 static const char * exts[] =
 {
-	"DSP",
-	"GCM",
-	"HPS",
-	"IDSP",
-	"SPT",
-	"SPD",
-	"MSS",
+	"DSP", "GCM", "HPS", "IDSP", "SPT", "SPD", "MSS", "MPDSP", "ISH", "YMF", "WAM", "WAC", "WAD", "WAA", "WVS", "THP",
+	"RSD", "RSP",
+	"RWSD", "BRSTM", "GCA", "ZWDSP", "KRAW", "ASR",
 	"ADP"
 };
+
+const char * const SPM22names[] = {
+"btl_boss_middle1_44k_lp.brstm",
+"btl_boss_stg1_22k_lp.brstm",
+"btl_boss_stg2_22k_lp.brstm",
+"btl_boss_stg3_44k_lp.brstm",
+"btl_boss_stg4_lp.brstm",
+"btl_boss_stg5_e3_44k_lp.brstm",
+"btl_boss_stg6_44k_lp.brstm",
+"btl_boss_stg7_44k_lp.brstm",
+"btl_demen1_44k_lp.brstm",
+"btl_demenL_44k_lp.brstm",
+"btl_dodontas2_44k_lp.brstm",
+"btl_koopa1_44k_lp.brstm",
+"btl_manera1_44k_lp.brstm",
+"btl_mr_zigen1_44k_lp.brstm",
+"b_happy_flower_44k_lp.brstm",
+"evt_angel_44k_lp.brstm",
+"evt_area_start1_44k_lp..brstm",
+"evt_cooking1_44k_lp.brstm",
+"evt_danger1_44k_lp.brstm",
+"evt_demen_appear1_44k_lp.brstm",
+"evt_Dliigi_appear1_44k_lp.brstm",
+"evt_dodontas_appear1_44k_lp.brstm",
+"evt_dotabata1_44k_e4_lp.brstm",
+"evt_exective_appear1_44k_lp.brstm",
+"evt_exective_soudan1_44k_lp.brstm",
+"evt_fairlin_magin1_44k_lp.brstm",
+"evt_gesso_appear1_44k_lp.brstm",
+"evt_hamerustone1_44k_lp.brstm",
+"evt_hana_appear1_44k_lp.brstm",
+"evt_happy_flower_44k.brstm",
+"evt_hiroshi1_44k_lp.brstm",
+"evt_kaisou_stg1_44k_lp.brstm",
+"evt_kaisou_stg2_44k_lp.brstm",
+"evt_kaisou_stg3_44k_lp.brstm",
+"evt_kaisou_stg4_44k_lp.brstm",
+"evt_konton1_44k_lp.brstm",
+"evt_koopa_catsle_44k_lp.brstm",
+"evt_manela_appear2_44k_lp.brstm",
+"evt_manuke1_44k_lp.brstm",
+"evt_mario_house1_44k_lp.brstm",
+"evt_op_book_s_lp.brstm",
+"evt_op_peach1_e1_lp.brstm",
+"evt_peach_hen1_44k_lp.brstm",
+"evt_plo4_open1_44k_lp.brstm",
+"evt_quiz1_44k_lp.brstm",
+"evt_quiz_s_e1_lp.brstm",
+"evt_sini_appear_44k_lp.brstm",
+"evt_star1_44k_lp.brstm",
+"evt_stg1_crystale1_44k_lp.brstm",
+"evt_stg3_adv1_22k_lp_e1.brstm",
+"evt_stg6_syoumetsu1_e1.brstm",
+"evt_stg7_rpg1_e2_44k_lp.brstm",
+"evt_stg7_rpg_e3_44k_lp.brstm",
+"evt_stg7_rpg_ff1_e2_44k.brstm",
+"evt_stg8_end_44k_lp.brstm",
+"evt_stg8_escape1_lp.brstm",
+"evt_stg8_pure_born1_lp.brstm",
+"evt_stg8_pure_go1_44k_lp.brstm",
+"evt_stg8_world_break1_44k_lp.brstm",
+"evt_uranai_44k_lp.brstm",
+"evt_wedding1_44k_lp.brstm",
+"evt_zigen_appear1_44k_lp.brstm",
+"evt_zunbaba_appear1_44k_lp.brstm",
+"ff_areastart_44k_lp.brstm",
+"ff_card_get1_lp.brstm",
+"ff_companion1_44k_lp.brstm",
+"ff_correct1_32k.brstm",
+"ff_pureheart1_44k_lp.brstm",
+"ff_pureheartget1_s_lp.brstm",
+"ff_pureheart_get_s2_lp.brstm",
+"ff_umai1_e1_lp.brstm",
+"ff_yado1_44k_lp.brstm",
+"ff_zigenwaza_get1_44k_lp.brstm",
+"map_100f_44k_lp.brstm",
+"map_dungeon1_22k_lp.brstm",
+"map_room1_22k_lp.brstm",
+"map_stg1_1_44k_e_lp.brstm",
+"map_stg1_sabaku_lp.brstm",
+"map_stg1_start1_44k_lp.brstm",
+"map_stg2_1_e3_44k_lp.brstm",
+"map_stg2_start1_44k_lp.brstm",
+"map_stg2_yakata_e6_lp.brstm",
+"map_stg2_yakata_out1_lp.brstm",
+"map_stg3_1_e6_44k_lp.brstm",
+"map_stg3_castle1_22k_lp.brstm",
+"map_stg3_room1_44k_lp.brstm",
+"map_stg3_start1_44k_lp.brstm",
+"map_stg3_water1_22k_lp.brstm",
+"map_stg4_4d1_44k_lp.brstm",
+"map_stg4_44k_lp.brstm",
+"map_stg4_start1_44k_lp.brstm",
+"map_stg5_1_e5_lp.brstm",
+"map_stg5_2_e14_lp.brstm",
+"map_stg5_start1_44k_lp.brstm",
+"map_stg5_truck2_44k_lp.brstm",
+"map_stg6_2_44k_lp.brstm",
+"map_stg6_3_44k_lp.brstm",
+"map_stg6_44k_lp.brstm",
+"map_stg6_start1_44k_lp.brstm",
+"map_stg7_3_44k_lp.brstm",
+"map_stg7_44k_lp.brstm",
+"map_stg7_sanzu1_44k_lp.brstm",
+"map_stg7_start1_44k_lp.brstm",
+"map_stg8_1_44k_lp.brstm",
+"map_stg8_start1_44k_lp.brstm",
+"map_town_omote1_44k_lp.brstm",
+"map_town_ura1_44k_lp.brstm",
+"minigame_gura_44k_lp.brstm",
+"minigame_hayauti1_44k_e2_lp.brstm",
+"minigame_hayauti1_e7_lp.brstm",
+"minigame_hayauti1_e8_lp.brstm",
+"minigame_koura1_44k_lp.brstm",
+"minigame_panel_lp.brstm",
+"sys_gameover1_44k_lp.brstm",
+"sys_stage_clear_E3_lp.brstm",
+"sys_title1_44k_lp.brstm",
+"sys_yarare1_44k_lp.brstm",
+};
+
+bool checkSPM22(const char * infile) {
+	const char * basename = infile + pfc::scan_filename( infile );
+
+	for (unsigned i=0, j = tabsize( SPM22names ); i < j; i++ )
+	{
+		if ( ! strcmp( basename, SPM22names [i] ) ) return true;
+	}
+	return false;
+}
 
 class input_dsp
 {
@@ -44,7 +170,7 @@ class input_dsp
 
 	pfc::array_t<t_int16> sample_buffer;
 
-	int pos, swallow;
+	t_uint64 pos, swallow;
 
 	bool looped;
 
@@ -112,6 +238,9 @@ public:
 
 		if ( ! stricmp_utf8( ext, "MSS" ) ) type = type_mss;
 		else if ( ! stricmp_utf8( ext, "GCM" ) ) type = type_gcm;
+		else if ( ! stricmp_utf8( ext, "YMF" ) ) type = type_ymf;
+		else if ( ! stricmp_utf8( ext, "WVS" ) ) type = type_wvs;
+		else if ( ! stricmp_utf8( ext, "BRSTM" ) && checkSPM22( p_path ) ) type = type_spmrstm_wii;
 		else if ( ! stricmp_utf8( ext, "ADP" ) ) type = type_adp;
 	}
 
@@ -137,7 +266,7 @@ public:
 		else
 		{
 			p_info.info_set( "codec", "DSP" );
-			{
+			/*{
 				static const char * header_type[] = {
 					"Standard",
 					"Star Fox Assault Cstr",
@@ -152,7 +281,7 @@ public:
 					"Monopoly Party"
 				};
 				p_info.info_set( "dsp_header_type", header_type[ dsp.ch[0].type ] );
-			}
+			}*/
 			if ( looped )
 			{
 				p_info.info_set_int( "dsp_loop_start", dsp.ch[0].header.sa );
@@ -283,7 +412,7 @@ public:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-		swallow = int( audio_math::time_to_samples( p_seconds, dsp.ch[0].header.sample_rate ) );
+		swallow = audio_math::time_to_samples( p_seconds, dsp.ch[0].header.sample_rate );
 		if ( swallow >= pos )
 		{
 			swallow -= pos;
@@ -292,7 +421,7 @@ public:
 		}
 
 		{
-			unsigned swallow = this->swallow;
+			t_uint64 swallow = this->swallow;
 			decode_initialize( dsp.ch[0].header.loop_flag ? 0 : input_flag_no_looping, p_abort );
 			this->swallow = pos = swallow;
 		}
@@ -341,8 +470,42 @@ public:
 	}
 };
 
-DECLARE_FILE_TYPE("GCN DSP audio files", "*.DSP;*.GCM;*.HPS;*.IDSP;*.SPT;*.SPD;*.MSS");
+class dsp_file_types : public input_file_type
+{
+	virtual unsigned get_count()
+	{
+		return 4;
+	}
 
-static input_singletrack_factory_t<input_dsp> g_input_acm_factory;
+	virtual bool get_name(unsigned idx, pfc::string_base & out)
+	{
+		static const char * names[] = { "DSP Files", "RSD Files", "Wii Files", "ADP Files" };
+		if (idx > 3) return false;
+		out = names[idx];
+		return true;
+	}
 
-DECLARE_COMPONENT_VERSION("GCN DSP decoder", MY_VERSION, "Decodes DSP, GCM, and HPS files ripped from various GameCube discs.");
+	virtual bool get_mask(unsigned idx, pfc::string_base & out)
+	{
+		static const unsigned int offsets[] = { 0, 16, 18, 24 };
+		static const unsigned int counts[] = { 16, 2, 6, 1 };
+		if (idx > 3) return false;
+		out.reset();
+		for (int l = 0, n = offsets [idx], o = counts [idx]; l < o; l++, n++)
+		{
+			if (l) out.add_byte(';');
+			out << "*." << exts[n];
+		}
+		return true;
+	}
+
+	virtual bool is_associatable(unsigned idx)
+	{
+		return true;
+	}
+};
+
+static input_singletrack_factory_t<input_dsp>      g_input_acm_factory;
+static service_factory_single_t   <dsp_file_types> g_input_file_type_dsp_factory;
+
+DECLARE_COMPONENT_VERSION("GCN DSP decoder", MY_VERSION, "Decodes DSP, GCM, and HPS files ripped from various GameCube and Wii discs.");

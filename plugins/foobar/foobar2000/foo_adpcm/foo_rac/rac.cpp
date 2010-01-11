@@ -286,7 +286,7 @@ class input_rac
 
 	pfc::array_t<t_int16> sample_buffer;
 
-	unsigned pos, filled, total, swallow;
+	t_uint64 pos, filled, total, swallow;
 	int loop_start;
 
 	pfc::string8 file_name;
@@ -469,7 +469,7 @@ eof:
 	void decode_seek( double p_seconds,abort_callback & p_abort )
 	{
 		eof = false;
-		swallow = int( audio_math::time_to_samples( p_seconds, 22050 ) );
+		swallow = audio_math::time_to_samples( p_seconds, 22050 );
 		if ( swallow > total )
 		{
 			swallow -= total;
