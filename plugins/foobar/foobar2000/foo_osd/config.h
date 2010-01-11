@@ -28,14 +28,14 @@ enum t_osd_flags
 
 struct osd_config
 {
-	string_simple       name;
+	pfc::string_simple  name;
 	unsigned            flags;
 	t_font_description  font;
 	unsigned            displaytime;
 	unsigned            x, y, pos, align;
 	unsigned            vwidth, vheight, vsteps;
 	int                 vmin;
-	string_simple       format;//, formatnext;
+	pfc::string_simple  format;//, formatnext;
 	unsigned            color, bgcolor;
 	unsigned            alphalev, alphaback;
 	unsigned            fadetime;

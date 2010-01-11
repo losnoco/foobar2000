@@ -25,7 +25,7 @@ public:
 	CSysexMap *smap;
 	CMarkerMap *mmap;
 	void CleanTempo();
-	int DoTrack(const BYTE* track,int size,string8 & name,string8 & text,int);
+	int DoTrack(const BYTE* track,int size,pfc::string8 & name,pfc::string8 & text,int);
 	bool Run(MIDI_file* mf);
 };
 
@@ -47,7 +47,7 @@ static bool is_kar(char* ptr,int siz)	//hack
 	return 0;
 }
 
-int CGetInfo::DoTrack(const BYTE* track,int size,string8 & name,string8 & text,int cpos)
+int CGetInfo::DoTrack(const BYTE* track,int size,pfc::string8 & name,pfc::string8 & text,int cpos)
 {
 	int res=0,_res=0;
 	int n=0;
@@ -232,8 +232,8 @@ bool CGetInfo::Run(MIDI_file* _mf)
 
 	int n,tmp;
 	int size=0;
-	mf->info.traxnames = new string8[hd.trax];
-	mf->info.traxtext = new string8[hd.trax];
+	mf->info.traxnames = new pfc::string8[hd.trax];
+	mf->info.traxtext = new pfc::string8[hd.trax];
 
 
 	for(c_track=0;c_track<hd.trax;c_track++)

@@ -6,13 +6,13 @@
 
 class cfg_osd_list : public cfg_var
 {
-	bool                   initialized;
+	bool                        initialized;
 
-	ptr_list_t<osd_config> val;
+	pfc::ptr_list_t<osd_config> val;
 
-	critical_section       sync;
-	ptr_list_t<osd_state>  state;
-	ptr_list_t<COsdWnd>    osd;
+	critical_section            sync;
+	pfc::ptr_list_t<osd_state>  state;
+	pfc::ptr_list_t<COsdWnd>    osd;
 
 	virtual void get_data_raw(stream_writer * p_stream,abort_callback & p_abort);
 	virtual void set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort);
@@ -30,7 +30,7 @@ public:
 
 	// enumeration
 	void get(unsigned n, osd_config & p_out);
-	void get_names( pfc::array_t<string_simple> & p_out );
+	void get_names( pfc::array_t<pfc::string_simple> & p_out );
 	//void get_all(array_t<osd_config> & p_out);
 	void get_callback_flags(unsigned & p_play_callback_flags, unsigned & p_playlist_callback_flags);
 

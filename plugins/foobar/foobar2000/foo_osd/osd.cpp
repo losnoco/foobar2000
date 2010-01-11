@@ -367,7 +367,7 @@ public:
 class playlist_callback_osd : public playlist_callback
 {
 public:
-	void FB2KAPI on_items_added(unsigned,unsigned,const list_base_const_t<metadb_handle_ptr> &,const bit_array &) {}
+	void FB2KAPI on_items_added(unsigned,unsigned,const pfc::list_base_const_t<metadb_handle_ptr> &,const bit_array &) {}
 	void FB2KAPI on_items_reordered(unsigned,const unsigned *,unsigned) {}
 	void FB2KAPI on_items_removing(unsigned,const bit_array &,unsigned,unsigned) {}
 	void FB2KAPI on_items_removed(unsigned,const bit_array &,unsigned,unsigned) {}
@@ -377,7 +377,7 @@ public:
 	void FB2KAPI on_items_modified(unsigned,const bit_array &) {}
 	void FB2KAPI on_items_modified_fromplayback(unsigned,const bit_array &,play_control::t_display_level) {}
 
-	void FB2KAPI on_items_replaced(unsigned,const bit_array &,const list_base_const_t<t_on_items_replaced_entry> &) {}
+	void FB2KAPI on_items_replaced(unsigned,const bit_array &,const pfc::list_base_const_t<t_on_items_replaced_entry> &) {}
 
 	void FB2KAPI on_item_ensure_visible(unsigned,unsigned) {}
 

@@ -215,7 +215,7 @@ public:
 
 	void open( service_ptr_t<file> p_file,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) throw exception_io_data();
+		if ( p_reason == input_open_info_write ) throw exception_io_unsupported_format();
 
 		if ( p_file.is_empty() )
 		{
@@ -300,9 +300,9 @@ public:
 		p_info.info_set_int("channels", 1);
 		p_info.info_set("codec", "Adlib register log");
 
-		string8 temp;
+		pfc::string8 temp;
 
-		p_info.info_set("imf_ticks_per_second", format_float( TicksPerSecond, 0, 2 ) );
+		p_info.info_set("imf_ticks_per_second", pfc::format_float( TicksPerSecond, 0, 2 ) );
 
 		p_info.set_length( get_length() );
 	}
@@ -349,7 +349,7 @@ public:
 			}
 		}
 
-		p_chunk.check_data_size( 1024 );
+		p_chunk.set_data_size( 1024 );
 		p_chunk.set_srate( srate );
 		p_chunk.set_channels( 1 );
 
@@ -503,7 +503,7 @@ another:
 
 	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		throw exception_io_data();
+		throw exception_io_unsupported_format();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

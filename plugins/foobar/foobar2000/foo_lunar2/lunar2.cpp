@@ -525,7 +525,7 @@ public:
 
 	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) throw exception_io_data();
+		if ( p_reason == input_open_info_write ) throw exception_io_unsupported_format();
 
 		if ( p_filehint.is_empty() )
 		{
@@ -571,7 +571,7 @@ public:
 			if ( ! memcmp( sums[n], & digest, 16 ) )
 			{
 				p_info.meta_add( "title", titles[ n ] );
-				p_info.meta_add( "tracknumber", format_int( tracks[ n ] ) );
+				p_info.meta_add( "tracknumber", pfc::format_int( tracks[ n ] ) );
 				break;
 			}
 		}
@@ -683,11 +683,12 @@ public:
 
 	void decode_on_idle( abort_callback & p_abort )
 	{
+		m_file->on_idle( p_abort );
 	}
 
 	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		throw exception_io_data();
+		throw exception_io_unsupported_format();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )
@@ -698,7 +699,7 @@ public:
 	static bool g_is_our_path( const char * p_full_path, const char * p_extension )
 	{
 		if ( stricmp( p_extension, "pcm" ) ) return false;
-		string8 name( p_full_path + pfc::scan_filename( p_full_path ) );
+		pfc::string8 name( p_full_path + pfc::scan_filename( p_full_path ) );
 		name.truncate( name.find_last( '.' ) );
 		if ( name.length() != 5 ) return false;
 

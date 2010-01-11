@@ -42,38 +42,38 @@ private:
 	void Repaint();
 	bool RepaintVolume(int volume);
 
-	HWND             m_hWnd;
-	string_simple    m_strText;
-	POINT            m_pPos;
-	SIZE             m_sSize;
-	critical_section m_bitmapsync;
-	HBITMAP          m_hBitmap;
-	BOOL             m_bFade;
-	int              m_iFadeNow;
-	int              m_iFadeTo;
-	int              m_iFadeStep;
+	HWND               m_hWnd;
+	pfc::string_simple m_strText;
+	POINT              m_pPos;
+	SIZE               m_sSize;
+	critical_section   m_bitmapsync;
+	HBITMAP            m_hBitmap;
+	BOOL               m_bFade;
+	int                m_iFadeNow;
+	int                m_iFadeTo;
+	int                m_iFadeStep;
 
-	dissolve       * m_dissolve;
+	dissolve         * m_dissolve;
 
-	STATE			m_sState;
+	STATE			   m_sState;
 
 	enum MODE {
 		TEXT,
 		VOLUME
 	};
 
-	MODE			m_mMode;
+	MODE			  m_mMode;
 
 	// volume
-	int				m_iLastVol;
-	int				m_iLastVolQ;
+	int				  m_iLastVol;
+	int				  m_iLastVolQ;
 
-	bool			m_bInterval;
+	bool			  m_bInterval;
 
-	osd_state     & m_state;
+	osd_state       & m_state;
 };
 
-class string_utf8_nocolor : public string8
+class string_utf8_nocolor : public pfc::string8
 {
 public:
 	string_utf8_nocolor(const char * src, int len = -1);

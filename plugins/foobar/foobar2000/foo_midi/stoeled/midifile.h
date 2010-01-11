@@ -10,10 +10,10 @@ typedef struct
 	UINT fmt,ntrax,tix;
 	UINT channels;
 	const char* e_type;
-	string8 copyright;
-	string8 markers;
-	string8 * traxnames;
-	string8 * traxtext;
+	pfc::string8 copyright;
+	pfc::string8 markers;
+	pfc::string8 * traxnames;
+	pfc::string8 * traxtext;
 } MIDIINFO;
 
 #define FLAG_INCOMPLETE 1
@@ -28,7 +28,7 @@ typedef struct tagINSDESC
 class MIDI_file
 {
 public:
-	string8 title;
+	pfc::string8 title;
 	int flags;
 	int format;
 	int len,tix;

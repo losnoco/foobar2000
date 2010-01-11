@@ -37,8 +37,8 @@ static PointF get_text_size(Graphics * graphics, Font * font, const TCHAR * text
 
 static PointF get_text_size(Graphics * graphics, Font * font, const char * text, UINT len)
 {
-	string8 meh(text,len);
-	string8 out;
+	pfc::string8 meh(text,len);
+	pfc::string8 out;
 	int s = 0, e;
 	while ((e = meh.find_first(3, s)) >= 0)
 	{
@@ -199,7 +199,7 @@ static void drawtext(Graphics * graphics, Font * font, const char * text, UINT l
 static PointF get_text_size_lines(Graphics * graphics, Font * font, const char * text, UINT len)
 {
 	PointF rv(0.0f, 0.0f);
-	string8 meh(text,len);
+	pfc::string8 meh(text,len);
 	int s = 0, e;
 	while ((e = meh.find_first('\n', s)) >= 0)
 	{
@@ -223,7 +223,7 @@ static PointF get_text_size_lines(Graphics * graphics, Font * font, const char *
 
 static void drawtextlines(Graphics * graphics, Font * font, const char * text, UINT len, PointF & origin, DWORD default_color, BOOL outline, int align)
 {
-	string8 meh(text,len);
+	pfc::string8 meh(text,len);
 	int s = 0, e;
 	PointF size = get_text_size_lines(graphics, font, text, len);
 	PointF myOrigin(origin);
@@ -276,7 +276,7 @@ static int get_text_width_color(HDC dc,const char * src,int len)
 static void drawtext(HDC dc, const char * text, UINT len, int x, int y, const RECT *clip, DWORD default_color, BOOL outline, BOOL pure_white, int align)
 {
 	// FUCKO
-	string_simple blah( text, len );
+	pfc::string_simple blah( text, len );
 	text = blah.get_ptr();
 
 	if (clip)
@@ -320,7 +320,7 @@ static void drawtext(HDC dc, const char * text, UINT len, int x, int y, const RE
 
 static void drawtextlines(HDC dc, const char * text, UINT len, int x, int y, const RECT *clip, DWORD default_color, BOOL outline, BOOL pure_white, int align)
 {
-	string8 meh(text, len);
+	pfc::string8 meh(text, len);
 	int s = 0, e;
 	while ((e = meh.find_first('\n', s)) >= 0)
 	{
@@ -336,7 +336,7 @@ static void drawtextlines(HDC dc, const char * text, UINT len, int x, int y, con
 static SIZE get_text_size_lines(HDC dc, const char * text, UINT len)
 {
 	SIZE rv = {0,0};
-	string8 meh(text,len);
+	pfc::string8 meh(text,len);
 	if (meh.length())
 	{
 		int s = 0, e, x, y = uGetTextHeight(dc);
@@ -446,7 +446,7 @@ bool COsdWnd::Initialize()
 
 	if (!wnd_class)
 	{
-		string8 error;
+		pfc::string8 error;
 		uFormatMessage(GetLastError(), error);
 		console::formatter() << "Failed to register window class - " << error.get_ptr();
 		return 0;
@@ -459,7 +459,7 @@ bool COsdWnd::Initialize()
 
 	if (!m_hWnd)
 	{
-		string8 error;
+		pfc::string8 error;
 		uFormatMessage(GetLastError(), error);
 		console::formatter() << "Failed to create window - " << error.get_ptr();
 		rwc.Unregister();
@@ -934,7 +934,11 @@ bool COsdWnd::RepaintVolume(int volume)
 		((volume <= vmin && m_iLastVol <= vmin) || (!volume && !m_iLastVol) ||
 		(volume < 0 && volume > vmin && m_iLastVol < 0 && m_iLastVol > vmin)) &&
 		pos.x == m_pPos.x && pos.y == m_pPos.y &&
-		sz.cx == m_sSize.cx && sz.cy == m_sSize.cy) return false;
+		sz.cx == m_sSize.cx && sz.cy == m_sSize.cy)
+	{
+		ReleaseDC(NULL, dDC);
+		return false;
+	}
 
 	m_mMode = VOLUME;
 	m_iLastVol = volume;
@@ -1187,7 +1191,7 @@ bool COsdWnd::RepaintVolume(int volume)
 
 string_utf8_nocolor::string_utf8_nocolor(const char * src, int len /* = -1 */)
 {
-	string8 meh(src, len);
+	pfc::string_simple meh(src, len);
 	if (meh.is_empty()) return;
 	if (strchr(meh, 3))
 		titleformat_compiler::remove_color_marks(meh, *this);

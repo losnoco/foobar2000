@@ -91,7 +91,7 @@ public:
 
 			if (playing == infinite || next >= count) break;
 
-			string8 result;
+			pfc::string8 result;
 			pm->playlist_item_format_title(playing, next, NULL, result, m_format, NULL, play_control::display_level_all);
 			if (result.length())
 			{
@@ -163,7 +163,7 @@ void cfg_osd_list::set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abo
 	{
 		p_stream->read_lendian_t( count, p_abort );
 
-		string8_fastalloc name, format; //, formatnext;
+		pfc::string8_fastalloc name, format; //, formatnext;
 		for (i = 0; i < count; i++)
 		{
 			c = 0;
@@ -409,7 +409,7 @@ void cfg_osd_list::rename(unsigned n, const char * name)
 	}
 }
 
-void cfg_osd_list::get_names(pfc::array_t<string_simple> & p_out)
+void cfg_osd_list::get_names(pfc::array_t<pfc::string_simple> & p_out)
 {
 	insync(sync);
 
@@ -477,9 +477,9 @@ static void color_cut( pfc::string_base & fmt )
 							{
 								fmt.reset();
 								fmt.add_byte( 3 );
-								fmt << format_int( fgcolor, 6, 16 );
+								fmt << pfc::format_int( fgcolor, 6, 16 );
 								fmt.add_byte( '|' );
-								fmt << format_int( olcolor, 6, 16 );
+								fmt << pfc::format_int( olcolor, 6, 16 );
 								fmt.add_byte(3);
 							}
 							else fmt.reset();
@@ -492,7 +492,7 @@ static void color_cut( pfc::string_base & fmt )
 				{
 					fmt.reset();
 					fmt.add_byte( 3 );
-					fmt << format_int( fgcolor, 6, 16 );
+					fmt << pfc::format_int( fgcolor, 6, 16 );
 					fmt.add_byte(3);
 				}
 				else fmt.reset();
@@ -514,13 +514,13 @@ void cfg_osd_list::test(unsigned n)
 	osd_state  * s = state[n];
 	COsdWnd    * o = osd[n];
 
-	string8 text;
+	pfc::string8 text;
 	static_api_ptr_t<play_control>()->playback_format_title(next_extra_i, text, s->format, NULL, play_control::display_level_all);
 
 	if (text.length()) o->Post(text, !!(c->flags & osd_interval));
 	else
 	{
-		string8 fmt(c->format);
+		pfc::string8 fmt(c->format);
 		color_cut(fmt);
 		fmt += "*silence*";
 		o->Post(fmt, false);
@@ -533,7 +533,7 @@ void cfg_osd_list::on_playback_time()
 	if (!initialized) return;
 
 	unsigned i, count;
-	string8_fastalloc cmd;
+	pfc::string8_fastalloc cmd;
 	static_api_ptr_t<play_control> pc;
 
 	for (i = 0, count = osd.get_count(); i < count; i++)
@@ -570,7 +570,7 @@ void cfg_osd_list::on_playback_dynamic_info(bool b_track_change)
 	if (!initialized) return;
 
 	unsigned i, count;
-	string8_fastalloc cmd;
+	pfc::string8_fastalloc cmd;
 	static_api_ptr_t<play_control> pc;
 
 	for (i = 0, count = osd.get_count(); i < count; i++)
@@ -604,7 +604,7 @@ void cfg_osd_list::on_playback_seek()
 	if (!initialized) return;
 
 	unsigned i, count;
-	string8_fastalloc cmd;
+	pfc::string8_fastalloc cmd;
 	static_api_ptr_t<play_control> pc;
 
 	for (i = 0, count = osd.get_count(); i < count; i++)
@@ -627,7 +627,7 @@ void cfg_osd_list::on_playback_pause(int _state)
 	if (!initialized) return;
 
 	unsigned i, count;
-	string8_fastalloc cmd;
+	pfc::string8_fastalloc cmd;
 	static_api_ptr_t<play_control> pc;
 
 	for (i = 0, count = osd.get_count(); i < count; i++)
@@ -667,7 +667,7 @@ void cfg_osd_list::on_playback_new_track(const metadb_handle_ptr & track)
 	if (!initialized) return;
 
 	unsigned i, count;
-	string8_fastalloc cmd;
+	pfc::string8_fastalloc cmd;
 	static_api_ptr_t<play_control> pc;
 
 	for (i = 0, count = osd.get_count(); i < count; i++)
@@ -690,7 +690,7 @@ void cfg_osd_list::on_playlist_switch()
 	if (!initialized) return;
 
 	unsigned i, count;
-	string8_fastalloc name, fmt;
+	pfc::string8_fastalloc name, fmt;
 
 	if (static_api_ptr_t<playlist_manager>()->activeplaylist_get_name(name))
 	{
@@ -723,7 +723,7 @@ void cfg_osd_list::show_track(unsigned n)
 		osd_config * c = val[n];
 		osd_state  * s = state[n];
 		COsdWnd    * o = osd[n];
-		string8_fastalloc cmd;
+		pfc::string8_fastalloc cmd;
 
 		static_api_ptr_t<play_control>()->playback_format_title(next_extra_i, cmd, s->format, NULL, play_control::display_level_all);
 		if (cmd.length()) o->Post(cmd, !!(c->flags & osd_interval));
@@ -735,7 +735,7 @@ void cfg_osd_list::show_playlist(unsigned n)
 	insync(sync);
 	if (!initialized) return;
 
-	string8_fastalloc name, fmt;
+	pfc::string8_fastalloc name, fmt;
 
 	if (n < osd.get_count() && static_api_ptr_t<playlist_manager>()->activeplaylist_get_name(name))
 	{

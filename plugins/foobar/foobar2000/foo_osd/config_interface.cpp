@@ -271,7 +271,7 @@ class preferences_page_osd : public preferences_page
 			uSetWindowLong(wnd, DWL_USER, lp);
 			{
 				pfc::string_base * ptr = reinterpret_cast<pfc::string_base*>(lp);
-				uSetWindowText( wnd, string8() << "Rename preset: \"" << ptr->get_ptr() << "\"" );
+				uSetWindowText( wnd, pfc::string8() << "Rename preset: \"" << ptr->get_ptr() << "\"" );
 				uSetDlgItemText(wnd, IDC_EDIT, ptr->get_ptr());
 				cfg_placement.on_window_creation(wnd);
 			}
@@ -368,7 +368,7 @@ class preferences_page_osd : public preferences_page
 
 				ShowWindow(uGetDlgItem(hTab, IDC_CONFIG1), SW_SHOW);
 
-				pfc::array_t<string_simple> names;
+				pfc::array_t<pfc::string_simple> names;
 				g_osd.get_names(names);
 
 				w = GetDlgItem(wnd, IDC_OVERLAY);
@@ -492,7 +492,7 @@ class preferences_page_osd : public preferences_page
 
 			case IDC_OVERLAY_RENAME:
 				{
-					string8_fastalloc temp;
+					pfc::string8_fastalloc temp;
 					temp = ctx->preset.name;
 
 					if (rename(temp, wnd))
@@ -637,7 +637,7 @@ class preferences_page_osd : public preferences_page
 				case MAKEID(IDC_CONFIG3, IDC_CCP):
 					{
 						HWND w = GetDlgItem(GetDlgItem(GetDlgItem(wnd, IDC_TAB), IDC_CONFIG3), IDC_CCF);
-						string8_fastalloc temp;
+						pfc::string8_fastalloc temp;
 						temp = string_utf8_from_window(w);
 						const char * ptr = temp.get_ptr() + 5;
 						DWORD color = strtoul(ptr, (char **) &ptr, 10);
@@ -647,11 +647,11 @@ class preferences_page_osd : public preferences_page
 						if (uChooseColor(&color, wnd, (DWORD*)&meh.colors))
 						{
 							temp = "$rgb(";
-							temp << format_int( color & 255 );
+							temp << pfc::format_int( color & 255 );
 							temp.add_byte(',');
-							temp << format_int( (color >> 8) & 255 );
+							temp << pfc::format_int( (color >> 8) & 255 );
 							temp.add_byte(',');
-							temp << format_int( (color >> 16) & 255 );
+							temp << pfc::format_int( (color >> 16) & 255 );
 							temp.add_byte(')');
 							uSetWindowText(w, temp);
 						}

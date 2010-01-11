@@ -59,9 +59,8 @@ CSessionWnd * g_sessionwnd = NULL;
 
 static void lock()
 {
-	string8 info("Workstation locked");
-	service_ptr_t<play_control> pc;
-	if (!play_control::g_get(pc)) return;
+	pfc::string8 info("Workstation locked");
+	static_api_ptr_t<playback_control> pc;
 	cfg_waslocked = TRUE;
 	if (pc->is_playing() && !pc->is_paused())
 	{
@@ -75,9 +74,8 @@ static void lock()
 
 static void unlock()
 {
-	string8 info("Workstation unlocked");
-	service_ptr_t<play_control> pc;
-	if (!play_control::g_get(pc)) return;
+	pfc::string8 info("Workstation unlocked");
+	static_api_ptr_t<play_control> pc;
 	cfg_waslocked = FALSE;
 	if (cfg_resume)
 	{
