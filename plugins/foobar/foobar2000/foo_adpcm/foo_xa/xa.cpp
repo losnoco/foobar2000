@@ -1500,7 +1500,7 @@ public:
 			if ( ! strnicmp(fn, "xa://", 5) )
 			{
 				// lovely, let's do this
-				pfc::string_simple temp("file://");
+				pfc::string8 temp("file://");
 				temp += fn.get_ptr() + 5;
 				fn = temp;
 			}
