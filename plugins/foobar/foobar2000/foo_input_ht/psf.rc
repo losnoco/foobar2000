@@ -1,0 +1,144 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_LOGOBMP             BITMAP                  "htsatlogo.bmp"
+IDB_LOGOBMP2            BITMAP                  "htdclogo.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PSF_CONFIG DIALOGEX 0, 0, 287, 164
+STYLE DS_SETFONT | WS_CHILD
+FONT 8, "Tahoma", 0, 0, 0x0
+BEGIN
+    GROUPBOX        "Length",-1,7,7,131,64
+    CONTROL         "Force all songs to play indefinitely",IDC_INDEFINITE,
+                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,14,19,121,10
+    RTEXT           "Default length is:",-1,10,36,58,8
+    EDITTEXT        IDC_DLENGTH,72,34,47,12,ES_AUTOHSCROLL | ES_WANTRETURN | WS_GROUP
+    LTEXT           "m:s",-1,121,36,12,8
+    RTEXT           "Fade out for:",-1,14,52,54,8
+    EDITTEXT        IDC_DFADE,72,50,47,12,ES_AUTOHSCROLL | WS_GROUP
+    LTEXT           "m:s",-1,121,52,12,8
+    CONTROL         "Suppress opening silence",IDC_SOS,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,146,13,97,10
+    CONTROL         "Stop after",IDC_SES,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,146,27,47,10
+    EDITTEXT        IDC_SILENCE,193,26,25,12,ES_AUTOHSCROLL | WS_GROUP
+    LTEXT           "sec. of silence",-1,220,28,46,8
+    GROUPBOX        "Sound",-1,7,75,151,56
+    CONTROL         "Enable direct (dry) output",IDC_DRY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,86,97,10
+    CONTROL         "Enable DSP emulation (for reverb, etc.)",IDC_DSP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,100,139,10
+    CONTROL         115,IDC_LOGO,"Static",SS_BITMAP,179,70,101,58
+    CTEXT           "",IDC_URL,179,134,101,8,NOT WS_GROUP
+    CTEXT           "",IDC_K54,179,146,101,8,NOT WS_GROUP
+    CONTROL         "Emulate DSP using dynamic recompiler",IDC_DSP_DYNAREC,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,114,135,10
+END
+
+IDD_TIME DIALOGEX 31, 26, 140, 44
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+FONT 8, "Tahoma", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,83,6,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,83,23,50,14
+    LTEXT           "Length:",-1,7,9,25,10,0,WS_EX_RIGHT
+    EDITTEXT        IDC_LENGTH,37,7,37,12,ES_AUTOHSCROLL
+    LTEXT           "Fade:",-1,7,26,25,10,0,WS_EX_RIGHT
+    EDITTEXT        IDC_FADE,37,24,37,12,ES_AUTOHSCROLL
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_PSF_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 280
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 157
+    END
+
+    IDD_TIME, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 133
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 37
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
