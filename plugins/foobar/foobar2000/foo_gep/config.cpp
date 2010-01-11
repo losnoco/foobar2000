@@ -217,26 +217,26 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		case IDC_GD3JAPANESE:
 			cfg_vgm_gd3_prefers_japanese = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
 			break;
-		case (EN_CHANGE<<16)|IDC_LENGTH:
+		case (EN_CHANGE<<16)|IDC_DLENGTH:
 			{
 				int meh = parse_time_crap(string_utf8_from_window((HWND)lp));
 				if (meh != BORK_TIME) cfg_default_length = meh;
 			}
 			break;
-		case (EN_KILLFOCUS<<16)|IDC_LENGTH:
+		case (EN_KILLFOCUS<<16)|IDC_DLENGTH:
 			{
 				char temp[16];
 				print_time_crap(cfg_default_length, (char *)&temp);
 				uSetWindowText((HWND)lp, temp);
 			}
 			break;
-		case (EN_CHANGE<<16)|IDC_FADE:
+		case (EN_CHANGE<<16)|IDC_DFADE:
 			{
 				int meh = parse_time_crap(string_utf8_from_window((HWND)lp));
 				if (meh != BORK_TIME) cfg_default_fade = meh;
 			}
 			break;
-		case (EN_KILLFOCUS<<16)|IDC_FADE:
+		case (EN_KILLFOCUS<<16)|IDC_DFADE:
 			{
 				char temp[16];
 				print_time_crap(cfg_default_fade, (char *)&temp);

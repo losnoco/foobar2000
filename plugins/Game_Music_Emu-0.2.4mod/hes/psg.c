@@ -153,14 +153,30 @@ void psg_w(FESTALON_HES *hes, uint16 address, uint8 data)
     }
 }
 
+static _inline void psg_update_ch(FESTALON_HES *hes, psg_channel *ch, int32 timestamp)
+{
+ int delta = ch->dda_cache[0] - ch->last_amp[0];
+ if (delta)
+ {
+  ch->last_amp[0] = ch->dda_cache[0];
+  synth_offset( hes->psg.blip_synth, timestamp, delta, ch->blip_buffer[0] );
+ }
+ delta = ch->dda_cache[1] - ch->last_amp[1];
+ if (delta)
+ {
+  ch->last_amp[1] = ch->dda_cache[1];
+  synth_offset( hes->psg.blip_synth, timestamp, delta, ch->blip_buffer[1] );
+ }
+}
+
 void psg_update(FESTALON_HES *hes)
 {
  int chc;
- int32 V;
+ int32 V, step;
  int32 timestamp;
  int disabled[6];
 
- timestamp = ((h6280_Regs *)hes->h6280)->timestamp; //(((h6280_Regs *)hes->h6280)->timestamp >> 1) &~1;
+ timestamp = ((h6280_Regs *)hes->h6280)->timestamp & ~3; //(((h6280_Regs *)hes->h6280)->timestamp >> 1) &~1;
 
  for(V=0;V<6;V++)
  {
@@ -174,59 +190,36 @@ void psg_update(FESTALON_HES *hes)
   psg_channel *ch = &hes->psg.channel[chc];
    
   if(disabled[chc]) continue;
-   
-  for(V = hes->psg.lastts; V < timestamp;V += 2)
+
+  if ( timestamp >= hes->psg.lastts ) psg_update_ch( hes, ch, hes->psg.lastts );
+
+  if ( ! ( ch->control & 0x40 ) )
   {
-   int32 delta;
-
-   //if(!(ch->control & 0x80)) continue;        // Channel disabled.
-
-   if(ch->control & 0x40) // DDA
+   if (ch->noisectrl & 0x80)
    {
+    for(V = hes->psg.lastts + ( ( ch->noisecount - 1 ) & 0x1F ) * 2, step = ( ch->noisectrl & 0x1F ) ? ( ch->noisectrl & 0x1F ) * 2 : 0x20 * 2; V < timestamp; V += step)
+    {
+     ch->lfsr = (ch->lfsr << 1) | ((~((ch->lfsr >> 15) ^ (ch->lfsr >> 14) ^ (ch->lfsr >> 13) ^ (ch->lfsr >> 3)))&1);
+     ch->dda = (ch->lfsr&1)?0x1F:0;
+     redo_ddacache(hes, ch);
+     psg_update_ch( hes, ch, V );
+    }
+    ch->noisecount = ( V - timestamp + 2 ) >> 1;
    }
    else
    {
-    if(ch->noisectrl & 0x80)
+    for(V = hes->psg.lastts + ( ( ch->counter - 1 ) & 0xFFF ) * 2, step = ch->frequency ? ch->frequency * 2 : 0x1000 * 2; V < timestamp; V += step)
     {
-     ch->noisecount = (ch->noisecount - 1) & 0x1F;
-     if(!ch->noisecount)
-     {
-      ch->noisecount = ch->noisectrl & 0x1F;
-      ch->lfsr = (ch->lfsr << 1) | ((~((ch->lfsr >> 15) ^ (ch->lfsr >> 14) ^ (ch->lfsr >> 13) ^ (ch->lfsr >> 3)))&1);
-      ch->dda = (ch->lfsr&1)?0x1F:0;
-      redo_ddacache(hes, ch);
-     }
+     ch->waveform_index = (ch->waveform_index + 1) & 0x1F;
+     ch->dda = ch->waveform[ch->waveform_index];
+     redo_ddacache(hes, ch);
+     psg_update_ch( hes, ch, V );
     }
-    else
-    {
-     ch->counter = (ch->counter - 1) & 0xFFF;
-
-     if(!ch->counter)
-     {
-      ch->counter = ch->frequency;
-      ch->waveform_index = (ch->waveform_index + 1) & 0x1F;
-      ch->dda = ch->waveform[ch->waveform_index];
-      redo_ddacache(hes, ch);
-     }
-    }
-   }
-
-   delta = ch->dda_cache[0] - ch->last_amp[0];
-   if (delta)
-   {
-    ch->last_amp[0] = ch->dda_cache[0];
-    synth_offset( hes->psg.blip_synth, V, delta, ch->blip_buffer[0] );
-   }
-   delta = ch->dda_cache[1] - ch->last_amp[1];
-   if (delta)
-   {
-    ch->last_amp[1] = ch->dda_cache[1];
-    synth_offset( hes->psg.blip_synth, V, delta, ch->blip_buffer[1] );
+    ch->counter = ( V - timestamp + 2 ) >> 1;
    }
   }
  }
-
- hes->psg.lastts = timestamp;
+ hes->psg.lastts = ( ((h6280_Regs *)hes->h6280)->timestamp + 3 ) & ~3;
 }
 
 

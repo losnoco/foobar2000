@@ -102,6 +102,6 @@ public:
 	}
 };
 
-DECLARE_FILE_TYPE( "HES files", "*.HES;*.PCE" );
+DECLARE_FILE_TYPE( "HES files", "*.HES" );
 
 static input_factory_t        <input_hes>   g_input_factory_hes;

@@ -151,7 +151,7 @@
 			ConfigurationType="4"
 			InheritedPropertySheets="..\..\..\Program Files\Microsoft Visual Studio 8\VC\VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
-			WholeProgramOptimization="1"
+			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
