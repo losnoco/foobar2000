@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.9"
+#define MYVERSION "2.0.10"
 
 /*
 	changelog
+
+2009-08-17 00:14 UTC - kode54
+- Fixed tag writer for correct QSF version number
+- Version is now 2.0.10
 
 2009-08-06 00:34 UTC - kode54
 - Fixed start silence skipping when resetting state in seek function
@@ -1299,7 +1303,7 @@ public:
 		BYTE *ptr = buffer.get_ptr();
 		m_file->read_object( ptr, 16, p_abort );
 		if (ptr[0] != 'P' || ptr[1] != 'S' || ptr[2] != 'F' ||
-			(ptr[3] != 1 && ptr[3] != 2)) throw exception_io_data();
+			ptr[3] != 0x41) throw exception_io_data();
 		int reserved_size = pfc::byteswap_if_be_t( ((unsigned long*)ptr)[1] );
 		int exe_size = pfc::byteswap_if_be_t( ((unsigned long*)ptr)[2] );
 		m_file->seek(16 + reserved_size + exe_size, p_abort);
