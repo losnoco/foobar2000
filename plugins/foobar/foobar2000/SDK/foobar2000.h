@@ -5,11 +5,21 @@
 #error Only UNICODE environment supported.
 #endif
 
-#define NEW_INPUT_SPEC
-
 #include "../../pfc/pfc.h"
 
-#include "utf8api.h"
+#include "shared.h"
+
+#ifndef NOTHROW
+#ifdef _MSC_VER
+#define NOTHROW __declspec(nothrow)
+#else
+#define NOTHROW
+#endif
+#endif
+
+#define FB2KAPI /*NOTHROW*/
+
+typedef const char * pcchar;
 
 #include "service.h"
 
@@ -19,6 +29,7 @@
 #include "preferences_page.h"
 #include "coreversion.h"
 #include "filesystem.h"
+#include "cfg_var.h"
 #include "mem_block_container.h"
 #include "audio_postprocessor.h"
 #include "playable_location.h"
@@ -26,7 +37,6 @@
 #include "file_info_impl.h"
 #include "metadb.h"
 #include "console.h"
-#include "converter.h"
 #include "dsp.h"
 #include "dsp_manager.h"
 #include "initquit.h"
@@ -36,13 +46,10 @@
 #include "menu_helpers.h"
 #include "modeless_dialog.h"
 #include "output.h"
-#include "output_manager.h"
+#include "playback_control.h"
 #include "play_callback.h"
-#include "play_control.h"
-#include "playback_core.h"
 #include "playlist.h"
 #include "playlist_loader.h"
-#include "track_indexer.h"
 #include "replaygain.h"
 #include "resampler.h"
 #include "tag_processor.h"
@@ -69,5 +76,6 @@
 #include "chapterizer.h"
 #include "ogg_stream_handler.h"
 #include "link_resolver.h"
+#include "main_thread_callback.h"
 
 #endif //_FOOBAR2000_H_

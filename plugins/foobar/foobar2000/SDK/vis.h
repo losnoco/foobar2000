@@ -4,54 +4,56 @@
 #include "service.h"
 #include "audio_chunk.h"
 
-typedef float vis_sample;
-
-struct vis_chunk
-{
-	enum
-	{
-		FLAG_LAGGED = 1,	//unless you need to process all samples in the stream for some reason (eg. scanning for peak), you should ignore chunks marked as "lagged"
-	};
-
-	vis_sample * data;
-	unsigned samples;// sizeof(data) == sizeof(vis_sample) * samples * nch;
-	unsigned srate,nch;
-	vis_sample * spectrum;
-	unsigned spectrum_size;// sizeof(spectrum) == sizeof(vis_sample) * spectrum_size * nch;
-	unsigned flags;//see FLAG_* above
-
-	inline double get_duration() const {return srate>0 ? (double)samples / (double)srate : 0;}
-
-};//both data and spectrum are channel-interleaved
-
-#define visualisation visualization
-#define visualisation_factory visualization_factory
-
-class NOVTABLE visualization : public service_base
-{
-public://all calls are from main thread
-	virtual void on_data(const vis_chunk * data)=0;
-	virtual void on_flush()=0;
-	virtual double get_expected_latency() {return 0;}//return time in seconds; allowed to change when running
+class NOVTABLE visualisation_stream : public service_base {
+public:
+	//! Retrieves absolute playback time since last playback start or seek. You typically pass value retrieved by this function - optionally with offset added - to other visualisation_stream methods.
+	//! @returns One of t_io_result codes. May fail with io_result_error_data when e.g. playback isn't active.
+	virtual t_io_result get_absolute_time(double & p_value) = 0;
 	
-	//allowed to change in runtime
-	virtual bool is_active()=0;
-	virtual bool need_spectrum()=0;
+	//! Retrieves an audio chunk starting at specified offset (see get_absolute_time()), of specified length.
+	//! @returns One of t_io_result codes. Will fail with io_result_error_data when requested timestamp is out of available range.
+	virtual t_io_result get_chunk_absolute(audio_chunk & p_chunk,double p_offset,double p_requested_length) = 0;
+	//! Retrieves spectrum for audio data at specified offset (see get_absolute_time()), with specified FFT size.
+	//! @param p_chunk Receives spectrum data. audio_chunk type is used for consistency (since required functionality is identical to provided by audio_chunk), the data is *not* PCM. Returned sample count is equal to half of FFT size; channels and sample rate are as in audio stream the spectrum was generated from.
+	//! @param p_offset Timestamp of spectrum to retrieve. See get_absolute_time().
+	//! @param p_fft_size FFT size to use for spectrum generation. Must be a power of 2.
+	//! @returns One of t_io_result codes. Will fail with io_result_error_data when requested timestamp is out of available range.
+	virtual t_io_result get_spectrum_absolute(audio_chunk & p_chunk,double p_offset,unsigned p_fft_size) = 0;
+	
+	//! Generates fake audio chunk to display when get_chunk_absolute() fails - e.g. shortly after visualisation_stream creation data for currently played audio might not be available yet.
+	//! @returns One of t_io_result codes.
+	virtual t_io_result make_fake_chunk_absolute(audio_chunk & p_chunk,double p_offset,double p_requested_length) = 0;
+	//! Generates fake spectrum to display when get_spectrum_absolute() fails - e.g. shortly after visualisation_stream creation data for currently played audio might not be available yet.
+	//! @returns One of t_io_result codes.
+	virtual t_io_result make_fake_spectrum_absolute(audio_chunk & p_chunk,double p_offset,unsigned p_fft_size) = 0;
 
+	
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	static bool is_vis_manager_present()
-	{
-		static const GUID guid = 
-		{ 0x5ca94fe1, 0x7593, 0x47de, { 0x8a, 0xdf, 0x8e, 0x36, 0xb4, 0x93, 0xa6, 0xd0 } };
-		return service_enum_is_present(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
+protected:
+	visualisation_stream() {}
+	~visualisation_stream() {}
 };
 
-template<class T>
-class visualization_factory : public service_factory_single_t<visualization,T> {};
+class NOVTABLE visualisation_manager : public service_base {
+public:
+	//! @param p_flags reserved for future use. Must be set to zero.
+	virtual bool create_stream(service_ptr_t<visualisation_stream> & p_out,unsigned p_flags) = 0;
 
-//usage: static visualisation_factory<myvisualisation> blah;
+	static const GUID class_guid;
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	visualisation_manager() {}
+	~visualisation_manager() {}
+};
+
 
 #endif //_FOOBAR2000_VIS_H_

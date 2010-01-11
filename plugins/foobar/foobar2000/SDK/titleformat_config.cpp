@@ -22,6 +22,7 @@ void titleformat_config_impl::get_data(string_base & p_out)
 	p_out = m_value;
 }
 
+
 void titleformat_config_impl::set_data(const char * p_string,unsigned p_string_length)
 {
 	if (core_api::assert_main_thread())
@@ -42,7 +43,7 @@ bool titleformat_config_impl::compile(service_ptr_t<titleformat_object> & p_out)
 	if (m_instance.is_empty())
 	{
 		if (m_compilation_failed) return false;
-		if (!static_api_ptr_t<titleformat>()->compile(m_instance,m_value))
+		if (!static_api_ptr_t<titleformat_compiler>()->compile(m_instance,m_value))
 		{
 			m_compilation_failed = true;
 			return false;
@@ -57,17 +58,24 @@ void titleformat_config_impl::reset()
 	set_data(m_value_default,infinite);
 }
 
-bool titleformat_config_impl::get_raw_data(write_config_callback * out)
+
+t_io_result titleformat_config_impl::get_data_raw(stream_writer * p_stream,abort_callback & p_abort)
 {
-	out->write(m_value.get_ptr(),m_value.length());
-	return true;
+	return p_stream->write_string_raw(m_value,p_abort);
 }
 
-void titleformat_config_impl::set_raw_data(const void * data,int size)
+t_io_result titleformat_config_impl::set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort)
 {
-	m_value.set_string((const char*)data,(unsigned)size);
-	m_instance.release();
-	m_compilation_failed = false;
+	string8_fastalloc temp;
+	t_io_result status;
+	status = p_stream->read_string_raw(temp,p_abort);
+	if (io_result_succeeded(status))
+	{
+		m_instance.release();
+		m_compilation_failed = false;
+		m_value = temp;
+	}
+	return status;
 }
 
 titleformat_config_impl::titleformat_config_impl(const GUID & p_guid,const char * p_name,const char * p_initvalue,double p_order) :

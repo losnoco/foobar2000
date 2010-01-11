@@ -4,10 +4,10 @@
 	Version="8.00"
 	Name="foobar2000_component_client"
 	ProjectGUID="{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK"
+	RootNamespace="foobar2000_component_client"
+	SccProjectName="&quot;$/foobar2000/plugins.root/plugins&quot;, CEAAAAAA"
+	SccLocalPath="..\..\.."
+	SccProvider="MSSCCI:Microsoft Visual SourceSafe"
 	>
 	<Platforms>
 		<Platform
@@ -22,7 +22,7 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="..\..\..\..\Program Files\Microsoft Visual Studio 8\VC\VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="C:\Program Files\Microsoft Visual Studio 8\VC\VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="1"
@@ -89,10 +89,11 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="..\..\..\..\Program Files\Microsoft Visual Studio 8\VC\VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="C:\Program Files\Microsoft Visual Studio 8\VC\VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="1"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -111,13 +112,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="true"
 				EnableFiberSafeOptimizations="false"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="true"
-				RuntimeLibrary="0"
+				FloatingPointModel="2"
+				RuntimeTypeInfo="false"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 			/>

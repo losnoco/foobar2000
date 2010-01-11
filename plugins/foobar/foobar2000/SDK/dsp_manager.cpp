@@ -11,13 +11,14 @@ void dsp_manager::dsp_run(unsigned idx,dsp_chunk_list * list,const metadb_handle
 {
 	list->remove_bad_chunks();
 
-	TRACK_CALL_TEXT("dsp::run");	
-	m_dsp_list[idx]->run(list,cur_file,flags);
-	latency += m_dsp_list[idx]->get_latency();
+	TRACK_CODE("dsp::run",m_dsp_list[idx]->run(list,cur_file,flags));
+	TRACK_CODE("dsp::get_latency",latency += m_dsp_list[idx]->get_latency());
 }
 
 double dsp_manager::run(dsp_chunk_list * list,const metadb_handle_ptr & cur_file,unsigned flags)
 {
+	TRACK_CALL_TEXT("dsp_manager::run");
+
 	fpu_control_default l_fpu_control;
 
 	unsigned n;
@@ -72,11 +73,9 @@ double dsp_manager::run(dsp_chunk_list * list,const metadb_handle_ptr & cur_file
 
 void dsp_manager::flush()
 {
-	TRACK_CALL_TEXT("dsp_manager::flush");
 	unsigned n, m = m_dsp_list.get_count();
-	for(n=0;n<m;n++)
-	{
-		m_dsp_list[n]->flush();
+	for(n=0;n<m;n++) {
+		TRACK_CODE("dsp::flush",m_dsp_list[n]->flush());
 	}
 }
 

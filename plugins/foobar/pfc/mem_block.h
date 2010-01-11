@@ -34,45 +34,53 @@ public:
 class mem_block
 {
 public:
-	enum mem_logic_t {ALLOC_DEFAULT,ALLOC_FAST,ALLOC_FAST_DONTGODOWN};
+	enum t_mem_logic {ALLOC_DEFAULT,ALLOC_FAST,ALLOC_FAST_DONTGODOWN};
 private:
 	void * data;
 	unsigned size,used;
-	mem_logic_t mem_logic;
+	t_mem_logic mem_logic;
 public:
-	inline void set_mem_logic(mem_logic_t v) {mem_logic=v;}
-	inline mem_logic_t get_mem_logic() const {return mem_logic;}
+	inline void set_mem_logic(t_mem_logic v) {mem_logic=v;}
+	inline t_mem_logic get_mem_logic() const {return mem_logic;}
 
-	void prealloc(unsigned size);
+	bool prealloc(unsigned size);
 
-	inline mem_block() : data(0), size(0), used(0), mem_logic(ALLOC_DEFAULT) {}
-	inline mem_block(const mem_block & p_block) : data(0), size(0), used(0), mem_logic(ALLOC_DEFAULT) {*this = p_block;}
+	mem_block() : data(0), size(0), used(0), mem_logic(ALLOC_DEFAULT) {}
+	mem_block(const mem_block & p_block) : data(0), size(0), used(0), mem_logic(ALLOC_DEFAULT) {*this = p_block;}
 
-	inline ~mem_block() {if (data) free(data);}
+	~mem_block();
 
-	inline unsigned get_size() const {return used;}
+	unsigned get_size() const {return used;}
 
-	inline const void * get_ptr() const {return data;}
-	inline void * get_ptr() {return data;}
+	const void * get_ptr() const {return data;}
+	void * get_ptr() {return data;}
 
 	bool set_size(unsigned new_used);
 
-	inline bool check_size(unsigned new_size)
+	void set_size_e(unsigned p_size) {
+		if (!set_size(p_size)) throw std::bad_alloc();
+	}
+
+	bool check_size(unsigned new_size)
 	{
 		if (used<new_size) return set_size(new_size);
 		else return true;
 	}
 
-	inline operator const void * () const {return get_ptr();}
-	inline operator void * () {return get_ptr();}
+	void check_size_e(unsigned p_size) {
+		if (!check_size(p_size)) throw std::bad_alloc();
+	}
 
-	void* copy(const void *ptr, unsigned bytes,unsigned start=0);
+	operator const void * () const {return get_ptr();}
+	operator void * () {return get_ptr();}
 
-	inline void* append(const void *ptr, unsigned bytes) {return copy(ptr,bytes,used);}
+	bool copy(const void *ptr, unsigned bytes,unsigned start=0);
 
-	inline void zeromemory() {memset(get_ptr(),0,used);}
+	bool append(const void *ptr, unsigned bytes) {return copy(ptr,bytes,used);}
 
-	inline void force_reset() {if (data) free(data);data=0;size=0;used=0;}
+	void zeromemory() {memset(get_ptr(),0,used);}
+
+	void force_reset();
 
 	bool set_data(const void * src,unsigned size)
 	{
@@ -81,7 +89,11 @@ public:
 		return true;
 	}
 
-	inline const mem_block & operator=(const mem_block & src) {set_data(src.get_ptr(),src.get_size()); return *this;}
+	inline const mem_block & operator=(const mem_block & src) {
+		if (!set_data(src.get_ptr(),src.get_size()))
+			throw std::bad_alloc();
+		return *this;
+	}
 
 	inline static void g_swap(mem_block & p_item1,mem_block & p_item2)
 	{
@@ -120,28 +132,36 @@ class mem_block_t
 {
 	mem_block theBlock;
 public:
-	inline mem_block_t() {}
-	inline mem_block_t(unsigned s) {theBlock.set_size(s*sizeof(T));}
-	inline mem_block_t(const mem_block_t<T> & p_source) {*this = p_source;}
+	mem_block_t() {}
+	mem_block_t(unsigned p_size) {set_size_e(p_size);}
+	mem_block_t(const mem_block_t<T> & p_source) {*this = p_source;}
 
-	inline void set_mem_logic(mem_block::mem_logic_t v) {theBlock.set_mem_logic(v);}
-	inline mem_block::mem_logic_t get_mem_logic() const {return theBlock.get_mem_logic();}
+	void set_mem_logic(mem_block::t_mem_logic v) {theBlock.set_mem_logic(v);}
+	mem_block::t_mem_logic get_mem_logic() const {return theBlock.get_mem_logic();}
 
-	inline unsigned get_size() const {return theBlock.get_size()/sizeof(T);}
+	unsigned get_size() const {return theBlock.get_size()/sizeof(T);}
 
-	inline const T* get_ptr() const {return reinterpret_cast<const T*>(theBlock.get_ptr());}
-	inline T* get_ptr() {return reinterpret_cast<T*>(theBlock.get_ptr());}
+	const T* get_ptr() const {return reinterpret_cast<const T*>(theBlock.get_ptr());}
+	T* get_ptr() {return reinterpret_cast<T*>(theBlock.get_ptr());}
 
-	inline bool set_size(unsigned new_size) {return theBlock.set_size(new_size*sizeof(T));}
+	bool set_size(unsigned p_size) {return theBlock.set_size(p_size*sizeof(T));}
 
-	inline bool check_size(unsigned new_size) {return theBlock.check_size(new_size*sizeof(T));}
+	void set_size_e(unsigned p_size) {
+		if (!set_size(p_size)) throw std::bad_alloc();
+	}
+
+	bool check_size(unsigned p_size) {return theBlock.check_size(p_size*sizeof(T));}
+	
+	void check_size_e(unsigned p_size) {
+		if (!check_size(p_size)) throw std::bad_alloc();
+	}
 
 	inline operator const T * () const {return get_ptr();}
 	inline operator T * () {return get_ptr();}
 
-	inline T* copy(const T* ptr,unsigned size,unsigned start=0) {return reinterpret_cast<T*>(theBlock.copy(reinterpret_cast<const void*>(ptr),size*sizeof(T),start*sizeof(T)));}
-	inline T* append(const T* ptr,unsigned size) {return reinterpret_cast<T*>(theBlock.append(reinterpret_cast<const void*>(ptr),size*sizeof(T)));}
-	inline void append(T item) {theBlock.append(reinterpret_cast<const void*>(&item),sizeof(item));}
+	inline bool copy(const T* ptr,unsigned size,unsigned start=0) {return theBlock.copy(reinterpret_cast<const void*>(ptr),size*sizeof(T),start*sizeof(T));}
+	inline bool append(const T* ptr,unsigned size) {return theBlock.append(reinterpret_cast<const void*>(ptr),size*sizeof(T));}
+	inline bool append(T item) {return theBlock.append(reinterpret_cast<const void*>(&item),sizeof(item));}
 
 	inline void swap(unsigned idx1,unsigned idx2)
 	{
@@ -149,12 +169,16 @@ public:
 		pfc::swap_t(ptr[idx1],ptr[idx2]);
 	}
 
-	T* set_data(const T* src,unsigned count)
+	bool set_data(const T* src,unsigned count)
 	{
-		return reinterpret_cast<T*>(theBlock.set_data(reinterpret_cast<const void*>(src),count*sizeof(T)));
+		return theBlock.set_data(reinterpret_cast<const void*>(src),count*sizeof(T));
 	}
 
-	const mem_block_t<T> & operator=(const mem_block_t<T> & src) {set_data(src.get_ptr(),src.get_size());return *this;}
+	const mem_block_t<T> & operator=(const mem_block_t<T> & src) {
+		if (!set_data(src.get_ptr(),src.get_size()))
+			throw std::bad_alloc();
+		return *this;
+	}
 
 	unsigned write_circular(unsigned offset,const T* src,unsigned count)
 	{//returns new offset
@@ -217,7 +241,7 @@ public:
 
 	inline void force_reset() {theBlock.force_reset();}
 
-	inline void prealloc(unsigned size) {theBlock.prealloc(size*sizeof(T));}
+	inline bool prealloc(unsigned size) {return theBlock.prealloc(size*sizeof(T));}
 
 	inline static void g_swap(mem_block_t<T> & p_item1,mem_block_t<T> & p_item2) {pfc::swap_t(p_item1.theBlock,p_item2.theBlock);}
 };
@@ -234,20 +258,20 @@ template<class T>
 class mem_block_fast_aggressive_t : public mem_block_t<T>
 {
 public:
-	inline mem_block_fast_aggressive_t() {init();}
-	inline mem_block_fast_aggressive_t(unsigned p_size) {init();this->set_size(p_size);}
-	inline mem_block_fast_aggressive_t(const mem_block_fast_aggressive_t<T> & p_source) {init();*this=p_source;}
+	mem_block_fast_aggressive_t() {init();}
+	mem_block_fast_aggressive_t(unsigned p_size) {init();this->set_size_e(p_size);}
+	mem_block_fast_aggressive_t(const mem_block_fast_aggressive_t<T> & p_source) {init();*this=p_source;}
 private:
-	inline void init() {set_mem_logic(mem_block::ALLOC_FAST_DONTGODOWN);}
+	void init() {set_mem_logic(mem_block::ALLOC_FAST_DONTGODOWN);}
 };
 
 template<class T>
 class mem_block_fast_t : public mem_block_t<T>
 {
 public:
-	inline mem_block_fast_t() {init();}
-	inline mem_block_fast_t(unsigned p_size) {init();this->set_size(p_size);}
-	inline mem_block_fast_t(const mem_block_fast_t<T> & p_source) {init();*this=p_source;}
+	mem_block_fast_t() {init();}
+	mem_block_fast_t(unsigned p_size) {init();this->set_size_e(p_size);}
+	mem_block_fast_t(const mem_block_fast_t<T> & p_source) {init();*this=p_source;}
 private:
 	inline void init() {set_mem_logic(mem_block::ALLOC_FAST);}
 };
@@ -265,20 +289,21 @@ class mem_block_aligned_t
 	mem_block data;
 	T * ptr_aligned;
 public:
-	inline mem_block_aligned_t() {ptr_aligned = 0;}
-	inline mem_block_aligned_t(unsigned size) {ptr_aligned = 0;set_size(size);}
-	inline mem_block_aligned_t(const mem_block_aligned_t<T> & p_source) {ptr_aligned = 0; *this = p_source;}
+	mem_block_aligned_t() {ptr_aligned = 0;}
+	mem_block_aligned_t(unsigned size) {ptr_aligned = 0;set_size_e(size);}
+	mem_block_aligned_t(const mem_block_aligned_t<T> & p_source) {ptr_aligned = 0; *this = p_source;}
 
 	const mem_block_aligned_t<T> & operator=(const mem_block_aligned_t<T> & p_source)
 	{
-		set_data(p_source.get_ptr(),p_source.get_size());
+		if (!set_data(p_source.get_ptr(),p_source.get_size()))
+			throw std::bad_alloc();
 		return *this;
 	}
 
 	unsigned get_size() const {return data.get_size()/sizeof(T);}
 
-	inline void set_mem_logic(mem_block::mem_logic_t v) {data.set_mem_logic(v);}
-	inline mem_block::mem_logic_t get_mem_logic() const {return data.get_mem_logic();}
+	inline void set_mem_logic(mem_block::t_mem_logic v) {data.set_mem_logic(v);}
+	inline mem_block::t_mem_logic get_mem_logic() const {return data.get_mem_logic();}
 
 	bool set_size(unsigned size)
 	{
@@ -300,9 +325,16 @@ public:
 		return true;
 	}
 
-	bool check_size(unsigned size)
-	{
-		return size > get_size() ? set_size(size) : true;
+	void set_size_e(unsigned p_size) {
+		if (!set_size(p_size)) throw std::bad_alloc();
+	}
+
+	bool check_size(unsigned p_size) {
+		return p_size > get_size() ? set_size(p_size) : true;
+	}
+
+	void check_size_e(unsigned p_size) {
+		if (!check_size(p_size)) throw std::bad_alloc();
 	}
 
 	void fill(T val)

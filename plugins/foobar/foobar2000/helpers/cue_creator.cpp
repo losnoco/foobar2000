@@ -2,21 +2,6 @@
 
 
 namespace {
-	class format_cuetime
-	{
-	public:
-		format_cuetime(double p_time)
-		{
-			t_uint64 ticks = dsp_util::duration_samples_from_time(p_time,75);
-			t_uint64 seconds = ticks / 75; ticks %= 75;
-			t_uint64 minutes = seconds / 60; seconds %= 60;
-			m_buffer << format_uint(minutes,2) << ":" << format_uint(seconds,2) << ":" << format_uint(ticks,2);
-		}
-
-		inline operator const char*() const {return m_buffer;}
-	private:
-		string_formatter m_buffer;
-	};
 
 	class format_meta
 	{
@@ -25,6 +10,10 @@ namespace {
 		{
 			p_source.meta_format(p_name,m_buffer);
 			m_buffer.replace_byte('\"','\'');
+			uReplaceString(m_buffer,string8(m_buffer),infinite,"\x0d\x0a",2,"\\",1,false);
+//			m_buffer.replace_byte(10,'\\');
+//			m_buffer.replace_byte(13,'\\');
+			m_buffer.replace_nontext_chars();
 		}
 		inline operator const char*() const {return m_buffer;}
 	private:
@@ -64,33 +53,29 @@ namespace cue_creator
 			discid_global =			is_meta_same_everywhere(p_data,"discid"),
 			comment_global =		is_meta_same_everywhere(p_data,"comment"),
 			catalog_global =		is_meta_same_everywhere(p_data,"catalog"),
-			isrc_global =			is_meta_same_everywhere(p_data,"isrc");
+			isrc_global =			is_meta_same_everywhere(p_data,"isrc"),
+			songwriter_global =		is_meta_same_everywhere(p_data,"songwriter");
 
-		if (genre_global)
-		{
+		if (genre_global) {
 			p_out << "REM GENRE " << format_meta(p_data.first()->m_infos,"genre") << g_eol;
 		}
-		if (date_global)
-		{
+		if (date_global) {
 			p_out << "REM DATE " << format_meta(p_data.first()->m_infos,"date") << g_eol;
 		}
-		if (discid_global)
-		{
+		if (discid_global) {
 			p_out << "REM DISCID " << format_meta(p_data.first()->m_infos,"discid") << g_eol;
 		}
-		if (comment_global)
-		{
+		if (comment_global) {
 			p_out << "REM COMMENT " << format_meta(p_data.first()->m_infos,"comment") << g_eol;
 		}
-
-		if (catalog_global)
-		{
+		if (catalog_global) {
 			p_out << "CATALOG " << format_meta(p_data.first()->m_infos,"catalog") << g_eol;
 		}
-
-		if (isrc_global)
-		{
+		if (isrc_global) {
 			p_out << "ISRC " << format_meta(p_data.first()->m_infos,"isrc") << g_eol;
+		}
+		if (songwriter_global) {
+			p_out << "SONGWRITER \"" << format_meta(p_data.first()->m_infos,"songwriter") << "\"" << g_eol;
 		}
 
 		if (album_artist_global)
@@ -134,6 +119,10 @@ namespace cue_creator
 			if (!artist_global && iter->m_infos.meta_find("artist") != infinite)
 				p_out << "    PERFORMER \"" << format_meta(iter->m_infos,"artist") << "\"" << g_eol;
 
+			if (!songwriter_global && iter->m_infos.meta_find("songwriter") != infinite) {
+				p_out << "    SONGWRITER \"" << format_meta(iter->m_infos,"songwriter") << "\"" << g_eol;
+			}
+
 
 			{
 				replaygain_info::t_text_buffer rgbuffer;
@@ -143,26 +132,31 @@ namespace cue_creator
 				if (rg.format_track_peak(rgbuffer))
 					p_out << "    REM REPLAYGAIN_TRACK_PEAK " << rgbuffer << g_eol;			
 			}
-			
+
+			if (iter->m_index_list.m_positions[0] < iter->m_index_list.m_positions[1])
 			{
-				t_index_list::const_iterator indexiter;
-				for(indexiter = iter->m_index_list.first();indexiter.is_valid();++indexiter)
-				{
-					p_out << "    INDEX " << format_uint(indexiter->m_index,2) << " " <<format_cuetime(indexiter->m_offset) << g_eol;
-				}
+				if (iter->m_index_list.m_positions[0] < 0)
+					p_out << "    PREGAP " << cuesheet_format_index_time(iter->m_index_list.m_positions[1] - iter->m_index_list.m_positions[0]) << g_eol;
+				else
+					p_out << "    INDEX 00 " << cuesheet_format_index_time(iter->m_index_list.m_positions[0]) << g_eol;
 			}
 
-			// p_out << "    INDEX 01 " << format_cuetime(iter->m_offset) << g_eol;
+			p_out << "    INDEX 01 " << cuesheet_format_index_time(iter->m_index_list.m_positions[1]) << g_eol;
+
+			for(unsigned n=2;n<t_cuesheet_index_list::count && iter->m_index_list.m_positions[n] > 0;n++)
+			{
+				p_out << "    INDEX " << format_uint(n,2) << " " << cuesheet_format_index_time(iter->m_index_list.m_positions[n]) << g_eol;
+			}
+
+			// p_out << "    INDEX 01 " << cuesheet_format_index_time(iter->m_offset) << g_eol;
 		}
 	}
 
 
 	void t_entry::set_simple_index(double p_time)
 	{
-		m_index_list.remove_all();
-		t_index_list::iterator iter = m_index_list.insert_last();
-		iter->m_index = 1;
-		iter->m_offset = p_time;
+		m_index_list.reset();
+		m_index_list.m_positions[0] = m_index_list.m_positions[1] = p_time;
 	}
 
 }

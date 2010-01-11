@@ -7,9 +7,8 @@ class array_t
 public:
 	inline array_t() : m_data(0), m_size(0) {}
 	
-	inline array_t(unsigned p_size) : m_data(0), m_size(0)
-	{
-		set_size(p_size);
+	array_t(unsigned p_size) : m_data(0), m_size(0) {
+		set_size_e(p_size);
 	}
 
 	inline const T& operator[](unsigned n) const
@@ -40,7 +39,7 @@ public:
 		}
 		else
 		{
-			T* new_data = new T[new_size];
+			T* new_data = new(std::nothrow) T[new_size];
 			if (new_data == 0) return false;
 			if (m_data)
 			{
@@ -54,6 +53,10 @@ public:
 			m_size = new_size;
 		}
 		return true;
+	}
+
+	void set_size_e(unsigned p_size) {
+		if (!set_size(p_size)) throw std::bad_alloc();
 	}
 
 
@@ -86,21 +89,19 @@ public:
 	}
 	
 
-	inline array_t(const array_t<T> & p_source) : m_data(0), m_size(0)
-	{
-		copy(p_source);
+	array_t(const array_t<T> & p_source) : m_data(0), m_size(0) {
+		*this = p_source;
 	}
 
-	inline const array_t<T> & operator=(const array_t<T> & p_source) {copy(p_source); return *this;}
+	const array_t<T> & operator=(const array_t<T> & p_source) {
+		unsigned n, m = p_source.get_size();
+		set_size_e(m);
+		for(n=0;n<m;n++) m_data[n] = p_source[n];
+		return *this;
+	}
 
 private:
 
-	void copy(const array_t<T> & p_source)
-	{
-		unsigned n, m = p_source.get_size();
-		set_size(m);
-		for(n=0;n<m;n++) m_data[n] = p_source[n];
-	}
 
 	T* m_data;
 	unsigned m_size;
@@ -110,27 +111,27 @@ template<class T>
 class array_fast_t
 {
 public:
-	inline array_fast_t() : m_size(0) {}
+	array_fast_t() : m_size(0) {}
 
-	inline array_fast_t(unsigned p_size) : m_size(0) {set_size(p_size);}
+	array_fast_t(unsigned p_size) : m_size(0) {set_size_e(p_size);}
 
-	inline array_fast_t(const array_fast_t<T> & p_source) : m_data(p_source.m_data), m_size(p_source.m_size) {}
+	array_fast_t(const array_fast_t<T> & p_source) : m_data(p_source.m_data), m_size(p_source.m_size) {}
 
-	inline const array_fast_t<T> & operator=(const array_fast_t<T> & p_source) {m_data = p_source.m_data; m_size = p_source.m_size; return *this;}
+	const array_fast_t<T> & operator=(const array_fast_t<T> & p_source) {m_data = p_source.m_data; m_size = p_source.m_size; return *this;}
 
-	inline const T& operator[](unsigned n) const
+	const T& operator[](unsigned n) const
 	{
 		assert(n<m_size);
 		return m_data[n];
 	}
 
-	inline T& operator[](unsigned n)
+	T& operator[](unsigned n)
 	{
 		assert(n<m_size);
 		return m_data[n];
 	}
 
-	inline unsigned get_size() const {return m_size;}
+	unsigned get_size() const {return m_size;}
 
 	bool set_size(unsigned p_size)
 	{
@@ -156,10 +157,14 @@ public:
 		else return false;
 	}
 
-	inline void prealloc(unsigned) {}
+	void set_size_e(unsigned p_size) {
+		if (!set_size(p_size)) throw std::bad_alloc();
+	}
 
-	inline T* get_ptr() {return m_data.get_ptr();}
-	inline const T* get_ptr() const {return m_data.get_ptr();}
+	void prealloc(unsigned) {}
+
+	T* get_ptr() {return m_data.get_ptr();}
+	const T* get_ptr() const {return m_data.get_ptr();}
 
 	inline void swap(unsigned p_index1,unsigned p_index2)
 	{
@@ -189,7 +194,7 @@ class array_fast_aggressive_t
 public:
 	inline array_fast_aggressive_t() : m_size(0) {}
 
-	inline array_fast_aggressive_t(unsigned p_size) : m_size(0) {set_size(p_size);}
+	inline array_fast_aggressive_t(unsigned p_size) : m_size(0) {set_size_e(p_size);}
 
 	inline array_fast_aggressive_t(const array_fast_aggressive_t<T> & p_source) : m_data(p_source.m_data), m_size(p_source.m_size) {}
 
@@ -228,6 +233,10 @@ public:
 		else return false;
 	}
 
+	void set_size_e(unsigned p_size) {
+		if (!set_size(p_size)) throw std::bad_alloc();
+	}
+
 	inline void prealloc(unsigned) {}
 
 	inline T* get_ptr() {return m_data.get_ptr();}
@@ -262,7 +271,7 @@ class array_hybrid_t
 {
 public:
 	inline array_hybrid_t() : m_size(0) {}
-	inline array_hybrid_t(unsigned p_size) : m_size(0) {set_size(p_size);}
+	inline array_hybrid_t(unsigned p_size) : m_size(0) {set_size_e(p_size);}
 	inline array_hybrid_t(const array_hybrid_t<T,t_fixed_count,t_variable_storage> & p_source)
 		: m_fixed(p_source.m_fixed), m_variable(p_source.m_variable), m_size(p_source.m_size)
 	{
@@ -281,6 +290,10 @@ public:
 	{
 		m_size = p_size;
 		return m_variable.set_size(p_size > t_fixed_count ? p_size - t_fixed_count : 0);
+	}
+
+	void set_size_e(unsigned p_size) {
+		if (!set_size(p_size)) throw std::bad_alloc();
 	}
 
 	inline T& operator[](unsigned p_index)

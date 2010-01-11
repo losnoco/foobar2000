@@ -10,18 +10,19 @@ public:
 	virtual bool create_preset(dsp_preset & p_out,unsigned p_target_srate,float p_qualityscale) = 0;//p_qualityscale is 0...1
 	virtual float get_priority() = 0;//value is 0...1, where high-quality (SSRC etc) has 1
 
-	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
-	
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return dsp_entry::service_query(guid);
-	}
-
 	static bool g_get_interface(service_ptr_t<resampler_entry> & p_out,unsigned p_srate_from,unsigned p_srate_to);
 	static bool g_create(service_ptr_t<dsp> & p_out,unsigned p_srate_from,unsigned p_srate_to,float p_qualityscale);
 	static bool g_create_preset(dsp_preset & p_out,unsigned p_srate_from,unsigned p_srate_to,float p_qualityscale);
+
+	static const GUID class_guid;
+	
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	resampler_entry() {}
+	~resampler_entry() {}
 };
 
 template<class T>

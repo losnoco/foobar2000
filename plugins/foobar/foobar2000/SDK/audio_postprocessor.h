@@ -13,7 +13,6 @@ public:
 	//! @param p_out_bps_physical Desired physical word width of output. Must be either 8, 16, 24 or 32, greater or equal to p_out_bps. This is typically set to same value as p_out_bps.
 	//! @param p_dither Indicates whether dithering should be used. Note that dithering is CPU-heavy.
 	//! @param p_prescale Value to scale all audio samples by when converting. Set to 1.0 to do nothing.
-	//! @param p_clipflag Set to true when clipping has occured.
 	//! @returns One of t_io_result codes. Possible values are: io_result_success, io_result_error_data (invalid parameters), io_result_error_out_of_memory.
 
 	virtual t_io_result run(const audio_chunk & p_chunk,
@@ -21,8 +20,7 @@ public:
 		unsigned p_out_bps,
 		unsigned p_out_bps_physical,
 		bool p_dither,
-		audio_sample p_prescale,
-		bool & p_clipflag
+		audio_sample p_prescale
 		) = 0;
 
 
@@ -30,17 +28,15 @@ public:
 	inline static bool g_create(service_ptr_t<audio_postprocessor> & p_out) {return service_enum_create_t(p_out,0);}
 
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
-	}
-
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
 protected:
-	inline audio_postprocessor() {}
-	inline ~audio_postprocessor() {}
+	audio_postprocessor() {}
+	~audio_postprocessor() {}
 };
 
 #endif

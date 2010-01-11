@@ -27,17 +27,15 @@ public:
 	//! @returns True on success, false on failure (no interface that supports specified path could be found).
 	static bool g_find(service_ptr_t<link_resolver> & p_out,const char * p_path);
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
-	}
-
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
 protected:
-	link_resolver() {}
-	~link_resolver() {}
+	inline link_resolver() {}
+	inline ~link_resolver() {}
 };
 
 #endif //_foobar2000_sdk_link_resolver_h_

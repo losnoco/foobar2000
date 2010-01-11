@@ -1,78 +1,6 @@
 #include "foobar2000.h"
 #include <math.h>
 
-#if 0 //defined(_MSC_VER) && !defined(_DEBUG) && defined(_M_IX86)
-#define DSP_HAVE_ASM
-#endif
-
-#ifndef DSP_HAVE_ASM
-void dsp_util::scale(audio_sample * ptr,double scale,unsigned count)
-{
-	for(;count;count--)
-	{
-		(*ptr) = (audio_sample)((*ptr) * scale);
-		ptr++;
-	}
-}
-#else
-
-__declspec(naked) void dsp_util::scale(audio_sample * ptr,double scale,unsigned count)
-{
-	_asm
-	{//ptr: [esp+4], scale: [esp+8], count: [esp+16]
-		mov ecx,[esp+16]
-		mov edx,[esp+4]		
-		fld qword ptr [esp+8]
-		mov eax,ecx
-		shr ecx,1
-		jz l12
-l1:
-		fld audio_sample_asm ptr [edx]
-		fld audio_sample_asm ptr [edx+audio_sample_bytes]
-		fmul st,st(2)
-		fxch
-		dec ecx
-		fmul st,st(2)
-		fstp audio_sample_asm ptr [edx]
-		fstp audio_sample_asm ptr [edx+audio_sample_bytes]
-		lea edx,[edx+audio_sample_bytes*2]
-		jnz l1
-l12:
-		test eax,1
-		jz l2
-		fld audio_sample_asm ptr [edx]
-		fmul st,st(1)
-		fstp audio_sample_asm ptr [edx]
-l2:
-		fstp st
-		ret
-	}
-}
-#endif
-
-void dsp_util::kill_denormal_32(float * fptr,unsigned count)
-{
-	DWORD * ptr = reinterpret_cast<DWORD*>(fptr);
-	for(;count;count--)
-	{
-		DWORD t = *ptr;
-		if ((t & 0x007FFFFF) && !(t & 0x7F800000)) *ptr=0;
-		ptr++;
-	}
-}
-
-void dsp_util::kill_denormal_64(double * fptr,unsigned count)
-{
-	unsigned __int64 * ptr = reinterpret_cast<unsigned __int64*>(fptr);
-	for(;count;count--)
-	{
-		unsigned __int64 t = *ptr;
-		if ((t & 0x000FFFFFFFFFFFFF) && !(t & 0x7FF0000000000000)) *ptr=0;
-		ptr++;
-	}
-}
-
-
 unsigned dsp_chunk_list_i::get_count() const {return data.get_count();}
 
 audio_chunk * dsp_chunk_list_i::get_item(unsigned n) const {return n>=0 && n<(unsigned)data.get_count() ? data[n] : 0;}
@@ -149,94 +77,6 @@ void dsp_chunk_list::remove_bad_chunks()
 	}
 	if (blah) console::info("one or more bad chunks removed from dsp chunk list");
 }
-
-__int64 dsp_util::duration_samples_from_time(double time,unsigned srate)
-{
-	return (__int64)floor((double)srate * time + 0.5);
-}
-
-
-#ifdef DSP_HAVE_ASM
-
-__declspec(naked) void __fastcall dsp_util::convert_32_to_64(const float  * src,double * dest,unsigned count)
-{
-	_asm//src: ecx, dest: edx, count: eax
-	{
-		mov eax,dword ptr [esp+4]
-		shr eax,2
-		jz l2
-l1:		fld dword ptr [ecx]
-		fld dword ptr [ecx+4]
-		fstp qword ptr [edx+8]
-		fstp qword ptr [edx]
-		dec eax
-		fld dword ptr [ecx+8]
-		fld dword ptr [ecx+12]
-		fstp qword ptr [edx+24]
-		fstp qword ptr [edx+16]
-		lea ecx,[ecx+16]
-		lea edx,[edx+32]
-		jnz l1
-l2:		mov eax,dword ptr [esp+4]
-		and eax,3
-		jz l4
-l3:		fld dword ptr [ecx]
-		dec eax
-		fstp qword ptr [edx]
-		lea ecx,[ecx+4]
-		lea edx,[edx+8]
-		jnz l3
-l4:		ret 4
-	}
-}
-
-__declspec(naked) void __fastcall dsp_util::convert_64_to_32(const double * src,float  * dest,unsigned count)
-{
-	_asm//src: ecx, dest: edx, count: eax
-	{
-		mov eax,dword ptr [esp+4]
-		shr eax,2
-		jz l2
-l1:		fld qword ptr [ecx]
-		fld qword ptr [ecx+8]
-		fstp dword ptr [edx+4]
-		fstp dword ptr [edx]
-		dec eax
-		fld qword ptr [ecx+16]
-		fld qword ptr [ecx+24]
-		fstp dword ptr [edx+12]
-		fstp dword ptr [edx+8]
-		lea ecx,[ecx+32]
-		lea edx,[edx+16]
-		jnz l1
-l2:		mov eax,dword ptr [esp+4]
-		and eax,3
-		jz l4
-l3:		fld qword ptr [ecx]
-		dec eax
-		fstp dword ptr [edx]
-		lea ecx,[ecx+8]
-		lea edx,[edx+4]
-		jnz l3
-l4:		ret 4
-	}
-}
-
-#else
-
-void __fastcall dsp_util::convert_32_to_64(const float  * src,double * dest,unsigned count)
-{
-	for(;count;count--)
-		*(dest++) = (double)*(src++);
-}
-
-void __fastcall dsp_util::convert_64_to_32(const double * src,float  * dest,unsigned count)
-{
-	for(;count;count--)
-		*(dest++) = (float)*(src++);
-}
-
-#endif
 
 
 bool dsp_entry::g_instantiate(service_ptr_t<dsp> & p_out,const dsp_preset & p_preset)
@@ -331,14 +171,14 @@ void cfg_dsp_chain_config::reset()
 	m_data.remove_all();
 }
 
-bool cfg_dsp_chain_config::get_raw_data(write_config_callback * out)
+t_io_result cfg_dsp_chain_config::get_data_raw(stream_writer * p_stream,abort_callback & p_abort)
 {
-	return io_result_succeeded( m_data.contents_to_stream(&stream_writer_wrapper_write_config_callback(out),abort_callback_impl()));
+	return m_data.contents_to_stream(p_stream,p_abort);
 }
 
-void cfg_dsp_chain_config::set_raw_data(const void * data,int size)
+t_io_result cfg_dsp_chain_config::set_data_raw(stream_reader * p_stream,unsigned,abort_callback & p_abort)
 {
-	m_data.contents_from_stream( &stream_reader_memblock_ref(data,size),abort_callback_impl());
+	return m_data.contents_from_stream(p_stream,p_abort);
 }
 
 void dsp_chain_config::remove_item(unsigned p_index)
@@ -537,4 +377,24 @@ bool resampler_entry::g_create(service_ptr_t<dsp> & p_out,unsigned p_srate_from,
 	dsp_preset_impl preset;
 	if (!entry->create_preset(preset,p_srate_to,p_qualityscale)) return false;
 	return entry->instantiate(p_out,preset);
+}
+
+
+void dsp_chain_config::get_name_list(string_base & p_out) const
+{
+	const unsigned count = get_count();
+	bool added = false;
+	for(unsigned n=0;n<count;n++)
+	{
+		service_ptr_t<dsp_entry> ptr;
+		if (dsp_entry::g_get_interface(ptr,get_item(n).get_owner()))
+		{
+			if (added) p_out += ", ";
+			added = true;
+
+			string8 temp;
+			ptr->get_name(temp);
+			p_out += temp;
+		}
+	}
 }

@@ -40,8 +40,8 @@ class config_object_impl : public config_object
 {
 public:
 	GUID get_guid() const;
-	t_io_result get_data(config_object_write_callback * p_callback,abort_callback & p_abort) const ;
-	t_io_result set_data(config_object_read_callback * p_callback,unsigned p_bytes,abort_callback & p_abort,bool p_notify);
+	t_io_result get_data(stream_writer * p_stream,abort_callback & p_abort) const ;
+	t_io_result set_data(stream_reader * p_stream,abort_callback & p_abort,bool p_notify);
 
 	config_object_impl(const GUID & p_guid,const void * p_data,unsigned p_bytes);
 
@@ -59,22 +59,22 @@ class config_object_fixed_impl_t : public config_object
 public:
 	GUID get_guid() const {return m_guid;}
 	
-	t_io_result get_data(config_object_write_callback * p_callback,abort_callback & p_abort) const
+	t_io_result get_data(stream_writer * p_stream,abort_callback & p_abort) const
 	{
 		insync(m_sync);
-		return p_callback->set_data(m_data,t_size,p_abort);
+		return p_stream->write_object(m_data,t_size,p_abort);
 	}
 
-	t_io_result set_data(config_object_read_callback * p_callback,unsigned p_bytes,abort_callback & p_abort,bool p_notify)
+	t_io_result set_data(stream_reader * p_stream,abort_callback & p_abort,bool p_notify)
 	{
 		if (!core_api::assert_main_thread()) return io_result_error_generic;
 		
-		if (p_bytes != t_size) return io_result_error_data;
-
 		{
+			t_uint8 temp[t_size];
 			insync(m_sync);
-			t_io_result status = p_callback->get_data(m_data,p_abort);
+			t_io_result status = p_stream->read_object(temp,t_size,p_abort);
 			if (io_result_failed(status)) return status;
+			memcpy(m_data,temp,t_size);
 		}
 
 		if (p_notify) config_object_notify_manager::g_on_changed(this);

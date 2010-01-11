@@ -11,8 +11,8 @@ public:
 	
 	unsigned	meta_get_count() const {return m_meta_count;}
 	const char*	meta_enum_name(unsigned p_index) const {return m_meta[p_index].m_name;}
-	unsigned	meta_enum_value_count(unsigned p_index) const {return m_meta[p_index].m_valuecount;}
-	const char*	meta_enum_value(unsigned p_index,unsigned p_value_number) const {return m_meta[p_index].m_valuemap[p_value_number];}
+	unsigned	meta_enum_value_count(unsigned p_index) const;
+	const char*	meta_enum_value(unsigned p_index,unsigned p_value_number) const;
 	unsigned	meta_find_ex(const char * p_name,unsigned p_name_length) const;
 
 	unsigned	info_get_count() const {return m_info_count;}

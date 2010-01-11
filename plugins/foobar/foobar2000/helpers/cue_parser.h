@@ -3,8 +3,7 @@ namespace cue_parser
 	struct cue_entry {
 		string8 m_file;
 		unsigned m_track_number;
-		double m_start;
-		double m_index;
+		t_cuesheet_index_list m_indexes;
 	};
 
 
@@ -13,7 +12,6 @@ namespace cue_parser
 	bool parse_full(const char * p_cuesheet,cue_creator::t_entry_list & p_out);
 
 //	bool modify(const char * p_old_cue,string_base & p_out,int p_index_to_modify,const file_info & p_info);
-	bool extract_info(const file_info & p_baseinfo,file_info & p_info, unsigned p_subsong_index,double & p_start,double & p_duration);
 	bool extract_info(const file_info & p_baseinfo,file_info & p_info, unsigned p_subsong_index);
 	void strip_cue_track_metadata(file_info & p_info);
 
@@ -27,11 +25,13 @@ namespace cue_parser
 	class input_wrapper_cue_t
 	{
 	public:
-		input_wrapper_cue_t() : m_time_done(0), m_duration(0), m_start(0) {}
+		input_wrapper_cue_t() {}
 		~input_wrapper_cue_t() {}
 
 		t_io_result open(service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort)
 		{
+			m_path = p_path;
+
 			t_io_result status;
 			status = m_instance.open(p_filehint,p_path,p_reason,p_abort);
 			if (io_result_failed(status)) return status;
@@ -84,72 +84,46 @@ namespace cue_parser
 
 		t_io_result decode_initialize(t_uint32 p_subsong,unsigned p_flags,abort_callback & p_abort)
 		{
-			double start = 0, end = m_info.get_length();
-			
-			if (p_subsong != 0)
+			m_decode_subsong = p_subsong;
+			if (m_decode_subsong == 0) return m_instance.decode_initialize(p_flags,p_abort);
+			else
 			{
-				pfc::chain_list_t<cue_entry>::const_iterator iter;
-				for(iter = m_cue_data.first();iter.is_valid(); ++iter)
+				double start = 0, end = m_info.get_length();
+				
+				if (p_subsong != 0)
 				{
-					if (iter->m_track_number == p_subsong)
+					pfc::chain_list_t<cue_entry>::const_iterator iter;
+					for(iter = m_cue_data.first();iter.is_valid(); ++iter)
 					{
-						start = iter->m_start;
-						++iter;
-						if (iter.is_valid())
-							end = iter->m_start;
-						break;
+						if (iter->m_track_number == p_subsong)
+						{
+							start = iter->m_indexes.start();
+							++iter;
+							if (iter.is_valid())
+								end = iter->m_indexes.start();
+							break;
+						}
 					}
 				}
+				
+				if (end <= start) return io_result_error_data;
+
+				return m_input_cue.open(make_playable_location(m_path,0),p_flags & ~input_flag_no_seeking,p_abort,start,end-start);
 			}
-			
-			if (end <= start) return io_result_error_data;
-
-			m_start = start;
-			m_duration = end - start;
-			m_time_done = 0;
-
-			t_io_result status;
-			status = m_instance.decode_initialize(p_flags,p_abort);
-			if (io_result_failed(status)) return status;
-			if (!m_instance.decode_can_seek()) return io_result_error_data;
-
-			if (m_start > 0)
-			{
-				status = m_instance.decode_seek(m_start,p_abort);
-				if (io_result_failed(status)) return status;
-			}
-			m_time_done = 0;
-			return io_result_success;
 		}
 
 		t_io_result decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 		{
-			if (m_time_done >= m_duration) {p_chunk.reset();return io_result_eof;}
-
-			t_io_result status = m_instance.decode_run(p_chunk,p_abort);
-			if (io_result_failed_or_eof(status)) return status;
-			double time_done_new = m_time_done + p_chunk.get_duration();
-			if (time_done_new > m_duration)
-			{
-				double target_chunk_duration = m_duration - m_time_done;
-				unsigned target_samples = (unsigned)dsp_util::duration_samples_from_time(target_chunk_duration,p_chunk.get_srate());
-				if (target_samples < p_chunk.get_sample_count()) p_chunk.set_sample_count(target_samples);
-				if (target_samples == 0) status = io_result_eof;
-			}
-			m_time_done = time_done_new;
-
-			return status;
+			return m_decode_subsong > 0 ?
+				m_input_cue.run(p_chunk,p_abort) :
+				m_instance.decode_run(p_chunk,p_abort);
 		}
 		
 		t_io_result decode_seek(double p_seconds,abort_callback & p_abort)
 		{
-			if (p_seconds >= m_duration) p_seconds = m_duration;
-			
-			t_io_result status = m_instance.decode_seek(m_start + p_seconds,p_abort);
-
-			if (io_result_succeeded(status)) m_time_done = p_seconds;
-			
-			return status;
+			return m_decode_subsong > 0 ? 
+				m_input_cue.seek(p_seconds,p_abort) :
+				m_instance.decode_seek(p_seconds,p_abort);
 		}
 		
 		bool decode_can_seek()
@@ -157,14 +131,26 @@ namespace cue_parser
 			return true;
 		}
 
-		bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta,bool & p_track_change)
+		bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta)
 		{
-			return m_instance.decode_get_dynamic_info(p_out,p_timestamp_delta,p_track_change);
+			return m_decode_subsong > 0 ? 
+				m_input_cue.get_dynamic_info(p_out,p_timestamp_delta) : 
+				m_instance.decode_get_dynamic_info(p_out,p_timestamp_delta);
+		}
+
+		bool decode_get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta)
+		{
+			return m_decode_subsong > 0 ? 
+				m_input_cue.get_dynamic_info_track(p_out,p_timestamp_delta) : 
+				m_instance.decode_get_dynamic_info_track(p_out,p_timestamp_delta);
 		}
 
 		void decode_on_idle(abort_callback & p_abort)
 		{
-			m_instance.decode_on_idle(p_abort);
+			if (m_decode_subsong > 0)
+				m_input_cue.on_idle(p_abort);
+			else
+				m_instance.decode_on_idle(p_abort);
 		}
 
 		t_io_result retag_set_info(t_uint32 p_subsong,const file_info & p_info,abort_callback & p_abort)
@@ -188,7 +174,8 @@ namespace cue_parser
 				const char * old_cue = m_info.meta_get("cuesheet",0);
 				if (old_cue != 0)
 				{
-					parse_full(old_cue,cue_entries);
+					if (!parse_full(old_cue,cue_entries))
+						cue_entries.remove_all();
 				}
 			}
 
@@ -239,7 +226,10 @@ namespace cue_parser
 	private:
 		t_base m_instance;
 		file_info_impl m_info;
-		double m_time_done,m_duration,m_start;
+		t_uint32 m_decode_subsong;
+		input_helper_cue m_input_cue;
+		string8 m_path;
+		
 		pfc::chain_list_t<cue_entry> m_cue_data;
 		
 		struct t_retag_entry {t_uint32 m_index; file_info_impl m_info;};
@@ -285,7 +275,8 @@ namespace cue_parser
 					entry->m_infos = p_list.get_info(n);
 					entry->m_file = "CDImage.wav";
 					entry->m_track_number = n+1;
-					entry->set_simple_index( offset_acc );
+					entry->m_index_list.from_infos(entry->m_infos,offset_acc);
+//					entry->set_simple_index( offset_acc );
 					offset_acc += entry->m_infos.get_length();
 					
 					input_wrapper_cue_base::write_meta(info,p_list.get_info(n),n+1);

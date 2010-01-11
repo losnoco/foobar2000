@@ -23,4 +23,11 @@ namespace audio_math
 	void SHARED_EXPORT convert_from_int32(const t_int32 * p_source,unsigned p_count,audio_sample * p_output,audio_sample p_scale);
 	audio_sample SHARED_EXPORT convert_to_int32_calculate_peak(const audio_sample * p_source,unsigned p_count,t_int32 * p_output,audio_sample p_scale);
 	audio_sample SHARED_EXPORT calculate_peak(const audio_sample * p_source,unsigned p_count);
+	void SHARED_EXPORT remove_denormals(audio_sample * p_buffer,unsigned p_count);
+	void SHARED_EXPORT add_offset(audio_sample * p_buffer,audio_sample p_delta,unsigned p_count);
+
+	
+	inline t_uint64 time_to_samples(double p_time,unsigned p_sample_rate) {
+		return (t_uint64)floor((double)p_sample_rate * p_time + 0.5);
+	}
 }

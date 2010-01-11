@@ -29,12 +29,10 @@ public:
 	virtual t_io_result get_file_stats(t_filestats & p_stats,abort_callback & p_abort) = 0;
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
 protected:
 	input_info_reader() {}
@@ -70,12 +68,17 @@ public:
 	//! Queries whether resource being read/decoded is seekable. If can_seek() returns false, all seek() calls will fail. Before calling can_seek() or other decoding calls, decoding must be initialized with initialize() call.
 	virtual bool can_seek() = 0;
 
-	//! This function is used to signal dynamic song titles, bitrate, etc. Called after each run() (or not called at all if caller doesn't care about dynamic info).
+	//! This function is used to signal dynamic VBR bitrate, etc. Called after each run() (or not called at all if caller doesn't care about dynamic info).
 	//! @param p_out - initially contains currently displayed info (either last get_dynamic_info result or current cached info), use this object to return changed info.
 	//! @param p_timestamp_delta - Indicates when returned info should be displayed (in seconds, relative to first sample of last decoded chunk), initially set to 0.
-	//! @param p_track_change Set this to true to indicate a track change, e.g. for live streams.
 	//! @returns Return false to keep old info, or true to indicate that you've made changes to p_info and those should be displayed.
-	virtual bool get_dynamic_info(file_info & p_out, double & p_timestamp_delta,bool & p_track_change) = 0;
+	virtual bool get_dynamic_info(file_info & p_out, double & p_timestamp_delta) = 0;
+
+	//! This function is used to signal dynamic live stream song titles etc. Called after each run() (or not called at all if caller doesn't care about dynamic info). The difference between this and get_dynamic_info() is frequency and relevance of dynamic info changes - get_dynamic_info_track() returns new info only on track change in the stream, returning new titles etc.
+	//! @param p_out - initially contains currently displayed info (either last get_dynamic_info_track result or current cached info), use this object to return changed info.
+	//! @param p_timestamp_delta - Indicates when returned info should be displayed (in seconds, relative to first sample of last decoded chunk), initially set to 0.
+	//! @returns Return false to keep old info, or true to indicate that you've made changes to p_info and those should be displayed.
+	virtual bool get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta) = 0;
 
 	//! Called from playback thread before sleeping.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
@@ -83,12 +86,10 @@ public:
 
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return input_info_reader::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return input_info_reader::service_query(p_out,p_guid);
 	}
 protected:
 	input_decoder() {}
@@ -111,12 +112,10 @@ public:
 	virtual t_io_result commit(abort_callback & p_abort) = 0;
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return input_info_reader::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return input_info_reader::service_query(p_out,p_guid);
 	}
 protected:
 	input_info_writer() {}
@@ -168,7 +167,7 @@ public:
 		flag_parallel_reads_slow = 2,
 	};
 	//! See flag_* enums.
-	unsigned get_flags();
+	virtual unsigned get_flags() = 0;
 
 	inline bool is_redirect() {return (get_flags() & flag_redirect) != 0;}
 	inline bool are_parallel_reads_slow() {return (get_flags() & flag_parallel_reads_slow) != 0;}
@@ -181,34 +180,14 @@ public:
 	static bool g_is_supported_path(const char * p_path);
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
 protected:
-	inline input_entry() {}
-	inline ~input_entry() {}
-};
-
-class input_entry_v2 : public input_entry
-{
-public:
-	virtual unsigned get_flags() = 0;
-
-	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
-
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return input_entry::service_query(guid);
-	}
-protected:
-	inline input_entry_v2() {}
-	inline ~input_entry_v2() {}
+	input_entry() {}
+	~input_entry() {}
 };
 
 enum t_input_open_reason {
@@ -224,7 +203,7 @@ enum t_input_open_reason {
 //! @param p_abort abort_callback object signaling user aborting the operation.
 t_io_result input_open_file_helper(service_ptr_t<file> & p_file,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort);
 
-//! Helper function; calls input_open_file_helper() with specified parameters and throws an t_io_result exception on failure. See input_open_file_helper().
+//! Helper function; calls input_open_file_helper() with specified parameters and throws an exception_io exception on failure. See input_open_file_helper().
 void input_open_file_helper_e(service_ptr_t<file> & p_file,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort);
 
 //! This is a class that just declares prototypes of functions that each input needs to implement. See input_decoder / input_info_reader / input_info_writer interfaces for full descriptions of member functions. Since input implementation class is instantiated using a template, you don't need to derive from input_impl as virtual functions are not used on implementation class level. Use input_factory_t template to register input class based on input_impl.
@@ -260,7 +239,9 @@ public:
 	//! See: input_decoder::can_seek(). Valid after decode_initialize().
 	bool decode_can_seek();
 	//! See: input_decoder::get_dynamic_info(). Valid after decode_initialize().
-	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta,bool & p_track_change);
+	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta);
+	//! See: input_decoder::get_dynamic_info_track(). Valid after decode_initialize().
+	bool decode_get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta);
 	//! See: input_decoder::on_idle(). Valid after decode_initialize().
 	void decode_on_idle(abort_callback & p_abort);
 
@@ -310,7 +291,9 @@ public:
 	//! See: input_decoder::can_seek(). Valid after decode_initialize().
 	bool decode_can_seek();
 	//! See: input_decoder::get_dynamic_info(). Valid after decode_initialize().
-	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta,bool & p_track_change);
+	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta);
+	//! See: input_decoder::get_dynamic_info_track(). Valid after decode_initialize().
+	bool decode_get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta);
 	//! See: input_decoder::on_idle(). Valid after decode_initialize().
 	void decode_on_idle(abort_callback & p_abort);
 
@@ -341,7 +324,8 @@ public:
 	t_io_result decode_run(audio_chunk & p_chunk,abort_callback & p_abort);
 	t_io_result decode_seek(double p_seconds,abort_callback & p_abort);
 	bool decode_can_seek();
-	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta,bool & p_track_change);
+	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta);
+	bool decode_get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta);
 	void decode_on_idle(abort_callback & p_abort);
 
 	t_io_result retag(file_info & p_info,abort_callback & p_abort);
@@ -359,74 +343,66 @@ template<class I, class t_base>
 class input_impl_interface_wrapper_t : public t_base
 {
 public:
-	t_io_result open(service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort)
-	{
+	t_io_result open(service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort) {
 		return m_instance.open(p_filehint,p_path,p_reason,p_abort);
 	}
 
 	// input_info_reader methods
 
-	unsigned get_subsong_count()
-	{
+	unsigned get_subsong_count() {
 		return m_instance.get_subsong_count();
 	}
 	
-	t_uint32 get_subsong(unsigned p_index)
-	{
+	t_uint32 get_subsong(unsigned p_index) {
 		return m_instance.get_subsong(p_index);
 	}
 
 	
-	t_io_result get_info(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort)
-	{
+	t_io_result get_info(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort) {
 		return m_instance.get_info(p_subsong,p_info,p_abort);
 	}
 
-	t_io_result get_file_stats(t_filestats & p_stats,abort_callback & p_abort)
-	{
+	t_io_result get_file_stats(t_filestats & p_stats,abort_callback & p_abort) {
 		return m_instance.get_file_stats(p_stats,p_abort);
 	}
 
 	// input_decoder methods
 
-	t_io_result initialize(t_uint32 p_subsong,unsigned p_flags,abort_callback & p_abort)
-	{
+	t_io_result initialize(t_uint32 p_subsong,unsigned p_flags,abort_callback & p_abort) {
 		return m_instance.decode_initialize(p_subsong,p_flags,p_abort);
 	}
 
-	t_io_result run(audio_chunk & p_chunk,abort_callback & p_abort)
-	{
+	t_io_result run(audio_chunk & p_chunk,abort_callback & p_abort) {
 		return m_instance.decode_run(p_chunk,p_abort);
 	}
 
-	t_io_result seek(double p_seconds,abort_callback & p_abort)
-	{
+	t_io_result seek(double p_seconds,abort_callback & p_abort) {
 		return m_instance.decode_seek(p_seconds,p_abort);
 	}
 	
-	bool can_seek()
-	{
+	bool can_seek() {
 		return m_instance.decode_can_seek();
 	}
 
-	bool get_dynamic_info(file_info & p_out, double & p_timestamp_delta,bool & p_track_change)
-	{
-		return m_instance.decode_get_dynamic_info(p_out,p_timestamp_delta,p_track_change);
+	bool get_dynamic_info(file_info & p_out, double & p_timestamp_delta) {
+		return m_instance.decode_get_dynamic_info(p_out,p_timestamp_delta);
 	}
 
-	void on_idle(abort_callback & p_abort)
-	{
+	bool get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta) 	{
+		return m_instance.decode_get_dynamic_info_track(p_out,p_timestamp_delta);
+	}
+
+	void on_idle(abort_callback & p_abort) {
 		m_instance.decode_on_idle(p_abort);
 	}
+
 	// input_info_writer methods
 
-	t_io_result set_info(t_uint32 p_subsong,const file_info & p_info,abort_callback & p_abort)
-	{
+	t_io_result set_info(t_uint32 p_subsong,const file_info & p_info,abort_callback & p_abort) {
 		return m_instance.retag_set_info(p_subsong,p_info,p_abort);
 	}
 	
-	t_io_result commit(abort_callback & p_abort)
-	{
+	t_io_result commit(abort_callback & p_abort) {
 		return m_instance.retag_commit(p_abort);
 	}
 	
@@ -480,7 +456,8 @@ public:
 	inline t_io_result decode_run(audio_chunk & p_chunk,abort_callback & p_abort) {return m_instance.decode_run(p_chunk,p_abort);}
 	inline t_io_result decode_seek(double p_seconds,abort_callback & p_abort) {return m_instance.decode_seek(p_seconds,p_abort);}
 	inline bool decode_can_seek() {return m_instance.decode_can_seek();}
-	inline bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta,bool & p_track_change) {return m_instance.decode_get_dynamic_info(p_out,p_timestamp_delta,p_track_change);}
+	inline bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta) {return m_instance.decode_get_dynamic_info(p_out,p_timestamp_delta);}
+	inline bool decode_get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta) {return m_instance.decode_get_dynamic_info_track(p_out,p_timestamp_delta);}
 	inline void decode_on_idle(abort_callback & p_abort) {m_instance.decode_on_idle(p_abort);}
 
 	t_io_result retag_set_info(t_uint32 p_subsong,const file_info & p_info,abort_callback & p_abort)
@@ -504,7 +481,7 @@ private:
 
 //! Helper; standard input_entry implementation. Do not instantiate this directly, use input_factory_t or one of other input_*_factory_t helpers instead.
 template<class I,unsigned t_flags>
-class input_entry_impl_t : public input_entry_v2
+class input_entry_impl_t : public input_entry
 {
 private:
 	

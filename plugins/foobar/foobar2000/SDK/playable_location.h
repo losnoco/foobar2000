@@ -11,9 +11,6 @@
 
 class NOVTABLE playable_location//interface (for passing around between DLLs)
 {
-protected:
-	playable_location() {}
-	~playable_location() {}
 public:
 	virtual const char * get_path() const =0;
 	virtual void set_path(const char*)=0;
@@ -38,31 +35,40 @@ public:
 	inline void reset() {set_path("");set_subsong(0);}
 	inline t_uint32 get_subsong_index() const {return get_subsong();}
 	inline void set_subsong_index(t_uint32 v) {set_subsong(v);}
+
+protected:
+	playable_location() {}
+	~playable_location() {}
 };
 
-class playable_location_i : public playable_location//implementation
+typedef playable_location * pplayable_location;
+typedef playable_location const * pcplayable_location;
+typedef playable_location & rplayable_location;
+typedef playable_location const & rcplayable_location;
+
+class playable_location_impl : public playable_location//implementation
 {
-	string_simple path;
-	t_uint32 subsong;
 public:
+	const char * get_path() const {return m_path;}
+	void set_path(const char* p_path) {m_path=p_path;}
+	t_uint32 get_subsong() const {return m_subsong;}
+	void set_subsong(t_uint32 p_subsong) {m_subsong=p_subsong;}
 
-	virtual const char * get_path() const {return path;}
-	virtual void set_path(const char* z) {path=z;}
-	virtual t_uint32 get_subsong() const {return subsong;}
-	virtual void set_subsong(t_uint32 z) {subsong=z;}
+	const playable_location_impl & operator=(const playable_location & src) {copy(src);return *this;}
+	const playable_location_impl & operator=(const playable_location_impl & src) {copy(src);return *this;}
 
-	playable_location_i() {subsong=0;}
+	playable_location_impl() : m_subsong(0) {}
+	playable_location_impl(const char * p_path,t_uint32 p_subsong) : m_path(p_path), m_subsong(p_subsong) {}
+	playable_location_impl(const playable_location & src) {copy(src);}
+	playable_location_impl(const playable_location_impl & src) {copy(src);}
 
-	const playable_location_i & operator=(const playable_location & src)
-	{
-		copy(src);
-		return *this;
-	}
-
-	playable_location_i(const char * p_path,t_uint32 p_subsong) : path(p_path), subsong(p_subsong) {}
-
-	playable_location_i(const playable_location & src) {copy(src);}
+private:
+	string_simple m_path;
+	t_uint32 m_subsong;
 };
+
+//for compatibility
+#define playable_location_i playable_location_impl
 
 
 // usage: something( make_playable_location("file://c:\blah.ogg",0) );
@@ -82,6 +88,6 @@ public:
 	make_playable_location(const char * p_path,t_uint32 p_num) : path(p_path), num(p_num) {}
 };
 
-string_formatter & operator<<(string_formatter & p_fmt,const playable_location & p_location);
+string_base & operator<<(string_base & p_fmt,const playable_location & p_location);
 
 #endif //_FOOBAR2000_PLAYABLE_LOCATION_H_

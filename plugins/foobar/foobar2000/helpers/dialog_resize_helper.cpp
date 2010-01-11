@@ -98,14 +98,17 @@ void dialog_resize_helper::set_parent(HWND wnd)
 void dialog_resize_helper::reset()
 {
 	parent = 0;
+	sizegrip = 0;
 }
 
 void dialog_resize_helper::on_wm_size()
 {
 	if (parent)
 	{
-		unsigned n;
-		for(n=0;n<m_table_size;n++)
+		unsigned count = m_table_size;
+		if (sizegrip != 0) count++;
+		HDWP hWinPosInfo = BeginDeferWindowPos(count);
+		for(unsigned n=0;n<m_table_size;n++)
 		{
 			param & e = m_table[n];
 			const RECT & orig_rect = rects[n];
@@ -129,8 +132,16 @@ void dialog_resize_helper::on_wm_size()
 			else if (e.flags & Y_SIZE)
 				dest_cy += delta_y;
 			
-			SetWindowPos(wnd,0,dest_x,dest_y,dest_cx,dest_cy,SWP_NOZORDER);
+			DeferWindowPos(hWinPosInfo, wnd,0,dest_x,dest_y,dest_cx,dest_cy,SWP_NOZORDER);
 		}
+		if (sizegrip != 0)
+		{
+			RECT rc, rc_grip;
+			GetClientRect(parent, &rc);
+			GetWindowRect(sizegrip, &rc_grip);
+			DeferWindowPos(hWinPosInfo, sizegrip, NULL, rc.right - (rc_grip.right - rc_grip.left), rc.bottom - (rc_grip.bottom - rc_grip.top), 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+		}
+		EndDeferWindowPos(hWinPosInfo);
 		RedrawWindow(parent,0,0,RDW_INVALIDATE);
 	}
 }
@@ -147,21 +158,25 @@ bool dialog_resize_helper::process_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp
 		{
 			RECT r;
 			LPMINMAXINFO info = (LPMINMAXINFO) lp;
+			DWORD dwStyle = GetWindowLong(wnd, GWL_STYLE);
+			DWORD dwExStyle = GetWindowLong(wnd, GWL_EXSTYLE);
 			if (max_x && max_y)
 			{
 				r.left = 0; r.right = max_x;
 				r.top = 0; r.bottom = max_y;
 				MapDialogRect(wnd,&r);
-				info->ptMaxTrackSize.x = r.right;
-				info->ptMaxTrackSize.y = r.bottom;
+				AdjustWindowRectEx(&r, dwStyle, FALSE, dwExStyle);
+				info->ptMaxTrackSize.x = r.right - r.left;
+				info->ptMaxTrackSize.y = r.bottom - r.top;
 			}
 			if (min_x && min_y)
 			{
 				r.left = 0; r.right = min_x;
 				r.top = 0; r.bottom = min_y;
 				MapDialogRect(wnd,&r);
-				info->ptMinTrackSize.x = r.right;
-				info->ptMinTrackSize.y = r.bottom;
+				AdjustWindowRectEx(&r, dwStyle, FALSE, dwExStyle);
+				info->ptMinTrackSize.x = r.right - r.left;
+				info->ptMinTrackSize.y = r.bottom - r.top;
 			}
 		}
 		return true;
@@ -182,9 +197,26 @@ bool dialog_resize_helper::process_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp
 	return false;
 }
 
+void dialog_resize_helper::add_sizegrip()
+{
+	if (parent != 0 && sizegrip == 0)
+	{
+		sizegrip = CreateWindowEx(0, WC_SCROLLBAR, _T(""), WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | SBS_SIZEGRIP | SBS_SIZEBOXBOTTOMRIGHTALIGN,
+			0, 0, CW_USEDEFAULT, CW_USEDEFAULT,
+			parent, (HMENU)0, NULL, NULL);
+		if (sizegrip != 0)
+		{
+			RECT rc, rc_grip;
+			GetClientRect(parent, &rc);
+			GetWindowRect(sizegrip, &rc_grip);
+			SetWindowPos(sizegrip, NULL, rc.right - (rc_grip.right - rc_grip.left), rc.bottom - (rc_grip.bottom - rc_grip.top), 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+		}
+	}
+}
+
 
 dialog_resize_helper::dialog_resize_helper(const param * src,unsigned count,unsigned p_min_x,unsigned p_min_y,unsigned p_max_x,unsigned p_max_y) 
-	: min_x(p_min_x), min_y(p_min_y), max_x(p_max_x), max_y(p_max_y), parent(0)
+	: min_x(p_min_x), min_y(p_min_y), max_x(p_max_x), max_y(p_max_y), parent(0), sizegrip(0)
 {
 	m_table_size = count;
 	m_table = new param[count];

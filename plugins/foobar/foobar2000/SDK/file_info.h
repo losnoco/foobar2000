@@ -52,6 +52,7 @@ inline bool operator!=(const replaygain_info & item1,const replaygain_info & ite
 
 static const replaygain_info replaygain_info_invalid = {replaygain_info::gain_invalid,replaygain_info::gain_invalid,replaygain_info::peak_invalid,replaygain_info::peak_invalid};
 
+
 class NOVTABLE file_info
 {
 public:
@@ -140,6 +141,7 @@ public:
 	void		reset_replaygain();
 	void		copy_meta_single_rename_ex(const file_info & p_source,unsigned p_index,const char * p_new_name,unsigned p_new_name_length);
 	inline void	copy_meta_single_rename(const file_info & p_source,unsigned p_index,const char * p_new_name) {copy_meta_single_rename_ex(p_source,p_index,p_new_name,infinite);}
+	void		overwrite_info(const file_info & p_source);
 
 	t_int64 info_get_int(const char * name) const;
 	t_int64 info_get_length_samples() const;
@@ -161,9 +163,6 @@ public:
 	unsigned info_get_decoded_bps() const;//what bps the stream originally was (before converting to audio_sample), 0 if unknown
 
 	void merge(const list_base_const_t<const file_info*> & p_sources);
-
-	void meta_set_ansi_ex(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length);
-	inline void meta_set_ansi(const char * p_name,const char * p_value) {meta_set_ansi_ex(p_name,infinite,p_value,infinite);}
 
 	bool are_meta_fields_identical(unsigned p_index1,unsigned p_index2) const;
 

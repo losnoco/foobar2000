@@ -1,6 +1,7 @@
 #ifndef _FOOBAR2000_HELPERS_WIN32_DIALOG_H_
 #define _FOOBAR2000_HELPERS_WIN32_DIALOG_H_
 
+
 namespace dialog_helper
 {
 	class dialog
@@ -58,13 +59,28 @@ namespace dialog_helper
 	};
 
 
-	//! This class is meant to be used with new/delete operators only. Destroying the window will result in object calling delete this. If object is deleted directly using delete operator, WM_DESTROY handler may not be called so it should not be used (use destructor of derived class instead).
+	//! This class is meant to be used with new/delete operators only. Destroying the window - outside create() / WM_INITDIALOG - will result in object calling delete this. If object is deleted directly using delete operator, WM_DESTROY handler may not be called so it should not be used (use destructor of derived class instead).
 	//! Classes derived from dialog_modeless must not be instantiated in any other way than operator new().
+	/*! Typical usage : \n
+	class mydialog : public dialog_helper::dialog_modeless {...};
+	(...)
+	bool createmydialog()
+	{
+		mydialog * instance = new mydialog;
+		if (instance == 0) return flase;
+		if (!instance->create(...)) {delete instance; return false;}
+		return true;
+	}
+
+	*/
 	class dialog_modeless
 	{
 	public:
+		//! Creates the dialog window. This will call on_message with WM_INITDIALOG. To abort creation, you can call DestroyWindow() on our window; it will not delete the object but make create() return false instead. You should not delete the object from inside WM_INITDIALOG handler or anything else possibly called from create().
+		//! @returns true on success, false on failure.
 		bool create(unsigned p_id,HWND p_parent,HINSTANCE p_instance = core_api::get_my_instance());
 	protected:
+		//! Standard windows message handler (DialogProc-style). Use get_wnd() to retrieve our dialog window handle.
 		virtual BOOL on_message(UINT msg,WPARAM wp,LPARAM lp)=0;
 
 		inline dialog_modeless() : m_wnd(0), m_destructor_status(destructor_none), m_is_in_create(false) {}
@@ -80,6 +96,25 @@ namespace dialog_helper
 		enum {destructor_none,destructor_normal,destructor_fromwindow} m_destructor_status;
 		bool m_is_in_create;
 	};
+
+
+
+
+	class dialog_modeless_v2
+	{
+	protected:
+		explicit dialog_modeless_v2(unsigned p_id,HWND p_parent,HINSTANCE p_instance = core_api::get_my_instance());
+		virtual ~dialog_modeless_v2();
+		HWND get_wnd() const {return m_wnd;}
+		virtual BOOL on_message(UINT msg,WPARAM wp,LPARAM lp) {return FALSE;}
+	private:
+		static BOOL CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
+		void detach_window();
+		BOOL on_message_internal(UINT msg,WPARAM wp,LPARAM lp);
+		enum {status_construction, status_lifetime, status_destruction_requested, status_destruction} m_status;
+		HWND m_wnd;
+	};
+
 
 };
 

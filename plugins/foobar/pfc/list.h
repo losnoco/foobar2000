@@ -221,6 +221,21 @@ public:
 
 	inline unsigned add_items(const list_base_const_t<T> & items) {return insert_items(items,get_count());}
 	inline unsigned add_item(const T& item) {return insert_item(item,get_count());}
+
+	void add_items_e(const list_base_const_t<T> & p_items) {
+		if (add_items(p_items) == infinite) throw std::bad_alloc();
+	}
+	void add_item_e(const T& p_item) {
+		if (add_item(p_item) == infinite) throw std::bad_alloc();
+	}
+
+	inline void insert_items_e(const list_base_const_t<T> & p_items,unsigned p_base) {
+		if (insert_items(p_items,p_base) == infinite) throw std::bad_alloc();
+	}
+
+	inline void insert_item_e(const T & p_item,unsigned p_base) {
+		if (insert_item(p_item,p_base) == infinite) throw std::bad_alloc();
+	}
 	
 	inline void remove_mask(const bit_array & mask) {filter_mask(bit_array_not(mask));}
 	inline void remove_all() {filter_mask(bit_array_false());}
@@ -287,16 +302,20 @@ public:
 
 	void prealloc(unsigned count) {m_buffer.prealloc(count);}
 
-	void set_count(unsigned p_count) {m_buffer.set_size(p_count);}
+	bool set_count(unsigned p_count) {return m_buffer.set_size(p_count);}
+	void set_count_e(unsigned p_count) {if (!set_count(p_count)) throw std::bad_alloc();}
 
-	void insert_item(const T& item,unsigned idx)
+	unsigned insert_item(const T& item,unsigned idx)
 	{
-		unsigned max = m_buffer.get_size() + 1;
-		m_buffer.set_size(max);
+		unsigned max = m_buffer.get_size();
+		if (idx > max) idx = max;
+		max++;
+		if (!m_buffer.set_size(max)) return infinite;
 		unsigned n;
 		for(n=max-1;n>idx;n--)
 			m_buffer[n]=m_buffer[n-1];
 		m_buffer[idx]=item;
+		return idx;
 	}
 
 	T remove_by_idx(unsigned idx)
@@ -308,7 +327,7 @@ public:
 		{
 			pfc::swap_t(m_buffer[n-1],m_buffer[n]);
 		}
-		m_buffer.set_size(max-1);
+		m_buffer.set_size_e(max-1);//should never fail
 		return ret;
 	}
 
@@ -358,7 +377,7 @@ public:
 		unsigned count = get_count();
 		if (base>count) base = count;
 		unsigned num = source.get_count();
-		m_buffer.set_size(count+num);
+		if (!m_buffer.set_size(count+num)) return infinite;
 		if (count > base)
 		{
 			unsigned n;
@@ -397,7 +416,7 @@ public:
 			for(n=mask.find(true,n+1,count-n-1);n<count;n=mask.find(true,n+1,count-n-1))
 				pfc::swap_t(m_buffer[total++],m_buffer[n]);
 
-			m_buffer.set_size(total);
+			m_buffer.set_size_e(total);
 		}
 	}
 
@@ -518,18 +537,30 @@ public:
 	mem_block_list_t() {m_buffer.set_mem_logic(mem_block::ALLOC_FAST);}
 	mem_block_list_t(const mem_block_list_t<T> & p_source) {m_buffer.set_mem_logic(mem_block::ALLOC_FAST); *this = p_source;}
 
-	inline void set_mem_logic(mem_block::mem_logic_t v) {this->m_buffer.set_mem_logic(v);}
+	inline void set_mem_logic(mem_block::t_mem_logic v) {this->m_buffer.set_mem_logic(v);}
 
 	void prealloc(unsigned count) {m_buffer.prealloc(count);}
 };
 
+template<typename T,unsigned N>
+class mem_block_list_hybrid_t : public list_impl_t<T, array_hybrid_t<T,N,mem_block_fast_t<T> > > {
+public:
+	mem_block_list_hybrid_t() {}
+	mem_block_list_hybrid_t(const mem_block_list_hybrid_t<T,N> & p_source) {*this = p_source;}
+};
+
 template<typename T, typename S = array_fast_t<T> >
-class list_t : public list_impl_t<T,S >
-{
+class list_t : public list_impl_t<T,S> {
 public:
 	list_t() {}
 	list_t(const list_t<T,S> & p_src) {*this = p_src;}
-	
+};
+
+template<typename T, unsigned N, typename S = array_fast_t<T> >
+class list_hybrid_t : public list_impl_t<T,array_hybrid_t<T,N,S> > {
+public:
+	list_hybrid_t() {}
+	list_hybrid_t(const list_hybrid_t<T,N> & p_src) {*this = p_src;}
 };
 
 namespace pfc {

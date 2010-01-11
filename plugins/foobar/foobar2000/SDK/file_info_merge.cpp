@@ -35,7 +35,9 @@ void file_info::merge(const list_base_const_t<const file_info*> & p_in)
 
 		set_replaygain(replaygain_info::g_merge(get_replaygain(),info->get_replaygain()));
 
-		copy_info_single_by_name(*info,"tagtype");
+		overwrite_info(*info);
+
+		//copy_info_single_by_name(*info,"tagtype");
 		
 		return;
 	}
@@ -63,7 +65,7 @@ void file_info::merge(const list_base_const_t<const file_info*> & p_in)
 		{
 			const char * fieldname = fieldnames[fieldnames_ptr];
 			unsigned in_ptr, in_best = infinite, in_best_rating = 0;
-			for(in_ptr = 0; in_ptr < in_count; in_ptr++)//SLOW #$@!
+			for(in_ptr = 0; in_ptr < in_count; in_ptr++)//SLOW
 			{
 				unsigned rating = merge_tags_calc_rating(fieldname,p_in[in_ptr]);
 				if (rating > in_best_rating) {in_best = in_ptr; in_best_rating = rating;}
@@ -104,5 +106,12 @@ void file_info::merge(const list_base_const_t<const file_info*> & p_in)
 		}
 		if (!tagtype.is_empty()) info_set("tagtype",tagtype);
 		set_replaygain(rg);
+	}
+}
+
+void file_info::overwrite_info(const file_info & p_source) {
+	unsigned count = p_source.info_get_count();
+	for(unsigned n=0;n<count;n++) {
+		info_set(p_source.info_enum_name(n),p_source.info_enum_value(n));
 	}
 }

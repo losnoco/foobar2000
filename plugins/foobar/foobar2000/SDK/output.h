@@ -4,6 +4,8 @@
 //! Structure describing PCM audio data format, with basic helper functions.
 struct t_pcmspec
 {
+	inline t_pcmspec() {reset();}
+	inline t_pcmspec(const t_pcmspec & p_source) {*this = p_source;}
 	unsigned m_sample_rate;
 	unsigned m_bits_per_sample;
 	unsigned m_channels,m_channel_config;
@@ -29,7 +31,12 @@ struct t_pcmspec
 	}
 
 	inline void reset() {m_sample_rate = 0; m_bits_per_sample = 0; m_channels = 0; m_channel_config = 0; m_float = false;}
-	inline bool is_valid() const {return m_sample_rate > 0 && m_bits_per_sample > 0 && m_bits_per_sample % 8 == 0 && m_channels > 0 && m_channel_config != 0;}
+	inline bool is_valid() const
+	{
+		return m_sample_rate >= 1000 && m_sample_rate <= 1000000 &&
+			m_channels > 0 && m_channels <= 256 && m_channel_config != 0 &&
+			(m_bits_per_sample == 8 || m_bits_per_sample == 16 || m_bits_per_sample == 24 || m_bits_per_sample == 32);
+	}
 };
 
 class NOVTABLE output_device_enum_callback
@@ -62,16 +69,14 @@ public:
 	virtual t_io_result volume_set(double p_val) = 0;
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
 protected:
-	inline output() {}
-	inline ~output() {}
+	output() {}
+	~output() {}
 };
 
 class NOVTABLE output_entry : public service_base
@@ -97,16 +102,14 @@ public:
 	static bool g_find(service_ptr_t<output_entry> & p_out,const GUID & p_guid);
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
 protected:
-	inline output_entry() {}
-	inline ~output_entry() {}
+	output_entry() {}
+	~output_entry() {}
 };
 
 //! Helper; implements output_entry for specific output class implementation. output_entry methods are forwarded to static methods of your output class. Use output_factory_t<myoutputclass> instead of using this class directly.

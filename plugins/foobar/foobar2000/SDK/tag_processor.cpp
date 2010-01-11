@@ -188,6 +188,12 @@ t_io_result tag_processor::read_trailing(const service_ptr_t<file> & p_file,file
 	return status;
 }
 
+t_io_result tag_processor::read_trailing_ex(const service_ptr_t<file> & p_file,file_info & p_info,t_uint64 & p_tagoffset,abort_callback & p_abort) {
+	t_io_result status = static_api_ptr_t<tag_processor_trailing>()->read_ex(p_file,p_info,p_tagoffset,p_abort);
+	if (status == io_result_error_data) status = io_result_error_not_found;
+	return status;
+}
+
 t_io_result tag_processor::read_id3v2(const service_ptr_t<file> & p_file,file_info & p_info,abort_callback & p_abort)
 {
 	service_ptr_t<tag_processor_id3v2> ptr;

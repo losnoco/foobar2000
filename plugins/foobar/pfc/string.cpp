@@ -1,17 +1,11 @@
 #include "pfc.h"
 
-#ifdef WIN32
-#define STRICT
-#include <windows.h>
-#include <stdio.h>
-#endif
-
-
-void string_base::add_char(unsigned c)
+bool string_base::add_char(unsigned c)
 {
 	char temp[8];
 	unsigned len = utf8_encode_char(c,temp);
-	if (len>0) add_string(temp,len);
+	if (len>0) return add_string(temp,len);
+	else return true;
 }
 
 void string_base::skip_trailing_char(unsigned skip)
@@ -77,25 +71,25 @@ int strcmp_partial(const char * s1,const char * s2)
 	return 0;
 }
 
-void string_base::add_float(double val,unsigned digits)
+bool string_base::add_float(double val,unsigned digits)
 {
-	char temp[64];
+	char temp[_CVTBUFSIZE];
 	_gcvt(val,digits,temp);
-	add_string(temp);
+	return add_string(temp);
 }
 
-void string_base::add_int(t_int64 val,unsigned base)
+bool string_base::add_int(t_int64 val,unsigned base)
 {
 	char temp[64];
 	_i64toa(val,temp,base);
-	add_string(temp);
+	return add_string(temp);
 }
 
-void string_base::add_uint(t_uint64 val,unsigned base)
+bool string_base::add_uint(t_uint64 val,unsigned base)
 {
 	char temp[64];
 	_ui64toa(val,temp,base);
-	add_string(temp);
+	return add_string(temp);
 }
 
 bool is_path_separator(unsigned c)
@@ -105,7 +99,7 @@ bool is_path_separator(unsigned c)
 
 bool is_path_bad_char(unsigned c)
 {
-#ifdef WIN32
+#ifdef _WINDOWS
 	return c=='\\' || c=='/' || c=='|' || c==':' || c=='*' || c=='?' || c=='\"' || c=='>' || c=='<';
 #else
 #error portme
@@ -246,35 +240,41 @@ char * strdup_n(const char * src,unsigned len)
 	return ret;
 }
 
-void string8::add_string(const char * ptr,unsigned len)
+bool string8::add_string(const char * ptr,unsigned len)
 {
-	if (ptr >= data.get_ptr() && ptr < data.get_ptr() + data.get_size())
+	if (len > 0 && ptr >= data.get_ptr() && ptr <= data.get_ptr() + data.get_size())
 	{
-		add_string(string_simple(ptr,len));
+		string8 temp;
+		if (!temp.set_string(ptr,len)) return false;
+		return add_string(temp);
 	}
 	else
 	{
 		len = strlen_max(ptr,len);
-		makespace(used+len+1);
+		if (!makespace(used+len+1)) return false;
 		data.copy(ptr,len,used);
 		used+=len;
 		data[used]=0;
+		return true;
 	}
 }
 
-void string8::set_string(const char * ptr,unsigned len)
+bool string8::set_string(const char * ptr,unsigned len)
 {
-	if (ptr >= data.get_ptr() && ptr < data.get_ptr() + data.get_size())
+	if (len > 0 && ptr >= data.get_ptr() && ptr < data.get_ptr() + data.get_size())
 	{
-		set_string(string_simple(ptr,len));
+		string8 temp;
+		if (!temp.set_string(ptr,len)) return false;
+		return set_string(temp);
 	}
 	else
 	{
 		len = strlen_max(ptr,len);
-		makespace(len+1);
+		if (!makespace(len+1)) return false;
 		data.copy(ptr,len);
 		used=len;
 		data[used]=0;
+		return true;
 	}
 }
 
@@ -763,11 +763,21 @@ int stricmp_ascii(const char * s1,const char * s2)
 	}
 }
 
-unsigned string8::replace_byte(char c1,char c2)
+unsigned string8::replace_nontext_chars(char p_replace)
+{
+	unsigned ret = 0;
+	for(unsigned n=0;n<used;n++)
+	{
+		if ((unsigned char)data[n] < 32) {data[n] = p_replace; ret++; }
+	}
+	return ret;
+}
+
+unsigned string8::replace_byte(char c1,char c2,unsigned start)
 {
 	assert(c1 != 0); assert(c2 != 0);
 	unsigned n, ret = 0;
-	for(n=0;n<used;n++)
+	for(n=start;n<used;n++)
 	{
 		if (data[n] == c1) {data[n] = c2; ret++;}
 	}
@@ -841,6 +851,17 @@ format_uint::format_uint(t_uint64 val,unsigned p_width,unsigned p_base)
 	*out = 0;
 }
 
+format_fixedpoint::format_fixedpoint(t_int64 p_val,unsigned p_point)
+{
+	unsigned div = 1;
+	for(unsigned n=0;n<p_point;n++) div *= 10;
+
+	if (p_val < 0) {m_buffer << "-";p_val = -p_val;}
+
+	
+	m_buffer << format_int(p_val / div) << "." << format_int(p_val % div, p_point);
+}
+
 format_int::format_int(t_int64 p_val,unsigned p_width,unsigned p_base)
 {
 	bool neg = false;
@@ -911,4 +932,15 @@ string_directory::string_directory(const char * p_path)
 {
 	unsigned ptr = string8::g_scan_filename(p_path);
 	if (ptr > 0) m_data.set_string(p_path,ptr-1);
+}
+
+
+
+
+
+void string_base::add_string_e(const char * p_string,unsigned p_length) {
+	if (!add_string(p_string,p_length)) throw std::bad_alloc();
+}
+void string_base::set_string_e(const char * p_string,unsigned p_length) {
+	if (!set_string(p_string,p_length)) throw std::bad_alloc();
 }

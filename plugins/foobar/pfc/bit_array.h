@@ -217,8 +217,8 @@ public:
 
 class bit_array_bittable : public bit_array_var
 {
-	unsigned char * data;
-	unsigned count;
+	unsigned char * m_data;
+	unsigned m_count;
 public:
 	//helpers
 	inline static bool g_get(const unsigned char * ptr,unsigned idx)
@@ -233,41 +233,53 @@ public:
 		dst = val ? dst|mask : dst&~mask;
 	}
 
-	inline static unsigned g_estimate_size(unsigned count) {return (count+7)>>3;}
+	inline static unsigned g_estimate_size(unsigned p_count) {return (p_count+7)>>3;}
 
-	void resize(unsigned p_count)
+	bool resize(unsigned p_count)
 	{
-		unsigned old_bytes = g_estimate_size(count);
-		count = p_count;
-		unsigned bytes = g_estimate_size(count);
+		unsigned old_bytes = g_estimate_size(m_count);
+		m_count = p_count;
+		unsigned bytes = g_estimate_size(m_count);
 		if (bytes==0)
 		{
-			if (data) {free(data);data=0;}
+			if (m_data != NULL) {free(m_data);m_data=NULL;}
 		}
 		else
 		{
-			data = data ? (unsigned char*)realloc(data,bytes) : (unsigned char*)malloc(bytes);
-			if (bytes > old_bytes) memset(data+old_bytes,0,bytes-old_bytes);
+			if (m_data == NULL) {
+				m_data = (unsigned char*) malloc(bytes);
+				if (m_data == NULL) return false;
+			} else {
+				unsigned char * newdata = (unsigned char*) realloc(m_data,bytes);
+				if (newdata == NULL) return false;
+				m_data = newdata;
+			}
+			if (bytes > old_bytes) memset(m_data+old_bytes,0,bytes-old_bytes);
 		}
+		return true;
 	}
 
-	inline bit_array_bittable(unsigned p_count) {count=0;data=0;resize(p_count);}
-	inline ~bit_array_bittable() {free(data);}
+	void resize_e(unsigned p_count) {
+		if (!resize(p_count)) throw std::bad_alloc();
+	}
+
+	bit_array_bittable(unsigned p_count) : m_count(0), m_data(NULL) {resize_e(p_count);}
+	~bit_array_bittable() {if (m_data != NULL) free(m_data);}
 	
 	virtual void set(int n,bool val)
 	{
-		if ((unsigned)n<count)
+		if ((unsigned)n<m_count)
 		{
-			g_set(data,n,val);
+			g_set(m_data,n,val);
 		}
 	}
 
 	virtual bool get(int n) const
 	{
 		bool rv = false;
-		if ((unsigned)n<count)
+		if ((unsigned)n<m_count)
 		{
-			rv = g_get(data,n);
+			rv = g_get(m_data,n);
 		}
 		return rv;
 	}

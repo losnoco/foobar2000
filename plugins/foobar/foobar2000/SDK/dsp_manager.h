@@ -31,21 +31,19 @@ public:
 	
 	virtual bool configure_popup(dsp_chain_config & p_data,HWND p_parent,const char * p_title) = 0;
 	
-	virtual HWND configure_embedded(const dsp_chain_config & p_initdata,HWND p_parent,unsigned p_id) = 0;
+	virtual HWND configure_embedded(const dsp_chain_config & p_initdata,HWND p_parent,unsigned p_id,bool p_from_modal) = 0;
 	virtual void configure_embedded_retrieve(HWND wnd,dsp_chain_config & p_data) = 0;
 	virtual void configure_embedded_change(HWND wnd,const dsp_chain_config & p_data) = 0;
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
-	}
-
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
 protected:
-	inline dsp_config_manager() {}
-	inline ~dsp_config_manager() {}
+	dsp_config_manager() {}
+	~dsp_config_manager() {}
 };
 
 class NOVTABLE dsp_config_callback : public service_base
@@ -53,18 +51,15 @@ class NOVTABLE dsp_config_callback : public service_base
 public:
 	virtual void on_core_settings_change(const dsp_chain_config & p_newdata) = 0;
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
-	}
-
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
-	
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
 protected:
-	inline dsp_config_callback() {}
-	inline ~dsp_config_callback() {}
+	dsp_config_callback() {}
+	~dsp_config_callback() {}
 
 };
 

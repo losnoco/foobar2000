@@ -1,6 +1,6 @@
 #include "foobar2000.h"
 
-void titleformat::remove_color_marks(const char * src,string_base & out)//helper
+void titleformat_compiler::remove_color_marks(const char * src,string_base & out)//helper
 {
 	out.reset();
 	while(*src)
@@ -20,7 +20,7 @@ static bool test_for_bad_char(const char * source,unsigned source_char_len,const
 	return strstr_ex(reserved,(unsigned)(-1),source,source_char_len) != (unsigned)(-1);
 }
 
-void titleformat::remove_forbidden_chars(titleformat_text_out * p_out,const char * p_source,unsigned p_source_len,const char * p_reserved_chars)
+void titleformat_compiler::remove_forbidden_chars(titleformat_text_out * p_out,const char * p_source,unsigned p_source_len,const char * p_reserved_chars)
 {
 	if (p_reserved_chars == 0 || *p_reserved_chars == 0)
 	{
@@ -50,12 +50,12 @@ void titleformat::remove_forbidden_chars(titleformat_text_out * p_out,const char
 	}
 }
 
-void titleformat::remove_forbidden_chars_string_append(string_base & p_out,const char * p_source,unsigned p_source_len,const char * p_reserved_chars)
+void titleformat_compiler::remove_forbidden_chars_string_append(string_base & p_out,const char * p_source,unsigned p_source_len,const char * p_reserved_chars)
 {
 	remove_forbidden_chars(&titleformat_text_out_impl_string(p_out),p_source,p_source_len,p_reserved_chars);
 }
 
-void titleformat::remove_forbidden_chars_string(string_base & p_out,const char * p_source,unsigned p_source_len,const char * p_reserved_chars)
+void titleformat_compiler::remove_forbidden_chars_string(string_base & p_out,const char * p_source,unsigned p_source_len,const char * p_reserved_chars)
 {
 	p_out.reset();
 	remove_forbidden_chars_string_append(p_out,p_source,p_source_len,p_reserved_chars);
@@ -78,6 +78,77 @@ void titleformat_hook_impl_file_info::process_codec(titleformat_text_out * p_out
 	}
 }
 
+bool titleformat_hook_impl_file_info::remap_meta(unsigned & p_meta_index, const char * p_name, unsigned p_name_length)
+{
+	p_meta_index = infinite;
+	if (!stricmp_utf8_ex(p_name, p_name_length, "album", infinite))
+	{
+		p_meta_index = m_info->meta_find("album");
+		if (p_meta_index != infinite) return true;
+		p_meta_index = m_info->meta_find("venue");
+		if (p_meta_index != infinite) return true;
+		return false;
+	}
+	else if (!stricmp_utf8_ex(p_name, p_name_length, "artist", infinite))
+	{
+		p_meta_index = m_info->meta_find("artist");
+		if (p_meta_index != infinite) return true;
+		p_meta_index = m_info->meta_find("album artist");
+		if (p_meta_index != infinite) return true;
+		p_meta_index = m_info->meta_find("composer");
+		if (p_meta_index != infinite) return true;
+		p_meta_index = m_info->meta_find("performer");
+		if (p_meta_index != infinite) return true;
+		return false;
+	}
+	else if (!stricmp_utf8_ex(p_name, p_name_length, "album artist", infinite))
+	{
+		p_meta_index = m_info->meta_find("album artist");
+		if (p_meta_index != infinite) return true;
+		p_meta_index = m_info->meta_find("artist");
+		if (p_meta_index != infinite) return true;
+		p_meta_index = m_info->meta_find("composer");
+		if (p_meta_index != infinite) return true;
+		p_meta_index = m_info->meta_find("performer");
+		if (p_meta_index != infinite) return true;
+		return false;
+	}
+	else if (!stricmp_utf8_ex(p_name,p_name_length,"track artist",infinite))
+	{
+		unsigned index_artist, index_album_artist;
+		
+		index_artist = m_info->meta_find("artist");
+		if (index_artist == infinite) return false;
+		index_album_artist = m_info->meta_find("album artist");
+		if (index_album_artist == infinite) return false;
+		if (m_info->are_meta_fields_identical(index_artist, index_album_artist)) return false;
+
+		p_meta_index = index_artist;
+		return true;
+	}
+	else if (!stricmp_utf8_ex(p_name,p_name_length,"track",infinite) || !stricmp_utf8_ex(p_name,p_name_length,"tracknumber",infinite))
+	{
+		p_meta_index = m_info->meta_find("tracknumber");
+		if (p_meta_index != infinite) return true;
+		p_meta_index = m_info->meta_find("track");
+		if (p_meta_index != infinite) return true;
+		return false;
+	}
+	else if (!stricmp_utf8_ex(p_name,p_name_length,"disc",infinite) || !stricmp_utf8_ex(p_name,p_name_length,"discnumber",infinite))
+	{
+		p_meta_index = m_info->meta_find("discnumber");
+		if (p_meta_index != infinite) return true;
+		p_meta_index = m_info->meta_find("disc");
+		if (p_meta_index != infinite) return true;
+		return false;
+	}
+	else
+	{
+		p_meta_index = m_info->meta_find_ex(p_name,p_name_length);
+		return p_meta_index != infinite;
+	}
+}
+
 bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,bool & p_found_flag)
 {
 	p_found_flag = false;
@@ -91,11 +162,31 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 		p_found_flag = true;
 		return true;
 	}
+	else if (!stricmp_utf8_ex(p_name,p_name_length,"filename_sort",infinite))
+	{
+		string8 temp;
+		filesystem::g_get_display_path(m_location.get_path(),temp);
+		output_text(p_out,string_filename(temp),infinite);
+		output_text(p_out,"|",infinite);
+		output_text(p_out,format_uint(m_location.get_subsong(),10),infinite);
+		p_found_flag = true;
+		return true;
+	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"path",infinite))
 	{
 		string8 temp;
 		filesystem::g_get_display_path(m_location.get_path(),temp);
 		output_text(p_out,temp.is_empty() ? "n/a" : temp.get_ptr(),infinite);
+		p_found_flag = true;
+		return true;
+	}
+	else if (!stricmp_utf8_ex(p_name,p_name_length,"path_sort",infinite))
+	{
+		string8_fastalloc temp;
+		filesystem::g_get_display_path(m_location.get_path(),temp);
+		output_text(p_out,temp,infinite);
+		output_text(p_out,"|",infinite);
+		output_text(p_out,format_uint(m_location.get_subsong(),10),infinite);
 		p_found_flag = true;
 		return true;
 	}
@@ -161,76 +252,6 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 		output_text(p_out,value,infinite);
 		p_found_flag = true;
 		return true;
-	}
-	else if (!stricmp_utf8_ex(p_name,p_name_length,"album",infinite))
-	{
-		if (process_meta(p_out,"album",infinite,", ",2,", ",2))
-		{
-			p_found_flag = true;
-			return true;
-		}
-		else if (process_meta(p_out,"venue",infinite,", ",2,", ",2))
-		{
-			p_found_flag = true;
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-	else if (!stricmp_utf8_ex(p_name,p_name_length,"artist",infinite))
-	{
-		if (process_meta(p_out,"artist",infinite,", ",2,", ",2))
-		{
-			p_found_flag = true;
-			return true;
-		} else if (process_meta(p_out,"album artist",infinite,", ",2,", ",2))
-		{
-			p_found_flag = true;
-			return true;
-		} else if (process_meta(p_out,"composer",infinite,", ",2,", ",2))
-		{
-			p_found_flag = true;
-			return true;
-		} else if (process_meta(p_out,"performer",infinite,", ",2,", ",2))
-		{
-			p_found_flag = true;
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-	else if (!stricmp_utf8_ex(p_name,p_name_length,"album artist",infinite))
-	{
-		if (process_album_artist(p_out))
-		{
-			p_found_flag = true;
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-	else if (!stricmp_utf8_ex(p_name,p_name_length,"track artist",infinite))
-	{
-		unsigned index_artist, index_album_artist;
-		
-		index_artist = m_info->meta_find("artist");
-		if (index_artist == infinite) return false;
-		index_album_artist = m_info->meta_find("album artist");
-		if (index_album_artist == infinite) return false;
-		if (m_info->are_meta_fields_identical(index_artist,index_album_artist)) return false;
-
-		process_meta(p_out,"artist",infinite,", ",2,", ",2);
-
-		p_found_flag = true;
-		return true;
-
-		
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"title",infinite))
 	{
@@ -361,9 +382,14 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 	}
 	else
 	{//meta
-		bool status = process_meta(p_out,p_name,p_name_length,", ",2,", ",2);
-		p_found_flag = status;
-		return status;
+		unsigned index;
+		if (remap_meta(index, p_name, p_name_length))
+		{
+			bool status = process_meta(p_out,index,", ",2,", ",2);
+			p_found_flag = status;
+			return status;
+		}
+		return false;
 	}
 }
 
@@ -533,26 +559,17 @@ bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_
 	else return false;
 }
 
-bool titleformat_hook_impl_file_info::process_album_artist(titleformat_text_out * p_out)
-{
-	if (process_meta(p_out,"album artist",infinite,", ",2,", ",2))
-		return true;
-	else if (process_meta(p_out,"artist",infinite,", ",2,", ",2))
-		return true;
-	else if (process_meta(p_out,"composer",infinite,", ",2,", ",2))
-		return true;
-	else if (process_meta(p_out,"performer",infinite,", ",2,", ",2))
-		return true;
-	else
-		return false;
-}
-
 bool titleformat_hook_impl_file_info::process_meta(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,const char * p_sep1,unsigned p_sep1_length,const char * p_sep2,unsigned p_sep2_length)
 {
 	unsigned index = m_info->meta_find_ex(p_name,p_name_length);
-	if (index == infinite) return false;
+	return process_meta(p_out, index, p_sep1, p_sep1_length, p_sep2, p_sep2_length);
+}
 
-	unsigned n, m = m_info->meta_enum_value_count(index);
+bool titleformat_hook_impl_file_info::process_meta(titleformat_text_out * p_out,unsigned p_index,const char * p_sep1,unsigned p_sep1_length,const char * p_sep2,unsigned p_sep2_length)
+{
+	if (p_index == infinite) return false;
+
+	unsigned n, m = m_info->meta_enum_value_count(p_index);
 	for(n=0;n<m;n++)
 	{
 		if (n>0)
@@ -560,7 +577,7 @@ bool titleformat_hook_impl_file_info::process_meta(titleformat_text_out * p_out,
 			if (n+1 == m) output_text(p_out,p_sep2,p_sep2_length);
 			else output_text(p_out,p_sep1,p_sep1_length);
 		}			
-		output_text(p_out,m_info->meta_enum_value(index,n),infinite);
+		output_text(p_out,m_info->meta_enum_value(p_index,n),infinite);
 	}
 	return true;
 }
@@ -692,38 +709,6 @@ void titleformat_hook_impl_file_info::output_int(titleformat_text_out * p_out,t_
 	output_text(p_out,temp,infinite);
 }
 
-bool titleformat_hook_impl_legacy_extrainfos::process_field(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,bool & p_found_flag)
-{
-	p_found_flag = false;
-	if (m_extralist && p_name_length > 1 && p_name[0] == '_'  && p_name[1] != '_')
-	{
-		const char * name = p_name + 1;
-		unsigned name_length = p_name_length - 1;
-		const char * ptr = m_extralist;
-		while(*ptr)
-		{
-			const char * ptr2 = strchr(ptr,'=');
-			if (ptr2)
-			{
-				if (!stricmp_utf8_ex(name,name_length,ptr,ptr2-ptr))
-				{
-					p_out->write(ptr2+1,infinite);
-					p_found_flag = true;
-					return true;
-				}
-			}
-			ptr += strlen(ptr) + 1;
-		}
-		return false;
-	}
-	else return false;
-}
-
-bool titleformat_hook_impl_legacy_extrainfos::process_function(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag)
-{
-	return false;
-}
-
 void titleformat_object::run_filtered(titleformat_hook * p_source,string_base & p_out,titleformat_text_filter * p_filter)
 {
 	if (p_filter)
@@ -755,16 +740,6 @@ void titleformat_object::run_simple(const playable_location & p_location,const f
 	run(&titleformat_hook_impl_file_info(p_location,p_source),p_out);
 }
 
-void titleformat_object::run_legacy(const playable_location & p_location,const file_info * p_source,string_base & p_out,const char * p_extra)
-{
-	run(
-		&titleformat_hook_impl_splitter(
-		&titleformat_hook_impl_file_info(p_location,p_source),
-		&titleformat_hook_impl_legacy_extrainfos(p_extra)
-		),
-		p_out);
-}
-
 unsigned titleformat_hook_function_params::get_param_uint(unsigned index)
 {
 	const char * str;
@@ -776,7 +751,7 @@ unsigned titleformat_hook_function_params::get_param_uint(unsigned index)
 
 void titleformat_text_out_impl_filter_chars::write(const char * p_data,unsigned p_data_length)
 {
-	titleformat::remove_forbidden_chars(m_chain,p_data,p_data_length,m_restricted_chars);
+	titleformat_compiler::remove_forbidden_chars(m_chain,p_data,p_data_length,m_restricted_chars);
 }
 
 bool titleformat_hook_impl_splitter::process_field(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,bool & p_found_flag)
@@ -827,7 +802,7 @@ void titleformat_text_out_impl_filter::write(const char * p_data,unsigned p_data
 
 void titleformat_text_filter_impl_reserved_chars::write(titleformat_text_out * p_out,const char * p_data,unsigned p_data_length)
 {
-	titleformat::remove_forbidden_chars(p_out,p_data,p_data_length,m_reserved_chars);
+	titleformat_compiler::remove_forbidden_chars(p_out,p_data,p_data_length,m_reserved_chars);
 }
 
 
@@ -852,17 +827,17 @@ void titleformat_text_filter_impl_reserved_chars::on_new_field()
 {
 }
 
-void titleformat::run(titleformat_hook * p_source,string_base & p_out,const char * p_spec)
+void titleformat_compiler::run(titleformat_hook * p_source,string_base & p_out,const char * p_spec)
 {
 	service_ptr_t<titleformat_object> ptr;
 	if (!compile(ptr,p_spec)) p_out = "[COMPILATION ERROR]";
 	else ptr->run(p_source,p_out);
 }
 
-void titleformat::compile_safe(service_ptr_t<titleformat_object> & p_out,const char * p_spec)
+void titleformat_compiler::compile_safe(service_ptr_t<titleformat_object> & p_out,const char * p_spec)
 {
-	if (!compile(p_out,p_spec))
-	{
-		compile(p_out,"%_filename%");
+	if (!compile(p_out,p_spec)) {
+		if (!compile(p_out,"%filename%"))
+			throw pfc::exception_bug_check();
 	}
 }

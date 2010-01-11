@@ -1,5 +1,45 @@
 #include "stdafx.h"
 
+static const char * const standard_fieldnames[] = 
+{
+	"artist","ARTIST","Artist",
+	"album","ALBUM","Album",
+	"tracknumber","TRACKNUMBER","Tracknumber",
+	"genre","GENRE","Genre",
+	"title","TITLE","title",
+	"comment","COMMENT","Comment",
+	"date","DATE","Date",
+	"discnumber","DISCNUMBER","Discnumber"
+};
+
+static const char * const standard_infonames[] = 
+{
+	"bitspersample", "channels", "bitrate", "codec", "codec_profile","tool","tagtype", "samplerate"
+};
+
+static const char * optimize_fieldname(const char * p_string)
+{
+	for(unsigned n=0;n<tabsize(standard_fieldnames);n++)
+	{
+		const char * stdstring = standard_fieldnames[n];
+		if (/*p_string[0] == stdstring[0] && */strcmp(p_string,stdstring) == 0) {
+			return stdstring;
+		}
+	}
+	return NULL;
+}
+
+static const char * optimize_infoname(const char * p_string)
+{
+	for(unsigned n=0;n<tabsize(standard_infonames);n++)
+	{
+		const char * stdstring = standard_infonames[n];
+		if (/*p_string[0] == stdstring[0] && */strcmp(p_string,stdstring) == 0) {
+			return stdstring;
+		}
+	}
+	return NULL;
+}
 
 /*
 order of things
@@ -95,16 +135,26 @@ void file_info_const_impl::copy(const file_info & p_source)
 #endif//__file_info_const_impl_have_hintmap__
 		for(index = 0; index < m_meta_count; index++ )
 		{
-			
-			stringbuffer_size += strlen(p_source.meta_enum_name(index)) + 1;
+			{
+				const char * name = p_source.meta_enum_name(index);
+				if (optimize_fieldname(name) == 0)
+					stringbuffer_size += strlen(name) + 1;
+			}
 
 			unsigned val; const unsigned val_max = pfc::min_t<unsigned>(p_source.meta_enum_value_count(index),metacount_upperlimit);
 			
-			valuemap_size += val_max * sizeof(char*);
-
-			for(val = 0; val < val_max; val++ )
+			if (val_max == 1)
 			{
-				stringbuffer_size += strlen(p_source.meta_enum_value(index,val)) + 1;
+				stringbuffer_size += strlen(p_source.meta_enum_value(index,0)) + 1;
+			}
+			else
+			{
+				valuemap_size += val_max * sizeof(char*);
+
+				for(val = 0; val < val_max; val++ )
+				{
+					stringbuffer_size += strlen(p_source.meta_enum_value(index,val)) + 1;
+				}
 			}
 		}
 
@@ -112,7 +162,8 @@ void file_info_const_impl::copy(const file_info & p_source)
 		info_size = m_info_count * sizeof(info_entry);
 		for(index = 0; index < m_info_count; index++ )
 		{
-			stringbuffer_size += strlen(p_source.info_enum_name(index)) + 1;
+			const char * name = p_source.info_enum_name(index);
+			if (optimize_infoname(name) == NULL) stringbuffer_size += strlen(name) + 1;
 			stringbuffer_size += strlen(p_source.info_enum_value(index)) + 1;
 		}
 	}
@@ -154,17 +205,37 @@ void file_info_const_impl::copy(const file_info & p_source)
 		{
 			unsigned val; const unsigned val_max = pfc::min_t<unsigned>(p_source.meta_enum_value_count(index),metacount_upperlimit);
 
-			meta[index].m_name = stringbuffer_append(stringbuffer, p_source.meta_enum_name(index) );
-			meta[index].m_valuemap = valuemap;
-			meta[index].m_valuecount = val_max;
+			{
+				const char * name = p_source.meta_enum_name(index);
+				const char * name_opt = optimize_fieldname(name);
+				if (name_opt == NULL)
+					meta[index].m_name = stringbuffer_append(stringbuffer, name );
+				else
+					meta[index].m_name = name_opt;
+			}
 			
-			for( val = 0; val < val_max ; val ++ )
-				*(valuemap ++ ) = stringbuffer_append(stringbuffer, p_source.meta_enum_value(index,val) );
+			meta[index].m_valuecount = val_max;
+
+			if (val_max == 1)
+			{
+				meta[index].m_valuemap = reinterpret_cast<const char * const *>(stringbuffer_append(stringbuffer, p_source.meta_enum_value(index,0) ));
+			}
+			else
+			{
+				meta[index].m_valuemap = valuemap;
+				for( val = 0; val < val_max ; val ++ )
+					*(valuemap ++ ) = stringbuffer_append(stringbuffer, p_source.meta_enum_value(index,val) );
+			}
 		}
 
 		for( index = 0; index < m_info_count; index ++ )
 		{
-			info[index].m_name = stringbuffer_append(stringbuffer, p_source.info_enum_name(index) );
+			const char * name = p_source.info_enum_name(index);
+			const char * name_opt = optimize_infoname(name);
+			if (name_opt == NULL)
+				info[index].m_name = stringbuffer_append(stringbuffer, name );
+			else
+				info[index].m_name = name_opt;
 			info[index].m_value = stringbuffer_append(stringbuffer, p_source.info_enum_value(index) );
 		}
 	}
@@ -195,4 +266,19 @@ unsigned file_info_const_impl::meta_find_ex(const char * p_name,unsigned p_name_
 #else
 	return file_info::meta_find_ex(p_name,p_name_length);
 #endif
+}
+
+
+unsigned	file_info_const_impl::meta_enum_value_count(unsigned p_index) const
+{
+	return m_meta[p_index].m_valuecount;
+}
+
+const char*	file_info_const_impl::meta_enum_value(unsigned p_index,unsigned p_value_number) const
+{
+	const meta_entry & entry = m_meta[p_index];
+	if (entry.m_valuecount == 1)
+		return reinterpret_cast<const char*>(entry.m_valuemap);
+	else
+		return entry.m_valuemap[p_value_number];
 }

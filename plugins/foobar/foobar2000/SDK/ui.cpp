@@ -10,12 +10,12 @@ bool ui_drop_item_callback::g_on_drop(interface IDataObject * pDataObject)
 	return false;
 }
 
-bool ui_drop_item_callback::g_is_accepted_type(interface IDataObject * pDataObject)
+bool ui_drop_item_callback::g_is_accepted_type(interface IDataObject * pDataObject, DWORD * p_effect)
 {
 	service_enum_t<ui_drop_item_callback> e;
 	service_ptr_t<ui_drop_item_callback> ptr;
 	if (e.first(ptr)) do {
-		if (ptr->is_accepted_type(pDataObject)) return true;
+		if (ptr->is_accepted_type(pDataObject,p_effect)) return true;
 	} while(e.next(ptr));
 	return false;
 }
@@ -36,10 +36,3 @@ bool user_interface::g_find(service_ptr_t<user_interface> & p_out,const GUID & p
 
 
 bool ui_control::g_get(service_ptr_t<ui_control> & p_out) {return service_enum_create_t(p_out,0);}
-
-bool ui_control_v2::g_get(service_ptr_t<ui_control_v2> & p_out)
-{
-	service_ptr_t<ui_control> api;
-	if (!service_enum_create_t(api,0)) return false;
-	return api->service_query_t(p_out);
-}

@@ -1,10 +1,6 @@
 #ifndef _COMPONENTVERSION_H_
 #define _COMPONENTVERSION_H_
 
-#include "service.h"
-
-//reminder: all strings are UTF-8
-
 class NOVTABLE componentversion : public service_base
 {
 public:
@@ -14,10 +10,17 @@ public:
 	virtual void get_about_message(string_base & out)=0;//about message uses "\n" for line separators
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	componentversion() {}
+	~componentversion() {}
 };
 
-class componentversion_i_simple : public componentversion
+class componentversion_impl_simple : public componentversion
 {
 	const char * name,*version,*about;
 public:
@@ -26,10 +29,10 @@ public:
 	virtual void get_component_name(string_base & out) {out.set_string(name?name:"");}
 	virtual void get_component_version(string_base & out) {out.set_string(version?version:"");}
 	virtual void get_about_message(string_base & out) {out.set_string(about?about:"");}
-	componentversion_i_simple(const char * p_name,const char * p_version,const char * p_about) : name(p_name), version(p_version), about(p_about ? p_about : "") {}
+	explicit componentversion_impl_simple(const char * p_name,const char * p_version,const char * p_about) : name(p_name), version(p_version), about(p_about ? p_about : "") {}
 };
 
-class componentversion_i_copy : public componentversion
+class componentversion_impl_copy : public componentversion
 {
 	string_simple name,version,about;
 public:
@@ -38,15 +41,15 @@ public:
 	virtual void get_component_name(string_base & out) {out.set_string(name);}
 	virtual void get_component_version(string_base & out) {out.set_string(version);}
 	virtual void get_about_message(string_base & out) {out.set_string(about);}
-	componentversion_i_copy(const char * p_name,const char * p_version,const char * p_about) : name(p_name), version(p_version), about(p_about ? p_about : "") {}
+	explicit componentversion_impl_copy(const char * p_name,const char * p_version,const char * p_about) : name(p_name), version(p_version), about(p_about ? p_about : "") {}
 };
 
 
 #define DECLARE_COMPONENT_VERSION(NAME,VERSION,ABOUT) \
-	static service_factory_single_transparent_p3_t<componentversion,componentversion_i_simple,const char*,const char*,const char*> g_componentversion_service(NAME,VERSION,ABOUT);
+	static service_factory_single_transparent_p3_t<componentversion,componentversion_impl_simple,const char*,const char*,const char*> g_componentversion_service(NAME,VERSION,ABOUT);
 
 #define DECLARE_COMPONENT_VERSION_COPY(NAME,VERSION,ABOUT) \
-	static service_factory_single_transparent_p3_t<componentversion,componentversion_i_copy,const char*,const char*,const char*> g_componentversion_service(NAME,VERSION,ABOUT);
+	static service_factory_single_transparent_p3_t<componentversion,componentversion_impl_copy,const char*,const char*,const char*> g_componentversion_service(NAME,VERSION,ABOUT);
 
 //usage: DECLARE_COMPONENT_VERSION("blah","v1.337",0)
 //about message is optional can be null

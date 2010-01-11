@@ -12,7 +12,7 @@ namespace {
 			process_path_internal(p_path,p_reader,m_callback,playlist_loader_callback::entry_directory_enumerated,p_stats);
 			return !m_callback.is_aborting();
 		}
-		bool is_aborting() {return m_callback.is_aborting();}
+		bool FB2KAPI is_aborting() {return m_callback.is_aborting();}
 	private:
 		playlist_loader_callback & m_callback;
 	};
@@ -68,6 +68,71 @@ t_io_result playlist_loader::g_load_playlist(const char * p_filename,playlist_lo
 
 	return io_result_error_data;
 }
+
+static t_io_result track_indexer__g_get_tracks(const char * p_path,const service_ptr_t<file> & p_reader,const t_filestats & p_stats,playlist_loader_callback::t_entry_type p_type,playlist_loader_callback & p_callback,bool & p_got_input)
+{
+	if (p_reader.is_empty() && filesystem::g_is_remote(p_path))
+	{
+		metadb_handle_ptr handle;
+		if (p_callback.handle_create(handle,make_playable_location(p_path,0))) {
+			p_got_input = true;
+			p_callback.on_entry(handle,p_type,p_stats,true);
+		}
+		return io_result_success;
+	}
+
+	t_io_result status;
+	service_ptr_t<input_info_reader> instance;
+	status = input_entry::g_open_for_info_read(instance,p_reader,p_path,p_callback);
+	if (io_result_failed(status)) return status;
+
+	t_filestats stats;
+	status = instance->get_file_stats(stats,p_callback);
+	if (io_result_failed(status)) return status;
+
+	unsigned subsong,subsong_count = instance->get_subsong_count();
+	for(subsong=0;subsong<subsong_count;subsong++)
+	{
+		if (p_callback.is_aborting()) return io_result_aborted;
+		metadb_handle_ptr handle;
+		if (p_callback.handle_create(handle,make_playable_location(p_path,instance->get_subsong(subsong))))
+		{
+			p_got_input = true;
+			if (p_callback.want_info(handle,p_type,stats,true))
+			{
+				file_info_impl info;
+				status = instance->get_info(handle->get_subsong_index(),info,p_callback);
+				if (io_result_failed(status)) return status;
+				p_callback.on_entry_info(handle,p_type,stats,info,true);
+			}
+			else
+			{
+				p_callback.on_entry(handle,p_type,stats,true);
+			}
+		}
+	}
+	return io_result_success;
+}
+
+
+static t_io_result track_indexer__g_get_tracks_wrap(const char * p_path,const service_ptr_t<file> & p_reader,const t_filestats & p_stats,playlist_loader_callback::t_entry_type p_type,playlist_loader_callback & p_callback)
+{
+	bool got_input = false;
+	t_io_result status = track_indexer__g_get_tracks(p_path,p_reader,p_stats,p_type,p_callback,got_input);
+	if (io_result_failed(status) && !got_input && !p_callback.is_aborting())
+	{
+		if (p_type == playlist_loader_callback::entry_user_requested)
+		{
+			metadb_handle_ptr handle;
+			if (p_callback.handle_create(handle,make_playable_location(p_path,0)))
+			{
+				p_callback.on_entry(handle,p_type,p_stats,true);
+			}
+		}
+	}
+	return status;
+}
+
 
 static void process_path_internal(const char * p_path,const service_ptr_t<file> & p_reader,playlist_loader_callback & p_callback,playlist_loader_callback::t_entry_type p_type,const t_filestats & p_stats)
 {
@@ -138,9 +203,11 @@ static void process_path_internal(const char * p_path,const service_ptr_t<file> 
 		if (link_resolver::g_find(ptr,p_path))
 		{
 			string8 temp;
-			if (io_result_succeeded(ptr->resolve(p_reader,p_path,temp,p_callback)))
+			t_io_result status;
+			TRACK_CODE("link_resolver::resolve",status = ptr->resolve(p_reader,p_path,temp,p_callback));
+			if (io_result_succeeded(status))
 			{
-				track_indexer::g_get_tracks_wrap(temp,0,filestats_invalid,playlist_loader_callback::entry_from_playlist,p_callback);
+				track_indexer__g_get_tracks_wrap(temp,0,filestats_invalid,playlist_loader_callback::entry_from_playlist,p_callback);
 				resolved = true;
 			}
 			else
@@ -154,7 +221,7 @@ static void process_path_internal(const char * p_path,const service_ptr_t<file> 
 
 	if (!resolved)
 	{
-		track_indexer::g_get_tracks_wrap(p_path,p_reader,p_stats,p_type,p_callback);
+		track_indexer__g_get_tracks_wrap(p_path,p_reader,p_stats,p_type,p_callback);
 	}
 }
 

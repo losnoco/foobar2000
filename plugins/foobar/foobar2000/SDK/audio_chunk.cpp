@@ -2,22 +2,16 @@
 
 bool audio_chunk::set_data(const audio_sample * src,unsigned samples,unsigned nch,unsigned srate,unsigned channel_config)
 {
-	bool rv = false;
 	unsigned size = samples * nch;
-	audio_sample * out = check_data_size(size);
-	if (out)
-	{
-		if (src)
-			mem_ops<audio_sample>::copy(out,src,size);
-		else
-			mem_ops<audio_sample>::set(out,0,size);
-		set_sample_count(samples);
-		set_channels(nch,channel_config);
-		set_srate(srate);
-		rv = true;
-	}
-	else reset();
-	return rv;
+	if (!check_data_size(size)) {reset(); return false;}
+	if (src)
+		mem_ops<audio_sample>::copy(get_data(),src,size);
+	else
+		mem_ops<audio_sample>::set(get_data(),0,size);
+	set_sample_count(samples);
+	set_channels(nch,channel_config);
+	set_srate(srate);
+	return true;
 }
 
 static bool check_exclusive(unsigned val, unsigned mask)
@@ -127,8 +121,8 @@ bool audio_chunk::set_data_fixedpoint_ex(const void * source,unsigned size,unsig
 	if (byte_order::machine_is_big_endian()) need_swap = !need_swap;
 
 	unsigned count = size / (bps/8);
-	audio_sample * buffer = check_data_size(count);
-	if (buffer==0) {reset();return false;}
+	if (!check_data_size(count)) {reset();return false;}
+	audio_sample * buffer = get_data();
 	bool b_signed = !!(flags & FLAG_SIGNED);
 
 	switch(bps)
@@ -137,24 +131,16 @@ bool audio_chunk::set_data_fixedpoint_ex(const void * source,unsigned size,unsig
 		msvc6_sucks<char,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
 		break;
 	case 16:
-		msvc6_sucks<short,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
+		if (!need_swap && b_signed) audio_math::convert_from_int16((const t_int16*)source,count,buffer,1.0);
+		else msvc6_sucks<short,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
 		break;
 	case 24:
 		msvc6_sucks<long,true>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
 		break;
 	case 32:
-		msvc6_sucks<long,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
+		if (!need_swap && b_signed) audio_math::convert_from_int32((const t_int32*)source,count,buffer,1.0);
+		else msvc6_sucks<long,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
 		break;
-	case 40:
-	case 48:
-	case 56:
-	case 64:
-		msvc6_sucks<__int64,true>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
-		break;
-/*
-		additional template would bump size while i doubt if anyone playing PCM above 32bit would care about performance gain
-		msvc6_sucks<__int64,false>::do_fixedpoint_convert(need_swap,b_signed,source,bps,count,buffer);
-		break;*/
 	default:
 		//unknown size, cant convert
 		mem_ops<audio_sample>::setval(buffer,0,count);
@@ -195,8 +181,8 @@ bool audio_chunk::set_data_floatingpoint_ex(const void * ptr,unsigned size,unsig
 	bool use_swap = byte_order::machine_is_big_endian() ? !!(flags & FLAG_LITTLE_ENDIAN) : !!(flags & FLAG_BIG_ENDIAN);
 
 	const unsigned count = size / (bps/8);
-	audio_sample * out = check_data_size(count);
-	if (out==0) {reset();return false;}
+	if (!check_data_size(count)) {reset(); return false;}
+	audio_sample * out = get_data();
 
 	if (bps == 32)
 	{
@@ -220,32 +206,6 @@ bool audio_chunk::set_data_floatingpoint_ex(const void * ptr,unsigned size,unsig
 
 	return true;
 }
-
-#if audio_sample_size == 64
-bool audio_chunk::set_data_32(const float * src,UINT samples,UINT nch,UINT srate)
-{
-	unsigned size = samples * nch;
-	audio_sample * out = check_data_size(size);
-	if (out==0) {reset();return false;}
-	dsp_util::convert_32_to_64(src,out,size);
-	set_sample_count(samples);
-	set_channels(nch);
-	set_srate(srate);
-	return true;
-}
-#else
-bool audio_chunk::set_data_64(const double * src,UINT samples,UINT nch,UINT srate)
-{
-	unsigned size = samples * nch;
-	audio_sample * out = check_data_size(size);
-	if (out==0) {reset();return false;}
-	dsp_util::convert_64_to_32(src,out,size);
-	set_sample_count(samples);
-	set_channels(nch);
-	set_srate(srate);
-	return true;
-}
-#endif
 
 bool audio_chunk::is_valid()
 {
@@ -279,14 +239,10 @@ bool audio_chunk::pad_with_silence_ex(unsigned samples,unsigned hint_nch,unsigne
 		{
 			unsigned old_size = get_sample_count() * get_channels();
 			unsigned new_size = samples * get_channels();
-			audio_sample * ptr = check_data_size(new_size);
-			if (ptr)
-			{
-				mem_ops<audio_sample>::set(ptr + old_size,0,new_size - old_size);
-				set_sample_count(samples);
-				return true;
-			}
-			else return false;			
+			if (!check_data_size(new_size)) return false;
+			mem_ops<audio_sample>::set(get_data() + old_size,0,new_size - old_size);
+			set_sample_count(samples);
+			return true;
 		}
 		else return true;
 	}
@@ -298,14 +254,10 @@ bool audio_chunk::pad_with_silence(unsigned samples)
 	{
 		unsigned old_size = get_sample_count() * get_channels();
 		unsigned new_size = samples * get_channels();
-		audio_sample * ptr = check_data_size(new_size);
-		if (ptr)
-		{
-			mem_ops<audio_sample>::set(ptr + old_size,0,new_size - old_size);
-			set_sample_count(samples);
-			return true;
-		}
-		else return false;			
+		if (!check_data_size(new_size)) return false;
+		mem_ops<audio_sample>::set(get_data() + old_size,0,new_size - old_size);
+		set_sample_count(samples);
+		return true;
 	}
 	else return true;
 }
@@ -315,15 +267,12 @@ bool audio_chunk::insert_silence_fromstart(unsigned samples)
 	unsigned old_size = get_sample_count() * get_channels();
 	unsigned delta = samples * get_channels();
 	unsigned new_size = old_size + delta;
-	audio_sample * ptr = check_data_size(new_size);
-	if (ptr)
-	{
-		mem_ops<audio_sample>::move(ptr+delta,ptr,old_size);
-		mem_ops<audio_sample>::set(ptr,0,delta);
-		set_sample_count(get_sample_count() + samples);
-		return true;
-	}
-	else return false;			
+	if (!check_data_size(new_size)) return false;
+	audio_sample * ptr = get_data();
+	mem_ops<audio_sample>::move(ptr+delta,ptr,old_size);
+	mem_ops<audio_sample>::set(ptr,0,delta);
+	set_sample_count(get_sample_count() + samples);
+	return true;
 }
 
 unsigned audio_chunk::skip_first_samples(unsigned samples_delta)
@@ -359,12 +308,11 @@ void audio_chunk_i::set_channels(unsigned val)
 
 audio_sample audio_chunk::get_peak(audio_sample peak) const
 {
-	unsigned num = get_data_length();
-	const audio_sample * data = get_data();
-	for(;num;num--)
-	{
-		audio_sample temp = (audio_sample)fabs(*(data++));
-		if (temp>peak) peak = temp;
-	}
-	return peak;
+	return pfc::max_t<audio_sample>(peak,audio_math::calculate_peak(get_data(),get_sample_count() * get_channels() ));
+}
+
+void audio_chunk::scale(audio_sample p_value)
+{
+	audio_sample * ptr = get_data();
+	audio_math::scale(ptr,get_sample_count() * get_channels(),ptr,p_value);
 }

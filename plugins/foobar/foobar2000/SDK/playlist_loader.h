@@ -29,7 +29,7 @@ public:
 	~playlist_loader_callback_i() {}
 	explicit playlist_loader_callback_i(abort_callback & p_abort) : m_abort(p_abort) {}
 
-	bool is_aborting() {return m_abort.is_aborting();}
+	bool FB2KAPI is_aborting() {return m_abort.is_aborting();}
 
 	const metadb_handle_ptr & get_item(unsigned idx) const {return m_data[idx];}
 	const metadb_handle_ptr & operator[](unsigned idx) const {return m_data[idx];}
@@ -79,13 +79,14 @@ public:
 	}
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
+protected:
+	playlist_loader() {}
+	~playlist_loader() {}
 };
 
 

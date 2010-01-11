@@ -5,8 +5,7 @@ public:
 
 	static void g_create_e(service_ptr_t<file> & p_out,service_ptr_t<file> p_base,abort_callback & p_abort)
 	{
-		t_io_result status = g_create(p_out,p_base,p_abort);
-		if (io_result_failed(status)) throw status;
+		exception_io::g_test(g_create(p_out,p_base,p_abort));
 	}
 	static t_io_result g_create(service_ptr_t<file> & p_out,service_ptr_t<file> p_base,abort_callback & p_abort)
 	{

@@ -5,17 +5,18 @@ public:
 	virtual bool get_name(unsigned idx,string_base & out)=0;//e.g. "MPEG file"
 	virtual bool get_mask(unsigned idx,string_base & out)=0;//e.g. "*.MP3;*.MP2"; separate with semicolons
 	virtual bool is_associatable(unsigned idx) = 0;
-	
-	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
-
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
-	}
 
 	static void build_openfile_mask(string_base & out,bool b_include_playlists=true);
+
+	static const GUID class_guid;
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	input_file_type() {}
+	~input_file_type() {}
 };
 
 class input_file_type_impl : public service_impl_single_t<input_file_type>

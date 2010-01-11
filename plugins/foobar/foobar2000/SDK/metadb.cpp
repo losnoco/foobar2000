@@ -22,8 +22,10 @@ bool metadb::handle_create_replace_path(metadb_handle_ptr & p_out,const metadb_h
 
 bool metadb::handle_replace_path_canonical(metadb_handle_ptr & p_out,const char * p_new_path)
 {
-	metadb_handle_ptr blah(p_out);
-	return handle_create_replace_path_canonical(p_out,blah,p_new_path);
+	metadb_handle_ptr temp;
+	bool status = handle_create_replace_path_canonical(temp,p_out,p_new_path);
+	if (status) p_out = temp;
+	return status;
 }
 
 
@@ -76,7 +78,7 @@ bool file_info_update_helper::read_infos(HWND p_parent,bool p_show_errors)
 	unsigned loaded_count = 0;
 	for(n=0;n<m;n++)
 	{
-		bool val = api->pending_query_ex(m_data[n],m_infos[n]);
+		bool val = m_data[n]->get_info(m_infos[n]);
 		if (val) loaded_count++;
 		m_mask[n] = val;
 	}
@@ -112,20 +114,15 @@ file_info_update_helper::t_write_result file_info_update_helper::write_infos(HWN
 			true,
 			retcodes.get_ptr())) return write_aborted;
 
-		bool got_errors = false, got_busy = false;
-		bool pending_enabled = api->pending_is_enabled();
+		bool got_errors = false;
 		for(n=0;n<outptr;n++)
 		{
 			t_io_result code = retcodes[n];
-			if (io_result_failed(code))
-			{
-				if (code == io_result_error_sharing_violation && pending_enabled) got_busy = true;
-				else got_errors = true;
-			}
+			if (io_result_failed(code)) 
+				got_errors = true;
 		}
 
 		if (got_errors) return write_error;
-		else if (got_busy) return write_busy;
 		else return write_ok;
 	}
 }
@@ -163,8 +160,36 @@ void metadb_io::hint_async(metadb_handle_ptr p_item,const file_info & p_info,con
 }
 
 
-bool metadb_io::pending_query_ex(metadb_handle_ptr p_item,file_info & p_out)
-{
-	if (pending_query(p_item,p_out)) return true;
-	return p_item->get_info(p_out);
+bool metadb::g_get_random_handle(metadb_handle_ptr & p_out) {
+	if (static_api_ptr_t<playback_control>()->get_now_playing(p_out)) return true;
+
+	{
+		static_api_ptr_t<playlist_manager> api;	
+
+		unsigned playlist_count = api->get_playlist_count();
+		unsigned active_playlist = api->get_active_playlist();
+		if (active_playlist != infinite) {
+			if (api->playlist_get_focus_item_handle(p_out,active_playlist)) return true;
+		}
+
+		for(unsigned n = 0; n < playlist_count; n++) {
+			if (api->playlist_get_focus_item_handle(p_out,n)) return true;
+		}
+
+		if (active_playlist != infinite) {
+			unsigned item_count = api->playlist_get_item_count(active_playlist);
+			if (item_count > 0) {
+				if (api->playlist_get_item_handle(p_out,active_playlist,0)) return true;
+			}
+		}
+		
+		for(unsigned n = 0; n < playlist_count; n++) {
+			unsigned item_count = api->playlist_get_item_count(n);
+			if (item_count > 0) {
+				if (api->playlist_get_item_handle(p_out,n,0)) return true;
+			}
+		}
+	}
+
+	return false;
 }

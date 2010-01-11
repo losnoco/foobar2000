@@ -21,6 +21,7 @@ class dialog_resize_helper
 	RECT * rects;
 	RECT orig_client;
 	HWND parent;
+	HWND sizegrip;
 	unsigned min_x,min_y,max_x,max_y;
 
 public:
@@ -40,6 +41,7 @@ private:
 public:
 	inline void set_min_size(unsigned x,unsigned y) {min_x = x; min_y = y;}
 	inline void set_max_size(unsigned x,unsigned y) {max_x = x; max_y = y;}
+	void add_sizegrip();
 	
 	enum {
 		X_MOVE = 1, X_SIZE = 2, Y_MOVE = 4, Y_SIZE = 8,

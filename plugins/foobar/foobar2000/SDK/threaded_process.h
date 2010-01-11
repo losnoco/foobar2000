@@ -19,6 +19,9 @@ public:
 	void set_progress_secondary(unsigned p_state,unsigned p_max);
 	void set_progress_float(double p_state);
 	void set_progress_secondary_float(double p_state);
+protected:
+	threaded_process_status() {}
+	~threaded_process_status() {}
 };
 
 class NOVTABLE threaded_process_callback
@@ -27,6 +30,9 @@ public:
 	virtual void on_init(HWND p_wnd) {}
 	virtual void run(threaded_process_status & p_status,abort_callback & p_abort) = 0;
 	virtual void on_done(HWND p_wnd,bool p_was_aborted) {}
+protected:
+	threaded_process_callback() {}
+	~threaded_process_callback() {}
 };
 
 class NOVTABLE threaded_process : public service_base
@@ -50,14 +56,14 @@ public:
 	static bool g_run_modeless(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,unsigned p_title_len = infinite);
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
-
+protected:
+	threaded_process() {}
+	~threaded_process() {}
 };
 
 

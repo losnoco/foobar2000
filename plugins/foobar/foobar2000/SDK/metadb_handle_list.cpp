@@ -14,7 +14,7 @@ namespace {
 static int __cdecl custom_sort_compare(const custom_sort_data & elem1, const custom_sort_data & elem2 )
 {//depends on unicode/ansi, nonportable (win32 lstrcmpi)
 	int ret = uSortStringCompare(elem1.text,elem2.text);//uStringCompare
-	if (ret == 0) ret = elem1.subsong - elem2.subsong;
+//	if (ret == 0) ret = elem1.subsong - elem2.subsong;
 	if (ret == 0) ret = elem1.index - elem2.index;
 	return ret;
 }
@@ -22,14 +22,14 @@ static int __cdecl custom_sort_compare(const custom_sort_data & elem1, const cus
 void metadb_handle_list_helper::sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,const char * spec,titleformat_hook * p_hook)
 {
 	service_ptr_t<titleformat_object> script;
-	if (static_api_ptr_t<titleformat>()->compile(script,spec))
+	if (static_api_ptr_t<titleformat_compiler>()->compile(script,spec))
 		sort_by_format_partial(p_list,base,count,script,p_hook);
 }
 
 void metadb_handle_list_helper::sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,unsigned* order,const char * spec,titleformat_hook * p_hook)
 {
 	service_ptr_t<titleformat_object> script;
-	if (static_api_ptr_t<titleformat>()->compile(script,spec))
+	if (static_api_ptr_t<titleformat_compiler>()->compile(script,spec))
 		sort_by_format_get_order_partial(p_list,base,count,order,script,p_hook);
 }
 
@@ -262,5 +262,5 @@ double metadb_handle_list_helper::calc_total_duration(const list_base_const_t<me
 
 void metadb_handle_list_helper::sort_by_path(list_base_t<metadb_handle_ptr> & p_list)
 {
-	sort_by_format_partial(p_list,0,p_list.get_count(),"%path%",0);
+	sort_by_format_partial(p_list,0,p_list.get_count(),"%path_sort%",0);
 }

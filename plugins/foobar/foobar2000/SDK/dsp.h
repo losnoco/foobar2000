@@ -4,27 +4,6 @@
 #include "service.h"
 #include "audio_chunk.h"
 
-namespace dsp_util
-{
-	__int64 duration_samples_from_time(double time,unsigned srate);
-
-	void kill_denormal_32(float * ptr,unsigned count);
-	void kill_denormal_64(double * ptr,unsigned count);
-	void scale(audio_sample * ptr,double scale,unsigned count);
-	inline void kill_denormal(audio_sample * ptr,unsigned count)
-	{
-#if audio_sample_size == 32
-		kill_denormal_32(ptr,count);
-#else
-		kill_denormal_64(ptr,count);
-#endif
-	}
-	inline void scale_chunk(audio_chunk * ptr,double scale) {dsp_util::scale(ptr->get_data(),scale,ptr->get_data_length());}
-	
-	void __fastcall convert_32_to_64(const float  * src,double * dest,unsigned count);
-	void __fastcall convert_64_to_32(const double * src,float  * dest,unsigned count);
-};
-
 class NOVTABLE dsp_chunk_list//interface (cross-dll safe)
 {
 public:
@@ -53,6 +32,9 @@ public:
 	}
 
 	void remove_bad_chunks();
+protected:
+	dsp_chunk_list() {}
+	~dsp_chunk_list() {}
 };
 
 class dsp_chunk_list_i : public dsp_chunk_list//implementation
@@ -84,14 +66,14 @@ public:
 
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
-
+protected:
+	dsp() {}
+	~dsp() {}
 };
 
 template<class T>
@@ -173,6 +155,7 @@ public:
 	static t_io_result g_contents_from_stream_skip(stream_reader * p_stream,abort_callback & p_abort);
 
 protected:
+	dsp_preset() {}
 	~dsp_preset() {}
 };
 
@@ -219,16 +202,14 @@ public:
 	static bool g_show_config_popup(dsp_preset & p_preset,HWND p_parent);
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
 protected:
-	inline dsp_entry() {}
-	inline ~dsp_entry() {}
+	dsp_entry() {}
+	~dsp_entry() {}
 };
 
 template<class T,class T_entry = dsp_entry>
@@ -306,20 +287,30 @@ public:
 	void add_item(const dsp_preset & p_data);
 	void copy(const dsp_chain_config & p_source);
 
+	const dsp_chain_config & operator=(const dsp_chain_config & p_source) {copy(p_source); return *this;}
+
 	t_io_result contents_to_stream(stream_writer * p_stream,abort_callback & p_abort) const;
 	t_io_result contents_from_stream(stream_reader * p_stream,abort_callback & p_abort);
 
 	void instantiate(service_list_t<dsp> & p_out);
+
+	void get_name_list(string_base & p_out) const;
 };
 
 class dsp_chain_config_impl : public dsp_chain_config
 {
 public:
+	dsp_chain_config_impl() {}
+	dsp_chain_config_impl(const dsp_chain_config & p_source) {copy(p_source);}
+	dsp_chain_config_impl(const dsp_chain_config_impl & p_source) {copy(p_source);}
 	unsigned get_count() const;
 	const dsp_preset & get_item(unsigned p_index) const;
 	void replace_item(const dsp_preset & p_data,unsigned p_index);
 	void insert_item(const dsp_preset & p_data,unsigned p_index);
 	void remove_mask(const bit_array & p_mask);
+
+	const dsp_chain_config_impl & operator=(const dsp_chain_config & p_source) {copy(p_source); return *this;}
+	const dsp_chain_config_impl & operator=(const dsp_chain_config_impl & p_source) {copy(p_source); return *this;}
 
 	~dsp_chain_config_impl();
 private:
@@ -329,13 +320,11 @@ private:
 class cfg_dsp_chain_config : public cfg_var
 {
 protected:
-	void reset();
-	bool get_raw_data(write_config_callback * out);
-	void set_raw_data(const void * data,int size);
+	t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort);
+	t_io_result set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort);
 public:
-	cfg_dsp_chain_config(const GUID & p_guid) : cfg_var(p_guid)
-	{
-	}
+	void reset();
+	inline cfg_dsp_chain_config(const GUID & p_guid) : cfg_var(p_guid) {}
 	unsigned get_count() const {return m_data.get_count();}
 	const dsp_preset & get_item(unsigned p_index) const {return m_data.get_item(p_index);}
 	bool get_data(dsp_chain_config & p_data) const;

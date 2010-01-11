@@ -6,7 +6,7 @@ static bool is_rect_null(const RECT * r)
 	return r->right <= r->left || r->bottom <= r->top;
 }
 
-SHARED_EXPORT UINT uGetTextHeight(HDC dc)
+UINT SHARED_EXPORT uGetTextHeight(HDC dc)
 {
 	TEXTMETRIC tm;
 	POINT pt[2];
@@ -213,26 +213,18 @@ static BOOL text_out_colors_tab(HDC dc,const TCHAR * display,int display_len,con
 
 extern "C" {
 
-SHARED_EXPORT BOOL uTextOutColors(HDC dc,const char * text,UINT len,int x,int y,const RECT * clip,BOOL is_selected,DWORD default_color)
+BOOL SHARED_EXPORT uTextOutColors(HDC dc,const char * p_text,UINT len,int x,int y,const RECT * clip,BOOL is_selected,DWORD default_color)
 {
-	unsigned temp_len = estimate_utf8_to_os(text,len);
-	mem_block_t<TCHAR> temp_block;
-	TCHAR * temp = (temp_len * sizeof(TCHAR) <= PFC_ALLOCA_LIMIT) ? (TCHAR*)alloca(temp_len * sizeof(TCHAR)) : (temp_block.set_size(temp_len) ? temp_block.get_ptr() : 0);
-	assert(temp);
-	convert_utf8_to_os(text,temp,len);
-
-	return text_out_colors(dc,temp,_tcslen(temp),x,y,clip,!!is_selected,default_color);
+	pfc::stringcvt::string_os_from_utf8 temp;
+	if (!temp.convert(p_text)) return FALSE;
+	return text_out_colors(dc,temp,temp.length(),x,y,clip,!!is_selected,default_color);
 }
 
-SHARED_EXPORT BOOL uTextOutColorsTabbed(HDC dc,const char * text,UINT len,const RECT * item,int border,const RECT * clip,BOOL selected,DWORD default_color,BOOL use_columns)
+BOOL SHARED_EXPORT uTextOutColorsTabbed(HDC dc,const char * p_text,UINT len,const RECT * item,int border,const RECT * clip,BOOL selected,DWORD default_color,BOOL use_columns)
 {
-	unsigned temp_len = estimate_utf8_to_os(text,len);
-	mem_block_t<TCHAR> temp_block;
-	TCHAR * temp = (temp_len * sizeof(TCHAR) <= PFC_ALLOCA_LIMIT) ? (TCHAR*)alloca(temp_len * sizeof(TCHAR)) : (temp_block.set_size(temp_len) ? temp_block.get_ptr() : 0);
-	assert(temp);
-	convert_utf8_to_os(text,temp,len);
-
-	return text_out_colors_tab(dc,temp,_tcslen(temp),item,border,clip,!!selected,default_color,!!use_columns);
+	pfc::stringcvt::string_os_from_utf8 temp;
+	if (!temp.convert(p_text)) return FALSE;
+	return text_out_colors_tab(dc,temp,temp.length(),item,border,clip,!!selected,default_color,!!use_columns);
 }
 
 }

@@ -7,10 +7,13 @@ class NOVTABLE abort_callback
 {
 public:
 	//! Returns whether user has requested the operation to be aborted.
-	virtual bool is_aborting() = 0;
+	virtual bool FB2KAPI is_aborting() = 0;
 	
 	//! Checks if user has requested the operation to be aborted, and throws io_result_aborted exception if so.
 	void check_e();
+protected:
+	abort_callback() {}
+	~abort_callback() {}
 };
 
 
@@ -22,7 +25,7 @@ public:
 	abort_callback_impl() : m_aborting(false) {}
 	inline void abort() {m_aborting = true;}
 	inline void reset() {m_aborting = false;}
-	virtual bool is_aborting() {return m_aborting;}
+	bool FB2KAPI is_aborting() {return m_aborting;}
 };
 
 #endif //_foobar2000_sdk_abort_callback_h_

@@ -15,10 +15,20 @@
 #include <ddeml.h>
 #include <commctrl.h>
 
-#ifndef SHARED_EXPORTS
-#define SHARED_EXPORT _declspec(dllimport)
+#ifndef NOTHROW
+#ifdef _MSC_VER
+#define NOTHROW __declspec(nothrow)
 #else
-#define SHARED_EXPORT _declspec(dllexport)
+#define NOTHROW
+#endif
+#endif
+
+#define SHARED_API /*NOTHROW*/ __stdcall
+
+#ifndef SHARED_EXPORTS
+#define SHARED_EXPORT __declspec(dllimport) SHARED_API
+#else
+#define SHARED_EXPORT __declspec(dllexport) SHARED_API
 #endif
 
 extern "C" {
@@ -30,74 +40,75 @@ extern "C" {
 #define IsUnicode() 0
 #endif
 
-SHARED_EXPORT LRESULT uSendMessageText(HWND wnd,UINT msg,WPARAM wp,const char * text);
-SHARED_EXPORT LRESULT uSendDlgItemMessageText(HWND wnd,UINT id,UINT msg,WPARAM wp,const char * text);
-SHARED_EXPORT BOOL uGetWindowText(HWND wnd,string_base & out);
-SHARED_EXPORT BOOL uSetWindowText(HWND wnd,const char * p_text);
-SHARED_EXPORT BOOL uSetWindowTextEx(HWND wnd,const char * p_text,unsigned p_text_length);
-SHARED_EXPORT BOOL uGetDlgItemText(HWND wnd,UINT id,string_base & out);
-SHARED_EXPORT BOOL uSetDlgItemText(HWND wnd,UINT id,const char * p_text);
-SHARED_EXPORT BOOL uSetDlgItemTextEx(HWND wnd,UINT id,const char * p_text,unsigned p_text_length);
-SHARED_EXPORT BOOL uBrowseForFolder(HWND parent,const char * title,string_base & out);
-SHARED_EXPORT BOOL uBrowseForFolderWithFile(HWND parent,const char * title,string_base & out,const char * p_file_to_find);
-SHARED_EXPORT int uMessageBox(HWND wnd,const char * text,const char * caption,UINT type);
-SHARED_EXPORT void uOutputDebugString(const char * msg);
-SHARED_EXPORT BOOL uAppendMenu(HMENU menu,UINT flags,UINT id,const char * content);
-SHARED_EXPORT BOOL uInsertMenu(HMENU menu,UINT position,UINT flags,UINT id,const char * content);
-SHARED_EXPORT int uStringCompare(const char * elem1, const char * elem2);
-SHARED_EXPORT HINSTANCE uLoadLibrary(const char * name);
-SHARED_EXPORT HANDLE uCreateEvent(LPSECURITY_ATTRIBUTES lpEventAttributes,BOOL bManualReset,BOOL bInitialState, const char * lpName);
-SHARED_EXPORT DWORD uGetModuleFileName(HMODULE hMod,string_base & out);
-SHARED_EXPORT BOOL uSetClipboardString(const char * ptr);
-SHARED_EXPORT BOOL uIsDialogMessage(HWND dlg,LPMSG msg);
-SHARED_EXPORT BOOL uGetMessage(LPMSG msg,HWND wnd,UINT min,UINT max);
-SHARED_EXPORT BOOL uGetClassName(HWND wnd,string_base & out);
-SHARED_EXPORT UINT uCharLength(const char * src);
-SHARED_EXPORT BOOL uDragQueryFile(HDROP hDrop,UINT idx,string_base & out);
-SHARED_EXPORT UINT uDragQueryFileCount(HDROP hDrop);
-SHARED_EXPORT BOOL uGetTextExtentPoint32(HDC dc,const char * text,UINT cb,LPSIZE size);//note, cb is number of bytes, not actual unicode characters in the string (read: plain strlen() will do)
-SHARED_EXPORT BOOL uExtTextOut(HDC dc,int x,int y,UINT flags,const RECT * rect,const char * text,UINT cb,const int * lpdx);
-SHARED_EXPORT BOOL uTextOutColors(HDC dc,const char * src,UINT len,int x,int y,const RECT * clip,BOOL is_selected,DWORD default_color);
-SHARED_EXPORT BOOL uTextOutColorsTabbed(HDC dc,const char * src,UINT src_len,const RECT * item,int border,const RECT * clip,BOOL selected,DWORD default_color,BOOL use_columns);
-SHARED_EXPORT UINT uGetTextHeight(HDC dc);
-SHARED_EXPORT UINT uGetFontHeight(HFONT font);
-SHARED_EXPORT BOOL uChooseColor(DWORD * p_color,HWND parent,DWORD * p_custom_colors);
-SHARED_EXPORT HCURSOR uLoadCursor(HINSTANCE hIns,const char * name);
-SHARED_EXPORT HICON uLoadIcon(HINSTANCE hIns,const char * name);
-SHARED_EXPORT HMENU uLoadMenu(HINSTANCE hIns,const char * name);
-SHARED_EXPORT BOOL uGetEnvironmentVariable(const char * name,string_base & out);
-SHARED_EXPORT HMODULE uGetModuleHandle(const char * name);
-SHARED_EXPORT UINT uRegisterWindowMessage(const char * name);
-SHARED_EXPORT BOOL uMoveFile(const char * src,const char * dst);
-SHARED_EXPORT BOOL uDeleteFile(const char * fn);
-SHARED_EXPORT DWORD uGetFileAttributes(const char * fn);
-SHARED_EXPORT BOOL uFileExists(const char * fn);
-SHARED_EXPORT BOOL uRemoveDirectory(const char * fn);
-SHARED_EXPORT HANDLE uCreateFile(const char * fn,DWORD access,DWORD share,LPSECURITY_ATTRIBUTES blah,DWORD creat,DWORD flags,HANDLE tmpl);
-SHARED_EXPORT HANDLE uCreateFileMapping(HANDLE hFile,LPSECURITY_ATTRIBUTES lpFileMappingAttributes,DWORD flProtect,DWORD dwMaximumSizeHigh,DWORD dwMaximumSizeLow,const char * lpName);
-SHARED_EXPORT BOOL uCreateDirectory(const char * fn,LPSECURITY_ATTRIBUTES blah);
-SHARED_EXPORT HANDLE uCreateMutex(LPSECURITY_ATTRIBUTES blah,BOOL bInitialOwner,const char * name);
-SHARED_EXPORT BOOL uGetLongPathName(const char * name,string_base & out);//may just fail to work on old windows versions, present on win98/win2k+
-SHARED_EXPORT BOOL uGetFullPathName(const char * name,string_base & out);
-SHARED_EXPORT BOOL uSearchPath(const char * path, const char * filename, const char * extension, string_base & p_out);
-SHARED_EXPORT BOOL uFixPathCaps(const char * path,string_base & p_out);
-SHARED_EXPORT void uGetCommandLine(string_base & out);
-SHARED_EXPORT BOOL uGetTempPath(string_base & out);
-SHARED_EXPORT BOOL uGetTempFileName(const char * path_name,const char * prefix,UINT unique,string_base & out);
-SHARED_EXPORT BOOL uGetOpenFileName(HWND parent,const char * p_ext_mask,unsigned def_ext_mask,const char * p_def_ext,const char * p_title,const char * p_directory,string_base & p_filename,BOOL b_save);
+LRESULT SHARED_EXPORT uSendMessageText(HWND wnd,UINT msg,WPARAM wp,const char * text);
+LRESULT SHARED_EXPORT uSendDlgItemMessageText(HWND wnd,UINT id,UINT msg,WPARAM wp,const char * text);
+BOOL SHARED_EXPORT uGetWindowText(HWND wnd,string_base & out);
+BOOL SHARED_EXPORT uSetWindowText(HWND wnd,const char * p_text);
+BOOL SHARED_EXPORT uSetWindowTextEx(HWND wnd,const char * p_text,unsigned p_text_length);
+BOOL SHARED_EXPORT uGetDlgItemText(HWND wnd,UINT id,string_base & out);
+BOOL SHARED_EXPORT uSetDlgItemText(HWND wnd,UINT id,const char * p_text);
+BOOL SHARED_EXPORT uSetDlgItemTextEx(HWND wnd,UINT id,const char * p_text,unsigned p_text_length);
+BOOL SHARED_EXPORT uBrowseForFolder(HWND parent,const char * title,string_base & out);
+BOOL SHARED_EXPORT uBrowseForFolderWithFile(HWND parent,const char * title,string_base & out,const char * p_file_to_find);
+int SHARED_EXPORT uMessageBox(HWND wnd,const char * text,const char * caption,UINT type);
+void SHARED_EXPORT uOutputDebugString(const char * msg);
+BOOL SHARED_EXPORT uAppendMenu(HMENU menu,UINT flags,UINT id,const char * content);
+BOOL SHARED_EXPORT uInsertMenu(HMENU menu,UINT position,UINT flags,UINT id,const char * content);
+int SHARED_EXPORT uStringCompare(const char * elem1, const char * elem2);
+HINSTANCE SHARED_EXPORT uLoadLibrary(const char * name);
+HANDLE SHARED_EXPORT uCreateEvent(LPSECURITY_ATTRIBUTES lpEventAttributes,BOOL bManualReset,BOOL bInitialState, const char * lpName);
+DWORD SHARED_EXPORT uGetModuleFileName(HMODULE hMod,string_base & out);
+BOOL SHARED_EXPORT uSetClipboardString(const char * ptr);
+BOOL SHARED_EXPORT uIsDialogMessage(HWND dlg,LPMSG msg);
+BOOL SHARED_EXPORT uGetMessage(LPMSG msg,HWND wnd,UINT min,UINT max);
+BOOL SHARED_EXPORT uGetClassName(HWND wnd,string_base & out);
+UINT SHARED_EXPORT uCharLength(const char * src);
+BOOL SHARED_EXPORT uDragQueryFile(HDROP hDrop,UINT idx,string_base & out);
+UINT SHARED_EXPORT uDragQueryFileCount(HDROP hDrop);
+BOOL SHARED_EXPORT uGetTextExtentPoint32(HDC dc,const char * text,UINT cb,LPSIZE size);//note, cb is number of bytes, not actual unicode characters in the string (read: plain strlen() will do)
+BOOL SHARED_EXPORT uExtTextOut(HDC dc,int x,int y,UINT flags,const RECT * rect,const char * text,UINT cb,const int * lpdx);
+BOOL SHARED_EXPORT uTextOutColors(HDC dc,const char * src,UINT len,int x,int y,const RECT * clip,BOOL is_selected,DWORD default_color);
+BOOL SHARED_EXPORT uTextOutColorsTabbed(HDC dc,const char * src,UINT src_len,const RECT * item,int border,const RECT * clip,BOOL selected,DWORD default_color,BOOL use_columns);
+UINT SHARED_EXPORT uGetTextHeight(HDC dc);
+UINT SHARED_EXPORT uGetFontHeight(HFONT font);
+BOOL SHARED_EXPORT uChooseColor(DWORD * p_color,HWND parent,DWORD * p_custom_colors);
+HCURSOR SHARED_EXPORT uLoadCursor(HINSTANCE hIns,const char * name);
+HICON SHARED_EXPORT uLoadIcon(HINSTANCE hIns,const char * name);
+HMENU SHARED_EXPORT uLoadMenu(HINSTANCE hIns,const char * name);
+BOOL SHARED_EXPORT uGetEnvironmentVariable(const char * name,string_base & out);
+HMODULE SHARED_EXPORT uGetModuleHandle(const char * name);
+UINT SHARED_EXPORT uRegisterWindowMessage(const char * name);
+BOOL SHARED_EXPORT uMoveFile(const char * src,const char * dst);
+BOOL SHARED_EXPORT uDeleteFile(const char * fn);
+DWORD SHARED_EXPORT uGetFileAttributes(const char * fn);
+BOOL SHARED_EXPORT uFileExists(const char * fn);
+BOOL SHARED_EXPORT uRemoveDirectory(const char * fn);
+HANDLE SHARED_EXPORT uCreateFile(const char * fn,DWORD access,DWORD share,LPSECURITY_ATTRIBUTES blah,DWORD creat,DWORD flags,HANDLE tmpl);
+HANDLE SHARED_EXPORT uCreateFileMapping(HANDLE hFile,LPSECURITY_ATTRIBUTES lpFileMappingAttributes,DWORD flProtect,DWORD dwMaximumSizeHigh,DWORD dwMaximumSizeLow,const char * lpName);
+BOOL SHARED_EXPORT uCreateDirectory(const char * fn,LPSECURITY_ATTRIBUTES blah);
+HANDLE SHARED_EXPORT uCreateMutex(LPSECURITY_ATTRIBUTES blah,BOOL bInitialOwner,const char * name);
+BOOL SHARED_EXPORT uGetLongPathName(const char * name,string_base & out);//may just fail to work on old windows versions, present on win98/win2k+
+BOOL SHARED_EXPORT uGetFullPathName(const char * name,string_base & out);
+BOOL SHARED_EXPORT uSearchPath(const char * path, const char * filename, const char * extension, string_base & p_out);
+BOOL SHARED_EXPORT uFixPathCaps(const char * path,string_base & p_out);
+void SHARED_EXPORT uGetCommandLine(string_base & out);
+BOOL SHARED_EXPORT uGetTempPath(string_base & out);
+BOOL SHARED_EXPORT uGetTempFileName(const char * path_name,const char * prefix,UINT unique,string_base & out);
+BOOL SHARED_EXPORT uGetOpenFileName(HWND parent,const char * p_ext_mask,unsigned def_ext_mask,const char * p_def_ext,const char * p_title,const char * p_directory,string_base & p_filename,BOOL b_save);
 //note: uGetOpenFileName extension mask uses | as separator, not null
-SHARED_EXPORT HANDLE uLoadImage(HINSTANCE hIns,const char * name,UINT type,int x,int y,UINT flags);
-SHARED_EXPORT UINT uRegisterClipboardFormat(const char * name);
-SHARED_EXPORT BOOL uGetClipboardFormatName(UINT format,string_base & out);
+HANDLE SHARED_EXPORT uLoadImage(HINSTANCE hIns,const char * name,UINT type,int x,int y,UINT flags);
+UINT SHARED_EXPORT uRegisterClipboardFormat(const char * name);
+BOOL SHARED_EXPORT uGetClipboardFormatName(UINT format,string_base & out);
+BOOL SHARED_EXPORT uFormatSystemErrorMessage(string_base & p_out,DWORD p_code);
 
-SHARED_EXPORT HANDLE uSortStringCreate(const char * src);
-SHARED_EXPORT int uSortStringCompare(HANDLE string1,HANDLE string2);
-SHARED_EXPORT int uSortStringCompareEx(HANDLE string1,HANDLE string2,DWORD flags);//flags - see win32 CompareString
-SHARED_EXPORT int uSortPathCompare(HANDLE string1,HANDLE string2);
-SHARED_EXPORT void uSortStringFree(HANDLE string);
+HANDLE SHARED_EXPORT uSortStringCreate(const char * src);
+int SHARED_EXPORT uSortStringCompare(HANDLE string1,HANDLE string2);
+int SHARED_EXPORT uSortStringCompareEx(HANDLE string1,HANDLE string2,DWORD flags);//flags - see win32 CompareString
+int SHARED_EXPORT uSortPathCompare(HANDLE string1,HANDLE string2);
+void SHARED_EXPORT uSortStringFree(HANDLE string);
 
 
-SHARED_EXPORT int uCompareString(DWORD flags,const char * str1,unsigned len1,const char * str2,unsigned len2);
+int SHARED_EXPORT uCompareString(DWORD flags,const char * str1,unsigned len1,const char * str2,unsigned len2);
 
 class NOVTABLE uGetOpenFileNameMultiResult : public list_base_const_t<const char*>
 {
@@ -107,7 +118,9 @@ public:
 	virtual ~uGetOpenFileNameMultiResult() {}
 };
 
-SHARED_EXPORT uGetOpenFileNameMultiResult * uGetOpenFileNameMulti(HWND parent,const char * p_ext_mask,unsigned def_ext_mask,const char * p_def_ext,const char * p_title,const char * p_directory);
+typedef uGetOpenFileNameMultiResult * puGetOpenFileNameMultiResult;
+
+puGetOpenFileNameMultiResult SHARED_EXPORT uGetOpenFileNameMulti(HWND parent,const char * p_ext_mask,unsigned def_ext_mask,const char * p_def_ext,const char * p_title,const char * p_directory);
 
 class NOVTABLE uFindFile
 {
@@ -125,34 +138,32 @@ public:
 	inline bool IsDirectory() {return (GetAttributes() & FILE_ATTRIBUTE_DIRECTORY) ? true : false;}
 };
 
-SHARED_EXPORT uFindFile * uFindFirstFile(const char * path);
+typedef uFindFile * puFindFile;
 
-SHARED_EXPORT HINSTANCE uShellExecute(HWND wnd,const char * oper,const char * file,const char * params,const char * dir,int cmd);
-SHARED_EXPORT HWND uCreateStatusWindow(LONG style,const char * text,HWND parent,UINT id);
+puFindFile SHARED_EXPORT uFindFirstFile(const char * path);
 
-typedef WNDCLASSA uWNDCLASS;
-SHARED_EXPORT ATOM uRegisterClass(const uWNDCLASS * ptr);
-SHARED_EXPORT BOOL uUnregisterClass(const char * name,HINSTANCE ins);
+HINSTANCE SHARED_EXPORT uShellExecute(HWND wnd,const char * oper,const char * file,const char * params,const char * dir,int cmd);
+HWND SHARED_EXPORT uCreateStatusWindow(LONG style,const char * text,HWND parent,UINT id);
 
-SHARED_EXPORT BOOL uShellNotifyIcon(DWORD dwMessage,HWND wnd,UINT id,UINT callbackmsg,HICON icon,const char * tip);
-SHARED_EXPORT BOOL uShellNotifyIconEx(DWORD dwMessage,HWND wnd,UINT id,UINT callbackmsg,HICON icon,const char * tip,const char * balloon_title,const char * balloon_msg);
+BOOL SHARED_EXPORT uShellNotifyIcon(DWORD dwMessage,HWND wnd,UINT id,UINT callbackmsg,HICON icon,const char * tip);
+BOOL SHARED_EXPORT uShellNotifyIconEx(DWORD dwMessage,HWND wnd,UINT id,UINT callbackmsg,HICON icon,const char * tip,const char * balloon_title,const char * balloon_msg);
 
-SHARED_EXPORT HWND uCreateWindowEx(DWORD dwExStyle,const char * lpClassName,const char * lpWindowName,DWORD dwStyle,int x,int y,int nWidth,int nHeight,HWND hWndParent,HMENU hMenu,HINSTANCE hInstance,LPVOID lpParam);
+HWND SHARED_EXPORT uCreateWindowEx(DWORD dwExStyle,const char * lpClassName,const char * lpWindowName,DWORD dwStyle,int x,int y,int nWidth,int nHeight,HWND hWndParent,HMENU hMenu,HINSTANCE hInstance,LPVOID lpParam);
 
-SHARED_EXPORT BOOL uGetSystemDirectory(string_base & out); 
-SHARED_EXPORT BOOL uGetWindowsDirectory(string_base & out); 
-SHARED_EXPORT BOOL uSetCurrentDirectory(const char * path);
-SHARED_EXPORT BOOL uGetCurrentDirectory(string_base & out);
-SHARED_EXPORT BOOL uExpandEnvironmentStrings(const char * src,string_base & out);
-SHARED_EXPORT BOOL uGetUserName(string_base & out);
-SHARED_EXPORT BOOL uGetShortPathName(const char * src,string_base & out);
+BOOL SHARED_EXPORT uGetSystemDirectory(string_base & out); 
+BOOL SHARED_EXPORT uGetWindowsDirectory(string_base & out); 
+BOOL SHARED_EXPORT uSetCurrentDirectory(const char * path);
+BOOL SHARED_EXPORT uGetCurrentDirectory(string_base & out);
+BOOL SHARED_EXPORT uExpandEnvironmentStrings(const char * src,string_base & out);
+BOOL SHARED_EXPORT uGetUserName(string_base & out);
+BOOL SHARED_EXPORT uGetShortPathName(const char * src,string_base & out);
 
-SHARED_EXPORT HSZ uDdeCreateStringHandle(DWORD ins,const char * src);
-SHARED_EXPORT BOOL uDdeQueryString(DWORD ins,HSZ hsz,string_base & out);
-SHARED_EXPORT UINT uDdeInitialize(LPDWORD pidInst,PFNCALLBACK pfnCallback,DWORD afCmd,DWORD ulRes);
-SHARED_EXPORT BOOL uDdeAccessData_Text(HDDEDATA data,string_base & out);
+HSZ SHARED_EXPORT uDdeCreateStringHandle(DWORD ins,const char * src);
+BOOL SHARED_EXPORT uDdeQueryString(DWORD ins,HSZ hsz,string_base & out);
+UINT SHARED_EXPORT uDdeInitialize(LPDWORD pidInst,PFNCALLBACK pfnCallback,DWORD afCmd,DWORD ulRes);
+BOOL SHARED_EXPORT uDdeAccessData_Text(HDDEDATA data,string_base & out);
 
-SHARED_EXPORT HIMAGELIST uImageList_LoadImage(HINSTANCE hi, const char * lpbmp, int cx, int cGrow, COLORREF crMask, UINT uType, UINT uFlags);
+HIMAGELIST SHARED_EXPORT uImageList_LoadImage(HINSTANCE hi, const char * lpbmp, int cx, int cGrow, COLORREF crMask, UINT uType, UINT uFlags);
 
 #define uDdeFreeStringHandle DdeFreeStringHandle
 #define uDdeCmpStringHandles DdeCmpStringHandles
@@ -164,35 +175,15 @@ SHARED_EXPORT HIMAGELIST uImageList_LoadImage(HINSTANCE hi, const char * lpbmp, 
 
 typedef TVINSERTSTRUCTA uTVINSERTSTRUCT;
 
-SHARED_EXPORT HTREEITEM uTreeView_InsertItem(HWND wnd,const uTVINSERTSTRUCT * param);
-SHARED_EXPORT LPARAM uTreeView_GetUserData(HWND wnd,HTREEITEM item);
-SHARED_EXPORT bool uTreeView_GetText(HWND wnd,HTREEITEM item,string_base & out);
+HTREEITEM SHARED_EXPORT uTreeView_InsertItem(HWND wnd,const uTVINSERTSTRUCT * param);
+LPARAM SHARED_EXPORT uTreeView_GetUserData(HWND wnd,HTREEITEM item);
+bool SHARED_EXPORT uTreeView_GetText(HWND wnd,HTREEITEM item,string_base & out);
 
 #define uSetWindowsHookEx SetWindowsHookEx
 #define uUnhookWindowsHookEx UnhookWindowsHookEx
 #define uCallNextHookEx CallNextHookEx
 
 
-typedef SHFILEOPSTRUCTA uSHFILEOPSTRUCT;
-SHARED_EXPORT int uSHFileOperation(uSHFILEOPSTRUCT * lpFileOp);
-
-typedef STARTUPINFOA uSTARTUPINFO;
-
-SHARED_EXPORT BOOL uCreateProcess(
-  const char * lpApplicationName,
-  const char * lpCommandLine,
-  LPSECURITY_ATTRIBUTES lpProcessAttributes,
-  LPSECURITY_ATTRIBUTES lpThreadAttributes,
-  BOOL bInheritHandles,
-  DWORD dwCreationFlags,
-  const char * lpEnvironment,
-  const char * lpCurrentDirectory,
-  const uSTARTUPINFO * lpStartupInfo,
-  LPPROCESS_INFORMATION lpProcessInformation
-);
-
-SHARED_EXPORT unsigned uOSStringEstimateSize(const char * src,unsigned len = -1);//return value in bytes
-SHARED_EXPORT unsigned uOSStringConvert(const char * src,void * dst,unsigned len = -1);//length of src (will cut if found null earlier)
 /* usage:
 
   const char * src = "something";
@@ -203,31 +194,30 @@ SHARED_EXPORT unsigned uOSStringConvert(const char * src,void * dst,unsigned len
 */
 
 typedef TCITEMA uTCITEM;
-SHARED_EXPORT int uTabCtrl_InsertItem(HWND wnd,int idx,const uTCITEM * item);
-SHARED_EXPORT int uTabCtrl_SetItem(HWND wnd,int idx,const uTCITEM * item);
+int SHARED_EXPORT uTabCtrl_InsertItem(HWND wnd,int idx,const uTCITEM * item);
+int SHARED_EXPORT uTabCtrl_SetItem(HWND wnd,int idx,const uTCITEM * item);
 
-SHARED_EXPORT int uGetKeyNameText(LONG lparam,string_base & out);
+int SHARED_EXPORT uGetKeyNameText(LONG lparam,string_base & out);
 
-SHARED_EXPORT void uFixAmpersandChars(const char * src,string_base & out);//for systray
-SHARED_EXPORT void uFixAmpersandChars_v2(const char * src,string_base & out);//for other controls
-//gotta hate MS for shoving ampersand=>underline conversion into random things AND making each of them use different rules for inserting ampersand char instead of underline
-
+void SHARED_EXPORT uFixAmpersandChars(const char * src,string_base & out);//for systray
+void SHARED_EXPORT uFixAmpersandChars_v2(const char * src,string_base & out);//for other controls
 
 //deprecated
-SHARED_EXPORT UINT uPrintCrashInfo(LPEXCEPTION_POINTERS param,const char * extrainfo,char * out);
-#define uPrintCrashInfo_max_length 1024
+UINT SHARED_EXPORT uPrintCrashInfo(LPEXCEPTION_POINTERS param,const char * extrainfo,char * out);
+enum {uPrintCrashInfo_max_length = 1024};
 
-SHARED_EXPORT void uPrintCrashInfo_Init(const char * name);//called only by exe on startup
-SHARED_EXPORT void uPrintCrashInfo_AddInfo(const char * p_info);//called only by exe on startup
-SHARED_EXPORT void uPrintCrashInfo_SetDumpPath(const char * name);//called only by exe on startup
+void SHARED_EXPORT uPrintCrashInfo_Init(const char * name);//called only by exe on startup
+void SHARED_EXPORT uPrintCrashInfo_AddInfo(const char * p_info);//called only by exe on startup
+void SHARED_EXPORT uPrintCrashInfo_SetDumpPath(const char * name);//called only by exe on startup
 
 
-SHARED_EXPORT void uDumpCrashInfo(LPEXCEPTION_POINTERS param);
+void SHARED_EXPORT uDumpCrashInfo(LPEXCEPTION_POINTERS param);
 
-SHARED_EXPORT BOOL uListBox_GetText(HWND listbox,UINT index,string_base & out);
+BOOL SHARED_EXPORT uListBox_GetText(HWND listbox,UINT index,string_base & out);
 
-SHARED_EXPORT void uPrintf(string_base & out,const char * fmt,...);
-SHARED_EXPORT void uPrintfV(string_base & out,const char * fmt,va_list arglist);
+void SHARED_EXPORT uPrintfV(string_base & out,const char * fmt,va_list arglist);
+static inline void uPrintf(string_base & out,const char * fmt,...) {va_list list;va_start(list,fmt);uPrintfV(out,fmt,list);va_end(list);}
+
 
 class NOVTABLE uResource
 {
@@ -237,18 +227,20 @@ public:
 	virtual ~uResource() {}
 };
 
-SHARED_EXPORT uResource * uLoadResource(HMODULE hMod,const char * name,const char * type,WORD wLang = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL) );
-SHARED_EXPORT uResource * LoadResourceEx(HMODULE hMod,const TCHAR * name,const TCHAR * type,WORD wLang = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL) );
-SHARED_EXPORT HRSRC uFindResource(HMODULE hMod,const char * name,const char * type,WORD wLang = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL) );
+typedef uResource* puResource;
 
-SHARED_EXPORT BOOL uLoadString(HINSTANCE ins,UINT id,string_base & out);
+puResource SHARED_EXPORT uLoadResource(HMODULE hMod,const char * name,const char * type,WORD wLang = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL) );
+puResource SHARED_EXPORT LoadResourceEx(HMODULE hMod,const TCHAR * name,const TCHAR * type,WORD wLang = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL) );
+HRSRC SHARED_EXPORT uFindResource(HMODULE hMod,const char * name,const char * type,WORD wLang = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL) );
 
-SHARED_EXPORT UINT uCharLower(UINT c);
-SHARED_EXPORT UINT uCharUpper(UINT c);
+BOOL SHARED_EXPORT uLoadString(HINSTANCE ins,UINT id,string_base & out);
 
-SHARED_EXPORT BOOL uGetMenuString(HMENU menu,UINT id,string_base & out,UINT flag);
-SHARED_EXPORT BOOL uModifyMenu(HMENU menu,UINT id,UINT flags,UINT newitem,const char * data);
-SHARED_EXPORT UINT uGetMenuItemType(HMENU menu,UINT position);
+UINT SHARED_EXPORT uCharLower(UINT c);
+UINT SHARED_EXPORT uCharUpper(UINT c);
+
+BOOL SHARED_EXPORT uGetMenuString(HMENU menu,UINT id,string_base & out,UINT flag);
+BOOL SHARED_EXPORT uModifyMenu(HMENU menu,UINT id,UINT flags,UINT newitem,const char * data);
+UINT SHARED_EXPORT uGetMenuItemType(HMENU menu,UINT position);
 
 
 }//extern "C"
@@ -416,35 +408,40 @@ private:
 inline LRESULT uButton_SetCheck(HWND wnd,UINT id,bool state) {return uSendDlgItemMessage(wnd,id,BM_SETCHECK,state ? BST_CHECKED : BST_UNCHECKED,0); }
 inline bool uButton_GetCheck(HWND wnd,UINT id) {return uSendDlgItemMessage(wnd,id,BM_GETCHECK,0,0) == BST_CHECKED;}
 
-class SHARED_EXPORT uCallStackTracker
+class uCallStackTracker
 {
 	unsigned param;
 public:
-	explicit uCallStackTracker(const char * name);
-	~uCallStackTracker();
+	explicit SHARED_EXPORT uCallStackTracker(const char * name);
+	SHARED_EXPORT ~uCallStackTracker();
 };
 
 extern "C"
 {
-	SHARED_EXPORT const char * uGetCallStackPath();
+	LPCSTR SHARED_EXPORT uGetCallStackPath();
 }
 
+#if 1
 #define TRACK_CALL(X) uCallStackTracker TRACKER__##X(#X)
 #define TRACK_CALL_TEXT(X) uCallStackTracker TRACKER__BLAH(X)
-#define TRACK_CODE(X,Y) {uCallStackTracker __call_tracker(X); Y;}
-
+#define TRACK_CODE(description,code) {uCallStackTracker __call_tracker(description); code;}
+#else
+#define TRACK_CALL(X)
+#define TRACK_CALL_TEXT(X)
+#define TRACK_CODE(description,code) {code;}
+#endif
 
 extern "C" {
-SHARED_EXPORT int stricmp_utf8(const char * p1,const char * p2);
-SHARED_EXPORT int stricmp_utf8_ex(const char * p1,unsigned len1,const char * p2,unsigned len2);
-SHARED_EXPORT int stricmp_utf8_stringtoblock(const char * p1,const char * p2,unsigned p2_bytes);
-SHARED_EXPORT int stricmp_utf8_partial(const char * p1,const char * p2,unsigned num = (unsigned)(-1));
-SHARED_EXPORT int stricmp_utf8_max(const char * p1,const char * p2,unsigned p1_bytes);
-SHARED_EXPORT unsigned uReplaceStringAdd(string_base & out,const char * src,unsigned src_len,const char * s1,unsigned len1,const char * s2,unsigned len2,bool casesens);
-SHARED_EXPORT unsigned uReplaceCharAdd(string_base & out,const char * src,unsigned src_len,unsigned c1,unsigned c2,bool casesens);
+int SHARED_EXPORT stricmp_utf8(const char * p1,const char * p2);
+int SHARED_EXPORT stricmp_utf8_ex(const char * p1,unsigned len1,const char * p2,unsigned len2);
+int SHARED_EXPORT stricmp_utf8_stringtoblock(const char * p1,const char * p2,unsigned p2_bytes);
+int SHARED_EXPORT stricmp_utf8_partial(const char * p1,const char * p2,unsigned num = (unsigned)(-1));
+int SHARED_EXPORT stricmp_utf8_max(const char * p1,const char * p2,unsigned p1_bytes);
+unsigned SHARED_EXPORT uReplaceStringAdd(string_base & out,const char * src,unsigned src_len,const char * s1,unsigned len1,const char * s2,unsigned len2,bool casesens);
+unsigned SHARED_EXPORT uReplaceCharAdd(string_base & out,const char * src,unsigned src_len,unsigned c1,unsigned c2,bool casesens);
 //all lengths in uReplaceString functions are optional, set to -1 if parameters is a simple null-terminated string
-SHARED_EXPORT void uAddStringLower(string_base & out,const char * src,unsigned len = (unsigned)(-1));
-SHARED_EXPORT void uAddStringUpper(string_base & out,const char * src,unsigned len = (unsigned)(-1));
+void SHARED_EXPORT uAddStringLower(string_base & out,const char * src,unsigned len = (unsigned)(-1));
+void SHARED_EXPORT uAddStringUpper(string_base & out,const char * src,unsigned len = (unsigned)(-1));
 }
 
 inline void uStringLower(string_base & out,const char * src,unsigned len = (unsigned)(-1)) {out.reset();uAddStringLower(out,src,len);}
@@ -511,10 +508,10 @@ struct t_font_description
 	t_uint8 m_charset;
 	char m_facename[m_facename_length];
 
-	SHARED_EXPORT HFONT create();
-	SHARED_EXPORT bool popup_dialog(HWND p_parent);
-	SHARED_EXPORT void from_font(HFONT p_font);
-	SHARED_EXPORT static t_font_description g_from_font(HFONT p_font);
+	HFONT SHARED_EXPORT create() const;
+	bool SHARED_EXPORT popup_dialog(HWND p_parent);
+	void SHARED_EXPORT from_font(HFONT p_font);
+	static t_font_description SHARED_EXPORT g_from_font(HFONT p_font);
 };
 
 
@@ -525,12 +522,12 @@ struct t_modal_dialog_entry
 };
 
 extern "C" {
-	SHARED_EXPORT void ModalDialog_Switch(t_modal_dialog_entry & p_entry);
-	SHARED_EXPORT void ModalDialog_PokeExisting();
-	SHARED_EXPORT bool ModalDialog_CanCreateNew();
+	void SHARED_EXPORT ModalDialog_Switch(t_modal_dialog_entry & p_entry);
+	void SHARED_EXPORT ModalDialog_PokeExisting();
+	bool SHARED_EXPORT ModalDialog_CanCreateNew();
 
-	SHARED_EXPORT HWND FindOwningPopup(HWND p_wnd);
-	SHARED_EXPORT void PokeWindow(HWND p_wnd);
+	HWND SHARED_EXPORT FindOwningPopup(HWND p_wnd);
+	void SHARED_EXPORT PokeWindow(HWND p_wnd);
 };
 
 class modal_dialog_scope
@@ -573,5 +570,27 @@ private:
 
 	bool m_initialized;
 };
+
+class format_win32_error {
+public:
+	format_win32_error(DWORD p_code) {
+		if (!uFormatSystemErrorMessage(m_buffer,p_code)) m_buffer << "Unknown error code (" << (unsigned)p_code << ")";
+	}
+
+	const char * get_ptr() const {return m_buffer.get_ptr();}
+	operator const char*() const {return m_buffer.get_ptr();}
+private:
+	string8 m_buffer;
+};
+
+struct exception_win32 : public std::exception {
+	exception_win32(DWORD p_code) : std::exception(format_win32_error(p_code)), m_code(p_code) {}
+	DWORD get_code() const {return m_code;}
+private:
+	DWORD m_code;
+};
+
+
+#include "audio_math.h"
 
 #endif //_UTF8API_DLL__UTF8API_H_

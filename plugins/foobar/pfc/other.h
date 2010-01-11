@@ -159,21 +159,13 @@ namespace pfc {
 		~autodestructor_t() {t_destructor(*this);}
 	};
 
-	class exception_text
-	{
-	public:
-		inline exception_text(const char * p_message) : m_message(p_message) {}
-		inline exception_text(const exception_text & p_exception) : m_message(p_exception.m_message) {}
-		inline const exception_text & operator=(const char * p_message) {m_message = p_message;return *this;}
-		inline const exception_text & operator=(const exception_text & p_exception) {m_message = p_exception.m_message;return *this;}
-		
-		inline const char * get_message() const {return m_message;}
-	private:
-		const char * m_message;
-	};
-
-
 	void crash();
+
+	class exception_bug_check : public std::exception {
+	public:
+		exception_bug_check() : exception("bug check",0) {}
+		exception_bug_check(const exception_bug_check & p_exception) {*this = p_exception;}
+	};
 
 }
 

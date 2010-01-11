@@ -12,7 +12,14 @@ public:
 	virtual void on_system_shutdown() {}//called instead of on_quit() when system is shutting down
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	initquit() {}
+	~initquit() {}
 };
 
 template<class T>

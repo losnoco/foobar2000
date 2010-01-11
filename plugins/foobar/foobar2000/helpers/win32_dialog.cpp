@@ -133,7 +133,7 @@ namespace dialog_helper {
 			}
 			break;
 		case destructor_fromwindow:
-			//do nothing
+			if (m_wnd != 0) SetWindowLong(m_wnd,DWL_USER,0);
 			break;
 		default:
 			//should never trigger
@@ -180,14 +180,14 @@ namespace dialog_helper {
 			thisptr = reinterpret_cast<dialog_modeless*>(lp);
 			thisptr->m_wnd = wnd;
 			uSetWindowLong(wnd,DWL_USER,lp);
-			modeless_dialog_manager::add(wnd);
+			modeless_dialog_manager::g_add(wnd);
 		}
 		else thisptr = reinterpret_cast<dialog_modeless*>(uGetWindowLong(wnd,DWL_USER));
 
 		rv = thisptr ? thisptr->on_message_wrap(msg,wp,lp) : FALSE;
 
 		if (msg == WM_DESTROY)
-			modeless_dialog_manager::remove(wnd);
+			modeless_dialog_manager::g_remove(wnd);
 
 		if (msg == WM_DESTROY && thisptr != 0)
 			thisptr->on_window_destruction();
@@ -195,4 +195,97 @@ namespace dialog_helper {
 		return rv;
 	}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	dialog_modeless_v2::dialog_modeless_v2(unsigned p_id,HWND p_parent,HINSTANCE p_instance) : m_wnd(0), m_status(status_construction)
+	{
+		SetLastError(NO_ERROR);
+		HWND result = CreateDialogParam(p_instance,MAKEINTRESOURCE(p_id),p_parent,DlgProc,reinterpret_cast<LPARAM>(this));
+		if (result == 0 || m_wnd == 0) throw exception_win32(GetLastError());
+		m_status = status_lifetime;
+	}
+
+	dialog_modeless_v2::~dialog_modeless_v2()
+	{
+		bool is_window_being_destroyed = (m_status == status_destruction_requested);
+		m_status = status_destruction;
+
+		if (m_wnd != 0)
+		{
+			if (is_window_being_destroyed)
+				detach_window();
+			else
+				DestroyWindow(m_wnd);
+		}
+	}
+	
+	BOOL CALLBACK dialog_modeless_v2::DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
+	{
+		dialog_modeless_v2 * thisptr;
+		BOOL rv = FALSE;
+		if (msg == WM_INITDIALOG)
+		{
+			thisptr = reinterpret_cast<dialog_modeless_v2*>(lp);
+			assert(thisptr->m_status == status_construction);
+			thisptr->m_wnd = wnd;
+			SetWindowLong(wnd,DWL_USER,lp);
+			modeless_dialog_manager::g_add(wnd);
+		}
+		else thisptr = reinterpret_cast<dialog_modeless_v2*>(GetWindowLong(wnd,DWL_USER));
+
+		if (thisptr != NULL) rv = thisptr->on_message_internal(msg,wp,lp);
+
+		if (msg == WM_DESTROY)
+		{
+			modeless_dialog_manager::g_remove(wnd);
+		}
+
+		return rv;
+	}
+
+
+	void dialog_modeless_v2::detach_window()
+	{
+		if (m_wnd != 0)
+		{
+			SetWindowLong(m_wnd,DWL_USER,0);
+			m_wnd = 0;
+		}
+	}
+
+	
+	BOOL dialog_modeless_v2::on_message_internal(UINT msg,WPARAM wp,LPARAM lp)
+	{
+		if (m_status == status_lifetime || m_status == status_destruction_requested)
+		{
+			if (msg == WM_DESTROY)
+			{
+				assert(m_status == status_lifetime);
+				m_status = status_destruction_requested;
+				delete this;
+				return TRUE;
+			}
+			else 
+				return on_message(msg,wp,lp);
+		}
+		else if (m_status == status_construction)
+		{
+			if (msg == WM_INITDIALOG) return TRUE;
+			else return FALSE;
+		}
+		else return FALSE;
+	}
 }

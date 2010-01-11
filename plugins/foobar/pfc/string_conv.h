@@ -125,7 +125,7 @@ namespace pfc {
 
 		template<typename t_char> bool string_is_empty_t(const t_char * p_string,unsigned p_string_size = infinite) {
 			if (p_string_size == 0) return true;
-			return p_string[0] != 0;
+			return p_string[0] == 0;
 		}
 
 		template<typename t_char> class char_buffer_t {
@@ -137,6 +137,8 @@ namespace pfc {
 			const t_char * get_ptr() const {
 				return m_buffer.get_size() > 0 ? m_buffer.get_ptr() : null_string_t<t_char>();
 			}
+
+			void set_mem_logic(mem_block::t_mem_logic p_value) {m_buffer.set_mem_logic(p_value);}
 		private:
 			mem_block_t<t_char> m_buffer;
 		};
@@ -144,8 +146,12 @@ namespace pfc {
 		class string_utf8_from_wide {
 		public:
 			string_utf8_from_wide() {}
-			string_utf8_from_wide(const wchar_t * p_source,unsigned p_source_size = infinite) {convert(p_source,p_source_size);}
+			string_utf8_from_wide(const wchar_t * p_source,unsigned p_source_size = infinite) {convert_e(p_source,p_source_size);}
 		
+			void convert_e(const wchar_t * p_source,unsigned p_source_size = infinite) {
+				if (!convert(p_source,p_source_size)) throw std::bad_alloc();
+			}
+
 			bool convert(const wchar_t * p_source,unsigned p_source_size = infinite) {
 				unsigned size = estimate_wide_to_utf8(p_source,p_source_size);
 				if (!m_buffer.set_size(size)) return false;
@@ -158,6 +164,7 @@ namespace pfc {
 			bool is_empty() const {return string_is_empty_t(get_ptr());}
 			unsigned length() const {return strlen_t(get_ptr());}
 
+			void set_mem_logic(mem_block::t_mem_logic p_value) {m_buffer.set_mem_logic(p_value);}
 		private:
 			char_buffer_t<char> m_buffer;
 		};
@@ -166,7 +173,11 @@ namespace pfc {
 		public:
 			string_wide_from_utf8() {}
 			string_wide_from_utf8(const string_wide_from_utf8 & p_source) : m_buffer(p_source.m_buffer) {}
-			string_wide_from_utf8(const char* p_source,unsigned p_source_size = infinite) {convert(p_source,p_source_size);}
+			string_wide_from_utf8(const char* p_source,unsigned p_source_size = infinite) {convert_e(p_source,p_source_size);}
+
+			void convert_e(const char * p_source,unsigned p_source_size = infinite) {
+				if (!convert(p_source,p_source_size)) throw std::bad_alloc();
+			}
 
 			bool convert(const char* p_source,unsigned p_source_size = infinite) {
 				unsigned size = estimate_utf8_to_wide(p_source,p_source_size);
@@ -180,6 +191,7 @@ namespace pfc {
 			bool is_empty() const {return string_is_empty_t(get_ptr());}
 			unsigned length() const {return strlen_t(get_ptr());}
 
+			void set_mem_logic(mem_block::t_mem_logic p_value) {m_buffer.set_mem_logic(p_value);}
 		private:
 			char_buffer_t<wchar_t> m_buffer;
 		};
@@ -188,7 +200,11 @@ namespace pfc {
 		public:
 			string_wide_from_codepage() {}
 			string_wide_from_codepage(const string_wide_from_codepage & p_source) : m_buffer(p_source.m_buffer) {}
-			string_wide_from_codepage(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {convert(p_codepage,p_source,p_source_size);}
+			string_wide_from_codepage(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {convert_e(p_codepage,p_source,p_source_size);}
+
+			void convert_e(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {
+				if (!convert(p_codepage,p_source,p_source_size)) throw std::bad_alloc();
+			}
 
 			bool convert(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {
 				unsigned size = estimate_codepage_to_wide(p_codepage,p_source,p_source_size);
@@ -202,6 +218,7 @@ namespace pfc {
 			bool is_empty() const {return string_is_empty_t(get_ptr());}
 			unsigned length() const {return strlen_t(get_ptr());}
 
+			void set_mem_logic(mem_block::t_mem_logic p_value) {m_buffer.set_mem_logic(p_value);}
 		private:
 			char_buffer_t<wchar_t> m_buffer;
 		};
@@ -210,7 +227,11 @@ namespace pfc {
 		public:
 			string_codepage_from_wide() {}
 			string_codepage_from_wide(const string_codepage_from_wide & p_source) : m_buffer(p_source.m_buffer) {}
-			string_codepage_from_wide(unsigned p_codepage,const wchar_t * p_source,unsigned p_source_size = infinite) {convert(p_codepage,p_source,p_source_size);}
+			string_codepage_from_wide(unsigned p_codepage,const wchar_t * p_source,unsigned p_source_size = infinite) {convert_e(p_codepage,p_source,p_source_size);}
+
+			void convert_e(unsigned p_codepage,const wchar_t * p_source,unsigned p_source_size = infinite) {
+				if (!convert(p_codepage,p_source,p_source_size)) throw std::bad_alloc();
+			}
 
 			bool convert(unsigned p_codepage,const wchar_t * p_source,unsigned p_source_size = infinite) {
 				unsigned size = estimate_wide_to_codepage(p_codepage,p_source,p_source_size);
@@ -224,6 +245,7 @@ namespace pfc {
 			bool is_empty() const {return string_is_empty_t(get_ptr());}
 			unsigned length() const {return strlen_t(get_ptr());}
 
+			void set_mem_logic(mem_block::t_mem_logic p_value) {m_buffer.set_mem_logic(p_value);}
 		private:
 			char_buffer_t<char> m_buffer;
 		};
@@ -232,7 +254,11 @@ namespace pfc {
 		public:
 			string_codepage_from_utf8() {}
 			string_codepage_from_utf8(const string_codepage_from_utf8 & p_source) : m_buffer(p_source.m_buffer) {}
-			string_codepage_from_utf8(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {convert(p_codepage,p_source,p_source_size);}
+			string_codepage_from_utf8(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {convert_e(p_codepage,p_source,p_source_size);}
+			
+			void convert_e(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {
+				if (!convert(p_codepage,p_source,p_source_size)) throw std::bad_alloc();
+			}
 			
 			bool convert(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {
 				string_wide_from_utf8 temp;
@@ -248,6 +274,7 @@ namespace pfc {
 			bool is_empty() const {return string_is_empty_t(get_ptr());}
 			unsigned length() const {return strlen_t(get_ptr());}
 
+			void set_mem_logic(mem_block::t_mem_logic p_value) {m_buffer.set_mem_logic(p_value);}
 		private:
 			char_buffer_t<char> m_buffer;
 		};
@@ -256,8 +283,12 @@ namespace pfc {
 		public:
 			string_utf8_from_codepage() {}
 			string_utf8_from_codepage(const string_utf8_from_codepage & p_source) : m_buffer(p_source.m_buffer) {}
-			string_utf8_from_codepage(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {convert(p_codepage,p_source,p_source_size);}
+			string_utf8_from_codepage(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {convert_e(p_codepage,p_source,p_source_size);}
 			
+			void convert_e(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {
+				if (!convert(p_codepage,p_source,p_source_size)) throw std::bad_alloc();
+			}
+
 			bool convert(unsigned p_codepage,const char * p_source,unsigned p_source_size = infinite) {
 				string_wide_from_codepage temp;
 				if (!temp.convert(p_codepage,p_source,p_source_size)) return false;
@@ -272,6 +303,7 @@ namespace pfc {
 			bool is_empty() const {return string_is_empty_t(get_ptr());}
 			unsigned length() const {return strlen_t(get_ptr());}
 
+			void set_mem_logic(mem_block::t_mem_logic p_value) {m_buffer.set_mem_logic(p_value);}
 		private:
 			char_buffer_t<char> m_buffer;
 		};
@@ -287,7 +319,13 @@ namespace pfc {
 			bool is_empty() const {return string_is_empty_t(get_ptr());}
 			unsigned length() const {return strlen_t(get_ptr());}
 
+			void convert_e(const char * p_source,unsigned p_source_size = infinite) {
+				if (!convert(p_source,p_source_size)) throw std::bad_alloc();
+			}
+
 			bool convert(const char * p_source,unsigned p_source_size = infinite) {return m_buffer.convert(codepage_system,p_source,p_source_size);}
+
+			void set_mem_logic(mem_block::t_mem_logic p_value) {m_buffer.set_mem_logic(p_value);}
 		private:
 			string_utf8_from_codepage m_buffer;
 		};
@@ -302,7 +340,13 @@ namespace pfc {
 			bool is_empty() const {return string_is_empty_t(get_ptr());}
 			unsigned length() const {return strlen_t(get_ptr());}
 
+			void convert_e(const char * p_source,unsigned p_source_size = infinite) {
+				if (!convert(p_source,p_source_size)) throw std::bad_alloc();
+			}
+
 			bool convert(const char * p_source,unsigned p_source_size = infinite) {return m_buffer.convert(codepage_system,p_source,p_source_size);}
+
+			void set_mem_logic(mem_block::t_mem_logic p_value) {m_buffer.set_mem_logic(p_value);}
 		private:
 			string_codepage_from_utf8 m_buffer;
 		};
@@ -317,7 +361,13 @@ namespace pfc {
 			bool is_empty() const {return string_is_empty_t(get_ptr());}
 			unsigned length() const {return strlen_t(get_ptr());}
 
+			void convert_e(const char * p_source,unsigned p_source_size = infinite) {
+				if (!convert(p_source,p_source_size)) throw std::bad_alloc();
+			}
+
 			bool convert(const char * p_source,unsigned p_source_size = infinite) {return m_buffer.convert(codepage_system,p_source,p_source_size);}
+
+			void set_mem_logic(mem_block::t_mem_logic p_value) {m_buffer.set_mem_logic(p_value);}
 		private:
 			string_wide_from_codepage m_buffer;
 		};
@@ -332,7 +382,13 @@ namespace pfc {
 			bool is_empty() const {return string_is_empty_t(get_ptr());}
 			unsigned length() const {return strlen_t(get_ptr());}
 
+			void convert_e(const wchar_t * p_source,unsigned p_source_size = infinite) {
+				if (!convert(p_source,p_source_size)) throw std::bad_alloc();
+			}
+
 			bool convert(const wchar_t * p_source,unsigned p_source_size = infinite) {return m_buffer.convert(codepage_system,p_source,p_source_size);}
+
+			void set_mem_logic(mem_block::t_mem_logic p_value) {m_buffer.set_mem_logic(p_value);}
 		private:
 			string_codepage_from_wide m_buffer;
 		};

@@ -576,4 +576,33 @@ namespace audio_math {
 		}
 	}
 
+	void SHARED_EXPORT kill_denormal(audio_sample * p_buffer,unsigned p_count) {
+#if audio_sample_size == 32
+		t_uint32 * ptr = reinterpret_cast<t_uint32*>(p_buffer);
+		for(;p_count;p_count--)
+		{
+			t_uint32 t = *ptr;
+			if ((t & 0x007FFFFF) && !(t & 0x7F800000)) *ptr=0;
+			ptr++;
+		}
+#elif audio_sample_size == 64
+		t_uint64 * ptr = reinterpret_cast<t_uint64*>(p_buffer);
+		for(;p_count;p_count--)
+		{
+			t_uint64 t = *ptr;
+			if ((t & 0x000FFFFFFFFFFFFF) && !(t & 0x7FF0000000000000)) *ptr=0;
+			ptr++;
+		}
+#else
+#error unsupported
+#endif
+	}
+
+	// to be optimized?
+	void SHARED_EXPORT add_offset(audio_sample * p_buffer,audio_sample p_delta,unsigned p_count) {
+		for(unsigned n=0;n<p_count;n++) {
+			p_buffer[n] += p_delta;
+		}
+	}
+
 }

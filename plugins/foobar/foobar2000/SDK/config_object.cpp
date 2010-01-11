@@ -107,59 +107,53 @@ t_io_result config_object::g_set_data_bool(const GUID & p_guid,bool p_val) {retu
 
 
 namespace {
-	class config_object_read_callback_memblock : public config_object_read_callback
+	class stream_writer_string : public stream_writer
 	{
 	public:
-		t_io_result get_data(void * p_buffer,abort_callback & p_abort)
+		t_io_result write(const void * p_buffer,unsigned p_bytes,unsigned & p_bytes_written,abort_callback & p_abort)
 		{
-			memcpy(p_buffer,m_data,m_size);
+			m_out.add_string((const char*)p_buffer,p_bytes);
+			p_bytes_written = p_bytes;
 			return io_result_success;
 		}
-		config_object_read_callback_memblock(const void * p_data,unsigned p_size) : m_data(p_data), m_size(p_size) {}
-	private:
-		const void * m_data;
-		unsigned m_size;
-	};
-
-	class config_object_write_callback_string : public config_object_write_callback
-	{
-	public:
-		t_io_result set_data(const void * p_buffer,unsigned p_bytes,abort_callback & p_abort)
-		{
-			m_out.set_string((const char*)p_buffer,p_bytes);
-			return io_result_success;
-		}
-		config_object_write_callback_string(string_base & p_out) : m_out(p_out) {}
+		stream_writer_string(string_base & p_out) : m_out(p_out) {m_out.reset();}
 	private:
 		string_base & m_out;
 	};
 
-	class config_object_write_callback_raw : public config_object_write_callback
+	class stream_writer_fixedbuffer : public stream_writer
 	{
 	public:
-		t_io_result set_data(const void * p_buffer,unsigned p_bytes,abort_callback & p_abort)
+		t_io_result write(const void * p_buffer,unsigned p_bytes,unsigned & p_bytes_written,abort_callback & p_abort)
 		{
-			unsigned todo = p_bytes > m_bytes ? m_bytes : p_bytes;
-			memcpy(m_out,p_buffer,todo);
-			m_bytes_read = todo;
-			return io_result_success;
+			unsigned todo = pfc::min_t(p_bytes, m_bytes - m_bytes_read);
+			if (todo > 0)
+			{
+				memcpy((t_uint8*)m_out,p_buffer,todo);
+				m_bytes_read += todo;
+			}
+			p_bytes_written = todo;
+			return todo == p_bytes ? io_result_success : io_result_eof;
 		}
-		config_object_write_callback_raw(void * p_out,unsigned p_bytes,unsigned & p_bytes_read) : m_out(p_out), m_bytes(p_bytes), m_bytes_read(p_bytes_read) {}
+		stream_writer_fixedbuffer(void * p_out,unsigned p_bytes,unsigned & p_bytes_read) : m_out(p_out), m_bytes(p_bytes), m_bytes_read(p_bytes_read) {m_bytes_read = 0;}
 	private:
 		void * m_out;
 		unsigned m_bytes;
 		unsigned & m_bytes_read;
 	};
 
-	class config_object_write_callback_get_length : public config_object_write_callback
+
+
+	class stream_writer_get_length : public stream_writer
 	{
 	public:
-		t_io_result set_data(const void * p_buffer,unsigned p_bytes,abort_callback & p_abort)
+		t_io_result write(const void * p_buffer,unsigned p_bytes,unsigned & p_bytes_written,abort_callback & p_abort)
 		{
-			m_length = p_bytes;
+			m_length += p_bytes;
+			p_bytes_written = p_bytes;
 			return io_result_success;
 		}
-		config_object_write_callback_get_length(unsigned & p_length) : m_length(p_length) {}
+		stream_writer_get_length(unsigned & p_length) : m_length(p_length) {m_length = 0;}
 	private:
 		unsigned & m_length;
 	};
@@ -167,17 +161,17 @@ namespace {
 
 t_io_result config_object::get_data_raw(void * p_out,unsigned p_bytes,unsigned & p_bytes_used)
 {
-	return get_data(&config_object_write_callback_raw(p_out,p_bytes,p_bytes_used),abort_callback_impl());
+	return get_data(&stream_writer_fixedbuffer(p_out,p_bytes,p_bytes_used),abort_callback_impl());
 }
 
 t_io_result config_object::get_data_raw_length(unsigned & p_length)
 {
-	return get_data(&config_object_write_callback_get_length(p_length),abort_callback_impl());
+	return get_data(&stream_writer_get_length(p_length),abort_callback_impl());
 }
 
 t_io_result config_object::set_data_raw(const void * p_data,unsigned p_bytes, bool p_notify)
 {
-	return set_data(&config_object_read_callback_memblock(p_data,p_bytes),p_bytes,abort_callback_impl(),p_notify);
+	return set_data(&stream_reader_memblock_ref(p_data,p_bytes),abort_callback_impl(),p_notify);
 }
 
 t_io_result config_object::set_data_string(const char * p_data,unsigned p_length)
@@ -187,7 +181,7 @@ t_io_result config_object::set_data_string(const char * p_data,unsigned p_length
 
 t_io_result config_object::get_data_string(string_base & p_out)
 {
-	return get_data(&config_object_write_callback_string(p_out),abort_callback_impl());
+	return get_data(&stream_writer_string(p_out),abort_callback_impl());
 }
 
 
@@ -198,25 +192,33 @@ GUID config_object_impl::get_guid() const
 	return m_guid;
 }
 
-t_io_result config_object_impl::get_data(config_object_write_callback * p_callback,abort_callback & p_abort) const
+t_io_result config_object_impl::get_data(stream_writer * p_stream,abort_callback & p_abort) const
 {
 	insync(m_sync);
-	return p_callback->set_data(m_data.get_ptr(),m_data.get_size(),p_abort);
+	return p_stream->write_object(m_data.get_ptr(),m_data.get_size(),p_abort);
 }
 
-t_io_result config_object_impl::set_data(config_object_read_callback * p_callback,unsigned p_bytes,abort_callback & p_abort,bool p_notify)
+t_io_result config_object_impl::set_data(stream_reader * p_stream,abort_callback & p_abort,bool p_notify)
 {
 	if (!core_api::assert_main_thread()) return io_result_error_generic;
 
 	{
 		insync(m_sync);
-		if (p_bytes == 0)
-			m_data.set_size(0);
-		else
+		m_data.set_size(0);
+		enum {delta = 1024};
+		t_uint8 buffer[delta];
+		for(;;)
 		{
-			if (!m_data.set_size(p_bytes)) return io_result_error_generic;
-			t_io_result status = p_callback->get_data(m_data.get_ptr(),p_abort);
+			unsigned delta_done;
+			t_io_result status = p_stream->read(buffer,delta,delta_done,p_abort);
 			if (io_result_failed(status)) return status;
+			
+			if (delta_done > 0)
+			{
+				if (!m_data.append(buffer,delta_done)) return io_result_error_out_of_memory;
+			}
+			
+			if (delta_done != delta) break;
 		}
 	}
 

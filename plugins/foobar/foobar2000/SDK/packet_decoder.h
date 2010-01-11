@@ -68,12 +68,10 @@ public:
 
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 	
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
 
 protected:
@@ -88,12 +86,10 @@ public:
 	virtual t_io_result analyze_first_frame_ex(const void * p_buffer,unsigned p_bytes,unsigned & p_bytes_processed,abort_callback & p_abort) = 0;
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 	
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return packet_decoder::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return packet_decoder::service_query(p_out,p_guid);
 	}
 
 protected:
@@ -108,13 +104,14 @@ public:
 	virtual t_io_result open(service_ptr_t<packet_decoder> & p_out,bool p_decode,const GUID & p_owner,unsigned p_param1,const void * p_param2,unsigned p_param2size,abort_callback & p_abort) = 0;
 	
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 	
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
+protected:
+	packet_decoder_entry() {}
+	~packet_decoder_entry() {}
 };
 
 

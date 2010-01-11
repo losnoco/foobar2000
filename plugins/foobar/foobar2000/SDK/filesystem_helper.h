@@ -77,7 +77,7 @@ private:
 		if (size64<=0 || size64>0x7FFFFFFF) return false;
 		unsigned size = (unsigned)size64;
 
-		if (!m_buffer.set_size(size)) throw io_result_error_out_of_memory;
+		if (!m_buffer.set_size(size)) throw exception_io(io_result_error_out_of_memory);
 
 		if (p_src->can_seek()) p_src->seek_e(0,p_abort);
 		

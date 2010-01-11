@@ -100,21 +100,28 @@ namespace pfc {
 	}
 
 	template<typename T>
-	T max_t(const T & item1, const T & item2)
+	inline T max_t(const T & item1, const T & item2)
 	{
 		return item1 > item2 ? item1 : item2;
 	};
 
 	template<typename T>
-	T min_t(const T & item1, const T & item2)
+	inline T min_t(const T & item1, const T & item2)
 	{
 		return item1 < item2 ? item1 : item2;
 	};
 
 	template<typename T>
-	T abs_t(const T & item)
+	inline T abs_t(T item)
 	{
 		return item<0 ? -item : item;
+	}
+
+	template<typename T>
+	inline T clip_t(T p_item, T p_min, T p_max) {
+		if (p_item < p_min) return p_min;
+		else if (p_item <= p_max) return p_item;
+		else return p_max;
 	}
 
 
@@ -166,4 +173,11 @@ namespace pfc {
 
 	template<typename T>
 	inline T* clone_t(T* ptr) {return new T(*ptr);}
+
+
+	template<typename T>
+	T* new_ptr_check_t(T* p_ptr) {
+		if (p_ptr == NULL) throw std::bad_alloc();
+		return p_ptr;
+	}
 };

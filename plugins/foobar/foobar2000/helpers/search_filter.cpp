@@ -104,7 +104,7 @@ namespace search_tools
 		filter_node_is_format(const char * p_field,const char * p_param)
 			: param(p_param), is_wildcard(wildcard_helper::has_wildcards(p_param))
 		{
-			static_api_ptr_t<titleformat>()->compile_safe(m_script,p_field);
+			static_api_ptr_t<titleformat_compiler>()->compile_safe(m_script,p_field);
 		}
 
 		~filter_node_is_format() {}
@@ -453,7 +453,7 @@ namespace search_tools
 			left_ex(is_format_spec(p_left))
 		{
 			if (left_ex)
-				static_api_ptr_t<titleformat>()->compile_safe(left_script,left);
+				static_api_ptr_t<titleformat_compiler>()->compile_safe(left_script,left);
 		}
 		virtual ~filter_node_mathop() {}
 
@@ -598,7 +598,7 @@ namespace search_tools
 			}
 		}
 
-		mem_block_list<token_info> operators;
+		mem_block_list_hybrid_t<token_info,8> operators;
 		
 		p.skip_spacing();
 		while(p.get_remaining()>0)

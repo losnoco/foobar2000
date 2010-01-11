@@ -24,14 +24,14 @@ namespace pfc {
 		inline t_iter prev(t_iter param) {return reinterpret_cast<elem*>(param)->m_prev;}
 		inline T & get_item(t_iter param) {return reinterpret_cast<elem*>(param)->m_data;}
 		inline const T & get_item(t_iter param) const {return reinterpret_cast<elem*>(param)->m_data;}
-		inline t_iter insert_first() {return _insert_first(new elem());}
-		inline t_iter insert_first(const T& param) {return _insert_first(new elem(param));}
-		inline t_iter insert_last() {return _insert_last(new elem());}
-		inline t_iter insert_last(const T& param) {return _insert_last(new elem(param));}
-		inline t_iter insert_before(t_iter p_iter) {return _insert_before(p_iter,new elem());}
-		inline t_iter insert_before(t_iter p_iter,const T& param) {return _insert_before(p_iter,new elem(param));}
-		inline t_iter insert_after(t_iter p_iter) {return _insert_after(p_iter,new elem());}
-		inline t_iter insert_after(t_iter p_iter,const T& param) {return _insert_after(p_iter,new elem(param));}
+		inline t_iter insert_first() {return _insert_first(new_ptr_check_t(new elem()));}
+		inline t_iter insert_first(const T& param) {return _insert_first(new_ptr_check_t(new elem(param)));}
+		inline t_iter insert_last() {return _insert_last(new_ptr_check_t(new elem()));}
+		inline t_iter insert_last(const T& param) {return _insert_last(new_ptr_check_t(new elem(param)));}
+		inline t_iter insert_before(t_iter p_iter) {return _insert_before(p_iter,new_ptr_check_t(new elem()));}
+		inline t_iter insert_before(t_iter p_iter,const T& param) {return _insert_before(p_iter,new_ptr_check_t(new elem(param)));}
+		inline t_iter insert_after(t_iter p_iter) {return _insert_after(p_iter,new_ptr_check_t(new elem()));}
+		inline t_iter insert_after(t_iter p_iter,const T& param) {return _insert_after(p_iter,new_ptr_check_t(new elem(param)));}
 		inline void remove(t_iter p_iter) {elem * item = reinterpret_cast<elem*>(p_iter); _unlink(item); delete item;}
 		
 		inline void unlink(t_iter p_iter) {_unlink(reinterpret_cast<elem*>(p_iter));}
@@ -235,6 +235,12 @@ namespace pfc {
 		inline iterator find_prev(iterator p_iter,const T & p_item) const {p_iter++; return find_back(p_iter,p_item);}
 		inline const_iterator find_prev(const_iterator p_iter,const T & p_item) const {p_iter++; return find_back(p_iter,p_item);}
 
+		inline bool find_first_and_remove(const T & p_item) {
+			iterator iter = find_first(p_item);
+			if (iter.is_valid()) {remove_single(iter); return true;}
+			else return false;
+		}
+
 		const_iterator by_index(unsigned p_idx) const
 		{
 			const_iterator iter = first();
@@ -370,17 +376,13 @@ namespace pfc {
 	{
 		assert(p_iter.is_valid() && p_iter.m_owner == this);
 		elem * ptr = p_iter.m_ptr;
-		elem * new_elem = new elem(p_item);
-		if (new_elem)
-		{
-			new_elem->m_prev = ptr;
-			new_elem->m_next = ptr->m_next;
-			(ptr->m_next ? ptr->m_next->m_prev : m_last) = new_elem;
-			ptr->m_next = new_elem;
-			m_count++;
-			return iterator(this,new_elem);
-		}
-		else return iterator()
+		elem * new_elem = new_ptr_check_t(new elem(p_item));
+		new_elem->m_prev = ptr;
+		new_elem->m_next = ptr->m_next;
+		(ptr->m_next ? ptr->m_next->m_prev : m_last) = new_elem;
+		ptr->m_next = new_elem;
+		m_count++;
+		return iterator(this,new_elem);
 	}
 
 	template<typename T>
@@ -388,47 +390,35 @@ namespace pfc {
 	{
 		assert(p_iter.is_valid() && p_iter.m_owner == this);
 		elem * ptr = p_iter.m_ptr;
-		elem * new_elem = new elem(p_item);
-		if (new_elem)
-		{
-			new_elem->m_next = ptr;
-			new_elem->m_prev = ptr->m_prev;
-			(ptr->m_prev ? ptr->m_prev->m_next : m_first) = new_elem;
-			ptr->m_prev = new_elem;
-			m_count++;
-			return iterator(this,new_elem);
-		}
-		else return iterator();
+		elem * new_elem = new_ptr_check_t(new elem(p_item));
+		new_elem->m_next = ptr;
+		new_elem->m_prev = ptr->m_prev;
+		(ptr->m_prev ? ptr->m_prev->m_next : m_first) = new_elem;
+		ptr->m_prev = new_elem;
+		m_count++;
+		return iterator(this,new_elem);
 	}
 
 	template<typename T>
 	typename chain_list_t<T>::iterator chain_list_t<T>::insert_last(const T & p_item)
 	{
-		elem * new_elem = new elem(p_item);
-		if (new_elem)
-		{
-			new_elem->m_prev = m_last;
-			(m_last ? m_last->m_next : m_first) = new_elem;
-			m_last = new_elem;
-			m_count++;
-			return iterator(this,new_elem);
-		}
-		else return iterator();
+		elem * new_elem = new_ptr_check_t(new elem(p_item));
+		new_elem->m_prev = m_last;
+		(m_last ? m_last->m_next : m_first) = new_elem;
+		m_last = new_elem;
+		m_count++;
+		return iterator(this,new_elem);
 	}
 
 	template<typename T>
 	typename chain_list_t<T>::iterator chain_list_t<T>::insert_first(const T & p_item)
 	{
-		elem * new_elem = new elem(p_item);
-		if (new_elem)
-		{
-			new_elem->m_next = m_first;
-			(m_first ? m_first->m_prev : m_last) = new_elem;
-			m_first = new_elem;
-			m_count++;
-			return iterator(this,new_elem);
-		}
-		else return iterator();
+		elem * new_elem = new_ptr_check_t(new elem(p_item));
+		new_elem->m_next = m_first;
+		(m_first ? m_first->m_prev : m_last) = new_elem;
+		m_first = new_elem;
+		m_count++;
+		return iterator(this,new_elem);
 	}
 
 
@@ -437,18 +427,14 @@ namespace pfc {
 	{
 		assert(p_iter.is_valid() && p_iter.m_owner == this);
 		elem * ptr = p_iter.m_ptr;
-		elem * new_elem = new elem();
-		if (new_elem)
-		{
-			new_elem->m_prev = ptr;
-			new_elem->m_next = ptr->m_next;
-			(ptr->m_next ? ptr->m_next->m_prev : m_last) = new_elem;
-			ptr->m_next = new_elem;
-			m_count++;
+		elem * new_elem = new_ptr_check_t(new elem());
+		new_elem->m_prev = ptr;
+		new_elem->m_next = ptr->m_next;
+		(ptr->m_next ? ptr->m_next->m_prev : m_last) = new_elem;
+		ptr->m_next = new_elem;
+		m_count++;
 
-			return iterator(this,new_elem);
-		}
-		else return iterator();
+		return iterator(this,new_elem);
 	}
 
 	template<typename T>
@@ -456,50 +442,38 @@ namespace pfc {
 	{
 		assert(p_iter.is_valid() && p_iter.m_owner == this);
 		elem * ptr = p_iter.m_ptr;
-		elem * new_elem = new elem();
-		if (new_elem)
-		{
-			new_elem->m_next = ptr;
-			new_elem->m_prev = ptr->m_prev;
-			(ptr->m_prev ? ptr->m_prev->m_next : m_first) = new_elem;
-			ptr->m_prev = new_elem;
-			m_count++;
-			
-			return iterator(this,new_elem);			
-		}
-		else return iterator();
+		elem * new_elem = new_ptr_check_t(new elem());
+		new_elem->m_next = ptr;
+		new_elem->m_prev = ptr->m_prev;
+		(ptr->m_prev ? ptr->m_prev->m_next : m_first) = new_elem;
+		ptr->m_prev = new_elem;
+		m_count++;
+		
+		return iterator(this,new_elem);			
 	}
 
 	template<typename T>
 	typename chain_list_t<T>::iterator chain_list_t<T>::insert_last()
 	{
-		elem * new_elem = new elem();
-		if (new_elem)
-		{
-			new_elem->m_prev = m_last;
-			(m_last ? m_last->m_next : m_first) = new_elem;
-			m_last = new_elem;
-			m_count++;
-			
-			return iterator(this,new_elem);
-		}
-		else return iterator();
+		elem * new_elem = new_ptr_check_t(new elem());
+		new_elem->m_prev = m_last;
+		(m_last ? m_last->m_next : m_first) = new_elem;
+		m_last = new_elem;
+		m_count++;
+		
+		return iterator(this,new_elem);
 	}
 
 	template<typename T>
 	typename chain_list_t<T>::iterator chain_list_t<T>::insert_first()
 	{
-		elem * new_elem = new elem();
-		if (new_elem)
-		{
-			new_elem->m_next = m_first;
-			(m_first ? m_first->m_prev : m_last) = new_elem;
-			m_first = new_elem;
-			m_count++;
+		elem * new_elem = new_ptr_check_t(new elem());
+		new_elem->m_next = m_first;
+		(m_first ? m_first->m_prev : m_last) = new_elem;
+		m_first = new_elem;
+		m_count++;
 
-			return iterator(this,new_elem);
-		}
-		else return iterator();
+		return iterator(this,new_elem);
 	}
 
 

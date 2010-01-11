@@ -94,9 +94,7 @@ t_io_result seekabilizer::initialize(service_ptr_t<file> p_base,unsigned p_buffe
 
 void seekabilizer::g_seekabilize_e(service_ptr_t<file> & p_reader,unsigned p_buffer_size,abort_callback & p_abort)
 {
-	t_io_result status;
-	status = g_seekabilize(p_reader,p_buffer_size,p_abort);
-	if (io_result_failed(status)) throw status;
+	exception_io::g_test(g_seekabilize(p_reader,p_buffer_size,p_abort));
 }
 
 t_io_result seekabilizer::g_seekabilize(service_ptr_t<file> & p_reader,unsigned p_buffer_size,abort_callback & p_abort)

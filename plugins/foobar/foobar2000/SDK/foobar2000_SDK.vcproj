@@ -5,10 +5,9 @@
 	Name="foobar2000_SDK"
 	ProjectGUID="{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}"
 	RootNamespace="foobar2000_SDK"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK"
+	SccProjectName="&quot;$/foobar2000/plugins.root/plugins&quot;, CEAAAAAA"
+	SccLocalPath="..\..\.."
+	SccProvider="MSSCCI:Microsoft Visual SourceSafe"
 	>
 	<Platforms>
 		<Platform
@@ -23,7 +22,7 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="..\..\..\..\Program Files\Microsoft Visual Studio 8\VC\VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="C:\Program Files\Microsoft Visual Studio 8\VC\VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="1"
@@ -91,10 +90,11 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="..\..\..\..\Program Files\Microsoft Visual Studio 8\VC\VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="C:\Program Files\Microsoft Visual Studio 8\VC\VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="1"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -113,14 +113,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="true"
-				EnableFiberSafeOptimizations="false"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="true"
-				RuntimeLibrary="0"
 				FloatingPointModel="2"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="foobar2000.h"
 				WarningLevel="3"
@@ -250,6 +246,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\cfg_var.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\chapterizer.cpp"
 				>
 			</File>
@@ -318,27 +318,6 @@
 			</File>
 			<File
 				RelativePath="console.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="converter.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -486,6 +465,27 @@
 			</File>
 			<File
 				RelativePath="filesystem.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						BasicRuntimeChecks="3"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\filesystem_helper.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -774,27 +774,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="play_control.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="playable_location.cpp"
 				>
 				<FileConfiguration
@@ -816,7 +795,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="playback_core.cpp"
+				RelativePath=".\playback_control.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -923,27 +902,6 @@
 			<File
 				RelativePath=".\preferences_page.cpp"
 				>
-			</File>
-			<File
-				RelativePath="reader_helper.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="replaygain.cpp"
@@ -1137,27 +1095,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="track_indexer.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="ui.cpp"
 				>
 				<FileConfiguration
@@ -1221,6 +1158,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cfg_var.h"
+				>
+			</File>
+			<File
 				RelativePath=".\chapterizer.h"
 				>
 			</File>
@@ -1250,10 +1191,6 @@
 			</File>
 			<File
 				RelativePath="console.h"
-				>
-			</File>
-			<File
-				RelativePath="converter.h"
 				>
 			</File>
 			<File
@@ -1289,6 +1226,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\filesystem_helper.h"
+				>
+			</File>
+			<File
 				RelativePath="foobar2000.h"
 				>
 			</File>
@@ -1318,6 +1259,10 @@
 			</File>
 			<File
 				RelativePath=".\link_resolver.h"
+				>
+			</File>
+			<File
+				RelativePath=".\main_thread_callback.h"
 				>
 			</File>
 			<File
@@ -1365,10 +1310,6 @@
 				>
 			</File>
 			<File
-				RelativePath="output_manager.h"
-				>
-			</File>
-			<File
 				RelativePath="packet_decoder.h"
 				>
 			</File>
@@ -1377,15 +1318,11 @@
 				>
 			</File>
 			<File
-				RelativePath="play_control.h"
-				>
-			</File>
-			<File
 				RelativePath="playable_location.h"
 				>
 			</File>
 			<File
-				RelativePath="playback_core.h"
+				RelativePath=".\playback_control.h"
 				>
 			</File>
 			<File
@@ -1405,10 +1342,6 @@
 				>
 			</File>
 			<File
-				RelativePath="reader_helper.h"
-				>
-			</File>
-			<File
 				RelativePath="replaygain.h"
 				>
 			</File>
@@ -1422,6 +1355,10 @@
 			</File>
 			<File
 				RelativePath="service_impl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\shared.h"
 				>
 			</File>
 			<File
@@ -1441,19 +1378,11 @@
 				>
 			</File>
 			<File
-				RelativePath="track_indexer.h"
-				>
-			</File>
-			<File
 				RelativePath="ui.h"
 				>
 			</File>
 			<File
 				RelativePath="unpack.h"
-				>
-			</File>
-			<File
-				RelativePath="utf8api.h"
 				>
 			</File>
 			<File

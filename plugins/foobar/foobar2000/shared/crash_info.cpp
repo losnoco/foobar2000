@@ -285,7 +285,7 @@ static BOOL CALLBACK EnumModulesCallback(LPSTR ModuleName,ULONG BaseOfDll,PVOID 
 }
 
 
-SHARED_EXPORT void uDumpCrashInfo(LPEXCEPTION_POINTERS param)
+void SHARED_EXPORT uDumpCrashInfo(LPEXCEPTION_POINTERS param)
 {
 	char temp[2048];
 	long number = InterlockedIncrement(&crash_no);
@@ -431,7 +431,7 @@ SHARED_EXPORT void uDumpCrashInfo(LPEXCEPTION_POINTERS param)
 }
 
 //not really being utf8 here, all chars should be in 128 ascii range
-SHARED_EXPORT UINT uPrintCrashInfo(LPEXCEPTION_POINTERS param,const char * extra_info,char * outbase)
+UINT SHARED_EXPORT uPrintCrashInfo(LPEXCEPTION_POINTERS param,const char * extra_info,char * outbase)
 {
 	uDumpCrashInfo(param);
 	if (extra_info==0) extra_info = g_thread_call_stack;
@@ -554,22 +554,22 @@ static LONG WINAPI exceptfilter(LPEXCEPTION_POINTERS param)
 	return filterproc(param);//never called
 }
 
-SHARED_EXPORT void uPrintCrashInfo_Init(const char * name)//called only by exe on startup
+void SHARED_EXPORT uPrintCrashInfo_Init(const char * name)//called only by exe on startup
 {
 	version_string = name;
 	filterproc = SetUnhandledExceptionFilter(exceptfilter);
 }
 
-SHARED_EXPORT void uPrintCrashInfo_AddInfo(const char * p_info)
+void SHARED_EXPORT uPrintCrashInfo_AddInfo(const char * p_info)
 {
 	g_extra_info += "Additional info:\n";
 	g_extra_info += p_info;
 	g_extra_info += "\n";
 }
 
-SHARED_EXPORT void uPrintCrashInfo_SetDumpPath(const char * p_path)
+void SHARED_EXPORT uPrintCrashInfo_SetDumpPath(const char * p_path)
 {
-	g_dump_path = string_os_from_utf8(p_path ? p_path : "");
+	g_dump_path = pfc::stringcvt::string_os_from_utf8(p_path ? p_path : "");
 }
 
 static void callstack_add(const char * param)
@@ -599,4 +599,4 @@ uCallStackTracker::~uCallStackTracker()
 
 }
 
-extern "C" {SHARED_EXPORT const char * uGetCallStackPath() {return g_thread_call_stack;} }
+extern "C" {LPCSTR SHARED_EXPORT uGetCallStackPath() {return g_thread_call_stack;} }

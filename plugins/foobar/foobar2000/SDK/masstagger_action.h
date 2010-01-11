@@ -3,9 +3,6 @@
 
 class NOVTABLE masstagger_action : public service_base
 {
-protected:
-	masstagger_action() {}
-	~masstagger_action() {}
 public:
 	/**
 	 * Get name to display on list of available actions.
@@ -64,6 +61,14 @@ public:
 	virtual const GUID & get_guid()=0;
 
 	static const GUID class_guid;
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	masstagger_action() {}
+	~masstagger_action() {}
 };
 
 DECLARE_CLASS_GUID(masstagger_action,0x49da1f6c, 0x6744, 0x47f3, 0xbf, 0x93, 0x67, 0x1c, 0x37, 0x79, 0xff, 0xcd);

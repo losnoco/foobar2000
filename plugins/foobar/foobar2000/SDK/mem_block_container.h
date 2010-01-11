@@ -14,6 +14,10 @@ public:
 	inline void reset() {set_size(0);}
 
 	const mem_block_container & operator=(const mem_block_container & p_source) {copy(p_source);return *this;}
+
+protected:
+	mem_block_container() {}
+	~mem_block_container() {}
 };
 
 template<class t_container>

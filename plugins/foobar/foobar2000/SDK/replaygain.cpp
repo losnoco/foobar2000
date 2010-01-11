@@ -8,12 +8,12 @@ void t_replaygain_config::reset()
 	m_preamp_with_rg = 0;
 }
 
-double t_replaygain_config::query_scale(const file_info & p_info) const
+audio_sample t_replaygain_config::query_scale(const file_info & p_info) const
 {
-	const double peak_margin = 1.0;//used to be 0.999 but it must not trigger on lossless
+	const audio_sample peak_margin = 1.0;//used to be 0.999 but it must not trigger on lossless
 
-	double peak = peak_margin;
-	double gain = 0;
+	audio_sample peak = peak_margin;
+	audio_sample gain = 0;
 
 	bool have_rg_gain = false, have_rg_peak = false;
 
@@ -43,7 +43,7 @@ double t_replaygain_config::query_scale(const file_info & p_info) const
 
 	if (m_processing_mode == processing_mode_gain || m_processing_mode == processing_mode_gain_and_peak)
 	{
-		scale *= pow(10.0,gain / 20.0);
+		scale *= (audio_sample) pow(10.0,gain / 20.0);
 	}
 
 	if (m_processing_mode == processing_mode_peak || m_processing_mode == processing_mode_gain_and_peak)
@@ -78,4 +78,144 @@ audio_sample replaygain_manager::core_settings_query_scale(const metadb_handle_p
 	t_replaygain_config temp;
 	get_core_settings(temp);
 	return temp.query_scale(info);
+}
+
+//enum t_source_mode {source_mode_none,source_mode_track,source_mode_album};
+//enum t_processing_mode {processing_mode_none,processing_mode_gain,processing_mode_gain_and_peak,processing_mode_peak};
+
+class format_dbdelta
+{
+public:
+	format_dbdelta(double p_val);
+	operator const char*() const {return m_buffer;}
+private:
+	string_fixed_t<128> m_buffer;
+};
+
+format_dbdelta::format_dbdelta(double p_val)
+{
+	int val = (int)(p_val * 10);
+	uPrintf(m_buffer,"%s%u.%udB",val<0 ? "-" : val>0 ? "+" : "\xc2\xb1",abs(val)/10,abs(val)%10);
+}
+
+void t_replaygain_config::format_name(string_base & p_out) const
+{
+	switch(m_processing_mode)
+	{
+	case processing_mode_none:
+		p_out = "None.";
+		break;
+	case processing_mode_gain:
+		switch(m_source_mode)
+		{
+		case source_mode_none:
+			if (m_preamp_without_rg == 0) p_out = "None."; 
+			else p_out = string_formatter() << "Preamp : " << format_dbdelta(m_preamp_without_rg); 
+			break;
+		case source_mode_track:
+			{
+				string_formatter fmt;
+				fmt << "Apply track gain";
+				if (m_preamp_without_rg != 0 || m_preamp_with_rg != 0) fmt << ", with preamp";
+				fmt << ".";
+				p_out = fmt;
+			}
+			break;
+		case source_mode_album:
+			{
+				string_formatter fmt;
+				fmt << "Apply album gain";
+				if (m_preamp_without_rg != 0 || m_preamp_with_rg != 0) fmt << ", with preamp";
+				fmt << ".";
+				p_out = fmt;
+			}
+			break;
+		};
+		break;
+	case processing_mode_gain_and_peak:
+		switch(m_source_mode)
+		{
+		case source_mode_none:
+			if (m_preamp_without_rg >= 0) p_out = "None.";
+			else p_out = string_formatter() << "Preamp : " << format_dbdelta(m_preamp_without_rg);
+			break;
+		case source_mode_track:
+			{
+				string_formatter fmt;
+				fmt << "Apply track gain";
+				if (m_preamp_without_rg != 0 || m_preamp_with_rg != 0) fmt << ", with preamp";
+				fmt << ", prevent clipping according to track peak.";
+				p_out = fmt;
+			}
+			break;
+		case source_mode_album:
+			{
+				string_formatter fmt;
+				fmt << "Apply album gain";
+				if (m_preamp_without_rg != 0 || m_preamp_with_rg != 0) fmt << ", with preamp";
+				fmt << ", prevent clipping according to album peak.";
+				p_out = fmt;
+			}
+			break;
+		};
+		break;
+	case processing_mode_peak:
+		switch(m_source_mode)
+		{
+		case source_mode_none:
+			p_out = "None.";
+			break;
+		case source_mode_track:
+			p_out = "Prevent clipping according to track peak.";
+			break;
+		case source_mode_album:
+			p_out = "Prevent clipping according to album peak.";
+			break;
+		};
+		break;
+	}
+}
+
+bool t_replaygain_config::is_active() const
+{
+	switch(m_processing_mode)
+	{
+	case processing_mode_none:
+		return false;
+	case processing_mode_gain:
+		switch(m_source_mode)
+		{
+		case source_mode_none:
+			return m_preamp_without_rg != 0;
+		case source_mode_track:
+			return true;
+		case source_mode_album:
+			return true;
+		};
+		return false;
+	case processing_mode_gain_and_peak:
+		switch(m_source_mode)
+		{
+		case source_mode_none:
+			return m_preamp_without_rg < 0;
+		case source_mode_track:
+			return true;
+		case source_mode_album:
+			return true;
+		};
+		return false;
+	case processing_mode_peak:
+		switch(m_source_mode)
+		{
+		case source_mode_none:
+			return false;
+		case source_mode_track:
+			return true;
+		case source_mode_album:
+			return true;
+		};
+		return false;
+	default:
+		return false;
+	}
 }

@@ -39,6 +39,10 @@ namespace foobar2000_io
 		io_result_error_device_full,
 		//! Out of memory (malloc failure etc)
 		io_result_error_out_of_memory,
+		//! User error
+		io_result_error_user,
+		//! Bug in the code
+		io_result_error_bug_check,
 		//! User abort (see: abort_callback)
 		io_result_aborted,
 	};
@@ -56,6 +60,15 @@ namespace foobar2000_io
 	//! Helper function; converts win32 error code to t_io_result.
 	t_io_result io_error_from_win32(DWORD p_code);
 
+	class exception_io : public std::exception {
+	public:
+		exception_io(t_io_result p_code) : exception(io_result_get_message(p_code),0), m_code(p_code) {}
+		exception_io(const exception_io & p_src) {*this = p_src;}
+		t_io_result get_code() const {return m_code;}
+		static void g_test(t_io_result code) {if (io_result_failed(code)) throw exception_io(code);}
+	private:
+		t_io_result m_code;
+	};
 
 	//! Stores file stats (size and timestamp).
 	struct t_filestats
@@ -94,14 +107,14 @@ namespace foobar2000_io
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		t_io_result read_object(void * p_buffer,unsigned p_bytes,abort_callback & p_abort);
 
-		//! Helper function built around read(); reads specified amount of bytes from a stream; throws a t_io_result exception on failure and returns number of bytes read.
+		//! Helper function built around read(); reads specified amount of bytes from a stream; throws an exception_io exception on failure and returns number of bytes read.
 		//! @param p_buffer Pointer to buffer receiving data.
 		//! @param p_bytes Number of bytes to read.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		//! @returns Number of bytes read.
 		unsigned read_e(void * p_buffer,unsigned p_bytes,abort_callback & p_abort);
 
-		//! Helper function built around read_object(); reads specified amount of bytes from a stream; throws a t_io_result exception on failure or if EOF was hit before requested amount of data could be retrieved (io_result_error_data).
+		//! Helper function built around read_object(); reads specified amount of bytes from a stream; throws an exception_io exception on failure or if EOF was hit before requested amount of data could be retrieved (io_result_error_data).
 		//! @param p_buffer Pointer to buffer receiving data.
 		//! @param p_bytes Number of bytes to read.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
@@ -118,13 +131,13 @@ namespace foobar2000_io
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		t_io_result skip_object(t_uint64 p_bytes,abort_callback & p_abort);
 
-		//! Helper function built around skip(); throws a t_io_result exception on failure and returns number of bytes skipped.
+		//! Helper function built around skip(); throws an exception_io exception on failure and returns number of bytes skipped.
 		//! @param p_bytes Number of bytes to skip.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		//! @returns Number of bytes skipped.
 		t_uint64 skip_e(t_uint64 p_bytes,abort_callback & p_abort);
 
-		//! Helper function built around skip_object(); skips specified amount of bytes in the stream; throws a t_io_result exception on failure or if EOF was hit before requested amount of data could be skipped (io_result_error_data).
+		//! Helper function built around skip_object(); skips specified amount of bytes in the stream; throws an exception_io exception on failure or if EOF was hit before requested amount of data could be skipped (io_result_error_data).
 		//! @param p_bytes Number of bytes to skip.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		void skip_object_e(t_uint64 p_bytes,abort_callback & p_abort);
@@ -145,21 +158,32 @@ namespace foobar2000_io
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		template<typename T> inline t_io_result read_bendian_t(T& p_object,abort_callback & p_abort) {t_io_result ret = read_object_t(p_object,p_abort); if (io_result_succeeded(ret)) byte_order::order_be_to_native_t(p_object);return ret;}
 
-		//! Helper function template built around read_object_e; reads entire raw variable of any type (int, struct, etc) from the stream. Note: not byte order safe. This helper function throws a t_io_result exception on failure.
+		//! Helper function template built around read_object_e; reads entire raw variable of any type (int, struct, etc) from the stream. Note: not byte order safe. This helper function throws an exception_io exception on failure.
 		//! @param p_object Object of any type to read.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		template<typename T> inline void read_object_e_t(T& p_object,abort_callback & p_abort) {read_object_e(&p_object,sizeof(p_object),p_abort);}
 
-		//! Helper function template built around read_object_e_t; reads entire variable of any type (int, struct, etc) from the stream, using byte_order namespace functions to convert it from little endian byte order to host byte order. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_le_to_native_t for relevant types. This helper function throws a t_io_result exception on failure.
+		//! Helper function template built around read_object_e_t; reads entire variable of any type (int, struct, etc) from the stream, using byte_order namespace functions to convert it from little endian byte order to host byte order. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_le_to_native_t for relevant types. This helper function throws an exception_io exception on failure.
 		//! @param p_object Object of any type to read.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		template<typename T> inline void read_lendian_e_t(T& p_object,abort_callback & p_abort) {read_object_e_t(p_object,p_abort); byte_order::order_le_to_native_t(p_object); }
 
-		//! Helper function template built around read_object_e_t; reads entire variable of any type (int, struct, etc) from the stream, using byte_order namespace functions to convert it from big endian byte order to host byte order. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_be_to_native_t for relevant types. This helper function throws a t_io_result exception on failure.
+		//! Helper function template built around read_object_e_t; reads entire variable of any type (int, struct, etc) from the stream, using byte_order namespace functions to convert it from big endian byte order to host byte order. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_be_to_native_t for relevant types. This helper function throws an exception_io exception on failure.
 		//! @param p_object Object of any type to read.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		template<typename T> inline void read_bendian_e_t(T& p_object,abort_callback & p_abort) {read_object_e_t(p_object,p_abort); byte_order::order_be_to_native_t(p_object); }
 
+		//! Helper function; reads string (with 32-bit header indicating length in bytes followed by UTF-8 encoded data without null terminator).
+		t_io_result read_string(string_base & p_out,abort_callback & p_abort);
+
+		//! Helper function built around read_string(); throws an exception on failure.
+		void read_string_e(string_base & p_out,abort_callback & p_abort);
+
+		//! Helper function; alternate way of storing strings; assumes string takes space up to end of stream.
+		t_io_result read_string_raw(string_base & p_out,abort_callback & p_abort);
+		
+		//! Helper function built around read_string_raw(); throws an exception on failure.
+		void read_string_raw_e(string_base & p_out,abort_callback & p_abort);
 	};
 
 
@@ -183,14 +207,14 @@ namespace foobar2000_io
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		t_io_result write_object(const void * p_buffer,unsigned p_bytes,abort_callback & p_abort);
 
-		//! Helper built around write(); writes data to the stream and throws a t_io_result exception on failure.
+		//! Helper built around write(); writes data to the stream and throws an exception_io exception on failure.
 		//! @param p_buffer Pointer to buffer containing data to write.
 		//! @param p_bytes Number of bytes to write.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		//! @returns Number of bytes written.
 		unsigned write_e(const void * p_buffer,unsigned p_bytes,abort_callback & p_abort);
 
-		//! Helper built around write_object(); writes data to the stream and throws a t_io_result exception on failure or when less data than requested could be written.
+		//! Helper built around write_object(); writes data to the stream and throws an exception_io exception on failure or when less data than requested could be written.
 		//! @param p_buffer Pointer to buffer containing data to write.
 		//! @param p_bytes Number of bytes to write.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
@@ -211,28 +235,37 @@ namespace foobar2000_io
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		template<typename T> inline t_io_result write_bendian_t(const T & p_object,abort_callback & p_abort) {T temp = p_object; byte_order::order_native_to_be_t(temp);return write_object_t(temp,p_abort);}
 
-		//! Helper template built around write_object_e(); writes entire raw object of any type (int, struct, etc) to the stream and throws a t_io_result exception on failure. Note: not byte order safe.
+		//! Helper template built around write_object_e(); writes entire raw object of any type (int, struct, etc) to the stream and throws an exception_io exception on failure. Note: not byte order safe.
 		//! @param p_object Object to be written.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		template<typename T> inline void write_object_e_t(const T & p_object,abort_callback & p_abort) {write_object_e(&p_object,sizeof(p_object),p_abort);}
 
-		//! Helper template built around write_object_t(); writes entire raw object of any type (int, struct, etc) to the stream, using byte_order namespace functions to convert it to little endian byte order from host byte order; throws a t_io_result exception on failure. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_native_to_le_t for relevant types.
+		//! Helper template built around write_object_t(); writes entire raw object of any type (int, struct, etc) to the stream, using byte_order namespace functions to convert it to little endian byte order from host byte order; throws an exception_io exception on failure. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_native_to_le_t for relevant types.
 		//! @param p_object Object to be written.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		template<typename T> inline void write_lendian_e_t(const T & p_object,abort_callback & p_abort) {T temp = p_object; byte_order::order_native_to_le_t(temp);write_object_e_t(temp,p_abort);}
 
-		//! Helper template built around write_object_t(); writes entire raw object of any type (int, struct, etc) to the stream, using byte_order namespace functions to convert it to big endian byte order from host byte order; throws a t_io_result exception on failure. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_native_to_be_t for relevant types.
+		//! Helper template built around write_object_t(); writes entire raw object of any type (int, struct, etc) to the stream, using byte_order namespace functions to convert it to big endian byte order from host byte order; throws an exception_io exception on failure. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_native_to_be_t for relevant types.
 		//! @param p_object Object to be written.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		template<typename T> inline void write_bendian_e_t(const T & p_object,abort_callback & p_abort) {T temp = p_object; byte_order::order_native_to_be_t(temp);write_object_e_t(temp,p_abort);}
+
+		//! Helper function; writes string (with 32-bit header indicating length in bytes followed by UTF-8 encoded data without null terminator).
+		t_io_result write_string(const char * p_string,abort_callback & p_abort);
+
+		//! Helper function built around write_string(); throws an exception on failure.
+		void write_string_e(const char * p_string,abort_callback & p_abort);
+
+		//! Helper function; writes raw string to the stream, with no length info or null terminators.
+		t_io_result write_string_raw(const char * p_string,abort_callback & p_abort);
+
+		//! Helper function built around write_string_raw(); throws an exception on failure.
+		void write_string_raw_e(const char * p_string,abort_callback & p_abort);
 
 	};
 
 	class NOVTABLE file : public service_base, public stream_reader, public stream_writer
 	{
-	protected:
-		~file() {};
-		file() {};
 	public:
 		//! Retrieves size of the file.
 		//! @param p_size Receives file size on success; filesize_invalid if unknown (nonseekable stream etc).
@@ -297,6 +330,9 @@ namespace foobar2000_io
 		void reopen_e(abort_callback & p_abort);
 		void set_eof_e(abort_callback & p_abort);
 
+		t_io_result truncate(t_uint64 p_position,abort_callback & p_abort);
+		void truncate_e(t_uint64 p_position,abort_callback & p_abort);
+
 		//helper
 		static t_io_result g_transfer(stream_reader * src,stream_writer * dst,t_filesize bytes,t_filesize & transferred,abort_callback & p_abort);
 		static t_io_result g_transfer_object(stream_reader * src,stream_writer * dst,t_filesize bytes,abort_callback & p_abort);
@@ -306,15 +342,15 @@ namespace foobar2000_io
 		static t_io_result g_transfer_file(const service_ptr_t<file> & p_from,const service_ptr_t<file> & p_to,abort_callback & p_abort);
 
 		
-		virtual service_base * service_query(const GUID & guid)
-		{
-			if (guid == get_class_guid()) {service_add_ref();return this;}
-			else return service_base::service_query(guid);
-		}
-
 		static const GUID class_guid;
-		static inline const GUID & get_class_guid() {return class_guid;}
 
+		virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+			if (p_guid == class_guid) {p_out = this; return true;}
+			else return service_base::service_query(p_out,p_guid);
+		}
+	protected:
+		file() {}
+		~file() {}
 	};
 
 	class file_dynamicinfo : public file//for shoutcast metadata nonsense
@@ -325,16 +361,17 @@ namespace foobar2000_io
 
 		virtual bool is_dynamic_info_enabled()=0;//checks if currently open stream gets dynamic metadata
 
-		virtual bool get_dynamic_info(class file_info & p_out, bool & p_track_change)=0;//see input::get_dynamic_info
-
-		virtual service_base * service_query(const GUID & guid)
-		{
-			if (guid == get_class_guid()) {service_add_ref();return this;}
-			else return file::service_query(guid);
-		}
+		virtual bool get_dynamic_info(class file_info & p_out)=0;//see input::get_dynamic_info_track
 
 		static const GUID class_guid;
-		static inline const GUID & get_class_guid() {return class_guid;}//only for service_query
+
+		virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+			if (p_guid == class_guid) {p_out = this; return true;}
+			else return file::service_query(p_out,p_guid);
+		}
+	protected:
+		file_dynamicinfo() {}
+		~file_dynamicinfo() {}
 	};
 
 	class filesystem;
@@ -404,7 +441,8 @@ namespace foobar2000_io
 		static bool g_relative_path_create(const char * file_path,const char * playlist_path,string_base & out);
 		static bool g_relative_path_parse(const char * relative_path,const char * playlist_path,string_base & out);
 		
-		static t_io_result g_create_directory(const char * path,abort_callback &);
+		static t_io_result g_create_directory(const char * p_path,abort_callback & p_abort);
+		static void g_create_directory_e(const char * p_path,abort_callback & p_abort);
 
 		static FILE * streamio_open(const char * path,const char * flags); // if for some bloody reason you ever need stream io compatibility, use this, INSTEAD of calling fopen() on the path string you've got; will only work with file:// (and not with http://, unpack:// or whatever)
 
@@ -421,14 +459,15 @@ namespace foobar2000_io
 		static bool g_is_empty_directory(const char * path,abort_callback & p_abort);
 
 
-		virtual service_base * service_query(const GUID & guid)
-		{
-			if (guid == get_class_guid()) {service_add_ref();return this;}
-			else return service_base::service_query(guid);
-		}
-
 		static const GUID class_guid;
-		static inline const GUID & get_class_guid() {return class_guid;}
+
+		virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+			if (p_guid == class_guid) {p_out = this; return true;}
+			else return service_base::service_query(p_out,p_guid);
+		}
+	protected:
+		filesystem() {}
+		~filesystem() {}
 	};
 
 	class directory_callback_i : public directory_callback
@@ -468,17 +507,18 @@ namespace foobar2000_io
 	public:
 		virtual t_io_result archive_list(const char * p_path,const service_ptr_t<file> & p_reader,archive_callback & p_callback,bool p_want_readers) = 0;
 		
-		virtual service_base * service_query(const GUID & guid)
-		{
-			if (guid == get_class_guid()) {service_add_ref();return this;}
-			else return filesystem::service_query(guid);
-		}
-		
 		static const GUID class_guid;
-		static inline const GUID & get_class_guid() {return class_guid;}
+
+		virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+			if (p_guid == class_guid) {p_out = this; return true;}
+			else return filesystem::service_query(p_out,p_guid);
+		}
+	protected:
+		archive() {}
+		~archive() {}
 	};
 
-	class NOVTABLE archive_i : public archive // derive from this
+	class NOVTABLE archive_impl : public archive // derive from this
 	{
 	private:
 		//do not override these
@@ -521,12 +561,23 @@ namespace foobar2000_io
 
 	t_filetimestamp filetimestamp_from_system_timer();
 
+	//! Warning: this formats according to system timezone settings, created strings should be used for display only, never for storage.
+	class format_filetimestamp {
+	public:
+		format_filetimestamp(t_filetimestamp p_timestamp);
+		operator const char*() const {return m_buffer;}
+		const char * get_ptr() const {return m_buffer;}
+	private:
+		string_fixed_t<32> m_buffer;
+	};
 }
+
 
 using namespace foobar2000_io;
 
-inline string_formatter & operator<<(string_formatter & p_fmt,t_io_result p_code) {return p_fmt << io_result_get_message(p_code);}
+//inline string_base & operator<<(string_base & p_fmt,t_filetimestamp p_timestamp) {return p_fmt << format_timestamp(p_timestamp);}
+inline string_base & operator<<(string_base & p_fmt,t_io_result p_code) {return p_fmt << io_result_get_message(p_code);}
 
-#include "reader_helper.h"
+#include "filesystem_helper.h"
 
 #endif//_FOOBAR2000_SDK_FILESYSTEM_H_

@@ -1,6 +1,11 @@
 #ifndef ___PFC_H___
 #define ___PFC_H___
 
+#if !defined(_WINDOWS) && (defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64) || defined(_WIN32_WCE))
+#define _WINDOWS
+#endif
+
+
 #if 0
 #ifdef PFC_DLL_EXPORTS
 #define PFC_DLL_EXPORT __declspec(dllexport)
@@ -15,9 +20,6 @@
 #pragma warning(disable:4996)
 #ifndef STRICT
 #define STRICT
-#endif
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0400
 #endif
 #include <windows.h>
 #else
@@ -76,6 +78,9 @@ typedef t_uint8 BYTE;
 
 #define INDEX_INVALID ((unsigned)(-1))
 
+#include <exception>
+#include <new>
+
 #include <malloc.h>
 
 #include <tchar.h>
@@ -109,11 +114,17 @@ typedef t_uint8 BYTE;
 #endif
 
 const unsigned infinite = (unsigned)(-1);
-const unsigned long infinite32 = (unsigned long)(-1);
-const unsigned short infinite16 = (unsigned short)(-1);
+const t_uint16 infinite16 = (t_uint16)(-1);
+const t_uint32 infinite32 = (t_uint32)(-1);
 const t_uint64 infinite64 = (t_uint64)(-1);
 
 #define tabsize(x) (sizeof(x)/sizeof(*x))
+
+template<typename t_ret,typename t_param> 
+inline t_ret __safe_cast(t_param p_param) {
+	t_ret temp ( p_param );
+	return temp;
+}
 
 #include "primitives.h"
 #include "array.h"
@@ -122,7 +133,6 @@ const t_uint64 infinite64 = (t_uint64)(-1);
 #include "bsearch.h"
 #include "sort.h"
 #include "mem_block.h"
-#include "array_byptr.h"
 #include "list.h"
 #include "ptr_list.h"
 #include "string.h"
@@ -130,11 +140,10 @@ const t_uint64 infinite64 = (t_uint64)(-1);
 #include "string_list.h"
 #include "profiler.h"
 #include "guid.h"
-#include "cfg_var.h"
-#include "cfg_memblock.h"
 #include "byte_order_helper.h"
 #include "other.h"
 #include "chainlist.h"
 #include "ref_counter.h"
 #include "com_ptr_t.h"
+#include "string_conv.h"
 #endif //___PFC_H___

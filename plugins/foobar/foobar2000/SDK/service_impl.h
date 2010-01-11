@@ -21,24 +21,24 @@ public:
 	private:	\
 		service_reference_counter m_reference_counter;	\
 	public:	\
-		virtual int service_release() {long ret = m_reference_counter.decrement(); if (ret == 0) delete this; return ret;} \
-		virtual int service_add_ref() {return m_reference_counter.increment();}
+		virtual int FB2KAPI service_release() {long ret = m_reference_counter.decrement(); if (ret == 0) delete this; return ret;} \
+		virtual int FB2KAPI service_add_ref() {return m_reference_counter.increment();}
 
-#ifdef _DEBUG
+#if 0 //defined(_DEBUG)
 
 #define __implement_service_base_single \
 	private:	\
 		service_reference_counter m_reference_counter;	\
 	public:	\
-		virtual int service_release() {long ret = m_reference_counter.decrement(); assert(ret >= 0); return ret;} \
-		virtual int service_add_ref() {return m_reference_counter.increment();}
+		virtual int FB2KAPI service_release() {long ret = m_reference_counter.decrement(); assert(ret >= 0); return ret;} \
+		virtual int FB2KAPI service_add_ref() {return m_reference_counter.increment();}
 
 #else
 
 #define __implement_service_base_single \
 	public:	\
-		virtual int service_release() {return 1;}	\
-		virtual int service_add_ref() {return 1;}
+		virtual int FB2KAPI service_release() {return 1;}	\
+		virtual int FB2KAPI service_add_ref() {return 1;}
 #endif
 
 template<class T>

@@ -16,39 +16,38 @@ protected:
 	~string_base() {}
 public:
 	virtual const char * get_ptr() const = 0;
-	virtual void add_string(const char * ptr,unsigned len=-1)=0;//stops adding new chars if encounters null before len
-	virtual void set_string(const char * ptr,unsigned len=-1) {reset();add_string(ptr,len);}
+	virtual bool add_string(const char * p_string,unsigned p_length = infinite) = 0;
+	virtual bool set_string(const char * p_string,unsigned p_length = infinite) {reset();return add_string(p_string,p_length);}
 	virtual void truncate(unsigned len)=0;
-	virtual unsigned length() const {return strlen(get_ptr());}
+	virtual unsigned get_length() const {return strlen(get_ptr());}
+	virtual char * lock_buffer(unsigned p_requested_length) = 0;
+	virtual void unlock_buffer() = 0;
 
+	void add_string_e(const char * p_string,unsigned p_length = infinite);
+	void set_string_e(const char * p_string,unsigned p_length = infinite);
+
+	//! For compatibility with old conventions.
+	inline unsigned length() const {return get_length();}
 	
 	inline void reset() {truncate(0);}
 	
 	inline void add_byte(char c) {add_string(&c,1);}
 	inline bool is_empty() const {return *get_ptr()==0;}
 	
-	void add_char(unsigned c);//adds unicode char to the string
+	
 	void skip_trailing_char(unsigned c = ' ');
 
 	inline void add_chars(unsigned c,unsigned count) {for(;count;count--) add_char(c);}
 
-	
-	void add_int(t_int64 val,unsigned base = 10);
-	void add_uint(t_uint64 val,unsigned base = 10);
-	void add_float(double val,unsigned digits);
+	bool add_char(unsigned c);//adds unicode char to the string
+	bool add_int(t_int64 val,unsigned base = 10);
+	bool add_uint(t_uint64 val,unsigned base = 10);
+	bool add_float(double val,unsigned digits);
 
-/*	void add_string_lower(const char * src,unsigned len = -1);
-	void add_string_upper(const char * src,unsigned len = -1);
-	inline void set_string_lower(const char * src,unsigned len = -1) {reset();add_string_lower(src,len);}
-	inline void set_string_upper(const char * src,unsigned len = -1) {reset();add_string_upper(src,len);}
-
-	void to_lower();
-	void to_upper();
-*/
-	void add_string_ansi(const char * src,unsigned len = -1); //converts from ansi to utf8
-	void set_string_ansi(const char * src,unsigned len = -1) {reset();add_string_ansi(src,len);}
-	void add_string_utf16(const WCHAR * src,unsigned len = -1);//converts from utf16 (widechar) to utf8
-	void set_string_utf16(const WCHAR * src,unsigned len = -1) {reset();add_string_utf16(src,len);}
+	void add_char_e(unsigned c) {if (!add_char(c)) throw std::bad_alloc();}
+	void add_int_e(t_int64 val,unsigned base = 10) {if (!add_int(val,base)) throw std::bad_alloc();}
+	void add_uint_e(t_uint64 val,unsigned base = 10) {if (!add_uint(val,base)) throw std::bad_alloc();}
+	void add_float_e(double val,unsigned digits) {if (!add_float(val,digits)) throw std::bad_alloc();}
 
 	bool is_valid_utf8() {return ::is_valid_utf8(get_ptr());}
 
@@ -56,10 +55,10 @@ public:
 
 
 
-	inline const string_base & operator= (const char * src) {set_string(src);return *this;}
-	inline const string_base & operator+= (const char * src) {add_string(src);return *this;}
-	inline const string_base & operator= (const string_base & src) {set_string(src);return *this;}
-	inline const string_base & operator+= (const string_base & src) {add_string(src);return *this;}
+	inline const string_base & operator= (const char * src) {set_string_e(src);return *this;}
+	inline const string_base & operator+= (const char * src) {add_string_e(src);return *this;}
+	inline const string_base & operator= (const string_base & src) {set_string_e(src);return *this;}
+	inline const string_base & operator+= (const string_base & src) {add_string_e(src);return *this;}
 
 	inline operator const char * () const {return get_ptr();}
 };
@@ -70,49 +69,50 @@ protected:
 	mem_block_t<char> data;
 	unsigned used;
 
-	inline void makespace(unsigned s)
+	inline bool makespace(unsigned s)
 	{
 		unsigned old_size = data.get_size();
 		if (old_size < s)
-			data.set_size(s+16);
+			return data.set_size(s+16);
 		else if (old_size > s + 32)
-			data.set_size(s);
+			return data.set_size(s);
+		else
+			return true;
 	}
 
 public:
-	inline const string8 & operator= (const char * src) {set_string(src);return *this;}
-	inline const string8 & operator+= (const char * src) {add_string(src);return *this;}
-	inline const string8 & operator= (const string_base & src) {set_string(src);return *this;}
-	inline const string8 & operator+= (const string_base & src) {add_string(src);return *this;}
-	inline const string8 & operator= (const string8 & src) {set_string(src);return *this;}
-	inline const string8 & operator+= (const string8 & src) {add_string(src);return *this;}
+	inline const string8 & operator= (const char * src) {set_string_e(src);return *this;}
+	inline const string8 & operator+= (const char * src) {add_string_e(src);return *this;}
+	inline const string8 & operator= (const string_base & src) {set_string_e(src);return *this;}
+	inline const string8 & operator+= (const string_base & src) {add_string_e(src);return *this;}
+	inline const string8 & operator= (const string8 & src) {set_string_e(src);return *this;}
+	inline const string8 & operator+= (const string8 & src) {add_string_e(src);return *this;}
 
 	inline operator const char * () const {return get_ptr();}
 
 	inline string8() : used(0) {}
-	inline string8(const char * src) : used(0) {set_string(src);}
-	inline string8(const char * src,unsigned num) : used(0) {set_string(src,num);}
-	inline string8(const string8 & src) : used(0) {set_string(src);}
-	inline string8(const string_base & src) : used(0) {set_string(src);}
+	inline string8(const char * p_string) : used(0) {set_string_e(p_string);}
+	inline string8(const char * p_string,unsigned p_length) : used(0) {set_string_e(p_string,p_length);}
+	inline string8(const string8 & p_string) : used(0) {set_string_e(p_string);}
+	inline string8(const string_base & p_string) : used(0) {set_string_e(p_string);}
 
-	inline void set_mem_logic(mem_block::mem_logic_t v) {data.set_mem_logic(v);}
+	inline void set_mem_logic(mem_block::t_mem_logic v) {data.set_mem_logic(v);}
 	inline int get_mem_logic() const {return data.get_mem_logic();}
 	void prealloc(unsigned s) {s++;if (s>used) makespace(s);}
 
-	const char * get_ptr() const
-	{
+	const char * get_ptr() const {
 		return used > 0 ? data.get_ptr() : "";
 	}
 
-	virtual void add_string(const char * ptr,unsigned len = -1);
-	virtual void set_string(const char * ptr,unsigned len = -1);
+	bool add_string(const char * p_string,unsigned p_length = infinite);
+	bool set_string(const char * p_string,unsigned p_length = infinite);
 
-	virtual void truncate(unsigned len)
+	void truncate(unsigned len)
 	{
 		if (used>len) {used=len;data[len]=0;makespace(used+1);}
 	}
 
-	virtual unsigned length() const {return used;}
+	unsigned get_length() const {return used;}
 
 
 	void set_char(unsigned offset,char c);
@@ -120,8 +120,9 @@ public:
 	int find_last(char c,int start = -1);
 	int find_first(const char * str,int start = 0);
 	int find_last(const char * str,int start = -1);
+	unsigned replace_nontext_chars(char p_replace = '_');
 	unsigned replace_char(unsigned c1,unsigned c2,unsigned start = 0);
-	unsigned replace_byte(char c1,char c2);
+	unsigned replace_byte(char c1,char c2,unsigned start = 0);
 	static unsigned g_scan_filename(const char * ptr);
 	unsigned scan_filename();
 	void fix_filename_chars(char def = '_',char leave=0);//replace "bad" characters, leave can be used to keep eg. path separators
@@ -135,20 +136,20 @@ public:
 	bool limit_length(unsigned length_in_chars,const char * append = " (...)");
 
 	//for string_buffer class
-	inline char * buffer_get(unsigned n)
+	char * lock_buffer(unsigned n)
 	{
 		makespace(n+1);
 		data.zeromemory();
 		return data;
 	}
 
-	inline void buffer_done()
+	void unlock_buffer()
 	{
 		used=strlen(data);
 		makespace(used+1);
 	}
 
-	inline void force_reset() {used=0;data.force_reset();}
+	void force_reset() {used=0;data.force_reset();}
 
 	inline static void g_swap(string8 & p_item1,string8 & p_item2)
 	{
@@ -168,12 +169,12 @@ public:
 class string_buffer
 {
 private:
-	string8 * owner;
-	char * data;
+	string_base & m_owner;
+	char * m_buffer;
 public:
-	explicit string_buffer(string8 & s,unsigned siz) {owner=&s;data=s.buffer_get(siz);}
-	~string_buffer() {owner->buffer_done();}
-	operator char* () {return data;}
+	explicit string_buffer(string_base & p_string,unsigned p_requeted_length) : m_owner(p_string) {m_buffer = m_owner.lock_buffer(p_requeted_length);}
+	~string_buffer() {m_owner.unlock_buffer();}
+	operator char* () {return m_buffer;}
 };
 
 class string_printf : public string8_fastalloc
@@ -236,153 +237,13 @@ unsigned utf8_chars_to_bytes(const char * string,unsigned count);
 
 unsigned strcpy_utf8_truncate(const char * src,char * out,unsigned maxbytes);
 
-unsigned utf8_decode_char(const char * src,unsigned * out,unsigned src_bytes = -1);//returns length in bytes
+unsigned utf8_decode_char(const char * src,unsigned * out,unsigned src_bytes = infinite);//returns length in bytes
 unsigned utf8_encode_char(unsigned c,char * out);//returns used length in bytes, max 6
-unsigned utf16_decode_char(const WCHAR * src,unsigned * out);
+unsigned utf16_decode_char(const wchar_t * p_source,unsigned * p_out,unsigned p_source_length = infinite);
 unsigned utf16_encode_char(unsigned c,WCHAR * out);
 
-inline unsigned estimate_utf8_to_utf16(const char * src,unsigned len = infinite) {return strlen_max(src,len) + 1;}//estimates amount of output buffer space that will be sufficient for conversion, including null
-inline unsigned estimate_utf16_to_utf8(const WCHAR * src,unsigned len = infinite) {return wcslen_max(src,len) * 3 + 1;}
-
-inline unsigned estimate_utf16_to_ansi(const WCHAR * src,unsigned len = infinite) {return wcslen_max(src,len) * 2 + 1;}
-inline unsigned estimate_ansi_to_utf16(const char * src,unsigned len = infinite) {return strlen_max(src,len) + 1;}
-
-inline unsigned estimate_utf8_to_ansi(const char * src,unsigned len = infinite) {return strlen_max(src,len) + 1;}
-inline unsigned estimate_ansi_to_utf8(const char * src,unsigned len = infinite) {return strlen_max(src,len) * 3 + 1;}
-
-unsigned convert_utf8_to_utf16(const char * src,WCHAR * dst,unsigned len = -1);//len - amount of bytes/wchars to convert (will not go past null terminator)
-unsigned convert_utf16_to_utf8(const WCHAR * src,char * dst,unsigned len = -1);
-unsigned convert_utf8_to_ansi(const char * src,char * dst,unsigned len = -1);
-unsigned convert_ansi_to_utf8(const char * src,char * dst,unsigned len = -1);
-unsigned convert_ansi_to_utf16(const char * src,WCHAR * dst,unsigned len = -1);
-unsigned convert_utf16_to_ansi(const WCHAR * src,char * dst,unsigned len = -1);
 
 unsigned strstr_ex(const char * p_string,unsigned p_string_len,const char * p_substring,unsigned p_substring_len);
-
-template<class T>
-class string_convert_base
-{
-protected:
-	T * ptr;
-	inline void alloc(unsigned size) {ptr = mem_ops<T>::alloc(size);}
-	inline ~string_convert_base() {mem_ops<T>::free(ptr);}
-public:
-	inline operator const T * () const {return ptr;}
-	inline const T * get_ptr() const {return ptr;}
-	
-	inline unsigned length()
-	{
-		unsigned ret = 0;
-		const T* p = ptr;
-		while(*p) {ret++;p++;}
-		return ret;
-	}
-};
-
-class string_utf8_from_utf16 : public string_convert_base<char>
-{
-public:
-	explicit string_utf8_from_utf16(const WCHAR * src,unsigned len = -1)
-	{
-		len = wcslen_max(src,len);
-		alloc(estimate_utf16_to_utf8(src,len));
-		convert_utf16_to_utf8(src,ptr,len);
-	}
-};
-
-class string_utf16_from_utf8 : public string_convert_base<WCHAR>
-{
-public:
-	explicit string_utf16_from_utf8(const char * src,unsigned len = -1)
-	{
-		len = strlen_max(src,len);
-		alloc(estimate_utf8_to_utf16(src,len));
-		convert_utf8_to_utf16(src,ptr,len);
-	}
-};
-
-class string_ansi_from_utf16 : public string_convert_base<char>
-{
-public:
-	explicit string_ansi_from_utf16(const WCHAR * src,unsigned len = -1)
-	{
-		len = wcslen_max(src,len);
-		alloc(estimate_utf16_to_ansi(src,len));
-		convert_utf16_to_ansi(src,ptr,len);
-	}
-};
-
-class string_utf16_from_ansi : public string_convert_base<WCHAR>
-{
-public:
-	explicit string_utf16_from_ansi(const char * src,unsigned len = -1)
-	{
-		len = strlen_max(src,len);
-		alloc(estimate_ansi_to_utf16(src,len));
-		convert_ansi_to_utf16(src,ptr,len);
-	}
-};
-
-class string_utf8_from_ansi : public string_convert_base<char>
-{
-public:
-	explicit string_utf8_from_ansi(const char * src,unsigned len = -1)
-	{
-		len = strlen_max(src,len);
-		alloc(estimate_ansi_to_utf8(src,len));
-		convert_ansi_to_utf8(src,ptr,len);
-	}
-};
-
-class string_ansi_from_utf8 : public string_convert_base<char>
-{
-public:
-	explicit string_ansi_from_utf8(const char * src,unsigned len = -1)
-	{
-		len = strlen_max(src,len);
-		alloc(estimate_utf8_to_ansi(src,len));
-		convert_utf8_to_ansi(src,ptr,len);
-	}
-};
-
-class string_ascii_from_utf8 : public string_convert_base<char>
-{
-public:
-	explicit string_ascii_from_utf8(const char * src,unsigned len = -1)
-	{
-		len = strlen_max(src,len);
-		alloc(len+1);
-		convert_to_lower_ascii(src,len,ptr,'?');
-	}
-};
-
-#define string_wide_from_utf8 string_utf16_from_utf8
-#define string_utf8_from_wide string_utf8_from_utf16
-#define string_wide_from_ansi string_utf16_from_ansi
-#define string_ansi_from_wide string_ansi_from_utf16
-
-#ifdef UNICODE
-#define string_os_from_utf8 string_wide_from_utf8
-#define string_utf8_from_os string_utf8_from_wide
-#define _TX(X) L##X
-#define estimate_utf8_to_os estimate_utf8_to_utf16
-#define estimate_os_to_utf8 estimate_utf16_to_utf8
-#define convert_utf8_to_os convert_utf8_to_utf16
-#define convert_os_to_utf8 convert_utf16_to_utf8
-#define add_string_os add_string_utf16
-#define set_string_os set_string_utf16
-#else
-#define string_os_from_utf8 string_ansi_from_utf8
-#define string_utf8_from_os string_utf8_from_ansi
-#define _TX(X) X
-#define estimate_utf8_to_os estimate_utf8_to_ansi
-#define estimate_os_to_utf8 estimate_ansi_to_utf8
-#define convert_utf8_to_os convert_utf8_to_ansi
-#define convert_os_to_utf8 convert_ansi_to_utf8
-#define add_string_os add_string_ansi
-#define set_string_os set_string_ansi
-#endif
-
 
 int strcmp_partial(const char * s1,const char * s2);
 unsigned skip_utf8_chars(const char * ptr,unsigned count);
@@ -465,7 +326,8 @@ public:
 
 	inline bool is_empty() const {return !ptr || !*ptr;}
 
-	inline unsigned length() const {return t_strlen(get_ptr());}
+	inline unsigned get_length() const {return t_strlen(get_ptr());}
+	inline unsigned length() const {return get_length();}
 
 	void add_string(const T * param,unsigned len = -1)
 	{
@@ -657,6 +519,7 @@ private:
 	char m_buffer[64];
 };
 
+
 class format_uint
 {
 public:
@@ -680,18 +543,7 @@ private:
 };
 
 
-class string_formatter : public string8_fastalloc
-{
-public:
-	inline string_formatter() {}
-	inline string_formatter(const string_formatter & p_source) {*this = p_source;}
-
-	inline const string_formatter & operator=(const string_formatter & p_source) {set_string(p_source); return *this;}
-	inline const string_formatter & operator=(const string_base & p_source) {set_string(p_source); return *this;}
-	inline const string_formatter & operator=(const char * p_source) {set_string(p_source); return *this;}
-
-	inline operator const char * () const {return get_ptr();}
-};
+typedef string8_fastalloc string_formatter;
 
 class format_hexdump
 {
@@ -705,12 +557,24 @@ private:
 	string_formatter m_formatter;
 };
 
-inline string_formatter & operator<<(string_formatter & p_fmt,const char * p_source) {p_fmt.add_string(p_source); return p_fmt;}
-inline string_formatter & operator<<(string_formatter & p_fmt,int p_val) {p_fmt.add_int(p_val); return p_fmt;}
-inline string_formatter & operator<<(string_formatter & p_fmt,unsigned p_val) {p_fmt.add_uint(p_val); return p_fmt;}
-inline string_formatter & operator<<(string_formatter & p_fmt,t_int64 p_val) {p_fmt.add_int(p_val); return p_fmt;}
-inline string_formatter & operator<<(string_formatter & p_fmt,t_uint64 p_val) {p_fmt.add_uint(p_val); return p_fmt;}
-inline string_formatter & operator<<(string_formatter & p_fmt,double p_val) {return p_fmt << format_float(p_val,0,7);}
+class format_fixedpoint
+{
+public:
+	format_fixedpoint(t_int64 p_val,unsigned p_point);
+	format_fixedpoint(const format_fixedpoint & p_source) {*this = p_source;}
+	inline const char * get_ptr() const {return m_buffer;}
+	inline operator const char*() const {return m_buffer;}
+private:
+	string_formatter m_buffer;
+};
 
+inline string_base & operator<<(string_base & p_fmt,const char * p_source) {p_fmt.add_string_e(p_source); return p_fmt;}
+inline string_base & operator<<(string_base & p_fmt,int p_val) {p_fmt.add_int_e(p_val); return p_fmt;}
+inline string_base & operator<<(string_base & p_fmt,unsigned p_val) {p_fmt.add_uint_e(p_val); return p_fmt;}
+inline string_base & operator<<(string_base & p_fmt,t_int64 p_val) {p_fmt.add_int_e(p_val); return p_fmt;}
+inline string_base & operator<<(string_base & p_fmt,t_uint64 p_val) {p_fmt.add_uint_e(p_val); return p_fmt;}
+inline string_base & operator<<(string_base & p_fmt,double p_val) {return p_fmt << format_float(p_val,0,7);}
+
+inline string_base & operator<<(string_base & p_fmt,std::exception const & p_exception) {return p_fmt << p_exception.what();}
 
 #endif //_PFC_STRING_H_

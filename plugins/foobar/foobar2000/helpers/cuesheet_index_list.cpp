@@ -31,7 +31,7 @@ static bool parse_value(const char * p_name,double & p_out)
 	if (p_name == NULL) return false;
 	try {
 		p_out = cuesheet_parse_index_time_e(p_name,strlen(p_name));
-	} catch(pfc::exception_text const &) {return false;}
+	} catch(std::exception const &) {return false;}
 	return true;
 }
 
@@ -56,7 +56,7 @@ void t_cuesheet_index_list::from_infos(file_info const & p_in,double p_base)
 
 cuesheet_format_index_time::cuesheet_format_index_time(double p_time)
 {
-	t_uint64 ticks = dsp_util::duration_samples_from_time(p_time,75);
+	t_uint64 ticks = audio_math::time_to_samples(p_time,75);
 	t_uint64 seconds = ticks / 75; ticks %= 75;
 	t_uint64 minutes = seconds / 60; seconds %= 60;
 	m_buffer << format_uint(minutes,2) << ":" << format_uint(seconds,2) << ":" << format_uint(ticks,2);
@@ -76,10 +76,10 @@ unsigned cuesheet_parse_index_time_ticks_e(const char * p_string,unsigned p_leng
 	{
 		if (p_string[ptr] == ':')
 		{
-			if (splitptr >= 2) throw pfc::exception_text("invalid INDEX time syntax");
+			if (splitptr >= 2) throw std::exception("invalid INDEX time syntax",0);
 			splitmarks[splitptr++] = ptr;
 		}
-		else if (!is_numeric(p_string[ptr])) throw pfc::exception_text("invalid INDEX time syntax");
+		else if (!is_numeric(p_string[ptr])) throw std::exception("invalid INDEX time syntax",0);
 	}
 	
 	unsigned minutes_base = 0, minutes_length = 0, seconds_base = 0, seconds_length = 0, frames_base = 0, frames_length = 0;

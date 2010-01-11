@@ -11,20 +11,22 @@ private:
 	static cfg_var * list;
 	cfg_var * next;
 
-	cfg_var(const cfg_var& ) {assert(0);}
-	void operator=(const cfg_var& ) {assert(0);}
+	cfg_var(const cfg_var& ) {pfc::crash();}
+	const cfg_var & operator=(const cfg_var& ) {pfc::crash();return *this;}
 
-public:
-
+protected:
 	explicit inline cfg_var(const GUID & p_guid) : m_guid(p_guid) {next=list;list=this;};
+	~cfg_var() {}
+public:
 	
 	virtual t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort) = 0;
-	virtual t_io_result set_data_raw(stream_reader * p_stream,abort_callback & p_abort) = 0;
+	virtual t_io_result set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort) = 0;
 
 	inline const GUID & get_guid() const {return m_guid;}
 
 	static t_io_result config_read_file(stream_reader * p_stream,abort_callback & p_abort);
 	static t_io_result config_write_file(stream_writer * p_stream,abort_callback & p_abort);
+
 };
 
 template<typename t_inttype>
@@ -34,7 +36,7 @@ private:
 	t_inttype m_val;
 protected:
 	t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort) {return p_stream->write_lendian_t(m_val,p_abort);}
-	t_io_result set_data_raw(stream_reader * p_stream,abort_callback & p_abort)
+	t_io_result set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort)
 	{
 		t_inttype temp;
 		t_io_result status;
@@ -63,7 +65,7 @@ class cfg_string : public cfg_var, public string8
 {
 protected:
 	t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort);
-	t_io_result set_data_raw(stream_reader * p_stream,abort_callback & p_abort);
+	t_io_result set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort);
 
 public:
 	explicit inline cfg_string(const GUID & p_guid,const char * p_val) : cfg_var(p_guid), string8(p_val) {}
@@ -84,7 +86,7 @@ private:
 protected:
 
 	t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort) {return p_stream->write_object(&m_val,sizeof(m_val),p_abort);}
-	t_io_result set_data_raw(stream_reader * p_stream,abort_callback & p_abort)
+	t_io_result set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort)
 	{
 		t_struct temp;
 		t_io_result status;

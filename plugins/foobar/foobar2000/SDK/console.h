@@ -16,10 +16,9 @@ namespace console
     void printf(const char*,...);
 	void printfv(const char*,va_list p_arglist);
 
-	class formatter : public string_formatter
-	{
+	class formatter : public string8_fastalloc {
 	public:
-		~formatter() {if (!is_empty())console::print(get_ptr());}
+		~formatter() {if (!is_empty()) console::print(get_ptr());}
 	};
 };
 
@@ -30,13 +29,14 @@ public:
 	virtual void print(const char * p_message,unsigned p_message_length) = 0;
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
+protected:
+	console_receiver() {}
+	~console_receiver() {}
 };
 
 #endif

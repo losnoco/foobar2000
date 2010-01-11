@@ -21,7 +21,7 @@ namespace text_file_loader
 		}
 		else
 		{
-			string_ansi_from_utf8 bah(p_string);
+			pfc::stringcvt::string_ansi_from_utf8 bah(p_string);
 			status = p_file->write_object(bah,bah.length(),p_abort);
 			if (io_result_failed(status)) return status;
 		}
@@ -54,7 +54,7 @@ namespace text_file_loader
 			if (io_result_failed(status)) return status;
 			if (done != 3)
 			{
-				if (done > 0) p_out.add_string_ansi(temp,done);
+				if (done > 0) p_out = pfc::stringcvt::string_utf8_from_ansi(temp,done);
 				return io_result_success;
 			}
 			if (!memcmp(utf8_header,temp,3)) is_utf8 = true;
@@ -76,7 +76,9 @@ namespace text_file_loader
 
 			if (!is_utf8)
 			{
-				p_out.add_string_ansi(ansitemp);
+				pfc::stringcvt::string_utf8_from_ansi cvt;
+				if (!cvt.convert(ansitemp)) return io_result_error_out_of_memory;
+				p_out = cvt;
 			}
 
 			return io_result_success;
@@ -91,7 +93,12 @@ namespace text_file_loader
 			if (io_result_failed(status)) return status;
 			asdf[size]=0;
 			if (size>3 && !memcmp(utf8_header,asdf,3)) {is_utf8 = true; p_out.add_string(asdf+3); }
-			else {is_utf8 = false; p_out.add_string_ansi(asdf); }
+			else {
+				is_utf8 = false;
+				pfc::stringcvt::string_utf8_from_ansi cvt;
+				if (!cvt.convert(asdf)) return io_result_error_out_of_memory;
+				p_out = cvt;
+			}
 			return io_result_success;
 		}
 	}

@@ -3,21 +3,30 @@
 
 class NOVTABLE unpacker : public service_base
 {
-protected:
-	//override this
-	virtual t_io_result open(service_ptr_t<file> & p_out,const service_ptr_t<file> & p_source,abort_callback & p_abort)=0;
 public:
-	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
+	//! Attempts to open specified file for unpacking, creates interface to virtual file with uncompressed data on success.
+	//! @param p_out Receives interface to virtual file with uncompressed data on success.
+	//! @param p_source Source file to process.
+	//! @param p_abort abort_callback object signaling user aborting the operation.
+	//! @returns One of t_io_result codes. When examined file doesn't appear to be one of formats supported by this unpacker implementation, return value is io_result_error_data.
+	virtual t_io_result open(service_ptr_t<file> & p_out,const service_ptr_t<file> & p_source,abort_callback & p_abort) = 0;
 
+	//! Static helper querying existing unpacker implementations until one that successfully opens specified file is found. Attempts to open specified file for unpacking, creates interface to virtual file with uncompressed data on success.
+	//! @param p_out Receives interface to virtual file with uncompressed data on success.
+	//! @param p_source Source file to process.
+	//! @param p_abort abort_callback object signaling user aborting the operation.
+	//! @returns One of t_io_result codes. When examined file doesn't appear to be one of formats supported by registered unpacker implementations, return value is io_result_error_data.
 	static t_io_result g_open(service_ptr_t<file> & p_out,const service_ptr_t<file> & p_source,abort_callback & p_abort);
-};
 
-/*
-usage:
-you have a reader to an zip/rar/gzip/whatever archive containing just a single file you want to read, eg. a module
-do unpacker::g_open() on that reader
-returns 0 on failure (not a known archive or cant read it) or pointer to a new reader reading contents of that archive on success
-*/
+	static const GUID class_guid;
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	unpacker() {}
+	~unpacker() {}
+};
 
 #endif

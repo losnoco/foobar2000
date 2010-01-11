@@ -33,7 +33,7 @@ static UINT char_convert_win9x(UINT param,bool b_upper)
 
 #endif
 
-SHARED_EXPORT UINT uCharLower(UINT param)
+UINT SHARED_EXPORT uCharLower(UINT param)
 {
 	if (param<128)
 	{
@@ -61,7 +61,7 @@ SHARED_EXPORT UINT uCharLower(UINT param)
 #endif
 }
 
-SHARED_EXPORT UINT uCharUpper(UINT param)
+UINT SHARED_EXPORT uCharUpper(UINT param)
 {
 	if (param<128)
 	{
@@ -100,7 +100,7 @@ static inline int compare_wchar(unsigned c1,unsigned c2)
 }
 
 
-SHARED_EXPORT int stricmp_utf8(const char * p1,const char * p2)
+int SHARED_EXPORT stricmp_utf8(const char * p1,const char * p2)
 {
 	for(;;)
 	{
@@ -131,12 +131,12 @@ SHARED_EXPORT int stricmp_utf8(const char * p1,const char * p2)
 	}
 }
 
-SHARED_EXPORT int stricmp_utf8_stringtoblock(const char * p1,const char * p2,unsigned p2_bytes)
+int SHARED_EXPORT stricmp_utf8_stringtoblock(const char * p1,const char * p2,unsigned p2_bytes)
 {
 	return stricmp_utf8_ex(p1,-1,p2,p2_bytes);
 }
 
-SHARED_EXPORT int stricmp_utf8_partial(const char * p1,const char * p2,unsigned num)
+int SHARED_EXPORT stricmp_utf8_partial(const char * p1,const char * p2,unsigned num)
 {
 	for(;num;)
 	{
@@ -153,7 +153,7 @@ SHARED_EXPORT int stricmp_utf8_partial(const char * p1,const char * p2,unsigned 
 	return 0;
 }
 
-SHARED_EXPORT int stricmp_utf8_max(const char * p1,const char * p2,unsigned p1_bytes)
+int SHARED_EXPORT stricmp_utf8_max(const char * p1,const char * p2,unsigned p1_bytes)
 {
 	return stricmp_utf8_ex(p1,p1_bytes,p2,-1);
 }
@@ -178,7 +178,7 @@ namespace {
 	}
 }
 
-SHARED_EXPORT unsigned uReplaceStringAdd(string_base & out,const char * src,unsigned src_len,const char * s1,unsigned len1,const char * s2,unsigned len2,bool casesens)
+unsigned SHARED_EXPORT uReplaceStringAdd(string_base & out,const char * src,unsigned src_len,const char * s1,unsigned len1,const char * s2,unsigned len2,bool casesens)
 {
 	t_replace_test testfunc = casesens ? replace_test : replace_test_i;
 
@@ -206,7 +206,7 @@ SHARED_EXPORT unsigned uReplaceStringAdd(string_base & out,const char * src,unsi
 	return count;
 }
 
-SHARED_EXPORT unsigned uReplaceCharAdd(string_base & out,const char * src,unsigned src_len,unsigned c1,unsigned c2,bool casesens)
+unsigned SHARED_EXPORT uReplaceCharAdd(string_base & out,const char * src,unsigned src_len,unsigned c1,unsigned c2,bool casesens)
 {
 	assert(c1>0);
 	assert(c2>0);
@@ -218,7 +218,7 @@ SHARED_EXPORT unsigned uReplaceCharAdd(string_base & out,const char * src,unsign
 }
 
 
-SHARED_EXPORT void uAddStringLower(string_base & out,const char * src,unsigned len)
+void SHARED_EXPORT uAddStringLower(string_base & out,const char * src,unsigned len)
 {
 	while(*src && len)
 	{
@@ -231,7 +231,7 @@ SHARED_EXPORT void uAddStringLower(string_base & out,const char * src,unsigned l
 	}
 }
 
-SHARED_EXPORT void uAddStringUpper(string_base & out,const char * src,unsigned len)
+void SHARED_EXPORT uAddStringUpper(string_base & out,const char * src,unsigned len)
 {
 	while(*src && len)
 	{
@@ -244,7 +244,7 @@ SHARED_EXPORT void uAddStringUpper(string_base & out,const char * src,unsigned l
 	}
 }
 
-SHARED_EXPORT int stricmp_utf8_ex(const char * p1,unsigned p1_bytes,const char * p2,unsigned p2_bytes)
+int SHARED_EXPORT stricmp_utf8_ex(const char * p1,unsigned p1_bytes,const char * p2,unsigned p2_bytes)
 {
 	p1_bytes = strlen_max(p1,p1_bytes);
 	p2_bytes = strlen_max(p2,p2_bytes);

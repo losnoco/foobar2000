@@ -14,14 +14,13 @@ namespace listview_helper {
 		LVITEM item;
 		memset(&item,0,sizeof(item));
 
-		mem_block os_string_temp;
-		os_string_temp.set_size(uOSStringEstimateSize(p_name));
-		uOSStringConvert(p_name,os_string_temp);
+		pfc::stringcvt::string_os_from_utf8 os_string_temp;
+		if (!os_string_temp.convert(p_name)) return infinite;
 
 		item.mask = LVIF_TEXT | LVIF_PARAM;
 		item.iItem = p_index;
 		item.lParam = p_param;
-		item.pszText = reinterpret_cast<TCHAR*>(os_string_temp.get_ptr());
+		item.pszText = const_cast<TCHAR*>(os_string_temp.get_ptr());
 		
 		int ret = uSendMessage(p_listview,uLVM_INSERTITEM,0,(LPARAM)&item);
 		if (ret < 0) return infinite;
@@ -32,9 +31,8 @@ namespace listview_helper {
 
 	unsigned insert_column(HWND p_listview,unsigned p_index,const char * p_name,unsigned p_width_dlu)
 	{
-		mem_block os_string_temp;
-		os_string_temp.set_size(uOSStringEstimateSize(p_name));
-		uOSStringConvert(p_name,os_string_temp);
+		pfc::stringcvt::string_os_from_utf8 os_string_temp;
+		if (!os_string_temp.convert(p_name)) return infinite;
 
 		RECT rect = {0,0,p_width_dlu,0};
 		MapDialogRect(GetParent(p_listview),&rect);
@@ -44,7 +42,7 @@ namespace listview_helper {
 		data.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_FMT;
 		data.fmt = LVCFMT_LEFT;
 		data.cx = rect.right;
-		data.pszText = reinterpret_cast<TCHAR*>(os_string_temp.get_ptr());
+		data.pszText = const_cast<TCHAR*>(os_string_temp.get_ptr());
 		
 		int ret = uSendMessage(p_listview,uLVM_INSERTCOLUMN,p_index,(LPARAM)&data);
 		if (ret < 0) return infinite;
@@ -55,15 +53,14 @@ namespace listview_helper {
 	{
 		LVITEM item;
 		memset(&item,0,sizeof(item));
-		mem_block os_string_temp;
 
-		os_string_temp.set_size(uOSStringEstimateSize(p_name));
-		uOSStringConvert(p_name,os_string_temp);
+		pfc::stringcvt::string_os_from_utf8 os_string_temp;
+		if (!os_string_temp.convert(p_name)) return false;
 
 		item.mask = LVIF_TEXT;
 		item.iItem = p_index;
 		item.iSubItem = p_column;
-		item.pszText = reinterpret_cast<TCHAR*>(os_string_temp.get_ptr());
+		item.pszText = const_cast<TCHAR*>(os_string_temp.get_ptr());
 		return uSendMessage(p_listview,uLVM_SETITEM,0,(LPARAM)&item) ? true : false;
 	}
 

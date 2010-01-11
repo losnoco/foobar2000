@@ -1,34 +1,30 @@
 class cfg_guidlist : public cfg_var, public mem_block_list<GUID>
 {
 public:
-	bool get_raw_data(write_config_callback * out)
+	t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort)
 	{
-		t_uint32 n, m = get_count();
-		out->write_dword_le(m);
-		for(n=0;n<m;n++)
-			out->write_guid_le(get_item(n));
-		return true;
+		try {
+			t_uint32 n, m = get_count();
+			p_stream->write_lendian_e_t(m,p_abort);
+			for(n=0;n<m;n++) p_stream->write_lendian_e_t(get_item(n),p_abort);
+		} catch(exception_io const & e) {return e.get_code();}
+		return io_result_success;
 	}
-
-	void set_raw_data(const void * data,int size)
+	t_io_result set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort)
 	{
-		read_config_helper r(data,size);
+		t_io_result status;
 		t_uint32 n,count;
-		if (r.read_dword_le(count))
+		status = p_stream->read_lendian_t(count,p_abort);
+		if (io_result_failed(status)) return status;
+		if (m_buffer.set_size(count)) //else return io_result_error_out_of_memory?
 		{
-			if (m_buffer.set_size(count))
+			for(n=0;n<count;n++)
 			{
-				for(n=0;n<count;n++)
-				{
-					if (!r.read_guid_le(m_buffer[n]))
-					{
-						m_buffer.set_size(0);
-						break;
-					}
-				}
-
+				status = p_stream->read_lendian_t(m_buffer[n],p_abort);
+				if (io_result_failed(status)) {m_buffer.set_size(0); return status;}
 			}
 		}
+		return io_result_success;
 	}
 
 	void sort()

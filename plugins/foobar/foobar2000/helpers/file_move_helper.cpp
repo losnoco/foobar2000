@@ -5,20 +5,18 @@ static bool grab_items_by_path(list_base_t<metadb_handle_ptr> & p_out,const char
 	string8 path;
 	filesystem::g_get_canonical_path(p_path,path);
 	p_out.remove_all();
-	track_indexer::g_get_tracks(path,0,filestats_invalid,track_indexer_callback_impl_simple(p_out,p_abort));
-	if (p_abort.is_aborting()) return false;
+	service_ptr_t<input_info_reader> reader;
+	if (io_result_failed(input_entry::g_open_for_info_read(reader,0,path,p_abort))) return false;
 
-	{
-		unsigned n, m = p_out.get_count();
-		bit_array_bittable mask(m);
-		bool found_bad = false;
-		for(n=0;n<m;n++)
-		{
-			bool bad = metadb::path_compare(path,p_out.get_item(n)->get_path()) != 0;
-			if (bad) found_bad = true;
-			mask.set(n, bad);
+	static_api_ptr_t<metadb> l_metadb;
+	
+	const unsigned count = reader->get_subsong_count();
+	for(unsigned n=0;n<count;n++) {
+		if (p_abort.is_aborting()) return false;
+		metadb_handle_ptr ptr;
+		if (l_metadb->handle_create(ptr,make_playable_location(path,reader->get_subsong(n)))) {
+			p_out.add_item(ptr);
 		}
-		if (found_bad) p_out.remove_mask(mask);
 	}
 
 	return p_out.get_count() > 0;

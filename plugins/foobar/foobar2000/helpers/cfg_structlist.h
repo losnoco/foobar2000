@@ -2,36 +2,39 @@ template<typename T>
 class cfg_structlist_t : public cfg_var, public mem_block_list<T>
 {
 public:
-	bool get_raw_data(write_config_callback * out)
+	t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort)
 	{
+		t_io_result status;
 		t_uint32 n, m = get_count();
-		out->write_dword_le(m);
+		status = p_stream->write_lendian_t(m,p_abort);
+		if (io_result_failed(status)) return status;
 		for(n=0;n<m;n++)
 		{
-			out->write(&m_buffer[n],sizeof(T));
+			status = p_stream->write_object(&m_buffer[n],sizeof(T),p_abort);
+			if (io_result_failed(status)) return status;
 		}
-		return true;
+		return io_result_success;
 	}
-
-	void set_raw_data(const void * data,int size)
+	
+	t_io_result set_data_raw(stream_reader * p_stream,abort_callback & p_abort)
 	{
-		read_config_helper r(data,size);
+		t_io_result status;
 		t_uint32 n,count;
-		if (r.read_dword_le(count))
+		status = p_stream->read_lendian_t(count,p_abort);
+		if (io_result_failed(status)) return status;
+		if (m_buffer.set_size(count))
 		{
-			if (m_buffer.set_size(count))
+			for(n=0;n<count;n++)
 			{
-				for(n=0;n<count;n++)
+				status = p_stream->read_object(&m_buffer[n],sizeof(T),p_abort);
+				if (io_result_failed(status))
 				{
-					if (!r.read(&m_buffer[n],sizeof(T)))
-					{
-						m_buffer.set_size(0);
-						break;
-					}
+					m_buffer.set_size(0);
+					return status;
 				}
-
 			}
 		}
+		return status;
 	}
 
 public:

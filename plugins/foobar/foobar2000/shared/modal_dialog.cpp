@@ -11,7 +11,7 @@ static bool TestMainThread()
 	return false;
 }
 
-SHARED_EXPORT HWND FindOwningPopup(HWND p_wnd)
+HWND SHARED_EXPORT FindOwningPopup(HWND p_wnd)
 {
 	HWND walk = p_wnd;
 	while(walk != 0 && (GetWindowLong(walk,GWL_STYLE) & WS_POPUP) == 0) 
@@ -19,7 +19,7 @@ SHARED_EXPORT HWND FindOwningPopup(HWND p_wnd)
 	return walk ? walk : p_wnd;
 }
 
-SHARED_EXPORT void PokeWindow(HWND p_wnd)
+void SHARED_EXPORT PokeWindow(HWND p_wnd)
 {
 	p_wnd = FindOwningPopup(p_wnd);
 	if (IsWindowEnabled(p_wnd))
@@ -39,13 +39,13 @@ SHARED_EXPORT void PokeWindow(HWND p_wnd)
 }
 
 extern "C" {
-	SHARED_EXPORT void ModalDialog_Switch(t_modal_dialog_entry & p_entry)
+	void SHARED_EXPORT ModalDialog_Switch(t_modal_dialog_entry & p_entry)
 	{
 		if (TestMainThread())
 			pfc::swap_t(p_entry,g_status);
 	}
 
-	SHARED_EXPORT void ModalDialog_PokeExisting()
+	void SHARED_EXPORT ModalDialog_PokeExisting()
 	{
 		if (TestMainThread())
 		{
@@ -57,7 +57,7 @@ extern "C" {
 		}
 	}
 
-	SHARED_EXPORT bool ModalDialog_CanCreateNew()
+	bool SHARED_EXPORT ModalDialog_CanCreateNew()
 	{
 		if (TestMainThread())
 			return !g_status.m_in_use;

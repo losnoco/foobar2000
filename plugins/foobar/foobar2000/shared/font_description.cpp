@@ -40,7 +40,7 @@ static void make_logfont(LOGFONT & p_logfont,const t_font_description & p_desc)
 	p_logfont.lfClipPrecision = 2;
 	p_logfont.lfQuality = 1;
 	p_logfont.lfPitchAndFamily = 34;
-	tcsncpy_addnull(p_logfont.lfFaceName,string_os_from_utf8(p_desc.m_facename),tabsize(p_logfont.lfFaceName));
+	tcsncpy_addnull(p_logfont.lfFaceName,pfc::stringcvt::string_os_from_utf8(p_desc.m_facename,tabsize(p_desc.m_facename)),tabsize(p_logfont.lfFaceName));
 }
 
 static void make_description(t_font_description & p_desc,const LOGFONT & p_logfont)
@@ -49,10 +49,10 @@ static void make_description(t_font_description & p_desc,const LOGFONT & p_logfo
 	p_desc.m_weight = p_logfont.lfWeight;
 	p_desc.m_italic = p_logfont.lfItalic;
 	p_desc.m_charset = p_logfont.lfCharSet;
-	strncpy_addnull(p_desc.m_facename,string_utf8_from_os(p_logfont.lfFaceName),tabsize(p_desc.m_facename));
+	strncpy_addnull(p_desc.m_facename,pfc::stringcvt::string_utf8_from_os(p_logfont.lfFaceName,tabsize(p_logfont.lfFaceName)),tabsize(p_desc.m_facename));
 }
 
-SHARED_EXPORT HFONT t_font_description::create()
+HFONT SHARED_EXPORT t_font_description::create() const
 {
 	LOGFONT temp;
 	make_logfont(temp,*this);
@@ -74,7 +74,7 @@ static UINT_PTR CALLBACK choose_font_hook(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 	}
 }
 
-SHARED_EXPORT bool t_font_description::popup_dialog(HWND p_parent)
+bool SHARED_EXPORT t_font_description::popup_dialog(HWND p_parent)
 {
 	modal_dialog_scope scope;
 
@@ -99,14 +99,14 @@ SHARED_EXPORT bool t_font_description::popup_dialog(HWND p_parent)
 }
 
 
-SHARED_EXPORT void t_font_description::from_font(HFONT p_font)
+void SHARED_EXPORT t_font_description::from_font(HFONT p_font)
 {
 	LOGFONT logfont;
 	GetObject((HGDIOBJ) p_font, sizeof(logfont), &logfont);
 	make_description(*this,logfont);
 }
 
-SHARED_EXPORT t_font_description t_font_description::g_from_font(HFONT p_font)
+t_font_description SHARED_EXPORT t_font_description::g_from_font(HFONT p_font)
 {
 	t_font_description temp;
 	temp.from_font(p_font);

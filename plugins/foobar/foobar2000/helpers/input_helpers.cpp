@@ -36,7 +36,7 @@ static t_io_result process_fullbuffer(service_ptr_t<file> & p_file,const char * 
 						p_file = l_file_buffered;
 					}
 				}
-				catch(t_io_result code) {return code;}
+				catch(exception_io const & e) {return e.get_code();}
 			}
 		}
 	}
@@ -58,7 +58,9 @@ t_io_result input_helper::open(const playable_location & p_location,unsigned p_f
 		status = process_fullbuffer(l_file,p_location.get_path(),m_fullbuffer,p_abort);
 		if (io_result_failed(status)) return status;
 
-		status = input_entry::g_open_for_decoding(m_input,l_file,p_location.get_path(),p_abort,p_from_redirect);
+		TRACK_CODE("input_entry::g_open_for_decoding",
+			status = input_entry::g_open_for_decoding(m_input,l_file,p_location.get_path(),p_abort,p_from_redirect)
+			);
 		if (io_result_failed(status)) return status;
 
 		m_path = p_location.get_path();
@@ -70,7 +72,7 @@ t_io_result input_helper::open(const playable_location & p_location,unsigned p_f
 
 	if (p_abort.is_aborting()) return io_result_aborted;
 
-	status = m_input->initialize(p_location.get_subsong_index(),p_flags,p_abort);
+	TRACK_CODE("input_decoder::initialize",status = m_input->initialize(p_location.get_subsong_index(),p_flags,p_abort));
 	if (io_result_failed(status)) return status;
 
 	return io_result_success;
@@ -89,18 +91,20 @@ bool input_helper::is_open()
 
 t_io_result input_helper::run(audio_chunk & p_chunk,abort_callback & p_abort)
 {
-	if (m_input.is_valid())
-		return m_input->run(p_chunk,p_abort);
-	else
+	if (m_input.is_valid()) {
+		TRACK_CODE("input_decoder::run",return m_input->run(p_chunk,p_abort));
+	} else {
 		return io_result_error_data;
+	}
 }
 
 t_io_result input_helper::seek(double seconds,abort_callback & p_abort)
 {
-	if (m_input.is_valid())
-		return m_input->seek(seconds,p_abort);
-	else
+	if (m_input.is_valid()) {
+		TRACK_CODE("input_decoder::seek",return m_input->seek(seconds,p_abort));
+	} else {
 		return io_result_error_data;
+	}
 }
 
 bool input_helper::can_seek()
@@ -114,24 +118,36 @@ void input_helper::set_full_buffer(t_filesize val)
 }
 void input_helper::on_idle(abort_callback & p_abort)
 {
-	if (m_input.is_valid()) m_input->on_idle(p_abort);
+	if (m_input.is_valid()) {
+		TRACK_CODE("input_decoder::on_idle",m_input->on_idle(p_abort));
+	}
 }
 
-bool input_helper::get_dynamic_info(file_info & p_out,double & p_timestamp_delta,bool & p_track_change)
+bool input_helper::get_dynamic_info(file_info & p_out,double & p_timestamp_delta)
 {
-	if (m_input.is_valid())
-		return m_input->get_dynamic_info(p_out,p_timestamp_delta,p_track_change);
-	else
+	if (m_input.is_valid()) {
+		TRACK_CODE("input_decoder::get_dynamic_info",return m_input->get_dynamic_info(p_out,p_timestamp_delta));
+	} else {
 		return false;
+	}
+}
+
+bool input_helper::get_dynamic_info_track(file_info & p_out,double & p_timestamp_delta)
+{
+	if (m_input.is_valid()) {
+		TRACK_CODE("input_decoder::get_dynamic_info_track",return m_input->get_dynamic_info_track(p_out,p_timestamp_delta));
+	} else {
+		return false;
+	}
 }
 
 t_io_result input_helper::get_info(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort)
 {
-	if (m_input.is_valid())
-	{
-		return m_input->get_info(p_subsong,p_info,p_abort);
+	if (m_input.is_valid()) {
+		TRACK_CODE("input_decoder::get_info",return m_input->get_info(p_subsong,p_info,p_abort));
+	} else {
+		return io_result_error_data;
 	}
-	else return io_result_error_data;
 }
 
 const char * input_helper::get_path() const
@@ -175,15 +191,29 @@ bool dead_item_filter::run(const list_base_const_t<metadb_handle_ptr> & p_list,b
 	file_list_helper::file_list_from_metadb_handle_list path_list;
 	path_list.init_from_list(p_list);
 	metadb_handle_list valid_handles;
+	static_api_ptr_t<metadb> l_metadb;
 	for(unsigned pathidx=0;pathidx<path_list.get_count();pathidx++)
 	{
 		if (is_aborting()) return false;
 		on_progress(pathidx,path_list.get_count());
-		metadb_handle_list temp;
-		t_filestats stats = filestats_invalid;
-		if (io_result_succeeded(track_indexer::g_get_tracks_simple(path_list[pathidx],0,stats,temp,*this)))
-			valid_handles.add_items(temp);
+		
+		
+		{
+			service_ptr_t<input_info_reader> reader;
+			const char * path = path_list[pathidx];
+			if (io_result_succeeded(input_entry::g_open_for_info_read(reader,0,path,*this))) {
+				const unsigned count = reader->get_subsong_count();
+				for(unsigned n=0;n<count && !is_aborting();n++) {
+					metadb_handle_ptr ptr;
+					if (l_metadb->handle_create(ptr,make_playable_location(path,reader->get_subsong(n)))) {
+						valid_handles.add_item(ptr);
+					}
+				}
+			}
+		}
 	}
+
+	if (is_aborting()) return false;;
 
 	valid_handles.sort_by_pointer();
 	for(unsigned listidx=0;listidx<p_list.get_count();listidx++)
@@ -199,7 +229,7 @@ class dead_item_filter_impl_simple : public dead_item_filter
 {
 public:
 	inline dead_item_filter_impl_simple(abort_callback & p_abort) : m_abort(p_abort) {}
-	bool is_aborting() {return m_abort.is_aborting();}
+	bool FB2KAPI is_aborting() {return m_abort.is_aborting();}
 	void on_progress(unsigned p_position,unsigned p_total) {}
 private:
 	abort_callback & m_abort;
@@ -220,7 +250,7 @@ t_io_result input_info_read_helper::open(const char * p_path,abort_callback & p_
 	{
 		m_path = p_path;
 
-		m_open_status = input_entry::g_open_for_info_read(m_input,0,p_path,p_abort);
+		TRACK_CODE("input_entry::g_open_for_info_read",m_open_status = input_entry::g_open_for_info_read(m_input,0,p_path,p_abort));
 	}
 	return m_open_status;
 }
@@ -232,10 +262,10 @@ t_io_result input_info_read_helper::get_info(const playable_location & p_locatio
 	status = open(p_location.get_path(),p_abort);
 	if (io_result_failed(status)) return status;
 
-	status = m_input->get_file_stats(p_stats,p_abort);
+	TRACK_CODE("input_info_reader::get_file_stats",status = m_input->get_file_stats(p_stats,p_abort));
 	if (io_result_failed(status)) return status;
 
-	status = m_input->get_info(p_location.get_subsong_index(),p_info,p_abort);
+	TRACK_CODE("input_info_reader::get_info",status = m_input->get_info(p_location.get_subsong_index(),p_info,p_abort));
 	if (io_result_failed(status)) return status;
 
 	return io_result_success;
@@ -249,13 +279,13 @@ t_io_result input_info_read_helper::get_info_check(const playable_location & p_l
 	if (io_result_failed(status)) return status;
 
 	t_filestats newstats;
-	status = m_input->get_file_stats(newstats,p_abort);
+	TRACK_CODE("input_info_reader::get_file_stats",status = m_input->get_file_stats(newstats,p_abort));
 	if (io_result_failed(status)) return status;
 
 	if (metadb_handle::g_should_reload(p_stats,newstats,true))
 	{
 		p_stats = newstats;
-		status = m_input->get_info(p_location.get_subsong_index(),p_info,p_abort);
+		TRACK_CODE("input_info_reader::get_info",status = m_input->get_info(p_location.get_subsong_index(),p_info,p_abort));
 		if (io_result_failed(status)) return status;
 		p_reloaded = true;
 	}
@@ -265,4 +295,151 @@ t_io_result input_info_read_helper::get_info_check(const playable_location & p_l
 	}
 
 	return io_result_success;
+}
+
+
+
+
+
+
+t_io_result input_helper_cue::open(const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,double p_start,double p_length)
+{
+	m_start = p_start;
+	m_position = 0;
+	m_dynamic_info_trigger = false;
+	t_io_result status;
+	
+	status = m_input.open(p_location,p_flags,p_abort,true,true);
+	if (io_result_failed(status)) return status;
+	if (!m_input.can_seek()) return io_result_error_data;
+	if (m_start > 0)
+	{
+		status = m_input.seek(m_start,p_abort);
+		if (io_result_failed(status)) return status;
+	}
+
+	if (p_length > 0)
+	{
+		m_length = p_length;
+	}
+	else
+	{
+		file_info_impl temp;
+		status = m_input.get_info(0,temp,p_abort);
+		if (io_result_failed(status)) return status;
+		double ref_length = temp.get_length();
+		if (ref_length <= 0) return io_result_error_data;
+		m_length = ref_length - m_start + p_length /* negative or zero */;
+		if (m_length <= 0) return io_result_error_data;
+	}
+
+	return io_result_success;
+}
+
+void input_helper_cue::close() {m_input.close();}
+bool input_helper_cue::is_open() {return m_input.is_open();}
+
+t_io_result input_helper_cue::run(audio_chunk & p_chunk,abort_callback & p_abort)
+{
+	if (p_abort.is_aborting()) return io_result_aborted;
+
+
+	if (m_length > 0)
+	{
+		if (m_position >= m_length) return io_result_eof;
+
+		m_dynamic_info_trigger = true;
+
+		t_io_result status; 
+		status = m_input.run(p_chunk,p_abort);
+		if (io_result_failed_or_eof(status)) return status;
+
+		t_uint64 max = (t_uint64) audio_math::time_to_samples(m_length - m_position, p_chunk.get_sample_rate());
+		if (max == 0)
+		{//handle rounding accidents, this normally shouldn't trigger
+			m_position = m_length;
+			return io_result_eof;
+		}
+
+		unsigned samples = p_chunk.get_sample_count();
+		if ((t_uint64)samples > max)
+		{
+			p_chunk.set_sample_count((unsigned)max);
+			m_position = m_length;
+		}
+		else
+		{
+			m_position += p_chunk.get_duration();
+		}
+		return io_result_success;
+	}
+	else
+	{
+		t_io_result status;
+		status = m_input.run(p_chunk,p_abort);
+		if (io_result_failed_or_eof(status)) return status;
+		m_position += p_chunk.get_duration();
+		return io_result_success;
+	}
+}
+
+t_io_result input_helper_cue::seek(double p_seconds,abort_callback & p_abort)
+{
+	m_dynamic_info_trigger = false;
+	if (m_length <= 0 || p_seconds < m_length)
+	{
+		t_io_result status;
+		status = m_input.seek(p_seconds + m_start,p_abort);
+		if (io_result_failed(status)) return status;
+		m_position = p_seconds;
+		return io_result_success;
+	}
+	else
+	{
+		m_position = m_length;
+		return io_result_success;
+	}
+}
+
+bool input_helper_cue::can_seek()
+{
+	return true;
+}
+void input_helper_cue::set_full_buffer(t_filesize val) {m_input.set_full_buffer(val);}
+
+void input_helper_cue::on_idle(abort_callback & p_abort) {m_input.on_idle(p_abort);}
+
+bool input_helper_cue::get_dynamic_info(file_info & p_out,double & p_timestamp_delta)
+{
+	if (m_dynamic_info_trigger)
+	{
+		m_dynamic_info_trigger = false;
+		return m_input.get_dynamic_info(p_out,p_timestamp_delta);
+	}
+	else return false;
+}
+
+bool input_helper_cue::get_dynamic_info_track(file_info & p_out,double & p_timestamp_delta) {
+	return false;
+}
+
+const char * input_helper_cue::get_path() const {return m_input.get_path();}
+	
+t_io_result input_helper_cue::get_info(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort) {return m_input.get_info(p_subsong,p_info,p_abort);}
+
+
+
+bool input_helper::run_e(audio_chunk & p_chunk,abort_callback & p_abort) {
+	t_io_result status = run(p_chunk,p_abort);
+	exception_io::g_test(status);
+	return status != io_result_eof;
+}
+
+void input_helper::seek_e(double p_seconds,abort_callback & p_abort) {
+	exception_io::g_test(seek(p_seconds,p_abort));
+}
+	
+
+void input_helper::get_info_e(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort) {
+	exception_io::g_test(get_info(p_subsong,p_info,p_abort));
 }

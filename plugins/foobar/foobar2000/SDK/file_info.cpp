@@ -190,7 +190,7 @@ t_int64 file_info::info_get_length_samples() const
 
 	if (srate>0 && len>0)
 	{
-		ret = dsp_util::duration_samples_from_time(len,(unsigned)srate);
+		ret = audio_math::time_to_samples(len,(unsigned)srate);
 	}
 	return ret;
 }
@@ -306,11 +306,6 @@ unsigned file_info::meta_add_ex(const char * p_name,unsigned p_name_length,const
 		meta_add_value_ex(index,p_value,p_value_length);
 		return index;
 	}
-}
-
-void file_info::meta_set_ansi_ex(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length)
-{
-	meta_set(string_utf8_from_ansi(p_name,p_name_length),string_utf8_from_ansi(p_value,p_value_length));
 }
 
 void file_info::meta_add_value_ex(unsigned p_index,const char * p_value,unsigned p_value_length)

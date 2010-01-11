@@ -31,8 +31,8 @@ public:
 	virtual bool is_mappable_shortcut() = 0;
 
 protected:
-	inline menu_item_node() {}
-	inline ~menu_item_node() {}
+	menu_item_node() {}
+	~menu_item_node() {}
 };
 
 class NOVTABLE menu_item_node_root : public menu_item_node
@@ -120,20 +120,21 @@ public:
 	bool item_get_display_data_root(string_base & p_out,unsigned & displayflags,unsigned p_index,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller);
 	bool item_get_display_data(string_base & p_out,unsigned & displayflags,unsigned p_index,const GUID & p_node,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller);
 	
-	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
-
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
-	}
-
 	static const GUID caller_now_playing;
 	static const GUID caller_playlist;
 	static const GUID caller_undefined;
 	static const GUID caller_keyboard_shortcut_list;
 
+
+	static const GUID class_guid;
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	menu_item() {}
+	~menu_item() {}
 };
 
 class NOVTABLE menu_item_impl_simple : public menu_item

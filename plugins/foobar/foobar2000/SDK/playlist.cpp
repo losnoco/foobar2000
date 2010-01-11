@@ -425,11 +425,11 @@ void playlist_manager::activeplaylist_remove_selection(bool p_crop)
 	if (playlist != infinite) playlist_remove_selection(playlist,p_crop);
 }
 
-void playlist_manager::activeplaylist_item_format_title(unsigned p_item,titleformat_hook * p_hook,string_base & out,const service_ptr_t<titleformat_object> & p_script,titleformat_text_filter * p_filter)
+void playlist_manager::activeplaylist_item_format_title(unsigned p_item,titleformat_hook * p_hook,string_base & out,const service_ptr_t<titleformat_object> & p_script,titleformat_text_filter * p_filter,play_control::t_display_level p_playback_info_level)
 {
 	unsigned playlist = get_active_playlist();
-	if (playlist == infinite) out = "[playlist index out of range]";
-	else playlist_item_format_title(playlist,p_item,p_hook,out,p_script,p_filter);
+	if (playlist == infinite) out = "NJET";
+	else playlist_item_format_title(playlist,p_item,p_hook,out,p_script,p_filter,p_playback_info_level);
 }
 
 void playlist_manager::playlist_set_selection_single(unsigned p_playlist,unsigned p_item,bool p_state)
@@ -624,4 +624,34 @@ bool playlist_manager::remove_playlist_switch(unsigned idx)
 		return true;
 	}
 	else return false;
+}
+
+
+
+bool t_playback_queue_item::operator==(const t_playback_queue_item & p_item) const
+{
+	return m_handle == p_item.m_handle && m_playlist == p_item.m_playlist && m_item == p_item.m_item;
+}
+
+bool t_playback_queue_item::operator!=(const t_playback_queue_item & p_item) const
+{
+	return m_handle != p_item.m_handle || m_playlist != p_item.m_playlist || m_item != p_item.m_item;
+}
+
+
+void playlist_manager::queue_flush()
+{
+	return queue_remove_mask(bit_array_true());
+}
+bool playlist_manager::queue_is_active()
+{
+	return queue_get_count() > 0;
+}
+
+
+
+bool playlist_manager::activeplaylist_execute_default_action(unsigned p_item) {
+	unsigned idx = get_active_playlist();
+	if (idx == infinite) return false;
+	else return playlist_execute_default_action(idx,p_item);
 }

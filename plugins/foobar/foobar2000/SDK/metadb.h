@@ -30,20 +30,6 @@ public:
 	virtual bool rewrite_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,HWND p_parent_window,bool p_show_errors,t_io_result * p_retcodes) = 0;
 	//! Removes tags from multiple items.
 	virtual bool remove_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,HWND p_parent_window,bool p_show_errors,t_io_result * p_retcodes) = 0;
-	//! Returns true when tag updates on busy files will be queued for later, false if fail (default behavior).
-	virtual bool pending_is_enabled() = 0;
-	//! Returns count of pending updates (after files were busy during first update attempt).
-	virtual unsigned pending_get_count() = 0;
-	//! Attempts to execute any pending tag update operations.
-	//! @param p_force If set to true, will display dialog box asking user to approve dropping updates.
-	//! @param p_parent Parent window for progress dialog and dialog asking user to approve dropping updates if p_force is set to true.
-	//! @param p_show_errors If set to true, will report any I/O errors to user (using popup_message API).
-	//! @returns number of updates still pending. If returns non-zero after p_force was set to true, user chose "cancel" in the dialog.
-	virtual unsigned pending_flush(bool p_force,HWND p_parent,bool p_show_errors) = 0;
-	//! Resets pending tag update operations. WARNING: this will cause data loss.
-	virtual void pending_reset() = 0;
-	//! If specified item is one of queued updates, retrieves info that is about to be written to file. Returns true on success, false if specified item is not in queue.
-	virtual bool pending_query(metadb_handle_ptr p_item,file_info & p_out) = 0; 
 
 	virtual void hint_multi(const list_base_const_t<metadb_handle_ptr> & p_list,const list_base_const_t<const file_info*> & p_infos,const list_base_const_t<t_filestats> & p_stats,const bit_array & p_fresh_mask) = 0;
 
@@ -53,22 +39,22 @@ public:
 
 	virtual t_io_result path_to_handles_simple(const char * p_path,list_base_t<metadb_handle_ptr> & p_out) = 0;
 
+	virtual void dispatch_refresh(const list_base_const_t<metadb_handle_ptr> & p_list) = 0;
+
 	void hint_async(metadb_handle_ptr p_item,const file_info & p_info,const t_filestats & p_stats,bool p_fresh);
-
-	bool pending_query_ex(metadb_handle_ptr p_item,file_info & p_out);
-
 
 	t_io_result load_info(metadb_handle_ptr p_item,t_load_info_type p_type,HWND p_parent_window,bool p_show_errors);
 	t_io_result update_info(metadb_handle_ptr p_item,file_info & p_info,HWND p_parent_window,bool p_show_errors);
 	
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
+protected:
+	metadb_io() {}
+	~metadb_io() {}
 };
 
 class NOVTABLE metadb_io_callback : public service_base
@@ -77,13 +63,14 @@ public:
 	virtual void on_changed_sorted(const list_base_const_t<metadb_handle_ptr> & p_items_sorted)=0;//items are always sorted by pointer value
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
+protected:
+	metadb_io_callback() {}
+	~metadb_io_callback() {}
 };
 
 //only one implementation in main exe, do not derive from this
@@ -106,6 +93,8 @@ public:
 	bool handle_replace_path_canonical(metadb_handle_ptr & p_out,const char * p_new_path);
 	bool handle_create_replace_path(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path);//should never fail
 
+	static bool g_get_random_handle(metadb_handle_ptr & p_out);
+
 
 	enum {case_sensitive = true};
 
@@ -116,13 +105,14 @@ public:
 	static bool g_get(service_ptr_t<metadb> & p_out);//should never fail
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
+protected:
+	metadb() {}
+	~metadb() {}
 };
 
 
@@ -172,5 +162,33 @@ private:
 	array_t<bool> m_mask;
 };
 
+class titleformat_text_out;
+class titleformat_hook_function_params;
+
+
+/*
+	Implementing this service installs a global hook for metadb_handle::format_title field processing. \n
+	This should be implemented only where absolutely necessary, for safety and performance reasons. \n
+	metadb_display_hook methods should NEVER make any other API calls (other than possibly querying information from passed metadb_handle pointer), only read implementation-specific private data and return as soon as possible. Since those are called from metadb_handle::format_title, no assumptions should be made about calling context (threading etc). \n
+	Both methods are called from inside metadb lock, so no additional locking is required to use *_locked metadb_handle methods.
+	See titleformat_hook for more info about methods/parameters. \n
+	If there are multiple metadb_display_hook implementations registered, call order is undefined.
+*/
+
+class metadb_display_hook : public service_base {
+public:
+	virtual bool process_field(metadb_handle * p_handle,titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,bool & p_found_flag) = 0;
+	virtual bool process_function(metadb_handle * p_handle,titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag) = 0;
+
+	static const GUID class_guid;
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	metadb_display_hook() {}
+	~metadb_display_hook() {}
+};
 
 #endif

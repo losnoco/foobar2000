@@ -23,13 +23,14 @@ public:
 	static const GUID config_playlist,config_copy,config_statusbar,config_systray,config_windowtitle;
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
+protected:
+	titleformat_config() {}
+	~titleformat_config() {}
 };
 
 class titleformat_config_callback : public service_base
@@ -40,13 +41,14 @@ public:
 	static void g_on_change(const GUID & p_guid,const char * p_name,const char * p_value,unsigned p_value_length);
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
+protected:
+	titleformat_config_callback() {}
+	~titleformat_config_callback() {}
 };
 
 class titleformat_config_impl : public titleformat_config, private cfg_var
@@ -62,10 +64,10 @@ public:
 	titleformat_config_impl(const GUID &,const char * p_name,const char * p_initvalue,double p_order);
 private:
 
-	virtual bool get_raw_data(write_config_callback * out);
-	virtual void set_raw_data(const void * data,int size);
+	t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort);
+	t_io_result set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort);
 
-	string_simple m_name,m_value,m_value_default;
+	string8 m_name,m_value,m_value_default;
 	service_ptr_t<titleformat_object> m_instance;
 	bool m_compilation_failed;
 	GUID m_guid;

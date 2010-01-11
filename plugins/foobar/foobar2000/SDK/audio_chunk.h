@@ -2,20 +2,6 @@
 #define _AUDIO_CHUNK_H_
 
 
-#define audio_sample_size 64
-
-#if audio_sample_size == 32
-typedef float audio_sample;
-#define audio_sample_asm dword
-#elif audio_sample_size == 64
-typedef double audio_sample;
-#define audio_sample_asm qword
-#else
-#error wrong audio_sample_size
-#endif
-
-#define audio_sample_bytes (audio_sample_size/8)
-
 
 class NOVTABLE audio_chunk
 {
@@ -64,7 +50,7 @@ public:
 	virtual audio_sample * get_data()=0;
 	virtual const audio_sample * get_data() const = 0;
 	virtual unsigned get_data_size() const = 0;//buffer size in audio_samples; must be at least samples * nch;
-	virtual audio_sample * set_data_size(unsigned new_size)=0;
+	virtual bool set_data_size(unsigned new_size)=0;
 	
 	virtual unsigned get_srate() const = 0;
 	inline unsigned get_sample_rate() const {return get_srate();}
@@ -79,7 +65,7 @@ public:
 	virtual unsigned get_sample_count() const = 0;
 	virtual void set_sample_count(unsigned val)=0;
 
-	inline audio_sample * check_data_size(unsigned new_size) {if (new_size > get_data_size()) return set_data_size(new_size); else return get_data();}
+	inline bool check_data_size(unsigned new_size) {if (new_size > get_data_size()) return set_data_size(new_size); else return true;}
 	
 	inline bool copy_from(const audio_chunk * src)
 	{
@@ -164,21 +150,26 @@ public:
 	unsigned skip_first_samples(unsigned samples);
 
 	audio_sample get_peak(audio_sample p_peak = 0) const;
+
+	void scale(audio_sample p_value);
+
+
+	const audio_chunk & operator=(const audio_chunk & p_source) {copy_from(&p_source);return *this;}
 };
 
-class audio_chunk_i : public audio_chunk
+class audio_chunk_impl : public audio_chunk
 {
 	mem_block_aligned_t<audio_sample> m_data;
 	unsigned m_srate,m_nch,m_samples,m_setup;
 public:
-	audio_chunk_i() : m_srate(0), m_nch(0), m_samples(0), m_setup(0) {}
-	audio_chunk_i(const audio_sample * src,unsigned samples,unsigned nch,unsigned srate) : m_srate(0), m_nch(0), m_samples(0)
+	audio_chunk_impl() : m_srate(0), m_nch(0), m_samples(0), m_setup(0) {}
+	audio_chunk_impl(const audio_sample * src,unsigned samples,unsigned nch,unsigned srate) : m_srate(0), m_nch(0), m_samples(0)
 	{set_data(src,samples,nch,srate);}
 	
 	virtual audio_sample * get_data() {return m_data;}
 	virtual const audio_sample * get_data() const {return m_data;}
 	virtual unsigned get_data_size() const {return m_data.get_size();}
-	virtual audio_sample * set_data_size(unsigned new_size) {return m_data.set_size(new_size) ? m_data.get_ptr() : 0;}
+	virtual bool set_data_size(unsigned new_size) {return m_data.set_size(new_size);}
 	
 	virtual unsigned get_srate() const {return m_srate;}
 	virtual void set_srate(unsigned val) {m_srate=val;}
@@ -190,9 +181,13 @@ public:
 	virtual unsigned get_sample_count() const {return m_samples;}
 	virtual void set_sample_count(unsigned val) {m_samples = val;}
 
-	inline void set_mem_logic(mem_block::mem_logic_t v) {m_data.set_mem_logic(v);}
-	inline mem_block::mem_logic_t get_mem_logic() const {return m_data.get_mem_logic();}
+	inline void set_mem_logic(mem_block::t_mem_logic v) {m_data.set_mem_logic(v);}
+	inline mem_block::t_mem_logic get_mem_logic() const {return m_data.get_mem_logic();}
 
+	const audio_chunk_impl & operator=(const audio_chunk & p_source) {copy_from(&p_source);return *this;}
+	const audio_chunk_impl & operator=(const audio_chunk_impl & p_source) {copy_from(&p_source);return *this;}
 };
+
+typedef audio_chunk_impl audio_chunk_i;//for compatibility
 
 #endif //_AUDIO_CHUNK_H_

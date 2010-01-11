@@ -1,8 +1,8 @@
 #ifndef __PFC_PTR_LIST_H_
 #define __PFC_PTR_LIST_H_
 
-template<class T>
-class ptr_list_t : public mem_block_list<T*>
+template<class T, class B = mem_block_list_t<T*> >
+class ptr_list_t : public B
 {
 public:
 	ptr_list_t() {}
@@ -77,6 +77,13 @@ public:
 
 
 	T * operator[](unsigned n) const {return get_item(n);}
+};
+
+template<typename T,unsigned N>
+class ptr_list_hybrid_t : public ptr_list_t<T,mem_block_list_hybrid_t<T*,N> > {
+public:
+	ptr_list_hybrid_t() {}
+	ptr_list_hybrid_t(const ptr_list_hybrid_t<T,N> & p_source) {*this = p_source;}
 };
 
 typedef ptr_list_t<void> ptr_list;

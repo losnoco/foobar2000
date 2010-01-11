@@ -18,7 +18,7 @@ int playable_location::compare(const playable_location & src) const
 	}
 }
 
-string_formatter & operator<<(string_formatter & p_fmt,const playable_location & p_location)
+string_base & operator<<(string_base & p_fmt,const playable_location & p_location)
 {
 	p_fmt << "\"" << file_path_display(p_location.get_path()) << "\"";
 	t_uint32 index = p_location.get_subsong_index();

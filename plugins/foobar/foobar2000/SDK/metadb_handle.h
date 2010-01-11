@@ -17,47 +17,41 @@ class NOVTABLE metadb_handle : public service_base
 {
 public:
 	//! Retrieves location represented by this metadb_handle object.
-	virtual const playable_location & get_location() const = 0;//never fails, returned pointer valid till the object is released
+	virtual rcplayable_location FB2KAPI get_location() const = 0;//never fails, returned pointer valid till the object is released
 
 
-	virtual bool format_title(titleformat_hook * p_hook,string_base & out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter) = 0;
+	virtual bool FB2KAPI format_title(titleformat_hook * p_hook,string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter) = 0;
 
 	//! Locks metadb to prevent other threads from modifying it while you're working with some of its contents. Some functions (metadb_handle::get_info_locked(), metadb_handle::get_info_async_locked()) can be called only from inside metadb lock section.
 	//! Same as metadb::database_lock().
-	virtual void metadb_lock() = 0;
+	virtual void FB2KAPI metadb_lock() = 0;
 	//! Unlocks metadb after metadb_lock(). Some functions (metadb_handle::get_info_locked(), metadb_handle::get_info_async_locked()) can be called only from inside metadb lock section.
 	//! Same as metadb::database_unlock().
-	virtual void metadb_unlock() = 0;
+	virtual void FB2KAPI metadb_unlock() = 0;
 
 	//! Returns last seen file stats, filestats_invalid if unknown.
-	virtual t_filestats get_filestats() const = 0;
+	virtual t_filestats FB2KAPI get_filestats() const = 0;
 
-	virtual bool is_info_loaded() const = 0;
-	virtual bool get_info(file_info & p_info) const = 0;
-	virtual bool get_info_locked(const file_info * & p_info) const = 0;
-	virtual bool is_info_loaded_async() const = 0;	
-	virtual bool get_info_async(file_info & p_info) const = 0;	
-	virtual bool get_info_async_locked(const file_info * & p_info) const = 0;
+	virtual bool FB2KAPI is_info_loaded() const = 0;
+	virtual bool FB2KAPI get_info(file_info & p_info) const = 0;
+	virtual bool FB2KAPI get_info_locked(const file_info * & p_info) const = 0;
+	virtual bool FB2KAPI is_info_loaded_async() const = 0;	
+	virtual bool FB2KAPI get_info_async(file_info & p_info) const = 0;	
+	virtual bool FB2KAPI get_info_async_locked(const file_info * & p_info) const = 0;
 
-	virtual void format_title_from_external_info(const file_info & p_info,titleformat_hook * p_hook,string_base & out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter)=0;
+	virtual void FB2KAPI format_title_from_external_info(const file_info & p_info,titleformat_hook * p_hook,string_base & out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter)=0;
 	
 	static bool g_should_reload(const t_filestats & p_old_stats,const t_filestats & p_new_stats,bool p_fresh);
 	bool should_reload(const t_filestats & p_new_stats,bool p_fresh) const;
 	
 
 	int format_title(titleformat_hook * p_hook,string_base & out,const char * spec,titleformat_text_filter * p_filter);
+#if 0
 	int format_title_legacy(string_base & out,const char * spec,const char * extra_items);
+#endif
 
-
-	inline const char * get_path() const//never fails
-	{
-		return get_location().get_path();
-	}
-	inline t_uint32 get_subsong_index() const
-	{
-		return get_location().get_subsong_index();
-	}
-
+	inline const char * get_path() const {return get_location().get_path();}
+	inline t_uint32 get_subsong_index() const {return get_location().get_subsong_index();}
 	
 	double get_length();//helper
 	
@@ -65,12 +59,10 @@ public:
 	t_filesize get_filesize();
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
 
 protected:
@@ -167,7 +159,12 @@ public:
 	inline ~metadb_handle_lock() {m_ptr->metadb_unlock();}
 };
 
-inline string_formatter & operator<<(string_formatter & p_fmt,const metadb_handle_ptr & p_location) {return p_fmt << p_location->get_location();}
+inline string_base & operator<<(string_base & p_fmt,const metadb_handle_ptr & p_location) {
+	if (p_location.is_valid()) 
+		return p_fmt << p_location->get_location();
+	else
+		return p_fmt << "[invalid location]";
+}
 
 
 #endif //_FOOBAR2000_METADB_HANDLE_H_

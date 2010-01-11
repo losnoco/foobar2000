@@ -100,7 +100,7 @@ t_io_result input_entry::g_open_for_info_write(service_ptr_t<input_info_writer> 
 	service_ptr_t<file> filehint = p_filehint;
 	service_ptr_t<input_entry> entry;
 
-	status = prepare_for_open(entry,filehint,p_path,filesystem::open_mode_read,p_abort,p_from_redirect);
+	status = prepare_for_open(entry,filehint,p_path,filesystem::open_mode_write_existing,p_abort,p_from_redirect);
 	if (io_result_failed(status)) return status;
 
 	return entry->open_for_info_write(p_instance,filehint,p_path,p_abort);
@@ -124,7 +124,7 @@ void input_open_file_helper_e(service_ptr_t<file> & p_file,const char * p_path,t
 {
 	t_io_result status;
 	status = input_open_file_helper(p_file,p_path,p_reason,p_abort);
-	if (io_result_failed(status)) throw status;
+	exception_io::g_test(status);
 }
 
 
@@ -149,11 +149,4 @@ t_io_result input_open_file_helper(service_ptr_t<file> & p_file,const char * p_p
 		if (io_result_failed(status)) return status;
 	}
 	return io_result_success;
-}
-
-unsigned input_entry::get_flags()
-{
-	service_ptr_t<input_entry_v2> ptr;
-	if (service_query_t(ptr)) return ptr->get_flags();
-	else return 0;
 }

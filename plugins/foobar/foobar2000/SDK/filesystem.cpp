@@ -137,7 +137,7 @@ void filesystem::g_open_e(service_ptr_t<file> & p_out,const char * path,t_open_m
 {
 	t_io_result status;
 	status = g_open(p_out,path,mode,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 }
 
 t_io_result filesystem::g_open_ex(service_ptr_t<file> & p_out,const char * path,t_open_mode mode,abort_callback & p_abort)
@@ -171,6 +171,11 @@ t_io_result filesystem::g_remove(const char * path,abort_callback & p_abort)
 	return fs->remove(path_c,p_abort);
 }
 
+void filesystem::g_create_directory_e(const char * p_path,abort_callback & p_abort) {
+	t_io_result status;
+	status = g_create_directory(p_path,p_abort);
+	if (io_result_failed(status)) throw exception_io(status);
+}
 t_io_result filesystem::g_create_directory(const char * path,abort_callback & p_abort)
 {
 	string8 path_c;
@@ -293,7 +298,7 @@ bool filesystem::g_relative_path_parse(const char * relative_path,const char * p
 
 
 
-bool archive_i::get_canonical_path(const char * path,string_base & out)
+bool archive_impl::get_canonical_path(const char * path,string_base & out)
 {
 	if (is_our_path(path))
 	{
@@ -310,7 +315,7 @@ bool archive_i::get_canonical_path(const char * path,string_base & out)
 	else return false;
 }
 
-bool archive_i::is_our_path(const char * path)
+bool archive_impl::is_our_path(const char * path)
 {
 	if (strncmp(path,"unpack://",9)) return false;
 	const char * type = get_archive_type();
@@ -325,7 +330,7 @@ bool archive_i::is_our_path(const char * path)
 	return true;
 }
 
-bool archive_i::get_display_path(const char * path,string_base & out)
+bool archive_impl::get_display_path(const char * path,string_base & out)
 {
 	string8 archive,file;
 	if (g_parse_unpack_path(path,archive,file))
@@ -338,7 +343,7 @@ bool archive_i::get_display_path(const char * path,string_base & out)
 	else return false;
 }
 
-t_io_result archive_i::open(service_ptr_t<file> & p_out,const char * path,t_open_mode mode, abort_callback & p_abort)
+t_io_result archive_impl::open(service_ptr_t<file> & p_out,const char * path,t_open_mode mode, abort_callback & p_abort)
 {
 	if (mode != open_mode_read) return io_result_error_generic;
 	string8 archive,file;
@@ -347,17 +352,17 @@ t_io_result archive_i::open(service_ptr_t<file> & p_out,const char * path,t_open
 }
 
 
-t_io_result archive_i::remove(const char * path,abort_callback & p_abort)
+t_io_result archive_impl::remove(const char * path,abort_callback & p_abort)
 {
 	return io_result_error_generic;
 }
 
-t_io_result archive_i::move(const char * src,const char * dst,abort_callback & p_abort)
+t_io_result archive_impl::move(const char * src,const char * dst,abort_callback & p_abort)
 {
 	return io_result_error_generic;
 }
 
-bool archive_i::is_remote(const char * src)
+bool archive_impl::is_remote(const char * src)
 {
 	string8 archive,file;
 	if (g_parse_unpack_path(src,archive,file))
@@ -365,7 +370,7 @@ bool archive_i::is_remote(const char * src)
 	else return false;
 }
 
-bool archive_i::relative_path_create(const char * file_path,const char * playlist_path,string_base & out)
+bool archive_impl::relative_path_create(const char * file_path,const char * playlist_path,string_base & out)
 {
 	string8 archive,file;
 	if (g_parse_unpack_path(file_path,archive,file))
@@ -382,7 +387,7 @@ bool archive_i::relative_path_create(const char * file_path,const char * playlis
 	return false;
 }
 
-bool archive_i::relative_path_parse(const char * relative_path,const char * playlist_path,string_base & out)
+bool archive_impl::relative_path_parse(const char * relative_path,const char * playlist_path,string_base & out)
 {
 	if (!is_our_path(relative_path)) return false;
 	string8 archive_rel,file;
@@ -402,7 +407,7 @@ bool archive_i::relative_path_parse(const char * relative_path,const char * play
 
 // "unpack://zip|17|file://c:\unf.rar|meh.mp3"
 
-bool archive_i::g_parse_unpack_path(const char * path,string8 & archive,string8 & file)
+bool archive_impl::g_parse_unpack_path(const char * path,string8 & archive,string8 & file)
 {
 	path  = strchr(path,'|');
 	if (!path) return false;
@@ -413,7 +418,7 @@ bool archive_i::g_parse_unpack_path(const char * path,string8 & archive,string8 
 	return true;
 }
 
-void archive_i::g_make_unpack_path(string_base & path,const char * archive,const char * file,const char * name)
+void archive_impl::g_make_unpack_path(string_base & path,const char * archive,const char * file,const char * name)
 {
 	path = "unpack://";
 	path += name;
@@ -421,7 +426,7 @@ void archive_i::g_make_unpack_path(string_base & path,const char * archive,const
 	path += file;
 }
 
-void archive_i::make_unpack_path(string_base & path,const char * archive,const char * file) {g_make_unpack_path(path,archive,file,get_archive_type());}
+void archive_impl::make_unpack_path(string_base & path,const char * archive,const char * file) {g_make_unpack_path(path,archive,file,get_archive_type());}
 
 
 FILE * filesystem::streamio_open(const char * path,const char * flags)
@@ -431,7 +436,7 @@ FILE * filesystem::streamio_open(const char * path,const char * flags)
 	g_get_canonical_path(path,temp);
 	if (!strncmp(temp,"file://",7))
 	{
-		ret = _wfopen(string_wide_from_utf8(path+7),string_wide_from_utf8(flags));
+		ret = _wfopen(pfc::stringcvt::string_wide_from_utf8(path+7),pfc::stringcvt::string_wide_from_utf8(flags));
 	}
 	return ret;
 }
@@ -584,7 +589,7 @@ unsigned stream_reader::read_e(void * p_buffer,unsigned p_bytes,abort_callback &
 	t_io_result io_status;
 	unsigned io_bytes_done;
 	io_status = read(p_buffer,p_bytes,io_bytes_done,p_abort);
-	if (io_result_failed(io_status)) throw io_status;
+	if (io_result_failed(io_status)) throw exception_io(io_status);
 	return io_bytes_done;
 }
 
@@ -601,7 +606,7 @@ void stream_reader::read_object_e(void * p_buffer,unsigned p_bytes,abort_callbac
 {
 	t_io_result io_status;
 	io_status = read_object(p_buffer,p_bytes,p_abort);
-	if (io_result_failed_or_eof(io_status)) throw io_status;
+	if (io_result_failed_or_eof(io_status)) throw exception_io(io_status);
 }
 
 unsigned stream_writer::write_e(const void * p_buffer,unsigned p_bytes,abort_callback & p_abort)
@@ -609,7 +614,7 @@ unsigned stream_writer::write_e(const void * p_buffer,unsigned p_bytes,abort_cal
 	t_io_result io_status;
 	unsigned io_bytes_done;
 	io_status = write(p_buffer,p_bytes,io_bytes_done,p_abort);
-	if (io_result_failed(io_status)) throw io_status;
+	if (io_result_failed(io_status)) throw exception_io(io_status);
 	return io_bytes_done;
 }
 
@@ -617,25 +622,25 @@ void stream_writer::write_object_e(const void * p_buffer,unsigned p_bytes,abort_
 {
 	t_io_result io_status;
 	io_status = write_object(p_buffer,p_bytes,p_abort);
-	if (io_result_failed(io_status)) throw io_status;
+	if (io_result_failed(io_status)) throw exception_io(io_status);
 }
 
 void file::seek_e(t_filesize position,abort_callback & p_abort)
 {
 	t_io_result status = seek(position,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 }
 
 void file::seek2_e(t_int64 position,int mode,abort_callback & p_abort)
 {
 	t_io_result status = seek2(position,mode,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 }
 
 void file::reopen_e(abort_callback & p_abort)
 {
 	t_io_result status = reopen(p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 }
 
 t_io_result stream_writer::write_object(const void * p_buffer,unsigned p_bytes,abort_callback & p_abort)
@@ -643,7 +648,7 @@ t_io_result stream_writer::write_object(const void * p_buffer,unsigned p_bytes,a
 	t_io_result io_status;
 	unsigned io_bytes_done;
 	io_status = write(p_buffer,p_bytes,io_bytes_done,p_abort);
-	if (io_result_succeeded(io_status) && io_bytes_done != p_bytes) io_status = io_result_error_generic;
+	if (io_result_succeeded(io_status) && io_bytes_done != p_bytes) io_status = io_result_error_data;
 	return io_status;
 }
 
@@ -651,14 +656,14 @@ t_uint64 stream_reader::skip_e(t_uint64 p_bytes,abort_callback & p_abort)
 {
 	t_uint64 skipped = 0;
 	t_io_result status = skip(p_bytes,skipped,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 	return skipped;
 }
 
 void stream_reader::skip_object_e(t_uint64 p_bytes,abort_callback & p_abort)
 {
 	t_io_result status = skip_object(p_bytes,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 }
 
 t_filesize file::get_size_e(abort_callback & p_abort)
@@ -666,7 +671,7 @@ t_filesize file::get_size_e(abort_callback & p_abort)
 	t_io_result status;
 	t_filesize ret;
 	status = get_size(ret,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 	return ret;
 }
 
@@ -675,7 +680,7 @@ t_filesize file::get_position_e(abort_callback & p_abort)
 	t_io_result status;
 	t_filesize ret;
 	status = get_position(ret,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 	return ret;
 }
 
@@ -702,7 +707,7 @@ t_filetimestamp file::get_timestamp_e(abort_callback & p_abort)
 	t_io_result status;
 	t_filetimestamp ret;
 	status = get_timestamp(ret,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 	return ret;
 }
 
@@ -738,19 +743,19 @@ t_io_result stream_reader::skip_object(t_uint64 p_bytes,abort_callback & p_abort
 void file::set_eof_e(abort_callback & p_abort)
 {
 	t_io_result status = set_eof(p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 }
 
 void file::g_transfer_e(stream_reader * src,stream_writer * dst,t_filesize bytes,t_filesize & transferred,abort_callback & p_abort)
 {
 	t_io_result status = g_transfer(src,dst,bytes,transferred,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 }
 
 void file::g_transfer_object_e(stream_reader * src,stream_writer * dst,t_filesize bytes,abort_callback & p_abort)
 {
 	t_io_result status = g_transfer_object(src,dst,bytes,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 }
 
 t_io_result filesystem::g_open_write_new(service_ptr_t<file> & p_out,const char * p_path,abort_callback & p_abort)
@@ -761,7 +766,7 @@ t_io_result filesystem::g_open_write_new(service_ptr_t<file> & p_out,const char 
 void filesystem::g_open_write_new_e(service_ptr_t<file> & p_out,const char * p_path,abort_callback & p_abort)
 {
 	t_io_result code = g_open_write_new(p_out,p_path,p_abort);
-	if (io_result_failed(code)) throw code;
+	if (io_result_failed(code)) throw exception_io(code);
 }
 
 t_io_result file::g_transfer_file(const service_ptr_t<file> & p_from,const service_ptr_t<file> & p_to,abort_callback & p_abort)
@@ -800,21 +805,21 @@ t_io_result filesystem::g_open_tempmem(service_ptr_t<file> & p_out,abort_callbac
 void filesystem::g_open_temp_e(service_ptr_t<file> & p_out,abort_callback & p_abort)
 {
 	t_io_result status = g_open_temp(p_out,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 }
 
 void filesystem::g_open_tempmem_e(service_ptr_t<file> & p_out,abort_callback & p_abort)
 {
 	t_io_result status = g_open_tempmem(p_out,p_abort);
-	if (io_result_failed(status)) throw status;
+	if (io_result_failed(status)) throw exception_io(status);
 }
 
-t_io_result archive_i::list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort)
+t_io_result archive_impl::list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort)
 {
 	return io_result_error_not_found;
 }
 
-t_io_result archive_i::create_directory(const char * path,abort_callback &)
+t_io_result archive_impl::create_directory(const char * path,abort_callback &)
 {
 	return io_result_error_generic;
 }
@@ -834,7 +839,7 @@ t_io_result filesystem::g_get_stats_ex(const char * p_path,t_filestats & p_stats
 	return g_get_stats(path_c,p_stats,p_is_writeable,p_abort);
 }
 
-t_io_result archive_i::get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort)
+t_io_result archive_impl::get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort)
 {
 	string8 archive,file;
 	if (g_parse_unpack_path(p_path,archive,file))
@@ -865,7 +870,7 @@ bool file::is_eof_e(abort_callback & p_abort)
 	bool ret;
 	t_io_result code;
 	code = is_eof(ret,p_abort);
-	if (io_result_failed(code)) throw code;
+	if (io_result_failed(code)) throw exception_io(code);
 	return ret;
 }
 
@@ -894,6 +899,10 @@ const char * foobar2000_io::io_result_get_message(t_io_result param)
 		return "Device is full";
 	case io_result_error_out_of_memory:
 		return "Out of memory";
+	case io_result_error_bug_check:
+		return "Bug check";
+	case io_result_error_user:
+		return "User error";
 	default:
 		return "Unknown error code";
 	}
@@ -922,4 +931,120 @@ t_filetimestamp foobar2000_io::filetimestamp_from_system_timer()
 	t_filetimestamp ret;
 	GetSystemTimeAsFileTime((FILETIME*)&ret);
 	return ret;
+}
+
+t_io_result stream_reader::read_string(string_base & p_out,abort_callback & p_abort)
+{
+	t_io_result status;
+	t_uint32 length;
+	status = read_lendian_t(length,p_abort);
+	if (io_result_failed(status)) return status;
+	char * ptr = p_out.lock_buffer(length);
+	if (ptr == 0) return io_result_error_out_of_memory;
+	status = read_object(ptr,length,p_abort);
+	p_out.unlock_buffer();
+	if (io_result_failed(status)) return status;
+	return io_result_success;	
+}
+
+void stream_reader::read_string_e(string_base & p_out,abort_callback & p_abort)
+{
+	t_io_result status;
+	status = read_string(p_out,p_abort);
+	if (io_result_failed(status)) throw exception_io(status);
+}
+
+t_io_result stream_reader::read_string_raw(string_base & p_out,abort_callback & p_abort)
+{
+	enum {delta = 256};
+	char buffer[delta];
+	t_io_result status;
+	p_out.reset();
+	for(;;)
+	{
+		unsigned delta_done = 0;
+		status = read(buffer,delta,delta_done,p_abort);
+		if (io_result_failed(status)) return status;
+		p_out.add_string(buffer,delta_done);
+		if (status == io_result_eof) break;
+	}
+	return io_result_success;
+}
+
+void stream_reader::read_string_raw_e(string_base & p_out,abort_callback & p_abort)
+{
+	t_io_result status;
+	status = read_string_raw(p_out,p_abort);
+	if (io_result_failed(status)) throw exception_io(status);
+}
+
+t_io_result stream_writer::write_string(const char * p_string,abort_callback & p_abort)
+{
+	t_io_result status;
+	t_uint32 len = (t_uint32) strlen(p_string);
+	status = write_lendian_t(len,p_abort);
+	if (io_result_failed(status)) return status;
+	status = write_object(p_string,len,p_abort);
+	if (io_result_failed(status)) return status;
+	return io_result_success;
+}
+
+void stream_writer::write_string_e(const char * p_string,abort_callback & p_abort)
+{
+	t_io_result status;
+	status = write_string(p_string,p_abort);
+	if (io_result_failed(status)) throw exception_io(status);
+}
+
+t_io_result stream_writer::write_string_raw(const char * p_string,abort_callback & p_abort)
+{
+	return write_object(p_string,strlen(p_string),p_abort);
+}
+
+void stream_writer::write_string_raw_e(const char * p_string,abort_callback & p_abort)
+{
+	t_io_result status;
+	status = write_string_raw(p_string,p_abort);
+	if (io_result_failed(status)) throw exception_io(status);
+}
+
+
+t_io_result file::truncate(t_uint64 p_position,abort_callback & p_abort)
+{
+	t_uint64 backup;
+	t_io_result status;
+	status = get_position(backup,p_abort);
+	if (io_result_failed(status)) return status;
+	status = seek(p_position,p_abort);
+	if (io_result_failed(status)) return status;
+	status = set_eof(p_abort);
+	if (io_result_failed(status)) return status;
+	if (backup < p_position)
+	{
+		status = seek(backup,p_abort);
+		if (io_result_failed(status)) return status;
+	}
+	return io_result_success;
+}
+
+void file::truncate_e(t_uint64 p_position,abort_callback & p_abort)
+{
+	t_io_result status = truncate(p_position,p_abort);
+	if (io_result_failed(status)) throw exception_io(status);
+}
+
+
+format_filetimestamp::format_filetimestamp(t_filetimestamp p_timestamp) {
+#ifdef _WINDOWS
+	SYSTEMTIME st; FILETIME ft;
+	if (FileTimeToLocalFileTime((FILETIME*)&p_timestamp,&ft)) {
+		if (FileTimeToSystemTime(&ft,&st)) {
+			m_buffer 
+				<< format_uint(st.wYear,4) << "-" << format_uint(st.wMonth,2) << "-" << format_uint(st.wDay,2) << " " 
+				<< format_uint(st.wHour,2) << ":" << format_uint(st.wMinute,2) << ":" << format_uint(st.wSecond,2);
+		} else m_buffer << "<invalid timestamp>";
+	} else m_buffer << "<invalid timestamp>";
+#else
+#error portme
+#endif
 }

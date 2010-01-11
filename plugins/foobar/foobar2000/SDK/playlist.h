@@ -1,12 +1,7 @@
 #ifndef _PLAYLIST_H_
 #define _PLAYLIST_H_
 
-#include "service.h"
-#include "metadb_handle.h"
-#include "play_control.h"
-
-class NOVTABLE playlist_lock : public service_base
-{
+class NOVTABLE playlist_lock : public service_base {
 public:
 	enum 
 	{
@@ -14,7 +9,9 @@ public:
 		filter_remove	= 1 << 1,
 		filter_reorder  = 1 << 2,
 		filter_replace  = 1 << 3,
-		filter_rename	= 1 << 4
+		filter_rename	= 1 << 4,
+		filter_remove_playlist = 1 << 5,
+		filter_default_action = 1 << 6,
 	};
 
 	virtual bool query_items_add(unsigned start, const list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;
@@ -22,22 +19,32 @@ public:
 	virtual bool query_items_remove(const bit_array & mask,bool p_force)=0;//if p_force is set, files have been physically removed and your return value is ignored
 	virtual bool query_item_replace(unsigned idx,const metadb_handle_ptr & p_old,const metadb_handle_ptr & p_new)=0;
 	virtual bool query_playlist_rename(const char * p_new_name,unsigned p_new_name_len) = 0;
+	virtual bool query_playlist_remove() = 0;
+	virtual bool execute_default_action(unsigned p_item) = 0;
 	virtual void on_playlist_index_change(unsigned p_new_index) = 0;
 	virtual void on_playlist_remove() = 0;
 	virtual void get_lock_name(string_base & p_out) = 0;
 	virtual void show_ui() = 0;
 	virtual t_uint32 get_filter_mask() = 0;
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
-	}
-
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	playlist_lock() {}
+	~playlist_lock() {}
 };
 
+struct t_playback_queue_item {
+	metadb_handle_ptr m_handle;
+	unsigned m_playlist,m_item;
+
+	bool operator==(const t_playback_queue_item & p_item) const;
+	bool operator!=(const t_playback_queue_item & p_item) const;
+};
 
 //important: playlist engine is SINGLE-THREADED. call any APIs not from main thread and things will either blow up or refuse to work. all callbacks can be assumed to come from main thread.
 
@@ -83,12 +90,12 @@ public:
 	virtual bool playlist_is_undo_available(unsigned p_playlist) = 0;
 	virtual bool playlist_is_redo_available(unsigned p_playlist) = 0;
 
-	virtual void playlist_item_format_title(unsigned p_playlist,unsigned p_item,titleformat_hook * p_hook,string_base & out,const service_ptr_t<titleformat_object> & p_script,titleformat_text_filter * p_filter)=0;//spec may be null, will use core settings; extra items are optional
+	virtual void playlist_item_format_title(unsigned p_playlist,unsigned p_item,titleformat_hook * p_hook,string_base & out,const service_ptr_t<titleformat_object> & p_script,titleformat_text_filter * p_filter,play_control::t_display_level p_playback_info_level)=0;
 
 	virtual bool get_playing_item_location(unsigned * p_playlist,unsigned * p_index) = 0;
 	
-	virtual unsigned playlist_get_playback_cursor(unsigned p_playlist) = 0;
-	virtual void playlist_set_playback_cursor(unsigned p_playlist,unsigned p_cursor) = 0;
+//	virtual unsigned playlist_get_playback_cursor(unsigned p_playlist) = 0;
+//	virtual void playlist_set_playback_cursor(unsigned p_playlist,unsigned p_cursor) = 0;
 
 	virtual bool playlist_sort_by_format(unsigned p_playlist,const char * spec,bool p_sel_only) = 0;
 
@@ -111,12 +118,28 @@ public:
 	virtual unsigned playback_order_get_active() = 0;
 	virtual void playback_order_set_active(unsigned p_index) = 0;
 	
-	virtual void queue_flush() = 0;
+	virtual void queue_remove_mask(bit_array const & p_mask) = 0;
 	virtual void queue_add_item_playlist(unsigned p_playlist,unsigned p_item) = 0;
 	virtual void queue_add_item(metadb_handle_ptr p_item) = 0;
-	virtual bool queue_is_active() = 0;
+	virtual unsigned queue_get_count() = 0;
+	virtual void queue_get_contents(list_base_t<t_playback_queue_item> & p_out) = 0;
+	//! Returns index (0-based) on success, infinite on failure.
+	virtual unsigned queue_find_index(t_playback_queue_item const & p_item) = 0;
 
+	virtual void register_callback(class playlist_callback * p_callback,unsigned p_flags) = 0;
+	virtual void register_callback(class playlist_callback_single * p_callback,unsigned p_flags) = 0;
+	virtual void unregister_callback(class playlist_callback * p_callback) = 0;
+	virtual void unregister_callback(class playlist_callback_single * p_callback) = 0;
+	virtual void modify_callback(class playlist_callback * p_callback,unsigned p_flags) = 0;
+	virtual void modify_callback(class playlist_callback_single * p_callback,unsigned p_flags) = 0;
+
+	virtual bool playlist_execute_default_action(unsigned p_playlist,unsigned p_item) = 0;
+
+	
 	//helpers
+	void queue_flush();
+	bool queue_is_active();
+
 	bool highlight_playing_item();
 	bool remove_playlist(unsigned idx);
 	bool remove_playlist_switch(unsigned idx);//attempts to switch to another playlist after removing
@@ -184,7 +207,7 @@ public:
 	void activeplaylist_clear_selection();
 	void activeplaylist_remove_selection(bool p_crop = false);
 
-	void activeplaylist_item_format_title(unsigned p_item,titleformat_hook * p_hook,string_base & out,const service_ptr_t<titleformat_object> & p_script,titleformat_text_filter * p_filter);
+	void activeplaylist_item_format_title(unsigned p_item,titleformat_hook * p_hook,string_base & out,const service_ptr_t<titleformat_object> & p_script,titleformat_text_filter * p_filter,play_control::t_display_level p_playback_info_level);
 
 	void playlist_set_selection_single(unsigned p_playlist,unsigned p_item,bool p_state);
 	void activeplaylist_set_selection_single(unsigned p_item,bool p_state);
@@ -204,36 +227,40 @@ public:
 	bool activeplaylist_is_undo_available();
 	bool activeplaylist_is_redo_available();
 
+	bool activeplaylist_execute_default_action(unsigned p_item);
+
 	void remove_items_from_all_playlists(const list_base_const_t<metadb_handle_ptr> & p_data);
 
 	void active_playlist_fix();
 
 	bool get_all_items(list_base_t<metadb_handle_ptr> & out);
 
+	static bool g_get(service_ptr_t<playlist_manager> & p_out);
+
 	static const GUID class_guid;
 	static inline const GUID & get_class_guid() {return class_guid;}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
 	}
-
-
-	static bool g_get(service_ptr_t<playlist_manager> & p_out);
+protected:
+	playlist_manager() {}
+	~playlist_manager() {}
 };
 
-class NOVTABLE playlist_callback : public service_base
+class NOVTABLE playlist_callback
 {
 public:
-	virtual void on_items_added(unsigned p_playlist,unsigned start, const list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call IPlaylist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
-	virtual void on_items_reordered(unsigned p_playlist,const unsigned * order,unsigned count)=0;//changes selection too; doesnt actually change set of items that are selected or item having focus, just changes their order
-	virtual void on_items_removing(unsigned p_playlist,const bit_array & mask)=0;//called before actually removing them
-	virtual void on_items_removed(unsigned p_playlist,const bit_array & mask)=0;
-	virtual void on_items_selection_change(unsigned p_playlist,const bit_array & affected,const bit_array & state) = 0;
-	virtual void on_item_focus_change(unsigned p_playlist,unsigned from,unsigned to)=0;//focus may be -1 when no item has focus; reminder: focus may also change on other callbacks
+	virtual void FB2KAPI on_items_added(unsigned p_playlist,unsigned p_start, const list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call playlist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
+	virtual void FB2KAPI on_items_reordered(unsigned p_playlist,const unsigned * p_order,unsigned p_count)=0;//changes selection too; doesnt actually change set of items that are selected or item having focus, just changes their order
+	virtual void FB2KAPI on_items_removing(unsigned p_playlist,const bit_array & p_mask,unsigned p_old_count,unsigned p_new_count)=0;//called before actually removing them
+	virtual void FB2KAPI on_items_removed(unsigned p_playlist,const bit_array & p_mask,unsigned p_old_count,unsigned p_new_count)=0;
+	virtual void FB2KAPI on_items_selection_change(unsigned p_playlist,const bit_array & p_affected,const bit_array & p_state) = 0;
+	virtual void FB2KAPI on_item_focus_change(unsigned p_playlist,unsigned p_from,unsigned p_to)=0;//focus may be -1 when no item has focus; reminder: focus may also change on other callbacks
 	
-	virtual void on_items_modified(unsigned p_playlist,const bit_array & p_mask)=0;
+	virtual void FB2KAPI on_items_modified(unsigned p_playlist,const bit_array & p_mask)=0;
+	virtual void FB2KAPI on_items_modified_fromplayback(unsigned p_playlist,const bit_array & p_mask,play_control::t_display_level p_level)=0;
 
 	struct t_on_items_replaced_entry
 	{
@@ -241,85 +268,185 @@ public:
 		metadb_handle_ptr m_old,m_new;
 	};
 
-	virtual void on_items_replaced(unsigned p_playlist,const bit_array & p_mask,const list_base_const_t<t_on_items_replaced_entry> & p_data)=0;
+	virtual void FB2KAPI on_items_replaced(unsigned p_playlist,const bit_array & p_mask,const list_base_const_t<t_on_items_replaced_entry> & p_data)=0;
 
-	virtual void on_item_ensure_visible(unsigned p_playlist,unsigned idx)=0;
+	virtual void FB2KAPI on_item_ensure_visible(unsigned p_playlist,unsigned p_idx)=0;
 
-	virtual void on_playlist_activate(unsigned p_old,unsigned p_new) = 0;
-	virtual void on_playlist_created(unsigned p_index,const char * p_name,unsigned p_name_len) = 0;
-	virtual void on_playlists_reorder(const unsigned * p_order,unsigned p_count) = 0;
-	virtual void on_playlists_removing(const bit_array & p_mask,unsigned p_old_count,unsigned p_new_count) = 0;
-	virtual void on_playlists_removed(const bit_array & p_mask,unsigned p_old_count,unsigned p_new_count) = 0;
-	virtual void on_playlist_renamed(unsigned p_index,const char * p_new_name,unsigned p_new_name_len) = 0;
+	virtual void FB2KAPI on_playlist_activate(unsigned p_old,unsigned p_new) = 0;
+	virtual void FB2KAPI on_playlist_created(unsigned p_index,const char * p_name,unsigned p_name_len) = 0;
+	virtual void FB2KAPI on_playlists_reorder(const unsigned * p_order,unsigned p_count) = 0;
+	virtual void FB2KAPI on_playlists_removing(const bit_array & p_mask,unsigned p_old_count,unsigned p_new_count) = 0;
+	virtual void FB2KAPI on_playlists_removed(const bit_array & p_mask,unsigned p_old_count,unsigned p_new_count) = 0;
+	virtual void FB2KAPI on_playlist_renamed(unsigned p_index,const char * p_new_name,unsigned p_new_name_len) = 0;
 
-	virtual void on_default_format_changed() = 0;
-	virtual void on_playback_order_changed(unsigned p_new_index) = 0;
-	virtual void on_playlist_locked(unsigned p_playlist,bool p_locked) = 0;
+	virtual void FB2KAPI on_default_format_changed() = 0;
+	virtual void FB2KAPI on_playback_order_changed(unsigned p_new_index) = 0;
+	virtual void FB2KAPI on_playlist_locked(unsigned p_playlist,bool p_locked) = 0;
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
-	}
+	enum {
+		flag_on_items_added					= 1 << 0,
+		flag_on_items_reordered				= 1 << 1,
+		flag_on_items_removing				= 1 << 2,
+		flag_on_items_removed				= 1 << 3,
+		flag_on_items_selection_change		= 1 << 4,
+		flag_on_item_focus_change			= 1 << 5,
+		flag_on_items_modified				= 1 << 6,
+		flag_on_items_modified_fromplayback	= 1 << 7,
+		flag_on_items_replaced				= 1 << 8,
+		flag_on_item_ensure_visible			= 1 << 9,
+		flag_on_playlist_activate			= 1 << 10,
+		flag_on_playlist_created			= 1 << 11,
+		flag_on_playlists_reorder			= 1 << 12,
+		flag_on_playlists_removing			= 1 << 13,
+		flag_on_playlists_removed			= 1 << 14,
+		flag_on_playlist_renamed			= 1 << 15,
+		flag_on_default_format_changed		= 1 << 16,
+		flag_on_playback_order_changed		= 1 << 17,
+		flag_on_playlist_locked				= 1 << 18,
 
-	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
+		flag_all							= ~0,
+	};
+protected:
+	playlist_callback() {}
+	~playlist_callback() {}
 };
 
-class NOVTABLE playlist_callback_single : public service_base
+class NOVTABLE playlist_callback_static : public service_base, public playlist_callback 
 {
 public:
-	virtual void on_items_added(unsigned start, const list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call IPlaylist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
-	virtual void on_items_reordered(const unsigned * order,unsigned count)=0;//changes selection too; doesnt actually change set of items that are selected or item having focus, just changes their order
-	virtual void on_items_removing(const bit_array & mask)=0;//called before actually removing them
-	virtual void on_items_removed(const bit_array & mask)=0;
-	virtual void on_items_selection_change(const bit_array & affected,const bit_array & state) = 0;
-	virtual void on_item_focus_change(unsigned from,unsigned to)=0;//focus may be -1 when no item has focus; reminder: focus may also change on other callbacks
-	virtual void on_items_modified(const bit_array & p_mask)=0;
-	virtual void on_items_replaced(const bit_array & p_mask,const list_base_const_t<playlist_callback::t_on_items_replaced_entry> & p_data)=0;
-	virtual void on_item_ensure_visible(unsigned idx)=0;
-
-	virtual void on_playlist_switch() = 0;
-	virtual void on_playlist_renamed(const char * p_new_name,unsigned p_new_name_len) = 0;
-	virtual void on_playlist_locked(bool p_locked) = 0;
-
-	virtual void on_default_format_changed() = 0;
-	virtual void on_playback_order_changed(unsigned p_new_index) = 0;
-
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
-	}
+	virtual unsigned get_flags() = 0;
 
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	playlist_callback_static() {}
+	~playlist_callback_static() {}
+};
+
+class NOVTABLE playlist_callback_single
+{
+public:
+	virtual void FB2KAPI on_items_added(unsigned start, const list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call playlist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
+	virtual void FB2KAPI on_items_reordered(const unsigned * order,unsigned count)=0;//changes selection too; doesnt actually change set of items that are selected or item having focus, just changes their order
+	virtual void FB2KAPI on_items_removing(const bit_array & p_mask,unsigned p_old_count,unsigned p_new_count)=0;//called before actually removing them
+	virtual void FB2KAPI on_items_removed(const bit_array & p_mask,unsigned p_old_count,unsigned p_new_count)=0;
+	virtual void FB2KAPI on_items_selection_change(const bit_array & p_affected,const bit_array & p_state) = 0;
+	virtual void FB2KAPI on_item_focus_change(unsigned p_from,unsigned p_to)=0;//focus may be -1 when no item has focus; reminder: focus may also change on other callbacks
+	virtual void FB2KAPI on_items_modified(const bit_array & p_mask)=0;
+	virtual void FB2KAPI on_items_modified_fromplayback(const bit_array & p_mask,play_control::t_display_level p_level)=0;
+	virtual void FB2KAPI on_items_replaced(const bit_array & p_mask,const list_base_const_t<playlist_callback::t_on_items_replaced_entry> & p_data)=0;
+	virtual void FB2KAPI on_item_ensure_visible(unsigned p_idx)=0;
+
+	virtual void FB2KAPI on_playlist_switch() = 0;
+	virtual void FB2KAPI on_playlist_renamed(const char * p_new_name,unsigned p_new_name_len) = 0;
+	virtual void FB2KAPI on_playlist_locked(bool p_locked) = 0;
+
+	virtual void FB2KAPI on_default_format_changed() = 0;
+	virtual void FB2KAPI on_playback_order_changed(unsigned p_new_index) = 0;
+
+	enum {
+		flag_on_items_added					= 1 << 0,
+		flag_on_items_reordered				= 1 << 1,
+		flag_on_items_removing				= 1 << 2,
+		flag_on_items_removed				= 1 << 3,
+		flag_on_items_selection_change		= 1 << 4,
+		flag_on_item_focus_change			= 1 << 5,
+		flag_on_items_modified				= 1 << 6,
+		flag_on_items_modified_fromplayback = 1 << 7,
+		flag_on_items_replaced				= 1 << 8,
+		flag_on_item_ensure_visible			= 1 << 9,
+		flag_on_playlist_switch				= 1 << 10,
+		flag_on_playlist_renamed			= 1 << 11,
+		flag_on_playlist_locked				= 1 << 12,
+		flag_on_default_format_changed		= 1 << 13,
+		flag_on_playback_order_changed		= 1 << 14,
+		flag_all							= ~0,
+	};
+protected:
+	playlist_callback_single() {}
+	~playlist_callback_single() {}
+};
+
+class playlist_callback_single_static : public service_base, public playlist_callback_single
+{
+public:
+	virtual unsigned get_flags() = 0;
+
+	static const GUID class_guid;
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	playlist_callback_single_static() {}
+	~playlist_callback_single_static() {}
 };
 
 class NOVTABLE playlist_incoming_item_filter : public service_base
 {
 public:
 	virtual bool filter_items(const list_base_const_t<metadb_handle_ptr> & in,list_base_t<metadb_handle_ptr> & out) = 0;//sort / remove duplicates
-	virtual bool process_locations(const list_base_const_t<const char*> & urls,list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_restrict_mask_overide, const char * p_exclude_mask_override,HWND p_parentwnd)=0;
-	virtual bool process_dropped_files(interface IDataObject * pDataObject,list_base_t<metadb_handle_ptr> & out,bool filter,HWND p_parentwnd)=0;
-	virtual bool process_dropped_files_check(interface IDataObject * pDataObject)=0;
-	virtual bool process_dropped_files_check_if_native(interface IDataObject * pDataObject)=0;
-	virtual interface IDataObject * create_dataobject(const list_base_const_t<metadb_handle_ptr> & data)=0;
+	virtual bool process_locations(const list_base_const_t<const char*> & urls,list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_restrict_mask_overide, const char * p_exclude_mask_override,HWND p_parentwnd) = 0;
+	virtual bool process_dropped_files(interface IDataObject * pDataObject,list_base_t<metadb_handle_ptr> & out,bool filter,HWND p_parentwnd) = 0;
+	virtual bool process_dropped_files_check(interface IDataObject * pDataObject) = 0;
+	virtual bool process_dropped_files_check_if_native(interface IDataObject * pDataObject) = 0;
+	virtual interface IDataObject * create_dataobject(const list_base_const_t<metadb_handle_ptr> & data) = 0;
 
 	//helper
 	bool process_location(const char * url,list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_mask,const char * p_exclude,HWND p_parentwnd);
 
 	static bool g_get(service_ptr_t<playlist_incoming_item_filter> & p_out) {return service_enum_t<playlist_incoming_item_filter>().first(p_out);}
 
-	virtual service_base * service_query(const GUID & guid)
-	{
-		if (guid == get_class_guid()) {service_add_ref();return this;}
-		else return service_base::service_query(guid);
-	}
-
 	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	playlist_incoming_item_filter() {}
+	~playlist_incoming_item_filter() {}
 };
 
+class NOVTABLE playlist_incoming_item_filter_ex : public playlist_incoming_item_filter {
+public:
+	virtual bool process_dropped_files_check_ex(interface IDataObject * pDataObject, DWORD * p_effect) = 0;
+
+	static const GUID class_guid;
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	playlist_incoming_item_filter_ex() {}
+	~playlist_incoming_item_filter_ex() {}
+};
+
+class NOVTABLE playback_queue_callback : public service_base
+{
+public:
+	enum t_change_origin {
+		changed_user_added,
+		changed_user_removed,
+		changed_playback_advance,
+	};
+	virtual void on_changed(t_change_origin p_origin) = 0;
+
+	static const GUID class_guid;
+
+	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
+		if (p_guid == class_guid) {p_out = this; return true;}
+		else return service_base::service_query(p_out,p_guid);
+	}
+protected:
+	playback_queue_callback() {}
+	~playback_queue_callback() {}
+};
 
 #endif

@@ -1,7 +1,5 @@
 #include "pfc.h"
 
-#include <locale.h>
-
 //utf8 stuff
 
 #ifndef BYTE
@@ -159,26 +157,30 @@ unsigned utf16_encode_char(unsigned cur_wchar,WCHAR * out)
 	return 0;
 }
 
-unsigned utf16_decode_char(const WCHAR * src,unsigned * out)
-{
-	unsigned rv = 0;
-	unsigned int cur_wchar = *(src++);
-	if (cur_wchar)
-	{
-		rv = 1;
-		if ((cur_wchar & 0xFC00) == 0xD800)
+unsigned utf16_decode_char(const wchar_t * p_source,unsigned * p_out,unsigned p_source_length) {
+	if (p_source_length == 0) return 0;
+	else if (p_source_length == 1) {
+		*p_out = p_source[0];
+		return 1;
+	} else {
+		unsigned retval = 0;
+		unsigned decoded = p_source[0];
+		if (decoded != 0)
 		{
-			unsigned int low = *src;
-			if ((low & 0xFC00) == 0xDC00)
+			retval = 1;
+			if ((decoded & 0xFC00) == 0xD800)
 			{
-				src++;
-				cur_wchar = 0x10000 + ( ((cur_wchar & 0x3FF) << 10) | (low & 0x3FF) );
-				rv = 2;
+				unsigned low = p_source[1];
+				if ((low & 0xFC00) == 0xDC00)
+				{
+					decoded = 0x10000 + ( ((decoded & 0x3FF) << 10) | (low & 0x3FF) );
+					retval = 2;
+				}
 			}
 		}
+		*p_out = decoded;
+		return retval;
 	}
-	*out = cur_wchar;
-	return rv;
 }
 
 
@@ -205,126 +207,6 @@ unsigned skip_utf8_chars(const char * ptr,unsigned count)
 		num+=d;		
 	}
 	return num;
-}
-
-unsigned convert_utf8_to_utf16(const char * src,WCHAR * dst,unsigned len)
-{
-	unsigned rv = 0;
-	while(len && *src)
-	{
-		unsigned c,d;
-		d = utf8_decode_char(src,&c,len);
-		if (d==0 || d>len) break;
-		src += d;
-		len -= d;
-		d = utf16_encode_char(c,dst);
-		if (d==0) break;
-		dst += d;
-		rv += d;
-	}
-	*dst = 0;
-	return rv;
-}
-
-unsigned convert_utf16_to_utf8(const WCHAR * src,char * dst,unsigned len)
-{
-	unsigned rv = 0;
-	while(len && *src)
-	{
-		unsigned c,d;
-		d = utf16_decode_char(src,&c);
-		if (d==0 || d>len) break;
-		src += d;
-		len -= d;
-		d = utf8_encode_char(c,dst);
-		if (d==0) break;
-		dst += d;
-		rv += d;
-	}
-	*dst = 0;
-	return rv;
-}
-
-unsigned convert_ansi_to_utf16(const char * src,WCHAR * dst,unsigned len)
-{
-	len = strlen_max(src,len);
-	unsigned rv;
-#ifdef WIN32
-	rv = MultiByteToWideChar(CP_ACP,0,src,len,dst,estimate_ansi_to_utf16(src));
-#else
-	setlocale(LC_CTYPE,"");
-	rv = mbstowcs(dst,src,len);
-#endif
-	if ((signed)rv<0) rv = 0;
-	dst[rv]=0;
-	return rv;
-}
-
-unsigned convert_utf16_to_ansi(const WCHAR * src,char * dst,unsigned len)
-{
-	len = wcslen_max(src,len);
-	unsigned rv;
-#ifdef WIN32
-	rv = WideCharToMultiByte(CP_ACP,0,src,len,dst,estimate_utf16_to_ansi(src),0,0);
-#else
-	setlocale(LC_CTYPE,"");
-	rv = wcstombs(dst,src,len);
-#endif
-	if ((signed)rv<0) rv = 0;
-	dst[rv]=0;
-	return rv;
-}
-
-unsigned convert_utf8_to_ansi(const char * src,char * dst,unsigned len)
-{//meh
-	len = strlen_max(src,len);
-
-	unsigned temp_len = estimate_utf8_to_utf16(src,len);
-	mem_block_t<WCHAR> temp_block;
-	WCHAR * temp = (temp_len * sizeof(WCHAR) <= PFC_ALLOCA_LIMIT) ? (WCHAR*)alloca(temp_len * sizeof(WCHAR)) : (temp_block.set_size(temp_len) ? temp_block.get_ptr() : 0);
-	assert(temp);
-
-	len = convert_utf8_to_utf16(src,temp,len);
-	return convert_utf16_to_ansi(temp,dst,len);
-}
-
-unsigned convert_ansi_to_utf8(const char * src,char * dst,unsigned len)
-{//meh
-	len = strlen_max(src,len);
-
-	unsigned temp_len = estimate_ansi_to_utf16(src,len);
-	mem_block_t<WCHAR> temp_block;
-	WCHAR * temp = (temp_len * sizeof(WCHAR) <= PFC_ALLOCA_LIMIT) ? (WCHAR*)alloca(temp_len * sizeof(WCHAR)) : (temp_block.set_size(temp_len) ? temp_block.get_ptr() : 0);
-	assert(temp);
-
-	len = convert_ansi_to_utf16(src,temp,len);
-	return convert_utf16_to_utf8(temp,dst,len);
-}
-
-void string_base::add_string_ansi(const char * src,unsigned len)
-{
-	len = strlen_max(src,len);
-
-	unsigned temp_len = estimate_ansi_to_utf8(src,len);
-	mem_block_t<char> temp_block;
-	char * temp = (temp_len * sizeof(char) <= PFC_ALLOCA_LIMIT) ? (char*)alloca(temp_len * sizeof(char)) : (temp_block.set_size(temp_len) ? temp_block.get_ptr() : 0);
-	assert(temp);
-
-	len = convert_ansi_to_utf8(src,temp,len);
-	add_string(temp,len);
-}
-
-void string_base::add_string_utf16(const WCHAR * src,unsigned len)
-{
-	len = wcslen_max(src,len);
-
-	unsigned temp_len = estimate_utf16_to_utf8(src,len);
-	mem_block_t<char> temp_block;
-	char * temp = (temp_len * sizeof(char) <= PFC_ALLOCA_LIMIT) ? (char*)alloca(temp_len * sizeof(char)) : (temp_block.set_size(temp_len) ? temp_block.get_ptr() : 0);
-	assert(temp);
-
-	len = convert_utf16_to_utf8(src,temp,len);
-	add_string(temp,len);
 }
 
 bool is_valid_utf8(const char * param)
@@ -386,22 +268,10 @@ unsigned strcpy_utf8_truncate(const char * src,char * out,unsigned maxbytes)
 	return rv;
 }
 
-void recover_invalid_utf8(const char * src,char * out,unsigned replace)
-{
-	while(!check_end_of_string(src))
-	{
-		unsigned c,d;
-		__try {
-			d = utf8_decode_char(src,&c);
-		} __except(1) {d = 0;}
-		if (d==0) c = replace;
-		out += utf8_encode_char(c,out);
-	}
-	*out = 0;
-}
-
 unsigned string8::replace_char(unsigned c1,unsigned c2,unsigned start)
 {
+	if (c1 < 128 && c2 < 128) return replace_byte((char)c1,(char)c2,start);
+
 	string8 temp(get_ptr()+start);
 	truncate(start);
 	const char * ptr = temp;

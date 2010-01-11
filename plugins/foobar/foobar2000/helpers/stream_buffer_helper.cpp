@@ -86,9 +86,7 @@ t_io_result stream_writer_buffered::write(const void * p_buffer,unsigned p_bytes
 
 void stream_writer_buffered::flush_e(abort_callback & p_abort)
 {
-	t_io_result status;
-	status = flush(p_abort);
-	if (io_result_failed(status)) throw status;
+	exception_io::g_test(flush(p_abort));
 }
 
 t_io_result stream_writer_buffered::flush(abort_callback & p_abort)

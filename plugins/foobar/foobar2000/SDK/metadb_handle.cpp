@@ -12,13 +12,13 @@ double metadb_handle::get_length()
 	return rv;
 }
 
-
+#if 0
 int metadb_handle::format_title_legacy(string_base & out,const char * spec,const char * extra_items)
 {
 	if (extra_items) return format_title(&titleformat_hook_impl_legacy_extrainfos(extra_items),out,spec,0);
 	else return format_title(0,out,spec,0);
 }
-
+#endif
 t_filetimestamp metadb_handle::get_filetimestamp()
 {
 	return get_filestats().m_timestamp;
@@ -32,7 +32,7 @@ t_filesize metadb_handle::get_filesize()
 int metadb_handle::format_title(titleformat_hook * p_hook,string_base & p_out,const char * p_spec,titleformat_text_filter * p_filter)
 {
 	service_ptr_t<titleformat_object> script;
-	if (static_api_ptr_t<titleformat>()->compile(script,p_spec))
+	if (static_api_ptr_t<titleformat_compiler>()->compile(script,p_spec))
 		return format_title(p_hook,p_out,script,p_filter);
 	else
 	{
