@@ -3,6 +3,13 @@
 /*
 	changelog
 
+2008-10-30 20:39 UTC - kode54
+- Sample/instrument/pattern/channel numbers added to multi-value field.
+
+2008-10-29 00:54 UTC - kode54
+- Changed sample/instrument/pattern/channel names to use a single multi-
+  value field.
+
 2008-06-27 03:37 UTC - kode54
 - Fixed xm_note_off for when instrument number is out of range.
 
@@ -842,10 +849,14 @@ static const char field_samples[] = "mod_samples";
 static const char field_instruments[] = "mod_instruments";
 static const char field_trackerver[] = "mod_ver_tracker";
 static const char field_formatver[] = "mod_ver_format";
-static const char field_sample[] = "smpl";
+/*static const char field_sample[] = "smpl";
 static const char field_instrument[] = "inst";
 static const char field_pattern[] = "patt";
-static const char field_channel[] = "chan";
+static const char field_channel[] = "chan";*/
+static const char field_sample[] = "sample";
+static const char field_instrument[] = "instrument";
+static const char field_pattern[] = "pattern";
+static const char field_channel[] = "channel";
 static const char field_comment[] = "comment";
 static const char field_title[] = "title";
 
@@ -1033,11 +1044,14 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 			{
 				if (itsd->sample[i].name[0])
 				{
-					name = field_sample;
+					/*name = field_sample;
 					if (i < 10) name.add_byte('0');
-					name << i;
-					if (dos) info.meta_add(name, string_utf8_from_oem((char*)&itsd->sample[i].name, sizeof(itsd->sample[i].name)));
-					else info.meta_add(name, pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->sample[i].name, sizeof(itsd->sample[i].name)));
+					name << i;*/
+					name = pfc::format_int( i, 3 );
+					name += ". ";
+					if (dos) name += string_utf8_from_oem((char*)&itsd->sample[i].name, sizeof(itsd->sample[i].name));
+					else name += pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->sample[i].name, sizeof(itsd->sample[i].name));
+					info.meta_add(field_sample, name);
 				}
 			}
 		}
@@ -1053,11 +1067,14 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 			{
 				if (itsd->instrument[i].name[0])
 				{
-					name = field_instrument;
+					/*name = field_instrument;
 					if (i < 10) name.add_byte('0');
-					name << i;
-					if (dos) info.meta_add(name, string_utf8_from_oem((char*)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name)));
-					else info.meta_add(name, pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name)));
+					name << i;*/
+					name = pfc::format_int( i, 3 );
+					name += ". ";
+					if (dos) name += string_utf8_from_oem((char*)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name));
+					else name += pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name));
+					info.meta_add(field_instrument, name);
 				}
 			}
 		}
@@ -1160,10 +1177,13 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			}
 			if (*(ptr + offset_n + 0x14))
 			{
-				name = field_sample;
+				/*name = field_sample;
 				if (n < 10) name.add_byte('0');
-				name << n;
-				info.meta_add(name, string_utf8_from_it((const char *) ptr + offset_n + 0x14, 26));
+				name << n;*/
+				name = pfc::format_int( n, 3 );
+				name += ". ";
+				name += string_utf8_from_it((const char *) ptr + offset_n + 0x14, 26);
+				info.meta_add(field_sample, name);
 			}
 		}
 
@@ -1176,10 +1196,13 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			if ((!offset_n) || (offset_n + 0x20 + 26 >= size)) continue;
 			if (*(ptr + offset_n + 0x20))
 			{
-				name = field_instrument;
+				/*name = field_instrument;
 				if (n < 10) name.add_byte('0');
-				name << n;
-				info.meta_add(name, string_utf8_from_it((const char *) ptr + offset_n + 0x20, 26));
+				name << n;*/
+				name = pfc::format_int( n, 3 );
+				name += ". ";
+				name += string_utf8_from_it((const char *) ptr + offset_n + 0x20, 26);
+				info.meta_add(field_instrument, name);
 			}
 		}
 	}
@@ -1214,10 +1237,13 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 				{
 					if (*(ptr + pos + n * 32))
 					{
-						name = field_pattern;
+						/*name = field_pattern;
 						if (n < 10) name.add_byte('0');
-						name << n;
-						info.meta_add(name, string_utf8_from_it((const char *) ptr + pos + n * 32, 32));
+						name << n;*/
+						name = pfc::format_int( n, 3 );
+						name += ". ";
+						name += string_utf8_from_it((const char *) ptr + pos + n * 32, 32);
+						info.meta_add(field_pattern, name);
 					}
 				}
 			}
@@ -1239,10 +1265,13 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 				{
 					if (*(ptr + pos + n * 20))
 					{
-						name = field_channel;
+						/*name = field_channel;
 						if (n < 10) name.add_byte('0');
-						name << n;
-						info.meta_add(name, string_utf8_from_it((const char *) ptr + pos + n * 20, 20));
+						name << n;*/
+						name = pfc::format_int( n, 3 );
+						name += ". ";
+						name += string_utf8_from_it((const char *) ptr + pos + n * 20, 20);
+						info.meta_add(field_channel, name);
 					}
 				}
 			}
