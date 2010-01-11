@@ -42,6 +42,7 @@ bool InitADPFILE(CUBEFILE * adp, abort_callback & p_abort) {
     adp->ch[1].lhist2 = 0;
 
 	adp->ch[0].readloc=adp->ch[1].readloc=adp->ch[0].writeloc=adp->ch[1].writeloc=0;
+	adp->ch[0].filled=adp->ch[1].filled=0;
 
 	adp->ch[0].infile->seek( 0, p_abort );
 
