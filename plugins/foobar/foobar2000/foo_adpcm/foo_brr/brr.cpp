@@ -512,6 +512,7 @@ public:
 		p_info.info_set_int( "bitrate", rate * ( stereo + 1 ) * 8 * ( psx ? 16 : 9 ) / ( psx ? 28 : 16 ) / 1000 );
 		if (loopstart!=~0) p_info.info_set_int( "brr_loop_start", loopstart );
 		p_info.info_set( "codec", psx ? "PSX ADPCM" : "SNES ADPCM" );
+		p_info.info_set( "encoding", "lossy" );
 	}
 
 	t_filestats get_file_stats( abort_callback & p_abort )

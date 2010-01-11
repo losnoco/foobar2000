@@ -556,6 +556,7 @@ public:
 		p_info.info_set_int( "samplerate", sample_rate );
 		p_info.info_set_int( "channels", channels );
 		p_info.info_set( "codec", "EA MUS" );
+		p_info.info_set( "encoding", "lossy" );
 
 		if ( loop_offset != 0xFFFFFFFF && loop_length != 0 )
 		{

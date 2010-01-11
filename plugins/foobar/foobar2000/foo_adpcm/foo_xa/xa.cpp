@@ -1612,6 +1612,7 @@ public:
 		p_info.info_set_int( "bitspersample", info->bits_per_sample ? 8 : 4 );
 		p_info.info_set_int( "decoded_bitspersample", 16 );
 		p_info.info_set( "codec", "XA ADPCM" );
+		p_info.info_set( "encoding", "lossy" );
 
 		p_info.info_set_int( "xa_sector_start", info->sector_offset );
 		p_info.info_set_int( "xa_sector_end", info->sector_offset_end );

@@ -64,6 +64,7 @@ public:
 		p_info.info_set_int("channels", libpcm_get_numberofchannels( decoder ) );
 		p_info.info_set_int("bitspersample", libpcm_get_bitspersample( decoder ) );
 		p_info.info_set("codec", libpcm_get_codecname( libpcm_get_codec( decoder ) ) );
+		p_info.info_set( "encoding", "lossy" );
 
 		uint32_t loop_length = libpcm_get_looplength( decoder );
 		if ( loop_length )

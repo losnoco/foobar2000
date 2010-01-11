@@ -340,6 +340,7 @@ public:
 		p_info.info_set_int( "bitspersample", 4 );
 		p_info.info_set_int( "decoded_bitspersample", 16 );
 		p_info.info_set( "codec", "IMA ADPCM" );
+		p_info.info_set( "encoding", "lossy" );
 		p_info.info_set_int( "bitrate", 22050 * 8 / 1000 );
 
 		if ( loop_start >= 0 ) p_info.info_set_int( "rac_loop_start", loop_start );

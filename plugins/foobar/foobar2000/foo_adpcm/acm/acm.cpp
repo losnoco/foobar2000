@@ -77,6 +77,7 @@ public:
 		p_info.info_set_int( "samplerate", srate );
 		p_info.info_set_int( "channels", nch );
 		p_info.info_set( "codec", "Interplay ACM" );
+		p_info.info_set( "encoding", "lossy" );
 
 		p_info.set_length( double( size / nch ) / double( srate ) );
 	}

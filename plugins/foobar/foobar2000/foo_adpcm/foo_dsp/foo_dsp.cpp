@@ -264,6 +264,7 @@ public:
 
 		p_info.info_set_int( "samplerate", dsp.ch[0].header.sample_rate );
 		p_info.info_set_int( "channels", dsp.NCH );
+		p_info.info_set( "encoding", "lossy" );
 		if ( dsp.ch[0].type == type_adp )
 		{
 			p_info.info_set( "codec", "ADP" );
