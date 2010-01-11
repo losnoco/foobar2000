@@ -1,7 +1,11 @@
-#define MY_VERSION "1.3"
+#define MY_VERSION "1.4"
 
 /*
 	changelog
+
+2009-06-13 01:41 UTC - kode54
+- Implemented support for 2336 byte sector files on hard disk only.
+- Version is now 1.4
 
 2009-01-16 01:50 UTC - kode54
 - Updated file add/open function.
@@ -914,7 +918,7 @@ static void xa_decode_4m(t_int16 *out, const unsigned char *in, short * temp)
 	s_1 = temp[0];
 	s_2 = temp[1];
 
-	in += 0x18;
+	in += 8;
 
 	for (h = 0; h < 18; h++, in += 128)
 	{
@@ -973,7 +977,7 @@ static void xa_decode_4s(t_int16 *out, const unsigned char *in, short * temp)
 	s_3 = temp[2];
 	s_4 = temp[3];
 
-	in += 0x18;
+	in += 8;
 
 	for (h = 0; h < 18; h++, in += 128)
 	{
@@ -1039,7 +1043,7 @@ static void xa_decode_8m(t_int16 *out, const unsigned char *in, short * temp)
 	s_1 = temp[0];
 	s_2 = temp[1];
 
-	in += 0x18;
+	in += 8;
 
 	for (h = 0; h < 18; h++, in += 128)
 	{
@@ -1080,7 +1084,7 @@ static void xa_decode_8s(t_int16 *out, const unsigned char *in, short * temp)
 	s_3 = temp[2];
 	s_4 = temp[3];
 
-	in += 0x18;
+	in += 8;
 
 	for (h = 0; h < 18; h++, in += 128)
 	{
@@ -1179,12 +1183,12 @@ public:
 		for ( unsigned i = 0, j = info.get_size(); i < j; ++i ) delete info[ i ];
 	}
 
-	void run( service_ptr_t<file> & m_file, abort_callback & p_abort )
+	void run( service_ptr_t<file> & m_file, int sector_size, abort_callback & p_abort )
 	{
 		{
 			t_filesize length = m_file->get_size( p_abort );
 			
-			t_uint64 sector_count = length / 2352;
+			t_uint64 sector_count = length / sector_size;
 
 			m_loop_data.set_size( unsigned( sector_count ) );
 
@@ -1192,34 +1196,39 @@ public:
 			for ( unsigned i = 0; i < 256; ++i ) info[ i ] = 0;
 
 			pfc::array_t< t_uint8 > xa_buffer;
-			xa_buffer.set_size( 2352 );
+			xa_buffer.set_size( sector_size );
 			unsigned char * ptr = xa_buffer.get_ptr();
 
 			m_file->seek( 0, p_abort );
 
 			t_uint64 sector = 0;
 
+			int offset = 0;
+
 			while ( sector < sector_count )
 			{
 				p_abort.check();
 
-				m_file->read_object( ptr, 2352, p_abort );
+				m_file->read_object( ptr, sector_size, p_abort );
+
+				offset = ( sector_size == 2352 ) ? 16 : 0;
+
 				sector++;
 				/*p_status.set_progress_float( double( sector ) / double( sector_count ) );*/
 
-				if ( ! memcmp( sync, ptr, 12 ) &&
-					ptr[ 15 ] == 2 &&
-					( ptr[ 18 ] & 0x2E ) == 0x24 )
+				if ( ( sector_size != 2352 || ( ! memcmp( sync, ptr, 12 ) &&
+					ptr[ 15 ] == 2 ) ) &&
+					( ptr[ offset + 2 ] & 0x2E ) == 0x24 )
 				{
 					xa_subsong_scanner_loop_info & p_loop_info = m_loop_data[ sector - 1 ];
-					p_loop_info.file_number = ptr[ 16 ];
-					p_loop_info.channel = ptr[ 17 ];
-					p_loop_info.scalefactor = ptr[ 2200 + 8 ];
+					p_loop_info.file_number = ptr[ offset ];
+					p_loop_info.channel = ptr[ offset + 1 ];
+					p_loop_info.scalefactor = ptr[ offset - 16 + 2200 + 8 ];
 					unsigned j = 0;
 					for ( unsigned i = 0; i < 28; ++i )
 					{
-						j += p_loop_info.data[ i * 2 ]     = ptr[ 2200 + 18 + i * 4 ];
-						j += p_loop_info.data[ i * 2 + 1 ] = ptr[ 2200 + 18 + i * 4 + 1 ];
+						j += p_loop_info.data[ i * 2 ]     = ptr[ offset - 16 + 2200 + 18 + i * 4 ];
+						j += p_loop_info.data[ i * 2 + 1 ] = ptr[ offset - 16 + 2200 + 18 + i * 4 + 1 ];
 					}
 					if ( !j )
 					{
@@ -1227,39 +1236,39 @@ public:
 						p_loop_info.channel     = 0xAD;
 					}
 
-					xa_subsong_scanner_info * p_info = info[ ptr[17] ];
+					xa_subsong_scanner_info * p_info = info[ ptr[ offset + 1 ] ];
 
 					if ( p_info )
 					{
-						if ( p_info->file_number == ptr[16] )
+						if ( p_info->file_number == ptr[ offset ] )
 						{
 							++ p_info->sector_count;
 							p_info->sector_offset_end = unsigned( sector - 1 );
-							if ( ptr[18] & 0x81 )
+							if ( ptr[ offset + 2 ] & 0x81 )
 							{
 								m_info.add_item( p_info );
-								info[ ptr[17] ] = 0;
+								info[ ptr[ offset + 1 ] ] = 0;
 							}
 						}
 						else
 						{
 							m_info.add_item( p_info );
-							info[ ptr[17] ] = p_info = 0;
+							info[ ptr[ offset + 1 ] ] = p_info = 0;
 						}
 					}
 
 					if ( ! p_info )
 					{
-						info[ ptr[17] ] = p_info = new xa_subsong_scanner_info;
-						p_info->file_number = ptr[16];
+						info[ ptr[ offset + 1 ] ] = p_info = new xa_subsong_scanner_info;
+						p_info->file_number = ptr[ offset ];
 						p_info->sector_offset = unsigned( sector - 1 );
 						p_info->sector_count = 1;
-						p_info->channel = ptr[17];
+						p_info->channel = ptr[ offset + 1 ];
 						p_info->loop_start = ~0;
 
-						p_info->bits_per_sample = ( ptr[19] & 48 ) >> 4;
+						p_info->bits_per_sample = ( ptr[ offset + 3 ] & 48 ) >> 4;
 						if (p_info->bits_per_sample > 1) throw exception_io_data();
-						switch ( ptr[19] & 12 )
+						switch ( ptr[ offset + 3 ] & 12 )
 						{
 						case 0:
 							p_info->srate = 37800;
@@ -1270,7 +1279,7 @@ public:
 						default:
 							throw exception_io_data();
 						}
-						switch ( ptr[19] & 3 )
+						switch ( ptr[ offset + 3 ] & 3 )
 						{
 						case 0:
 							p_info->nch = 1;
@@ -1405,7 +1414,7 @@ public:
 		m_cache.delete_all();
 	}
 
-	void run( service_ptr_t<file> & p_file, const char * p_path, t_filetimestamp p_timestamp, pfc::ptr_list_t< xa_subsong_scanner_info > & p_out, abort_callback & p_abort )
+	void run( service_ptr_t<file> & p_file, const char * p_path, t_filetimestamp p_timestamp, int sector_size, pfc::ptr_list_t< xa_subsong_scanner_info > & p_out, abort_callback & p_abort )
 	{
 		insync( sync );
 
@@ -1432,7 +1441,7 @@ public:
 
 		try
 		{
-			scanner.run( p_file, p_abort );
+			scanner.run( p_file, sector_size, p_abort );
 		}
 		catch (...)
 		{
@@ -1475,7 +1484,9 @@ class input_xa
 	// reader * wrt;
 
 	t_filesize header;
-	int file_number, channel, no_loop;
+	int file_number, channel, sector_size;
+	
+	bool no_loop;
 
 	long loopstart, eof;
 
@@ -1490,7 +1501,7 @@ class input_xa
 
 	void setSector( long sector, abort_callback & p_abort )
 	{
-		m_file->seek( header + t_filesize(sector) * 2352, p_abort );
+		m_file->seek( header + t_filesize(sector) * t_filesize(sector_size), p_abort );
 	}
 
 	/*long getSector()
@@ -1533,9 +1544,22 @@ public:
 		}
 		else m_file = p_filehint;
 
+		sector_size = 2352;
+
 		try
 		{
 			header = check_cdxa(m_file, p_abort);
+
+			if ( header != ~0 )
+			{
+				unsigned char temp [16];
+				m_file->seek( header, p_abort );
+				m_file->read_object( temp, 16, p_abort );
+				m_file->seek( header, p_abort );
+
+				if ( memcmp( temp, sync, 12 ) )
+					sector_size = 2336;
+			}
 		}
 		catch(exception_io const &)
 		{
@@ -1556,7 +1580,7 @@ public:
 			header = 0;
 		}
 
-		g_cache.run( m_file, p_path, m_file->get_timestamp( p_abort ), m_info, p_abort );
+		g_cache.run( m_file, p_path, m_file->get_timestamp( p_abort ), sector_size, m_info, p_abort );
 	}
 
 	unsigned get_subsong_count()
@@ -1602,7 +1626,7 @@ public:
 
 		//if ( m_info.get_count() == 1 )
 		{
-			p_info.info_set_bitrate( t_int64( 2352. / seconds_per_sector * 8. / 1000. + .5 ) );
+			p_info.info_set_bitrate( t_int64( sector_size / seconds_per_sector * 8. / 1000. + .5 ) );
 		}
 		//else p_info.info_set_bitrate( 2458 ); // 2457.6
 	}
@@ -1649,7 +1673,7 @@ public:
 	{
 		if (eof) return false;
 
-		xabuffer.grow_size( 2352 );
+		xabuffer.grow_size( sector_size );
 		BYTE *xa = xabuffer.get_ptr();
 		int stereo;
 
@@ -1657,12 +1681,14 @@ public:
 		int bits_per_sample;
 		long samples;
 
+		int offset = (sector_size == 2352) ? 16 : 0;
+
 		t_int16 * out;
 		
 		//try
 		{
 retry1:
-			if ( m_file->read( xa, 2352, p_abort ) < 2352 )
+			if ( m_file->read( xa, sector_size, p_abort ) < sector_size )
 			{
 				if (!no_loop)
 				{
@@ -1672,12 +1698,12 @@ retry1:
 				else return false;
 			}
 
-			while (memcmp(sync, xa, 12) || xa[15] != 2 || (xa[18] & 0x2E) != 0x24 || xa[17] != channel)
+			while ((offset == 16 && (memcmp(sync, xa, 12) || xa[15] != 2)) || (xa[offset + 2] & 0x2E) != 0x24 || xa[offset + 1] != channel)
 			{
 retry2:
 				p_abort.check();
 
-				if ( m_file->read(xa, 2352, p_abort) < 2352 )
+				if ( m_file->read(xa, sector_size, p_abort) < sector_size )
 				{
 					if (!no_loop)
 					{
@@ -1688,7 +1714,7 @@ retry2:
 				}
 			}
 
-			if (xa[16] != file_number)
+			if (xa[offset] != file_number)
 			{
 				if (!no_loop)
 				{
@@ -1698,11 +1724,11 @@ retry2:
 				else return false;
 			}
 
-			// if (wrt) wrt->write(xa, 2352);
+			// if (wrt) wrt->write(xa, sector_size);
 
-			bits_per_sample = xa[19] & 48;
+			bits_per_sample = xa[offset + 3] & 48;
 			if ( bits_per_sample > 16 ) throw exception_io_data(); // reserved values
-			switch (xa[19] & 12)
+			switch (xa[offset + 3] & 12)
 			{
 			case 0:
 				srate = 37800;
@@ -1713,7 +1739,7 @@ retry2:
 			default:
 				throw exception_io_data(); // wtf? reserved rate
 			}
-			switch (xa[19] & 3)
+			switch (xa[offset + 3] & 3)
 			{
 			case 0:
 				stereo = 0;
@@ -1725,7 +1751,7 @@ retry2:
 				throw exception_io_data(); // another reserved value
 			}
 
-			if (xa[18] & 0x81)
+			if (xa[offset + 2] & 0x81)
 			{
 				if (!no_loop) setSector(loopstart, p_abort);
 				else
@@ -1736,15 +1762,15 @@ retry2:
 			{
 				samplebuffer.grow_size( 2016 );
 				out = samplebuffer.get_ptr();
-				if ( stereo ) { xa_decode_8s(out, xa, temp); samples = 1008; }
-				else { xa_decode_8m(out, xa, temp); samples = 2016; }
+				if ( stereo ) { xa_decode_8s(out, xa + offset, temp); samples = 1008; }
+				else { xa_decode_8m(out, xa + offset, temp); samples = 2016; }
 			}
 			else
 			{
 				samplebuffer.grow_size( 4032 );
 				out = samplebuffer.get_ptr();
-				if ( stereo ) { xa_decode_4s(out, xa, temp); samples = 2016; }
-				else { xa_decode_4m(out, xa, temp); samples = 4032; }
+				if ( stereo ) { xa_decode_4s(out, xa + offset, temp); samples = 2016; }
+				else { xa_decode_4m(out, xa + offset, temp); samples = 4032; }
 			}
 
 			pos += double(samples) / double(srate);
