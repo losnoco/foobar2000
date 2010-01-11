@@ -373,9 +373,9 @@ public:
 				}
 				return false;
 			} else {
-				if ( bufptr - buf >= chunk->get_sample_count() * 2 ) {
+				/*if ( bufptr - buf >= chunk->get_sample_count() * 2 ) {
 					return false;
-				} else {
+				} else*/ {
 					flush_chunk();
 					flush();
 					return true;
