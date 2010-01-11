@@ -189,7 +189,7 @@ public:
 		}
 
 		//p_info.info_set_int("samplerate", sample_rate);
-		p_info.info_set_int("channels", 1);
+		p_info.info_set_int("channels", 2);
 		p_info.info_set_int("bitspersample", 16);
 	}
 
@@ -216,9 +216,13 @@ public:
 
 				this->emu = emu = new Nsf_Emu;
 
+				setup_effects();
+
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( header, rdr ) );
 				handle_warning();
+
+				setup_effects_2();
 			}
 			catch(...)
 			{

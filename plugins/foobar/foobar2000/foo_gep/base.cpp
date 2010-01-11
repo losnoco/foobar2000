@@ -2,6 +2,8 @@
 #include "config.h"
 #include "monitor.h"
 
+#include <cmath>
+
 static t_size sjis_decode_char( const char * p_sjis, t_size max )
 {
 	const t_uint8 * sjis = (const t_uint8 *) p_sjis;
@@ -77,9 +79,16 @@ input_gep::input_gep()
 	emu = 0;
 	//voice_mask = 0;
 
+	buffer = 0;
+
 	sample_rate = cfg_sample_rate;
 
 	monitoring = false;
+
+	effects_enable = !!cfg_effects_enable;
+	effects_bass = cfg_effects_bass;
+	effects_treble = cfg_effects_treble;
+	effects_echo_depth = cfg_effects_echo_depth;
 }
 
 input_gep::~input_gep()
@@ -89,6 +98,8 @@ input_gep::~input_gep()
 		handle_warning();
 		delete emu;
 	}
+
+	delete buffer;
 
 	if ( monitoring ) monitor_stop();
 }
@@ -119,6 +130,45 @@ void input_gep::monitor_stop()
 {
 	monitoring = false;
 	::monitor_stop( emu );
+}
+
+void input_gep::setup_effects()
+{
+	if ( effects_enable )
+	{
+		Music_Emu::equalizer_t eq;
+		// bass - logarithmic, 2 to 8194 Hz
+		double bass = double( 255 - effects_bass ) / 255;
+		eq.bass = std::pow( 2.0, bass * 13 ) + 2.0;
+
+		// treble - level from -108 to 0 to 5 dB
+		double treble = double( effects_treble - 128 ) / 128;
+		eq.treble = treble * ( ( treble > 0 ) ? 16.0 : 80.0 ) - 8.0;
+
+		emu->set_equalizer( eq );
+
+		if ( effects_echo_depth > 0 )
+		{
+			if ( ! buffer ) buffer = new Effects_Buffer;
+			emu->set_buffer( buffer );
+		}
+	}
+}
+
+void input_gep::setup_effects_2()
+{
+	if ( effects_enable && effects_echo_depth > 0 )
+	{
+		double depth = double( effects_echo_depth ) / 255;
+		Effects_Buffer::config_t & cfg = buffer->config();
+
+		cfg.simple.stereo = 0.6 * depth;
+		cfg.simple.echo = 0.30 * depth;
+		cfg.simple.enabled = true;
+		cfg.enabled = true;
+
+		buffer->apply_config();
+	}
 }
 
 void input_gep::open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )

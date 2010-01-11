@@ -8,10 +8,14 @@
 #define IDD_PLAYLISTINFO                102
 #define IDD_TIME                        103
 #define IDD_MONITOR                     104
+#define IDC_EFFECTS                     1000
 #define IDC_LENGTH                      1001
 #define IDC_FADE                        1002
+#define IDC_SLIDER_BASS                 1002
 #define IDC_LOOPS                       1003
 #define IDC_VGMLOOPCOUNT                1003
+#define IDC_SLIDER_TREBLE               1004
+#define IDC_SLIDER_ECHO_DEPTH           1005
 #define IDC_VGMLOOPCOUNT_TEXT           1055
 #define IDC_TRACKLIST                   1101
 #define IDC_ADDALL                      1102

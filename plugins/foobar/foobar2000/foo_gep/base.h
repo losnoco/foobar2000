@@ -2,6 +2,7 @@
 
 #include <gme/Music_Emu.h>
 #include <gme/Multi_Buffer.h>
+#include <gme/Effects_Buffer.h>
 
 #define ERRCHK(f) \
 	{ \
@@ -20,6 +21,8 @@ class input_gep
 protected:
 
 	Music_Emu                 * emu;
+
+	Effects_Buffer            * buffer;
 
 	unsigned                    sample_rate;
 
@@ -40,6 +43,11 @@ protected:
 
 	bool                        monitoring;
 
+	bool                        effects_enable;
+	int                         effects_bass;
+	int                         effects_treble;
+	int                         effects_echo_depth;
+
 	pfc::array_t<blip_sample_t> sample_buffer;
 
 	service_ptr_t<file>         m_file;
@@ -53,6 +61,9 @@ protected:
 	void monitor_start();
 	void monitor_update();
 	void monitor_stop();
+
+	void setup_effects();
+	void setup_effects_2();
 
 public:
 	input_gep();

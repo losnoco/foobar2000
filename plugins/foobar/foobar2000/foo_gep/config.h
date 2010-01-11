@@ -18,6 +18,8 @@ extern cfg_int cfg_control_override, cfg_control_tempo;
 
 extern cfg_int cfg_format_enable;
 
+extern cfg_int cfg_effects_enable, cfg_effects_bass, cfg_effects_treble, cfg_effects_echo_depth;
+
 #define BORK_TIME 0xC0CAC01A
 
 unsigned long parse_time_crap(const char *input);

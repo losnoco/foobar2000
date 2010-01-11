@@ -1,9 +1,13 @@
-#define MYVERSION "1.5"
+#define MYVERSION "1.6"
 
 /*
 	change log
 
-2006-12:18 17:07 UTC - kode54
+2009-02-01 07:20 UTC - kode54
+- Implemented effects control for applicable formats.
+- Version is now 1.6
+
+2006-12-18 17:07 UTC - kode54
 - Logo is now self-cleaning and unregisters on shutdown.
 - Version is now 1.5
 
@@ -80,6 +84,12 @@ static const GUID guid_cfg_vgm_loop_count = { 0xc6690d9, 0x6c36, 0x470e, { 0x93,
 static const GUID guid_cfg_control_override = { 0x550a107e, 0x8b34, 0x41e5, { 0xae, 0xd6, 0x2, 0x1b, 0xf8, 0x3e, 0x14, 0xe4 } };
 static const GUID guid_cfg_control_tempo = { 0xfbddc77c, 0x2a6, 0x41c9, { 0xbf, 0xfa, 0x54, 0x60, 0xbe, 0x2a, 0xa5, 0x23 } };
 
+static const GUID guid_cfg_effects_enable = { 0x7a12d84d, 0x92ab, 0x4dae, { 0x89, 0x7, 0xfc, 0x47, 0x11, 0x1e, 0x66, 0x74 } };
+static const GUID guid_cfg_effects_bass = { 0x6bad04a5, 0xb579, 0x400e, { 0x8c, 0xbd, 0x59, 0xb1, 0x22, 0x63, 0x2a, 0x37 } };
+static const GUID guid_cfg_effects_treble = { 0x908aec30, 0x66b8, 0x4ab1, { 0x90, 0xa5, 0x77, 0xb9, 0xea, 0x98, 0xe, 0xd8 } };
+static const GUID guid_cfg_effects_echo_depth = { 0x4c04e4ce, 0xeab9, 0x4046, { 0xb8, 0x33, 0xf1, 0x68, 0x44, 0xa3, 0x50, 0x19 } };
+
+
 cfg_int cfg_sample_rate(guid_cfg_sample_rate, 44100);
 
 cfg_int cfg_indefinite(guid_cfg_indefinite, 0);
@@ -100,6 +110,11 @@ cfg_int cfg_format_enable(guid_cfg_format_enable, ~0);
 
 cfg_int cfg_control_override(guid_cfg_control_override, 0);
 cfg_int cfg_control_tempo(guid_cfg_control_tempo, 10000);
+
+cfg_int cfg_effects_enable(guid_cfg_effects_enable, 0);
+cfg_int cfg_effects_bass(guid_cfg_effects_bass, 128);
+cfg_int cfg_effects_treble(guid_cfg_effects_treble, 128);
+cfg_int cfg_effects_echo_depth(guid_cfg_effects_echo_depth, 31);
 
 static cfg_dropdown_history cfg_history_rate(guid_cfg_history_rate,16);
 
@@ -220,12 +235,26 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			uSendDlgItemMessage(wnd, IDC_NSFEPL, BM_SETCHECK, cfg_nsfe_ignore_playlists, 0);
 			uSendDlgItemMessage(wnd, IDC_ANTISURROUND, BM_SETCHECK, cfg_spc_anti_surround, 0);
 			uSendDlgItemMessage(wnd, IDC_GD3JAPANESE, BM_SETCHECK, cfg_vgm_gd3_prefers_japanese, 0);
+			uSendDlgItemMessage(wnd, IDC_EFFECTS, BM_SETCHECK, cfg_effects_enable, 0);
 			print_time_crap(cfg_default_length, (char *)&temp);
 			uSetDlgItemText(wnd, IDC_DLENGTH, (char *)&temp);
 			print_time_crap(cfg_default_fade, (char *)&temp);
 			uSetDlgItemText(wnd, IDC_DFADE, (char *)&temp);
 
 			HWND w;
+
+			w = GetDlgItem(wnd, IDC_SLIDER_BASS);
+			SendMessage( w, TBM_SETRANGE, 0, MAKELONG( 0, 255 ) );
+			SendMessage( w, TBM_SETPOS, 1, cfg_effects_bass );
+
+			w = GetDlgItem( wnd, IDC_SLIDER_TREBLE );
+			SendMessage( w, TBM_SETRANGE, 0, MAKELONG( 0, 255 ) );
+			SendMessage( w, TBM_SETPOS, 1, cfg_effects_treble );
+
+			w = GetDlgItem( wnd, IDC_SLIDER_ECHO_DEPTH );
+			SendMessage( w, TBM_SETRANGE, 0, MAKELONG( 0, 255 ) );
+			SendMessage( w, TBM_SETPOS, 1, cfg_effects_echo_depth );
+
 			int n,o;
 			for(n=IDC_FORMAT_NSF,o=0;n<=IDC_FORMAT_SAP;n++,o++)
 			{
@@ -295,6 +324,9 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		case IDC_GD3JAPANESE:
 			cfg_vgm_gd3_prefers_japanese = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
 			break;
+		case IDC_EFFECTS:
+			cfg_effects_enable = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
+			break;
 		default:
 			if (wp >= IDC_FORMAT_NSF && wp <= IDC_FORMAT_SAP)
 			{
@@ -344,6 +376,23 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			break;*/
 		}
 		break;
+	case WM_HSCROLL:
+		{
+			int t = uSendMessage((HWND)lp, TBM_GETPOS, 0, 0);
+			switch ((LPARAM)GetMenu((HWND)lp))
+			{
+			case IDC_SLIDER_BASS:
+				cfg_effects_bass = t;
+				break;
+			case IDC_SLIDER_TREBLE:
+				cfg_effects_treble = t;
+				break;
+			case IDC_SLIDER_ECHO_DEPTH:
+				cfg_effects_echo_depth = t;
+				break;
+			}
+		}
+		break;
 	case WM_DESTROY:
 		char temp[16];
 		itoa(cfg_sample_rate, temp, 10);
@@ -385,6 +434,19 @@ public:
 		cfg_nsfe_ignore_playlists = 0;
 
 		cfg_spc_anti_surround = 0;
+
+		cfg_vgm_gd3_prefers_japanese = 0;
+		cfg_vgm_loop_count = 1;
+
+		cfg_control_override = 0;
+		cfg_control_tempo = 10000;
+
+		cfg_format_enable = ~0;
+
+		cfg_effects_enable = 0;
+		cfg_effects_bass = 128;
+		cfg_effects_treble = 128;
+		cfg_effects_echo_depth = 31;
 	}
 };
 

@@ -68,12 +68,20 @@ public:
 			emu = gtype->new_emu();
 		if ( !emu ) throw std::bad_alloc();
 
-		if ( gtype == gme_gym_type && p_reason == input_open_decode )
-			static_cast<Gym_Emu *>( emu )->disable_oversampling();
+		if ( p_reason == input_open_decode )
+		{
+			if ( gtype == gme_gym_type )
+				static_cast<Gym_Emu *>( emu )->disable_oversampling();
+			else
+				setup_effects();
+		}
 
 		ERRCHK( emu->set_sample_rate( sample_rate ) );
 		ERRCHK( emu->load( rdr ) );
 		handle_warning();
+
+		if ( p_reason == input_open_decode && gtype != gme_gym_type )
+			setup_effects_2();
 
 		m_file.release();
 
