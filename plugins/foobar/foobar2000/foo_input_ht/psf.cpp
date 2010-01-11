@@ -142,6 +142,9 @@
 #include <zlib.h>
 
 #include "../../../ESP/Sega/Core/sega.h"
+#include "../../../ESP/Sega/Core/dcsound.h"
+#include "../../../ESP/Sega/Core/satsound.h"
+#include "../../../ESP/Sega/Core/yam.h"
 
 #include <atlbase.h>
 #include <atlapp.h>
@@ -457,6 +460,7 @@ static void trim_whitespace( pfc::string_base & val )
 	while ( *start && *start < 0x20 ) ++start;
 	while ( end >= start && *end < 0x20 ) --end;
 	memcpy( (void *) val.get_ptr(), start, end - start + 2 );
+	val.truncate( end - start + 1 );
 }
 
 static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, int & tag_song_ms, int & tag_fade_ms)
@@ -699,7 +703,25 @@ private:
 
 				sega_enable_dry( state, cfg_dry );
 				sega_enable_dsp( state, cfg_dsp );
-				sega_enable_dsp_dynarec( state, cfg_dsp_dynarec );
+
+				int dynarec = cfg_dsp_dynarec;
+				sega_enable_dsp_dynarec( state, dynarec );
+
+				if ( dynarec )
+				{
+					void * yam = 0;
+					if ( m_version == 2 )
+					{
+						void * dcsound = sega_get_dcsound_state( state );
+						yam = dcsound_get_yam_state( dcsound );
+					}
+					else
+					{
+						void * satsound = sega_get_satsound_state( state );
+						yam = satsound_get_yam_state( satsound );
+					}
+					if ( yam ) yam_prepare_dynacode( yam );
+				}
 			}
 		}
 
@@ -905,6 +927,19 @@ public:
 
 	~input_xsf()
 	{
+		void * yam = 0;
+		if ( xsf_version == 2 )
+		{
+			void * dcsound = sega_get_dcsound_state( sega_state.get_ptr() );
+			yam = dcsound_get_yam_state( dcsound );
+		}
+		else
+		{
+			void * satsound = sega_get_satsound_state( sega_state.get_ptr() );
+			yam = satsound_get_yam_state( satsound );
+		}
+		if ( yam ) yam_unprepare_dynacode( yam );
+
 	}
 
 	void open( service_ptr_t<file> p_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
@@ -1131,7 +1166,6 @@ public:
 			pfc::string8 path = base_path;
 			path += filename;
 
-			sega_clear_state( pEmu, xsf_version );
 			load_xsf( m_file, path, temp, true, p_abort );
 			xsfemu_pos = 0.;
 			if ( startsilence )
