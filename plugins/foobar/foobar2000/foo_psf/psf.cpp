@@ -496,7 +496,8 @@ static void trim_whitespace( pfc::string_base & val )
 	const char * end = start + strlen( start ) - 1;
 	while ( *start && *start < 0x20 ) ++start;
 	while ( end >= start && *end < 0x20 ) --end;
-	memcpy( (void *) val.get_ptr(), start, end - start + 2 );
+	memcpy( (void *) val.get_ptr(), start, end - start + 1 );
+	val.truncate( end - start + 1 );
 }
 
 static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, int & tag_song_ms, int & tag_fade_ms)
