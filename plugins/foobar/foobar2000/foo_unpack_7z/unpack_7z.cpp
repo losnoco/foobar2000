@@ -27,6 +27,7 @@ static void transfer_file( Data_Reader & in, service_ptr_t<file> & out, abort_ca
 	int read;
 	for (;;)
 	{
+		read = 1024;
 		in.read_avail( buffer, &read );
 		out->write_object( buffer, read, p_abort );
 		if ( read < 1024 ) break;
