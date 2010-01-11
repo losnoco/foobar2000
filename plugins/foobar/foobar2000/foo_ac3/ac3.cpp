@@ -351,6 +351,7 @@ public:
 		m_info.info_set( "codec", "ATSC A/52" );
 		m_info.info_set_int( "channels", get_channels( flags ) );
 		m_info.info_set_int( "samplerate", srate );
+		m_info.info_set( "encoding", "lossy" );
 	}
 
 	void get_info( file_info & p_info, abort_callback & p_abort )
@@ -518,12 +519,14 @@ class packet_decoder_ac3 : public packet_decoder_streamparse
 {
 	a52_state_t * m_state;
 	bool m_dynrng, m_decode;
+	int srate, nch;
 
 public:
     packet_decoder_ac3()
     {
 		m_state = NULL;
 		m_dynrng = !!cfg_dynrng;
+		cleanup();
     }
 
     ~packet_decoder_ac3()
@@ -533,6 +536,8 @@ public:
 
 	void cleanup()
 	{
+		srate = 0;
+		nch = 0;
 		if ( m_state )
 		{
 			a52_free( m_state );
@@ -566,6 +571,10 @@ public:
 		m_state = a52_init( /*MM_ACCEL_DJBFFT*/ );
 		if ( ! m_state ) throw std::bad_alloc();
 
+        const matroska_setup *setup = (const matroska_setup *)p_param2;
+		srate = setup->sample_rate;
+		nch = setup->channels;
+
 		m_decode = p_decode;
 	}
 
@@ -576,7 +585,10 @@ public:
 
 	virtual void get_info( file_info & p_info )
 	{
+        p_info.info_set_int( "samplerate", srate );
+        p_info.info_set_int( "channels", nch );
 		p_info.info_set( "codec", "ATSC A/52" );
+		p_info.info_set( "encoding", "lossy" );
 	}
 
 	virtual unsigned get_max_frame_dependency() { return 0; }
