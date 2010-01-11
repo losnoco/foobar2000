@@ -25,7 +25,7 @@ private:
 	IScriptEnvironment* m_env;
 	HMODULE m_dll;
 	VideoInfo m_inf;
-	long m_pos;
+	__int64 m_pos;
 	char * m_script;
 
 
@@ -90,7 +90,9 @@ public:
 		m_file = p_filehint;//p_filehint may be null, hence next line
 		input_open_file_helper(m_file,p_path,p_reason,p_abort);//if m_file is null, opens file with appropriate privelages for our operation (read/write for writing tags, read-only otherwise).
 		t_filesize scriptSize = m_file->get_size(p_abort);
+		if (scriptSize > UINT_MAX) throw exception_io_data("Script too large");
 		m_script = (char *)malloc(scriptSize + 16);
+		if (!m_script) throw std::bad_alloc();
 		memset(m_script, 0, scriptSize + 16);
 		m_file->read(m_script, scriptSize, p_abort);
 		//*(m_buffer.get_ptr()+scriptSize+1)=NULL;
@@ -102,7 +104,7 @@ public:
 		if(!CreateScriptEnvironment) throw exception_io_data("Cannot load CreateScriptEnvironment");
 
 		m_env = CreateScriptEnvironment(AVISYNTH_INTERFACE_VERSION);
-		if (m_env == NULL) throw exception_io_data("Required Avisynth 2.5");
+		if (m_env == NULL) throw exception_io_data("Requires Avisynth 2.5");
 
 		try
 		{
@@ -153,7 +155,7 @@ public:
 
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort) 
 	{
-		int	deltaread = max(min( m_inf.num_audio_samples - m_pos , (long)1024),0);
+		int	deltaread = (int) max(min( m_inf.num_audio_samples - m_pos , 1024),0);
 		
 		if(0 == deltaread) return false;
 
@@ -177,7 +179,7 @@ public:
 	void decode_seek(double p_seconds,abort_callback & p_abort) 
 	{
 		// IMPORTANT: convert time to sample offset with proper rounding! audio_math::time_to_samples does this properly for you.
-		m_pos = min( audio_math::time_to_samples(p_seconds,m_inf.audio_samples_per_second), m_inf.num_audio_samples);
+		m_pos = min( audio_math::time_to_samples(p_seconds,m_inf.audio_samples_per_second), (t_uint64) m_inf.num_audio_samples);
 	}
 	bool decode_can_seek() {return true;}
 	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta) {return false;}
