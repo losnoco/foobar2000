@@ -1,5 +1,13 @@
 #define MY_VERSION "1.0"
 
+/*
+	changelog
+
+2009-08-13 21:27 UTC - kode54
+- Implemented simple gzip stream length checking
+
+*/
+
 #include <foobar2000.h>
 
 #include <fex/Gzip_Reader.h>
@@ -9,6 +17,17 @@
 static void handle_error( const char * str )
 {
 	if ( str ) throw exception_io_data( str );
+}
+
+static t_filesize streamSize( const service_ptr_t< file > & src_fd, abort_callback & p_abort )
+{
+	foobar_File_Reader in( src_fd, p_abort );
+	Gzip_Reader ingz;
+	handle_error( ingz.open( &in ) );
+
+	if ( ! ingz.deflated() ) throw exception_io_data( "Not GZIP data" );
+
+	return ingz.remain();
 }
 
 static void uncompressStream( const service_ptr_t< file > & src_fd, service_ptr_t< file > & dst_fd, abort_callback & p_abort )
@@ -47,11 +66,9 @@ public:
 	{
 		service_ptr_t< file > m_file, m_temp;
 		filesystem::g_open( m_file, p_archive, filesystem::open_mode_read, p_abort );
-		filesystem::g_open_tempmem( m_temp, p_abort );
-		uncompressStream( m_file, m_temp, p_abort );
 
 		t_filestats ret = m_file->get_stats( p_abort );
-		ret.m_size = m_temp->get_size_ex( p_abort );
+		ret.m_size = streamSize( m_file, p_abort );
 
 		return ret;
 	}
@@ -79,12 +96,20 @@ public:
 
 		make_unpack_path( m_path, path, pfc::string_filename( path ) );
 
-		filesystem::g_open_tempmem( m_out_file, p_out );
-		uncompressStream( m_file, m_out_file, p_out );
-		m_out_file->reopen( p_out );
-
 		t_filestats m_stats = m_file->get_stats( p_out );
-		m_stats.m_size = m_out_file->get_size_ex( p_out );
+
+		if ( p_want_readers )
+		{
+			filesystem::g_open_tempmem( m_out_file, p_out );
+			uncompressStream( m_file, m_out_file, p_out );
+			m_out_file->reopen( p_out );
+
+			m_stats.m_size = m_out_file->get_size_ex( p_out );
+		}
+		else
+		{
+			m_stats.m_size = streamSize( m_file, p_out );
+		}
 
 		p_out.on_entry( this, m_path, m_stats, m_out_file );
 	}
