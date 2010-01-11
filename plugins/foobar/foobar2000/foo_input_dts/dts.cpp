@@ -5,6 +5,7 @@
 // foobar2000 component copyright (C) 2004-2006 Janne Hyvärinen
 //
 // Changes:
+//  0.2.6  (2009-12-13): Really fixed DTS decoder DSP this time
 //  0.2.5  (2009-12-05): Fixed heap corruption on bad DTS files, DSP doesn't output until two consecutive frames are found
 //  0.2.4  (2009-05-02): Fixed a bug in DTS DSP and packet decoder for when dca_syncinfo fails
 //  0.2.3  (2009-03-30): Fixed tag writing
@@ -30,7 +31,7 @@
 //  0.0.4  (2004-10-15): Simplified packet decoder, added codec reporting, fixed typo in version number
 //  0.0.3  (2004-10-15): Added Matroska packet decoder support
 
-#define FD_VERSION  "0.2.5"
+#define FD_VERSION  "0.2.6"
 
 //#define DTS_DEBUG // print status info to console
 

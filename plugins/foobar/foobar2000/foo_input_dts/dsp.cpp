@@ -12,9 +12,11 @@ extern "C" {
 #include "dca.h"
 }
 
-#define BUFFER_SIZE 24576
-#define HEADER_SIZE 14
-#define FRAME_SAMPLES 256
+enum {
+	BUFFER_SIZE = 24576,
+	HEADER_SIZE = 14,
+	FRAME_SAMPLES = 256
+};
 
 class dts_dsp : public dsp_impl_base {
     bool init()
@@ -41,7 +43,7 @@ class dts_dsp : public dsp_impl_base {
 
         bufptr = buf;
         bufpos = buf + HEADER_SIZE;
-        dts_flags = nch = srate = bitrate = 0;
+        chunk_count = dts_flags = nch = srate = bitrate = 0;
         valid_scale_found = false;
     }
 
@@ -83,7 +85,7 @@ class dts_dsp : public dsp_impl_base {
         return map;
     }
 
-    bool decode(const void *data, t_size bytes, audio_chunk &p_chunk, bool first_packet, abort_callback &p_abort)
+    bool decode(const void *data, t_size bytes, audio_chunk &p_chunk, abort_callback &p_abort)
     {
         static const int chan_map[10][6] = {
             { 0, 0, 0, 0, 0, 0 },       // DCA_MONO
@@ -128,7 +130,7 @@ class dts_dsp : public dsp_impl_base {
                     int length = dca_syncinfo(state, buf, &dts_flags, &srate, &bitrate, &frame_length);
                     if (!length) {
                         //console::warning("DTS: skip");
-                        for (bufptr = buf; bufptr < buf + HEADER_SIZE-1; bufptr++) bufptr[0] = bufptr[1];
+                        for (bufptr = buf; bufptr < buf + HEADER_SIZE - 1; bufptr++) bufptr[0] = bufptr[1];
                         continue;
                     }
 
@@ -175,7 +177,7 @@ class dts_dsp : public dsp_impl_base {
 
                     bufptr = buf;
                     bufpos = buf + HEADER_SIZE;
-                    continue;
+					continue;
 
                     error:
                     return false;
@@ -186,7 +188,7 @@ class dts_dsp : public dsp_impl_base {
             }
         }
 
-		if (samples >= (first_packet ? FRAME_SAMPLES * 2 : FRAME_SAMPLES)) {
+		if (samples >= FRAME_SAMPLES) {
             p_chunk.set_data(output.get_ptr(), samples, nch, srate, channel_mask);
             return true;
         }
@@ -197,51 +199,75 @@ class dts_dsp : public dsp_impl_base {
     {
         if (samples < 4) return false;
 
+		audio_sample min_scale = 32768., min_scale_adjusted = 32767.;
+		audio_sample work_scale;
+
         for (unsigned int i = 0; i < samples-4; i++) {
             if (buf[i+0] == 0.0) continue;
 
             if (fabs((double)buf[i+1] - (double)buf[i+0] * (double)384/(double)(-385)) < 0.00001) {
-                scale = (double)(384/32768.0) / (double)buf[i+0];
+                work_scale = (double)(384/32768.0) / (double)buf[i+0];
                 //console::formatter() << "1. scale = " << scale;
-                return true;
+                //return true;
+				if ( fabs( work_scale - 1.0f ) < min_scale_adjusted ) {
+					min_scale = work_scale;
+					min_scale_adjusted = fabs( work_scale - 1.0f );
+				}
             }
 
             if (fabs((double)buf[i+1] - (double)buf[i+0] * (double)(-32767)/(double)32766) < 0.00001) {
-                scale = (double)(32766/32768.0) / (double)buf[i+0];
+                work_scale = (double)(32766/32768.0) / (double)buf[i+0];
                 //console::formatter() << "2. scale = " << scale;
-                return true;
+                //return true;
+				if ( fabs( work_scale - 1.0f ) < min_scale_adjusted ) {
+					min_scale = work_scale;
+					min_scale_adjusted = fabs( work_scale - 1.0f );
+				}
             }
 
             if (fabs((double)buf[i+1] - (double)buf[i+0] * (double)(-6144)/(double)8191) < 0.00001) {
-                scale = (double)(8191/32768.0) / (double)buf[i+0];
+                work_scale = (double)(8191/32768.0) / (double)buf[i+0];
                 t_int16 tmp[1];
-                audio_math::convert_to_int16(buf+i+2, 1, tmp, scale);
+                audio_math::convert_to_int16(buf+i+2, 1, tmp, work_scale);
                 const unsigned char *b = (const unsigned char *)tmp;
 
                 if (((b[0] & 0xf0) == 0xf0) && (b[1] == 0x07)) {
                     //console::formatter() << "3. scale = " << scale;
-                    return true;
-                }
+                    //return true;
+					if ( fabs( work_scale - 1.0f ) < min_scale_adjusted ) {
+						min_scale = work_scale;
+						min_scale_adjusted = fabs( work_scale - 1.0f );
+					}
+				}
             }
 
             if ((fabs((double)buf[i+1] - (double)buf[i+0] * (double)232/(double)(-225)) < 0.00001) &&
                 (fabs((double)buf[i+2] - (double)buf[i+0] * (double)1792/(double)(-225)) < 0.00001)) {
-                scale = (double)(232/32768.0) / (double)buf[i+0];
+                work_scale = (double)(232/32768.0) / (double)buf[i+0];
                 t_int16 tmp[1];
-                audio_math::convert_to_int16(buf+i+2, 1, tmp, scale);
+                audio_math::convert_to_int16(buf+i+2, 1, tmp, work_scale);
                 const unsigned char *b = (const unsigned char *)tmp;
 
                 if ((b[0] == 0x07) && ((b[1] & 0xf0) == 0xf0)) {
                     //console::formatter() << "4. scale = " << scale;
-                    return true;
+                    //return true;
+					if ( fabs( work_scale - 1.0f ) < min_scale_adjusted ) {
+						min_scale = work_scale;
+						min_scale_adjusted = fabs( work_scale - 1.0f );
+					}
                 }
             }
         }
 
+		if ( min_scale_adjusted < 32767. ) {
+			scale = min_scale;
+			return true;
+		}
+
         return false;
     }
 
-    audio_chunk_impl m_chunk;
+    audio_chunk_impl m_chunk[3];
 
     dca_state_t *state;
 
@@ -253,7 +279,7 @@ class dts_dsp : public dsp_impl_base {
     bool valid_scale_found;
 
     int dts_flags, nch, srate, bitrate, frame_length;
-    unsigned int channel_mask;
+    unsigned int channel_mask, chunk_count;
 
 public:
     dts_dsp()
@@ -291,29 +317,34 @@ public:
     virtual bool on_chunk(audio_chunk *chunk, abort_callback &p_abort)
     {
         if (chunk->get_channels() != 2 || chunk->get_srate() != 44100) {
+			flush_chunk();
             flush();
             return true;
         }
 
         metadb_handle_ptr fh;
         if (!get_cur_file(fh)) {
+			flush_chunk();
             flush();
             return true;
         }
 
         file_info_impl i;
         if (!fh->get_info_async(i)) {
+			flush_chunk();
             flush();
             return true;
         }
 
         if (i.info_get_decoded_bps() != 16) {
+			flush_chunk();
             flush();
             return true;
         }
 
         if (!state) {
             if (!find_dts_header(chunk->get_data(), chunk->get_sample_count()*2, scale)) {
+				flush_chunk();
                 flush();
                 return true;
             }
@@ -326,25 +357,71 @@ public:
         buffer.grow_size(data);
         audio_math::convert_to_int16(chunk->get_data(), chunk->get_sample_count()*2, (t_int16 *)buffer.get_ptr(), scale);
 
-        if (decode(buffer.get_ptr(), data, m_chunk, !valid_scale_found, p_abort)) {
-            valid_scale_found = true;
-            audio_chunk *out = insert_chunk(m_chunk.get_sample_count());
-            out->copy(m_chunk);
-            return false;
-        } else {
-            flush();
-            return true;
-        }
+		if (!valid_scale_found)
+		{
+			if ( !chunk_count ) m_chunk[ 2 ].copy( *chunk );
+			if ( decode( buffer.get_ptr(), data, m_chunk[ chunk_count ], p_abort ) ) {
+				if ( chunk_count ) {
+					chunk_count = 0;
+					valid_scale_found = true;
+					audio_chunk * out = insert_chunk( m_chunk[ 0 ].get_sample_count() );
+					out->copy( m_chunk[ 0 ] );
+					out = insert_chunk( m_chunk[ 1 ].get_sample_count() );
+					out->copy( m_chunk[ 1 ] );
+				} else {
+					chunk_count++;
+				}
+				return false;
+			} else {
+				if ( bufptr - buf >= chunk->get_sample_count() * 2 ) {
+					return false;
+				} else {
+					flush_chunk();
+					flush();
+					return true;
+				}
+			}
+		} else {
+			if (decode(buffer.get_ptr(), data, m_chunk[ 0 ], p_abort)) {
+				audio_chunk *out = insert_chunk(m_chunk[ 0 ].get_sample_count());
+				out->copy(m_chunk[ 0 ]);
+				return false;
+			} else {
+				if ( bufptr - buf >= chunk->get_sample_count() * 2 ) {
+					return false;
+				} else {
+					flush_chunk();
+					flush();
+					return true;
+				}
+			}
+		}
     }
 
     virtual void flush()
     {
 		valid_scale_found = false;
+		chunk_count = 0;
     }
+
+	inline void flush_chunk()
+	{
+		if ( chunk_count ) {
+			audio_chunk * out = insert_chunk( m_chunk[ 2 ].get_sample_count() );
+			out->copy( m_chunk[ 2 ] );
+		}
+	}
 
     virtual double get_latency()
     {
-        return 0.0; // return (double)(buffer_data / 4) / 44100.0;
+		double latency = 0.;
+		if ( bufptr > buf && srate ) {
+			latency += (double)((bufptr - buf + 3) / 4) / (double)srate;
+		}
+		if ( chunk_count ) {
+			latency += m_chunk[ 0 ].get_duration();
+		}
+        return latency; // return (double)(buffer_data / 4) / 44100.0;
     }
 
     virtual bool need_track_change_mark()
