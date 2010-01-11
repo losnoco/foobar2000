@@ -107,6 +107,25 @@ protected:
 	class Nes_Fme7_Apu* fme7;
 	static void write_fme7( Nsf_Emu*, nes_addr_t, int );
 	
+	class Nes_Vrc7_Apu* vrc7;
+	static void write_vrc7( Nsf_Emu*, nes_addr_t, int );
+
+	struct mmc5_t
+	{
+		byte mul [2];
+		byte exram [1024];
+	};
+	mmc5_t * mmc5;
+	class Nes_Mmc5_Apu* mmc5_apu;
+	static int read_mmc5( Nsf_Emu*, nes_addr_t );
+	static void write_mmc5( Nsf_Emu*, nes_addr_t, int );
+	static int read_mmc5_exram( Nsf_Emu*, nes_addr_t );
+	static void write_mmc5_exram( Nsf_Emu*, nes_addr_t, int );
+
+	// overlapped
+	static void write_ext_low( Nsf_Emu*, nes_addr_t, int );
+	static void write_ext_high( Nsf_Emu*, nes_addr_t, int );
+
 	// large objects
 	
 	header_t header_;

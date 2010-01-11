@@ -8,8 +8,10 @@
 
 #if !NSF_EMU_APU_ONLY
 	#include "Nes_Vrc6_Apu.h"
+	#include "Nes_Vrc7_Apu.h"
 	#include "Nes_Namco_Apu.h"
 	#include "Nes_Fme7_Apu.h"
+	#include "Nes_Mmc5_Apu.h"
 #endif
 
 #include "blargg_endian.h"
@@ -44,6 +46,8 @@ const nes_addr_t exram_addr = bank_select_addr - (bank_select_addr % Nes_Cpu::pa
 const int master_clock_divisor = 12;
 
 const int vrc6_flag = 0x01;
+const int vrc7_flag = 0x02;
+const int mmc5_flag = 0x08;
 const int namco_flag = 0x10;
 const int fme7_flag = 0x20;
 
@@ -123,6 +127,19 @@ void Nsf_Emu::write_sram( Nsf_Emu* emu, nes_addr_t addr, int data )
 
 #if !NSF_EMU_APU_ONLY
 
+// overlapped mess
+void Nsf_Emu::write_ext_low( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	emu->write_vrc6( emu, addr, data );
+	emu->write_vrc7( emu, addr, data );
+}
+
+void Nsf_Emu::write_ext_high( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	emu->write_namco_addr( emu, addr, data );
+	emu->write_fme7( emu, addr, data );
+}
+
 // Namco
 int Nsf_Emu::read_namco( Nsf_Emu* emu, nes_addr_t addr )
 {
@@ -152,6 +169,17 @@ void Nsf_Emu::write_vrc6( Nsf_Emu* emu, nes_addr_t addr, int data )
 		emu->vrc6->write_osc( emu->cpu.time(), osc, reg, data );
 }
 
+// VRC7
+void Nsf_Emu::write_vrc7( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	unsigned reg = ( unsigned ) ( addr - 0x9010 );
+	if ( reg <= 0x20 )
+	{
+		if ( reg >= 0x18 ) emu->vrc7->write_data( emu->cpu.time(), data );
+		else if ( ! reg ) emu->vrc7->write_reg( data );
+	}
+}
+
 // FME-7
 void Nsf_Emu::write_fme7( Nsf_Emu* emu, nes_addr_t addr, int data )
 {
@@ -165,6 +193,40 @@ void Nsf_Emu::write_fme7( Nsf_Emu* emu, nes_addr_t addr, int data )
 			emu->fme7->write_data( emu->cpu.time(), data );
 			break;
 	}
+}
+
+// MMC5
+int Nsf_Emu::read_mmc5( Nsf_Emu* emu, nes_addr_t addr )
+{
+	if ( unsigned ( addr - 0x5205 ) < 2 )
+	{
+		unsigned total = emu->mmc5->mul [ 0 ] * emu->mmc5->mul [ 1 ];
+		return ( total >> ( ( addr - 0x5205 ) * 8 ) ) & 255;
+	}
+	return addr >> 8;
+}
+
+void Nsf_Emu::write_mmc5( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	if ( unsigned ( addr - Nes_Mmc5_Apu::start_addr ) <= Nes_Mmc5_Apu::end_addr - Nes_Mmc5_Apu::start_addr )
+		emu->mmc5_apu->write_register( emu->cpu.time(), addr, data );
+	else if ( unsigned ( addr - 0x5205 ) < 2 )
+		emu->mmc5->mul [ addr - 0x5205 ] = data;
+}
+
+int Nsf_Emu::read_mmc5_exram( Nsf_Emu* emu, nes_addr_t addr )
+{
+	if ( unsigned ( addr - 0x5C00 ) < 0x3F8 )
+		return emu->mmc5->exram [ addr - 0x5C00 ];
+	return addr >> 8;
+}
+
+void Nsf_Emu::write_mmc5_exram( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	if ( unsigned ( addr - 0x5C00 ) < 0x3F8 )
+		emu->mmc5->exram [ addr - 0x5C00 ] = data;
+	else
+		emu->write_exram( emu, addr, data );
 }
 
 #endif
@@ -206,6 +268,9 @@ Nes_Emu::Nes_Emu( double gain_ )
 	vrc6 = NULL;
 	namco = NULL;
 	fme7 = NULL;
+	vrc7 = NULL;
+	mmc5 = NULL;
+	mmc5_apu = NULL;
 	Music_Emu::set_equalizer( nes_eq );
 	
 	// set unmapped code to illegal instruction
@@ -228,6 +293,15 @@ void Nsf_Emu::unload()
 		
 		delete fme7;
 		fme7 = NULL;
+
+		delete vrc7;
+		vrc7 = NULL;
+
+		delete mmc5;
+		mmc5 = NULL;
+
+		delete mmc5_apu;
+		mmc5_apu = NULL;
 		
 	#endif
 	
@@ -271,7 +345,7 @@ const char** Nsf_Emu::voice_names() const
 
 blargg_err_t Nsf_Emu::init_sound()
 {
-	if ( exp_flags & ~(namco_flag | vrc6_flag | fme7_flag) )
+	if ( exp_flags & ~(namco_flag | vrc6_flag | vrc7_flag | fme7_flag | mmc5_flag) )
 		return "NSF requires unsupported expansion audio hardware";
 	
 	// map memory
@@ -292,9 +366,27 @@ blargg_err_t Nsf_Emu::init_sound()
 		if ( exp_flags )
 			return "NSF requires expansion audio hardware";
 	#else
-	
+
+	bool overlapped_low = false;
+	bool overlapped_high = false;
+
 	if ( exp_flags )
+	{
 		set_voice_count( Nes_Apu::osc_count + 3 );
+
+		// overlapped mess
+		if ( ( exp_flags & ( vrc6_flag | vrc7_flag ) ) == ( vrc6_flag | vrc7_flag ) )
+		{
+			cpu.map_memory( 0x8000, 0x4000, read_code, write_ext_low );
+			overlapped_low = true;
+		}
+
+		if ( ( exp_flags & ( namco_flag | fme7_flag ) ) == ( namco_flag | fme7_flag ) )
+		{
+			cpu.map_memory( 0xC000, 0x4000, read_code, write_ext_high );
+			overlapped_high = true;
+		}
+	}
 	
 	// namco
 	if ( exp_flags & namco_flag )
@@ -305,8 +397,10 @@ blargg_err_t Nsf_Emu::init_sound()
 		adjusted_gain *= 0.75;
 		cpu.map_memory( Nes_Namco_Apu::data_reg_addr, Nes_Cpu::page_size,
 				read_namco, write_namco );
-		cpu.map_memory( Nes_Namco_Apu::addr_reg_addr, Nes_Cpu::page_size,
-				 read_code, write_namco_addr );
+
+		if ( ! overlapped_high )
+			cpu.map_memory( Nes_Namco_Apu::addr_reg_addr, Nes_Cpu::page_size,
+					 read_code, write_namco_addr );
 	}
 	
 	// vrc6
@@ -316,11 +410,24 @@ blargg_err_t Nsf_Emu::init_sound()
 		BLARGG_CHECK_ALLOC( vrc6 );
 		
 		adjusted_gain *= 0.75;
-		for ( int i = 0; i < Nes_Vrc6_Apu::osc_count; i++ )
-			cpu.map_memory( Nes_Vrc6_Apu::base_addr + i * Nes_Vrc6_Apu::addr_step,
-					Nes_Cpu::page_size, read_code, write_vrc6 );
+
+		if ( ! overlapped_low )
+			for ( int i = 0; i < Nes_Vrc6_Apu::osc_count; i++ )
+				cpu.map_memory( Nes_Vrc6_Apu::base_addr + i * Nes_Vrc6_Apu::addr_step,
+						Nes_Cpu::page_size, read_code, write_vrc6 );
 	}
-	
+
+	// vrc7
+	if ( exp_flags & vrc7_flag )
+	{
+		vrc7 = BLARGG_NEW Nes_Vrc7_Apu;
+		BLARGG_CHECK_ALLOC( vrc7 );
+
+		adjusted_gain *= 0.75;
+		if ( ! overlapped_low )
+			cpu.map_memory( 0x9000, Nes_Cpu::page_size, read_code, write_vrc7 );
+	}
+
 	// fme7
 	if ( exp_flags & fme7_flag )
 	{
@@ -328,8 +435,16 @@ blargg_err_t Nsf_Emu::init_sound()
 		BLARGG_CHECK_ALLOC( fme7 );
 		
 		adjusted_gain *= 0.75;
-		cpu.map_memory( fme7->latch_addr, ram_size - fme7->latch_addr,
-				read_code, write_fme7 );
+		if ( ! overlapped_high )
+			cpu.map_memory( fme7->latch_addr, ram_size - fme7->latch_addr,
+					read_code, write_fme7 );
+	}
+
+	if ( exp_flags & mmc5_flag )
+	{
+		adjusted_gain *= 0.75;
+		cpu.map_memory( 0x5000, Nes_Cpu::page_size, read_mmc5, write_mmc5 );
+		cpu.map_memory( 0x5800, Nes_Cpu::page_size, read_mmc5_exram, write_mmc5_exram );
 	}
 	// to do: is gain adjustment even needed? other sound chip volumes should work
 	// naturally with the apu without change.
@@ -340,9 +455,15 @@ blargg_err_t Nsf_Emu::init_sound()
 	if ( vrc6 )
 		vrc6->volume( adjusted_gain );
 	
+	if ( vrc7 )
+		vrc7->volume( adjusted_gain );
+	
 	if ( fme7 )
 		fme7->volume( adjusted_gain );
 	
+	if ( mmc5_apu )
+		mmc5_apu->volume( adjusted_gain );
+
 #endif
 	
 	apu.volume( adjusted_gain );
@@ -358,11 +479,17 @@ void Nsf_Emu::update_eq( blip_eq_t const& eq )
 		if ( vrc6 )
 			vrc6->treble_eq( eq );
 		
+		if ( vrc7 )
+			vrc7->treble_eq( eq );
+		
 		if ( namco )
 			namco->treble_eq( eq );
 		
 		if ( fme7 )
 			fme7->treble_eq( eq );
+
+		if ( mmc5_apu )
+			mmc5_apu->treble_eq( eq );
 	#endif
 }
 
@@ -476,6 +603,23 @@ void Nsf_Emu::set_voice( int i, Blip_Buffer* buf, Blip_Buffer*, Blip_Buffer* )
 		if ( fme7 )
 			fme7->osc_output( i - Nes_Apu::osc_count, buf );
 		
+		if ( vrc7 )
+		{
+			vrc7->osc_output( i - Nes_Apu::osc_count, buf );
+			vrc7->osc_output( i - Nes_Apu::osc_count + 3, buf );
+		}
+
+		if ( mmc5_apu )
+		{
+			if ( i < 7 )
+				mmc5_apu->osc_output( i - Nes_Apu::osc_count, buf );
+			else
+			{
+				for ( int n = 2; n < Nes_Mmc5_Apu::osc_count; ++n )
+					mmc5_apu->osc_output( n, buf );
+			}
+		}
+
 		if ( namco )
 		{
 			if ( i < 7 )
@@ -518,9 +662,15 @@ void Nsf_Emu::start_track( int track )
 		
 		if ( vrc6 )
 			vrc6->reset();
+
+		if ( vrc7 )
+			vrc7->reset();
 		
 		if ( fme7 )
 			fme7->reset();
+
+		if ( mmc5_apu )
+			mmc5_apu->reset();
 	#endif
 	
 	// reset cpu
@@ -611,9 +761,15 @@ blip_time_t Nsf_Emu::run_clocks( blip_time_t duration, bool* )
 		
 		if ( vrc6 )
 			vrc6->end_frame( duration );
+
+		if ( vrc7 )
+			vrc7->end_frame( duration );
 		
 		if ( fme7 )
 			fme7->end_frame( duration );
+
+		if ( mmc5_apu )
+			mmc5_apu->end_frame( duration );
 		
 	#endif
 	
