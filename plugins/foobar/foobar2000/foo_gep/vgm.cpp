@@ -50,7 +50,7 @@ class input_vgm : public input_gep
 					if ( ptr_cr && ptr_lf && ptr_cr < ptr_lf ) ptr_lf = ptr_cr;
 					if ( ptr_lf )
 					{
-						temp.add_string_utf16( value, ptr_lf - value );
+						temp += pfc::stringcvt::string_utf8_from_wide( value, ptr_lf - value );
 						temp += "\r\n";
 						value = ptr_lf;
 						if ( value[ 0 ] == '\r' && value[ 1 ] == '\n' ) value += 2;
@@ -61,12 +61,12 @@ class input_vgm : public input_gep
 				}
 				while ( * value && ( ptr_lf || ptr_cr ) );
 
-				if ( * value ) temp.add_string_utf16( value );
+				if ( * value ) temp += pfc::stringcvt::string_utf8_from_wide( value );
 
 				p_info.meta_add( name, temp );
 			}
 			else
-				p_info.meta_add( name, string_utf8_from_utf16( value ) );
+				p_info.meta_add( name, pfc::stringcvt::string_utf8_from_wide( value ) );
 		}
 	}
 
@@ -150,6 +150,11 @@ public:
 		service_ptr_t<file> p_unpackfile;
 		if ( io_result_succeeded( unpacker::g_open( p_unpackfile, m_file, p_abort ) ) )
 			m_file = p_unpackfile;
+		else
+		{
+			status = m_file->seek( 0, p_abort );
+			if ( io_result_failed( status ) ) return status;
+		}
 
 		foobar_File_Reader rdr(m_file, p_abort);
 

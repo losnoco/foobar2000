@@ -9,11 +9,11 @@
 		if (err) \
 		{ \
 			console::info(err); \
-			return io_result_error_data; \
+			throw io_result_error_data; \
 		} \
 	}
 
-#define HEADER_STRING(i,n,f) if ((f)[0]) (i).meta_add((n), string_utf8_from_ansi((f), sizeof((f))))
+#define HEADER_STRING(i,n,f) if ((f)[0]) (i).meta_add((n), pfc::stringcvt::string_utf8_from_ansi((f), sizeof((f))))
 
 class input_gep
 {

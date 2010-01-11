@@ -19,6 +19,8 @@ using namespace Gdiplus;
 #define IDT_DUE_TIME		1
 #define IDT_FADE_TIME		2
 
+#define swap_color(x) (((x) & 0xFF00) | (((x) & 0xFF) << 16) | (((x) & 0xFF0000) >> 16))
+
 #ifdef GDIPLUS
 
 static PointF get_text_size(Graphics * graphics, Font * font, const TCHAR * text, UINT len)
@@ -54,7 +56,7 @@ static PointF get_text_size(Graphics * graphics, Font * font, const char * text,
 	{
 		out += meh.get_ptr()+s;
 	}
-	string_os_from_utf8 temp(out);
+	pfc::stringcvt::string_os_from_utf8 temp(out);
 	return get_text_size(graphics, font, temp, _tcslen(temp));
 }
 
@@ -76,7 +78,6 @@ static float get_text_height(Graphics * graphics, Font * font, const char * src,
 	return ptSize.Y;
 }
 
-#define swap_color(x) (((x) & 0xFF00) | (((x) & 0xFF) << 16) | (((x) & 0xFF0000) >> 16))
 #define invert_color(x) ((0xFFFFFF - ((x) & 0xFFFFFF)) | ((x) & 0xFF000000))
 
 static BOOL text_out_colors(Graphics * graphics, Font * font, const TCHAR * src, int len, PointF & origin, bool selected, DWORD default_color)
@@ -139,7 +140,12 @@ static BOOL text_out_colors(Graphics * graphics, Font * font, const TCHAR * src,
 
 BOOL uTextOutColorz(Graphics * graphics, Font * font, const char * text,UINT len, PointF & origin, BOOL is_selected, DWORD default_color)
 {
-	unsigned temp_len = estimate_utf8_to_os(text,len);
+	unsigned temp_len;
+#ifdef UNICODE
+	temp_len = pfc::stringcvt::estimate_utf8_to_wide(text,len);
+#else
+	temp_len = pfc::stringcvt::estimate_utf8_to_ansi(text,len);
+#endif
 	mem_block_t<TCHAR> temp_block;
 	TCHAR * temp;
 	if ( ( temp_len * sizeof(TCHAR) ) <= PFC_ALLOCA_LIMIT )
@@ -156,7 +162,11 @@ BOOL uTextOutColorz(Graphics * graphics, Font * font, const char * text,UINT len
 		temp = temp_block.get_ptr();
 	}
 	assert(temp);
-	convert_utf8_to_os(text,temp,len);
+#ifdef UNICODE
+	pfc::stringcvt::convert_utf8_to_wide(temp,temp_len,text,len);
+#else
+	pfc::stringcvt::convert_utf8_to_ansi(temp,temp_len,text,len);
+#endif
 
 	return text_out_colors(graphics,font,temp,_tcslen(temp),origin,!!is_selected,default_color);
 }
@@ -419,9 +429,9 @@ BOOL uFormatMessage(DWORD dw_error, string_base & out)
 	if ( length )
 	{
 #ifdef UNICODE
-		out.set_string_utf16( ( const WCHAR * ) buffer );
+		out = pfc::stringcvt::string_utf8_from_wide( ( const WCHAR * ) buffer );
 #else
-		out.set_string_ansi( ( const char * ) buffer );
+		out = pfc::stringcvt::string_utf8_from_ansi( ( const char * ) buffer );
 #endif
 		LocalFree( buffer );
 		return TRUE;
@@ -1120,7 +1130,7 @@ bool COsdWnd::RepaintVolume(int volume)
 		volq = (volume * (m_sSize.cx - 2)) / vmin;
 		if (outline)
 		{
-			unsigned octemp = (ocolor | (255 << 24));
+			unsigned octemp = (swap_color(ocolor) | (255 << 24));
 			unsigned * ptr = (unsigned*) gfx;
 			unsigned * ptr2 = ptr + m_sSize.cx * (m_sSize.cy - 1);
 			for (int x = m_sSize.cx; x--;)
@@ -1136,6 +1146,7 @@ bool COsdWnd::RepaintVolume(int volume)
 				ptr[-1] = octemp;
 			}
 		}
+		color = swap_color(color);
 		unsigned col1 = (((color & 255) * 64 / 255) & 255) | (((color & 0xFF00) * 64 / 255) & 0xFF00) | (((color & 0xFF0000) * 64 / 255) & 0xFF0000) | (64 << 24);
 		unsigned col2 = (((color & 255) * 192 / 255) & 255) | (((color & 0xFF00) * 192 / 255) & 0xFF00) | (((color & 0xFF0000) * 192 / 255) & 0xFF0000) | (192 << 24);
 		unsigned * ptr = ((unsigned*) gfx) + m_sSize.cx + 1;

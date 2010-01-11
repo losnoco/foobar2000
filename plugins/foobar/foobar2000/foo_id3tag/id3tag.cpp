@@ -59,8 +59,6 @@ Shit that ID3v2 must follow:
 
 #include "foobar2000.h"
 
-#include "../foo_input_std/id3v2_hacks.h"
-
 //#include "resource.h"
 
 #include <id3tag.h>
@@ -84,8 +82,6 @@ bool is_iso88591(const char * src, unsigned len = ~0)
 	return !len;
 }
 */
-
-extern "C" int is_replaygain(const char * name);
 
 void id3v2_process_callback(void * ctx, const char * name, const char * value)
 {
@@ -113,7 +109,7 @@ public:
 	t_io_result read( const service_ptr_t<file> & p_file, file_info & p_info, abort_callback & p_abort )
 	{
 		t_uint64 skipped;
-		status = g_skip( p_file, skipped, p_abort );
+		t_io_result status = g_skip( p_file, skipped, p_abort );
 		if ( io_result_failed( status ) || !skipped ) return status;
 
 		status = p_file->seek( 0, p_abort );
@@ -125,7 +121,7 @@ public:
 		status = p_file->read_object( mem, skipped, p_abort );
 		if ( io_result_failed( status ) ) return status;
 
-		tag = id3_tag_parse(mem, skip);
+		tag = id3_tag_parse(mem, skipped);
 		if ( ! tag ) return io_result_error_data;
 
 		for (unsigned i = 0, count = tag->nframes; i < count; i++)
@@ -149,12 +145,12 @@ public:
 
 				if (read_info->process)
 				{
-					read_info->process(frame, read_info, id3v2_process_callback, info);
+					read_info->process(frame, read_info, id3v2_process_callback, &p_info);
 				}
 			}
 		}
 
-		return 1;
+		return io_result_success;
 	}
 
 	t_io_result write(const service_ptr_t<file> & p_file,const file_info & p_info,abort_callback & p_abort)

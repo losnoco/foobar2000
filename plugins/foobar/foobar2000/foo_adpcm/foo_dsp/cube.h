@@ -41,7 +41,7 @@ typedef struct {
 // structure for a single channel
 typedef struct {
 	service_ptr_t<file> infile; // processing on a single channel needs this,also this allows for seperate L/R files to be played at once
-	DSPHEAD header;
+	CUBEHEAD header;
 	short chanbuf[0x8000/8*14];
 	int readloc,writeloc; // offsets into the chanbuf
 	int filled;
@@ -49,7 +49,14 @@ typedef struct {
 	short bps; // bits per "size", 4 if offsets specified in nibbles, 8 if bytes
 	t_filesize chanstart; // offset in file of start of this channel
 	t_filesize offs; // current location
-	short hist1,hist2; // sample history
+	union { // sample history (either long or short, ADP uses long, others use short)
+		long lhist1;
+		short hist1;
+	};
+	union {
+		long lhist2;
+		short hist2;
+	};
 	long interleave; // _bytes_ of interleave, 0 if none
 } CUBESTREAM;
 
@@ -65,7 +72,8 @@ typedef struct {
 	long startinterleave;
 } CUBEFILE;
 
-void InitDSPFILE(DSPFILE * dsp, abort_callback & p_abort, headertype type = type_std);
+void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type = type_std);
+bool InitADPFILE(CUBEFILE * dsp, abort_callback & p_abort);
 //void CloseDSPFILE(DSPFILE * dsp);
 
 int DSPdecodebuffer
@@ -87,6 +95,9 @@ int ADPdecodebuffer(
 	long *histr2
 );
 
-void fillbuffers(DSPFILE * dsp, abort_callback & p_abort);
+void fillbuffers(CUBEFILE * dsp, abort_callback & p_abort);
 
-extern DSPFILE dspfile;
+void fillbufferDSP(CUBESTREAM * stream, abort_callback & p_abort);
+void fillbufferDSPinterleave(CUBEFILE * stream, abort_callback & p_abort);
+void fillbufferHALP(CUBEFILE * stream, abort_callback & p_abort);
+void fillbufferADP(CUBEFILE * adp, abort_callback & p_abort);

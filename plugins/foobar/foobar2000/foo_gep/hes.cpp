@@ -92,6 +92,11 @@ public:
 			}
 			catch ( t_io_result code )
 			{
+				if ( emu )
+				{
+					delete emu;
+					this->emu = emu = NULL;
+				}
 				return code;
 			}
 

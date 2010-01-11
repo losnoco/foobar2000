@@ -1,39 +1,48 @@
-// changelog
+#define MY_VERSION "0.7"
 
-// 2004-03-07 15:47 UTC - kode54
-// - Added VBR scanning threshold because scanning takes too damn long on xxbog hueg files
-// - Restricted seektable and accurate seeking/scanning to VBR files, because its ficking
-//   slow unless the files are small, or your drive is faaaaast
-// - Version is now 0.6
+/*
+	changelog
 
-// 2004-03-07 07:02 UTC - kode54
-// - Added seek table manager from foo_input_std\mp3.cpp, now supports accurate seeking even with VBR files
-// - Also skips over whole frames more efficiently
-// - Load-time also scans over the entire file for accurate length even for VBR files
+2005-12-04 20:07 UTC - kode54
+- Fixed synchronization from get_info
+- Version is now 0.7
 
-// 2004-01-14 16:50 UTC - kode54
-// - Fixed playback to skip over blocks with unwanted bsid, but length and seeking will still be broken
-// - Version is now 0.5.2
+2004-03-07 15:47 UTC - kode54
+- Added VBR scanning threshold because scanning takes too damn long on xxbog hueg files
+- Restricted seektable and accurate seeking/scanning to VBR files, because its ficking
+  slow unless the files are small, or your drive is faaaaast
+- Version is now 0.6
 
-// 2003-12-23 12:30 UTC - kode54
-// - Hotfix for new stereo and quad mappings
-// - Version is now 0.5.1
+2004-03-07 07:02 UTC - kode54
+- Added seek table manager from foo_input_std\mp3.cpp, now supports accurate seeking even with VBR files
+- Also skips over whole frames more efficiently
+- Load-time also scans over the entire file for accurate length even for VBR files
 
-// 2003-12-22 18:02 UTC - kode54
-// - Added smaller speaker count mappings for mono, stereo, and quad without LFE
-// - Version is now 0.5
+2004-01-14 16:50 UTC - kode54
+- Fixed playback to skip over blocks with unwanted bsid, but length and seeking will still be broken
+- Version is now 0.5.2
 
-// 2003-10-29 15:51 UTC - kode54
-// - Added APEv2 tag writing
-// - Version is now 0.4
+2003-12-23 12:30 UTC - kode54
+- Hotfix for new stereo and quad mappings
+- Version is now 0.5.1
 
-// 2003-07-16 18:29 - kode54
-// - Added sample accuracy to seeking
-// - Version is now 0.3
+2003-12-22 18:02 UTC - kode54
+- Added smaller speaker count mappings for mono, stereo, and quad without LFE
+- Version is now 0.5
 
-// 2003-06-26 07:34 - kode54
-// - Updated to 0.7 API
-// - Version is now 0.2
+2003-10-29 15:51 UTC - kode54
+- Added APEv2 tag writing
+- Version is now 0.4
+
+2003-07-16 18:29 - kode54
+- Added sample accuracy to seeking
+- Version is now 0.3
+
+2003-06-26 07:34 - kode54
+- Updated to 0.7 API
+- Version is now 0.2
+
+*/
 
 #include <foobar2000.h>
 
@@ -92,10 +101,10 @@ private:
 	a52_state_t * state;
 	mem_block_t<t_uint8> buffer;
 
-	bool sync_e( const service_ptr_t<file> & r, abort_callback & p_abort )
+	bool sync_e( const service_ptr_t<file> & r, t_uint8 * buffer, abort_callback & p_abort )
 	{
 		t_uint32 meh = 0;
-		t_uint8 * ptr = buffer.get_ptr();
+		t_uint8 * ptr = buffer;
 		int left = int( r->read_e( ptr + 7, 3840 - 7, p_abort ) + 7 );
 retry:
 		while ( left > 1 )
@@ -107,7 +116,7 @@ retry:
 		if (left > 1)
 		{
 			r->seek2_e(-left, SEEK_CUR, p_abort);
-			r->read_object_e(ptr = buffer.get_ptr(), 7, p_abort);
+			r->read_object_e(ptr = buffer, 7, p_abort);
 			if (ptr[5] >= 0x60 || (ptr[4] & 63) >= 38)
 			{
 				meh = 8192 - left;
@@ -188,7 +197,7 @@ public:
 
 			if ( ! bs )
 			{
-				if ( ! sync_e( m_file, p_abort ) ) return io_result_error_data;
+				if ( ! sync_e( m_file, ptr, p_abort ) ) return io_result_error_data;
 				bs = a52_syncinfo( ptr, & flags, & srate, & bitrate );
 			}
 
@@ -258,7 +267,7 @@ public:
 
 			if ( ! bs )
 			{
-				if ( ! sync_e( m_file, p_abort ) ) return io_result_error_data;
+				if ( ! sync_e( m_file, ptr, p_abort ) ) return io_result_error_data;
 				bs = a52_syncinfo( ptr, & flags, & srate, & bitrate );
 			}
 
@@ -321,7 +330,7 @@ public:
 				DWORD bs = a52_syncinfo( ptr, &flags, &srate, &bitrate );
 				if (!bs)
 				{
-					if ( ! sync_e( m_file, p_abort ) ) return io_result_error_data;
+					if ( ! sync_e( m_file, ptr, p_abort ) ) return io_result_error_data;
 					bs = a52_syncinfo( ptr, & flags, & srate, & bitrate );
 				}
 
@@ -702,4 +711,4 @@ DECLARE_FILE_TYPE("AC3 files", "*.AC3");
 static input_singletrack_factory_t<input_ac3>            g_input_factory_ac3;
 static preferences_page_factory_t <preferences_page_ac3> g_preferences_page_factory_ac3;
 
-DECLARE_COMPONENT_VERSION("AC3 decoder", "0.6", "Based on liba52 v0.7.4");
+DECLARE_COMPONENT_VERSION("AC3 decoder", MY_VERSION, "Based on liba52 v0.7.4");

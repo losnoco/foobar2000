@@ -5,9 +5,7 @@
 */
 
 #include <foobar2000.h>
-#include "dsp.h"
-
-DSPFILE dspfile;
+#include "cube.h"
 
 int get16bit(unsigned char* p)
 {
@@ -20,7 +18,7 @@ int get32bit(unsigned char* p)
 }
 
 // standard devkit version
-void get_dspheaderstd(DSPHEAD *dsp,unsigned char *buf)
+void get_dspheaderstd(CUBEHEAD *dsp,unsigned char *buf)
 {
 	int i;
 	dsp->num_samples=get32bit(buf);
@@ -46,7 +44,7 @@ void get_dspheaderstd(DSPHEAD *dsp,unsigned char *buf)
 }
 
 // SF Assault version
-void get_dspheadersfa(DSPHEAD *dsp,unsigned char *buf)
+void get_dspheadersfa(CUBEHEAD *dsp,unsigned char *buf)
 {
 	int i;
 	buf+=0x20; // for SF Assault
@@ -73,7 +71,7 @@ void get_dspheadersfa(DSPHEAD *dsp,unsigned char *buf)
 }
 
 // Metroid Prime 2 version
-void get_dspheadermp2(DSPHEAD *dsp,unsigned char *buf)
+void get_dspheadermp2(CUBEHEAD *dsp,unsigned char *buf)
 {
 	int i;
 	dsp->num_samples=get32bit(buf+0x8);
@@ -92,7 +90,7 @@ void get_dspheadermp2(DSPHEAD *dsp,unsigned char *buf)
 }
 
 // Metroid Prime 2 version (second channel)
-void get_dspheadermp22(DSPHEAD *dsp,unsigned char *buf)
+void get_dspheadermp22(CUBEHEAD *dsp,unsigned char *buf)
 {
 	int i;
 	dsp->num_samples=get32bit(buf+0x8);
@@ -111,7 +109,7 @@ void get_dspheadermp22(DSPHEAD *dsp,unsigned char *buf)
 }
 
 // SSB:M HALPST version
-void get_dspheaderhalp(DSPHEAD *dsp,unsigned char *buf)
+void get_dspheaderhalp(CUBEHEAD *dsp,unsigned char *buf)
 {
 	int i;
 	dsp->num_samples=get32bit(buf+0x18)*14/16; // I'm using the same as the loop endpoint...
@@ -128,7 +126,7 @@ void get_dspheaderhalp(DSPHEAD *dsp,unsigned char *buf)
 }
 
 // SSB:M HALPST version (second channel)
-void get_dspheaderhalp2(DSPHEAD *dsp,unsigned char *buf)
+void get_dspheaderhalp2(CUBEHEAD *dsp,unsigned char *buf)
 {
 	int i;
 	dsp->num_samples=get32bit(buf+0x50)*14/16; // I'm using the same as the loop endpoint...
@@ -145,7 +143,7 @@ void get_dspheaderhalp2(DSPHEAD *dsp,unsigned char *buf)
 }
 
 // Metroid Prime 2 demo's stereo fmt
-void get_dspheadermp2d(DSPHEAD *dsp,unsigned char *buf) {
+void get_dspheadermp2d(CUBEHEAD *dsp,unsigned char *buf) {
 	int i;
 	dsp->num_samples=get32bit(buf+0xc);
 	dsp->num_adpcm_nibbles=get32bit(buf+0xc)*2;
@@ -163,7 +161,7 @@ void get_dspheadermp2d(DSPHEAD *dsp,unsigned char *buf) {
 }
 
 // Metroid Prime 2 demo's stereo fmt (chan 2)
-void get_dspheadermp2d2(DSPHEAD *dsp,unsigned char *buf) {
+void get_dspheadermp2d2(CUBEHEAD *dsp,unsigned char *buf) {
 	int i;
 	dsp->num_samples=get32bit(buf+0x18);
 	dsp->num_adpcm_nibbles=get32bit(buf+0x18)*2;
@@ -180,6 +178,34 @@ void get_dspheadermp2d2(DSPHEAD *dsp,unsigned char *buf) {
 	dsp->yn1=dsp->yn2=dsp->lyn1=dsp->lyn2=0;
 }
 
+// spt header (seperate file)
+void get_dspheaderspt(CUBEHEAD *dsp,unsigned char *buf)
+{
+	int i;
+	//dsp->num_samples=get32bit(buf);
+	//dsp->num_adpcm_nibbles=get32bit(buf+4);
+	dsp->sample_rate=get32bit(buf+8);
+	dsp->loop_flag=get32bit(buf+4); // "type" field, 0=nonlooped ADPCM, 1=looped ADPCM
+	dsp->format=0; //get16bit(buf+0xE);
+	dsp->sa=get32bit(buf+0x0C);
+	dsp->ea=get32bit(buf+0x10);
+	//dsp->ea=get32bit(buf+0x14);
+	
+	dsp->ca=get32bit(buf+0x18);
+	/*DisplayError("get_dspheaderspt:\nnum_samples=%li\nnum_adpcm_nibbles=%li\nsample_rate=%li\n"
+		"loop_flag=%04x\nformat=%04x\nsa=%08x\nea=%08x\nca=%08x",dsp->num_samples,dsp->num_adpcm_nibbles,
+		dsp->sample_rate,dsp->loop_flag,dsp->format,dsp->sa,dsp->ea,dsp->ca);*/
+	for (i=0;i<16;i++)
+	dsp->coef[i]=get16bit(buf+0x20+i*2);
+	dsp->gain=get16bit(buf+0x40);
+	dsp->ps=get16bit(buf+0x42);
+	dsp->yn1=get16bit(buf+0x44);
+	dsp->yn2=get16bit(buf+0x46);
+	dsp->lps=get16bit(buf+0x48);
+	dsp->lyn1=get16bit(buf+0x4A);
+	dsp->lyn2=get16bit(buf+0x4C);
+}
+
 long mp2round(long addr) {
 	return (addr%0x8f00)+(addr/0x8f00*2*0x8f00);
 }
@@ -189,15 +215,41 @@ long mp2roundup(long addr) {
 }
 
 // return 1 on failure, 0 on success
-void InitDSPFILE(DSPFILE * dsp, abort_callback & p_abort) {
+void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 	unsigned char readbuf[0x100];
 	dsp->ch[0].infile->seek_e( 0, p_abort );
 
-	dsp->ch[0].infile->read_object_e( &readbuf, 0x100, p_abort );
+	unsigned read = dsp->ch[0].infile->read_e( &readbuf, 0x100, p_abort );
 	
+	if ( type == type_spt )
+	{
+		if ( read < 0x4E ) throw io_result_error_data;
+
+		dsp->ch[0].infile = dsp->ch[1].infile;
+		dsp->ch[0].infile->seek_e( 0, p_abort );
+		get_dspheaderspt( &dsp->ch[0].header, readbuf );
+	}
+
 	t_filesize size = dsp->ch[0].infile->get_size_e( p_abort );
 
-	if (readbuf[0]=='R' && readbuf[1]=='S' && readbuf[2]==0x00 && readbuf[3]==0x03) {
+	bool idsp = false;
+
+	if ( type == type_spt ) {
+		// SPT+SPD
+		
+		// only play single archives.
+		if (get32bit(readbuf)!=1) {
+			throw io_result_error_data;
+		}
+
+		dsp->ch[0].header.num_adpcm_nibbles = dsp->ch[1].header.num_adpcm_nibbles = size * 2;
+		dsp->ch[0].header.num_samples = dsp->ch[1].header.num_samples = size * 14 / 8;
+
+		dsp->NCH = 1;
+		dsp->ch[0].chanstart = 0;
+		dsp->ch[0].type = type_spt;
+		dsp->ch[0].bps = 4;
+	} else if (readbuf[0]=='R' && readbuf[1]=='S' && readbuf[2]==0x00 && readbuf[3]==0x03) {
 		// Metroid Prime 2 "RS03"
 		if (get16bit(readbuf+6)==2) { // channel count
 			get_dspheadermp2(&dsp->ch[0].header,readbuf);
@@ -274,7 +326,8 @@ void InitDSPFILE(DSPFILE * dsp, abort_callback & p_abort) {
 
 		dsp->ch[0].type=dsp->ch[1].type=type_pm2;
 		dsp->ch[0].bps=dsp->ch[1].bps=4;
-	} else if (readbuf[0]==' ' && readbuf[1]=='H' && readbuf[2]=='A' && readbuf[3]=='L' && readbuf[4]=='P') {
+	} else if (readbuf[0]==' ' && readbuf[1]=='H' && readbuf[2]=='A' && readbuf[3]=='L' && readbuf[4]=='P' &&
+		readbuf[5]=='S' && readbuf[6]=='T') {
 		// Super Smash Bros. Melee "HALPST"
 		get_dspheaderhalp(&dsp->ch[0].header,readbuf);
 		get_dspheaderhalp2(&dsp->ch[1].header,readbuf);
@@ -293,14 +346,50 @@ void InitDSPFILE(DSPFILE * dsp, abort_callback & p_abort) {
 
 		// determine if a HALPST file loops
 		{
-			long c=0x80,lastc=0;
-			while (c > lastc) {
-				lastc=c;
-				dsp->ch[0].infile->seek_e( c + 8, p_abort );
-				dsp->ch[0].infile->read_object_e( &c, 4, p_abort );
-				c=get32bit((unsigned char*)&c);
+			struct offset_info
+			{
+				long offset;
+				unsigned sample_count;
+				offset_info( long o, unsigned s ) : offset( o ), sample_count( s ) {}
+			};
+			class offset_list : public mem_block_t<offset_info>
+			{
+			public:
+				bool contains( long i )
+				{
+					for ( unsigned n = 0, s = get_size(); n < s; ++n )
+					{
+						if ( get_ptr()[ n ].offset == i ) return true;
+					}
+
+					return false;
+				}
+			};
+			offset_list offsets;
+			unsigned char sc[8];
+			long c=0x80;
+			unsigned sample_count = 0;
+			while ( c >= 0 && !offsets.contains( c ) ) {
+				offsets.append( offset_info( c, sample_count ) );
+				dsp->ch[0].infile->seek_e( c + 4, p_abort );
+				dsp->ch[0].infile->read_object_e( &sc, 8, p_abort );
+				sample_count += get32bit( sc ) + 1;
+				c = get32bit( sc + 4 );
 			}
 			dsp->ch[0].header.loop_flag=dsp->ch[1].header.loop_flag=((c<0)?0:1);
+			if ( c >= 0 )
+			{
+				dsp->ch[0].header.ea = dsp->ch[1].header.ea = MulDiv( sample_count, 28, 32 );
+				for ( unsigned n = 0, s = offsets.get_size(); n < s; ++n )
+				{
+					offset_info & offset = offsets[ n ];
+					if ( offset.offset == c )
+					{
+						dsp->ch[0].header.sa = dsp->ch[1].header.sa = MulDiv( offset.sample_count, 28, 32 );
+						break;
+					}
+				}
+			}
 		}
 	} else {
 		// assume standard devkit (or other formats without signature)
@@ -321,8 +410,18 @@ void InitDSPFILE(DSPFILE * dsp, abort_callback & p_abort) {
 				dsp->ch[0].bps=dsp->ch[1].bps=8;
 		} else { // if MP2 demo*/
 
-			get_dspheaderstd(&dsp->ch[0].header,readbuf);
-			get_dspheaderstd(&dsp->ch[1].header,readbuf+0x60); // header for channel 2 (duh!)
+			idsp = readbuf[0]=='I' && readbuf[1]=='D' && readbuf[2]=='S' && readbuf[3]=='P';
+
+			if ( idsp )
+			{
+				get_dspheaderstd(&dsp->ch[0].header,readbuf+0xC);
+				get_dspheaderstd(&dsp->ch[1].header,readbuf+0x6C);
+			}
+			else
+			{
+				get_dspheaderstd(&dsp->ch[0].header,readbuf);
+				get_dspheaderstd(&dsp->ch[1].header,readbuf+0x60);
+			}
 
 			// if a valid second header (agrees with first)
 			if (dsp->ch[0].header.num_adpcm_nibbles==dsp->ch[1].header.num_adpcm_nibbles &&
@@ -330,22 +429,49 @@ void InitDSPFILE(DSPFILE * dsp, abort_callback & p_abort) {
 
 				// stereo
 				dsp->NCH=2;
-				dsp->ch[0].interleave=dsp->ch[1].interleave=0x8000;
+				if (idsp) {
+					dsp->ch[0].interleave=dsp->ch[1].interleave=0x6b40;
+					dsp->ch[0].chanstart=0xcc;
+					dsp->ch[1].chanstart=0x6b40+0xcc;
+					dsp->ch[0].type = dsp->ch[1].type = type_idsp;
+				} else if (type == type_mss) {
+					dsp->ch[0].interleave=dsp->ch[1].interleave=0x1000;
+					dsp->ch[0].chanstart=0xc0;
+					dsp->ch[1].chanstart=0x10c0;
+					dsp->ch[0].type = dsp->ch[1].type = type;
+				} else if (type == type_gcm) {
+					dsp->ch[0].interleave=dsp->ch[1].interleave=0x8000;
+					dsp->ch[0].chanstart=0xc0;
+					dsp->ch[1].chanstart=0x80c0;
+					dsp->ch[0].type = dsp->ch[1].type = type_std;
 
-				dsp->ch[0].chanstart=0xc0;
-				dsp->ch[1].chanstart=0x80c0;
+					//dsp->ch[0].interleave=dsp->ch[1].interleave=0x4000;
+					//dsp->ch[0].chanstart=0xc0;
+					//dsp->ch[1].chanstart=0xc0+0x7ea0/2;
+				} else {
+					dsp->ch[0].interleave=dsp->ch[1].interleave=0x14180;
+					dsp->ch[0].chanstart=0xc0;
+					dsp->ch[1].chanstart=0x14180+0xc0;
+					dsp->ch[0].type = dsp->ch[1].type = type_std;
+				}					
 
-				dsp->ch[0].type=dsp->ch[1].type=type_std;
-				dsp->ch[0].bps=dsp->ch[1].bps=8;
+ 				dsp->ch[0].bps = dsp->ch[1].bps = 8;
 			} else { // if valid second header (standard)
 				// mono			
 				dsp->ch[0].interleave=0;
 
-				dsp->ch[0].type=type_std;
-
 				dsp->ch[0].bps=4;
 
-				dsp->ch[0].chanstart=0x60;
+				if (idsp)
+				{
+					dsp->ch[0].chanstart=0x6c;
+					dsp->ch[0].type=type_idsp;
+				}
+				else
+				{
+					dsp->ch[0].chanstart=0x60;
+					dsp->ch[0].type=type_std;
+				}
 
 				if (dsp->ch[0].infile != dsp->ch[1].infile) { // dual-file stereo
 					//DisplayError("stereo");
@@ -396,14 +522,23 @@ void InitDSPFILE(DSPFILE * dsp, abort_callback & p_abort) {
 		}
 	}
 
+	// in case loop end offset is beyond EOF... (MMX:CM)
+	//if (dsp->ch[0].header.ea*dsp->ch[0].bps/8>dsp->file_length-dsp->ch[0].chanstart) dsp->ch[0].header.ea=(dsp->file_length-dsp->ch[0].chanstart)*8/dsp->ch[0].bps;
+	//if (dsp->NCH==2 && dsp->ch[1].header.ea*dsp->ch[1].bps/8>dsp->file_length-dsp->ch[1].chanstart) dsp->ch[1].header.ea=(dsp->file_length-dsp->ch[1].chanstart)*8/dsp->ch[1].bps;
+
 	/*if (!dsp->ch[0].header.loop_flag)*/ dsp->nrsamples = dsp->ch[0].header.num_samples;
 	/*else if (dsp->ch[0].interleave)
 		dsp->nrsamples=(dsp->ch[0].header.sa+looptimes*(dsp->ch[0].header.ea-dsp->ch[0].header.sa))*14/(8*8/dsp->ch[0].bps)/dsp->NCH+masterfadelength*dsp->ch[0].header.sample_rate;
 	else
 		dsp->nrsamples=(dsp->ch[0].header.sa+looptimes*(dsp->ch[0].header.ea-dsp->ch[0].header.sa))*14/(8*8/dsp->ch[0].bps)+masterfadelength*dsp->ch[0].header.sample_rate;*/
 
+	// I got a threshold for the abuse I'll take.
+	if (dsp->ch[0].header.sample_rate<=0 || dsp->ch[0].header.sample_rate>96000) {
+		throw io_result_error_data;
+	}
+
 	dsp->file_length=size; //GetFileSize(dsp->ch[0].infile,NULL);
-	dsp->file_length=(dsp->file_length+0xf)&(~0xf);
+	if ( ! idsp ) dsp->file_length=(dsp->file_length+0xf)&(~0xf);
 
 	dsp->ch[0].hist1=dsp->ch[0].header.yn1;
 	dsp->ch[0].hist2=dsp->ch[0].header.yn2;
@@ -414,7 +549,7 @@ void InitDSPFILE(DSPFILE * dsp, abort_callback & p_abort) {
 	dsp->ch[0].filled=dsp->ch[1].filled=0;
 }
 
-/*void CloseDSPFILE(DSPFILE * dsp) {
+/*void CloseDSPFILE(CUBEFILE * dsp) {
 	if (dsp->ch[0].infile != INVALID_HANDLE_VALUE) CloseHandle(dsp->ch[0].infile);
 	if (dsp->ch[1].infile != INVALID_HANDLE_VALUE) CloseHandle(dsp->ch[1].infile);
 	dsp->ch[0].infile=dsp->ch[1].infile=INVALID_HANDLE_VALUE;
@@ -425,7 +560,7 @@ void InitDSPFILE(DSPFILE * dsp, abort_callback & p_abort) {
 
 // for noninterleaved files (mono, STM)
 // also for reading two mono Metroid Prime files simultaneously as stereo
-void fillbuffer(DSPSTREAM * stream, abort_callback & p_abort) {
+void fillbufferDSP(CUBESTREAM * stream, abort_callback & p_abort) {
 	int i,l;
 	short decodebuf[14];
 	char ADPCMbuf[8];
@@ -438,15 +573,14 @@ void fillbuffer(DSPSTREAM * stream, abort_callback & p_abort) {
 			l = stream->infile->read_e( ADPCMbuf, 8, p_abort );
 			if ( ! l ) throw io_result_eof;
 			if ( l < 8 ) memset( ADPCMbuf + l, 0, 8 - l );
-			decodebuffer((unsigned char *)&ADPCMbuf,decodebuf,stream->header.coef,&stream->hist1,&stream->hist2);
+			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf,stream->header.coef,&stream->hist1,&stream->hist2);
 			i=14;
 			stream->offs+=8;
-			
-			// seems to work OK for everything but MP2 demo
-			if (stream->header.loop_flag && (stream->offs-stream->chanstart)>=stream->header.ea*stream->bps/8) {
-				stream->offs=stream->chanstart+(stream->header.sa&(~0xf))*stream->bps/8;
+						
+			if (stream->header.loop_flag && (stream->offs-stream->chanstart+8)>=((stream->header.ea*stream->bps/8)&(~7))) {
+				stream->offs=stream->chanstart+((stream->header.sa*stream->bps/8)&(~7));
+				//DisplayError("loop from %08x to %08x",stream->ea,stream->offs);
 				stream->infile->seek_e( stream->offs, p_abort );
-				//DisplayError("loop");
 			}
 		}
 		stream->chanbuf[stream->writeloc++]=decodebuf[14-i];
@@ -457,14 +591,12 @@ void fillbuffer(DSPSTREAM * stream, abort_callback & p_abort) {
 }
 
 // each HALP block contains the address of the next one and the size of the current one
-void fillbufferhalp(DSPFILE * dsp, abort_callback & p_abort) {
-	int c,i,l;
+void fillbufferHALP(CUBEFILE * dsp, abort_callback & p_abort) {
+	int c,i;
 	short decodebuf1[28];
 	short decodebuf2[28];
 	char ADPCMbuf[16];
 
-	//if (dsp->halpsize==0 && (long)dsp->nexthalp < 0) dsp->ch[0].readloc=dsp->ch[1].readloc=dsp->ch[0].writeloc-1;
-	
 	i=0;
 	do {
 		if (i==0) {
@@ -472,10 +604,7 @@ void fillbufferhalp(DSPFILE * dsp, abort_callback & p_abort) {
 			// handle HALPST headers
 			if (dsp->halpsize==0) {
 				if ((long)dsp->nexthalp < 0) {
-					//for (c=0;c<0x8000/8*14;c++) dsp->ch[0].chanbuf[c]=dsp->ch[1].chanbuf[c]=0;
-					//dsp->ch[0].writeloc=dsp->ch[1].writeloc=0;
-					//dsp->ch[0].readloc=dsp->ch[1].readloc=dsp->ch[0].writeloc-1;
-					return;
+					throw io_result_eof;
 				}
 				dsp->ch[0].offs=dsp->nexthalp+0x20;
 				dsp->ch[0].infile->seek_e( dsp->nexthalp, p_abort );
@@ -488,13 +617,13 @@ void fillbufferhalp(DSPFILE * dsp, abort_callback & p_abort) {
 
 			dsp->ch[0].infile->seek_e( dsp->ch[0].offs, p_abort );
 			dsp->ch[0].infile->read_object_e( ADPCMbuf, 16, p_abort );
-			decodebuffer((unsigned char *)&ADPCMbuf,decodebuf1,dsp->ch[0].header.coef,&dsp->ch[0].hist1,&dsp->ch[0].hist2);
-			decodebuffer((unsigned char *)&ADPCMbuf+8,decodebuf1+14,dsp->ch[0].header.coef,&dsp->ch[0].hist1,&dsp->ch[0].hist2);
+			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf1,dsp->ch[0].header.coef,&dsp->ch[0].hist1,&dsp->ch[0].hist2);
+			DSPdecodebuffer((unsigned char *)&ADPCMbuf+8,decodebuf1+14,dsp->ch[0].header.coef,&dsp->ch[0].hist1,&dsp->ch[0].hist2);
 
 			dsp->ch[1].infile->seek_e( dsp->ch[1].offs, p_abort );
 			dsp->ch[1].infile->read_object_e( ADPCMbuf, 16, p_abort );
-			decodebuffer((unsigned char *)&ADPCMbuf,decodebuf2,dsp->ch[1].header.coef,&dsp->ch[1].hist1,&dsp->ch[1].hist2);
-			decodebuffer((unsigned char *)&ADPCMbuf+8,decodebuf2+14,dsp->ch[1].header.coef,&dsp->ch[1].hist1,&dsp->ch[1].hist2);
+			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf2,dsp->ch[1].header.coef,&dsp->ch[1].hist1,&dsp->ch[1].hist2);
+			DSPdecodebuffer((unsigned char *)&ADPCMbuf+8,decodebuf2+14,dsp->ch[1].header.coef,&dsp->ch[1].hist1,&dsp->ch[1].hist2);
 
 			i=28;
 			c=0;
@@ -515,8 +644,8 @@ void fillbufferhalp(DSPFILE * dsp, abort_callback & p_abort) {
 }
 
 // interleaved files requires streams with knowledge of each other (for proper looping)
-void fillbufferinterleave(DSPFILE * dsp, abort_callback & p_abort) {
-	int i,l;
+void fillbufferDSPinterleave(CUBEFILE * dsp, abort_callback & p_abort) {
+	int i;
 	short decodebuf1[14];
 	short decodebuf2[14];
 	char ADPCMbuf[8];
@@ -527,11 +656,11 @@ void fillbufferinterleave(DSPFILE * dsp, abort_callback & p_abort) {
 
 			dsp->ch[0].infile->seek_e( dsp->ch[0].offs, p_abort );
 			dsp->ch[0].infile->read_object_e( ADPCMbuf, 8, p_abort );
-			decodebuffer((unsigned char *)&ADPCMbuf,decodebuf1,dsp->ch[0].header.coef,&dsp->ch[0].hist1,&dsp->ch[0].hist2);
+			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf1,dsp->ch[0].header.coef,&dsp->ch[0].hist1,&dsp->ch[0].hist2);
 
 			dsp->ch[1].infile->seek_e( dsp->ch[1].offs, p_abort );
 			dsp->ch[1].infile->read_object_e( ADPCMbuf, 8, p_abort );
-			decodebuffer((unsigned char *)&ADPCMbuf,decodebuf2,dsp->ch[1].header.coef,&dsp->ch[1].hist1,&dsp->ch[1].hist2);
+			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf2,dsp->ch[1].header.coef,&dsp->ch[1].hist1,&dsp->ch[1].hist2);
 
 			i=14;
 			dsp->ch[0].offs+=8;
@@ -545,12 +674,13 @@ void fillbufferinterleave(DSPFILE * dsp, abort_callback & p_abort) {
 			if (!dsp->lastchunk && (dsp->ch[1].offs-dsp->ch[1].chanstart)%dsp->ch[1].interleave==0) {
 				dsp->ch[1].offs+=dsp->ch[1].interleave;
 
-				// metroid prime 2 has smaller interleave for last chunk
-				if (!dsp->lastchunk && dsp->ch[0].type==type_mp2 &&
+				// metroid prime 2, IDSP has smaller interleave for last chunk
+				if (!dsp->lastchunk &&
+					(dsp->ch[0].type==type_mp2 || dsp->ch[0].type==type_idsp) && 
 					dsp->ch[1].offs+dsp->ch[1].interleave>dsp->file_length) {
 					
 					dsp->ch[0].interleave=dsp->ch[1].interleave=
-						((dsp->file_length-dsp->ch[0].offs)/2);
+						(dsp->file_length-dsp->ch[0].offs)/2;
 					dsp->ch[1].offs=dsp->ch[0].offs+dsp->ch[1].interleave;
 
 					dsp->lastchunk=1;
@@ -564,9 +694,13 @@ void fillbufferinterleave(DSPFILE * dsp, abort_callback & p_abort) {
 				(dsp->ch[1].offs-dsp->ch[0].chanstart)>=dsp->ch[1].header.ea*dsp->ch[1].bps/8 
 				) ) {
 			
-				
-				dsp->ch[0].offs=dsp->ch[0].chanstart+(dsp->ch[0].header.sa&(~7))*dsp->ch[0].bps/8;
-				dsp->ch[1].offs=dsp->ch[1].chanstart+(dsp->ch[1].header.sa&(~7))*dsp->ch[1].bps/8;
+				if (dsp->ch[0].type==type_sfass && (dsp->ch[0].header.sa/dsp->ch[0].interleave)%2 == 1) {
+					dsp->ch[1].offs=dsp->ch[0].chanstart+(dsp->ch[0].header.sa&(~7))*dsp->ch[0].bps/8;
+					dsp->ch[0].offs=dsp->ch[1].offs-dsp->ch[0].interleave;
+				} else {
+					dsp->ch[0].offs=dsp->ch[0].chanstart+(dsp->ch[0].header.sa&(~7))*dsp->ch[0].bps/8;
+					dsp->ch[1].offs=dsp->ch[1].chanstart+(dsp->ch[1].header.sa&(~7))*dsp->ch[1].bps/8;
+				}
 
 				//DisplayError("loop\nch[1].offs=%08x",dsp->ch[1].offs);
 
@@ -584,14 +718,16 @@ void fillbufferinterleave(DSPFILE * dsp, abort_callback & p_abort) {
 	} while (dsp->ch[0].writeloc != dsp->ch[0].readloc);
 }
 
-void fillbuffers(DSPFILE * dsp, abort_callback & p_abort) {
-	if (dsp->ch[0].type==type_halp) {
-		return fillbufferhalp(dsp, p_abort);
+void fillbuffers(CUBEFILE * dsp, abort_callback & p_abort) {
+	if (dsp->ch[0].type==type_adp) {
+		fillbufferADP(dsp, p_abort);
+	} else if (dsp->ch[0].type==type_halp) {
+		fillbufferHALP(dsp, p_abort);
 	} else if (dsp->ch[0].interleave) {
-		return fillbufferinterleave(dsp, p_abort);
+		fillbufferDSPinterleave(dsp, p_abort);
 	} else {
-		fillbuffer(&dsp->ch[0], p_abort);
+		fillbufferDSP(&dsp->ch[0], p_abort);
 		if (dsp->NCH==2)
-			fillbuffer(&dsp->ch[1], p_abort);
+			fillbufferDSP(&dsp->ch[1], p_abort);
 	}
 }

@@ -392,15 +392,19 @@
 				Name="DSP"
 				>
 				<File
+					RelativePath=".\foo_dsp\adp.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\foo_dsp\cube.h"
+					>
+				</File>
+				<File
 					RelativePath=".\foo_dsp\decode.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\foo_dsp\dsp.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\foo_dsp\dsp.h"
 					>
 				</File>
 				<File

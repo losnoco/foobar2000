@@ -323,14 +323,14 @@ static void get_volume_label(const char * path, string_base & out)
 	if (IsUnicode())
 	{
 		WCHAR volume_name[MAX_PATH];
-		GetVolumeInformationW(string_utf16_from_utf8(path), volume_name, tabsize(volume_name), 0, 0, 0, 0, 0);
-		out.set_string(string_utf8_from_utf16(volume_name));
+		GetVolumeInformationW(pfc::stringcvt::string_wide_from_utf8(path), volume_name, tabsize(volume_name), 0, 0, 0, 0, 0);
+		out.set_string(pfc::stringcvt::string_utf8_from_wide(volume_name));
 	}
 	else
 	{
 		char volume_name[MAX_PATH];
-		GetVolumeInformationA(string_ansi_from_utf8(path), volume_name, tabsize(volume_name), 0, 0, 0, 0, 0);
-		out.set_string(string_utf8_from_ansi(volume_name));
+		GetVolumeInformationA(pfc::stringcvt::string_ansi_from_utf8(path), volume_name, tabsize(volume_name), 0, 0, 0, 0, 0);
+		out.set_string(pfc::stringcvt::string_utf8_from_ansi(volume_name));
 	}
 }
 
@@ -481,11 +481,11 @@ public:
 			string8 name;
 			if (joliet)
 			{
-				name.set_string(string_utf8_from_utf16((WCHAR*) &idr->name, isonum_711(idr->name_len)));
+				name = pfc::stringcvt::string_utf8_from_wide((WCHAR*) &idr->name, isonum_711(idr->name_len));
 			}
 			else
 			{
-				name.set_string_ansi(idr->name, isonum_711(idr->name_len));
+				name = pfc::stringcvt::string_utf8_from_ansi(idr->name, isonum_711(idr->name_len));
 			}
 			int e = name.find_first(';');
 			if (e >= 0) name.truncate(e);
@@ -512,11 +512,11 @@ public:
 
 				if (joliet)
 				{
-					name.set_string(string_utf8_from_utf16((WCHAR*) &idr->name, isonum_711(idr->name_len)));
+					name = pfc::stringcvt::string_utf8_from_wide((WCHAR*) &idr->name, isonum_711(idr->name_len));
 				}
 				else
 				{
-					name.set_string_ansi(idr->name, isonum_711(idr->name_len));
+					name = pfc::stringcvt::string_utf8_from_ansi(idr->name, isonum_711(idr->name_len));
 				}
 				int e = name.find_first(';');
 				if (e >= 0) name.truncate(e);
@@ -587,11 +587,11 @@ static HCDROM cdrom_from_path(const char * path)
 					ivd = (struct iso_primary_descriptor*) &desc->data;
 					if (joliet)
 					{
-						check_label.set_string(string_utf8_from_utf16((WCHAR*) &ivd->volume_id, ISODCL(41, 72)));
+						check_label = pfc::stringcvt::string_utf8_from_wide((WCHAR*) &ivd->volume_id, ISODCL(41, 72));
 					}
 					else
 					{
-						check_label.set_string_ansi(ivd->volume_id, ISODCL(41, 72));
+						check_label = pfc::stringcvt::string_utf8_from_ansi(ivd->volume_id, ISODCL(41, 72));
 					}
 					{
 						const char * ptr = check_label.get_ptr() + check_label.length() - 1;

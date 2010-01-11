@@ -441,6 +441,68 @@ void cfg_osd_list::get_callback_flags( unsigned & p_play_callback_flags, unsigne
 	}
 }
 
+static void color_cut( string8 & fmt )
+{
+	if (*(fmt.get_ptr()) == 3)
+		fmt.truncate(fmt.find_first(3, 1) + 1);
+	else if (!stricmp_utf8_partial(fmt.get_ptr(), "$rgb("))
+	{
+		const char * ptr = fmt.get_ptr() + 5;
+		const char * ptr2;
+		DWORD fgcolor, olcolor;
+
+		fgcolor = strtoul(ptr, (char **) &ptr2, 10);
+		if (ptr2 != ptr && *ptr2 == ',' && ptr2[1])
+		{
+			fgcolor |= strtoul(ptr2 + 1, (char **) &ptr, 10) << 8;
+			if (ptr != ptr2 && *ptr == ',' && ptr[1])
+			{
+				fgcolor |= strtoul(ptr + 1, (char **) &ptr2, 10) << 16;
+				if (ptr2 != ptr && *ptr2 == ',' && ptr2[1])
+				{
+					olcolor = strtoul(ptr2 + 1, (char **) &ptr, 10);
+					if (ptr != ptr2 && *ptr == ',' && ptr[1])
+					{
+						olcolor |= strtoul(ptr + 1, (char **) &ptr2, 10) << 8;
+						if (ptr2 != ptr && *ptr2 == ',' && ptr2[1])
+						{
+							olcolor |= strtoul(ptr2 + 1, (char **) &ptr, 10) << 16;
+							if (ptr != ptr2 && *ptr == ')')
+							{
+								fmt.reset();
+								fgcolor |= 0x1000000;
+								olcolor |= 0x1000000;
+								fmt.add_int(fgcolor, 16);
+								fmt.add_int(olcolor, 16);
+								ptr = fmt.get_ptr();
+								*((char *)ptr) = 3;
+								((char *)ptr)[1 + 6] = '|';
+								fmt.add_byte(3);
+							}
+							else fmt.reset();
+						}
+						else fmt.reset();
+					}
+					else fmt.reset();
+				}
+				else if (ptr2 != ptr && *ptr2 == ')')
+				{
+					fmt.reset();
+					fgcolor |= 0x1000000;
+					fmt.add_int(fgcolor, 16);
+					*((char *)fmt.get_ptr()) = 3;
+					fmt.add_byte(3);
+				}
+				else fmt.reset();
+			}
+			else fmt.reset();
+		}
+		else fmt.reset();
+	}
+	else
+		fmt.reset();
+}
+
 void cfg_osd_list::test(unsigned n)
 {
 	insync(sync);
@@ -457,64 +519,7 @@ void cfg_osd_list::test(unsigned n)
 	else
 	{
 		string8 fmt(c->format);
-		if (*(fmt.get_ptr()) == 3)
-			fmt.truncate(fmt.find_first(3, 1) + 1);
-		else if (!stricmp_utf8_partial(fmt.get_ptr(), "$rgb("))
-		{
-			const char * ptr = fmt.get_ptr() + 5;
-			const char * ptr2;
-			DWORD fgcolor, olcolor;
-			
-			fgcolor = strtoul(ptr, (char **) &ptr2, 10);
-			if (ptr2 != ptr && *ptr2 == ',' && ptr2[1])
-			{
-				fgcolor |= strtoul(ptr2 + 1, (char **) &ptr, 10) << 8;
-				if (ptr != ptr2 && *ptr == ',' && ptr[1])
-				{
-					fgcolor |= strtoul(ptr + 1, (char **) &ptr2, 10) << 16;
-					if (ptr2 != ptr && *ptr2 == ',' && ptr2[1])
-					{
-						olcolor = strtoul(ptr2 + 1, (char **) &ptr, 10);
-						if (ptr != ptr2 && *ptr == ',' && ptr[1])
-						{
-							olcolor |= strtoul(ptr + 1, (char **) &ptr2, 10) << 8;
-							if (ptr2 != ptr && *ptr2 == ',' && ptr2[1])
-							{
-								olcolor |= strtoul(ptr2 + 1, (char **) &ptr, 10) << 16;
-								if (ptr != ptr2 && *ptr == ')')
-								{
-									fmt.reset();
-									fgcolor |= 0x1000000;
-									olcolor |= 0x1000000;
-									fmt.add_int(fgcolor, 16);
-									fmt.add_int(olcolor, 16);
-									ptr = fmt.get_ptr();
-									*((char *)ptr) = 3;
-									((char *)ptr)[1 + 6] = '|';
-									fmt.add_byte(3);
-								}
-								else fmt.reset();
-							}
-							else fmt.reset();
-						}
-						else fmt.reset();
-					}
-					else if (ptr2 != ptr && *ptr2 == ')')
-					{
-						fmt.reset();
-						fgcolor |= 0x1000000;
-						fmt.add_int(fgcolor, 16);
-						*((char *)fmt.get_ptr()) = 3;
-						fmt.add_byte(3);
-					}
-					else fmt.reset();
-				}
-				else fmt.reset();
-			}
-			else fmt.reset();
-		}
-		else
-			fmt.reset();
+		color_cut(fmt);
 		fmt += "*silence*";
 		o->Post(fmt, false);
 	}
@@ -698,10 +703,7 @@ void cfg_osd_list::on_playlist_switch()
 			if ((c->flags & (osd_pop | osd_switch)) == (osd_pop | osd_switch))
 			{
 				fmt = c->format;
-				if (*(fmt.get_ptr()) == 3)
-					fmt.truncate(fmt.find_first(3, 1) + 1);
-				else
-					fmt.reset();
+				color_cut(fmt);
 				fmt += name;
 				o->Post(fmt, false);
 			}
@@ -742,10 +744,7 @@ void cfg_osd_list::show_playlist(unsigned n)
 		if (!name.length()) name = "(unnamed)";
 
 		fmt = c->format;
-		if (*(fmt.get_ptr()) == 3)
-			fmt.truncate(fmt.find_first(3, 1) + 1);
-		else
-			fmt.reset();
+		color_cut(fmt);
 		fmt += name;
 		o->Post(fmt, false);
 	}

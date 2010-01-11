@@ -44,7 +44,7 @@ static const GUID guid_cfg_placement =
 static cfg_window_placement cfg_placement(guid_cfg_placement);
 
 #undef HEADER_STRING
-#define HEADER_STRING(i,n,f) if ((f) && (f)[0]) (i).meta_add((n), string_utf8_from_ansi((f)))
+#define HEADER_STRING(i,n,f) if ((f) && (f)[0]) (i).meta_add((n), pfc::stringcvt::string_utf8_from_codepage(pfc::stringcvt::codepage_system, (f)))
 
 static void rename_file(const char * src, const char * ext, string_base & out, abort_callback & p_abort)
 {
@@ -108,7 +108,7 @@ static void rename_file(const char * src, const char * ext, string_base & out, a
 	ptr = p_info.meta_get(field_##f, 0); \
 	if (ptr) \
 	{ \
-		string_ansi_from_utf8 foo(ptr); \
+		pfc::stringcvt::string_codepage_from_utf8 foo(pfc::stringcvt::codepage_system, ptr); \
 		if (!p || strcmp(foo, p)) \
 		{ \
 			int len = foo.length() + 1; \
@@ -165,7 +165,7 @@ public:
 		HEADER_STRING(p_info, field_ripper, nsf.szRipper);
 
 		if (nsf.szTrackLabels && p_subsong < nsf.nTrackCount && nsf.szTrackLabels[p_subsong] &&
-			nsf.szTrackLabels[p_subsong][0]) p_info.meta_add(field_track, string_utf8_from_ansi(nsf.szTrackLabels[p_subsong]));
+			nsf.szTrackLabels[p_subsong][0]) p_info.meta_add(field_track, pfc::stringcvt::string_utf8_from_codepage(pfc::stringcvt::codepage_system, nsf.szTrackLabels[p_subsong]));
 
 		tag_song_ms = -1;
 		tag_fade_ms = -1;
@@ -238,9 +238,13 @@ public:
 			}
 			catch(t_io_result code)
 			{
+				if ( emu )
+				{
+					delete emu;
+					this->emu = emu = NULL;
+				}
 				return code;
 			}
-			this->emu = emu;
 		}
 
 		tag_song_ms = -1;
@@ -270,7 +274,7 @@ public:
 			if (ptr)
 			{
 				// fun!
-				string_ansi_from_utf8 foo(ptr);
+				pfc::stringcvt::string_ansi_from_utf8 foo(ptr);
 				int len = foo.length() + 1;
 
 				if (len > 1)

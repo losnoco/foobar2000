@@ -661,54 +661,6 @@ unsigned convert_oem_to_utf16(const char * src,WCHAR * dst,unsigned len)
 }
 */
 
-unsigned convert_oem_to_utf16(const char * src, WCHAR * dst, unsigned len)
-{
-	len = strlen_max(src, len);
-	unsigned rv;
-	rv = MultiByteToWideChar(CP_OEMCP, 0, src, len, dst, estimate_ansi_to_utf16(src, len));
-	if ((signed)rv < 0) rv = 0;
-	dst[rv] = 0;
-	return rv;
-}
-
-unsigned convert_oem_to_utf8(const char * src,char * dst,unsigned len)
-{
-	len = strlen_max(src,len);
-
-	unsigned temp_len = estimate_ansi_to_utf16(src,len);
-	mem_block_t<WCHAR> temp_block;
-	WCHAR * temp;
-	if ( temp_len * ( sizeof(WCHAR) <= PFC_ALLOCA_LIMIT ) ) 
-	{
-		temp = ( WCHAR * ) alloca( temp_len * sizeof( WCHAR ) );
-	}
-	else
-	{
-		if ( ! temp_block.set_size( temp_len ) )
-		{
-			* dst = 0;
-			return 0;
-		}
-
-		temp = temp_block.get_ptr();
-	}
-	assert(temp);
-
-	len = convert_oem_to_utf16(src,temp,len);
-	return convert_utf16_to_utf8(temp,dst,len);
-}
-
-class string_utf8_from_oem : public string_convert_base<char>
-{
-public:
-	explicit string_utf8_from_oem(const char * src, unsigned len = -1)
-	{
-		len = strlen_max(src, len);
-		alloc(len * 3 + 1);
-		convert_oem_to_utf8(src, ptr, len);
-	}
-};
-
 static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 {
 	if (!duh) return;
@@ -725,13 +677,13 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 	{
 		if (itsd->name[0])
 		{
-			if (dos) info.meta_add(field_title, string_utf8_from_oem((char*)&itsd->name, sizeof(itsd->name)));
-			else info.meta_add(field_title, string_utf8_from_ansi((char *)&itsd->name, sizeof(itsd->name)));
+			if (dos) info.meta_add(field_title, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)&itsd->name, sizeof(itsd->name)));
+			else info.meta_add(field_title, pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->name, sizeof(itsd->name)));
 		}
 		if (itsd->song_message && *itsd->song_message)
 		{
-			if (dos) info.meta_add(field_comment, string_utf8_from_oem((char*)itsd->song_message));
-			else info.meta_add(field_comment, string_utf8_from_ansi((char *)itsd->song_message));
+			if (dos) info.meta_add(field_comment, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)itsd->song_message));
+			else info.meta_add(field_comment, pfc::stringcvt::string_utf8_from_ansi((char *)itsd->song_message));
 		}
 	}
 
@@ -758,8 +710,8 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 					name = field_sample;
 					if (i < 10) name.add_byte('0');
 					name.add_int(i);
-					if (dos) info.meta_add(name, string_utf8_from_oem((char*)&itsd->sample[i].name, sizeof(itsd->sample[i].name)));
-					else info.meta_add(name, string_utf8_from_oem((char *)&itsd->sample[i].name, sizeof(itsd->sample[i].name)));
+					if (dos) info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)&itsd->sample[i].name, sizeof(itsd->sample[i].name)));
+					else info.meta_add(name, pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->sample[i].name, sizeof(itsd->sample[i].name)));
 				}
 			}
 		}
@@ -778,8 +730,8 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 					name = field_instrument;
 					if (i < 10) name.add_byte('0');
 					name.add_int(i);
-					if (dos) info.meta_add(name, string_utf8_from_oem((char*)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name)));
-					else info.meta_add(name, string_utf8_from_ansi((char *)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name)));
+					if (dos) info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name)));
+					else info.meta_add(name, pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name)));
 				}
 			}
 		}
@@ -852,7 +804,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 	if (pifh->smpnum) info.info_set_int(field_samples, pifh->smpnum);
 	if (pifh->insnum) info.info_set_int(field_instruments, pifh->insnum);
 
-	if (meta && pifh->songname[0]) info.meta_add(field_title, string_utf8_from_oem((char*)&pifh->songname, 26));
+	if (meta && pifh->songname[0]) info.meta_add(field_title, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)&pifh->songname, 26));
 
 	unsigned n, l, m_nChannels = 0;
 
@@ -882,7 +834,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			}
 			msg.add_byte(*str);
 		}
-		info.meta_add(field_comment, string_utf8_from_oem(msg));
+		info.meta_add(field_comment, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,msg));
 	}
 
 	unsigned * offset;
@@ -900,7 +852,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 				name = field_sample;
 				if (n < 10) name.add_byte('0');
 				name.add_int(n);
-				info.meta_add(name, string_utf8_from_oem((const char *) ptr + *offset + 0x14, 26));
+				info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + *offset + 0x14, 26));
 			}
 		}
 
@@ -914,7 +866,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 				name = field_instrument;
 				if (n < 10) name.add_byte('0');
 				name.add_int(n);
-				info.meta_add(name, string_utf8_from_oem((const char *) ptr + *offset + 0x20, 26));
+				info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + *offset + 0x20, 26));
 			}
 		}
 	}
@@ -952,7 +904,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 						name = field_pattern;
 						if (n < 10) name.add_byte('0');
 						name.add_int(n);
-						info.meta_add(name, string_utf8_from_oem((const char *) ptr + pos + n * 32, 32));
+						info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + pos + n * 32, 32));
 					}
 				}
 			}
@@ -977,7 +929,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 						name = field_channel;
 						if (n < 10) name.add_byte('0');
 						name.add_int(n);
-						info.meta_add(name, string_utf8_from_oem((const char *) ptr + pos + n * 20, 20));
+						info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + pos + n * 20, 20));
 					}
 				}
 			}
@@ -1105,7 +1057,7 @@ static bool ReadMTM(const BYTE * ptr, unsigned size, file_info * info, bool meta
 				name = field_sample;
 				if (i < 10) name.add_byte('0');
 				name.add_int(i);
-				info->meta_add(name, string_utf8_from_oem(pms->samplename, 22));
+				info->meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,pms->samplename, 22));
 			}
 			dwMemPos += 37;
 		}
@@ -1128,7 +1080,7 @@ static bool ReadMTM(const BYTE * ptr, unsigned size, file_info * info, bool meta
 				}
 				dwMemPos += 40;
 			}
-			info->meta_add(field_comment, string_utf8_from_oem(name));
+			info->meta_add(field_comment, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,name));
 		}
 	}
 

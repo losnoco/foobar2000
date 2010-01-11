@@ -449,12 +449,12 @@ static void info_meta_add(file_info & info, const char * tag, const char * value
 		// append as another line
 		string8 final = info.meta_get(tag, 0);
 		final += "\r\n";
-		final += string_utf8_from_ansi(value);
+		final += pfc::stringcvt::string_utf8_from_ansi(value);
 		info.meta_set(tag, final);
 	}
 	else
 	{
-		info.meta_add(tag, string_utf8_from_ansi(value));
+		info.meta_add(tag, pfc::stringcvt::string_utf8_from_ansi(value));
 	}
 }
 
@@ -467,7 +467,7 @@ static int find_crlf(string8 & blah)
 
 static void info_meta_write(string_base & tag, const file_info & info, const char * name, int idx, int & first)
 {
-	string8 v = string_ansi_from_utf8(info.meta_enum_value(idx, 0));
+	string8 v = pfc::stringcvt::string_ansi_from_utf8(info.meta_enum_value(idx, 0));
 	int pos = find_crlf(v);
 
 	if (pos == -1)

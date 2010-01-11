@@ -1,7 +1,11 @@
-#define MY_VERSION "1.1"
+#define MY_VERSION "1.2"
 
 /*
 	change log
+
+2005-12-04 13:37 UTC - kode54
+- Updated to in_cube mess
+- Version is now 1.2
 
 2005-11-22 11:20 UTC - kode54
 - Fixed seeking/swallow functionality (maybe it's about time I wrote that generic swallow/skip input framework for all these decoders)
@@ -15,11 +19,24 @@
 
 #include <foobar2000.h>
 
-#include "dsp.h"
+#include "cube.h"
+
+static const char * exts[] =
+{
+	"DSP",
+	"GCM",
+	"HPS",
+	"IDSP",
+	"SPT",
+	"SPD",
+	"MSS",
+	"ADP"
+};
 
 class input_dsp
 {
-	DSPFILE            dsp;
+	headertype         type;
+	CUBEFILE           dsp;
 
 	mem_block_t<short> sample_buffer;
 
@@ -39,7 +56,7 @@ class input_dsp
 	}
 
 public:
-	input_dsp() { pos = 0; dsp.file_length = 0; looped = false; }
+	input_dsp() { type = type_std; pos = 0; dsp.file_length = 0; looped = false; }
 	~input_dsp() {}
 
 	t_io_result open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
@@ -57,23 +74,37 @@ public:
 		dsp.ch[0].infile = p_filehint;
 
 		const char * ptr = p_path + string8::g_scan_filename( p_path );
+		string_extension_8 ext( ptr );
 		const char * dot = strrchr( ptr, '.' );
 		if ( dot ) ptr = dot - 1;
 		else if ( *ptr ) ptr += strlen( ptr ) - 1;
-		if ( *ptr == 'L' || *ptr == 'l' || *ptr == 'R' || *ptr == 'r' )
+		bool mp1 = *ptr == 'L' || *ptr == 'l' || *ptr == 'R' || *ptr == 'r';
+		bool ww = ptr[-1] == '_' && ( *ptr == '0' || *ptr == '1' );
+		bool spt = *ptr && ptr[1] == '.' && ( ptr[2] == 'S' || ptr[2] == 's' ) && ( ptr[3] == 'P' || ptr[3] == 'p' ) && ( ptr[4] == 'D' || ptr[4] == 'd' || ptr[4] == 'T' || ptr[4] == 't' );
+		if ( mp1 || ww || spt )
 		{
 			string8 temp( p_path );
-			temp.set_char( ptr - p_path, *ptr ^ ( 'L' ^ 'R' ) );
+			if ( mp1 ) temp.set_char( ptr - p_path, *ptr ^ ( 'L' ^ 'R' ) );
+			else if ( ww ) temp.set_char( ptr - p_path, *ptr ^ ( '0' ^ '1' ) );
+			else temp.set_char( ptr - p_path + 4, ptr[4] ^ ( 'D' ^ 'T' ) );
 			status = filesystem::g_open( p_filehint, temp, filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) && status != io_result_error_not_found ) return status;
+			if ( io_result_failed( status ) && ( status != io_result_error_not_found || spt ) ) return status;
 			if ( status != io_result_error_not_found )
 			{
 				dsp.ch[1].infile = p_filehint;
-				if ( *ptr == 'R' || *ptr == 'r' ) pfc::swap_t( dsp.ch[0].infile, dsp.ch[1].infile );
+				bool swap = false;
+				if ( mp1 ) swap = *ptr == 'R' || *ptr == 'r';
+				else if ( ww ) swap = *ptr == '1';
+				else swap = ( ptr[4] | 0x20 ) == 'd';
+				if ( swap ) pfc::swap_t( dsp.ch[0].infile, dsp.ch[1].infile );
 			}
 			else dsp.ch[1].infile = dsp.ch[0].infile;
 		}
 		else dsp.ch[1].infile = dsp.ch[0].infile;
+
+		if ( ! stricmp_utf8( ext, "MSS" ) ) type = type_mss;
+		else if ( ! stricmp_utf8( ext, "GCM" ) ) type = type_gcm;
+		else if ( ! stricmp_utf8( ext, "ADP" ) ) type = type_adp;
 
 		return io_result_success;
 	}
@@ -84,7 +115,11 @@ public:
 		{
 			try
 			{
-				InitDSPFILE( & dsp, p_abort );
+				if ( type == type_adp )
+				{
+					if ( ! InitADPFILE( & dsp, p_abort ) ) type = type_std;
+				}
+				if ( type != type_adp ) InitDSPFILE( & dsp, p_abort, type );
 			}
 			catch ( t_io_result code )
 			{
@@ -96,15 +131,33 @@ public:
 
 		p_info.info_set_int( "samplerate", dsp.ch[0].header.sample_rate );
 		p_info.info_set_int( "channels", dsp.NCH );
-		p_info.info_set( "codec", "DSP" );
+		if ( dsp.ch[0].type == type_adp )
 		{
-			static const char * header_type[] = { "Standard", "Star Fox: Assault", "Metroid Prime 2", "Paper Mario 2", "HALPST", "Metroid Prime 2 demo" };
-			p_info.info_set( "dsp_header_type", header_type[ dsp.ch[0].type ] );
+			p_info.info_set( "codec", "ADP" );
 		}
-		if ( looped )
+		else
 		{
-			p_info.info_set_int( "dsp_loop_start", dsp.ch[0].header.sa );
-			p_info.info_set_int( "dsp_loop_end", dsp.ch[0].header.ea );
+			p_info.info_set( "codec", "DSP" );
+			{
+				static const char * header_type[] = {
+					"Standard",
+					"Star Fox Assault Cstr",
+					"Metroid Prime 2 RS03",
+					"Paper Mario 2 STM",
+					"HALPST",
+					"Metroid Prime 2 Demo",
+					"IDSP",
+					"SPT+SPD",
+					"MSS",
+					"GCM"
+				};
+				p_info.info_set( "dsp_header_type", header_type[ dsp.ch[0].type ] );
+			}
+			if ( looped )
+			{
+				p_info.info_set_int( "dsp_loop_start", dsp.ch[0].header.sa );
+				p_info.info_set_int( "dsp_loop_end", dsp.ch[0].header.ea );
+			}
 		}
 
 		p_info.set_length( double( dsp.nrsamples ) / double( dsp.ch[0].header.sample_rate ) );
@@ -123,7 +176,11 @@ public:
 		{
 			try
 			{
-				InitDSPFILE( & dsp, p_abort );
+				if ( type == type_adp )
+				{
+					if ( ! InitADPFILE( & dsp, p_abort ) ) type = type_std;
+				}
+				if ( type != type_adp ) InitDSPFILE( & dsp, p_abort, type );
 			}
 			catch ( t_io_result code )
 			{
@@ -284,11 +341,16 @@ public:
 
 	static bool g_is_our_path( const char * p_full_path, const char * p_extension )
 	{
-		return ! stricmp( p_extension, "dsp" ) || ! stricmp( p_extension, "gcm" ) || ! stricmp( p_extension, "hps" );
+		int n;
+		for(n=0;n<tabsize(exts);n++)
+		{
+			if (!stricmp(p_extension,exts[n])) return true;
+		}
+		return false;
 	}
 };
 
-DECLARE_FILE_TYPE("GCN DSP audio files", "*.DSP;*.GCM;*.HPS");
+DECLARE_FILE_TYPE("GCN DSP audio files", "*.DSP;*.GCM;*.HPS;*.IDSP;*.SPT;*.SPD;*.MSS");
 
 static input_singletrack_factory_t<input_dsp> g_input_acm_factory;
 

@@ -55,7 +55,7 @@ public:
 	~Nes_Emu();
 	void start_track( int );
 	Nes_Apu* apu_() { return &apu; }
-	const char** voice_names() const;
+	//const char** voice_names() const;
 protected:
 	void set_voice( int, Blip_Buffer*, Blip_Buffer*, Blip_Buffer* );
 	void update_eq( blip_eq_t const& );
@@ -102,6 +102,24 @@ private:
 	class Nes_Fme7_Apu* fme7;
 	static void write_fme7( Nsf_Emu*, nes_addr_t, int );
 	
+	class Nes_Vrc7_Apu* vrc7;
+	static void write_vrc7( Nsf_Emu*, nes_addr_t, int );
+
+	struct mmc5_t
+	{
+		byte mul [2];
+		byte exram [1024];
+	};
+	mmc5_t * mmc5;
+	class Nes_Mmc5_Apu* mmc5_apu;
+	static int read_mmc5( Nsf_Emu*, nes_addr_t );
+	static void write_mmc5( Nsf_Emu*, nes_addr_t, int );
+	static int read_mmc5_exram( Nsf_Emu*, nes_addr_t );
+	static void write_mmc5_exram( Nsf_Emu*, nes_addr_t, int );
+
+	// blah
+	static void write_ext( Nsf_Emu*, nes_addr_t, int );
+
 	// large objects
 	
 	header_t header_;

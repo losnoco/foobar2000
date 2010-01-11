@@ -9,7 +9,7 @@
 #include "resource.h"
 
 #undef HEADER_STRING
-#define HEADER_STRING(i,n,f) if ((f)[0]) (i).meta_set_ansi((n), string_simple((f), sizeof((f))))
+#define HEADER_STRING(i,n,f) if ((f)[0]) (i).meta_set((n), pfc::stringcvt::string_utf8_from_ansi((f), sizeof((f))))
 
 static const char field_length[]="spc_length";
 static const char field_fade[]="spc_fade";
@@ -406,6 +406,11 @@ public:
 			}
 			catch ( t_io_result code )
 			{
+				if ( emu )
+				{
+					delete emu;
+					this->emu = emu = NULL;
+				}
 				return code;
 			}
 
