@@ -16,8 +16,8 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * kemuopl.h - Emulated OPL using Ken Silverman's emulator, by Simon Peter
- *             <dn.tlp@gmx.net>
+ * dbemuopl.h - Emulated OPL using Sjoerd van der Berg's emulator,
+ *              by Chris Moeller <kode54@gmail.com>
  */
 
 #ifndef H_ADPLUG_DBEMUOPL
