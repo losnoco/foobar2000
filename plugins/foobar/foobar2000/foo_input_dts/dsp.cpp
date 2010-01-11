@@ -83,7 +83,7 @@ class dts_dsp : public dsp_impl_base {
         return map;
     }
 
-    bool decode(const void *data, t_size bytes, audio_chunk &p_chunk, abort_callback &p_abort)
+    bool decode(const void *data, t_size bytes, audio_chunk &p_chunk, bool first_packet, abort_callback &p_abort)
     {
         static const int chan_map[10][6] = {
             { 0, 0, 0, 0, 0, 0 },       // DCA_MONO
@@ -186,7 +186,7 @@ class dts_dsp : public dsp_impl_base {
             }
         }
 
-        if (samples >= FRAME_SAMPLES) {
+		if (samples >= (first_packet ? FRAME_SAMPLES * 2 : FRAME_SAMPLES)) {
             p_chunk.set_data(output.get_ptr(), samples, nch, srate, channel_mask);
             return true;
         }
@@ -326,7 +326,7 @@ public:
         buffer.grow_size(data);
         audio_math::convert_to_int16(chunk->get_data(), chunk->get_sample_count()*2, (t_int16 *)buffer.get_ptr(), scale);
 
-        if (decode(buffer.get_ptr(), data, m_chunk, p_abort)) {
+        if (decode(buffer.get_ptr(), data, m_chunk, !valid_scale_found, p_abort)) {
             valid_scale_found = true;
             audio_chunk *out = insert_chunk(m_chunk.get_sample_count());
             out->copy(m_chunk);
@@ -339,6 +339,7 @@ public:
 
     virtual void flush()
     {
+		valid_scale_found = false;
     }
 
     virtual double get_latency()

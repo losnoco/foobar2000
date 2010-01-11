@@ -2,9 +2,10 @@
 // Based on dtsdec, Copyright (C) 2004 Gildas Bazin <gbazin@videolan.org>
 //                            (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
 //                            (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
-// foobar component copyright (C) 2004-2006 Janne Hyvärinen
+// foobar2000 component copyright (C) 2004-2006 Janne Hyvärinen
 //
 // Changes:
+//  0.2.5  (2009-12-05): Fixed heap corruption on bad DTS files, DSP doesn't output until two consecutive frames are found
 //  0.2.4  (2009-05-02): Fixed a bug in DTS DSP and packet decoder for when dca_syncinfo fails
 //  0.2.3  (2009-03-30): Fixed tag writing
 //  0.2.2  (2008-10-26): Restricted silence generation to DTS WAV files
@@ -29,13 +30,13 @@
 //  0.0.4  (2004-10-15): Simplified packet decoder, added codec reporting, fixed typo in version number
 //  0.0.3  (2004-10-15): Added Matroska packet decoder support
 
-#define FD_VERSION  "0.2.4"
+#define FD_VERSION  "0.2.5"
 
 //#define DTS_DEBUG // print status info to console
 
 #include "../SDK/foobar2000.h"
-using namespace pfc;
 #include "../helpers/helpers.h"
+using namespace pfc;
 
 typedef unsigned int    uint32_t;
 typedef signed int      int32_t;
@@ -48,11 +49,15 @@ extern "C" {
 #include "dca.h"
 }
 
-#define BUFFER_SIZE 24576
-#define HEADER_SIZE 14
-#define FRAME_SAMPLES 256
+enum {
+	BUFFER_SIZE = 24576,
+	HEADER_SIZE = 14,
+	FRAME_SAMPLES = 256,
 
-#define cfg_drc 0   // disable dynamic range compression
+
+	cfg_drc = 0 // disable dynamic range compression
+};
+
 //cfg_int cfg_drc ( "drc", 0 );   // Dynamic range compression defaults to off
 //cfg_int cfg_tag ( "tag", 1 );   // Write APEv2 tags by default
 
@@ -74,11 +79,11 @@ static void parse_tagtype_internal(const char *p_tagtype, bool &p_have_id3v1, bo
         while(tagtype[delta] != 0 && tagtype[delta] != '|') delta++;
         if (delta > 0)
         {
-            if (!stricmp_utf8_ex(tagtype, delta, "apev1", infinite) || !stricmp_utf8_ex(tagtype, delta, "apev2", infinite))
+            if (!stricmp_utf8_ex(tagtype, delta, "apev1", ~0) || !stricmp_utf8_ex(tagtype, delta, "apev2", ~0))
                 p_have_apev2 = true;
-            else if (!stricmp_utf8_ex(tagtype, delta, "id3v1", infinite))
+            else if (!stricmp_utf8_ex(tagtype, delta, "id3v1", ~0))
                 p_have_id3v1 = true;
-            else if (!stricmp_utf8_ex(tagtype, delta, "id3v2", infinite))
+            else if (!stricmp_utf8_ex(tagtype, delta, "id3v2", ~0))
                 p_have_id3v2 = true;
         }
         tagtype += delta;
@@ -95,7 +100,7 @@ private:
     bool eof, iswav;
 
     pfc::array_t<audio_sample> output;
-    uint8_t buffer[BUFFER_SIZE];
+    uint8_t buffer [BUFFER_SIZE];
     /*
     uint8_t buf[BUFFER_SIZE];
     uint8_t *bufptr, *bufpos;
@@ -206,11 +211,11 @@ private:
     {
         int offset = 0;
 
-        while (offset+sizeof(buffer) <= max_offset) {
-            if (r->read(buffer, sizeof(buffer), p_abort) != sizeof(buffer)) return -1;
-            int pos = find_dts_header(buffer, sizeof(buffer));
+        while (offset+BUFFER_SIZE <= max_offset) {
+            if (r->read(buffer, BUFFER_SIZE, p_abort) != BUFFER_SIZE) return -1;
+            int pos = find_dts_header(buffer, BUFFER_SIZE);
             if (pos >= 0) return offset + pos;
-            offset += sizeof(buffer);
+            offset += BUFFER_SIZE;
         }
 
         return -1;
@@ -342,7 +347,7 @@ public:
         if (t > 0 && p_reason==input_open_decode) console::formatter() << "DTS: header found at offset " << t+header_pos;
 #endif
 
-        t = find_dts_header(buffer, sizeof(buffer));
+        t = find_dts_header(buffer, BUFFER_SIZE);
         if (t < 0) {
             dca_free(state);
             state = 0;
@@ -353,7 +358,7 @@ public:
         if (t > 0 && p_reason==input_open_decode) console::formatter() << "DTS: find_dts_header returned " << t;
 #endif
 
-        frame_size = find_dts_header(buffer+t+1, (int)(sizeof(buffer)-t-1)) + 1;
+        frame_size = find_dts_header(buffer+t+1, (int)(BUFFER_SIZE-t-1)) + 1;
         if (frame_size <= 0) {
             dca_free(state);
             state = 0;
@@ -440,6 +445,18 @@ public:
         r->seek(header_pos, p_abort);
     }
 
+	t_size FillBuffer(uint8_t * &buf, uint8_t * &end, t_size toFill, abort_callback & abort) {
+		t_size skipped = buf - buffer;
+		if (skipped + toFill > BUFFER_SIZE) {
+			memmove(buffer, buf, end-buf);
+			buf = buffer; end -= skipped;
+		}
+		t_size used = end - buf;
+		t_size delta = r->read(end, toFill - used, abort);
+		end += delta;
+		return delta;
+	}
+
     bool decode_run(audio_chunk &chunk, abort_callback &p_abort)
     {
         /*
@@ -499,9 +516,7 @@ public:
 
             while (samples + (skipped/4) < 1024) {
                 if (end-buf < HEADER_SIZE) {
-                    //int len = r->read(end, sizeof(buffer)-(end-buf), p_abort);
-                    int len = r->read(end, HEADER_SIZE-(end-buf), p_abort);
-                    end += len;
+					FillBuffer(buf, end, HEADER_SIZE, p_abort);
                 }
 
                 if (end-buf < HEADER_SIZE) {
@@ -521,10 +536,8 @@ public:
 #ifdef DTS_DEBUG
                 decoded_bytes += length;
 #endif
-
                 if (end-buf < length) {
-                    //int len = r->read(end, sizeof(buffer)-(end-buf), p_abort);
-                    int len = r->read(end, length-(end-buf), p_abort);
+					t_size len = FillBuffer(buf, end, length, p_abort);
 #ifdef DTS_DEBUG
                     decoded_bytes -= length;
                     decoded_bytes += (end-buf) + len;
@@ -532,10 +545,8 @@ public:
                     if (len < length-(end-buf)) {
                         skipped += len;
                         buf += len;
-                        end += len;
                         break;
                     }
-                    end += len;
                 }
 
                 nch = get_channel_count(dts_flags);
@@ -581,12 +592,14 @@ public:
                         if (dts_flags & DCA_LFE) {
                             for (int j = 0; j < nch; j++) {
                                 for (int i = 0; i < FRAME_SAMPLES; i++) {
+									PFC_ASSERT( chan_map_lfe[tmp][j] < nch );
                                     out[i * nch + chan_map_lfe[tmp][j]] = src[j * FRAME_SAMPLES + i];
                                 }
                             }
                         } else {
                             for (int j = 0; j < nch; j++) {
                                 for (int i = 0; i < FRAME_SAMPLES; i++) {
+									PFC_ASSERT( chan_map[tmp][j] < nch );
                                     out[i * nch + chan_map[tmp][j]] = src[j * FRAME_SAMPLES + i];
                                 }
                             }
@@ -633,7 +646,7 @@ public:
                     skip_samples -= samples;
                 }
             } /*else if (iswav) { // hack to output silence with DTS in WAV (as CD players would do)
-                samples = sizeof(buffer) / (2*sizeof(short));
+                samples = BUFFER_SIZE / (2*sizeof(short));
                 if (samples > skip_samples) {
                     output.grow_size((samples + skip_samples) * nch);
                     memset((audio_sample *)(output.get_ptr() + skip_samples * nch), 0, (samples-skip_samples) * nch * sizeof(audio_sample));
@@ -670,7 +683,7 @@ public:
 #endif
 
             __int64 offset = (__int64)((newpos * real_bitrate/8.0) + 0.5);
-            if (offset+header_pos >= (__int64)(filesize)) {
+            if (offset+(__int64)header_pos >= (__int64)(filesize)) {
 #ifdef DTS_DEBUG
                 console::formatter() << "DTS: seek past eof";
 #endif
@@ -724,7 +737,7 @@ DECLARE_COMPONENT_VERSION("DTS decoder", FD_VERSION,
   "DTS decoding powered by libdca v0.0.5 by Gildas Bazin.\n"
   "Homepage for libdca: http://developers.videolan.org/libdca.html\n"
   "\n"
-  "foobar component by Janne HyvÃ¤rinen.\n"
+  "foobar2000 component by Janne HyvÃ¤rinen.\n"
   "Licensed under GNU GPL.\n");
 
 DECLARE_FILE_TYPE("DTS files", "*.DTS;*.DTSWAV");

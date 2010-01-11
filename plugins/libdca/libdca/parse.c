@@ -508,20 +508,26 @@ static int dca_subframe_header (dca_state_t * state)
     {
         for (k = 0; k < state->vq_start_subband[j]; k++)
         {
-            if (state->bitalloc_huffman[j] == 6)
-                state->bitalloc[j][k] = bitstream_get (state, 5);
-            else if (state->bitalloc_huffman[j] == 5)
-                state->bitalloc[j][k] = bitstream_get (state, 4);
-            else
-            {
-                state->bitalloc[j][k] = InverseQ (state,
-                    bitalloc_12[state->bitalloc_huffman[j]]);
+			int bh = state->bitalloc_huffman[j];
+			switch(bh) {
+				case 6:
+					state->bitalloc[j][k] = bitstream_get (state, 5);
+					break;
+				case 5:
+					state->bitalloc[j][k] = bitstream_get (state, 4);
+					break;
+				default:
+					if ((unsigned int)bh >= _countof(bitalloc_12)) return -1;
+					state->bitalloc[j][k] = InverseQ (state, bitalloc_12[bh]);
+					break;
             }
 
             if (state->bitalloc[j][k] > 26)
             {
+#ifdef DEBUG
                 fprintf (stderr, "bitalloc index [%i][%i] too big (%i)\n",
                          j, k, state->bitalloc[j][k]);
+#endif
                 return -1;
             }
         }
@@ -680,7 +686,9 @@ static int dca_subframe_header (dca_state_t * state)
 
             if (!state->debug_flag & 0x02)
             {
+#ifdef DEBUG
                 fprintf (stderr, "Joint stereo coding not supported\n");
+#endif
                 state->debug_flag |= 0x02;
             }
 
@@ -898,7 +906,9 @@ static int dca_subsubframe (dca_state_t * state)
                 break;
 
             default: /* Undefined */
+#ifdef DEBUG
                 fprintf (stderr, "Unknown quantization index codebook");
+#endif
                 return -1;
             }
 
@@ -950,7 +960,9 @@ static int dca_subsubframe (dca_state_t * state)
 
             if (!state->debug_flag & 0x01)
             {
+#ifdef DEBUG
                 fprintf (stderr, "Stream with high frequencies VQ coding\n");
+#endif
                 state->debug_flag |= 0x01;
             }
 
@@ -974,7 +986,9 @@ static int dca_subsubframe (dca_state_t * state)
         }
         else
         {
+#ifdef DEBUG
             fprintf( stderr, "Didn't get subframe DSYNC\n" );
+#endif
         }
     }
 
@@ -1069,8 +1083,10 @@ int dca_block (dca_state_t * state)
     /* Sanity check */
     if (state->current_subframe >= state->subframes)
     {
+#ifdef DEBUG
         fprintf (stderr, "check failed: %i>%i",
                  state->current_subframe, state->subframes);
+#endif
         return -1;
     }
 
@@ -1125,7 +1141,9 @@ int decode_blockcode( int code, int levels, int *values )
         return 1;
     else
     {
+#ifdef DEBUG
         fprintf (stderr, "ERROR: block code look-up failed\n");
+#endif
         return 0;
     }
 }
