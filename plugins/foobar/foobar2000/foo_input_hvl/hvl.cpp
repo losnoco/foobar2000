@@ -37,7 +37,7 @@ class input_hvl
 
 	unsigned srate;
 
-	bool first_block;
+	bool first_block, dont_loop;
 
 	pfc::array_t< t_int16 > sample_buffer;
 
@@ -118,10 +118,14 @@ public:
 		hvl_InitSubsong( m_tune, p_subsong );
 
 		sample_buffer.set_size( srate / 50 * 2 );
+
+		dont_loop = !! ( p_flags & input_flag_no_looping );
 	}
 
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 	{
+		if ( dont_loop && m_tune->ht_SongEndReached ) return false;
+
 		t_int8 * ptr = ( t_int8 * ) sample_buffer.get_ptr();
 
 		hvl_DecodeFrame( m_tune, ptr, ptr + 2, 4 );
