@@ -133,11 +133,21 @@
 #include <stdio.h>
 #include <zlib.h>
 
+#if 0
 #include "../../psfemucore/psx.h"
 #include "../../psfemucore/iop.h"
 #include "../../psfemucore/r3000.h"
 #include "../../psfemucore/spu.h"
+#else
+#include "../../../ESP/PSX/Core/psx.h"
+#include "../../../ESP/PSX/Core/iop.h"
+#include "../../../ESP/PSX/Core/r3000.h"
+#include "../../../ESP/PSX/Core/spu.h"
+#endif
+
 #include "../../psfemucore/psf2fs.h"
+
+#include "PSXFilter.h"
 
 #include <atlbase.h>
 #include <atlapp.h>
@@ -225,125 +235,6 @@ static cfg_window_placement cfg_placement(guid_cfg_placement);
 static const char field_length[]="psf_length";
 static const char field_fade[]="psf_fade";
 
-class CPSXFilter
-{
-private:
-	double la0, la1, la2, lb1, lb2;
-	double ha0, ha1, ha2, hb1, hb2;
-	double lx1, lx2, ly1, ly2;
-	double hx1[2], hx2[2];
-	double hy1[2], hy2[2];
-
-public:
-	CPSXFilter()
-	{
-	}
-
-	~CPSXFilter()
-	{
-	}
-
-	void Reset()
-	{
-		lx1=0.0f;
-		lx2=0.0f;
-		ly1=0.0f;
-		ly2=0.0f;
-		hx1[0]=0.0f;
-		hx2[0]=0.0f;
-		hy1[0]=0.0f;
-		hy2[0]=0.0f;
-		hx1[1]=0.0f;
-		hx2[1]=0.0f;
-		hy1[1]=0.0f;
-		hy2[1]=0.0f;
-	}
-
-	void Redesign(int nSampleRate)
-	{
-		// 150 and 4 is about spot-on for low
-		
-		if(nSampleRate==48000) {
-			// LOW SHELF sample=48000.000000 freq=150.000000 db=4.000000
-			la0=1.00320890889339290000;
-			la1=-1.97516434134506300000;
-			la2=0.97243484967313087000;
-			lb1=-1.97525280404731810000;
-			lb2=0.97555529586426892000;
-			// HIGH SHELF sample=48000.000000 freq=6000.000000 db=-5.000000
-			ha0=1.52690772687271160000;
-			ha1=-1.62653918974914990000;
-			ha2=0.57997976029249387000;
-			hb1=-0.80955590379048203000;
-			hb2=0.28990420120653748000;
-		} else {
-			// LOW SHELF sample=44100.000000 freq=150.000000 db=4.000000
-			la0=1.00349314378906680000;
-			la1=-1.97295980267143170000;
-			la2=0.97003400595243994000;
-			lb1=-1.97306449030610280000;
-			lb2=0.97342246210683581000;
-			// HIGH SHELF sample=44100.000000 freq=6000.000000 db=-5.000000
-			ha0=1.50796284998687450000;
-			ha1=-1.48628361940858910000;
-			ha2=0.52606706092412581000;
-			hb1=-0.71593574211151134000;
-			hb2=0.26368203361392234000;
-		}
-		
-		Reset();
-	}
-
-	void Process(audio_sample *stereobuffer, int nSamples)
-	{
-#define OVERALL_SCALE (0.87)
-		
-		int i;
-		/* initialise the filter */
-		double out, in;
-		
-		for (i = 0; i < nSamples; i++) {
-			double l, r;
-			l = stereobuffer[0];
-			r = stereobuffer[1];
-			
-			double mid  = l+r;
-			double side = l-r;
-			//
-			// Low shelf
-			//
-			in = mid;
-			out = la0 * in + la1 * lx1 + la2 * lx2 - lb1 * ly1 - lb2 * ly2;
-			lx2 = lx1; lx1 = in;
-			ly2 = ly1; ly1 = out;
-			mid = out;
-			
-			l = ((0.5)*(OVERALL_SCALE))*(mid + side);
-			r = ((0.5)*(OVERALL_SCALE))*(mid - side);
-			
-			//
-			// High shelf
-			//
-			in = l;
-			out = ha0 * in + ha1 * hx1[0] + ha2 * hx2[0] - hb1 * hy1[0] - hb2 * hy2[0];
-			hx2[0] = hx1[0]; hx1[0] = in;
-			hy2[0] = hy1[0]; hy1[0] = out;
-			l = out;
-			
-			in = r;
-			out = ha0 * in + ha1 * hx1[1] + ha2 * hx2[1] - hb1 * hy1[1] - hb2 * hy2[1];
-			hx2[1] = hx1[1]; hx1[1] = in;
-			hy2[1] = hy1[1]; hy1[1] = out;
-			r = out;
-			
-			stereobuffer[0] = l;
-			stereobuffer[1] = r;
-			stereobuffer += 2;
-		}
-		
-	}
-};
-
 #define BORK_TIME 0xC0CAC01A
 
 static unsigned long parse_time_crap(const char *input)
@@ -362,7 +253,7 @@ static unsigned long parse_time_crap(const char *input)
 			}
 		}
 	}
-	string8 foo = input;
+	pfc::string8 foo = input;
 	char *bar = (char *) foo.get_ptr();
 	char *strs = bar + foo.length() - 1;
 	while (strs > bar && (*strs >= '0' && *strs <= '9'))
@@ -447,7 +338,7 @@ static void info_meta_add(file_info & info, const char * tag, const char * value
 	if (info.meta_get_count_by_name(tag))
 	{
 		// append as another line
-		string8 final = info.meta_get(tag, 0);
+		pfc::string8 final = info.meta_get(tag, 0);
 		final += "\r\n";
 		final += pfc::stringcvt::string_utf8_from_ansi(value);
 		info.meta_set(tag, final);
@@ -458,7 +349,7 @@ static void info_meta_add(file_info & info, const char * tag, const char * value
 	}
 }
 
-static int find_crlf(string8 & blah)
+static int find_crlf(pfc::string8 & blah)
 {
 	int pos = blah.find_first('\r');
 	if (pos >= 0 && *(blah.get_ptr()+pos+1) == '\n') return pos;
@@ -467,7 +358,7 @@ static int find_crlf(string8 & blah)
 
 static void info_meta_write(pfc::string_base & tag, const file_info & info, const char * name, int idx, int & first)
 {
-	string8 v = pfc::stringcvt::string_ansi_from_utf8(info.meta_enum_value(idx, 0));
+	pfc::string8 v = pfc::stringcvt::string_ansi_from_utf8(info.meta_enum_value(idx, 0));
 	int pos = find_crlf(v);
 
 	if (pos == -1)
@@ -482,7 +373,7 @@ static void info_meta_write(pfc::string_base & tag, const file_info & info, cons
 	}
 	while (pos != -1)
 	{
-		string8 foo;
+		pfc::string8 foo;
 		foo = v;
 		foo.truncate(pos);
 		if (first) first = 0;
@@ -502,6 +393,77 @@ static void info_meta_write(pfc::string_base & tag, const file_info & info, cons
 	}
 }
 
+#if 0
+static bool info_read_line( const BYTE * ptr, int len, pfc::string_base & tag, pfc::string_base & value )
+{
+	int p = 0;
+	for ( ;; ++p )
+	{
+		if ( p >= len ) break;
+		unsigned u = ptr[ p ];
+		if ( ! u ) return false;
+		if ( u != 0x0A ) continue;
+		break;
+	}
+	len = p;
+	p = 0;
+	for ( ;; ++p )
+	{
+		if ( p >= len ) return false;
+		unsigned u = ptr[ p ];
+		if ( u == '=' ) break;
+		continue;
+	}
+	int equals_position = p;
+	p = 0;
+	for ( ;; ++p )
+	{
+		if ( p >= len ) return false;
+		unsigned u = ptr[ p ];
+		if ( u <= 0x20 ) continue;
+		break;
+	}
+	if ( p == equals_position ) return false; // no name or pure whitespace in name field
+
+	// okay, we have the tag name
+	int tag_start = p;
+
+	p = equals_position - 1;
+	for ( ;; --p )
+	{
+		if ( p < tag_start ) return false;
+		unsigned u = ptr[ p ];
+		if ( u <= 0x20 ) continue;
+		break;
+	}
+	tag.set_string( ( const char * ) ptr + tag_start, p - tag_start + 1 );
+
+	p = equals_position + 1;
+
+	for ( ;; ++p )
+	{
+		if ( p >= len ) return false;
+		unsigned u = ptr[ p ];
+		if ( u <= 0x20 ) continue;
+		break;
+	}
+
+	tag_start = p;
+	p = len;
+
+	for ( ;; --p )
+	{
+		if ( p < tag_start ) return false;
+		unsigned u = ptr[ p ];
+		if ( u <= 0x20 ) continue;
+		break;
+	}
+	value.set_string( ( const char * ) ptr + tag_start, p - tag_start + 1 );
+
+	return true;
+}
+#endif
+
 static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & tag_song_ms, int & tag_fade_ms)
 {
 	int pos, precede = 0;
@@ -511,12 +473,16 @@ static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & t
 	if (!memcmp(ptr, "[TAG]", 5))
 	{
 		DBG("found tag block");
+		pfc::string8_fastalloc tag, value;
+
 		for (ptr += 5, pos = 5; pos < len; pos++, ptr++)
 		{
-			char tag[256], value[1024];
 			DBG("scanning for name/value");
-			sscanf((char *)ptr, "%[^=]=%[^\n]", tag, value);
+			char tag[256], value[1024];
 			
+			if ( sscanf((char *)ptr, "%[^=]=%[^\n]", tag, value) == 2 ) // I suck
+			{
+			// meh, fuck it
 			if (inherit < 0)
 			{
 				// only parse metadata for top level executable
@@ -588,7 +554,7 @@ static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & t
 				// the top level internal info class
 				if (!strnicmp(tag, "_lib", 4))
 				{
-					string8 blah;
+					pfc::string8 blah;
 					if (!tag[4]) precede = 1;
 					blah.set_string(tag);
 					blah.add_byte('=');
@@ -596,8 +562,9 @@ static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & t
 					info.meta_add(info.info_get("current"), value);
 				}
 			}
+			}
 			
-			while (pos < len && *ptr != 10)
+			while (pos < len && *ptr && *ptr != 10)
 			{
 				pos++;
 				ptr++;
@@ -805,7 +772,7 @@ private:
 			if (inherit == -2) return 1;
 		}
 
-		string8 current;
+		pfc::string8 current;
 		if (inherit >= 0)
 		{
 			current = info.info_get("current");
@@ -821,7 +788,7 @@ private:
 			if (inherit < 0)
 			{
 				n = info.info_get("_lib");
-				string8 f = filename;
+				pfc::string8 f = filename;
 				const char *fn = f.get_ptr() + f.scan_filename();
 				if (!stricmp(fn, n))
 				{
@@ -842,7 +809,7 @@ private:
 				info.info_set("current",n);
 			}
 
-			string8 fn = base_path;
+			pfc::string8 fn = base_path;
 			fn += n;
 			DBG(fn);
 			filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
@@ -884,7 +851,7 @@ private:
 
 				internal.info_set("current", v);
 
-				string8 fn(base_path);
+				pfc::string8 fn(base_path);
 				fn += v;
 				filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
 				if ( !load( rdr, internal, 0 ) ) return 0;
@@ -895,7 +862,7 @@ private:
 		{
 			const char * n, * v;
 			bool found;
-			ptr_list_t<const char> libs;
+			pfc::ptr_list_t<const char> libs;
 			count = info.meta_get_count_by_name(current);
 			for (cur = 0; cur < count; cur++)
 			{
@@ -916,7 +883,7 @@ private:
 						return 0;
 					}
 					info.info_set("current", v);
-					string8 fn(base_path);
+					pfc::string8 fn(base_path);
 					fn.add_string(n);
 					filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
 					if ( !load( rdr, info, 0 ) ) return 0;
@@ -943,10 +910,10 @@ class input_psf
 
 	CPSXFilter * filter;
 
-	string8 base_path;
-	string8 filename;
+	pfc::string8 base_path;
+	pfc::string8 filename;
 
-	string8 errors;
+	pfc::string8 errors;
 
 	int err;
 
@@ -997,7 +964,7 @@ public:
 			m_file = p_file;
 
 			{
-				string8 f = p_path;
+				pfc::string8 f = p_path;
 				int meh = f.scan_filename();
 				filename = f.get_ptr() + meh;
 				f.truncate(meh);
@@ -1048,7 +1015,7 @@ public:
 		m_info.reset();
 
 		{
-			string8 path = base_path;
+			pfc::string8 path = base_path;
 			path += filename;
 			err = load_psf( m_file, path, m_info, true, p_abort );
 		}
@@ -1233,7 +1200,7 @@ public:
 		{
 			//file_info *temp = new file_info_i_full;
 			file_info_impl temp;
-			string8 path = base_path;
+			pfc::string8 path = base_path;
 			path += filename;
 			if (psf_version == 2)
 			{
@@ -1252,7 +1219,7 @@ public:
 				psx_execute( pEmu, 0x7FFFFFFF, 0, & meh, 0 );
 			}
 		}
-		unsigned int howmany = ( int )( ( p_seconds - psfemu_pos ) * ( psf_version == 2 ? 48000. : 44100. ) );
+		unsigned int howmany = ( int )( audio_math::time_to_samples( p_seconds - psfemu_pos, psf_version == 2 ? 48000 : 44100 ) );
 
 
 		// more abortable, and emu doesn't like doing huge numbers of samples per call anyway
@@ -1315,7 +1282,7 @@ public:
 		m_file->seek(16 + reserved_size + exe_size, p_abort);
 		m_file->set_eof(p_abort);
 
-		string8 tag = "[TAG]";
+		pfc::string8 tag = "[TAG]";
 
 		int first = 1;
 		// _lib and _refresh tags first
@@ -1474,7 +1441,7 @@ int input_psf::load_psf(service_ptr_t<file> & r, const char * p_path, file_info 
 
 		if (!full_open)
 		{
-			load_exe_recursive(0, r, p_path, info, 0, string8(), -2, refresh, tag_refresh, p_abort);
+			load_exe_recursive(0, r, p_path, info, 0, pfc::string8(), -2, refresh, tag_refresh, p_abort);
 			return 1;
 		}
 		
@@ -1626,7 +1593,7 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			data->m_link_neill.SubclassWindow( GetDlgItem( wnd, IDC_URL ) );
 
 			data->m_link_kode54.SetLabel( _T( "kode's Foobar2000 plug-ins" ) );
-			data->m_link_kode54.SetHyperLink( _T( "http://static.morbo.org/kode54/" ) );
+			data->m_link_kode54.SetHyperLink( _T( "http://kode54.foobar2000.org/" ) );
 			data->m_link_kode54.SubclassWindow( GetDlgItem( wnd, IDC_K54 ) );
 
 			{
@@ -1920,13 +1887,13 @@ public:
 		return guids[p_index];
 	}
 
-	virtual bool context_get_display(unsigned n,const list_base_const_t<metadb_handle_ptr> & data,pfc::string_base & out,unsigned & displayflags,const GUID &)
+	virtual bool context_get_display(unsigned n,const pfc::list_base_const_t<metadb_handle_ptr> & data,pfc::string_base & out,unsigned & displayflags,const GUID &)
 	{
 		unsigned i, j;
 		i = data.get_count();
 		for (j = 0; j < i; j++)
 		{
-			string_extension ext(data.get_item(j)->get_path());
+			pfc::string_extension ext(data.get_item(j)->get_path());
 			int c1 = strnicmp(ext, "PSF", 3);
 			int c2 = strnicmp(ext, "MINIPSF", 7);
 			if (c1 && c2) return false;
@@ -1938,7 +1905,7 @@ public:
 		return true;
 	}
 
-	virtual void context_command(unsigned n,const list_base_const_t<metadb_handle_ptr> & data,const GUID& caller)
+	virtual void context_command(unsigned n,const pfc::list_base_const_t<metadb_handle_ptr> & data,const GUID& caller)
 	{
 		unsigned tag_song_ms = 0, tag_fade_ms = 0;
 		unsigned i = data.get_count();
@@ -2025,14 +1992,14 @@ public:
 	virtual void get_component_version(pfc::string_base & out) { out = MYVERSION; }
 	virtual void get_about_message(pfc::string_base & out)
 	{
-		out = "Foobar2000 version by kode54\nOriginal library and concept by Neill Corlett\n\nCore: ";
+		out = "Foobar2000 version by kode54\nOriginal library and concept by Neill Corlett" /*"\n\nCore: ";
 		out += psx_getversion();
-		out += "\n\nhttp://www.neillcorlett.com/\nhttp://www.saunalahti.fi/cse/kode54/";
+		out +=*/ "\n\nhttp://www.neillcorlett.com/\nhttp://kode54.foobar2000.org/";
 	}
 };
 
 static input_singletrack_factory_t<input_psf>                      g_input_psf_factory;
 static preferences_page_factory_t <preferences_page_psf>           g_config_psf_factory;
 static contextmenu_item_factory_t <context_psf>                    g_contextmenu_item_psf_factory;
-static service_factory_single_t   <input_file_type,psf_file_types> g_input_file_type_psf_factory;
-static service_factory_single_t   <componentversion,version_psf>   g_componentversion_psf_factory;
+static service_factory_single_t   <psf_file_types> g_input_file_type_psf_factory;
+static service_factory_single_t   <version_psf>   g_componentversion_psf_factory;

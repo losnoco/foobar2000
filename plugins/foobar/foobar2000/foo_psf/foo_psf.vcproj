@@ -125,6 +125,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="1"
+			WholeProgramOptimization="4"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -345,6 +346,38 @@
 		</File>
 		<File
 			RelativePath="..\..\psfemucore\PSXCore-Win32-VC.lib"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				ExcludedFromBuild="true"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				ExcludedFromBuild="true"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release staticlink|Win32"
+				ExcludedFromBuild="true"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\PSXFilter.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\PSXFilter.h"
 			>
 		</File>
 		<File
