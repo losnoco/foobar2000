@@ -82,7 +82,6 @@
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="msimg32.lib winmm.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
-				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
@@ -222,7 +221,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="1"
-			WholeProgramOptimization="4"
+			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"

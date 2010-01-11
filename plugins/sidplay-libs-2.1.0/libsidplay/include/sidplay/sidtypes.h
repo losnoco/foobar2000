@@ -24,7 +24,7 @@
 #if SID_SIZEOF_CHAR == 1
 #   if (SID_SIZEOF_SHORT_INT == 2) || (SID_SIZEOF_INT == 2)
 #       if (SID_SIZEOF_INT == 4) || (SID_SIZEOF_LONG_INT == 4)
-//#           define SID_OPTIMISE_MEMORY_ACCESS
+#           define SID_OPTIMISE_MEMORY_ACCESS
 #       endif
 #   endif
 #endif

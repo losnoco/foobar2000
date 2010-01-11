@@ -184,7 +184,6 @@
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="comctl32.lib odbc32.lib odbccp32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
-				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\../Debug/foo_festalon.pdb"
@@ -225,7 +224,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="1"
-			WholeProgramOptimization="4"
+			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"

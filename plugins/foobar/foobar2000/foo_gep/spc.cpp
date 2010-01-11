@@ -228,94 +228,63 @@ static bool load_id666(const service_ptr_t<file> & p_file,LPID666TAG lpTag, abor
 
 class input_spc : public input_gep
 {
+	Spc_Emu::header_t m_header;
+	file_info_impl    m_info;
+	bool              retagging;
+
 public:
 	input_spc()
 	{
 		sample_rate = Spc_Emu::native_sample_rate;
 	}
 
-	static inline bool g_test_filename(const char * full_path, const char * extension)
+	static bool g_is_our_path( const char * p_path, const char * p_extension )
 	{
-		return !stricmp(extension, "spc");
+		return ! stricmp( p_extension, "spc" );
 	}
 
-	static GUID g_get_guid()
-	{
-		// {AF2744A4-BD39-4535-AFAB-7868855597BA}
-		static const GUID guid = 
-		{ 0xaf2744a4, 0xbd39, 0x4535, { 0xaf, 0xab, 0x78, 0x68, 0x85, 0x55, 0x97, 0xba } };
-		return guid;
-	}
-
-	static const char * g_get_name() {return "GEP SPC decoder";}
-
-	inline static t_io_result g_get_extended_data(const service_ptr_t<file> & p_reader,const playable_location & p_location,const GUID & p_guid,stream_writer * p_out,abort_callback & p_abort) {return io_result_error_data;}
-
-private:
-	t_io_result open_internal(const service_ptr_t<file> & p_file,const playable_location & p_location,file_info & p_info,abort_callback & p_abort,bool p_decode,bool p_want_info,bool p_can_loop)
+	t_io_result open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
 		assert(sample_rate == Spc_Emu::native_sample_rate);
 
-		/*t_filesize size64;
-		t_io_result status = p_file->get_size(size64, p_abort);
-		if (io_result_failed(status)) return status;
-		if (size64 > INT_MAX || size64 < 66048) return io_result_error_data;
-		int size = int(size64);
-		mem_block_t<signed char> temp;
-		signed char * ptr = temp.set_size(size);
+		t_io_result status = input_gep::open( p_filehint, p_path, p_reason, p_abort );
+		if ( io_result_failed( status ) ) return status;
 
-		status = p_file->read_object(ptr, size, p_abort);
-		if (io_result_failed(status)) return status;
+		foobar_File_Reader rdr(m_file, p_abort);
 
-		if (cfg_spc_anti_surround)
+		try
 		{
-			ptr[0x10100 + 0x0C] = abs(ptr[0x10100 + 0x0C]);
-			ptr[0x10100 + 0x1C] = abs(ptr[0x10100 + 0x1C]);
-		}
+			ERRCHK( rdr.read( &m_header, sizeof(m_header) ) );
 
-		Emu_Mem_Reader rdr(ptr, size);*/
-
-		foobar_File_Reader rdr(p_file, p_abort);
-		Spc_Emu::header_t header;
-
-		if (p_want_info || p_decode)
-		{
-			ERRCHK( rdr.read( &header, sizeof(header) ) );
-
-			if ( strncmp( header.tag, "SNES-SPC700 Sound File Data", 27 ) != 0 )
+			if ( strncmp( m_header.tag, "SNES-SPC700 Sound File Data", 27 ) != 0 )
 			{
 				console::info("Not an SPC file");
 				return io_result_error_data;
 			}
 
-			if (!no_infinite) no_infinite = !p_can_loop;
+			t_io_result status = tag_processor::read_trailing( m_file, m_info, p_abort );
+			if ( status != io_result_error_data && status != io_result_error_not_found && io_result_failed( status ) ) return status;
 
-			t_io_result status = tag_processor::read_trailing(p_file, p_info, p_abort);
-			if (status != io_result_error_data && status != io_result_error_not_found && io_result_failed(status)) return status;
-
-			t_io_result status2 = p_file->seek( sizeof(header), p_abort );
-			if (io_result_failed(status2)) return status2;
-
-			if (status != io_result_error_not_found)
+			if ( status != io_result_error_not_found )
 			{
 				const char * p;
-				p = p_info.meta_get(field_length, 0);
+				p = m_info.meta_get( field_length, 0 );
 				if (p)
 				{
-					p_info.info_set(field_length, p);
-					tag_song_ms = atoi(p);
-					p_info.meta_remove_field(field_length);
+					m_info.info_set( field_length, p );
+					tag_song_ms = atoi( p );
+					m_info.meta_remove_field( field_length );
 				}
 				else
 				{
 					tag_song_ms = 0;
 				}
-				p = p_info.meta_get(field_fade, 0);
-				if (p)
+				p = m_info.meta_get( field_fade, 0 );
+				if ( p )
 				{
-					p_info.info_set(field_fade,p);
-					tag_fade_ms = atoi(p);
-					p_info.meta_remove_field(field_fade);
+					m_info.info_set( field_fade,p );
+					tag_fade_ms = atoi( p );
+					m_info.meta_remove_field( field_fade );
 				}
 				else
 				{
@@ -328,49 +297,43 @@ private:
 
 				memset(&tag, 0, sizeof(tag));
 
-				if (p_want_info)
-				{
-					HEADER_STRING(p_info, "title", header.song);
-					HEADER_STRING(p_info, "album", header.game);
-					HEADER_STRING(p_info, "dumper", header.dumper);
-					HEADER_STRING(p_info, "comment", header.comment);
-					HEADER_STRING(p_info, "date", (const char *)&header.date);
-					HEADER_STRING(p_info, "artist", header.author);
-				}
+				HEADER_STRING(m_info, "title", m_header.song);
+				HEADER_STRING(m_info, "album", m_header.game);
+				HEADER_STRING(m_info, "dumper", m_header.dumper);
+				HEADER_STRING(m_info, "comment", m_header.comment);
+				HEADER_STRING(m_info, "date", (const char *)&m_header.date);
+				HEADER_STRING(m_info, "artist", m_header.author);
 
-				tag_song_ms = atoi(string_simple(header.len_secs, sizeof(header.len_secs))) * 1000;
-				tag_fade_ms = atoi(string_simple((const char *)&header.fade_msec, sizeof(header.fade_msec)));
-				voice_mask = header.mute_mask;
+				tag_song_ms = atoi(string_simple(m_header.len_secs, sizeof(m_header.len_secs))) * 1000;
+				tag_fade_ms = atoi(string_simple((const char *)&m_header.fade_msec, sizeof(m_header.fade_msec)));
+				voice_mask = m_header.mute_mask;
 
 				try
 				{
-					p_file->seek_e(66048, p_abort);
-					if (load_id666(p_file, &tag, p_abort))
+					m_file->seek_e( 66048, p_abort );
+					if ( load_id666( m_file, & tag, p_abort ) )
 					{
 						char temp[16];
 
-						if (p_want_info)
-						{
-							HEADER_STRING(p_info, "title", tag.szTitle);
-							HEADER_STRING(p_info, "album", tag.szGame);
-							HEADER_STRING(p_info, "artist", tag.szArtist);
-							HEADER_STRING(p_info, "dumper", tag.szDumper);
-							HEADER_STRING(p_info, "date", tag.szDate);
-							HEADER_STRING(p_info, "comment", tag.szComment);
+						HEADER_STRING(m_info, "title", tag.szTitle);
+						HEADER_STRING(m_info, "album", tag.szGame);
+						HEADER_STRING(m_info, "artist", tag.szArtist);
+						HEADER_STRING(m_info, "dumper", tag.szDumper);
+						HEADER_STRING(m_info, "date", tag.szDate);
+						HEADER_STRING(m_info, "comment", tag.szComment);
 
-							HEADER_STRING(p_info, "OST", tag.szOST);
-							HEADER_STRING(p_info, "publisher", tag.szPublisher);
-						}
+						HEADER_STRING(m_info, "OST", tag.szOST);
+						HEADER_STRING(m_info, "publisher", tag.szPublisher);
 
 						if (tag.wTrack > 0)
 						{
 							itoa( ( ( tag.wTrack & 0xFF00 ) >> 8 ) | ( ( tag.wTrack & 0x00FF ) << 8 ), temp, 10 );
-							p_info.meta_set("tracknumber", temp);
+							m_info.meta_set("tracknumber", temp);
 						}
 						if (tag.bDisc > 0)
 						{
 							itoa( tag.bDisc, temp, 10 );
-							p_info.meta_set("disc", temp);
+							m_info.meta_set("disc", temp);
 						}
 
 						if (tag.uSong_ms) tag_song_ms = tag.uSong_ms;
@@ -378,20 +341,14 @@ private:
 						voice_mask = tag.bMute;
 					}
 				}
-				catch(t_io_result code)
+				catch(t_io_result /*code*/)
 				{
 					//return code;
 					// failed to read id666 tag? do nothing...
 				}
 
-				status = p_file->seek(sizeof(header), p_abort);
-				if (io_result_failed(status)) return status;
-
-				if (p_want_info)
-				{
-					if (tag_song_ms > 0) p_info.info_set_int(field_length, tag_song_ms);
-					if (tag_fade_ms > 0) p_info.info_set_int(field_fade, tag_fade_ms);
-				}
+				if (tag_song_ms > 0) m_info.info_set_int(field_length, tag_song_ms);
+				if (tag_fade_ms > 0) m_info.info_set_int(field_fade, tag_fade_ms);
 			}
 
 			if (!tag_song_ms)
@@ -399,75 +356,104 @@ private:
 				tag_song_ms = cfg_default_length;
 				tag_fade_ms = cfg_default_fade;
 			}
-
-			if (p_want_info)
-			{
-				p_info.info_set("codec", "SPC");
-
-				p_info.info_set_int("samplerate", Spc_Emu::native_sample_rate );
-				p_info.info_set_int("channels", 2 );
-				p_info.info_set_int("bitspersample", 16 );
-
-				p_info.set_length(double(tag_song_ms + tag_fade_ms) * .001);
-			}
 		}
-
-		if (p_decode)
+		catch ( t_io_result code )
 		{
-			Spc_Emu * emu = new Spc_Emu;
-			if ( !emu )
-			{
-				console::info("Out of memory");
-				return io_result_error_out_of_memory;
-			}
-
-			this->emu = emu;
-
-			ERRCHK( emu->init( Spc_Emu::native_sample_rate ) );
-			ERRCHK( emu->load( header, rdr ) );
-			ERRCHK( emu->start_track( 0 ) );
-
-			emu->mute_voices( voice_mask );
-
-			emu->disable_surround(cfg_spc_anti_surround);
-
-			subsong = 0;
+			return code;
 		}
+
+		bool retagging = p_reason == input_open_info_write;
 
 		return io_result_success;
 	}
 
-public:
+	t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
+	{
+		p_info.copy( m_info );
+
+		p_info.info_set("codec", "SPC");
+
+		p_info.info_set_int("samplerate", Spc_Emu::native_sample_rate );
+		p_info.info_set_int("channels", 2 );
+		p_info.info_set_int("bitspersample", 16 );
+
+		p_info.set_length(double(tag_song_ms + tag_fade_ms) * .001);
+
+		return io_result_success;
+	}
+
+	t_io_result decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
+	{
+		Spc_Emu * emu = ( Spc_Emu * ) this->emu;
+		if ( ! emu )
+		{
+			emu = new Spc_Emu;
+			if ( ! emu )
+			{
+				console::info("Out of memory");
+				return io_result_error_out_of_memory;
+			}
+			this->emu = emu;
+
+			try
+			{
+				m_file->seek_e( 0, p_abort );
+				foobar_File_Reader rdr( m_file, p_abort );
+				rdr.skip( sizeof( m_header ) );
+
+				ERRCHK( emu->init( Spc_Emu::native_sample_rate ) );
+				ERRCHK( emu->load( m_header, rdr ) );
+			}
+			catch ( t_io_result code )
+			{
+				return code;
+			}
+
+			if ( ! retagging ) m_file.release();
+
+			emu->mute_voices( voice_mask );
+
+			emu->disable_surround(cfg_spc_anti_surround);
+		}
+
+		return input_gep::decode_initialize( 0, p_flags, p_abort );
+	}
+
 	virtual t_io_result set_info(const service_ptr_t<file> & p_reader,const playable_location & p_location,file_info & p_info,abort_callback & p_abort)
 	{
 		try
 		{
-			p_reader->seek_e(66048, p_abort);
-			p_reader->set_eof_e(p_abort);
+			m_file->seek_e( 66048, p_abort );
+			m_file->set_eof_e( p_abort );
 		}
 		catch(t_io_result code)
 		{
 			return code;
 		}
 
+		m_info.copy( p_info );
+
 		file_info_impl l_info;
-		l_info.copy(p_info);
+		l_info.copy( p_info );
 
 		{
 			const char * p;
-			p = l_info.info_get(field_length);
+			p = l_info.info_get( field_length );
 			if (p)
 			{
-				l_info.meta_set(field_length,p);
+				l_info.meta_set( field_length, p );
 			}
-			p = l_info.info_get(field_fade);
+			p = l_info.info_get( field_fade );
 			if (p)
 			{
-				l_info.meta_set(field_fade,p);
+				l_info.meta_set( field_fade, p );
 			}
 		}
 
-		return tag_processor::write_apev2(p_reader, l_info, p_abort);
+		t_io_result status = tag_processor::write_apev2( m_file, l_info, p_abort );
+		if ( io_result_failed( status ) ) return status;
+
+		return m_file->get_stats( m_stats, p_abort );
 	}
 };
 

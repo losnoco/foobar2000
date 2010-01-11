@@ -1,6 +1,8 @@
 #define MYVERSION "0.4.0"
 #define VSTRING "0.5.5"
 
+#define NSF_SUPPORT 0
+
 /*
 	changelog
 
@@ -105,6 +107,7 @@ static const GUID guid_cfg_default_fade =
 static const GUID guid_cfg_placement = 
 { 0xc552d230, 0x7048, 0x4af0, { 0x9b, 0x41, 0x38, 0x1b, 0x9e, 0x8d, 0xb3, 0xfd } };
 // {BCBC1B79-E55B-468a-928C-5BBAEE2D76F6}
+#if NSF_SUPPORT
 static const GUID guid_cfg_write = 
 { 0xbcbc1b79, 0xe55b, 0x468a, { 0x92, 0x8c, 0x5b, 0xba, 0xee, 0x2d, 0x76, 0xf6 } };
 // {5340C20B-0501-45fd-8D0A-D76F45890354}
@@ -113,7 +116,7 @@ static const GUID guid_cfg_write_nsfe =
 // {C41E2EA0-EEEF-48b1-8871-C52AFF0B9CD5}
 static const GUID guid_cfg_nsfe_ignore_playlists = 
 { 0xc41e2ea0, 0xeeef, 0x48b1, { 0x88, 0x71, 0xc5, 0x2a, 0xff, 0xb, 0x9c, 0xd5 } };
-
+#endif
 
 // Index to rate in the above table
 cfg_int cfg_srate(guid_cfg_srate, 0);
@@ -124,6 +127,7 @@ static const char * quality_tab[]={"high","higher"};
 // Quality level, controls which FIR filter sets Festalon uses for downsampling
 cfg_int cfg_quality(guid_cfg_quality, 0);
 
+#if NSF_SUPPORT
 // Info recycled by the tag writer and manipulated by the editor
 static const char field_length[]="nsf_length";
 static const char field_fade[]="nsf_fade";
@@ -143,6 +147,7 @@ static const char field_track[]="TITLE";
 
 // Special field, used only for playlist writing
 static const char field_playlist[]="nsf_playlist";
+#endif
 
 // Do we play forever?
 cfg_int cfg_infinite(guid_cfg_infinite,0);
@@ -154,6 +159,7 @@ cfg_int cfg_default_fade(guid_cfg_default_fade, 10000);
 // This remembers the editor window's position if user enables "Remember window position" in player UI settings
 static cfg_window_placement cfg_placement(guid_cfg_placement);
 
+#if NSF_SUPPORT
 // Will input_fest::set_info() function, and will it convert to NSFE (or downgrade to NESM) as necessary?
 static cfg_int cfg_write(guid_cfg_write, 0), cfg_write_nsfe(guid_cfg_write_nsfe, 0);
 
@@ -240,6 +246,7 @@ static void rename_file(const char * src, const char * ext, string_base & out, a
 		p = 0; \
 	} \
 }
+#endif
 
 // Ugly and disorganized, yes!
 class input_fest
@@ -257,9 +264,11 @@ protected:
 	int tag_song_ms, tag_fade_ms;
 	int data_written, discard;
 
-	bool ignoring_playlist;
+	//bool ignoring_playlist;
 
 	string_simple m_path;
+
+	service_ptr_t<file> m_file;
 
 	t_filestats m_stats;
 
@@ -276,24 +285,24 @@ public:
 
 	t_io_result open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
+#if NSF_SUPPORT
 		if ( p_reason == input_open_info_write && !cfg_write )
 		{
 			console::info( "Writing is disabled, see configuration." );
 			return io_result_error_data;
 		}
+#endif
 
 		t_io_result status;
 
-		service_ptr_t<file> p_file;
-
 		if ( p_filehint.is_empty() )
 		{
-			status = filesystem::g_open( p_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
+			status = filesystem::g_open( m_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
 			if ( io_result_failed( status ) ) return status;
 		}
-		else p_file = p_filehint;
+		else m_file = p_filehint;
 
-		status = p_file->get_stats( m_stats, p_abort );
+		status = m_file->get_stats( m_stats, p_abort );
 		if ( io_result_failed( status ) ) return status;
 
 		m_path = p_path;
@@ -303,15 +312,15 @@ public:
 
 		{
 			mem_block_t<BYTE> nsfbuffer;
-			unsigned size = (unsigned) p_file->get_size_e(p_abort);
+			unsigned size = (unsigned) m_file->get_size_e(p_abort);
 			if ( ! nsfbuffer.set_size( size ) )
 				return io_result_error_out_of_memory;
 			BYTE * ptr = nsfbuffer.get_ptr();
 
 			try
 			{
-				p_file->seek_e( 0, p_abort );
-				p_file->read_object_e( ptr, size, p_abort );
+				m_file->seek_e( 0, p_abort );
+				m_file->read_object_e( ptr, size, p_abort );
 			}
 			catch( t_io_result code )
 			{
@@ -325,32 +334,42 @@ public:
 			FESTAI_Disable( hfest, 0 );
 		}
 
+#if NSF_SUPPORT
+		if ( p_reason != input_open_info_write )
+#endif
+			m_file.release();
+
 		return io_result_success;
 	}
 
 	unsigned get_subsong_count()
 	{
+#if NSF_SUPPORT
 		ignoring_playlist = ( !!cfg_nsfe_ignore_playlists ) || ( ! hfest->Playlist );
 		if ( ! ignoring_playlist )
 			return hfest->PlaylistSize;
 		else
+#endif
 			return hfest->TotalSongs;
 	}
 
 	t_uint32 get_subsong( unsigned p_index )
 	{
+#if NSF_SUPPORT
 		if ( ! ignoring_playlist )
 		{
 			assert( p_index < hfest->PlaylistSize );
 			return hfest->Playlist[ p_index ];
 		}
 		else
+#endif
 		{
 			assert( p_index < hfest->TotalSongs );
 			return p_index;
 		}
 	}
 
+#if NSF_SUPPORT
 	t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
 		int tag_song_ms = -1;
@@ -402,6 +421,7 @@ public:
 
 		return io_result_success;
 	}
+#endif
 
 	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
 	{
@@ -414,8 +434,10 @@ public:
 		tag_song_ms = -1;
 		tag_fade_ms = -1;
 
+#if NSF_SUPPORT
 		if ( hfest->SongLengths ) tag_song_ms = hfest->SongLengths[ p_subsong ];
 		if ( hfest->SongFades ) tag_fade_ms = hfest->SongFades[ p_subsong ];
+#endif
 
 		if ( tag_song_ms < 0 ) tag_song_ms = cfg_default_length;
 		if ( tag_fade_ms < 0 ) tag_fade_ms = cfg_default_fade;
@@ -504,6 +526,7 @@ public:
 	{
 	}
 
+#if NSF_SUPPORT
 	t_io_result retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
 	{
 		const char * ptr;
@@ -608,12 +631,10 @@ public:
 
 	t_io_result retag_commit( abort_callback & p_abort )
 	{
-		service_ptr_t<file> p_file;
-		t_io_result status = filesystem::g_open( p_file, m_path, filesystem::open_mode_write_existing, p_abort );
+		t_io_result status = m_file->seek( 0, p_abort );
 		if ( io_result_failed( status ) ) return status;
-
 		uint8 sig_test[ 4 ];
-		status = p_file->read_object( sig_test, 4, p_abort );
+		status = m_file->read_object( sig_test, 4, p_abort );
 		if ( io_result_failed( status ) ) return status;
 
 		bool bIsExtended = ! memcmp( sig_test, "NSFE", 4 );
@@ -655,19 +676,6 @@ public:
 
 		try
 		{
-			string8_fastalloc path;
-			path = m_path;
-			const char * ext = bIsExtended ? "nsfe" : "nsf";
-			if ( stricmp( string_extension_8( m_path ), ext ) )
-			{
-				string8_fastalloc newname;
-				p_file.release();
-				rename_file( m_path, ext, newname, p_abort );
-				status = filesystem::g_open( p_file, newname, filesystem::open_mode_write_existing, p_abort );
-				if ( io_result_failed( status ) ) throw status;
-				m_path = newname;
-			}
-
 			uint8 * ptr;
 			uint32 size;
 
@@ -676,13 +684,25 @@ public:
 
 			if ( ! ptr || ! size ) throw io_result_error_out_of_memory;
 
-			p_file->seek_e(0, p_abort);
-			p_file->set_eof_e(p_abort);
-			p_file->write_object_e( ptr, size, p_abort );
+			m_file->seek_e(0, p_abort);
+			m_file->set_eof_e(p_abort);
+			m_file->write_object_e( ptr, size, p_abort );
 
 			free( ptr );
 
-			m_stats = p_file->get_stats_e( p_abort );
+			m_stats = m_file->get_stats_e( p_abort );
+
+			m_file.release();
+
+			string8_fastalloc path;
+			path = m_path;
+			const char * ext = bIsExtended ? "nsfe" : "nsf";
+			if ( stricmp( string_extension_8( m_path ), ext ) )
+			{
+				string8_fastalloc newname;
+				rename_file( m_path, ext, newname, p_abort );
+				m_path = newname;
+			}
 
 			// and now for the core info reload crap
 			if ( ! bIsExtended )
@@ -733,6 +753,7 @@ public:
 	{
 		return ! stricmp( p_extension, "nsf" ) || ! stricmp( p_extension, "nsfe" );
 	}
+#endif
 
 protected:
 	t_io_result emulate( abort_callback & p_abort )
@@ -927,9 +948,15 @@ class preferences_page_fest : public preferences_page
 				SendMessageA(w,CB_SETCURSEL,cfg_quality,0);
 
 				uSendDlgItemMessage(wnd, IDC_INFINITE, BM_SETCHECK, cfg_infinite, 0);
+#if NSF_SUPPORT
 				uSendDlgItemMessage(wnd, IDC_WRITE, BM_SETCHECK, cfg_write, 0);
 				uSendDlgItemMessage(wnd, IDC_WNSFE, BM_SETCHECK, cfg_write_nsfe, 0);
 				uSendDlgItemMessage(wnd, IDC_NSFEPL, BM_SETCHECK, cfg_nsfe_ignore_playlists, 0);
+#else
+				EnableWindow( GetDlgItem( wnd, IDC_WRITE ), FALSE );
+				EnableWindow( GetDlgItem( wnd, IDC_WNSFE ), FALSE );
+				EnableWindow( GetDlgItem( wnd, IDC_NSFEPL ), FALSE );
+#endif
 				print_time_crap(cfg_default_length, (char *)&temp);
 				uSetDlgItemText(wnd, IDC_DLENGTH, (char *)&temp);
 				print_time_crap(cfg_default_fade, (char *)&temp);
@@ -942,6 +969,7 @@ class preferences_page_fest : public preferences_page
 			case IDC_INFINITE:
 				cfg_infinite = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
 				break;
+#if NSF_SUPPORT
 			case IDC_WRITE:
 				cfg_write = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
 				break;
@@ -951,6 +979,7 @@ class preferences_page_fest : public preferences_page
 			case IDC_NSFEPL:
 				cfg_nsfe_ignore_playlists = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
 				break;
+#endif
 			case (EN_CHANGE<<16)|IDC_DLENGTH:
 				{
 					int meh = parse_time_crap(string_utf8_from_window((HWND)lp));
@@ -1015,13 +1044,16 @@ public:
 		cfg_default_length = 170000;
 		cfg_default_fade = 10000;
 
+#if NSF_SUPPORT
 		cfg_write = 0;
 		cfg_write_nsfe = 0;
 
 		cfg_nsfe_ignore_playlists = 0;
+#endif
 	}
 };
 
+#if NSF_SUPPORT
 typedef struct
 {
 	int song, fade;
@@ -1276,10 +1308,20 @@ public:
 };
 
 DECLARE_FILE_TYPE("NSF files", "*.NSF;*.NSFE");
+#endif
+DECLARE_FILE_TYPE("HES files", "*.HES");
 
+#if NSF_SUPPORT
 static input_factory_t           <input_fest>                   g_input_fest_factory;
+static menu_item_factory_t       <context_fest>                 g_menu_item_context_fest_factory;
+#endif
 static input_factory_t           <input_fest_hes>               g_input_fest_hes_factory;
 static preferences_page_factory_t<preferences_page_fest>        g_config_fest_factory;
-static menu_item_factory_t       <context_fest>                 g_menu_item_context_fest_factory;
 
-DECLARE_COMPONENT_VERSION("Festalon", MYVERSION, "Plays NSF files.\n\nBased on Festalon " VSTRING "\n\nThis plug-in is licensed under the GNU General\nPublic License. See COPYING.TXT.");
+#if NSF_SUPPORT
+#define XINFO "NSF and "
+#else
+#define XINFO ""
+#endif
+
+DECLARE_COMPONENT_VERSION("Festalon", MYVERSION, "Plays " XINFO "HES files.\n\nBased on Festalon " VSTRING "\n\nThis plug-in is licensed under the GNU General\nPublic License. See COPYING.TXT.");

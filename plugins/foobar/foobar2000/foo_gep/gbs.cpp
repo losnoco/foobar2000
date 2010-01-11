@@ -15,6 +15,8 @@ public:
 
 	t_io_result open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
+		if ( p_reason == input_open_info_write ) return io_result_error_data;
+
 		t_io_result status = input_gep::open( p_filehint, p_path, p_reason, p_abort );
 		if ( io_result_failed( status ) ) return status;
 
@@ -49,11 +51,6 @@ public:
 		return m_header.track_count;
 	}
 
-	t_uint32 get_subsong( unsigned p_index )
-	{
-		return p_index;
-	}
-
 	t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
 		HEADER_STRING(p_info, "album", m_header.game);
@@ -67,31 +64,38 @@ public:
 		p_info.info_set_int("bitspersample", 16);
 
 		p_info.set_length(double(tag_song_ms + tag_fade_ms) * .001);
+
+		return io_result_success;
 	}
 
 	t_io_result decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
 	{
-		Gbs_Emu * emu = new Gbs_Emu;
-		if ( !emu )
+		Gbs_Emu * emu = ( Gbs_Emu * ) this->emu;
+		if ( ! emu )
 		{
-			console::print("Out of memory");
-			return io_result_error_out_of_memory;
-		}
+			emu = new Gbs_Emu;
+			if ( !emu )
+			{
+				console::print("Out of memory");
+				return io_result_error_out_of_memory;
+			}
+			this->emu = emu;
 
-		this->emu = emu;
+			try
+			{
+				m_file->seek_e( 0, p_abort );
+				foobar_File_Reader rdr( m_file, p_abort );
+				rdr.skip( sizeof( m_header ) );
 
-		try
-		{
-			m_file->seek_e( 0, p_abort );
-			foobar_File_Reader rdr( m_file, p_abort );
-			rdr.skip( sizeof( m_header ) );
+				ERRCHK( emu->init( sample_rate ) );
+				ERRCHK( emu->load( m_header, rdr ) );
+			}
+			catch ( t_io_result code )
+			{
+				return code;
+			}
 
-			ERRCHK( emu->init( sample_rate ) );
-			ERRCHK( emu->load( m_header, rdr ) );
-		}
-		catch ( t_io_result code )
-		{
-			return code;
+			m_file.release();
 		}
 
 		return input_gep::decode_initialize( p_subsong, p_flags, p_abort );

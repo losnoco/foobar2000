@@ -17,11 +17,8 @@
 #define IDC_ANTISURROUND                1008
 #define IDC_LOGO                        1009
 #define IDC_LENGTH                      1009
-#define IDC_ANTISURROUND2               1009
 #define IDC_GD3JAPANESE                 1009
 #define IDC_FADE                        1010
-#define IDC_WRITE2                      1010
-#define IDC_NSFDISABLE                  1010
 #define IDC_TRACKLIST                   1011
 #define IDC_PLAYLIST                    1012
 #define IDC_REMOVEALL                   1013

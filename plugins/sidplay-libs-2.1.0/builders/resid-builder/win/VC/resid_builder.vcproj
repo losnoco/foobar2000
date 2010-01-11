@@ -120,7 +120,7 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="../../include,../../include/sidplay/builders,../../../../libsidplay/include"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;HAVE_MSWINDOWS;VERSION=&quot;0.1.4-p1&quot;"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\Debug/resid_builder.pch"
 				AssemblerListingLocation=".\Debug/"
@@ -826,11 +826,11 @@
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\..\include\config.h"
+			RelativePath="config.h"
 			>
 		</File>
 		<File
-			RelativePath="config.h"
+			RelativePath="..\..\include\config.h"
 			>
 		</File>
 		<File

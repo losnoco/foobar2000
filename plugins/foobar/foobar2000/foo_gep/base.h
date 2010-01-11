@@ -32,7 +32,6 @@ protected:
 	int                        tag_fade_ms;
 	int                        song_len;
 	int                        fade_len;
-	bool                       newtag;
 	bool                       no_infinite;
 
 	mem_block_t<blip_sample_t> sample_buffer;

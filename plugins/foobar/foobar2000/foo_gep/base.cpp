@@ -16,26 +16,22 @@ input_gep::~input_gep()
 
 t_io_result input_gep::open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 {
-	if ( p_reason == input_open_info_write )
-	{
-		return io_result_error_data;
-	}
-
 	t_io_result status;
-
-	service_ptr_t<file> p_file;
 
 	if ( p_filehint.is_empty() )
 	{
-		status = filesystem::g_open( p_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
+		status = filesystem::g_open( m_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
 		if ( io_result_failed( status ) ) return status;
 	}
-	else p_file = p_filehint;
+	else m_file = p_filehint;
 
-	status = p_file->get_stats( m_stats, p_abort );
+	status = m_file->get_stats( m_stats, p_abort );
 	if ( io_result_failed( status ) ) return status;
 
 	m_path = p_path;
+
+	tag_song_ms = cfg_default_length;
+	tag_fade_ms = cfg_default_fade;
 
 	return io_result_success;
 }
@@ -61,8 +57,6 @@ t_io_result input_gep::decode_initialize( t_uint32 p_subsong, unsigned p_flags, 
 {
 	played = 0;
 	no_infinite = !cfg_indefinite || ( p_flags & input_flag_no_looping );
-	tag_song_ms = cfg_default_length;
-	tag_fade_ms = cfg_default_fade;
 
 	song_len=MulDiv(tag_song_ms, sample_rate, 1000);
 	fade_len=MulDiv(tag_fade_ms, sample_rate, 1000);
@@ -77,14 +71,10 @@ t_io_result input_gep::decode_run( audio_chunk & p_chunk,abort_callback & p_abor
 {
 	if ( ! emu->track_ended() && ! p_abort.is_aborting() )
 	{
-		if ( newtag )
-		{
-			newtag=0;
-		}
-
 		if ( no_infinite && played >= song_len + fade_len ) return io_result_eof;
 
-		register blip_sample_t * buf = sample_buffer.check_size( 1024 );
+		if ( ! sample_buffer.check_size( 1024 ) ) return io_result_error_out_of_memory;
+		register blip_sample_t * buf = sample_buffer.get_ptr();
 		ERRCHK( emu->play( 1024, buf ) );
 
 		int d_start,d_end;
@@ -132,7 +122,8 @@ t_io_result input_gep::decode_seek( double p_seconds, abort_callback & p_abort )
 		played = 0;
 	}
 
-	register blip_sample_t * buf = sample_buffer.check_size( 1024 );
+	if ( ! sample_buffer.check_size( 1024 ) ) return io_result_error_out_of_memory;
+	register blip_sample_t * buf = sample_buffer.get_ptr();
 	register int played_ = played;
 
 	if ( now - played_ > int( sample_rate ) * 4 )
@@ -191,7 +182,7 @@ t_io_result input_gep::retag_commit( abort_callback & p_abort )
 	return io_result_error_data;
 }
 
-static bool input_gep::g_is_our_content_type( const char * p_content_type )
+bool input_gep::g_is_our_content_type( const char * p_content_type )
 {
 	return false;
 }

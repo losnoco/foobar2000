@@ -15,6 +15,8 @@ public:
 
 	t_io_result open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
+		if ( p_reason == input_open_info_write ) return io_result_error_data;
+
 		t_io_result status = input_gep::open( p_filehint, p_path, p_reason, p_abort );
 		if ( io_result_failed( status ) ) return status;
 
@@ -50,26 +52,33 @@ public:
 		p_info.info_set_int("channels", 2);
 		p_info.info_set_int("bitspersample", 16);
 
-		Gym_Emu * emu = new Gym_Emu;
-		if ( !emu )
+		Gym_Emu * emu = ( Gym_Emu * ) this->emu;
+		if ( ! emu )
 		{
-			console::info("Out of memory");
-			throw io_result_error_out_of_memory;
-		}
+			emu = new Gym_Emu;
+			if ( ! emu )
+			{
+				console::info("Out of memory");
+				throw io_result_error_out_of_memory;
+			}
+			this->emu = emu;
 
-		try
-		{
-			m_file->seek_e( 0, p_abort );
-			foobar_File_Reader rdr( m_file, p_abort );
-			rdr.skip( sizeof( m_header ) );
+			try
+			{
+				m_file->seek_e( 0, p_abort );
+				foobar_File_Reader rdr( m_file, p_abort );
+				rdr.skip( sizeof( m_header ) );
 
-			ERRCHK( emu->init( sample_rate ) );
-			ERRCHK( emu->load( m_header, rdr ) );
-			ERRCHK( emu->start_track( 0 ) );
-		}
-		catch ( t_io_result code )
-		{
-			return code;
+				ERRCHK( emu->init( sample_rate ) );
+				ERRCHK( emu->load( m_header, rdr ) );
+				ERRCHK( emu->start_track( 0 ) );
+			}
+			catch ( t_io_result code )
+			{
+				return code;
+			}
+
+			m_file.release();
 		}
 
 		double loop_start;
@@ -78,34 +87,37 @@ public:
 
 		if (loop_start >= 0) p_info.info_set_float("gym_loop_start", loop_start, 4);
 
-		delete emu;
-
 		return io_result_success;
 	}
 
 	t_io_result decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
 	{
-		Gym_Emu * emu = new Gym_Emu;
-		if ( !emu )
+		Gym_Emu * emu = ( Gym_Emu * ) this->emu;
+		if ( ! emu )
 		{
-			console::info("Out of memory");
-			return io_result_error_out_of_memory;
-		}
+			emu = new Gym_Emu;
+			if ( !emu )
+			{
+				console::info("Out of memory");
+				return io_result_error_out_of_memory;
+			}
+			this->emu = emu;
 
-		this->emu = emu;
+			try
+			{
+				m_file->seek_e( 0, p_abort );
+				foobar_File_Reader rdr( m_file, p_abort );
+				rdr.skip( sizeof( m_header ) );
 
-		try
-		{
-			m_file->seek_e( 0, p_abort );
-			foobar_File_Reader rdr( m_file, p_abort );
-			rdr.skip( sizeof( m_header ) );
+				ERRCHK( emu->init( sample_rate ) );
+				ERRCHK( emu->load( m_header, rdr ) );
+			}
+			catch ( t_io_result code )
+			{
+				return code;
+			}
 
-			ERRCHK( emu->init( sample_rate ) );
-			ERRCHK( emu->load( m_header, rdr ) );
-		}
-		catch ( t_io_result code )
-		{
-			return code;
+			m_file.release();
 		}
 
 		double loop_start;

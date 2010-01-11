@@ -13,14 +13,16 @@
 
 #include "imfcrc.h"
 
-//#define MASTER_CLOCK        (3579545)
-#define MASTER_CLOCK (3600000)
+#define MASTER_CLOCK        (3579545)
+//#define MASTER_CLOCK (3600000)
+
+static const int srate = MASTER_CLOCK / 72. + .5;
 
 // {DEE39839-DB32-489b-AD01-5DCFFC8E24EB}
-static const GUID guid_cfg_srate = 
-{ 0xdee39839, 0xdb32, 0x489b, { 0xad, 0x1, 0x5d, 0xcf, 0xfc, 0x8e, 0x24, 0xeb } };
+/*static const GUID guid_cfg_srate = 
+{ 0xdee39839, 0xdb32, 0x489b, { 0xad, 0x1, 0x5d, 0xcf, 0xfc, 0x8e, 0x24, 0xeb } };*/
 
-static cfg_int cfg_srate(guid_cfg_srate, 44100);
+//static cfg_int cfg_srate(guid_cfg_srate, 44100);
 
 #pragma pack(push)
 #pragma pack(1)
@@ -126,7 +128,7 @@ class input_imf
 
 	Xdata *pLog;
 	float TicksPerSecond;
-	UINT srate;
+	//UINT srate;
 	int LogCount;
 	int CurrentLog;
 	int CurrentTick;
@@ -219,7 +221,7 @@ public:
 
 		if ( m_stats.m_size > (1 << 30)) return io_result_error_data;
 
-		srate = cfg_srate;
+		//srate = cfg_srate;
 
 		{
 			unsigned wanted;
@@ -312,15 +314,23 @@ public:
 
 	t_io_result decode_initialize( unsigned p_flags,abort_callback & p_abort )
 	{
-		chip = new YMF[Chips];
+		if ( ! chip )
+		{
+			chip = new YMF[Chips];
+
+			for (int i = 0; i < Chips; i++)
+			{
+				chip[i].init(OPL_TYPE_WAVESEL, MASTER_CLOCK, srate);
+			}
+
+			outbuffer.set_size(576);
+		}
 
 		for (int i = 0; i < Chips; i++)
 		{
-			chip[i].init(OPL_TYPE_WAVESEL, MASTER_CLOCK, srate);
+			chip[i].Reset();
 			chip[i].Write(1, 32);
 		}
-
-		outbuffer.set_size(576);
 
 		CurrentLog = 0;
 		CurrentTick = 0;

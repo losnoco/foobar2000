@@ -38,7 +38,6 @@ static const GUID guid_cfg_sample_rate = { 0xaeeb3c42, 0x2089, 0x4533, { 0xbe, 0
 static const GUID guid_cfg_indefinite = { 0x333d265d, 0x4099, 0x4ee9, { 0xa0, 0xdf, 0xb6, 0xa4, 0xa3, 0xb7, 0x26, 0xe } };
 static const GUID guid_cfg_default_length = { 0x725a4bb8, 0xd924, 0x44f7, { 0x82, 0xf2, 0x65, 0xc4, 0x93, 0x2f, 0x5d, 0x93 } };
 static const GUID guid_cfg_default_fade = { 0x39da3fe0, 0x8f89, 0x4f35, { 0xbc, 0x16, 0xec, 0xc6, 0x0, 0x7a, 0xe6, 0xc9 } };
-static const GUID guid_cfg_nsf_disable = { 0x1c561fd6, 0xd992, 0x4fea, { 0xac, 0x4c, 0xd4, 0x27, 0xb0, 0x57, 0x9, 0x7d } };
 static const GUID guid_cfg_write = { 0x477ac718, 0xaf, 0x4873, { 0xa0, 0xce, 0x8e, 0x47, 0xf6, 0xec, 0xe5, 0x37 } };
 static const GUID guid_cfg_write_nsfe = { 0x3d33ee75, 0x5abc, 0x4e41, { 0x91, 0x66, 0x4d, 0x5a, 0xd9, 0x9d, 0xe, 0xb5 } };
 static const GUID guid_cfg_nsfe_ignore_playlists = { 0xc219de94, 0xcbd1, 0x45d4, { 0xa3, 0x21, 0xd, 0xee, 0xc4, 0x99, 0x82, 0x86 } };
@@ -52,8 +51,6 @@ cfg_int cfg_sample_rate(guid_cfg_sample_rate, 44100);
 cfg_int cfg_indefinite(guid_cfg_indefinite, 0);
 cfg_int cfg_default_length(guid_cfg_default_length, 170000);
 cfg_int cfg_default_fade(guid_cfg_default_fade, 10000);
-
-cfg_int cfg_nsf_disable(guid_cfg_nsf_disable, 0);
 
 cfg_int cfg_write(guid_cfg_write, 0);
 cfg_int cfg_write_nsfe(guid_cfg_write_nsfe, 0);
@@ -171,7 +168,6 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		{
 			char temp[16];
 			uSendDlgItemMessage(wnd, IDC_INDEFINITE, BM_SETCHECK, cfg_indefinite, 0);
-			uSendDlgItemMessage(wnd, IDC_NSFDISABLE, BM_SETCHECK, cfg_nsf_disable, 0);
 			uSendDlgItemMessage(wnd, IDC_WRITE, BM_SETCHECK, cfg_write, 0);
 			uSendDlgItemMessage(wnd, IDC_WNSFE, BM_SETCHECK, cfg_write_nsfe, 0);
 			uSendDlgItemMessage(wnd, IDC_NSFEPL, BM_SETCHECK, cfg_nsfe_ignore_playlists, 0);
@@ -205,9 +201,6 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		{
 		case IDC_INDEFINITE:
 			cfg_indefinite = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		case IDC_NSFDISABLE:
-			cfg_nsf_disable = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
 			break;
 		case IDC_WRITE:
 			cfg_write = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
@@ -297,8 +290,6 @@ public:
 		cfg_indefinite = 0;
 		cfg_default_length = 170000;
 		cfg_default_fade = 10000;
-
-		cfg_nsf_disable = 0;
 
 		cfg_write = 0;
 		cfg_write_nsfe = 0;

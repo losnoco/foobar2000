@@ -198,7 +198,6 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions=" "
 				Optimization="2"
-				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="src;src\nes\ext;src\fidlib;..\libsamplerate-0.0.15\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;MSVC=1;T_MSVC;LSB_FIRST;FIDLIB_MSVC;ARCH_X86;HAVE_MMX;inline=__inline"
 				ExceptionHandling="0"

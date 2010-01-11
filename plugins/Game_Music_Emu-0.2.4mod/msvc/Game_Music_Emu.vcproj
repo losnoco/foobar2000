@@ -150,7 +150,7 @@
 			ConfigurationType="4"
 			InheritedPropertySheets="..\..\..\Program Files\Microsoft Visual Studio 8\VC\VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
-			WholeProgramOptimization="1"
+			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -233,6 +233,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\emu2413.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\Fir_Resampler.cpp"
 				>
 			</File>
@@ -273,6 +277,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Nes_Fme07_Apu.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\Nes_Namco.cpp"
 				>
 			</File>
@@ -282,6 +290,10 @@
 			</File>
 			<File
 				RelativePath="..\Nes_Vrc6.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Nes_Vrc7.cpp"
 				>
 			</File>
 			<File
@@ -359,6 +371,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\emu2413.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Fir_Resampler.h"
 				>
 			</File>
@@ -399,6 +415,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Nes_Fme07_Apu.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Nes_Namco.h"
 				>
 			</File>
@@ -408,6 +428,10 @@
 			</File>
 			<File
 				RelativePath="..\Nes_Vrc6.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Nes_Vrc7.h"
 				>
 			</File>
 			<File

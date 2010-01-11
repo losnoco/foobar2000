@@ -1086,7 +1086,7 @@ void YMF::initialize()
 	int i;
 
 	/* frequency base */
-#if 1
+#if 0
 	OPL->freqbase  = (OPL->rate) ? ((double)OPL->clock / 72.0) / OPL->rate  : 0;
 #else
 	OPL->rate = (double)OPL->clock / 72.0;

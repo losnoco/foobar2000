@@ -1,7 +1,11 @@
-#define MY_VERSION "1.2"
+#define MY_VERSION "1.3"
 
 /*
 	change log
+
+2005-10-21 19:31 UTC - kode54
+- Fixed seeking by swallowing whole sets of decoded samples instead of single blocks of 32
+- Version is now 1.3
 
 2005-01-09 03:37 UTC - kode54
 - Fixed (?) looping where end points were not on a sample block boundary
@@ -98,6 +102,19 @@ static unsigned read_long(const unsigned char *p)
 	return (p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3];
 }
 
+#ifndef NDEBUG
+#include <stdarg.h>
+void dprintf( const TCHAR * fmt, ... )
+{
+	TCHAR temp[256];
+	va_list list;
+	va_start(list,fmt);
+	_vsntprintf(temp,256,fmt,list);
+	OutputDebugString(temp);
+	va_end(list);
+}
+#endif
+
 class input_adx
 {
 	service_ptr_t<file>        m_file;
@@ -118,6 +135,7 @@ class input_adx
 
 	/* for loops: */
 	unsigned                   loop_start;
+	unsigned                   loop_start_offset;
 	unsigned                   loop_end;
 	unsigned                   loop_swallow;
 	ADXContext               * loop_context;
@@ -185,6 +203,7 @@ private:
 		if ( read_long( ptr + 0x18 ) == 1 )
 		{
 			loop_start = read_long( ptr + 0x1C );
+			loop_start_offset = read_long( ptr + 0x20 );
 			loop_end = read_long( ptr + 0x24 );
 
 			if ( loop_start >= loop_end || loop_end > size ) loop_start = ~0;
@@ -266,15 +285,25 @@ public:
 more:
 			while (!p_abort.is_aborting() && done < 32 * 32)
 			{
+				//dprintf(_T("reading\n"));
 				read = m_file->read_e(in, 18 * 32 * nch, p_abort);
 				if (read < 18 * nch) throw io_result_error_data;
 
+				//dprintf(_T("decoding %u bytes\n"),read);
 				for (n = 0; !p_abort.is_aborting() && (pos < size) && (done < 32 * 32) && ((read - n) >= (18 * nch)); n += 18 * nch, pos += 32)
 				{
+					//dprintf(_T("block: pos = %u, offset = %I64u\n"), pos, m_file->get_position_e(p_abort) - read + t_filesize( n ) );
+					/*t_filesize current_offset = m_file->get_position_e(p_abort) - read + n;
+					if ( current_offset != ( offset + pos * nch * 18 / 32 ) )
+					{
+						dprintf(_T("expected offset: %I64u\ncurrent offset: %I64u\n"), t_filesize( offset + pos * nch * 18 / 32 ), current_offset );
+						assert(0);
+					}*/
 					if (loop_start != ~0)
 					{
 						if (loop_start - pos < 32)
 						{
+							//dprintf(_T("loop start found\n"));
 							if (!loop_context) loop_context = new ADXContext;
 							*loop_context = *context;
 							loop_swallow = loop_start - pos;
@@ -285,8 +314,15 @@ more:
 
 					if (nch == 1) adx_decode(out + done, in + n, context->prev);
 					else adx_decode_stereo(out + done * 2, in + n, context->prev);
-					if (swallow >= 32) swallow -= 32;
-					else done += 32;
+					done += 32; //, dprintf(_T("output\n"));
+				}
+				if (swallow)
+				{
+					if ( swallow >= done )
+					{
+						swallow -= done;
+						done = 0;
+					}
 				}
 				if (loop_start != ~0)
 				{
@@ -301,24 +337,43 @@ more:
 			{
 				if (pos >= loop_end)
 				{
-					if (done) done -= pos - loop_end;
-					else swallow += pos - loop_end;
+					swallow += pos - loop_end;
 					pos = loop_start - loop_swallow;
-					swallow += loop_swallow;
 					*context = *loop_context;
-					m_file->seek_e(offset + (pos * nch * 18 / 32), p_abort);
-					if (!done) goto more;
+					m_file->seek_e(loop_start_offset, p_abort);
+					if (swallow >= done)
+					{
+						swallow -= done;
+						goto more;
+					}
+					if (swallow)
+					{
+						out += swallow * nch;
+						done -= swallow;
+					}
+					swallow = loop_swallow;
+				}
+				else
+				{
+					if (swallow)
+					{
+						out += swallow * nch;
+						done -= swallow;
+						swallow = 0;
+					}
+				}
+			}
+			else
+			{
+				if (swallow)
+				{
+					out += swallow * nch;
+					done -= swallow;
+					swallow = 0;
 				}
 			}
 
 			if (!done) return io_result_eof;
-
-			if (swallow)
-			{
-				out += swallow * nch;
-				done -= swallow;
-				swallow = 0;
-			}
 
 			if (pos > size) done -= pos - size;
 

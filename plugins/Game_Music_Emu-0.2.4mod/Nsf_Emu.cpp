@@ -30,7 +30,9 @@ const nes_addr_t exram_addr = bank_select_addr - (bank_select_addr % Nes_Cpu::pa
 const int master_clock_divisor = 12;
 
 const int vrc6_flag = 0x01;
+const int vrc7_flag = 0x02;
 const int namco_flag = 0x10;
+const int fme07_flag = 0x20;
 
 // ROM
 
@@ -101,6 +103,15 @@ void Nsf_Emu::write_sram( Nsf_Emu* emu, nes_addr_t addr, int data )
 
 #if !NSF_EMU_APU_ONLY
 
+// dear god
+void Nsf_Emu::write_ext( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	if ( emu->exp_flags & vrc6_flag ) emu->write_vrc6( emu, addr, data );
+	if ( emu->exp_flags & vrc7_flag ) emu->write_vrc7( emu, addr, data );
+	if ( emu->exp_flags & namco_flag ) emu->write_namco_addr( emu, addr, data );
+	if ( emu->exp_flags & fme07_flag ) emu->write_fme07( emu, addr, data );
+}
+
 // Namco
 int Nsf_Emu::read_namco( Nsf_Emu* emu, nes_addr_t addr )
 {
@@ -128,6 +139,27 @@ void Nsf_Emu::write_vrc6( Nsf_Emu* emu, nes_addr_t addr, int data )
 	unsigned osc = unsigned (addr - Nes_Vrc6::base_addr) / Nes_Vrc6::addr_step;
 	if ( osc < Nes_Vrc6::osc_count && reg < Nes_Vrc6::reg_count )
 		emu->vrc6.write_osc( emu->cpu.time(), osc, reg, data );
+}
+
+// VRC7
+void Nsf_Emu::write_vrc7( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	unsigned reg = ( unsigned ) ( addr - 0x9010 );
+	if ( reg <= 0x20 )
+	{
+		if ( reg >= 0x18 ) emu->vrc7.write_data( emu->cpu.time(), data );
+		else if ( ! reg ) emu->vrc7.write_reg( data );
+	}
+}
+
+// FME-07
+void Nsf_Emu::write_fme07( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	if ( ( unsigned ) ( addr - 0xC000 ) < 0x4000 )
+	{
+		if ( addr & 0x2000 ) emu->fme07.write_data( emu->cpu.time(), data );
+		else emu->fme07.write_latch( data );
+	}
 }
 
 #endif
@@ -180,7 +212,7 @@ void Nsf_Emu::unload()
 	rom = NULL;
 }
 
-const char** Nsf_Emu::voice_names() const
+/*const char** Nsf_Emu::voice_names() const
 {
 	static const char* base_names [] = {
 		"Square 1", "Square 2", "Triangle", "Noise", "DMC"
@@ -193,6 +225,10 @@ const char** Nsf_Emu::voice_names() const
 		"Square 1", "Square 2", "Triangle", "Noise", "DMC",
 		"VRC6 Square 1", "VRC6 Square 2", "VRC6 Saw"
 	};
+	static const char* vrc7_names [] = {
+		"Square 1", "Square 2", "Triangle", "Noise", "DMC",
+		"VRC7 1&4", "VRC7 2&5", "VRC7 3&6"
+	}
 	static const char* dual_names [] = {
 		"Square 1", "Square 2", "Triangle", "Noise", "DMC",
 		"VRC6.1,N106.5&7", "VRC6.2,N106.4&6", "VRC6.3,N106.1-3"
@@ -205,11 +241,11 @@ const char** Nsf_Emu::voice_names() const
 		return vrc6_names;
 	
 	return base_names;
-}
+}*/
 
 blargg_err_t Nsf_Emu::init_sound()
 {
-	if ( exp_flags & ~(namco_flag | vrc6_flag) )
+	if ( exp_flags & ~(namco_flag | vrc6_flag | vrc7_flag | fme07_flag) )
 		return "NSF requires unsupported expansion audio hardware";
 	
 	// map memory
@@ -241,21 +277,43 @@ blargg_err_t Nsf_Emu::init_sound()
 		adjusted_gain *= 0.75;
 		cpu.map_memory( Nes_Namco::data_reg_addr, Nes_Cpu::page_size,
 				read_namco, write_namco );
-		cpu.map_memory( Nes_Namco::addr_reg_addr, Nes_Cpu::page_size,
-				 read_code, write_namco_addr );
+		/*cpu.map_memory( Nes_Namco::addr_reg_addr, Nes_Cpu::page_size,
+				 read_code, write_namco_addr );*/
 	}
 	
 	// vrc6
 	if ( exp_flags & vrc6_flag )
 	{
 		adjusted_gain *= 0.75;
-		for ( int i = 0; i < Nes_Vrc6::osc_count; i++ )
+		/*for ( int i = 0; i < Nes_Vrc6::osc_count; i++ )
 			cpu.map_memory( Nes_Vrc6::base_addr + i * Nes_Vrc6::addr_step,
-					Nes_Cpu::page_size, read_code, write_vrc6 );
+					Nes_Cpu::page_size, read_code, write_vrc6 );*/
+	}
+
+	// vrc7
+	if ( exp_flags & vrc7_flag )
+	{
+		adjusted_gain *= 0.75;
+		/*cpu.map_memory( 0x9000, Nes_Cpu::page_size, read_code, write_vrc7 );*/
+	}
+
+	// fme-07
+	if ( exp_flags & fme07_flag )
+	{
+		adjusted_gain *= 0.75;
+		/*cpu.map_memory( 0x8000, Nes_Cpu::page_size, read_code, write_fme07 );
+		cpu.map_memory( 0xA000, Nes_Cpu::page_size, read_code, write_fme07 );*/
+	}
+
+	if ( exp_flags )
+	{
+		cpu.map_memory( 0x8000, 0x8000, read_code, write_ext );
 	}
 	
 	namco.volume( adjusted_gain );
 	vrc6.volume( adjusted_gain );
+	vrc7.volume( adjusted_gain );
+	fme07.volume( adjusted_gain );
 #endif
 	
 	apu.volume( adjusted_gain );
@@ -268,6 +326,8 @@ void Nsf_Emu::update_eq( blip_eq_t const& eq )
 #if !NSF_EMU_APU_ONLY
 	vrc6.treble_eq( eq );
 	namco.treble_eq( eq );
+	vrc7.treble_eq( eq );
+	fme07.treble_eq( eq );
 #endif
 	apu.treble_eq( eq );
 }
@@ -368,6 +428,9 @@ void Nsf_Emu::set_voice( int i, Blip_Buffer* buf, Blip_Buffer*, Blip_Buffer* )
 	if ( i >= Nes_Apu::osc_count )
 	{
 		vrc6.osc_output( i - Nes_Apu::osc_count, buf );
+		fme07.osc_output( i - Nes_Apu::osc_count, buf );
+		vrc7.osc_output( i - Nes_Apu::osc_count, buf );
+		vrc7.osc_output( i - Nes_Apu::osc_count + 3, buf );
 		if ( i < 7 ) {
 			i &= 1;
 			namco.osc_output( i + 4, buf );
@@ -406,6 +469,8 @@ blargg_err_t Nsf_Emu::start_track( int track )
 	if ( exp_flags ) {
 		namco.reset();
 		vrc6.reset();
+		vrc7.reset();
+		fme07.reset();
 	}
 #endif
 	
@@ -479,6 +544,10 @@ blip_time_t Nsf_Emu::run( int msec, bool* )
 		namco.end_frame( duration );
 	if ( exp_flags & vrc6_flag )
 		vrc6.end_frame( duration );
+	if ( exp_flags & vrc7_flag )
+		vrc7.end_frame( duration );
+	if ( exp_flags & fme07_flag )
+		fme07.end_frame( duration );
 #endif
 	
 	return duration;

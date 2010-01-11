@@ -14,6 +14,8 @@
 #if !NSF_EMU_APU_ONLY
 	#include "Nes_Vrc6.h"
 	#include "Nes_Namco.h"
+	#include "Nes_Vrc7.h"
+	#include "Nes_Fme07_Apu.h"
 #endif
 
 class Nsf_Emu : public Classic_Emu {
@@ -50,7 +52,7 @@ public:
 	
 	blargg_err_t start_track( int );
 	Nes_Apu* apu_() { return &apu; }
-	const char** voice_names() const;
+	//const char** voice_names() const;
 	
 
 // End of public interface
@@ -112,6 +114,17 @@ private:
 	// vrc6
 	Nes_Vrc6 vrc6;
 	static void write_vrc6( Nsf_Emu*, nes_addr_t, int );
+
+	// vrc7
+	Nes_Vrc7 vrc7;
+	static void write_vrc7( Nsf_Emu*, nes_addr_t, int );
+
+	// fme-07
+	Nes_Fme07_Apu fme07;
+	static void write_fme07( Nsf_Emu*, nes_addr_t, int );
+
+	// blah
+	static void write_ext( Nsf_Emu*, nes_addr_t, int );
 #endif
 	
 	// sram

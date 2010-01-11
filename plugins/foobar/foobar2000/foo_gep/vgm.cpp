@@ -26,25 +26,8 @@ static const char tag_notes[]         = "comment";
 
 class input_vgm : public input_gep
 {
-public:
-	static inline bool g_test_filename(const char * full_path, const char * extension)
-	{
-		return !stricmp(extension, "vgm");
-	}
+	Vgm_Emu::header_t m_header;
 
-	static GUID g_get_guid()
-	{
-		// {1C2E4065-5235-464c-BE84-B9AC6D1DBC92}
-		static const GUID guid = 
-		{ 0x1c2e4065, 0x5235, 0x464c, { 0xbe, 0x84, 0xb9, 0xac, 0x6d, 0x1d, 0xbc, 0x92 } };
-		return guid;
-	}
-
-	static const char * g_get_name() {return "GEP VGM decoder";}
-
-	inline static t_io_result g_get_extended_data(const service_ptr_t<file> & p_reader,const playable_location & p_location,const GUID & p_guid,stream_writer * p_out,abort_callback & p_abort) {return io_result_error_data;}
-
-private:
 	const wchar_t * get_string( const wchar_t * & ptr, unsigned & wchar_remain )
 	{
 		while ( * ptr && wchar_remain ) ++ptr, --wchar_remain;
@@ -155,121 +138,144 @@ private:
 		}
 	}
 
-	t_io_result open_internal(const service_ptr_t<file> & p_file,const playable_location & p_location,file_info & p_info,abort_callback & p_abort,bool p_decode,bool p_want_info,bool p_can_loop)
+public:
+	static bool g_is_our_path( const char * p_path, const char * p_extension )
 	{
-		foobar_File_Reader rdr(p_file, p_abort);
-		Vgm_Emu::header_t header;
+		return ! stricmp( p_extension, "vgm" );
+	}
+
+	t_io_result open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
+	{
+		if ( p_reason == input_open_info_write ) return io_result_error_data;
+
+		t_io_result status = input_gep::open( p_filehint, p_path, p_reason, p_abort );
+		if ( io_result_failed( status ) ) return status;
+
+
+		foobar_File_Reader rdr(m_file, p_abort);
 
 		try
 		{
-			if (p_want_info || p_decode)
+			ERRCHK( rdr.read( &m_header, sizeof(m_header) ) );
+
+			if ( 0 != memcmp( m_header.tag, "Vgm ", 4 ) )
 			{
-				ERRCHK( rdr.read( &header, sizeof(header) ) );
-
-				if ( 0 != memcmp( header.tag, "Vgm ", 4 ) )
-				{
-					console::info("Not a VGM file");
-					throw io_result_error_data;
-				}
-				if ( get_le32( header.vers ) > 0x0101 )
-				{
-					console::info("Unsupported VGM format");
-					throw io_result_error_data;
-				}
-
-				//if (!no_infinite) no_infinite = !!memcmp( header.tag, "GYMX" );
-				//if (!no_infinite) 
-				if (!no_infinite) no_infinite = !p_can_loop;
+				console::info("Not a VGM file");
+				throw io_result_error_data;
 			}
-
-			if (p_want_info)
+			if ( get_le32( m_header.vers ) > 0x0101 )
 			{
-				p_info.info_set("codec", "VGM");
-
-				p_info.info_set_int("samplerate", sample_rate);
-				p_info.info_set_int("channels", 2);
-				p_info.info_set_int("bitspersample", 16);
-
-				if (!p_decode)
-				{
-					Vgm_Emu * emu = new Vgm_Emu;
-					if ( !emu )
-					{
-						console::info("Out of memory");
-						throw io_result_error_out_of_memory;
-					}
-
-					ERRCHK( emu->init( sample_rate ) );
-					ERRCHK( emu->load( header, rdr ) );
-					ERRCHK( emu->start_track( 0 ) );
-
-					Vgm_Emu::track_data_t tdata = emu->track_data();
-
-					if ( tdata.loop_end )
-					{
-						p_info.set_length( tdata.loop_end );
-						p_info.info_set_float("vgm_loop_start", tdata.loop_start, 4);
-						p_info.info_set_float("vgm_loop_end", tdata.loop_end, 4);
-					}
-					else p_info.set_length( tdata.length );
-
-					if ( tdata.trailer && tdata.trailer_size )
-					{
-						process_gd3_tag( tdata.trailer, tdata.trailer_size, p_info );
-					}
-
-					delete emu;
-				}
-			}
-
-			if (p_decode)
-			{
-				Vgm_Emu * emu = new Vgm_Emu;
-				if ( !emu )
-				{
-					console::info("Out of memory");
-					throw io_result_error_out_of_memory;
-				}
-
-				this->emu = emu;
-
-				ERRCHK( emu->init( sample_rate ) );
-				ERRCHK( emu->load( header, rdr ) );
-				ERRCHK( emu->start_track( 0 ) );
-
-				Vgm_Emu::track_data_t tdata = emu->track_data();
-
-				if (p_want_info)
-				{
-					if ( tdata.loop_end )
-					{
-						p_info.set_length( tdata.loop_end );
-						p_info.info_set_float("vgm_loop_start", tdata.loop_start, 4);
-						p_info.info_set_float("vgm_loop_end", tdata.loop_end, 4);
-					}
-					else p_info.set_length( tdata.length );
-
-					if ( tdata.trailer && tdata.trailer_size )
-					{
-						process_gd3_tag( tdata.trailer, tdata.trailer_size, p_info );
-					}
-				}
-
-				if ( no_infinite )
-				{
-					newtag = false;
-					song_len = int( ( tdata.loop_end ? tdata.loop_end : tdata.length ) * double( sample_rate ) );
-					fade_len = 0;
-				}
-
-				voice_mask = 0;
-				subsong = 0;
+				console::info("Unsupported VGM format");
+				throw io_result_error_data;
 			}
 		}
-		catch(t_io_result code)
+		catch ( t_io_result code )
 		{
 			return code;
 		}
+
+		return io_result_success;
+	}
+
+	t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
+	{
+		p_info.info_set("codec", "VGM");
+
+		p_info.info_set_int("samplerate", sample_rate);
+		p_info.info_set_int("channels", 2);
+		p_info.info_set_int("bitspersample", 16);
+
+		Vgm_Emu * emu = ( Vgm_Emu * ) this->emu;
+		if ( ! emu )
+		{
+			emu = new Vgm_Emu;
+			if ( ! emu )
+			{
+				console::info("Out of memory");
+				throw io_result_error_out_of_memory;
+			}
+			this->emu = emu;
+
+			try
+			{
+				m_file->seek_e( 0, p_abort );
+				foobar_File_Reader rdr( m_file, p_abort );
+				rdr.skip( sizeof( m_header ) );
+
+				ERRCHK( emu->init( sample_rate ) );
+				ERRCHK( emu->load( m_header, rdr ) );
+				ERRCHK( emu->start_track( 0 ) );
+			}
+			catch ( t_io_result code )
+			{
+				return code;
+			}
+
+			m_file.release();
+		}
+
+		Vgm_Emu::track_data_t tdata = emu->track_data();
+
+		if ( tdata.loop_end )
+		{
+			p_info.set_length( tdata.loop_end );
+			p_info.info_set_float("vgm_loop_start", tdata.loop_start, 4);
+			p_info.info_set_float("vgm_loop_end", tdata.loop_end, 4);
+		}
+		else p_info.set_length( tdata.length );
+
+		if ( tdata.trailer && tdata.trailer_size )
+		{
+			process_gd3_tag( tdata.trailer, tdata.trailer_size, p_info );
+		}
+
+		return io_result_success;
+	}
+
+	t_io_result decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
+	{
+		Vgm_Emu * emu = ( Vgm_Emu * ) this->emu;
+		if ( ! emu )
+		{
+			emu = new Vgm_Emu;
+			if ( ! emu )
+			{
+				console::info("Out of memory");
+				throw io_result_error_out_of_memory;
+			}
+			this->emu = emu;
+
+			try
+			{
+				m_file->seek_e( 0, p_abort );
+				foobar_File_Reader rdr( m_file, p_abort );
+				rdr.skip( sizeof( m_header ) );
+
+				ERRCHK( emu->init( sample_rate ) );
+				ERRCHK( emu->load( m_header, rdr ) );
+			}
+			catch ( t_io_result code )
+			{
+				return code;
+			}
+
+			m_file.release();
+		}
+
+		ERRCHK( emu->start_track( 0 ) );
+
+		Vgm_Emu::track_data_t tdata = emu->track_data();
+
+		played = 0;
+		no_infinite = !cfg_indefinite || ( p_flags & input_flag_no_looping );
+
+		if ( no_infinite )
+		{
+			song_len = int( ( tdata.loop_end ? tdata.loop_end : tdata.length ) * double( sample_rate ) );
+			fade_len = 0;
+		}
+
+		subsong = 0;
 
 		return io_result_success;
 	}
