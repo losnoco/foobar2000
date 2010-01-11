@@ -54,7 +54,7 @@ public:
 
 	Byte getByte()
 	{
-		if ( err & Eof ) return 0;
+		if ( err & Eof ) return -1;
 
 		if ( ! m_buffer_filled )
 		{
@@ -83,7 +83,7 @@ binistream * CProvider_foobar2000::open(std::string filename) const
 		if ( !strcmp( filename.c_str(), m_file_path.c_str() ) )
 		{
 			p_file = m_file_hint;
-			p_file->seek( 0, m_abort );
+			p_file->reopen( m_abort );
 		}
 	}
 
