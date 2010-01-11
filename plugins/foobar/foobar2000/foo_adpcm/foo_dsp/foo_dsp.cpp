@@ -61,7 +61,7 @@ public:
 
 	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) throw exception_io_data();
+		if ( p_reason == input_open_info_write ) throw exception_io_unsupported_format();
 
 		if ( p_filehint.is_empty() )
 		{
@@ -71,7 +71,7 @@ public:
 		dsp.ch[0].infile = p_filehint;
 
 		const char * ptr = p_path + pfc::scan_filename( p_path );
-		string_extension ext( ptr );
+		pfc::string_extension ext( ptr );
 		const char * dot = strrchr( ptr, '.' );
 		if ( dot ) ptr = dot - 1;
 		else if ( *ptr ) ptr += strlen( ptr ) - 1;
@@ -80,7 +80,7 @@ public:
 		bool spt = *ptr && ptr[1] == '.' && ( ptr[2] == 'S' || ptr[2] == 's' ) && ( ptr[3] == 'P' || ptr[3] == 'p' ) && ( ptr[4] == 'D' || ptr[4] == 'd' || ptr[4] == 'T' || ptr[4] == 't' );
 		if ( mp1 || ww || spt )
 		{
-			string8 temp( p_path );
+			pfc::string8 temp( p_path );
 			if ( mp1 ) temp.set_char( ptr - p_path, *ptr ^ ( 'L' ^ 'R' ) );
 			else if ( ww ) temp.set_char( ptr - p_path, *ptr ^ ( '0' ^ '1' ) );
 			else temp.set_char( ptr - p_path + 4, ptr[4] ^ ( 'D' ^ 'T' ) );
@@ -270,7 +270,7 @@ public:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-		swallow = int( p_seconds * double( dsp.ch[0].header.sample_rate ) + .5 );
+		swallow = int( audio_math::time_to_samples( p_seconds, dsp.ch[0].header.sample_rate ) );
 		if ( swallow >= pos )
 		{
 			swallow -= pos;
@@ -299,11 +299,14 @@ public:
 
 	void decode_on_idle( abort_callback & p_abort )
 	{
+		dsp.ch[0].infile->on_idle( p_abort );
+		if ( dsp.ch[0].infile != dsp.ch[1].infile )
+			dsp.ch[1].infile->on_idle( p_abort );
 	}
 
 	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		throw exception_io_data();
+		throw exception_io_unsupported_format();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

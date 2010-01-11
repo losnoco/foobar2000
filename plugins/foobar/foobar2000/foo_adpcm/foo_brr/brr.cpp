@@ -647,7 +647,7 @@ more:
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		eof = 0;
-		swallow = int( p_seconds * rate + .5 );
+		swallow = int( audio_math::time_to_samples( p_seconds, rate ) );
 		if ( swallow > pos )
 		{
 			swallow -= pos;
@@ -675,6 +675,7 @@ more:
 
 	void decode_on_idle( abort_callback & p_abort )
 	{
+		m_file->on_idle( p_abort );
 	}
 
 	void retag( const file_info & p_info, abort_callback & p_abort )

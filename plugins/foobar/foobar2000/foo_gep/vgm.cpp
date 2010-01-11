@@ -44,7 +44,7 @@ class input_vgm : public input_gep
 			const wchar_t * ptr_cr = wcschr( value, '\r' );
 			if ( ptr_lf || ptr_cr )
 			{
-				string8 temp;
+				pfc::string8 temp;
 				do
 				{
 					if ( ptr_cr && ptr_lf && ptr_cr < ptr_lf ) ptr_lf = ptr_cr;

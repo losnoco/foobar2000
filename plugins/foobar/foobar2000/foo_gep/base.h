@@ -39,7 +39,7 @@ protected:
 	pfc::array_t<blip_sample_t> sample_buffer;
 
 	service_ptr_t<file>         m_file;
-	string_simple               m_path;
+	pfc::string_simple          m_path;
 	t_filestats                 m_stats;
 
 public:

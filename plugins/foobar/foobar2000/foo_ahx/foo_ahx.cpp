@@ -2,6 +2,8 @@
 
 #include <foobar2000.h>
 
+#include <excpt.h>
+
 #include "ahx.h"
 
 /*
@@ -195,19 +197,21 @@ public:
 	}
 };
 
-class input_ahx : public input
+class input_ahx
 {
 	AHXPlayer * m_player;
 	AHXOutput * m_output;
 
-	bool using_waves, can_loop;
+	bool using_waves, g_can_loop, can_loop;
 
 	int srate, nch, oversample;
 
 	int pos, swallow;
 
+	t_filestats m_stats;
+
 public:
-	input_ahx() : m_player(0), m_output(0), using_waves(false), can_loop(cfg_loop),
+	input_ahx() : m_player(0), m_output(0), using_waves(false), g_can_loop(cfg_loop),
 		srate(cfg_srate), nch(cfg_nch), oversample(cfg_oversample) {}
 
 	~input_ahx()
@@ -230,52 +234,79 @@ public:
 		}
 	}
 
-	inline static bool g_test_filename(const char * full_path, const char * extension)
+	void open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
 	{
-		return !stricmp(extension, "ahx");
-	}
+		if ( p_reason == input_open_info_write ) throw exception_io_data();
 
-	t_io_result get_info(const service_ptr_t<file> & p_reader,const playable_location & p_location,file_info & p_info,abort_callback & p_abort)
-	{
-		return open_internal(p_reader,p_location,p_info,p_abort,false,true,false);
-	}
-
-	t_io_result open(const service_ptr_t<file> & p_reader,const playable_location & p_location,file_info & p_info,abort_callback & p_abort,unsigned p_flags)
-	{
-		return open_internal(p_reader,p_location,p_info,p_abort,true,!!(p_flags&OPEN_FLAG_GET_INFO),!(p_flags&OPEN_FLAG_NO_LOOPING));
-	}
-
-private:
-	t_io_result open_internal(const service_ptr_t<file> & p_file,const playable_location & p_location,file_info & p_info,abort_callback & p_abort,bool p_decode,bool p_want_info,bool p_can_loop)
-	{
-		if (p_want_info || p_decode)
+		if ( p_filehint.is_empty() )
 		{
-			m_player = new AHXPlayer;
-			if (!m_player) return io_result_error_generic;
+			filesystem::g_open( p_filehint, p_path, filesystem::open_mode_read, p_abort );
+		}
 
-			mem_block_t<unsigned char> song_buffer;
+		m_stats = p_filehint->get_stats( p_abort );
 
-			/*if ( strstr( p_location.get_path(), "draft-hawk.ahx" ) )
+		m_player = new AHXPlayer;
+
+		pfc::array_t<unsigned char> song_buffer;
+
+		t_filesize size = p_filehint->get_size_ex( p_abort );
+
+		if ( size > 65536 ) throw exception_io_data();
+
+		song_buffer.set_size( t_size( size ) );
+
+		p_filehint->read_object( song_buffer.get_ptr(), t_size( size ), p_abort );
+
+		if ( ! m_player->LoadSong( song_buffer.get_ptr(), (int)size ) ) throw exception_io_data();
+	}
+
+	void get_info( file_info & p_info, abort_callback & p_abort )
+	{
+		AHXSong & Song = m_player->Song;
+
+		if ( Song.Name[0] ) p_info.meta_set( "title", pfc::stringcvt::string_utf8_from_ansi( Song.Name ) );
+
+		pfc::string8_fastalloc temp;
+
+		for ( int i = 1; i < Song.InstrumentNr + 1; i++ )
+		{
+			const char * s = Song.Instruments[i].Name;
+			if ( * s )
 			{
-				console::info( "fucked file (draft-hawk.ahx)" );
-				return io_result_error_data;
-			}*/
-
-			try
-			{
-				t_filesize size = p_file->get_size_e(p_abort);
-
-				if (size < 0 || size > 65536) return io_result_error_data;
-
-				p_file->read_object_e(song_buffer.set_size((unsigned int)size), (unsigned int)size, p_abort);
-
-				if (! m_player->LoadSong(song_buffer.get_ptr(), (int)size ) ) return io_result_error_data;
+				temp = "inst";
+				temp += pfc::format_int( i, 2 );
+				p_info.meta_set( temp, pfc::stringcvt::string_utf8_from_ansi( s ) );
 			}
-			catch(t_io_result code)
-			{
-				return code;
-			}
+		}
 
+		p_info.info_set_int( "samplerate", srate );
+		p_info.info_set_int( "channels", 2 );
+		p_info.info_set( "codec", "AHX" );
+
+		p_info.info_set_int( "ahx_revision", Song.Revision );
+		p_info.info_set_int( "ahx_speed_multiplier", Song.SpeedMultiplier );
+		if ( Song.SubsongNr ) p_info.info_set_int( "ahx_subsongs", Song.SubsongNr );
+		p_info.info_set_int( "ahx_positions", Song.PositionNr );
+		p_info.info_set_int( "ahx_tracks", Song.TrackNr + 1 );
+		p_info.info_set_int( "ahx_instruments", Song.InstrumentNr );
+
+		/*m_player->Init( g_waves );
+		m_player->InitSubsong( 0 );
+
+		AHXFooOut output;
+		output.Play(m_player);
+		p_info.set_length(output.GetLength());*/
+	}
+
+	t_filestats get_file_stats( abort_callback & p_abort )
+	{
+		return m_stats;
+	}
+
+	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
+	{
+		if ( ! using_waves )
+		{
 			using_waves = true;
 			{
 				insync( g_waves_sync );
@@ -286,85 +317,47 @@ private:
 			}
 		}
 
-		if (p_want_info)
+		pos = 0;
+		swallow = 0;
+
+		m_player->Init( g_waves );
+		m_player->InitSubsong( 0 );
+
+		can_loop = g_can_loop && ! ( p_flags & input_flag_no_looping );
+
+		if ( m_output )
 		{
-			AHXSong & Song = m_player->Song;
-
-			if ( Song.Name[0] ) p_info.meta_set_ansi( "title", Song.Name );
-
-			for ( int i = 1; i < Song.InstrumentNr + 1; i++ )
-			{
-				string8_fastalloc temp;
-				const char * s = Song.Instruments[i].Name;
-				if ( * s )
-				{
-					temp = "inst";
-					if (i < 10) temp.add_byte('0');
-					temp.add_int(i);
-					p_info.meta_set_ansi( temp, s );
-				}
-			}
-
-			p_info.info_set_int( "samplerate", srate );
-			p_info.info_set_int( "channels", 2 );
-			p_info.info_set( "codec", "AHX" );
-
-			p_info.info_set_int( "ahx_revision", Song.Revision );
-			p_info.info_set_int( "ahx_speed_multiplier", Song.SpeedMultiplier );
-			if ( Song.SubsongNr ) p_info.info_set_int( "ahx_subsongs", Song.SubsongNr );
-			p_info.info_set_int( "ahx_positions", Song.PositionNr );
-			p_info.info_set_int( "ahx_tracks", Song.TrackNr + 1 );
-			p_info.info_set_int( "ahx_instruments", Song.InstrumentNr );
-
-			m_player->Init( g_waves );
-			m_player->InitSubsong( 0 );
-
-#ifdef _DEBUG
-			g_filename = p_location.get_path();
-#endif
-
-			AHXFooOut output;
-			output.Play(m_player);
-			p_info.set_length(output.GetLength());
+			m_output->Free();
+			delete m_output;
 		}
 
-		if (p_decode)
-		{
-			pos = 0;
-			swallow = 0;
-
-			m_player->Init( g_waves );
-			m_player->InitSubsong( 0 );
-
-			if (can_loop) can_loop = p_can_loop;
-
-			m_output = new AHXFooOut( nch, can_loop );
-			m_output->Init( srate, 16, 1, 1.0f, 50 );
-			m_output->SetOption( AHXOI_OVERSAMPLING, oversample );
-			m_output->Play( m_player );
-		}
-
-		return io_result_success;
+		m_output = new AHXFooOut( nch, can_loop );
+		m_output->Init( srate, 16, 1, 1.0f, 50 );
+		m_output->SetOption( AHXOI_OVERSAMPLING, oversample );
+		m_output->Play( m_player );
 	}
 
-public:
-	virtual t_io_result set_info( const service_ptr_t<file> & p_reader,const playable_location & p_location,file_info & p_info,abort_callback & p_abort )
+	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
-		return io_result_error_data;
-	}
+		p_chunk.set_data_size( srate / 50 * nch );
 
-	virtual t_io_result run( audio_chunk * chunk,abort_callback & p_abort )
-	{
 		int done;
-		audio_sample * out = chunk->check_data_size( srate / 50 * nch );
+		audio_sample * out = p_chunk.get_data();
 		
 		do
 		{
+			p_abort.check();
+
 			void * vout = out;
 			if ( swallow >= (srate / 50) ) vout = 0;
-			if ( ! m_output->CopyBuffer( vout, & done ) ) return io_result_error_generic;
 
-			if ( ! done ) return io_result_eof;
+			int rval;
+
+			rval = m_output->CopyBuffer( vout, & done );
+
+			if ( ! rval ) throw exception_io_data();
+
+			if ( ! done ) return false;
 
 			pos += done;
 
@@ -379,9 +372,9 @@ public:
 				{
 					if ( done - swallow )
 					{
-						audio_sample * foo = chunk->get_data();
+						audio_sample * foo = p_chunk.get_data();
 						audio_sample * bar = foo + swallow * nch;
-						memcpy( foo, bar, done * nch );
+						memmove( foo, bar, done * nch );
 					}
 
 					done -= swallow;
@@ -391,20 +384,20 @@ public:
 		}
 		while ( ! done );
 
-		chunk->set_srate( srate );
-		chunk->set_channels( nch );
-		chunk->set_sample_count( done );
+		p_chunk.set_srate( srate );
+		p_chunk.set_channels( nch );
+		p_chunk.set_sample_count( done );
 
-		return io_result_success;
+		return true;
 	}
 
-	virtual t_io_result seek( double seconds,abort_callback & p_abort )
+	void decode_seek( double p_seconds,abort_callback & p_abort )
 	{
-		swallow = int( seconds * double(srate) + .5 );
-		if (swallow > pos)
+		swallow = audio_math::time_to_samples( p_seconds, srate );
+		if ( swallow > pos )
 		{
 			swallow -= pos;
-			return io_result_success;
+			return;
 		}
 		pos = 0;
 		delete m_output;
@@ -415,28 +408,45 @@ public:
 		m_output->Init( srate, 16, 1, 1.0f, 50 );
 		m_output->SetOption( AHXOI_OVERSAMPLING, oversample );
 		m_output->Play( m_player );
-
-		return io_result_success;
 	}
 
-	inline static bool g_is_our_content_type(const char*,const char*) {return false;}
-	inline static bool g_needs_reader() {return true;}
-
-	static GUID g_get_guid()
+	bool decode_can_seek()
 	{
-		// {BC52C3D0-9DAD-4cfd-AE34-14AD5830E5F0}
-		static const GUID guid = 
-		{ 0xbc52c3d0, 0x9dad, 0x4cfd, { 0xae, 0x34, 0x14, 0xad, 0x58, 0x30, 0xe5, 0xf0 } };
-		return guid;
+		return true;
 	}
 
-	static const char * g_get_name() {return "Abyss AHX decoder";}
+	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta )
+	{
+		return false;
+	}
 
-	inline static t_io_result g_get_extended_data(const service_ptr_t<file> & p_reader,const playable_location & p_location,const GUID & p_guid,stream_writer * p_out,abort_callback & p_abort) {return io_result_error_data;}
+	bool decode_get_dynamic_info_track( file_info & p_out, double & p_timestamp_delta )
+	{
+		return false;
+	}
+
+	void decode_on_idle( abort_callback & p_abort )
+	{
+	}
+
+	void retag( const file_info & p_info, abort_callback & p_abort )
+	{
+		throw exception_io_data();
+	}
+
+	static bool g_is_our_content_type( const char * p_content_type )
+	{
+		return false;
+	}
+
+	static bool g_is_our_path( const char * p_full_path, const char * p_extension )
+	{
+		return ! stricmp( p_extension, "ahx" );
+	}
 };
 
 DECLARE_FILE_TYPE("Abyss AHX files", "*.AHX");
 
-static input_factory_t<input_ahx> g_input_ahx_factory;
+static input_singletrack_factory_t<input_ahx> g_input_ahx_factory;
 
 DECLARE_COMPONENT_VERSION("Abyss AHX decoder", MY_VERSION, "Based on the AHX Replayer SDK v0.9, with miscellaneous fixes.\n\nAbyss homepage: http://abyss.moving-people.net\nAHX homepage: http://abyss.moving-people.net/ahxpc.html");

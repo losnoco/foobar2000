@@ -419,19 +419,19 @@ class get_file_info
 {
 private:
 	HCDROM hCD;
-	ptr_list_t<char> elements;
+	pfc::ptr_list_t<char> elements;
 	unsigned start, len, depth, joliet;
 	abort_callback & m_abort;
 
 public:
 	get_file_info(HCDROM p_hCD, const char * p_path, unsigned & p_start, unsigned & p_len, abort_callback & p_abort) : m_abort(p_abort)
 	{
-		string8 path(strchr(p_path + 7, '\\') + 1);
+		pfc::string8 path(strchr(p_path + 7, '\\') + 1);
 
 		int s = 0, e;
 		while ((e = path.find_first('\\', s)) >= 0)
 		{
-			elements.add_item(strdup_n(path.get_ptr() + s, e - s));
+			elements.add_item(pfc::strdup_n(path.get_ptr() + s, e - s));
 			s = e + 1;
 		}
 		if (strlen(path.get_ptr() + s))
@@ -480,7 +480,7 @@ public:
 
 		if ( !(idr->flags[0] & 2) && depth == elements.get_count() - 1)
 		{
-			string8 name;
+			pfc::string8 name;
 			if (joliet)
 			{
 				name = pfc::stringcvt::string_utf8_from_wide((WCHAR*) &idr->name, isonum_711(idr->name_len));
@@ -510,7 +510,7 @@ public:
 			}
 			else if (depth < elements.get_count() - 1)
 			{
-				string8 name;
+				pfc::string8 name;
 
 				if (joliet)
 				{
@@ -553,7 +553,7 @@ static int readf_gfi(char *buf, int start, int len,void *udata)
 
 static HCDROM cdrom_from_path(const char * path)
 {
-	string8 root, label;
+	pfc::string8 root, label;
 
 	if (pfc::strcmp_partial(path, "file://")) return 0;
 
@@ -578,7 +578,7 @@ static HCDROM cdrom_from_path(const char * path)
 			iso_vol_desc * desc = ReadISO9660(readf, 0, cd);
 			iso_vol_desc * next = desc;
 			struct iso_primary_descriptor * ivd;
-			string8 check_label;
+			pfc::string8 check_label;
 			while (next)
 			{
 				switch(isonum_711(desc->data.type))
@@ -1153,7 +1153,7 @@ struct xa_subsong_scanner_loop_info
 
 class xa_subsong_scanner /*: public threaded_process_callback*/
 {
-	ptr_list_t< xa_subsong_scanner_info >        m_info;
+	pfc::ptr_list_t< xa_subsong_scanner_info >   m_info;
 	pfc::array_t< xa_subsong_scanner_loop_info > m_loop_data;
 
 	pfc::array_t< xa_subsong_scanner_info * >    info;
@@ -1325,7 +1325,7 @@ public:
 		//catch(exception_io const & e) {return e.get_code();}
 	}
 
-	void get_info( ptr_list_t< xa_subsong_scanner_info > & out )
+	void get_info( pfc::ptr_list_t< xa_subsong_scanner_info > & out )
 	{
 		for ( unsigned i = 0, j = m_info.get_count(); i < j; ++i )
 		{
@@ -1361,9 +1361,9 @@ class xa_subsong_info_cache
 {
 	struct t_info
 	{
-		string_simple                         path;
-		t_filetimestamp                       timestamp;
-		ptr_list_t< xa_subsong_scanner_info > info;
+		pfc::string_simple                         path;
+		t_filetimestamp                            timestamp;
+		pfc::ptr_list_t< xa_subsong_scanner_info > info;
 
 		~t_info()
 		{
@@ -1371,7 +1371,7 @@ class xa_subsong_info_cache
 		}
 	};
 
-	ptr_list_t< t_info > m_cache;
+	pfc::ptr_list_t< t_info > m_cache;
 
 	critical_section sync;
 
@@ -1381,7 +1381,7 @@ public:
 		m_cache.delete_all();
 	}
 
-	void run( service_ptr_t<file> & p_file, const char * p_path, t_filetimestamp p_timestamp, ptr_list_t< xa_subsong_scanner_info > & p_out, abort_callback & p_abort )
+	void run( service_ptr_t<file> & p_file, const char * p_path, t_filetimestamp p_timestamp, pfc::ptr_list_t< xa_subsong_scanner_info > & p_out, abort_callback & p_abort )
 	{
 		insync( sync );
 
@@ -1462,7 +1462,7 @@ class input_xa
 	double pos, swallow;
 	unsigned start;
 
-	ptr_list_t< xa_subsong_scanner_info > m_info;
+	pfc::ptr_list_t< xa_subsong_scanner_info > m_info;
 
 	void setSector( long sector, abort_callback & p_abort )
 	{
@@ -1493,14 +1493,14 @@ public:
 
 	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		string_simple fn( p_path );
+		pfc::string_simple fn( p_path );
 
 		if ( p_filehint.is_empty() )
 		{
 			if ( ! strnicmp(fn, "xa://", 5) )
 			{
 				// lovely, let's do this
-				string_simple temp("file://");
+				pfc::string_simple temp("file://");
 				temp += fn.get_ptr() + 5;
 				fn = temp;
 			}
@@ -1520,7 +1520,7 @@ public:
 
 		if (header == ~0) // read failed, try alternate reader
 		{
-			if ( p_reason == input_open_info_write ) throw exception_io_data();
+			if ( p_reason == input_open_info_write ) throw exception_io_unsupported_format();
 
 			m_raw = new service_impl_t<reader_raw>;
 			m_raw->set_timestamp( m_file->get_timestamp( p_abort ) );
@@ -1779,12 +1779,13 @@ retry2:
 
 	void decode_on_idle( abort_callback & p_abort )
 	{
+		m_file->on_idle( p_abort );
 	}
 
 	void retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
 	{
 		if ( p_subsong > 0 || m_info.get_count() > 1 )
-			throw exception_io_data();
+			throw exception_io_unsupported_format();
 
 		tag_processor::write_apev2( m_file, p_info, p_abort );
 	}

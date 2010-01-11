@@ -160,7 +160,7 @@ public:
 
 	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) throw exception_io_data();
+		if ( p_reason == input_open_info_write ) throw exception_io_unsupported_format();
 
 		if ( p_filehint.is_empty() )
 		{
@@ -286,7 +286,7 @@ public:
 		pfc::static_assert_t< sizeof( audio_sample ) == sizeof( t_int32 ) >();
 
 		data_buffer.grow_size( 18 * 32 * nch );
-		p_chunk.check_data_size( 32 * 32 * nch );
+		p_chunk.set_data_size( 32 * 32 * nch );
 
 		unsigned char * in = data_buffer.get_ptr();
 		t_int32 * out = ( t_int32 * ) p_chunk.get_data();
@@ -407,7 +407,7 @@ more:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-		swallow = int( p_seconds * double( srate ) + .5 );
+		swallow = int( audio_math::time_to_samples( p_seconds, srate ) ) * nch;
 		if ( swallow > pos )
 		{
 			swallow -= pos;
@@ -435,11 +435,12 @@ more:
 
 	void decode_on_idle( abort_callback & p_abort )
 	{
+		m_file->on_idle( p_abort );
 	}
 
 	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		throw exception_io_data();
+		throw exception_io_unsupported_format();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

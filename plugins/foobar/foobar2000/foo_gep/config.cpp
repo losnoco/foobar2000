@@ -80,7 +80,7 @@ unsigned long parse_time_crap(const char *input)
 			}
 		}
 	}
-	string8 foo = input;
+	pfc::string8 foo = input;
 	char *bar = (char *)foo.get_ptr();
 	char *strs = bar + foo.length() - 1;
 	while (strs > bar && (*strs >= '0' && *strs <= '9'))

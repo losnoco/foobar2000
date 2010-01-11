@@ -38,7 +38,7 @@ static const GUID guid_cfg_placement =
 
 static cfg_window_placement cfg_placement(guid_cfg_placement);
 
-class GetTrackLabel : public string8
+class GetTrackLabel : public pfc::string8
 {
 public:
 	GetTrackLabel(CNSFFile* file,BYTE track)
@@ -54,7 +54,7 @@ public:
 		}
 		while(0);
 		set_string("Track ");
-		add_string(format_int(track + 1));
+		add_string(pfc::format_int(track + 1));
 	}
 };
 

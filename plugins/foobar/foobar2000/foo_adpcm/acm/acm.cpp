@@ -47,7 +47,7 @@ public:
 
 	void open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) throw exception_io_data();
+		if (p_reason == input_open_info_write) throw exception_io_unsupported_format();
 
 		if ( p_filehint.is_empty() )
 		{
@@ -111,7 +111,7 @@ public:
 
 		//int * out = data_buffer.get_ptr();
 
-		p_chunk.check_data_size( todo );
+		p_chunk.set_data_size( todo );
 
 		int * out = ( int * ) p_chunk.get_data();
 
@@ -155,7 +155,7 @@ public:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-		swallow = int( p_seconds * double( srate ) + .5 ) * nch;
+		swallow = int( audio_math::time_to_samples( p_seconds, srate ) ) * nch;
 		if ( swallow >= pos )
 		{
 			swallow -= pos;
@@ -183,11 +183,12 @@ public:
 
 	void decode_on_idle( abort_callback & p_abort )
 	{
+		m_file->on_idle( p_abort );
 	}
 
 	void retag( const file_info & p_info, abort_callback & p_abort )
 	{
-		throw exception_io_data();
+		throw exception_io_unsupported_format();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

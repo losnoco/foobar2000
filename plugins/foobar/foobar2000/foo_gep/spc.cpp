@@ -93,7 +93,7 @@ static void SetDate(LPSTR lpszDate,int year,int month,int day)
 			else if(!(year%400))day++;
 		}
 */
-		string8 temp;
+		pfc::string8 temp;
 		temp << month;
 		temp.add_char('/');
 		temp << day;
@@ -357,11 +357,12 @@ public:
 				HEADER_STRING(m_info, "album", m_header.game);
 				HEADER_STRING(m_info, "dumper", m_header.dumper);
 				HEADER_STRING(m_info, "comment", m_header.comment);
-				HEADER_STRING(m_info, "date", (const char *)&m_header.date);
+				//HEADER_STRING(m_info, "date", m_header.date);
+				if ((m_header.date)[0]) m_info.meta_set("date", pfc::stringcvt::string_utf8_from_ansi(((const char *)&m_header.date), sizeof((m_header.date))));
 				HEADER_STRING(m_info, "artist", m_header.author);
 
-				tag_song_ms = atoi(string_simple(m_header.len_secs, sizeof(m_header.len_secs))) * 1000;
-				tag_fade_ms = atoi(string_simple((const char *)&m_header.fade_msec, sizeof(m_header.fade_msec)));
+				tag_song_ms = atoi(pfc::string_simple(m_header.len_secs, sizeof(m_header.len_secs))) * 1000;
+				tag_fade_ms = atoi(pfc::string_simple((const char *)&m_header.fade_msec, sizeof(m_header.fade_msec)));
 				voice_mask = m_header.mute_mask;
 
 				try
@@ -383,10 +384,10 @@ public:
 					HEADER_STRING(m_info, "OST", tag.szOST);
 					HEADER_STRING(m_info, "publisher", tag.szPublisher);
 
-					if (tag.wTrack > 0)
+					if ( tag.wTrack > 255 )
 					{
-						string8 temp;
-						temp = format_int( tag.wTrack >> 8 );
+						pfc::string8 temp;
+						temp = pfc::format_int( tag.wTrack >> 8 );
 						if ( tag.wTrack & 255 )
 						{
 							char foo[ 2 ] = { tag.wTrack & 255, 0 };
@@ -396,7 +397,7 @@ public:
 					}
 
 					if ( tag.bDisc > 0 )
-						m_info.meta_set("disc", format_int( tag.bDisc ) );
+						m_info.meta_set("disc", pfc::format_int( tag.bDisc ) );
 
 					if (tag.uSong_ms) tag_song_ms = tag.uSong_ms;
 					if (tag.uFade_ms) tag_fade_ms = tag.uFade_ms;
@@ -606,21 +607,21 @@ public:
 		return guid;
 	}
 
-	virtual bool context_get_display( unsigned n, const list_base_const_t< metadb_handle_ptr > & data, pfc::string_base & out, unsigned & displayflags, const GUID & )
+	virtual bool context_get_display( unsigned n, const pfc::list_base_const_t< metadb_handle_ptr > & data, pfc::string_base & out, unsigned & displayflags, const GUID & )
 	{
 		unsigned i, j;
 		i = data.get_count();
 		for (j = 0; j < i; j++)
 		{
 			const playable_location & foo = data.get_item(j)->get_location();
-			if ( stricmp( string_extension( foo.get_path() ), "spc" ) ) return false;
+			if ( stricmp( pfc::string_extension( foo.get_path() ), "spc" ) ) return false;
 		}
 		if (i == 1) out = "Edit length";
 		else out = "Set length";
 		return true;
 	}
 
-	virtual void context_command( unsigned n, const list_base_const_t< metadb_handle_ptr > & data, const GUID& )
+	virtual void context_command( unsigned n, const pfc::list_base_const_t< metadb_handle_ptr > & data, const GUID& )
 	{
 		unsigned tag_song_ms = 0, tag_fade_ms = 0;
 		unsigned i = data.get_count();

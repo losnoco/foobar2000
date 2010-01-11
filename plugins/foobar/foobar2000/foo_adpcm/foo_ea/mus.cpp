@@ -293,7 +293,7 @@ class input_ea_mus
 public:
 	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) throw exception_io_data();
+		if ( p_reason == input_open_info_write ) throw exception_io_unsupported_format();
 
 		if ( p_filehint.is_empty() )
 		{
@@ -728,7 +728,7 @@ public:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-		seek( unsigned ( p_seconds * double( sample_rate ) ) );
+		seek( unsigned ( audio_math::time_to_samples( p_seconds, sample_rate ) ) );
 	}
 
 	bool decode_can_seek()
@@ -748,11 +748,12 @@ public:
 
 	void decode_on_idle( abort_callback & p_abort )
 	{
+		m_file->on_idle( p_abort );
 	}
 
 	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		throw exception_io_data();
+		throw exception_io_unsupported_format();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )
@@ -790,7 +791,7 @@ class input_ea_map
 public:
 	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) throw exception_io_data();
+		if ( p_reason == input_open_info_write ) throw exception_io_unsupported_format();
 
 		if ( p_filehint.is_empty() )
 		{
@@ -819,11 +820,11 @@ public:
 
 		try
 		{
-			filesystem::g_open( m_file, string_replace_extension( p_path, "asf" ), filesystem::open_mode_read, p_abort );
+			filesystem::g_open( m_file, pfc::string_replace_extension( p_path, "asf" ), filesystem::open_mode_read, p_abort );
 		}
 		catch ( const exception_io_not_found & )
 		{
-			filesystem::g_open( m_file, string_replace_extension( p_path, "mus" ), filesystem::open_mode_read, p_abort );
+			filesystem::g_open( m_file, pfc::string_replace_extension( p_path, "mus" ), filesystem::open_mode_read, p_abort );
 		}
 
 		ptr += 12;
@@ -953,11 +954,12 @@ public:
 
 	void decode_on_idle( abort_callback & p_abort )
 	{
+		sections[ current_section ].m_decoder.decode_on_idle( p_abort );
 	}
 
 	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		throw exception_io_data();
+		throw exception_io_unsupported_format();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

@@ -48,7 +48,7 @@ static cfg_window_placement cfg_placement(guid_cfg_placement);
 
 static void rename_file(const char * src, const char * ext, pfc::string_base & out, abort_callback & p_abort)
 {
-	string8 dst(src);
+	pfc::string8 dst(src);
 	const char * start = dst.get_ptr() + dst.scan_filename();
 	const char * end = start + strlen(start);
 	const char * ptr = end - 1;
@@ -60,7 +60,7 @@ static void rename_file(const char * src, const char * ext, pfc::string_base & o
 
 	if (ptr >= start && *ptr == '.')
 	{
-		string8 temp(ptr + 4);
+		pfc::string8 temp(ptr + 4);
 		dst.truncate(ptr - dst.get_ptr() + 1);
 		dst += ext;
 		dst += temp;
@@ -72,7 +72,7 @@ static void rename_file(const char * src, const char * ext, pfc::string_base & o
 		{
 			filesystem::g_move(src, dst, p_abort);
 
-			list_t<const char *> from, to;
+			pfc::list_t<const char *> from, to;
 			from.add_item(src);
 			to.add_item(dst);
 			file_operation_callback::g_on_files_moved(from, to);
@@ -81,7 +81,7 @@ static void rename_file(const char * src, const char * ext, pfc::string_base & o
 		}
 		catch ( const exception_io & )
 		{
-			string8 msg;
+			pfc::string8 msg;
 			msg = "Error renaming file: \n";
 			msg += file_path_display(src);
 			msg += "\nto:\n";
@@ -174,7 +174,7 @@ public:
 		p_info.info_set(field_speed, nsf.nIsPal ? "PAL" : "NTSC");
 
 		{
-			string8 chips;
+			pfc::string8 chips;
 			static const char * chip[] = {"VRC6", "VRC7", "FDS", "MMC5", "N106", "FME7"};
 			for (int i = 0, mask = 1; i < tabsize(chip); i++, mask <<= 1)
 			{
@@ -405,12 +405,12 @@ public:
 
 			m_file.release();
 
-			string8_fastalloc path;
+			pfc::string8_fastalloc path;
 			path = m_path;
 			const char * ext = nsf.bIsExtended ? "nsfe" : "nsf";
-			if ( stricmp( string_extension( m_path ), ext ) )
+			if ( stricmp( pfc::string_extension( m_path ), ext ) )
 			{
-				string8_fastalloc newname;
+				pfc::string8_fastalloc newname;
 				rename_file( m_path, ext, newname, p_abort );
 				m_path = newname;
 			}
@@ -550,7 +550,7 @@ public:
 		return guids[n];
 	}
 
-	virtual bool context_get_display( unsigned n, const list_base_const_t<metadb_handle_ptr> & data, pfc::string_base & out,unsigned & displayflags, const GUID & )
+	virtual bool context_get_display( unsigned n, const pfc::list_base_const_t<metadb_handle_ptr> & data, pfc::string_base & out,unsigned & displayflags, const GUID & )
 	{
 		if (!cfg_write || !cfg_write_nsfe) return false; // No writing? File doesn't check database for lengths.
 		unsigned i, j;
@@ -558,7 +558,7 @@ public:
 		for (j = 0; j < i; j++)
 		{
 			const playable_location & foo = data.get_item(j)->get_location();
-			string_extension ext(foo.get_path());
+			pfc::string_extension ext(foo.get_path());
 			if (stricmp(ext, "nsf") && stricmp(ext, "nsfe")) return false;
 		}
 		if (n) out = "Edit playlist";
@@ -570,7 +570,7 @@ public:
 		return true;
 	}
 
-	virtual void context_command( unsigned n, const list_base_const_t<metadb_handle_ptr> & data, const GUID & )
+	virtual void context_command( unsigned n, const pfc::list_base_const_t<metadb_handle_ptr> & data, const GUID & )
 	{
 		unsigned i = data.get_count();
 		abort_callback_impl m_abort;
@@ -638,7 +638,7 @@ public:
 			}
 			i = files.get_count();
 			file_info_impl info;
-			string8_fastalloc list;
+			pfc::string8_fastalloc list;
 			static_api_ptr_t<metadb_io> p_imgr;
 			for (unsigned j = 0; j < i; j++)
 			{
@@ -655,13 +655,13 @@ public:
 				{
 					break;
 				}
-				if ( ! context_playlist_dialog( &nsf, string8() << string_filename( item->get_location().get_path() ) << " - NSFE playlist editor" ) ) continue;
+				if ( ! context_playlist_dialog( &nsf, pfc::string8() << pfc::string_filename( item->get_location().get_path() ) << " - NSFE playlist editor" ) ) continue;
 				list.reset();
 				list << nsf.nPlaylistSize;
 				for (unsigned k = 0; k < nsf.nPlaylistSize; k++)
 				{
 					list.add_byte(',');
-					list << format_int( nsf.pPlaylist[k] );
+					list << pfc::format_int( nsf.pPlaylist[k] );
 				}
 				item->metadb_lock();
 				if (item->get_info(info))

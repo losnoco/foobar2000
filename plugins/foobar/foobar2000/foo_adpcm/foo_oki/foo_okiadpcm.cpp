@@ -38,7 +38,7 @@ public:
 
 	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) throw exception_io_data();
+		if ( p_reason == input_open_info_write ) throw exception_io_unsupported_format();
 
 		if ( p_filehint.is_empty() )
 		{
@@ -114,7 +114,7 @@ public:
 	{
 		libpcm_SetFooReaderAbort( stream, p_abort );
 
-		libpcm_seek( decoder, unsigned( p_seconds * double( libpcm_get_samplerate( decoder ) ) ) );
+		libpcm_seek( decoder, unsigned( audio_math::time_to_samples( p_seconds, libpcm_get_samplerate( decoder ) ) ) );
 	}
 
 	bool decode_can_seek()
@@ -134,11 +134,12 @@ public:
 
 	void decode_on_idle( abort_callback & p_abort )
 	{
+		m_file->on_idle( p_abort );
 	}
 
 	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		throw exception_io_data();
+		throw exception_io_unsupported_format();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )
@@ -158,7 +159,7 @@ class okiadpcm_file_types : public input_file_type
 {
 	virtual unsigned get_count()
 	{
-		return 11;
+		return 10;
 	}
 
 	virtual bool get_name(unsigned idx, pfc::string_base & out)
@@ -173,8 +174,8 @@ class okiadpcm_file_types : public input_file_type
 			"Hayashigumi-KWF sample files",
 			"VisualArts-NWA sample files",
 			"jANIS-PX sample files",
-			"CLOVER-BW sample files",
-			"AbogadoPowers-ADP sample files"
+			"CLOVER-BW sample files"/*,
+			"AbogadoPowers-ADP sample files"*/
 		};
 		if (idx >= tabsize( names ) ) return false;
 		out = names[ idx ];
@@ -183,7 +184,7 @@ class okiadpcm_file_types : public input_file_type
 
 	virtual bool get_mask(unsigned idx, pfc::string_base & out)
 	{
-		if (idx >= 11) return false;
+		if (idx >= 10) return false;
 		out = "*.";
 		out += foobar2000_extlist[ idx ];
 		return true;
@@ -196,6 +197,6 @@ class okiadpcm_file_types : public input_file_type
 };
 
 static input_singletrack_factory_t<input_okiadpcm>                      g_okiadpcm_factory;
-static service_factory_single_t   <input_file_type,okiadpcm_file_types> g_input_file_type_okiadpcm_factory;
+static service_factory_single_t   <okiadpcm_file_types> g_input_file_type_okiadpcm_factory;
 
 DECLARE_COMPONENT_VERSION(FOOBAR2000COMPONENT_NAME,FOOBAR2000COMPONENT_VERSION,"");

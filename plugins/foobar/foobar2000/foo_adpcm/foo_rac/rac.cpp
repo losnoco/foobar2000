@@ -289,10 +289,10 @@ class input_rac
 	unsigned pos, filled, total, swallow;
 	int loop_start;
 
-	string8    file_name;
-	t_filesize file_length;
+	pfc::string8 file_name;
+	t_filesize   file_length;
 
-	bool eof;
+	bool loop, eof;
 
 public:
 	input_rac() : inf(0), /*expand_m(0),*/ expand_s(0), file_length(0) {}
@@ -306,7 +306,7 @@ public:
 
 	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) throw exception_io_data();
+		if ( p_reason == input_open_info_write ) throw exception_io_unsupported_format();
 
 		if ( p_filehint.is_empty() )
 		{
@@ -314,7 +314,7 @@ public:
 		}
 		else m_file = p_filehint;
 
-		file_name = string_filename( p_path );
+		file_name = pfc::string_filename( p_path );
 		file_name.truncate( file_name.find_last( '.' ) );
 	}
 
@@ -356,7 +356,7 @@ public:
 	{
 		if ( ! file_length ) open_internal( p_abort );
 
-		bool loop = cfg_loop && ! ( p_flags & input_flag_no_looping );
+		loop = cfg_loop && ! ( p_flags & input_flag_no_looping );
 
 		if ( ! inf ) inf = new foofile( m_file );
 		else inf->seek( 0, p_abort );
@@ -415,7 +415,7 @@ eof:
 				}
 				if ( done < todo )
 				{
-					if ( loop_start >= 0 )
+					if ( loop && loop_start >= 0 )
 					{
 						if ( filled < xfade_size * 2 ) break;
 						inf->seek( loop_start, p_abort );
@@ -469,7 +469,7 @@ eof:
 	void decode_seek( double p_seconds,abort_callback & p_abort )
 	{
 		eof = false;
-		swallow = int( p_seconds * 22050. + .5 );
+		swallow = int( audio_math::time_to_samples( p_seconds, 22050 ) );
 		if ( swallow > total )
 		{
 			swallow -= total;
@@ -498,11 +498,12 @@ eof:
 
 	void decode_on_idle( abort_callback & p_abort )
 	{
+		m_file->on_idle( p_abort );
 	}
 
 	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		throw exception_io_data();
+		throw exception_io_unsupported_format();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )
