@@ -21,7 +21,9 @@ void parser_ac3::reset()
 
 void parser_ac3::buffer_fill( service_ptr_t<file> & p_file, abort_callback & p_abort )
 {
-	buffer_filled += p_file->read( buffer.get_ptr() + buffer_filled, 4096 - buffer_filled, p_abort );
+	t_size read = p_file->read( buffer.get_ptr() + buffer_filled, 4096 - buffer_filled, p_abort );
+	buffer_filled += read;
+	if ( !read ) throw exception_io_data_truncation();
 }
 
 void parser_ac3::buffer_remove( size_t amount )

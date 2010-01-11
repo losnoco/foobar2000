@@ -1,7 +1,11 @@
-#define MY_VERSION "0.9"
+#define MY_VERSION "0.9.1"
 
 /*
 	changelog
+
+2008-05-29 01:21 UTC - kode54
+- Fixed AC3 parser to handle end of file.
+- Version is now 0.9.1
 
 2007-02-07 03:07 UTC - kode54
 - Implemented a new buffering packet processor which includes CRC checking to hopefully avoid any
