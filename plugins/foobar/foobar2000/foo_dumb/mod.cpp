@@ -1,7 +1,57 @@
-#define MYVERSION "0.9.7"
+#define MYVERSION "0.9.7.3"
 
 /*
 	changelog
+
+2006-05-23 00:06 UTC - kode54
+- Changed module format load order priority to check all signatures before
+  attempting MOD now, and then only 15 sample module for MOD/MDZ. This should
+  hopefully cut back on problems with N formats renamed to MOD.
+- Version is now 0.9.7.4
+
+2006-05-22 21:44 UTC - kode54
+- XM reader now supports up to 256 instruments, even though FT2 only
+  supports up to 128. ModPlug Tracker again.
+- g_open_module now supports other files misnamed as .MOD (hilse.mod .it)
+
+2006-05-22 18:43 UTC - kode54
+- S3M reader was using the incorrect index into component for sample packing
+  when reading sample data. Was using n, should have been m.
+
+2006-05-22 17:26 UTC - kode54
+- IT renderer may have a bug with its time_lost / loop handling. Switchover
+  from sustain loop would compound time_lost onto itself for every note-off.
+  I'm not sure if this crap is even doing the right thing, especially in the
+  case of a sample with a sustain loop, but no main loop. Working around for
+  now by zeroing time_lost after note-off. (hall8.it)
+- S3M reader ignores effects outside of 1-25 range so nothing can hit
+  internal effects which are XM or PTM only. (N4.S3M)
+- IT reader now supports ModPlug Tracker extensions for up to 4000 samples
+  and mapping them with instruments. (hallowe.it.it)
+- XM reader now supports instrument vibrato 4, random. Yet another ModPlug
+  extension. (hcw-st.xm)
+
+2006-05-21 02:11 UTC - kode54
+- S3M reader correctly reads all 24 bits of the sample memory segment
+  offset, fixing at least one file with >1MB of sample data (d-t-x_x.s3m)
+- XM reader stops reading instruments when it has at least one valid
+  instrument and encounters an error, fixing at least one file with
+  too high instrument count in the header (drx-chri.xm)
+- IT reader ignores instrument header signatures, since there seem to
+  be files with bad signatures on unused/filler instruments (dsouls.it)
+- MOD reader can now be restricted to handling 31 sample files with
+  legal/known signatures only, so frontend can fall back on restricted
+  MOD loading for files with incorrect extensions (dreamer_0g.s3m)
+- Version is now 0.9.7.2
+
+2006-05-20 xx:xx UTC - kode54
+- Modified silence skipping to hack around some "S L O W" effects crap
+  and a misused break to row effect
+
+2006-03-27 07:51 UTC - kode54
+- Changed RIFF AMFF loader to ignore one unknown sample flag and
+  be a little more flexible with the INST chunk handler
+- Version is now 0.9.7.1
 
 2005-11-07 05:00 UTC - kode54
 - Added generic RIFF module handler and AM/AMFF format readers
@@ -695,7 +745,7 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 	if (tag && *tag) info.info_set(field_formatver, tag);
 
 	int i, n;
-	string8_fastalloc name;
+	pfc::string8_fastalloc name;
 
 	if (itsd->n_samples)
 	{
@@ -782,24 +832,24 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 	if ((!ptr) || (size < 0x100)) return false;
 	if ((pfc::byteswap_if_be_t(pifh->id) != 0x4D504D49) ||
 		(pfc::byteswap_if_be_t(pifh->insnum) >= 256) ||
-		(!pifh->smpnum) || (pfc::byteswap_if_be_t(pifh->smpnum) >= 256) ||
+		(!pifh->smpnum) || (pfc::byteswap_if_be_t(pifh->smpnum) > 4000) || // XXX
 		(!pifh->ordnum)) return false;
 	if (sizeof(ITFILEHEADER) + pfc::byteswap_if_be_t(pifh->ordnum) +
 		pfc::byteswap_if_be_t(pifh->insnum)*4 +
 		pfc::byteswap_if_be_t(pifh->smpnum)*4 +
 		pfc::byteswap_if_be_t(pifh->patnum)*4 > size) return false;
 
-	string8_fastalloc ver;
+	pfc::string8_fastalloc ver;
 
 	ver = "IT v";
-	ver << format_int( pfc::byteswap_if_be_t(pifh->cmwt) >> 8 );
+	ver << pfc::format_int( pfc::byteswap_if_be_t(pifh->cmwt) >> 8 );
 	ver.add_byte('.');
-	ver << format_int( pfc::byteswap_if_be_t(pifh->cmwt) & 255, 2, 16 );
+	ver << pfc::format_int( pfc::byteswap_if_be_t(pifh->cmwt) & 255, 2, 16 );
 	info.info_set( "codec", ver );
 
-	ver = format_int( pfc::byteswap_if_be_t(pifh->cwtv) >> 8 );
+	ver = pfc::format_int( pfc::byteswap_if_be_t(pifh->cwtv) >> 8 );
 	ver.add_byte('.');
-	ver << format_int( pfc::byteswap_if_be_t(pifh->cwtv) & 255, 2, 16 );
+	ver << pfc::format_int( pfc::byteswap_if_be_t(pifh->cwtv) & 255, 2, 16 );
 	info.info_set( field_trackerver, ver );
 
 	if ( pifh->smpnum ) info.info_set_int( field_samples, pfc::byteswap_if_be_t(pifh->smpnum) );
@@ -811,7 +861,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 
 	if ( meta && ( pfc::byteswap_if_be_t(pifh->special) & 1 ) && ( pifh->msglength ) && ( pfc::byteswap_if_be_t(pifh->msgoffset) + pfc::byteswap_if_be_t(pifh->msglength) < size ) )
 	{
-		string8 msg;
+		pfc::string8 msg;
 		const char * str = (const char *) ptr + pfc::byteswap_if_be_t(pifh->msgoffset);
 		for (n = 0, l = pfc::byteswap_if_be_t(pifh->msglength); n < l; n++, str++)
 		{
@@ -839,7 +889,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 	}
 
 	t_uint32 * offset;
-	string8_fastalloc name;
+	pfc::string8_fastalloc name;
 	
 	if (meta)
 	{
@@ -1052,7 +1102,7 @@ static bool ReadMTM(const BYTE * ptr, unsigned size, file_info * info, bool meta
 
 	if (meta)
 	{
-		string8_fastalloc name;
+		pfc::string8_fastalloc name;
 		for	(UINT i=0; i<nSamples; i++)
 		{
 			MTMSAMPLE *pms = (MTMSAMPLE *)(ptr + dwMemPos);
@@ -1201,12 +1251,7 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 	is_it = false;
 	is_dos = true;
 
-	if (!stricmp(ext, exts[0]) || !stricmp(ext, exts[1]))
-	{
-		is_dos = false;
-		duh = dumb_read_mod(f);
-	}
-	else if (size >= 4 &&
+	if (size >= 4 &&
 		ptr[0] == 0xC1 && ptr[1] == 0x83 &&
 		ptr[2] == 0x2A && ptr[3] == 0x9E)
 	{
@@ -1224,25 +1269,25 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 					/*
 					if (!stricmp(type, "it"))
 					{
-						is_it = true;
-						ptr += memdata.offset = pkg.object_offset(i);
-						size = memdata.size = memdata.offset + pkg.object_size(i);
-						duh = dumb_read_it(f);
-						break;
+					is_it = true;
+					ptr += memdata.offset = pkg.object_offset(i);
+					size = memdata.size = memdata.offset + pkg.object_size(i);
+					duh = dumb_read_it(f);
+					break;
 					}
 					else if (!stricmp(type, "s3m"))
 					{
-						memdata.offset = pkg.object_offset(i);
-						memdata.size = memdata.offset + pkg.object_size(i);
-						duh = dumb_read_s3m(f);
-						break;
+					memdata.offset = pkg.object_offset(i);
+					memdata.size = memdata.offset + pkg.object_size(i);
+					duh = dumb_read_s3m(f);
+					break;
 					}
 					else if (!stricmp(type, "xm"))
 					{
-						memdata.offset = pkg.object_offset(i);
-						memdata.size = memdata.offset + pkg.object_size(i);
-						duh = dumb_read_xm(f);
-						break;
+					memdata.offset = pkg.object_offset(i);
+					memdata.size = memdata.offset + pkg.object_size(i);
+					duh = dumb_read_xm(f);
+					break;
 					}
 					*/
 					// blah, type can't be trusted
@@ -1323,6 +1368,12 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 		ptr[2] == 'F' && ptr[3] == 'F')
 	{
 		duh = dumb_read_riff(f);
+	}
+
+	if ( ! duh )
+	{
+		is_dos = false;
+		duh = dumb_read_mod(f, ( ! stricmp( ext, exts[ 0 ] ) || ! stricmp( ext, exts[ 1 ] ) ) ? 0 : 1 );
 	}
 
 	dumbfile_close(f);
@@ -1530,13 +1581,13 @@ struct dumb_subsong_info
 
 class dumb_info_scanner
 {
-	ptr_list_t< dumb_subsong_info > m_info;
+	pfc::ptr_list_t< dumb_subsong_info > m_info;
 
 	DUH * duh;
 
 	struct callback_info
 	{
-		ptr_list_t< dumb_subsong_info > & m_info;
+		pfc::ptr_list_t< dumb_subsong_info > & m_info;
 		abort_callback & m_abort;
 	};
 
@@ -1620,7 +1671,7 @@ public:
 		p_abort.check();
 	}
 
-	void get_info( ptr_list_t< dumb_subsong_info > & out )
+	void get_info( pfc::ptr_list_t< dumb_subsong_info > & out )
 	{
 		for ( unsigned i = 0, j = m_info.get_count(); i < j; ++i )
 		{
@@ -1636,9 +1687,9 @@ class dumb_info_cache
 {
 	struct t_info
 	{
-		string_simple                   path;
+		pfc::string_simple                   path;
 		t_filetimestamp                 timestamp;
-		ptr_list_t< dumb_subsong_info > info;
+		pfc::ptr_list_t< dumb_subsong_info > info;
 
 		~t_info()
 		{
@@ -1646,7 +1697,7 @@ class dumb_info_cache
 		}
 	};
 
-	ptr_list_t< t_info > m_cache;
+	pfc::ptr_list_t< t_info > m_cache;
 
 	critical_section sync;
 
@@ -1656,7 +1707,7 @@ public:
 		m_cache.delete_all();
 	}
 
-	void run( const t_uint8 * ptr, unsigned size, const char * p_path, t_filetimestamp p_timestamp, ptr_list_t< dumb_subsong_info > & p_out, abort_callback & p_abort )
+	void run( const t_uint8 * ptr, unsigned size, const char * p_path, t_filetimestamp p_timestamp, pfc::ptr_list_t< dumb_subsong_info > & p_out, abort_callback & p_abort )
 	{
 		insync( sync );
 
@@ -1684,7 +1735,7 @@ public:
 		dumb_info_scanner scanner;
 		try
 		{
-			scanner.run( ptr, size, string_extension( p_path ), p_abort );
+			scanner.run( ptr, size, pfc::string_extension( p_path ), p_abort );
 		}
 		catch (...)
 		{
@@ -1827,7 +1878,7 @@ class input_mod
 
 	//pfc::array_t< sample_t > dbuf;
 
-	string_simple extension;
+	pfc::string_simple extension;
 	service_ptr_t< file > m_file;
 	pfc::array_t< t_uint8 > buffer;
 
@@ -1836,7 +1887,7 @@ class input_mod
 	bool is_dos, is_it;
 	file_info_impl * m_info;
 
-	ptr_list_t< dumb_subsong_info > m_subsong_info;
+	pfc::ptr_list_t< dumb_subsong_info > m_subsong_info;
 
 public:
 	input_mod()
@@ -1870,7 +1921,7 @@ public:
 		t_uint8            * ptr;
 		unsigned             size;
 
-		extension = string_extension( p_path );
+		extension = pfc::string_extension( p_path );
 
 		bool read_tag;
 
@@ -1902,7 +1953,7 @@ public:
 				}
 			}
 
-			if ( !read_tag && p_reason == input_open_info_write ) throw exception_io_data();
+			if ( !read_tag && p_reason == input_open_info_write ) throw exception_io_unsupported_format();
 
 			m_stats = m_file->get_stats( p_abort );
 			if ( m_stats.m_size < 1 || m_stats.m_size > ( 1UL << 30 ) )
@@ -2114,7 +2165,7 @@ retry:
 		if      ( written == 0 )  return false;
 		else if ( written == -1 ) throw exception_io_data();
 
-		p_chunk.check_data_size( written * 2 );
+		p_chunk.set_data_size( written * 2 );
 
 		sample_t * in_l = buf[0];
 		sample_t * in_r = buf[1];
@@ -2140,7 +2191,7 @@ retry:
 
 		if ( from_pos < 0 ) throw exception_io();
 
-		long to_pos = long( 65536. * p_seconds + .5 );
+		long to_pos = long( audio_math::time_to_samples( p_seconds, 65536 ) );
 
 		if ( to_pos < from_pos )
 		{
@@ -2235,7 +2286,7 @@ retry:
 	{
 		if ( cfg_tag )
 		{
-			if ( p_subsong > 0 || m_subsong_info.get_count() > 1 ) throw exception_io_data();
+			if ( p_subsong > 0 || m_subsong_info.get_count() > 1 ) throw exception_io_unsupported_format();
 
 			m_info->copy( p_info );
 
@@ -2245,7 +2296,7 @@ retry:
 		}
 		else
 		{
-			throw exception_io_data();
+			throw exception_io_unsupported_format();
 		}
 	}
 
@@ -2351,7 +2402,7 @@ class preferences_page_mod : public preferences_page
 				/*
 				case (CBN_SELCHANGE<<16)|IDC_SAMPLERATE:
 				{
-				string8 meh;
+				pfc::string8 meh;
 				cfg_history_rate.get_item(meh, SendMessage((HWND)lp,CB_GETCURSEL,0,0));
 				cfg_samplerate = atoi(meh);
 				}			
@@ -2546,7 +2597,7 @@ static BOOL CALLBACK context_proc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 
 			if (cd.title)
 			{
-				string8 title = (const char *) GlobalLock(cd.title);
+				pfc::string8 title = (const char *) GlobalLock(cd.title);
 				GlobalUnlock(cd.title);
 				uSetWindowText(wnd, title);
 			}
@@ -2848,7 +2899,7 @@ public:
 
 		if (orders <= 0) return;
 
-		string8 title = "Set ";
+		pfc::string8 title = "Set ";
 		if (psm) title += "subsong";
 		else title += "initial order";
 		title += " for ";
@@ -2885,7 +2936,7 @@ public:
 
 static input_factory_t           <input_mod>                      g_input_mod_factory;
 static preferences_page_factory_t<preferences_page_mod>           g_config_mod_factory;
-static service_factory_single_t  <input_file_type,mod_file_types> g_input_file_type_mod_factory;
+static service_factory_single_t  <mod_file_types> g_input_file_type_mod_factory;
 //static menu_item_factory_t       <context_mod>                    g_menu_item_mod_factory;
 
 DECLARE_COMPONENT_VERSION( "DUMB module decoder", MYVERSION, "Using DUMB v" DUMB_VERSION_STR "-cvs-" DUMB_YEAR_STR4 DUMB_MONTH_STR2 DUMB_DAY_STR2 ",\nwith several modifications.\n\nhttp://dumb.sourceforge.net/");
