@@ -146,4 +146,4 @@ public:
 static archive_factory_t < archive_7z >  g_archive_7z_factory;
 static unpacker_factory_t< unpacker_7z > g_unpacker_7z_factory;
 
-DECLARE_COMPONENT_VERSION( "7-Zip unpacker", MY_VERSION, (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "7-Zip reader", MY_VERSION, (const char*)NULL );

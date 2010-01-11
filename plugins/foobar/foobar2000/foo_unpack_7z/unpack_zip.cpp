@@ -145,4 +145,4 @@ public:
 static archive_factory_t < archive_zip >  g_archive_zip_factory;
 static unpacker_factory_t< unpacker_zip > g_unpacker_zip_factory;
 
-DECLARE_COMPONENT_VERSION( "ZIP unpacker", "1.0", (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "ZIP reader", "1.0", (const char*)NULL );

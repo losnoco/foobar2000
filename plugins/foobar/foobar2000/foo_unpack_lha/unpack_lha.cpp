@@ -449,4 +449,4 @@ public:
 static archive_factory_t < archive_lha >  g_archive_lha_factory;
 static unpacker_factory_t< unpacker_lha > g_unpacker_lha_factory;
 
-DECLARE_COMPONENT_VERSION( "LHA unpacker", MY_VERSION, (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "LHA reader", MY_VERSION, (const char*)NULL );

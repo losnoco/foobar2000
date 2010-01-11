@@ -137,4 +137,4 @@ public:
 static archive_factory_t < archive_rar >  g_archive_rar_factory;
 static unpacker_factory_t< unpacker_rar > g_unpacker_rar_factory;
 
-DECLARE_COMPONENT_VERSION( "Rar unpacker", "1.0", (const char*)NULL );
+DECLARE_COMPONENT_VERSION("RAR reader", "1.0", (const char*)NULL );

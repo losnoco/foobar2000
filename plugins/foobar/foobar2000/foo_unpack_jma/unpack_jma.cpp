@@ -105,4 +105,4 @@ public:
 static archive_factory_t < archive_jma >  g_archive_jma_factory;
 static unpacker_factory_t< unpacker_jma > g_unpacker_jma_factory;
 
-DECLARE_COMPONENT_VERSION( "JMA unpacker", MY_VERSION, (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "JMA reader", MY_VERSION, (const char*)NULL );

@@ -38,4 +38,4 @@ public:
 
 static unpacker_factory_t< unpacker_gz > g_unpacker_gz_factory;
 
-DECLARE_COMPONENT_VERSION( "Gzip unpacker", "1.0", (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "GZIP reader", "1.0", (const char*)NULL );
