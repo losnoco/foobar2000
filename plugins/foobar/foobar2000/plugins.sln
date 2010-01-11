@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
+﻿Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseClasses", "..\..\BaseClasses\baseclasses.vcproj", "{FDB4D58E-BD17-4EE3-843D-738F6548C3F8}"
 EndProject
@@ -537,7 +537,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_dsdiff", "foo_inp
 	EndProjectSection
 EndProject
 Global
-	GlobalSection(SourceCodeControl) = preSolution
+	GlobalSection(TeamFoundationVersionControl) = preSolution
 		SccNumberOfProjects = 111
 		SccProjectName0 = \u0022$/foobar2000/plugins.root/plugins\u0022,\u0020CEAAAAAA
 		SccLocalPath0 = ..\\..
