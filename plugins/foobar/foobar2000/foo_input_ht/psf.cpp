@@ -936,19 +936,21 @@ public:
 
 	~input_xsf()
 	{
-		void * yam = 0;
-		if ( xsf_version == 2 )
+		if ( sega_state.get_size() )
 		{
-			void * dcsound = sega_get_dcsound_state( sega_state.get_ptr() );
-			yam = dcsound_get_yam_state( dcsound );
+			void * yam = 0;
+			if ( xsf_version == 2 )
+			{
+				void * dcsound = sega_get_dcsound_state( sega_state.get_ptr() );
+				yam = dcsound_get_yam_state( dcsound );
+			}
+			else
+			{
+				void * satsound = sega_get_satsound_state( sega_state.get_ptr() );
+				yam = satsound_get_yam_state( satsound );
+			}
+			if ( yam ) yam_unprepare_dynacode( yam );
 		}
-		else
-		{
-			void * satsound = sega_get_satsound_state( sega_state.get_ptr() );
-			yam = satsound_get_yam_state( satsound );
-		}
-		if ( yam ) yam_unprepare_dynacode( yam );
-
 	}
 
 	void open( service_ptr_t<file> p_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
