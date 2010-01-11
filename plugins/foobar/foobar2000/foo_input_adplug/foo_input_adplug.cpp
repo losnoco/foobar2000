@@ -1,7 +1,13 @@
-#define MYVERSION "1.2"
+#define MYVERSION "1.21"
+
+#define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2009-07-22 04:32 UTC - kode54
+- Disabled the ADL reader until it can be fixed
+- Version is now 1.21
 
 2009-05-03 04:38 UTC - kode54
 - Implemented Harekiet's OPL emulator core and configuration
@@ -105,7 +111,7 @@ class input_adplug
 
 	unsigned srate;
 
-	bool first_block, dont_loop, is_adl;
+	bool first_block, dont_loop;//, is_adl;
 
 	unsigned subsong, samples_todo;
 
@@ -162,13 +168,13 @@ public:
 				throw exception_io_data();
 		}
 
-		if ( !strcmp( m_player->gettype().c_str(), "Westwood ADL" ) )
+		/*if ( !strcmp( m_player->gettype().c_str(), "Westwood ADL" ) )
 		{
 			is_adl = true;
 			lengths.set_size( 1 );
 			lengths[0] = m_player->songlength( -1 );
 		}
-		else
+		else*/
 		{
 			unsigned i, j = m_player->getsubsongs();
 			lengths.set_size( j );
@@ -181,8 +187,8 @@ public:
 
 	unsigned get_subsong_count()
 	{
-		if ( is_adl ) return 1;
-		else return m_player->getsubsongs();
+		/*if ( is_adl ) return 1;
+		else*/ return m_player->getsubsongs();
 	}
 
 	t_uint32 get_subsong(unsigned p_index)
@@ -204,8 +210,8 @@ public:
 			p_info.info_set( "codec_profile", pfc::stringcvt::string_utf8_from_ansi( m_player->gettype().c_str() ) );
 
 		unsigned long length;
-		if ( is_adl ) length = lengths[ 0 ];
-		else length = lengths[ p_subsong ];
+		/*if ( is_adl ) length = lengths[ 0 ];
+		else*/ length = lengths[ p_subsong ];
 		p_info.set_length( length / 1000. );
 	}
 
@@ -223,7 +229,7 @@ public:
 		seconds = 0;
 
 		subsong = p_subsong;
-		if ( is_adl ) subsong = -1;
+		/*if ( is_adl ) subsong = -1;*/
 
 		m_emu->init();
 
@@ -326,6 +332,11 @@ public:
 		if ( !stricmp_utf8( p_extension, "mid" ) || !stricmp_utf8( p_extension, "s3m" ) || !stricmp_utf8( p_extension, "msc" ) )
 			return false;
 
+#ifdef DISABLE_ADL
+		if ( !stricmp_utf8( p_extension, "adl" ) )
+			return false;
+#endif
+
 		if ( !stricmp_utf8( p_extension, "mida" ) || !stricmp_utf8( p_extension, "s3ma" ) || !stricmp_utf8( p_extension, "msca" ) )
 			return true;
 
@@ -375,9 +386,12 @@ class adplug_file_types : public input_file_type
 		out.reset();
 		for ( unsigned i = 0; p->get_extension( i ); ++i )
 		{
+			const char * ext = p->get_extension( i );
+#ifdef DISABLE_ADL
+			if ( !stricmp( ext + 1, "adl" ) ) continue;
+#endif
 			if ( i ) out.add_byte( ';' );
 			out.add_byte( '*' );
-			const char * ext = p->get_extension( i );
 			out += ext;
 			if ( !stricmp( ext + 1, "s3m" ) || !stricmp( ext + 1, "mid" ) || !stricmp( ext + 1, "msc" ) )
 				out.add_byte( 'a' );

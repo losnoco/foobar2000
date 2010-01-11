@@ -277,7 +277,11 @@ public:
   // * One for instruments, starting at offset 500.
 
   uint8 *getProgram(int progId) {
-    return _soundData + READ_LE_UINT16(_soundData + 2 * progId);
+    uint16 offset = READ_LE_UINT16(_soundData + 2 * progId);
+    //TODO: Check in LoL CD Adlib driver
+    if (offset == 0xFFFF)
+      return 0;
+    return _soundData + offset;
   }
 
   uint8 *getInstrument(int instrumentId) {
@@ -548,6 +552,8 @@ int AdlibDriver::snd_startSong(va_list &list) {
   _flagTrigger = 1;
 
   uint8 *ptr = getProgram(songId);
+  if (!ptr)
+    return 0;
   uint8 chan = *ptr;
 
   if ((songId << 1) != 0) {
@@ -598,15 +604,20 @@ int AdlibDriver::snd_unkOpcode3(va_list &list) {
 int AdlibDriver::snd_readByte(va_list &list) {
   int a = va_arg(list, int);
   int b = va_arg(list, int);
-  uint8 *ptr = getProgram(a) + b;
-  return *ptr;
+  uint8 *ptr = getProgram(a);
+  if (!ptr)
+    return 0;
+  return *(ptr + b);
 }
 
 int AdlibDriver::snd_writeByte(va_list &list) {
   int a = va_arg(list, int);
   int b = va_arg(list, int);
   int c = va_arg(list, int);
-  uint8 *ptr = getProgram(a) + b;
+  uint8 *ptr = getProgram(a);
+  if (!ptr)
+    return 0;
+  ptr += b;
   uint8 oldValue = *ptr;
   *ptr = (uint8)c;
   return oldValue;
@@ -671,6 +682,8 @@ void AdlibDriver::callback() {
 void AdlibDriver::setupPrograms() {
   while (_lastProcessed != _soundsPlaying) {
     uint8 *ptr = getProgram(_soundIdTable[_lastProcessed]);
+    if (!ptr)
+      return;
     uint8 chan = *ptr++;
     uint8 priority = *ptr++;
 
@@ -1278,6 +1291,9 @@ int AdlibDriver::update_setupProgram(uint8 *&dataptr, Channel &channel, uint8 va
     return 0;
 
   uint8 *ptr = getProgram(value);
+  //TODO: Check in LoL CD Adlib driver
+  if (!ptr)
+    return 0;
   uint8 chan = *ptr++;
   uint8 priority = *ptr++;
 
@@ -1380,6 +1396,8 @@ int AdlibDriver::update_stopOtherChannel(uint8 *&dataptr, Channel &channel, uint
 
 int AdlibDriver::update_waitForEndOfProgram(uint8 *&dataptr, Channel &channel, uint8 value) {
   uint8 *ptr = getProgram(value);
+  if (!ptr)
+    return 0;
   uint8 chan = *ptr;
 
   if (!_channels[chan].dataptr) {
