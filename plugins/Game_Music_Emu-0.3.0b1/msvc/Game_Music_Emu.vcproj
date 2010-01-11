@@ -273,10 +273,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\gme\mame_fm.c"
-				>
-			</File>
-			<File
 				RelativePath="..\gme\Multi_Buffer.cpp"
 				>
 			</File>
@@ -353,14 +349,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\gme\ym2612.c"
-				>
-			</File>
-			<File
-				RelativePath="..\gme\ym2612.h"
-				>
-			</File>
-			<File
 				RelativePath="..\gme\Ym2612_Emu.cpp"
 				>
 			</File>
@@ -388,10 +376,6 @@
 			</File>
 			<File
 				RelativePath="..\gme\Blip_Buffer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\gme\Blip_Synth.h"
 				>
 			</File>
 			<File
