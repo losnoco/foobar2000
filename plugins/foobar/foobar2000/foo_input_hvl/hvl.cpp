@@ -1,4 +1,13 @@
-#define MYVERSION "1.0"
+#define MYVERSION "1.1"
+
+/*
+	changelog
+
+2009-07-31 22:14 UTC - kode54
+- Added null pointer and various buffer length checks to hvl_replay.c
+- Version is now 1.1
+
+*/
 
 #include <foobar2000.h>
 #include "../helpers/dropdown_helper.h"

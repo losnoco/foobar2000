@@ -376,6 +376,9 @@ struct hvl_tune *hvl_load_ahx( uint8 *buf, uint32 buflen, uint32 defstereo, uint
   struct hvl_tune *ht;
   struct  hvl_plsentry *ple;
   int32 defgain[] = { 71, 72, 76, 85, 100 };
+
+  if ( buflen < 14 )
+    return NULL;
   
   posn = ((buf[6]&0x0f)<<8)|buf[7];
   insn = buf[12];
@@ -394,10 +397,13 @@ struct hvl_tune *hvl_load_ahx( uint8 *buf, uint32 buflen, uint32 defstereo, uint
   bptr += posn*4*2; // Skip past the positions
   bptr += trkn*trkl*3;
   if((buf[6]&0x80)==0) bptr += trkl*3;
-  
+
   // *NOW* we can finally calculate PList space
   for( i=1; i<=insn; i++ )
   {
+    if ( bptr + 21 > buf + buflen )
+      return NULL;
+    
     hs += bptr[21] * sizeof( struct hvl_plsentry );
     bptr += 22 + bptr[21]*4;
   }
@@ -445,8 +451,17 @@ struct hvl_tune *hvl_load_ahx( uint8 *buf, uint32 buflen, uint32 defstereo, uint
     return NULL;
   }
 
-  strncpy( ht->ht_Name, (TEXT *)&buf[(buf[4]<<8)|buf[5]], 128 );
-  nptr = (TEXT *)&buf[((buf[4]<<8)|buf[5])+strlen( ht->ht_Name )+1];
+  bptr = &buf[(buf[4]<<8)|buf[5]];
+  i = min( 128, buf + buflen - bptr );
+
+  strncpy( ht->ht_Name, (TEXT *)bptr, i );
+  if ( i < 128 ) ht->ht_Name[ i ] = 0;
+  nptr = (TEXT *)bptr+strlen( ht->ht_Name )+1;
+  if ( nptr > buf + buflen )
+  {
+    free( ht );
+    return NULL;
+  }
 
   bptr = &buf[14];
   
@@ -570,6 +585,9 @@ struct hvl_tune *hvl_LoadTune( uint8 *buf, uint32 buflen, uint32 freq, uint32 de
   FILE *fh;
   struct  hvl_plsentry *ple;
 
+  if ( !buf || buflen < 4 )
+    return NULL;
+
   if( ( buf[0] == 'T' ) &&
       ( buf[1] == 'H' ) &&
       ( buf[2] == 'X' ) &&
@@ -584,6 +602,9 @@ struct hvl_tune *hvl_LoadTune( uint8 *buf, uint32 buflen, uint32 freq, uint32 de
     return NULL;
   }
   
+  if ( buflen < 14 )
+    return NULL;
+
   posn = ((buf[6]&0x0f)<<8)|buf[7];
   insn = buf[12];
   ssn  = buf[13];
@@ -600,7 +621,7 @@ struct hvl_tune *hvl_LoadTune( uint8 *buf, uint32 buflen, uint32 freq, uint32 de
   bptr = &buf[16];
   bptr += ssn*2;       // Skip past the subsong list
   bptr += posn*chnn*2; // Skip past the positions
-  
+
   // Skip past the tracks
   // 1.4: Fixed two really stupid bugs that cancelled each other
   //      out if the module had a blank first track (which is how
@@ -608,6 +629,9 @@ struct hvl_tune *hvl_LoadTune( uint8 *buf, uint32 buflen, uint32 freq, uint32 de
   for( i=((buf[6]&0x80)==0x80)?1:0; i<=trkn; i++ )
     for( j=0; j<trkl; j++ )
     {
+      if ( bptr > buf + buflen )
+        return NULL;
+      
       if( bptr[0] == 0x3f )
       {
         bptr++;
@@ -615,10 +639,13 @@ struct hvl_tune *hvl_LoadTune( uint8 *buf, uint32 buflen, uint32 freq, uint32 de
       }
       bptr += 5;
     }
-  
+
   // *NOW* we can finally calculate PList space
   for( i=1; i<=insn; i++ )
   {
+    if ( bptr + 21 > buf + buflen )
+      return NULL;
+    
     hs += bptr[21] * sizeof( struct hvl_plsentry );
     bptr += 22 + bptr[21]*5;
   }
@@ -667,8 +694,22 @@ struct hvl_tune *hvl_LoadTune( uint8 *buf, uint32 buflen, uint32 freq, uint32 de
     return NULL;
   }
 
-  strncpy( ht->ht_Name, (TEXT *)&buf[(buf[4]<<8)|buf[5]], 128 );
-  nptr = (TEXT *)&buf[((buf[4]<<8)|buf[5])+strlen( ht->ht_Name )+1];
+  bptr = &buf[(buf[4]<<8)|buf[5]];
+  if ( bptr > buf + buflen )
+  {
+    free( ht );
+    return NULL;
+  }
+  i = min( 128, buf + buflen - bptr );
+
+  strncpy( ht->ht_Name, (TEXT *)bptr, i );
+  if ( i < 128 ) ht->ht_Name[ i ] = 0;
+  nptr = (TEXT *)bptr+strlen( ht->ht_Name )+1;
+  if ( nptr > buf + buflen )
+  {
+    free( ht );
+    return NULL;
+  }
 
   bptr = &buf[16];
   
