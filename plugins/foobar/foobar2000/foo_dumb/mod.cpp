@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.8.5"
+#define MYVERSION "0.9.9"
 
 /*
 	changelog
+
+2009-08-31 08:40 UTC - kode54
+- Added somewhat shoddy support for MO3. I hope some day I can make it fully piped.
+- Version is now 0.9.9
 
 2009-04-18 19:29 UTC - kode54
 - Fixed another bug in xm_note_off with potential unknown files.
@@ -754,6 +758,7 @@ static const char * exts[]=
 	"AM","J2B",
 	"DSM",
 	"AMF",
+	"MO3",
 };
 
 // {0E54B9FA-05DB-46b2-A3A4-C6C3201D57C0}
@@ -2349,6 +2354,217 @@ void unpack_j2b( service_ptr_t<file> & p_out, const service_ptr_t<file> & p_sour
 	}
 }
 
+#define MO3_USE_TEMPFILE
+
+class unpack_mo3
+{
+#ifndef MO3_USE_TEMPFILE
+	HANDLE stdin_rd, stdin_wr;
+#else
+	pfc::string8 temp_file;
+	HANDLE TempHandle;
+#endif
+	HANDLE stdout_rd, stdout_wr;
+
+	wchar_t * command_line;
+
+	PROCESS_INFORMATION piProcInfo;
+
+public:
+	unpack_mo3( service_ptr_t<file> & p_out, const service_ptr_t<file> & p_source, abort_callback & p_abort )
+	{
+#ifndef MO3_USE_TEMPFILE
+		stdin_rd = NULL;
+		stdin_wr = NULL;
+#else
+		TempHandle = 0;
+#endif
+		stdout_rd = NULL;
+		stdout_wr = NULL;
+
+		command_line = NULL;
+
+		memset( &piProcInfo, 0, sizeof( piProcInfo ) );
+
+		unsigned char buffer [1024];
+
+		p_source->seek( 0, p_abort );
+		p_source->read_object( buffer, 3, p_abort );
+		p_source->seek( 0, p_abort );
+
+		if ( buffer [0] != 'M' || buffer [1] != 'O' || buffer [2] != '3' )
+		{
+			throw foobar2000_io::exception_io_data( "Not an MO3 file" );
+		}
+
+		SECURITY_ATTRIBUTES saAttr;
+
+		saAttr.nLength = sizeof( saAttr );
+		saAttr.bInheritHandle = TRUE;
+		saAttr.lpSecurityDescriptor = NULL;
+
+		pfc::string8 pipename;
+#ifndef MO3_USE_TEMPFILE
+		pipename = "\\\\.\\pipe\\dumb-mo3-";
+		pipename += "input-";
+		pipename += pfc::format_int( rand() );
+
+		pfc::stringcvt::string_wide_from_utf8 converter( pipename );
+
+		stdin_wr = CreateNamedPipeW( converter, FILE_FLAG_OVERLAPPED | FILE_FLAG_FIRST_PIPE_INSTANCE | PIPE_ACCESS_OUTBOUND, PIPE_TYPE_BYTE, 1, 65536, 65536, 0, &saAttr );
+		if ( stdin_wr == INVALID_HANDLE_VALUE ) foobar2000_io::exception_io_from_win32( GetLastError() );
+		stdin_rd = CreateFileW( converter, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &saAttr, OPEN_EXISTING, NULL, NULL );
+		if ( stdin_rd == INVALID_HANDLE_VALUE ) foobar2000_io::exception_io_from_win32( GetLastError() );
+#endif
+
+		pipename = "\\\\.\\pipe\\dumb-mo3-";
+		pipename += "output-";
+		pipename += pfc::format_int( rand() );
+
+#ifndef MO3_USE_TEMPFILE
+		converter.convert( pipename );
+#else
+		pfc::stringcvt::string_wide_from_utf8 converter( pipename );
+#endif
+
+		stdout_rd = CreateNamedPipeW( converter, FILE_FLAG_OVERLAPPED | FILE_FLAG_FIRST_PIPE_INSTANCE | PIPE_ACCESS_INBOUND, PIPE_TYPE_BYTE, 1, 65536, 65536, 0, &saAttr );
+		if ( stdout_rd == INVALID_HANDLE_VALUE ) foobar2000_io::exception_io_from_win32( GetLastError() );
+		stdout_wr = CreateFileW( converter, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, &saAttr, OPEN_EXISTING, NULL, NULL );
+		if ( stdout_wr == INVALID_HANDLE_VALUE ) foobar2000_io::exception_io_from_win32( GetLastError() );
+
+#ifndef MO3_USE_TEMPFILE
+		static const wchar_t base_command_line[] = L"unmo3.exe -s STDIN STDOUT";
+
+		command_line = new wchar_t[ wcslen( base_command_line ) + 1 ];
+		wcscpy( command_line, base_command_line );
+#else
+		pfc::string8 FolderName;
+		uGetTempPath(FolderName);
+
+		if (uGetTempFileName(FolderName, "MO3", 0, temp_file) == FALSE)
+		{
+			foobar2000_io::exception_io_from_win32( GetLastError() );
+		}
+
+		TempHandle = ::uCreateFile( temp_file, GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_TEMPORARY, NULL );
+		if (!TempHandle)
+		{
+			foobar2000_io::exception_io_from_win32( GetLastError() );
+		}
+
+		for (;;)
+		{
+			DWORD written;
+			t_size read = p_source->read( buffer, 1024, p_abort );
+			WriteFile( TempHandle, buffer, read, &written, NULL );
+			if ( read < 1024 || written < read ) break;
+		}
+
+		pfc::string_formatter base_command_line;
+		base_command_line << "unmo3.exe -s \"" << temp_file << "\" STDOUT";
+
+		converter.convert( base_command_line );
+
+		command_line = wcsdup( converter );
+#endif
+
+		STARTUPINFOW siStartInfo;
+
+		memset( &siStartInfo, 0, sizeof( siStartInfo ) );
+		siStartInfo.cb = sizeof( siStartInfo );
+		siStartInfo.hStdError = stdout_wr;
+		siStartInfo.hStdOutput = stdout_wr;
+#ifndef MO3_USE_TEMPFILE
+		siStartInfo.hStdInput = stdin_rd;
+#else
+		siStartInfo.hStdInput = GetStdHandle( STD_INPUT_HANDLE );
+#endif
+		siStartInfo.wShowWindow = SW_HIDE;
+		siStartInfo.dwFlags |= STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+
+		if ( ! CreateProcessW(NULL, command_line, NULL, NULL, TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo) )
+		{
+			foobar2000_io::exception_io_from_win32( GetLastError() );
+		}
+
+		DWORD retstatus;
+#ifndef MO3_USE_TEMPFILE
+		GetExitCodeProcess(piProcInfo.hProcess, &retstatus);
+
+		while ( retstatus == 259 )
+		{
+			DWORD written;
+			t_size read = p_source->read( buffer, 1024, p_abort );
+			if ( ! WriteFile( stdin_wr, buffer, read, &written, NULL ) )
+			{
+				foobar2000_io::exception_io_from_win32( GetLastError() );
+			}
+			if ( read < 1024 ) break;
+
+			GetExitCodeProcess(piProcInfo.hProcess, &retstatus);
+		}
+#endif
+
+		filesystem::g_open_tempmem( p_out, p_abort );
+
+		for (;;)
+		{
+			DWORD read;
+			if ( ! ReadFile( stdout_rd, buffer, 1024, &read, NULL ) )
+			{
+				foobar2000_io::exception_io_from_win32( GetLastError() );
+			}
+			p_out->write_object( buffer, read, p_abort );
+			if ( read < 1024 ) break;
+		}
+
+		p_out->reopen( p_abort );
+
+		//DWORD retstatus;
+
+		if ( (WaitForSingleObject(piProcInfo.hProcess, INFINITE) == 0) &&
+			GetExitCodeProcess(piProcInfo.hProcess, &retstatus) )
+		{
+			const char * msg = NULL;
+
+			switch ( retstatus )
+			{
+			//case 1: msg = "No file provided"; break; // Using pipes, input should always work
+			case 2: msg = "Not an MO3 file"; break;
+			case 3: msg = "Error decoding MO3 file"; break;
+			//case 4: msg = "Output file could not be opened"; break; // Using pipes, output should also always work
+			}
+
+			if ( msg ) throw foobar2000_io::exception_io_data( msg );
+		}
+		else
+		{
+			throw foobar2000_io::exception_io_data( "Process exit failed" );
+		}
+	}
+
+	~unpack_mo3()
+	{
+		if ( piProcInfo.hProcess ) CloseHandle( piProcInfo.hProcess );
+		if ( piProcInfo.hThread ) CloseHandle( piProcInfo.hThread );
+
+#ifndef MO3_USE_TEMPFILE
+		if ( stdin_rd ) CloseHandle( stdin_rd );
+		if ( stdin_wr ) CloseHandle( stdin_wr );
+#else
+		if ( TempHandle ) CloseHandle( TempHandle );
+		uDeleteFile( temp_file );
+#endif
+		if ( stdout_rd ) CloseHandle( stdout_rd );
+		if ( stdout_wr ) CloseHandle( stdout_wr );
+
+		delete [] command_line;
+	}
+};
+#ifdef MO3_USE_TEMPFILE
+#undef MO3_USE_TEMPFILE
+#endif
+
 class input_mod
 {
 	int srate, interp, volramp;
@@ -2401,10 +2617,7 @@ public:
 
 	void open( service_ptr_t<file> m_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( m_file.is_empty() )
-		{
-			filesystem::g_open( m_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
-		}
+		input_open_file_helper( m_file, p_path, p_reason, p_abort );
 
 		t_uint8            * ptr;
 		unsigned             size;
@@ -2416,18 +2629,11 @@ public:
 
 			m_info = new file_info_impl;
 
-			try
-			{
-				unpacker::g_open( m_unpack, m_file, p_abort );
-
-				m_file = m_unpack;
-				read_tag = false;
-			}
-			catch ( const exception_io_data & )
+			if ( ! stricmp_utf8( extension, "MO3" ) )
 			{
 				try
 				{
-					unpack_j2b( m_unpack, m_file, p_abort );
+					unpack_mo3( m_unpack, m_file, p_abort );
 
 					m_file = m_unpack;
 					read_tag = false;
@@ -2436,6 +2642,31 @@ public:
 				{
 					m_file->seek( 0, p_abort );
 					read_tag = true;
+				}
+			}
+			else
+			{
+				try
+				{
+					unpacker::g_open( m_unpack, m_file, p_abort );
+
+					m_file = m_unpack;
+					read_tag = false;
+				}
+				catch ( const exception_io_data & )
+				{
+					try
+					{
+						unpack_j2b( m_unpack, m_file, p_abort );
+
+						m_file = m_unpack;
+						read_tag = false;
+					}
+					catch ( const exception_io_data & )
+					{
+						m_file->seek( 0, p_abort );
+						read_tag = true;
+					}
 				}
 			}
 

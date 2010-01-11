@@ -214,7 +214,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="1"
-			WholeProgramOptimization="3"
+			WholeProgramOptimization="4"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
