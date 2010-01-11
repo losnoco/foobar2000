@@ -83,7 +83,7 @@ private:
 	bool is_seekable, noseeking;
 	sample_t bias, level;
 
-	bool do_dynrng;
+	bool do_dynrng, ignore_broken_files;
 
 	service_ptr_t<file> m_file;
 
@@ -221,6 +221,8 @@ public:
 
 	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
+		ignore_broken_files = ! ( p_flags & input_flag_testing_integrity );
+
 		if ( ! state )
 		{
 			state = a52_init(0);
@@ -283,6 +285,8 @@ public:
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
+		try
+		{
 		while (!remain)
 		{
 			p_abort.check();
@@ -551,6 +555,12 @@ public:
 		p_chunk.set_sample_count(256 - skip_samples);
 		skip_samples = 0;
 		return true;
+		}
+		catch ( const exception_io_data & )
+		{
+			if ( ignore_broken_files ) return false;
+			throw;
+		}
 	}
 
 	void decode_seek( double p_seconds,abort_callback & p_abort )
