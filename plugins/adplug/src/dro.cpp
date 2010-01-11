@@ -97,7 +97,8 @@ bool CdroPlayer::update()
     default:
       if(cmd==4) cmd = data[pos++]; //data override
       if(index == 0 || opl3_mode)
-	opl->write(cmd,data[pos++]);
+	opl->write(cmd,data[pos]);
+	  pos++;
       break;
     }
   }
