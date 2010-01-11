@@ -578,10 +578,9 @@ static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, i
 	return precede;
 }
 
-static int load_exe_unpack(pfc::array_t<t_uint8> & dst, const BYTE *src, uLong srclen)
+static int load_exe_unpack(pfc::array_t<t_uint8> & dst, const BYTE *src, uLong srclen, int version)
 {
 	DBG("loading");
-
 	pfc::array_t<t_uint8> buf;
 	buf.set_size( 0x200004 );
 	BYTE *ptr = buf.get_ptr();
@@ -600,8 +599,17 @@ static int load_exe_unpack(pfc::array_t<t_uint8> & dst, const BYTE *src, uLong s
 		return 1;
 	}
 
-	DWORD dst_start = pfc::byteswap_if_be_t( *(DWORD*)(dst.get_ptr()) );
-	DWORD src_start = pfc::byteswap_if_be_t( *(DWORD*)(buf.get_ptr()) );
+	DWORD dst_start, src_start;
+	if ( version == 1 )
+	{
+		dst_start = pfc::byteswap_if_le_t( *(DWORD*)(dst.get_ptr()) );
+		src_start = pfc::byteswap_if_le_t( *(DWORD*)(buf.get_ptr()) );
+	}
+	else
+	{
+		dst_start = pfc::byteswap_if_be_t( *(DWORD*)(dst.get_ptr()) );
+		src_start = pfc::byteswap_if_be_t( *(DWORD*)(buf.get_ptr()) );
+	}
 	dst_start &= 0x1FFFFF;
 	src_start &= 0x1FFFFF;
 	DWORD dst_len = dst.get_size() - 4;
@@ -617,7 +625,8 @@ static int load_exe_unpack(pfc::array_t<t_uint8> & dst, const BYTE *src, uLong s
 		memset( dst.get_ptr() + 4, 0, diff );
 		dst_len += diff;
 		dst_start = src_start;
-		*(DWORD*)(dst.get_ptr()) = pfc::byteswap_if_be_t( dst_start );
+		if ( version == 1 ) *(DWORD*)(dst.get_ptr()) = pfc::byteswap_if_le_t( dst_start );
+		else *(DWORD*)(dst.get_ptr()) = pfc::byteswap_if_be_t( dst_start );
 	}
 	if ( ( src_start + src_len ) > ( dst_start + dst_len ) )
 	{
@@ -733,7 +742,7 @@ private:
 			// load executable only
 			info.set_length((double)(tag_song_ms+tag_fade_ms)*.001);
 			if (inherit == -2) return 1;
-			return load_exe_unpack(m_executable, ptr, exe_size);
+			return load_exe_unpack(m_executable, ptr, exe_size, m_version);
 		}
 
 		int precede = 0;
@@ -824,7 +833,7 @@ private:
 			}
 		}
 
-		rtn = load_exe_unpack(m_executable, buf.get_ptr(), exe_size);
+		rtn = load_exe_unpack(m_executable, buf.get_ptr(), exe_size, m_version);
 		buf.set_size(0);
 		if (!rtn)
 		{
