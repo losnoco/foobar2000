@@ -967,7 +967,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\..\src\fluidsynth.h"
+			RelativePath="..\..\include\fluidsynth.h"
 			>
 		</File>
 		<File
