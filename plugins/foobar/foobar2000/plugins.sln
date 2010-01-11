@@ -493,7 +493,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsidplay_static", "..\..\
 EndProject
 Global
 	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 101
+		SccNumberOfProjects = 103
 		SccProjectName0 = \u0022$/foobar2000/plugins.root/plugins\u0022,\u0020CEAAAAAA
 		SccLocalPath0 = ..\\..
 		SccProvider0 = MSSCCI:Microsoft\u0020Visual\u0020SourceSafe
@@ -798,6 +798,12 @@ Global
 		SccProjectUniqueName100 = ..\\..\\sidplay2\\libsidplay\\win\\VC\\libsidplay_static.vcproj
 		SccLocalPath100 = ..\\..
 		SccProjectFilePathRelativizedFromConnection100 = sidplay2\\libsidplay\\win\\VC\\
+		SccProjectUniqueName101 = foo_input_dts\\foo_input_dts.vcproj
+		SccLocalPath101 = ..\\..
+		SccProjectFilePathRelativizedFromConnection101 = foobar\\foobar2000\\foo_input_dts\\
+		SccProjectUniqueName102 = ..\\..\\libdca\\vc++\\libdca.vcproj
+		SccLocalPath102 = ..\\..
+		SccProjectFilePathRelativizedFromConnection102 = libdca\\vc++\\
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
