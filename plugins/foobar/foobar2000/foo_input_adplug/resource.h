@@ -6,6 +6,8 @@
 #define IDC_SAMPLERATE                  1001
 #define IDC_CHECK1                      1002
 #define IDC_PLAY_INDEFINITELY           1002
+#define IDC_SAMPLERATE2                 1003
+#define IDC_ADLIBCORE                   1003
 
 // Next default values for new objects
 // 

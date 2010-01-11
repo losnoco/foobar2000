@@ -1,7 +1,11 @@
-#define MYVERSION "1.0"
+#define MYVERSION "1.1"
 
 /*
 	change log
+
+2009-03-30 01:00 UTC - kode54
+- Implemented Ken Silverman's Adlib emulator core and configuration
+- Version is now 1.1
 
 2008-10-16 02:48 UTC - kode54
 - Implemented database checking for live updates.
@@ -20,6 +24,7 @@
 
 #include <adplug.h>
 #include <emuopl.h>
+#include <kemuopl.h>
 
 // {0BD2647E-90FE-4d99-BE78-D3DCC5B22E87}
 static const GUID guid_cfg_samplerate = 
@@ -30,9 +35,13 @@ static const GUID guid_cfg_history_rate =
 // {58EB29CE-0FE7-4647-BF96-5C5A70EA4AD3}
 static const GUID guid_cfg_play_indefinitely = 
 { 0x58eb29ce, 0xfe7, 0x4647, { 0xbf, 0x96, 0x5c, 0x5a, 0x70, 0xea, 0x4a, 0xd3 } };
+// {A526C7E1-3BC6-4ddb-BD6A-C5A0F5D725FE}
+static const GUID guid_cfg_adlib_core = 
+{ 0xa526c7e1, 0x3bc6, 0x4ddb, { 0xbd, 0x6a, 0xc5, 0xa0, 0xf5, 0xd7, 0x25, 0xfe } };
 
 static cfg_int cfg_samplerate( guid_cfg_samplerate, 44100 );
 static cfg_int cfg_play_indefinitely( guid_cfg_play_indefinitely, 0 );
+static cfg_int cfg_adlib_core( guid_cfg_adlib_core, 0 );
 
 static critical_section  g_database_lock;
 static t_filestats       g_database_stats = {0};
@@ -128,7 +137,15 @@ public:
 
 		srate = cfg_samplerate;
 
-		m_emu = new CEmuopl( srate, true, true );
+		switch (cfg_adlib_core)
+		{
+		case 0:
+			m_emu = new CEmuopl( srate, true, true );
+			break;
+		case 1:
+			m_emu = new CKemuopl( srate, true, true );
+			break;
+		}
 
 		{
 			insync( g_database_lock );
@@ -395,6 +412,11 @@ class preferences_page_adplug : public preferences_page
 				cfg_history_rate.setup_dropdown(w = GetDlgItem(wnd,IDC_SAMPLERATE));
 				uSendMessage(w, CB_SETCURSEL, 0, 0);
 
+				w = GetDlgItem(wnd, IDC_ADLIBCORE);
+				uSendMessageText(w, CB_ADDSTRING, 0, "Jarek Burczynski's");
+				uSendMessageText(w, CB_ADDSTRING, 0, "Ken Silverman's");
+				uSendMessage(w, CB_SETCURSEL, cfg_adlib_core, 0);
+
 				uSendDlgItemMessage(wnd, IDC_PLAY_INDEFINITELY, BM_SETCHECK, cfg_play_indefinitely, 0);
 			}
 			return 1;
@@ -411,6 +433,9 @@ class preferences_page_adplug : public preferences_page
 					else if (t>192000) t=192000;
 					cfg_samplerate = t;
 				}
+				break;
+			case (CBN_SELCHANGE<<16)|IDC_ADLIBCORE:
+				cfg_adlib_core = uSendMessage((HWND)lp, CB_GETCURSEL, 0, 0);
 				break;
 			}
 			break;
