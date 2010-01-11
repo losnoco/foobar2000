@@ -2,6 +2,11 @@
      © 2004 Kreisquadratur
      icq#56165405
 
+    2009-07-22 00:55 UTC - kode54
+	- Removed Win9x detection since it's been a long time since foobar2000 supported Win9x
+	- Changed capitalization of menu command name
+	- Updated component version description notice and copyright
+
 	2004-02-09 15:59 UTC - kode54
 	- Added new WTSAPI32-based window class for session monitoring in Windows XP and 2003 Server
 	- Consolidated lock/unlock code into static functions
@@ -19,6 +24,7 @@
 */
 
 #define _WIN32_WINNT 0x501
+#define NO_MORE_WIN9X
 
 #include <foobar2000.h>
 
@@ -34,8 +40,9 @@ DECLARE_COMPONENT_VERSION(
 	"Pause on Lock",
 	"0.4",
 	"Pause/Resume when Workstation is Locked/Unlocked\n\n"
-	"for foobar2000 v0.8\n\n"
-	"(c) Kreisquadratur 2004");
+	"for foobar2000 v0.9\n\n"
+	"(c) Kreisquadratur 2004\n"
+	"(c) Chris Moeller 2009");
 
 // {79FC6DE5-0291-47ab-A806-B4764B1C2279}
 static const GUID guid_cfg_enabled = 
@@ -49,7 +56,9 @@ static BOOL cfg_waslocked = FALSE;
 static BOOL cfg_resume = FALSE;
 static UINT hTimer = 0;
 
+#ifndef NO_MORE_WIN9X
 static BOOL win_ver = FALSE;
+#endif
 
 class CSessionWnd;
 typedef BOOL (WINAPI * pWTSRegisterSessionNotification)(HWND hWnd, DWORD dwFlags);
@@ -277,7 +286,9 @@ static VOID CALLBACK IsWorkstationLocked(HWND hwnd,UINT message,UINT idEvent,DWO
 
 static void enable()
 {
+#ifndef NO_MORE_WIN9X
 	if (win_ver)
+#endif
 	{
 		g_sessionwnd = new CSessionWnd;
 		if (!g_sessionwnd->Initialize(core_api::get_my_instance()))
@@ -291,7 +302,9 @@ static void enable()
 
 static void disable()
 {
+#ifndef NO_MORE_WIN9X
 	if (win_ver)
+#endif
 	{
 		if (g_sessionwnd)
 		{
@@ -316,9 +329,13 @@ static void disable()
 class initquit_foolock : public initquit {
 	virtual void on_init()
 	{
+#ifndef NO_MORE_WIN9X
 		if (IsWinVer2000Plus())
+#endif
 		{
+#ifndef NO_MORE_WIN9X
 			win_ver = TRUE;
+#endif
 			if (cfg_enabled) enable();
 		}
 	}
@@ -350,7 +367,7 @@ class mainmenu_command_foolock : public mainmenu_commands {
 	
 	virtual void get_name(t_uint32 p_index,pfc::string_base & p_out)
 	{
-		p_out = "Pause on lock";
+		p_out = "Pause On Lock";
 	}
 
 	virtual bool get_description(t_uint32 p_index,pfc::string_base & p_out)
@@ -366,7 +383,15 @@ class mainmenu_command_foolock : public mainmenu_commands {
 
 	virtual bool get_display(t_uint32 p_index,pfc::string_base & p_text,t_uint32 & p_flags)
 	{
-		p_flags = ( win_ver ) ? ( ( cfg_enabled ) ? flag_checked : 0 ) : flag_disabled;
+		p_flags =
+#ifndef NO_MORE_WIN9X
+			( win_ver ) ?
+#endif
+			( ( cfg_enabled ) ? flag_checked : 0 )
+#ifndef NO_MORE_WIN9X
+			: flag_disabled
+#endif
+			;
 		get_name(p_index,p_text);
 		return true;
 	}
