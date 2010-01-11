@@ -11,12 +11,17 @@
 
 // both header and file type
 typedef enum {
-	type_std,
-	type_sfass,
-	type_mp2,
-	type_pm2,
-	type_halp,
-	type_mp2d
+	type_std,   // devkit standard DSP
+	type_sfass, // Star Fox Assault Cstr (DSP)
+	type_mp2,   // Metroid Prime 2 RS03 (DSP)
+	type_pm2,   // Paper Mario 2 STM (DSP)
+	type_halp,  // HALPST (DSP)
+	type_mp2d,  // Metroid Prime 2 Demo (DSP)
+	type_idsp,  // IDSP (DSP)
+	type_spt,   // SPT+SPD (DSP)
+	type_mss,   // MSS (DSP)
+	type_gcm,   // GCM (DSP)
+	type_adp	// ADP
 } headertype;
 
 // structure represents header for a channel
@@ -31,7 +36,7 @@ typedef struct {
 	u16 gain; // never used anyway
 	u16 ps,yn1,yn2;
 	u16 lps,lyn1,lyn2;
-} DSPHEAD;
+} CUBEHEAD;
 
 // structure for a single channel
 typedef struct {
@@ -46,11 +51,11 @@ typedef struct {
 	t_filesize offs; // current location
 	short hist1,hist2; // sample history
 	long interleave; // _bytes_ of interleave, 0 if none
-} DSPSTREAM;
+} CUBESTREAM;
 
 // structure represents a DSP file
 typedef struct {
-	DSPSTREAM ch[2];
+	CUBESTREAM ch[2];
 	int NCH;
 	long nrsamples;
 	long file_length;
@@ -58,18 +63,28 @@ typedef struct {
 	long halpsize;
 	int lastchunk;
 	long startinterleave;
-} DSPFILE;
+} CUBEFILE;
 
-void InitDSPFILE(DSPFILE * dsp, abort_callback & p_abort);
+void InitDSPFILE(DSPFILE * dsp, abort_callback & p_abort, headertype type = type_std);
 //void CloseDSPFILE(DSPFILE * dsp);
 
-int decodebuffer
+int DSPdecodebuffer
 (
     u8			*input, // location of encoded source samples
     s16         *out,   // location of destination buffer (16 bits / sample)
     short		coef[16],   // location of adpcm info
 	short * histp,
 	short * hist2p
+);
+
+int ADPdecodebuffer(
+	unsigned char *input,
+	short *outl,
+	short *outr,
+	long *histl1,
+	long *histl2,
+	long *histr1,
+	long *histr2
 );
 
 void fillbuffers(DSPFILE * dsp, abort_callback & p_abort);
