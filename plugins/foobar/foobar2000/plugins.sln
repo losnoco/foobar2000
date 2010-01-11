@@ -523,9 +523,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_qsf", "foo_input_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QCore", "..\..\ESP\QSound\Core\QCore.vcproj", "{AC325F7F-7898-4810-88F2-8E0C04125A77}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_unpack_unix", "foo_unpack_unix\foo_unpack_unix.vcproj", "{B2439394-4262-4FEC-B826-7F077C6786F2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA} = {4A5CC722-A067-487F-9DD3-8EDAC8633FDA}
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F} = {C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}
+		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE} = {E7DD9FB8-A045-42A3-A25A-37A96B1421AE}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 108
+		SccNumberOfProjects = 109
 		SccProjectName0 = \u0022$/foobar2000/plugins.root/plugins\u0022,\u0020CEAAAAAA
 		SccLocalPath0 = ..\\..
 		SccProvider0 = MSSCCI:Microsoft\u0020Visual\u0020SourceSafe
@@ -851,6 +858,9 @@ Global
 		SccProjectUniqueName107 = ..\\..\\ESP\\QSound\\Core\\QCore.vcproj
 		SccLocalPath107 = ..\\..
 		SccProjectFilePathRelativizedFromConnection107 = ESP\\QSound\\Core\\
+		SccProjectUniqueName108 = foo_unpack_unix\\foo_unpack_unix.vcproj
+		SccLocalPath108 = ..\\..
+		SccProjectFilePathRelativizedFromConnection108 = foobar\\foobar2000\\foo_unpack_unix\\
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -1492,6 +1502,12 @@ Global
 		{AC325F7F-7898-4810-88F2-8E0C04125A77}.Release staticlink|Win32.Build.0 = Release|Win32
 		{AC325F7F-7898-4810-88F2-8E0C04125A77}.Release|Win32.ActiveCfg = Release|Win32
 		{AC325F7F-7898-4810-88F2-8E0C04125A77}.Release|Win32.Build.0 = Release|Win32
+		{B2439394-4262-4FEC-B826-7F077C6786F2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B2439394-4262-4FEC-B826-7F077C6786F2}.Debug|Win32.Build.0 = Debug|Win32
+		{B2439394-4262-4FEC-B826-7F077C6786F2}.Release staticlink|Win32.ActiveCfg = Release|Win32
+		{B2439394-4262-4FEC-B826-7F077C6786F2}.Release staticlink|Win32.Build.0 = Release|Win32
+		{B2439394-4262-4FEC-B826-7F077C6786F2}.Release|Win32.ActiveCfg = Release|Win32
+		{B2439394-4262-4FEC-B826-7F077C6786F2}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
