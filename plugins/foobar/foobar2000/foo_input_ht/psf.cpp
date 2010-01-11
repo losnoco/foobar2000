@@ -3,6 +3,9 @@
 /*
 	changelog
 
+2009-08-09 22:40 UTC - kode54
+- Added limit to upload length in PSF loader, depending on target system's memory size
+
 2009-08-06 00:34 UTC - kode54
 - Fixed start silence skipping when resetting state in seek function
 
@@ -664,7 +667,13 @@ public:
 	{
 		if ( m_version != 2 ) m_version = 1;
 		if ( !load( p_reader, p_info, inherit ) ) throw exception_io_data();
-		if ( state ) sega_upload_program( state, m_executable.get_ptr(), m_executable.get_size() );
+		if ( state )
+		{
+			unsigned max_length = ( m_version == 2 ) ? 0x200004 : 0x80004;
+			unsigned length = m_executable.get_size();
+			if ( length > max_length ) length = max_length;
+			sega_upload_program( state, m_executable.get_ptr(), length );
+		}
 	}
 
 private:
