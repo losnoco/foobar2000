@@ -104,6 +104,13 @@ namespace pfc {
 		return temp;
 	}
 
+	typedef std::exception exception;
+
+	PFC_DECLARE_EXCEPTION(exception_overflow,exception,"Overflow");
+	PFC_DECLARE_EXCEPTION(exception_bug_check,exception,"Bug check");
+	PFC_DECLARE_EXCEPTION(exception_not_implemented,exception_bug_check,"Feature not implemented");
+	PFC_DECLARE_EXCEPTION(exception_dynamic_assert,exception_bug_check,"dynamic_assert failure");
+
 	template<typename t_ret,typename t_param>
 	t_ret downcast_guarded(const t_param & p_param) {
 		t_ret temp = (t_ret) p_param;
@@ -125,13 +132,6 @@ namespace pfc {
 		if (delta < p_acc) throw exception_overflow();
 		p_acc = delta;
 	}
-
-	typedef std::exception exception;
-
-	PFC_DECLARE_EXCEPTION(exception_overflow,exception,"Overflow");
-	PFC_DECLARE_EXCEPTION(exception_bug_check,exception,"Bug check");
-	PFC_DECLARE_EXCEPTION(exception_not_implemented,exception_bug_check,"Feature not implemented");
-	PFC_DECLARE_EXCEPTION(exception_dynamic_assert,exception_bug_check,"dynamic_assert failure");
 
 	//deprecated
 	inline void bug_check_assert(bool p_condition, const char * p_msg) {
@@ -621,6 +621,11 @@ namespace pfc {
 		array_rangecheck_t(p_array,p_from); array_rangecheck_t(p_array,p_to);
 	}
 
+	template<typename p_type1,typename p_type2> class assert_same_type;
+	template<typename p_type> class assert_same_type<p_type,p_type> {};
+
+	inline t_int32 rint32(double p_val) {return (t_int32) floor(p_val + 0.5);}
+	inline t_int64 rint64(double p_val) {return (t_int64) floor(p_val + 0.5);}
 };
 
 

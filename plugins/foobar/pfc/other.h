@@ -6,7 +6,7 @@ namespace pfc {
 	class vartoggle_t {
 		T oldval; T & var;
 	public:
-		vartoggle_t(T & p_var,T val) : var(p_var) {
+		vartoggle_t(T & p_var,const T & val) : var(p_var) {
 			oldval = var;
 			var = val;
 		}

@@ -35,3 +35,15 @@ private:
 };
 
 typedef mem_block_container_impl_t<> mem_block_container_impl;
+
+class mem_block_container_temp_impl : public mem_block_container {
+public:
+	mem_block_container_temp_impl(void * p_buffer,t_size p_size) : m_buffer(p_buffer), m_buffer_size(p_size), m_size(0) {}
+	const void * get_ptr() const {return m_buffer;}
+	void * get_ptr() {return m_buffer;}
+	t_size get_size() const {return m_size;}
+	void set_size(t_size p_size) {if (p_size > m_buffer_size) throw pfc::exception_overflow(); m_size = p_size;}
+private:
+	t_size m_size,m_buffer_size;
+	void * m_buffer;
+};

@@ -135,7 +135,7 @@ public:
 	
 	bool get_content_type(pfc::string_base &) {return false;}
 
-	void reopen(abort_callback & p_abort) {return seek(0,p_abort);}
+	void reopen(abort_callback & p_abort) {seek(0,p_abort);}
 };
 
 class stream_reader_memblock_ref : public stream_reader

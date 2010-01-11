@@ -472,7 +472,7 @@ t_size playlist_manager::find_playlist(const char * p_name,t_size p_name_length)
 	for(n=0;n<m;n++)
 	{
 		if (!playlist_get_name(n,temp)) break;
-		if (!stricmp_utf8_ex(temp,temp.length(),p_name,p_name_length)) return n;
+		if (stricmp_utf8_ex(temp,temp.length(),p_name,p_name_length) == 0) return n;
 	}
 	return infinite;
 }
@@ -482,6 +482,16 @@ t_size playlist_manager::find_or_create_playlist(const char * p_name,t_size p_na
 	t_size index = find_playlist(p_name,p_name_length);
 	if (index != infinite) return index;
 	return create_playlist(p_name,p_name_length,infinite);
+}
+
+t_size playlist_manager::create_playlist_autoname(t_size p_index) {	
+	static const char new_playlist_text[] = "New Playlist";
+	if (find_playlist(new_playlist_text,infinite) == infinite) return create_playlist(new_playlist_text,infinite,p_index);
+	for(t_size walk = 2; ; walk++) {
+		pfc::string_fixed_t<64> namebuffer;
+		namebuffer << new_playlist_text << " (" << walk << ")";
+		if (find_playlist(namebuffer,infinite) == infinite) return create_playlist(namebuffer,infinite,p_index);
+	}
 }
 
 bool playlist_manager::activeplaylist_sort_by_format(const char * spec,bool p_sel_only)
@@ -521,7 +531,7 @@ void playlist_manager::active_playlist_fix()
 		t_size max = get_playlist_count();
 		if (max == 0)
 		{
-			create_playlist("New playlist",infinite,infinite);
+			create_playlist_autoname();
 		}
 		set_active_playlist(0);
 	}

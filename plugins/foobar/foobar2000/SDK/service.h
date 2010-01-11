@@ -312,11 +312,11 @@ private:
 //! Usage: static_api_ptr_ex_t<myclass,myclass_extension> api; api->dosomething();
 //! Can be used at any point of code, WITH EXCEPTION of static objects that are initialized during DLL load before service system is initialized. That includes static static_api_ptr_ex_t objects, as well as having static_api_ptr_ex_t as members of statically created objects.
 //! Throws exception_service_not_found if service could not be reached (which can be ignored for core APIs that are always present unless there is some kind of bug in the code).
-template<typename t_entrypoint, typename t_extension>
+template<typename t_extension>
 class static_api_ptr_ex_t {
 public:
 	static_api_ptr_ex_t() {
-		if (!static_api_ptr_t<t_entrypoint>()->service_query_t(m_ptr)) throw exception_service_extension_not_found();
+		if (!static_api_ptr_t<t_extension::t_interface_entrypoint>()->service_query_t(m_ptr)) throw exception_service_extension_not_found();
 	}
 
 	service_obscure_refcounting<t_extension>* operator->() const {return service_obscure_refcounting_cast(m_ptr.get_ptr());}

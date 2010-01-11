@@ -16,15 +16,12 @@ public:
 
 	virtual void run(const audio_chunk & p_chunk,
 		mem_block_container & p_output,
-		unsigned p_out_bps,
-		unsigned p_out_bps_physical,
+		t_uint32 p_out_bps,
+		t_uint32 p_out_bps_physical,
 		bool p_dither,
 		audio_sample p_prescale
 		) = 0;
 
-
-	//! Static helper; creates an instance of audio_postprocessor service.
-	inline static bool g_create(service_ptr_t<audio_postprocessor> & p_out) {return service_enum_create_t(p_out,0);}
 
 
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(audio_postprocessor);

@@ -5,7 +5,7 @@
 class NOVTABLE preferences_page : public service_base {
 public:
 	//! Creates preferences page dialog window. It is safe to assume that two dialog instances will never coexist. Caller is responsible for embedding it into preferences dialog itself.
-	virtual HWND create(HWND parent) = 0;
+	virtual HWND create(HWND p_parent) = 0;
 	//! Retrieves name of the prefernces page to be displayed in preferences tree (static string).
 	virtual const char * get_name() = 0;
 	//! Retrieves GUID of the page.

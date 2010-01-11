@@ -99,6 +99,8 @@ namespace dialog_helper
 		virtual ~dialog_modeless_v2();
 		HWND get_wnd() const {return m_wnd;}
 		virtual BOOL on_message(UINT msg,WPARAM wp,LPARAM lp) {return FALSE;}
+
+		static dialog_modeless_v2 * __unsafe__instance_from_window(HWND p_wnd) {return reinterpret_cast<dialog_modeless_v2*>(GetWindowLong(p_wnd,DWL_USER));}
 	private:
 		static INT_PTR CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
 		void detach_window();

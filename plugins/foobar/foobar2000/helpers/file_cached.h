@@ -13,12 +13,12 @@ private:
 		m_position = 0;
 		m_can_seek = m_base->can_seek();
 		if (m_can_seek) {
-			m_base->get_position(m_position_base,p_abort);
+			m_position_base = m_base->get_position(p_abort);
 		} else {
 			m_position_base = 0;
 		}
 
-		m_size m_base->get_size(m_size,p_abort);
+		m_size = m_base->get_size( p_abort );
 
 		flush_buffer();
 	}
@@ -55,7 +55,7 @@ public:
 		p_abort.check_e();
 		adjust_position(m_position,p_abort);
 		m_base->write(p_buffer,p_bytes,p_abort);
-		m_position_base = m_position = m_position + p_bytes_written;
+		m_position_base = m_position = m_position + p_bytes;
 		if (m_size < m_position) m_size = m_position;
 		flush_buffer();
 	}
@@ -84,6 +84,24 @@ public:
 	bool get_content_type(pfc::string_base & out) {return m_base->get_content_type(out);}
 	void on_idle(abort_callback & p_abort) {p_abort.check_e();m_base->on_idle(p_abort);}
 	t_filetimestamp get_timestamp(abort_callback & p_abort) {p_abort.check_e(); return m_base->get_timestamp(p_abort);}
+	void resize( t_filesize p_size, abort_callback & p_abort )
+	{
+		p_abort.check_e();
+		if ( p_size != m_size )
+		{
+			if ( p_size < m_position ) m_position = p_size;
+			m_base->resize( p_size, p_abort );
+			if ( p_size < m_size && p_size < m_position_base + blocksize )
+				flush_buffer();
+			m_size = p_size;
+		}
+	}
+	void reopen( abort_callback & p_abort )
+	{
+		p_abort.check_e();
+		if ( m_position != 0 ) adjust_position( 0, p_abort );
+	}
+	bool is_remote() { return m_base->is_remote(); }
 private:
 	void adjust_position(t_filesize p_target,abort_callback & p_abort) {
 		if (p_target != m_position_base) {

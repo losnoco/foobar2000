@@ -4,7 +4,7 @@ namespace listview_helper
 
 	unsigned insert_column(HWND p_listview,unsigned p_index,const char * p_name,unsigned p_width_dlu);//returns index of new item on success, infinite on failure
 
-	bool set_item_text(HWND p_listview,unsigned p_index,unsigned p_column,const char * p_name);//returns index of new item on success, infinite on failure
+	bool set_item_text(HWND p_listview,unsigned p_index,unsigned p_column,const char * p_name);
 
 	bool is_item_selected(HWND p_listview,unsigned p_index);
 

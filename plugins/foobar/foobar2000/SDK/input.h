@@ -114,7 +114,7 @@ public:
 	//! @param p_type Content type string to test.
 	virtual bool is_our_content_type(const char * p_type)=0;
 
-	//! Determines whether specified file type can be handled by this input.
+	//! Determines whether specified file type can be handled by this input. This must not use any kind of file access; the result should be only based on file path / extension.
 	//! @param p_full_path Full URL of file being tested.
 	//! @param p_extension Extension of file being tested, provided by caller for performance reasons.
 	virtual bool is_our_path(const char * p_full_path,const char * p_extension)=0;
@@ -161,6 +161,11 @@ public:
 	static void g_open_for_info_read(service_ptr_t<input_info_reader> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
 	static void g_open_for_info_write(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
 	static bool g_is_supported_path(const char * p_path);
+
+
+	void open(service_ptr_t<input_decoder> & p_instance,service_ptr_t<file> const & p_filehint,const char * p_path,abort_callback & p_abort) {open_for_decoding(p_instance,p_filehint,p_path,p_abort);}
+	void open(service_ptr_t<input_info_reader> & p_instance,service_ptr_t<file> const & p_filehint,const char * p_path,abort_callback & p_abort) {open_for_info_read(p_instance,p_filehint,p_path,p_abort);}
+	void open(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> const & p_filehint,const char * p_path,abort_callback & p_abort) {open_for_info_write(p_instance,p_filehint,p_path,p_abort);}
 
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(input_entry);
 };

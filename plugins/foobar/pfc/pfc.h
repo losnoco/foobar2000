@@ -8,9 +8,9 @@
 
 #define PFC_DLL_EXPORT
 
-
 #if defined(_WIN32) || defined(_WIN32_WCE)
 #pragma warning(disable:4996)
+
 #ifndef STRICT
 #define STRICT
 #endif
@@ -18,9 +18,11 @@
 #ifndef _SYS_GUID_OPERATOR_EQ_
 #define _NO_SYS_GUID_OPERATOR_EQ_	//fix retarded warning with operator== on GUID returning int
 #endif
+
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x500
 #endif
+
 #include <windows.h>
 
 #ifndef _SYS_GUID_OPERATOR_EQ_
@@ -38,7 +40,9 @@ inline bool operator!=(REFGUID guidOne, REFGUID guidOther) {return !__InlineIsEq
 #endif
 
 #else
+
 #error Only win32 target supported.
+
 #endif
 
 
@@ -48,6 +52,7 @@ inline bool operator!=(REFGUID guidOne, REFGUID guidOther) {return !__InlineIsEq
 #define PFC_ALLOCA_LIMIT (4096)
 
 #define INDEX_INVALID ((unsigned)(-1))
+
 
 #include <exception>
 #include <stdexcept>

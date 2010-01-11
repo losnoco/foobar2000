@@ -199,7 +199,7 @@ void audio_chunk::set_data_floatingpoint_ex(const void * ptr,t_size size,unsigne
 	set_channels(nch,p_channel_config);
 }
 
-bool audio_chunk::is_valid()
+bool audio_chunk::is_valid() const
 {
 	unsigned nch = get_channels();
 	if (nch==0 || nch>256) return false;

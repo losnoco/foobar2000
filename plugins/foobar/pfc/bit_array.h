@@ -1,8 +1,7 @@
 #ifndef _PFC_BIT_ARRAY_H_
 #define _PFC_BIT_ARRAY_H_
 
-class NOVTABLE bit_array
-{
+class NOVTABLE bit_array {
 public:
 	virtual bool get(t_size n) const = 0;
 	virtual t_size find(bool val,t_size start,t_ssize count) const//can be overridden for improved speed; returns first occurance of val between start and start+count (excluding start+count), or start+count if not found; count may be negative if we're searching back
@@ -28,13 +27,17 @@ public:
 	inline t_size find_first(bool val,t_size start,t_size max) const {return find(val,start,max-start);}
 	inline t_size find_next(bool val,t_size previous,t_size max) const {return find(val,previous+1,max-(previous+1));}
 	//for(n = mask.find_first(true,0,m); n < m; n = mask.find_next(true,n,m) )
-
+protected:
+	bit_array() {}
+	~bit_array() {}
 };
 
-class NOVTABLE bit_array_var : public bit_array
-{
+class NOVTABLE bit_array_var : public bit_array {
 public:
 	virtual void set(t_size n,bool val)=0;
+protected:
+	bit_array_var() {}
+	~bit_array_var() {}
 };
 
 

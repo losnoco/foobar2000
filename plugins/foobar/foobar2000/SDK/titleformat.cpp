@@ -344,7 +344,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 		double len = m_info->get_length();
 		if (len>0)
 		{
-			p_out->write(titleformat_inputtypes::unknown,pfc::format_time((t_int64)len));
+			p_out->write(titleformat_inputtypes::unknown,pfc::format_time(pfc::rint64(len)));
 			p_found_flag = true;
 			return true;
 		}

@@ -331,6 +331,8 @@ public:
 	t_size find_playlist(const char * p_name,t_size p_name_length);
 	t_size find_or_create_playlist(const char * p_name,t_size p_name_length);
 
+	t_size create_playlist_autoname(t_size p_index = infinite);
+
 	bool activeplaylist_sort_by_format(const char * spec,bool p_sel_only);
 
 	t_uint32 activeplaylist_lock_get_filter_mask();

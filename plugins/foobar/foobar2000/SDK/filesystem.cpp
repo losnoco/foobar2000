@@ -713,6 +713,9 @@ void foobar2000_io::exception_io_from_win32(DWORD p_code) {
 	case ERROR_SHARING_VIOLATION:
 	case ERROR_LOCK_VIOLATION:
 		throw exception_io_sharing_violation();
+	case ERROR_HANDLE_DISK_FULL:
+	case ERROR_DISK_FULL:
+		throw exception_io_device_full();
 	default:
 		throw exception_io(pfc::string_formatter() << "I/O error (win32 #" << (t_uint32)p_code << ")");
 	case ERROR_FILE_NOT_FOUND:

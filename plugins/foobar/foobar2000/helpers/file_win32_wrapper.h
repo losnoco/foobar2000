@@ -124,8 +124,9 @@ public:
 		}
 		SetLastError(ERROR_SUCCESS);
 		if (!SetEndOfFile(m_handle)) {
+			DWORD code = GetLastError();
 			if (m_position != p_size) try {file_win32_helpers::seek(m_handle,m_position,file::seek_from_beginning);} catch(...) {}
-			exception_io_from_win32(GetLastError());
+			exception_io_from_win32(code);
 		}
 		if (m_position > p_size) m_position = p_size;
 		if (m_position != p_size) file_win32_helpers::seek(m_handle,m_position,file::seek_from_beginning);

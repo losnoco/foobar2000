@@ -31,9 +31,10 @@ namespace pfc {
 		
 		template<typename t_source>
 		inline void copy(t_source * p_ptr) {
-			if (m_ptr) m_ptr->refcount_release();
-			m_ptr = p_ptr;
-			if (m_ptr) m_ptr->refcount_add_ref();
+			T* torel = pfc::replace_t(m_ptr,p_ptr);
+			if (m_ptr != NULL) m_ptr->refcount_add_ref();
+			if (torel != NULL) torel->refcount_release();
+			
 		}
 
 		template<typename t_source>

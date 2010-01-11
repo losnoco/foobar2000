@@ -3,24 +3,49 @@
 
 namespace create_directory_helper
 {
-	void create_path(const char * p_path,abort_callback & p_abort)
-	{
-		pfc::array_t<char> temp; temp.set_size(strlen(p_path)+1);
-		strcpy(temp.get_ptr(),p_path);
-		char * ptr = strstr(temp.get_ptr(),":\\");
-		if (ptr)
-		{
-			ptr+=2;
-			while(*ptr)
-			{
-				if (*ptr == '\\')
-				{
-					*ptr = 0;
-					try {filesystem::g_create_directory(temp.get_ptr(),p_abort);} catch(exception_io_already_exists) {}
-					*ptr = '\\';
-				}
-				ptr++;
+	static void create_path_internal(const char * p_path,t_size p_base,abort_callback & p_abort) {
+		pfc::string8_fastalloc temp;
+		for(t_size walk = p_base; p_path[walk]; walk++) {
+			if (p_path[walk] == '\\') {
+				temp.set_string(p_path,walk);
+				try {filesystem::g_create_directory(temp.get_ptr(),p_abort);} catch(exception_io_already_exists) {}
 			}
+		}
+	}
+
+	static bool test_localpath(const char * p_path) {
+		if (pfc::strcmp_partial(p_path,"file://") == 0) p_path += strlen("file://");
+		return pfc::char_is_ascii_alpha(p_path[0]) && 
+			p_path[1] == ':' &&
+			p_path[2] == '\\';
+	}
+	static bool test_netpath(const char * p_path) {
+		if (pfc::strcmp_partial(p_path,"file://") == 0) p_path += strlen("file://");
+		if (*p_path != '\\') return false;
+		p_path++;
+		if (*p_path != '\\') return false;
+		p_path++;
+		if (!pfc::char_is_ascii_alphanumeric(*p_path)) return false;
+		p_path++;
+		while(pfc::char_is_ascii_alphanumeric(*p_path)) p_path++;
+		if (*p_path != '\\') return false;
+		return true;
+	}
+
+	void create_path(const char * p_path,abort_callback & p_abort) {
+		if (test_localpath(p_path)) {
+			t_size walk = 0;
+			if (pfc::strcmp_partial(p_path,"file://") == 0) walk += strlen("file://");
+			create_path_internal(p_path,walk + 3,p_abort);
+		} else if (test_netpath(p_path)) {
+			t_size walk = 0;
+			if (pfc::strcmp_partial(p_path,"file://") == 0) walk += strlen("file://");
+			while(p_path[walk] == '\\') walk++;
+			while(p_path[walk] != 0 && p_path[walk] != '\\') walk++;
+			while(p_path[walk] == '\\') walk++;
+			create_path_internal(p_path,walk,p_abort);
+		} else {
+			throw exception_io("Could not create directory structure; unknown path format");
 		}
 	}
 
@@ -115,7 +140,7 @@ namespace {
 void create_directory_helper::format_filename(const metadb_handle_ptr & handle,titleformat_hook * p_hook,const char * spec,pfc::string8 & out)
 {
 	pfc::string8 temp;
-	handle->format_title(p_hook,temp,spec,&titleformat_text_filter_impl_createdir());
+	handle->format_title_legacy(p_hook,temp,spec,&titleformat_text_filter_impl_createdir());
 	temp.replace_char('/','\\');
 	temp.fix_filename_chars('_','\\');
 	out = temp;

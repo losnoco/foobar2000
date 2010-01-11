@@ -85,6 +85,12 @@ public:
 	};
 
 	//! Renders information about currently playing item.
+	//! @param p_hook Optional callback object overriding fields and functions; set to NULL if not used.
+	//! @param p_out String receiving the output on success.
+	//! @param p_script Titleformat script to use. Use titleformat_compiler service to create one.
+	//! @param p_filter Optional callback object allowing input to be filtered according to context (i.e. removal of linebreak characters present in tags when rendering playlist lines). Set to NULL when not used.
+	//! @param p_level Indicates level of dynamic playback-related info displayed. See t_display_level enum for more details.
+	//! @returns true on success, false when no item is currently being played.
 	virtual bool playback_format_title(titleformat_hook * p_hook,pfc::string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter,t_display_level p_level) = 0;
 	
 

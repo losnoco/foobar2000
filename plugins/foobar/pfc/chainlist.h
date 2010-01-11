@@ -255,6 +255,20 @@ namespace pfc {
 			return iterator(this,new_elem);
 		}
 
+		template<typename t_insert> void insert_last_multi(const chain_list_t<t_insert> & p_list) {
+			chain_list_t<t_insert>::const_iterator iter;
+			for(iter = p_list.first(); iter.is_valid(); ++iter) {
+				insert_last(*iter);
+			}
+		}
+
+		template<typename t_insert> void insert_first_multi(const chain_list_t<t_insert> & p_list) {
+			chain_list_t<t_insert>::const_iterator iter;
+			for(iter = p_list.last(); iter.is_valid(); --iter) {
+				insert_first(*iter);
+			}
+		}
+
 		iterator insert_after(iterator const & p_iter);
 		iterator insert_before(iterator const & p_iter);
 		iterator insert_last();

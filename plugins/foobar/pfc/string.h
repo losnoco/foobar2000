@@ -39,6 +39,11 @@ namespace pfc {
 
 	bool string_is_numeric(const char * p_string,t_size p_length = infinite);
 	inline bool char_is_numeric(char p_char) {return p_char >= '0' && p_char <= '9';}
+	inline bool char_is_ascii_alpha_upper(char p_char) {return p_char >= 'A' && p_char <= 'Z';}
+	inline bool char_is_ascii_alpha_lower(char p_char) {return p_char >= 'a' && p_char <= 'z';}
+	inline bool char_is_ascii_alpha(char p_char) {return char_is_ascii_alpha_lower(p_char) || char_is_ascii_alpha_upper(p_char);}
+	inline bool char_is_ascii_alphanumeric(char p_char) {return char_is_ascii_alpha(p_char) || char_is_numeric(p_char);}
+	
 
 	class NOVTABLE string_base : public pfc::string_receiver {
 	public:

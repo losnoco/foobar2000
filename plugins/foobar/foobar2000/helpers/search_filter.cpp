@@ -159,7 +159,7 @@ namespace search_tools {
 		}
 
 		bool test(const file_info * item,const metadb_handle_ptr & handle) const {
-			handle->format_title(0,temp,field,0);
+			handle->format_title_legacy(0,temp,field,0);
 			return m_filter.test(temp);
 		}
 	};

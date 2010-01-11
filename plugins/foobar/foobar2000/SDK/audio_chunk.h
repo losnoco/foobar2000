@@ -1,7 +1,7 @@
 #ifndef _AUDIO_CHUNK_H_
 #define _AUDIO_CHUNK_H_
 
-//! Interface to container of a chunk of audio data. See audio_chunk_impl for implementation.
+//! Interface to container of a chunk of audio data. See audio_chunk_impl for an implementation.
 class NOVTABLE audio_chunk {
 public:
 	
@@ -14,8 +14,8 @@ public:
 		channel_lfe					= 1<<3,
 		channel_back_left			= 1<<4,
 		channel_back_right			= 1<<5,
-		channel_front_center_right	= 1<<6,
-		channel_front_center_left	= 1<<7,
+		channel_front_center_left	= 1<<6,
+		channel_front_center_right	= 1<<7,
 		channel_back_center			= 1<<8,
 		channel_side_left			= 1<<9,
 		channel_side_right			= 1<<10,
@@ -30,6 +30,8 @@ public:
 		channel_config_mono = channel_front_center,
 		channel_config_stereo = channel_front_left | channel_front_right,
 		channel_config_5point1 = channel_front_left | channel_front_right | channel_back_left | channel_back_right | channel_front_center | channel_lfe,
+
+		defined_channel_count = 18,
 	};
 
 	//! Helper function; guesses default channel map for specified channel count.
@@ -53,25 +55,25 @@ public:
 
 	//! Retrieves audio data buffer pointer (non-const version). Returned pointer is for temporary use only; it is valid until next set_data_size call, or until the object is destroyed. \n
 	//! Size of returned buffer is equal to get_data_size() return value (in audio_samples). Amount of actual data may be smaller, depending on sample count and channel count. Conditions where sample count * channel count are greater than data size should not be possible.
-	virtual audio_sample * get_data()=0;
+	virtual audio_sample * get_data() = 0;
 	//! Retrieves audio data buffer pointer (const version). Returned pointer is for temporary use only; it is valid until next set_data_size call, or until the object is destroyed. \n
 	//! Size of returned buffer is equal to get_data_size() return value (in audio_samples). Amount of actual data may be smaller, depending on sample count and channel count. Conditions where sample count * channel count are greater than data size should not be possible.
 	virtual const audio_sample * get_data() const = 0;
 	//! Retrieves size of allocated buffer space, in audio_samples.
 	virtual t_size get_data_size() const = 0;
 	//! Resizes audio data buffer to specified size. Throws std::bad_alloc on failure.
-	virtual void set_data_size(t_size p_new_size)=0;
+	virtual void set_data_size(t_size p_new_size) = 0;
 	
 	//! Retrieves sample rate of contained audio data.
 	virtual unsigned get_srate() const = 0;
 	//! Sets sample rate of contained audio data.
-	virtual void set_srate(unsigned val)=0;
+	virtual void set_srate(unsigned val) = 0;
 	//! Retrieves channel count of contained audio data.
 	virtual unsigned get_channels() const = 0;
 	//! Retrieves channel map of contained audio data. Conditions where number of channels specified by channel map don't match get_channels() return value should not be possible.
 	virtual unsigned get_channel_config() const = 0;
 	//! Sets channel count / channel map.
-	virtual void set_channels(unsigned p_count,unsigned p_config)=0;
+	virtual void set_channels(unsigned p_count,unsigned p_config) = 0;
 
 	//! Retrieves number of valid samples in the buffer. \n
 	//! Note that a "sample" means a unit of interleaved PCM data representing states of each channel at given point of time, not a single PCM value. \n
@@ -79,7 +81,7 @@ public:
 	virtual t_size get_sample_count() const = 0;
 	
 	//! Sets number of valid samples in the buffer. WARNING: sample count * channel count should never be above allocated buffer size.
-	virtual void set_sample_count(t_size val)=0;
+	virtual void set_sample_count(t_size val) = 0;
 
 	//! Helper, same as get_srate().
 	inline unsigned get_sample_rate() const {return get_srate();}
@@ -106,7 +108,7 @@ public:
 	inline bool is_empty() const {return get_channels()==0 || get_srate()==0 || get_sample_count()==0;}
 	
 	//! Returns whether the chunk contents are valid (for bug check purposes).
-	bool is_valid();
+	bool is_valid() const;
 
 	//! Returns actual amount of audio data contained in the buffer (sample count * channel count). Must not be greater than data size (see get_data_size()).
 	inline t_size get_data_length() const {return get_sample_count() * get_channels();}
@@ -217,5 +219,35 @@ public:
 
 typedef audio_chunk_impl_t<> audio_chunk_impl;
 typedef audio_chunk_impl audio_chunk_i;//for compatibility
+
+//! Implements const methods of audio_chunk only, referring to an external buffer. For temporary use only (does not maintain own storage), e.g.: somefunc( audio_chunk_temp_impl(mybuffer,....) );
+class audio_chunk_temp_impl : public audio_chunk {
+public:
+	audio_chunk_temp_impl(const audio_sample * p_data,t_size p_samples,t_uint32 p_sample_rate,t_uint32 p_channels,t_uint32 p_channel_config) :
+	m_data(p_data), m_samples(p_samples), m_sample_rate(p_sample_rate), m_channels(p_channels), m_channel_config(p_channel_config)
+	{
+		PFC_ASSERT(is_valid());
+	}
+
+	audio_sample * get_data() {throw pfc::exception_not_implemented();}
+	const audio_sample * get_data() const {return m_data;}
+	t_size get_data_size() const {return m_samples * m_channels;}
+	void set_data_size(t_size p_new_size) {throw pfc::exception_not_implemented();}
+	
+	unsigned get_srate() const {return m_sample_rate;}
+	void set_srate(unsigned val) {throw pfc::exception_not_implemented();}
+	unsigned get_channels() const {return m_channels;}
+	unsigned get_channel_config() const {return m_channel_config;}
+	void set_channels(unsigned p_count,unsigned p_config) {throw pfc::exception_not_implemented();}
+
+	t_size get_sample_count() const {return m_samples;}
+	
+	void set_sample_count(t_size val) {throw pfc::exception_not_implemented();}
+
+private:
+	t_size m_samples;
+	t_uint32 m_sample_rate,m_channels,m_channel_config;
+	const audio_sample * m_data;
+};
 
 #endif //_AUDIO_CHUNK_H_

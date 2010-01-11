@@ -18,6 +18,11 @@ namespace pfc {
 		alloc_dummy(const t_self&) {throw pfc::exception_not_implemented();}
 	};
 
+	template<typename t_item>
+	bool is_pointer_in_range(const t_item * p_buffer,t_size p_buffer_size,const void * p_pointer) {
+		return p_pointer >= reinterpret_cast<const void*>(p_buffer) && p_pointer < reinterpret_cast<const void*>(p_buffer + p_buffer_size);
+	}
+
 
 
 	template<typename t_item> class alloc_standard {
@@ -39,6 +44,8 @@ namespace pfc {
 		t_item * get_ptr() {return m_data;}
 
 		~alloc_standard() { if (m_data != NULL) free_t(m_data); }
+
+		bool is_ptr_owned(const void * p_item) const {return is_pointer_in_range(get_ptr(),get_size(),p_item);}
 	private:
 		alloc_standard(const t_self &) {throw pfc::exception_not_implemented();}
 		const t_self & operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -135,6 +142,7 @@ namespace pfc {
 		}
 		t_item * get_ptr() {return m_buffer;}
 		const t_item * get_ptr() const {return m_buffer;}
+		bool is_ptr_owned(const void * p_item) const {return is_pointer_in_range(m_buffer,m_size_total,p_item);}
 	private:
 		const t_self & operator=(const t_self &) {throw pfc::exception_not_implemented();}
 		__array_fast_helper_t(const t_self &) {throw pfc::exception_not_implemented();}
@@ -166,6 +174,7 @@ namespace pfc {
 
 		const t_item * get_ptr() const {return m_data.get_ptr();}
 		t_item * get_ptr() {return m_data.get_ptr();}
+		bool is_ptr_owned(const void * p_item) const {return m_data.is_ptr_owned(p_item);}
 	private:
 		alloc_fast(const t_self &) {throw pfc::exception_not_implemented();}
 		const t_self & operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -203,6 +212,7 @@ namespace pfc {
 
 		const t_item * get_ptr() const {return m_data.get_ptr();}
 		t_item * get_ptr() {return m_data.get_ptr();}
+		bool is_ptr_owned(const void * p_item) const {return m_data.is_ptr_owned(p_item);}
 	private:
 		alloc_fast_aggressive(const t_self &) {throw pfc::exception_not_implemented();}
 		const t_self & operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -241,6 +251,7 @@ namespace pfc {
 
 			const t_item & operator[](t_size n) const {return get_ptr()[n];}
 			t_item & operator[](t_size n) {return get_ptr()[n];}
+			bool is_ptr_owned(const void * p_item) const {return is_pointer_in_range(get_ptr(),p_width,p_item);}
 		private:
 			alloc(const t_self&) {throw pfc::exception_not_implemented();}
 			const t_self& operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -281,6 +292,7 @@ namespace pfc {
 			}
 
 			t_size get_size() const {return m_fixed.get_size() + m_variable.get_size();}
+			bool is_ptr_owned(const void * p_item) const {return m_fixed.is_ptr_owned(p_item) || m_variable.is_ptr_owned(p_item);}
 
 		private:
 			alloc(const t_self&) {throw pfc::exception_not_implemented();}

@@ -36,32 +36,59 @@ private:
 class hires_timer {
 public:
 	void start() {
-		QueryPerformanceCounter(&m_start);
+		m_start = g_query();
 	}
-	double query() {
-		LARGE_INTEGER current, frequency;
-		QueryPerformanceCounter(&current);
-		QueryPerformanceFrequency(&frequency);
-		return (double)( current.QuadPart - m_start.QuadPart ) / (double) frequency.QuadPart;
+	double query() const {
+		return _query( g_query() );
+	}
+	double query_reset() {
+		t_uint64 current = g_query();
+		double ret = _query(current);
+		m_start = current;
+		return ret;
 	}
 private:
-	LARGE_INTEGER m_start;
+	double _query(t_uint64 p_val) const {
+		return (double)( p_val - m_start ) / (double) g_query_freq();
+	}
+	static t_uint64 g_query() {
+		LARGE_INTEGER val;
+		if (!QueryPerformanceCounter(&val)) throw pfc::exception_not_implemented();
+		return val.QuadPart;
+	}
+	static t_uint64 g_query_freq() {
+		LARGE_INTEGER val;
+		if (!QueryPerformanceFrequency(&val)) throw pfc::exception_not_implemented();
+		return val.QuadPart;
+	}
+	t_uint64 m_start;
 };
 
 class lores_timer {
 public:
 	void start() {
-		m_last_seen = m_start = GetTickCount();
+		_start(GetTickCount());
 	}
 
-	double query() {
-		t_uint64 time = GetTickCount();
+	double query() const {
+		return _query(GetTickCount());
+	}
+	double query_reset() {
+		t_uint32 time = GetTickCount();
+		double ret = _query(time);
+		_start(time);
+		return ret;
+	}
+private:
+	void _start(t_uint32 p_time) {m_last_seen = m_start = p_time;}
+	double _query(t_uint32 p_time) const {
+		t_uint64 time = p_time;
 		if (time < (m_last_seen & 0xFFFFFFFF)) time += 0x100000000;
 		m_last_seen = (m_last_seen & 0xFFFFFFFF00000000) + time;
 		return (double)(m_last_seen - m_start) / 1000.0;
 	}
-private:
-	t_uint64 m_last_seen, m_start;
+	t_uint64 m_start;
+	mutable t_uint64 m_last_seen;
 };
 }
 #endif

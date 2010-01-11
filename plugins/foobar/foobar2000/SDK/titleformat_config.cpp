@@ -26,16 +26,14 @@ void titleformat_config_impl::get_data(pfc::string_base & p_out)
 
 void titleformat_config_impl::set_data(const char * p_string,unsigned p_string_length)
 {
-	if (core_api::assert_main_thread())
+	core_api::ensure_main_thread();
 	{
-		{
-			insync(m_sync);
-			m_value.set_string(p_string,p_string_length);
-			m_compilation_failed = false;
-			m_instance.release();
-		}
-		titleformat_config_callback::g_on_change(m_guid,m_name,p_string,p_string_length);
+		insync(m_sync);
+		m_value.set_string(p_string,p_string_length);
+		m_compilation_failed = false;
+		m_instance.release();
 	}
+	titleformat_config_callback::g_on_change(m_guid,m_name,p_string,p_string_length);
 }
 
 bool titleformat_config_impl::compile(service_ptr_t<titleformat_object> & p_out)

@@ -76,7 +76,8 @@ protected:
 
 public:
 	//! @param p_guid GUID of the variable, used to identify variable implementations owning specific configuration file entries when reading the configuration file back. You must generate a new GUID every time you declare a new cfg_var.
-	explicit inline cfg_string(const GUID & p_guid,const char * p_val) : cfg_var(p_guid), pfc::string8(p_val) {}
+	//! @param p_defaultval Default/initial value of the variable.
+	explicit inline cfg_string(const GUID & p_guid,const char * p_defaultval) : cfg_var(p_guid), pfc::string8(p_defaultval) {}
 
 	inline const cfg_string& operator=(const cfg_string & p_val) {set_string(p_val);return *this;}
 	inline const cfg_string& operator=(const char* p_val) {set_string(p_val);return *this;}

@@ -31,10 +31,10 @@ bool cfg_window_placement::read_from_window(HWND window)
 		wp.length = sizeof(wp);
 		if (!GetWindowPlacement(window,&wp))
 			memset(&wp,0,sizeof(wp));
-		else
+		/*else
 		{
 			if (!IsWindowVisible(window)) wp.showCmd = SW_HIDE;
-		}
+		}*/
 	}
 	m_data = wp;
 	return m_data.length == sizeof(m_data);
@@ -43,7 +43,7 @@ bool cfg_window_placement::read_from_window(HWND window)
 bool cfg_window_placement::on_window_creation(HWND window)
 {
 	bool ret = false;
-	assert(!m_windows.have_item(window));
+	PFC_ASSERT(!m_windows.have_item(window));
 	m_windows.add_item(window);
 
 	if (g_is_enabled())
@@ -76,7 +76,7 @@ void cfg_window_placement::get_data_raw(stream_writer * p_stream,abort_callback 
 			t_size n, m = m_windows.get_count();
 			for(n=0;n<m;n++) {
 				HWND window = m_windows[n];
-				assert(IsWindow(window));
+				PFC_ASSERT(IsWindow(window));
 				if (IsWindow(window) && read_from_window(window)) break;
 			}
 		}
@@ -115,7 +115,7 @@ static BOOL SetWindowSize(HWND p_wnd,unsigned p_x,unsigned p_y)
 bool cfg_window_size::on_window_creation(HWND p_wnd)
 {
 	bool ret = false;
-	assert(!m_windows.have_item(p_wnd));
+	PFC_ASSERT(!m_windows.have_item(p_wnd));
 	m_windows.add_item(p_wnd);
 
 	if (g_is_enabled())
@@ -165,7 +165,7 @@ void cfg_window_size::get_data_raw(stream_writer * p_stream,abort_callback & p_a
 			t_size n, m = m_windows.get_count();
 			for(n=0;n<m;n++) {
 				HWND window = m_windows[n];
-				assert(IsWindow(window));
+				PFC_ASSERT(IsWindow(window));
 				if (IsWindow(window) && read_from_window(window)) break;
 			}
 		}

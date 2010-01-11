@@ -40,7 +40,7 @@ public:
 	virtual bool process_field(titleformat_text_out * p_out,const char * p_name,t_size p_name_length,bool & p_found_flag) = 0;
 	virtual bool process_function(titleformat_text_out * p_out,const char * p_name,t_size p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag) = 0;
 };
-
+//! Represents precompiled executable title-formatting script. Use titleformat_compiler to instantiate; do not reimplement.
 class NOVTABLE titleformat_object : public service_base
 {
 public:
@@ -52,13 +52,17 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE(titleformat_object,service_base);
 };
 
+//! Standard service for instantiating titleformat_object. Implemented by the core; do not reimplement.
+//! To instantiate, use static_api_ptr_t<titleformat_compiler>.
 class NOVTABLE titleformat_compiler : public service_base
 {
 public:
+	//! Returns false in case of a compilation error.
 	virtual bool compile(service_ptr_t<titleformat_object> & p_out,const char * p_spec) = 0;
-	
+	//! Helper;
 	void run(titleformat_hook * p_source,pfc::string_base & p_out,const char * p_spec);
-	void compile_safe(service_ptr_t<titleformat_object> & p_out,const char * p_spec);//should never fail
+	//! Should never fail, falls back to %filename% in case of failure.
+	void compile_safe(service_ptr_t<titleformat_object> & p_out,const char * p_spec);
 
 
 	static void remove_color_marks(const char * src,pfc::string_base & out);//helper

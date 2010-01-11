@@ -22,10 +22,12 @@ public:
 	virtual void process(hasher_md5_state & p_state,const void * p_buffer,t_size p_bytes) = 0;
 	virtual hasher_md5_result get_result(const hasher_md5_state & p_state) = 0;
 
+	
 	static GUID guid_from_result(const hasher_md5_result & param);
 
 	hasher_md5_result process_single(const void * p_buffer,t_size p_bytes);
 	GUID process_single_guid(const void * p_buffer,t_size p_bytes);
+	GUID get_result_guid(const hasher_md5_state & p_state) {return guid_from_result(get_result(p_state));}
 
 	
 	//! Helper
