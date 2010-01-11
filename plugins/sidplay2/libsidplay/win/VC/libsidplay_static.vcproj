@@ -422,11 +422,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\include\config.h"
+				RelativePath="config.h"
 				>
 			</File>
 			<File
-				RelativePath="config.h"
+				RelativePath="..\..\include\config.h"
 				>
 			</File>
 			<File
@@ -866,6 +866,22 @@
 					>
 				</File>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="Header Files (Implementation)"
+			>
+			<File
+				RelativePath="..\..\include\sidplay\imp\component.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\include\sidplay\imp\iinterface.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\include\sidplay\imp\sidbuilder.h"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
