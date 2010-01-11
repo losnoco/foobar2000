@@ -1634,7 +1634,7 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			data->m_link_neill.SetHyperLink( _T( "http://www.neillcorlett.com/" ) );
 			data->m_link_neill.SubclassWindow( GetDlgItem( wnd, IDC_URL ) );
 
-			data->m_link_kode54.SetLabel( _T( "kode's Foobar2000 plug-ins" ) );
+			data->m_link_kode54.SetLabel( _T( "kode's foobar2000 plug-ins" ) );
 			data->m_link_kode54.SetHyperLink( _T( "http://kode54.foobar2000.org/" ) );
 			data->m_link_kode54.SubclassWindow( GetDlgItem( wnd, IDC_K54 ) );
 
