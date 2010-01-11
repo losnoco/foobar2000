@@ -77,6 +77,7 @@ namespace pfc {
 	public:
 		virtual int compare(t_size p_index1, t_size p_index2) const = 0;
 		virtual void swap(t_size p_index1, t_size p_index2) = 0;
+		void swap_check(t_size p_index1, t_size p_index2) {if (compare(p_index1,p_index2) > 0) swap(p_index1,p_index2);}
 	};
 
 	class sort_callback_stabilizer : public sort_callback
