@@ -1,7 +1,12 @@
-#define MYVERSION "0.9.6.3"
+#define MYVERSION "0.9.7"
 
 /*
 	changelog
+
+2005-10-13 09:02 UTC - kode54
+- Implemented XM format v1.02 and v1.03 support
+- Arpeggio fix for FastTracker 2 bug, I think
+- Version is now 0.9.7
 
 2005-06-04 00:59 UTC - kode54
 - Implemented ADPCM4 in S3M reader
