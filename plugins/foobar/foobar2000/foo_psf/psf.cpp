@@ -367,7 +367,7 @@ static void info_meta_ansi( file_info & info )
 	{
 		const char * name = info.info_enum_name( i );
 		if ( name[ 0 ] == '_' )
-			info.info_set( name, pfc::stringcvt::string_utf8_from_ansi( info.info_enum_value( i ) ) );
+			info.info_set( pfc::string8( name ), pfc::stringcvt::string_utf8_from_ansi( info.info_enum_value( i ) ) );
 	}
 }
 
