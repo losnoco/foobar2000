@@ -162,7 +162,7 @@ public:
 		{
 			ERRCHK( rdr.read( &m_header, sizeof(m_header) ) );
 
-			if ( 0 != memcmp( m_header.signature, "Vgm ", 4 ) )
+			if ( 0 != memcmp( m_header.tag, "Vgm ", 4 ) )
 			{
 				console::info("Not a VGM file");
 				return io_result_error_data;
@@ -226,7 +226,7 @@ public:
 
 		p_info.set_length( double( byte_order::dword_le_to_native( * ( ( t_uint32 * ) &m_header.track_duration ) ) ) / 44100 );
 
-		if ( m_header.loop_offset )
+		if ( * ( ( t_uint32 * ) &m_header.loop_offset ) )
 		{
 			unsigned loop_end = byte_order::dword_le_to_native( * ( ( t_uint32 * ) &m_header.track_duration ) );
 			unsigned loop_dur = byte_order::dword_le_to_native( * ( ( t_uint32 * ) &m_header.loop_duration ) );

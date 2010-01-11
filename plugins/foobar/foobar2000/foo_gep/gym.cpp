@@ -33,7 +33,7 @@ public:
 
 	t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
-		if ( memcmp( m_header.signature, "GYMX", 4 ) == 0 )
+		if ( memcmp( m_header.tag, "GYMX", 4 ) == 0 )
 		{
 			HEADER_STRING(p_info, "title", m_header.song);
 			HEADER_STRING(p_info, "album", m_header.game);
