@@ -1,7 +1,7 @@
 /* C code produced by gperf version 3.0.1 */
-/* Command-line: gperf -CcTonD -K name -N rg_check -s -3 -k '*' rg_check.gperf  */
+/* Command-line: gperf -CcTonD -K name -N rg_check --ignore-case rg_check.gperf  */
+/* Computed positions: -k'12,18' */
 
-#if 0
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
       && ('%' == 37) && ('&' == 38) && ('\'' == 39) && ('(' == 40) \
       && (')' == 41) && ('*' == 42) && ('+' == 43) && (',' == 44) \
@@ -28,11 +28,9 @@
 /* The character set is not based on ISO-646.  */
 error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gnu-gperf@gnu.org>."
 #endif
-#endif
 
 #line 1 "rg_check.gperf"
 
-#include "rg_check.h"
 
 #include <string.h>
 
@@ -40,11 +38,66 @@ error "gperf generated tables don't work with this execution character set. Plea
 #define TOTAL_KEYWORDS 4
 #define MIN_WORD_LENGTH 21
 #define MAX_WORD_LENGTH 21
-#define MIN_HASH_VALUE 2
-#define MAX_HASH_VALUE 5
-/* maximum key range = 4, duplicates = 0 */
+#define MIN_HASH_VALUE 0
+#define MAX_HASH_VALUE 7
+/* maximum key range = 8, duplicates = 0 */
 
+#ifndef GPERF_DOWNCASE
+#define GPERF_DOWNCASE 1
+static unsigned char gperf_downcase[256] =
+  {
+      0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,
+     15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,
+     30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,
+     45,  46,  47,  48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,
+     60,  61,  62,  63,  64,  97,  98,  99, 100, 101, 102, 103, 104, 105, 106,
+    107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121,
+    122,  91,  92,  93,  94,  95,  96,  97,  98,  99, 100, 101, 102, 103, 104,
+    105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
+    120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134,
+    135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
+    150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164,
+    165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179,
+    180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194,
+    195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209,
+    210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224,
+    225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
+    240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    255
+  };
+#endif
+
+#ifndef GPERF_CASE_STRNCMP
+#define GPERF_CASE_STRNCMP 1
+static int
+gperf_case_strncmp (s1, s2, n)
+     register const char *s1;
+     register const char *s2;
+     register unsigned int n;
+{
+  for (; n > 0;)
+    {
+      unsigned char c1 = gperf_downcase[(unsigned char)*s1++];
+      unsigned char c2 = gperf_downcase[(unsigned char)*s2++];
+      if (c1 != 0 && c1 == c2)
+        {
+          n--;
+          continue;
+        }
+      return (int)c1 - (int)c2;
+    }
+  return 0;
+}
+#endif
+
+#ifdef __GNUC__
 __inline
+#else
+#ifdef __cplusplus
+inline
+#endif
+#endif
+/*ARGSUSED*/
 static unsigned int
 hash (str, len)
      register const char *str;
@@ -52,53 +105,55 @@ hash (str, len)
 {
   static const unsigned char asso_values[] =
     {
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 0, 6, 0, 1, 0,
-      6, 1, 6, 0, 6, 0, 6, 0, 1, 0,
-      0, 6, 0, 6, 0, 6, 0, 0, 6, 6,
-      6, 0, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 2, 8, 8, 8, 8,
+      8, 5, 8, 8, 8, 8, 8, 8, 8, 8,
+      0, 8, 8, 8, 0, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 2, 8, 8,
+      8, 8, 8, 5, 8, 8, 8, 8, 8, 8,
+      8, 8, 0, 8, 8, 8, 0, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+      8, 8, 8, 8, 8, 8
     };
-  return asso_values[(unsigned char)str[20]] + asso_values[(unsigned char)str[19]] + asso_values[(unsigned char)str[18]] + asso_values[(unsigned char)str[17]] + asso_values[(unsigned char)str[16]] + asso_values[(unsigned char)str[15]] + asso_values[(unsigned char)str[14]] + asso_values[(unsigned char)str[13]] + asso_values[(unsigned char)str[12]] + asso_values[(unsigned char)str[11]] + asso_values[(unsigned char)str[10]] + asso_values[(unsigned char)str[9]] + asso_values[(unsigned char)str[8]] + asso_values[(unsigned char)str[7]] + asso_values[(unsigned char)str[6]] + asso_values[(unsigned char)str[5]] + asso_values[(unsigned char)str[4]] + asso_values[(unsigned char)str[3]] + asso_values[(unsigned char)str[2]] + asso_values[(unsigned char)str[1]] + asso_values[(unsigned char)str[0]];
+  return asso_values[(unsigned char)str[17]] + asso_values[(unsigned char)str[11]];
 }
 
+#ifdef __GNUC__
 __inline
-static const char *
+#endif
+const char *
 rg_check (str, len)
      register const char *str;
      register unsigned int len;
 {
   static const char * const wordlist[] =
     {
-      "replaygain_track_gain",
       "replaygain_track_peak",
-      "replaygain_album_gain",
-      "replaygain_album_peak"
+      "replaygain_album_peak",
+      "replaygain_track_gain",
+      "replaygain_album_gain"
     };
 
-  static const signed char lookup[] =
+  static const short lookup[] =
     {
-      -1, -1,  0,  1,  2,  3
+       0, -1,  1, -1, -1,  2, -1,  3
     };
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
@@ -113,7 +168,7 @@ rg_check (str, len)
             {
               register const char *s = wordlist[index];
 
-              if (*str == *s && !strncmp (str + 1, s + 1, len - 1) && s[len] == '\0')
+              if ((((unsigned char)*str ^ (unsigned char)*s) & ~32) == 0 && !gperf_case_strncmp (str, s, len) && s[len] == '\0')
                 return s;
             }
         }

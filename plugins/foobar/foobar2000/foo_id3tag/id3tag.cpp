@@ -85,24 +85,19 @@ bool is_iso88591(const char * src, unsigned len = ~0)
 }
 */
 
-int id3v2_isreplaygain(const char * name)
-{
-	string8_fastalloc check;
-	uAddStringLower(check, name);
-	return is_replaygain(check);
-}
+extern "C" int is_replaygain(const char * name);
 
 void id3v2_process_callback(void * ctx, const char * name, const char * value)
 {
 	file_info * info = (file_info *) ctx;
 
-	if (id3v2_isreplaygain(name))
-		info->info_set(name, value);
+	if (is_replaygain(name))
+		info->info_set_replaygain(name, value);
 	else
 		info->meta_add(name, value);
 }
 
-class tag_reader_id3v2 : public tag_reader
+class tag_reader_id3v2 : public tag_processor_id3v2
 {
 	id3_byte_t * mem;
 	id3_tag * tag;
@@ -115,21 +110,23 @@ public:
 		if (mem) free(mem);
 	}
 
-	int run(reader * r, file_info * info)
+	t_io_result read( const service_ptr_t<file> & p_file, file_info & p_info, abort_callback & p_abort )
 	{
-		r->seek(0);
+		t_uint64 skipped;
+		status = g_skip( p_file, skipped, p_abort );
+		if ( io_result_failed( status ) || !skipped ) return status;
 
-		int skip;
-		if (!(skip = id3v2_calc_size(r))) return 0;
-		r->seek(0);
+		status = p_file->seek( 0, p_abort );
+		if ( io_result_failed( status ) ) return status;
 
-		mem = (id3_byte_t *) malloc(skip);
-		if (!mem) return 0;
+		mem = (id3_byte_t *) malloc( skipped );
+		if ( !mem ) return io_result_error_out_of_memory;
 
-		if (skip != r->read(mem, skip)) return 0;
+		status = p_file->read_object( mem, skipped, p_abort );
+		if ( io_result_failed( status ) ) return status;
 
 		tag = id3_tag_parse(mem, skip);
-		if (!tag) return 0;
+		if ( ! tag ) return io_result_error_data;
 
 		for (unsigned i = 0, count = tag->nframes; i < count; i++)
 		{
@@ -145,7 +142,7 @@ public:
 				{
 					if (!read_info->validate(frame))
 					{
-						console::warning(uStringPrintf("Invalid %s frame (%u of %u)", frame->id, i, count));
+						console::formatter() << "Invalid " << frame->id << " frame (" << i << " of " << count << ")";
 						continue;
 					}
 				}
@@ -159,85 +156,13 @@ public:
 
 		return 1;
 	}
-	const char * get_name() { return "id3v2"; }
+
+	t_io_result write(const service_ptr_t<file> & p_file,const file_info & p_info,abort_callback & p_abort)
+	{
+		return io_result_error_data;
+	}
 };
 
-/*class tag_writer_id3v2 : public tag_writer
-{
-	int run(reader * r, const file_info * info)
-	{
-		return 0;
-	}
-	const char * get_name() { return "id3v2"; }
-};
-
-class tag_remover_id3v2 : public tag_remover
-{
-	void run(reader * r)
-	{
-		id3v2_remove(r);
-	}
-};*/
-
-/*static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
-{
-	switch(msg)
-	{
-	case WM_INITDIALOG:
-		{
-			uSendDlgItemMessage(wnd,IDC_ANSI,BM_SETCHECK,cfg_ansi,0);
-			HWND w = GetDlgItem(wnd, IDC_USEBOM);
-			EnableWindow(w, !cfg_ansi);
-			uSendMessage(w, BM_SETCHECK, cfg_usebom, 0);
-			uSendDlgItemMessage(wnd,IDC_FUCKINGLAME,BM_SETCHECK,cfg_fuckinglame,0);
-			uSendDlgItemMessage(wnd,IDC_PADDING,BM_SETCHECK,cfg_disablepadding,0);
-		}
-		break;
-	case WM_COMMAND:
-		switch(wp)
-		{
-		case IDC_ANSI:
-			cfg_ansi = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			EnableWindow(GetDlgItem(wnd,IDC_USEBOM),!cfg_ansi);
-			break;
-		case IDC_USEBOM:
-			if (IDYES == uMessageBox(wnd, "YOU KNOW WHAT YOU DOING?", "TAKE OFF EVERY 'BOM'!!", MB_YESNO | MB_ICONQUESTION))
-			{
-				cfg_usebom = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			}
-			else
-			{
-				uSendMessage((HWND)lp,BM_SETCHECK,cfg_usebom,0);
-			}
-			break;
-		case IDC_FUCKINGLAME:
-			cfg_fuckinglame = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		case IDC_PADDING:
-			cfg_disablepadding = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		}
-		break;
-	}
-	return 0;
-}
-
-class config_id3v2 : public config
-{
-public:
-	HWND create(HWND parent)
-	{
-		return uCreateDialog(IDD_CONFIG,parent,ConfigProc);
-	}
-	const char * get_name() {return "ID3v2 tag support";}
-	const char * get_parent_name() {return "Components";}
-};
-*/
-
-//static service_factory_single_t<config,config_id3v2> foo;
-//static service_factory_t<input,input_id3v2> foo3;
-static service_factory_t<tag_reader,tag_reader_id3v2> foo2;
-//static service_factory_t<tag_writer,tag_writer_id3v2> foo3;
-//static service_factory_t<tag_remover,tag_remover_id3v2> foo4;
+static service_factory_t<tag_processor_id3v2,tag_reader_id3v2> foo2;
 
 DECLARE_COMPONENT_VERSION("ID3v2 tag support",MYVERSION,"ID3v2 sucks sucks sucks");
