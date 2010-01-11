@@ -1,7 +1,11 @@
-#define MY_VERSION "0.9.1"
+#define MY_VERSION "0.9.2"
 
 /*
 	changelog
+
+2009-03-02 21:02 UTC - kode54
+- Fixed AC3 parser to ignore end of file when refilling the buffer, caller handles EOF already.
+- Version is now 0.9.2
 
 2008-05-29 01:21 UTC - kode54
 - Fixed AC3 parser to handle end of file.
