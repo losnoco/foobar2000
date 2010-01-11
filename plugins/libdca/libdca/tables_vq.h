@@ -23,7 +23,7 @@
 
 /* 8bits signed fractional Q4 binary codes */
 
-static int8_t high_freq_vq[1024][32] =
+static const int8_t high_freq_vq[1024][32] =
 {
   { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },

@@ -22,7 +22,7 @@
  */
 
 /* 16bits signed fractional Q13 binary codes */
-static int16_t adpcm_vb[4096][4] =
+static const int16_t adpcm_vb[4096][4] =
 {
   { 9928, -2618, -1093, -1263 },
   { 11077, -2876, -1747, -308 },
