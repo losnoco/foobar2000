@@ -494,9 +494,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "File_Extractor", "..\..\Fil
 		{FBF00162-1B31-4CD0-9F78-3ADA304E325F} = {FBF00162-1B31-4CD0-9F78-3ADA304E325F}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_avs", "foo_input_avs\foo_input_avs.vcproj", "{3D7746A3-5F2A-4F6B-AABA-6D92B916DE21}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4997D303-C9A0-4044-B0B8-494B8C950921} = {4997D303-C9A0-4044-B0B8-494B8C950921}
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA} = {4A5CC722-A067-487F-9DD3-8EDAC8633FDA}
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F} = {C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 103
+		SccNumberOfProjects = 104
 		SccProjectName0 = \u0022$/foobar2000/plugins.root/plugins\u0022,\u0020CEAAAAAA
 		SccLocalPath0 = ..\\..
 		SccProvider0 = MSSCCI:Microsoft\u0020Visual\u0020SourceSafe
@@ -807,6 +814,9 @@ Global
 		SccProjectUniqueName102 = ..\\..\\File_Extractor\\win32\\File_Extractor\\File_Extractor.vcproj
 		SccLocalPath102 = ..\\..
 		SccProjectFilePathRelativizedFromConnection102 = File_Extractor\\win32\\File_Extractor\\
+		SccProjectUniqueName103 = foo_input_avs\\foo_input_avs.vcproj
+		SccLocalPath103 = ..\\..
+		SccProjectFilePathRelativizedFromConnection103 = foobar\\foobar2000\\foo_input_avs\\
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -1418,6 +1428,12 @@ Global
 		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE}.Release staticlink|Win32.Build.0 = Release|Win32
 		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE}.Release|Win32.ActiveCfg = Release|Win32
 		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE}.Release|Win32.Build.0 = Release|Win32
+		{3D7746A3-5F2A-4F6B-AABA-6D92B916DE21}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3D7746A3-5F2A-4F6B-AABA-6D92B916DE21}.Debug|Win32.Build.0 = Debug|Win32
+		{3D7746A3-5F2A-4F6B-AABA-6D92B916DE21}.Release staticlink|Win32.ActiveCfg = Release staticlink|Win32
+		{3D7746A3-5F2A-4F6B-AABA-6D92B916DE21}.Release staticlink|Win32.Build.0 = Release staticlink|Win32
+		{3D7746A3-5F2A-4F6B-AABA-6D92B916DE21}.Release|Win32.ActiveCfg = Release|Win32
+		{3D7746A3-5F2A-4F6B-AABA-6D92B916DE21}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
