@@ -1,7 +1,11 @@
-#define MYVERSION "1.61"
+#define MYVERSION "1.62"
 
 /*
 	change log
+
+2009-04-17 20:44 UTC - kode54
+- Rolled back changes from 1.61 as GYM crashed and VGM didn't have any noticeable effect
+- Version is now 1.62
 
 2009-03-31 00:38 UTC - kode54
 - Implemented effects for the blip parts of GYM and VGM

@@ -245,8 +245,6 @@ public:
 			this->emu = emu = new Vgm_Emu();
 			emu->disable_oversampling();
 
-			setup_effects();
-
 			try
 			{
 				m_file->seek( 0, p_abort );
@@ -256,8 +254,6 @@ public:
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( m_header, rdr ) );
 				handle_warning();
-
-				setup_effects_2();
 			}
 			catch(...)
 			{
