@@ -3,6 +3,9 @@
 /*
 	changelog
 
+2006-10-08 03:51 UTC - kode54
+- Added CP437 graphics to text conversion functions.
+
 2006-10-07 05:24 UTC - kode54
 - Simplified volume ramping update code, reducing the size of the resampler code
   considerably.
@@ -781,6 +784,14 @@ static const char field_dyn_tempo[] = "mod_dyn_tempo";
 static const char field_dyn_channels[] = "mod_dyn_channels";
 static const char field_dyn_channels_max[] = "mod_dyn_channels_max";
 
+// 01 - 1F
+static const unsigned short cp437_to_utf16[31] = {
+	0x263A, 0x263B, 0x2665, 0x2666, 0x2663, 0x2660, 0x2022, 0x25D8,
+	0x25CB, 0x25D9, 0x2642, 0x2640, 0x266A, 0x266B, 0x263C, 0x25BA,
+	0x25C4, 0x2195, 0x203C, 0x00B6, 0x00A7, 0x25AC, 0x21A8, 0x2191,
+	0x2193, 0x2192, 0x2190, 0x2319, 0x2194, 0x25B2, 0x25BC
+};
+
 // 80 - C9 only, and mostly approximation
 static const unsigned short it_to_utf16[74] = {
 	0x250C, 0x2500, 0x2510, 0x2502, 0x2502, 0x2514, 0x2500, 0x2518,
@@ -795,14 +806,52 @@ static const unsigned short it_to_utf16[74] = {
 	0x25CF, 0x25CF 
 };
 
-class string_utf8_from_it : public pfc::string8_fastalloc
+// Costs an extra 2KB to template specialize this, and I doubt the speed
+// benefit matters for infrequently used string conversions such as this.
+
+class string_utf8_from_oem_t : public pfc::string8_fastalloc
 {
 public:
-	string_utf8_from_it( const char * p_source, t_size p_source_size = ~0 )
+	string_utf8_from_oem_t( bool multiline, const char * p_source, t_size p_source_size = ~0 )
 	{
 		for ( t_size i = 0; i < p_source_size && p_source[ i ]; ++i )
 		{
-			if ( p_source[ i ] > 0 ) add_byte( p_source[ i ] );
+			if ( p_source[ i ] >= 32 ) add_byte( p_source[ i ] );
+			else if ( multiline && ( p_source[ i ] == 10 || p_source[ i ] == 13 ) ) add_byte( p_source[ i ] );
+			else if ( p_source[ i ] > 0 ) add_char( cp437_to_utf16[ p_source[ i ] - 1 ] );
+			else
+			{
+				t_size j;
+				for ( j = i + 1; j < p_source_size; ++j )
+				{
+					if ( p_source[ j ] >= 0 ) break;
+				}
+				pfc::stringcvt::char_buffer_t<char> m_buffer;
+				pfc::stringcvt::string_wide_from_codepage temp;
+				temp.convert(CP_OEMCP,p_source + i,j - i);
+				t_size size = pfc::stringcvt::estimate_wide_to_utf8(temp,~0);
+				m_buffer.set_size(size);
+				pfc::stringcvt::convert_wide_to_utf8( m_buffer.get_ptr_var(),size,temp,~0);
+				add_string( m_buffer.get_ptr() );
+				i = j - 1;
+			}
+		}
+	}
+};
+
+#define string_utf8_from_oem(x) string_utf8_from_oem_t(false, x)
+#define string_utf8_from_oem_multiline(x) string_utf8_from_oem_t(true, x)
+
+class string_utf8_from_it_t : public pfc::string8_fastalloc
+{
+public:
+	string_utf8_from_it_t( bool multiline, const char * p_source, t_size p_source_size = ~0 )
+	{
+		for ( t_size i = 0; i < p_source_size && p_source[ i ]; ++i )
+		{
+			if ( p_source[ i ] >= 32 ) add_byte( p_source[ i ] );
+			else if ( multiline && ( p_source[ i ] == 10 || p_source[ i ] == 13 ) ) add_byte( p_source[ i ] );
+			else if ( p_source[ i ] > 0 ) add_char( cp437_to_utf16[ p_source[ i ] - 1 ] );
 			else if ( p_source[ i ] < -0x36 ) add_char( it_to_utf16[ p_source[ i ] + 0x80 ] );
 			else
 			{
@@ -823,6 +872,10 @@ public:
 		}
 	}
 };
+
+#define string_utf8_from_it(x) string_utf8_from_it_t(false, x)
+#define string_utf8_from_it_multiline(x) string_utf8_from_it_t(true, x)
+
 /*
 // 80 - FF only
 static const unsigned short cp852_to_utf16[128] = {
@@ -877,12 +930,12 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 	{
 		if (itsd->name[0])
 		{
-			if (dos) info.meta_add(field_title, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)&itsd->name, sizeof(itsd->name)));
+			if (dos) info.meta_add(field_title, string_utf8_from_oem((char*)&itsd->name, sizeof(itsd->name)));
 			else info.meta_add(field_title, pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->name, sizeof(itsd->name)));
 		}
 		if (itsd->song_message && *itsd->song_message)
 		{
-			if (dos) info.meta_add(field_comment, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)itsd->song_message));
+			if (dos) info.meta_add(field_comment, string_utf8_from_oem_multiline((char*)itsd->song_message));
 			else info.meta_add(field_comment, pfc::stringcvt::string_utf8_from_ansi((char *)itsd->song_message));
 		}
 	}
@@ -910,7 +963,7 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 					name = field_sample;
 					if (i < 10) name.add_byte('0');
 					name << i;
-					if (dos) info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)&itsd->sample[i].name, sizeof(itsd->sample[i].name)));
+					if (dos) info.meta_add(name, string_utf8_from_oem((char*)&itsd->sample[i].name, sizeof(itsd->sample[i].name)));
 					else info.meta_add(name, pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->sample[i].name, sizeof(itsd->sample[i].name)));
 				}
 			}
@@ -930,7 +983,7 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 					name = field_instrument;
 					if (i < 10) name.add_byte('0');
 					name << i;
-					if (dos) info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name)));
+					if (dos) info.meta_add(name, string_utf8_from_oem((char*)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name)));
 					else info.meta_add(name, pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name)));
 				}
 			}
@@ -1035,7 +1088,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			}
 			msg.add_byte(*str);
 		}
-		info.meta_add( field_comment, string_utf8_from_it( msg ) );
+		info.meta_add( field_comment, string_utf8_from_it_multiline( msg ) );
 	}
 
 	t_uint32 * offset;
@@ -1268,7 +1321,7 @@ static bool ReadMTM(const BYTE * ptr, unsigned size, file_info * info, bool meta
 				name = field_sample;
 				if (i < 10) name.add_byte('0');
 				name.add_int(i);
-				info->meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,pms->samplename, 22));
+				info->meta_add(name, string_utf8_from_oem(pms->samplename, 22));
 			}
 			dwMemPos += 37;
 		}
@@ -1291,7 +1344,7 @@ static bool ReadMTM(const BYTE * ptr, unsigned size, file_info * info, bool meta
 				}
 				dwMemPos += 40;
 			}
-			info->meta_add(field_comment, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,name));
+			info->meta_add(field_comment, string_utf8_from_oem_multiline(name));
 		}
 	}
 
