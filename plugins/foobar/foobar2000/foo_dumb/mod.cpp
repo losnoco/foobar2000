@@ -1,7 +1,24 @@
-#define MYVERSION "0.9.8.1"
+#define MYVERSION "0.9.8.2"
 
 /*
 	changelog
+
+2006-11-01 00:50 UTC - kode54
+- Resamplers now return immediately if the fixed point delta is zero.
+- IT renderer now cuts existing notes when it reaches a note where the instrument
+  references an invalid sample. (jumping under trees.it)
+- Version is now 0.9.8.2
+
+2006-10-14 08:33 UTC - kode54
+- IT renderer pattern loop processor now resets the rows played to clear table
+  per channel regardless of whether order changed since last loop start was
+  initiated. This is correct, since two pattern loop starts in a row means that
+  a loop will never jump to the first loop point.
+
+2006-10-12 06:28 UTC - kode54
+- STM reader checks for more values after the song name, reports the correct
+  order list size, and ignores samples which are shorter than four bytes or
+  have a default volume of zero.
 
 2006-10-08 03:51 UTC - kode54
 - Added CP437 graphics to text conversion functions.
@@ -1543,7 +1560,7 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 		duh = dumb_read_s3m_quick(f);
 	}
 	else if (size >= 1168 &&
-		ptr[28] == 0x1A && ptr[29] == 2 &&
+		/*ptr[28] == 0x1A &&*/ ptr[29] == 2 &&
 		( ! strnicmp( ( const char * ) ptr + 20, "!Scream!", 8 ) ||
 		! strnicmp( ( const char * ) ptr + 20, "BMOD2STM", 8 ) ||
 		! strnicmp( ( const char * ) ptr + 20, "WUZAMOD!", 8 ) ) )
