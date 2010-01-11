@@ -126,6 +126,7 @@
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
+				FloatingPointModel="2"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\ReleaseStatic/libsidplay_static.pch"
 				AssemblerListingLocation=".\ReleaseStatic/"
