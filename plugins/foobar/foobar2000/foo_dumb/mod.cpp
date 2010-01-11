@@ -3,6 +3,9 @@
 /*
 	changelog
 
+2006-12-26 06:41 UTC - kode54
+- Fixed sample rate reporting for when extra dynamic info is turned off.
+
 2006-11-01 00:50 UTC - kode54
 - Resamplers now return immediately if the fixed point delta is zero.
 - IT renderer now cuts existing notes when it reaches a note where the instrument
@@ -2550,7 +2553,7 @@ public:
 	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta)
 	{
 		bool ret = false;
-		if ( ( !first_block || dynamic_info ) && duh && sr)
+		if ( ( first_block || dynamic_info ) && duh && sr)
 		{
 			DUMB_IT_SIGDATA * itsd = duh_get_it_sigdata(duh);
 			DUMB_IT_SIGRENDERER * itsr = duh_get_it_sigrenderer(sr);
