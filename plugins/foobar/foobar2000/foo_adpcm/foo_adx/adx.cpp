@@ -3,6 +3,9 @@
 /*
 	change log
 
+2009-04-07 03:56 UTC - kode54
+- Added another key
+
 2009-04-07 00:54 UTC - kode54
 - Added new ADX keys
 
@@ -643,6 +646,10 @@ static struct {
 	/* (Enterbrain) Amagami */
 	/* one of 32 from guessadx */
 	{0x5a17,0x509f,0x5bfd},
+
+    /* Yamasa (Yamasa Digi Portable: Matsuri no Tatsujin) */
+    /* confirmed unique with guessadx */
+    {0x4c01,0x549d,0x676f},
 };
 
 static const int key_count = sizeof(keys)/sizeof(keys[0]);
