@@ -1,7 +1,12 @@
-#define MY_VERSION "1.1"
+#define MY_VERSION "1.2"
 
 /*
 	changelog
+
+2006-10-23 19:31 UTC - kode54
+- Re-added main menu items
+- Fixed file scanner to catch end of file bits
+- Version is now 1.2
 
 2005-08-30 07:31 UTC - kode54
 - Fixed playback when caller hits get_info() after decode_initialize() on single file song
@@ -1130,6 +1135,9 @@ struct xa_subsong_info
 	unsigned sector_offset;
 	unsigned sector_count;
 	unsigned loop_start;
+
+	inline bool operator < ( const xa_subsong_info & p_item ) { return sector_offset < p_item.sector_offset; }
+	inline bool operator > ( const xa_subsong_info & p_item ) { return sector_offset > p_item.sector_offset; }
 };
 
 struct xa_subsong_scanner_info : public xa_subsong_info
@@ -1197,17 +1205,22 @@ public:
 
 				if ( ! memcmp( sync, ptr, 12 ) &&
 					ptr[ 15 ] == 2 &&
-					ptr[ 18 ] & 0x20 &&
-					(ptr[ 18 ] & 14) == 4)
+					( ptr[ 18 ] & 0x2E ) == 0x24 )
 				{
 					xa_subsong_scanner_loop_info & p_loop_info = m_loop_data[ sector - 1 ];
 					p_loop_info.file_number = ptr[ 16 ];
 					p_loop_info.channel = ptr[ 17 ];
 					p_loop_info.scalefactor = ptr[ 2200 + 8 ];
+					unsigned j = 0;
 					for ( unsigned i = 0; i < 28; ++i )
 					{
-						p_loop_info.data[ i * 2 ]     = ptr[ 2200 + 18 + i * 4 ];
-						p_loop_info.data[ i * 2 + 1 ] = ptr[ 2200 + 18 + i * 4 + 1 ];
+						j += p_loop_info.data[ i * 2 ]     = ptr[ 2200 + 18 + i * 4 ];
+						j += p_loop_info.data[ i * 2 + 1 ] = ptr[ 2200 + 18 + i * 4 + 1 ];
+					}
+					if ( !j )
+					{
+						p_loop_info.file_number = 0xDE;
+						p_loop_info.channel     = 0xAD;
 					}
 
 					xa_subsong_scanner_info * p_info = info[ ptr[17] ];
@@ -1218,6 +1231,11 @@ public:
 						{
 							++ p_info->sector_count;
 							p_info->sector_offset_end = unsigned( sector - 1 );
+							if ( ptr[18] & 0x81 )
+							{
+								m_info.add_item( p_info );
+								info[ ptr[17] ] = 0;
+							}
 						}
 						else
 						{
@@ -1323,6 +1341,8 @@ public:
 			m_loop_data.set_size( 0 );
 		}
 		//catch(exception_io const & e) {return e.get_code();}
+
+		m_info.sort();
 	}
 
 	void get_info( pfc::ptr_list_t< xa_subsong_scanner_info > & out )
@@ -1648,7 +1668,7 @@ retry1:
 				else return false;
 			}
 
-			while (memcmp(sync, xa, 12) || xa[15] != 2 || !(xa[18] & 0x20) || xa[17] != channel || (xa[18] & 0xe) != 4)
+			while (memcmp(sync, xa, 12) || xa[15] != 2 || (xa[18] & 0x2E) != 0x24 || xa[17] != channel)
 			{
 retry2:
 				p_abort.check();
@@ -1957,7 +1977,7 @@ public:
 				while (!eof)
 				{
 					handle_messages();
-					while (memcmp(sync, xa, 12) || xa[15] != 2 || !(xa[18] & 0x20) || xa[17] != channel || (xa[18] & 14) != 4)
+					while (memcmp(sync, xa, 12) || xa[15] != 2 || (xa[18] & 0x2E) != 0x24 || xa[17] != channel)
 					{
 						r->read_object_e(xa, 2352, m_abort);
 						sector++;
@@ -2080,82 +2100,82 @@ public:
 };
 #endif
 
-#if 0
-class mainmenu_xa : public menu_item_legacy
-{
-	virtual type get_type()
+template <bool ADD>
+class mainmenu_command_xa : public mainmenu_commands {
+	virtual t_uint32 get_command_count()
 	{
-		return TYPE_MAIN;
+		return 1;
 	}
 
-	virtual unsigned get_num_items()
-	{
-		return 2;
-	}
-
-	virtual void get_item_name(unsigned n, string_base & out)
-	{
-		if (!n) out = "Open XA file(s)...";
-		else out = "Add XA file(s)...";
-	}
-
-	virtual void get_item_default_path(unsigned n, string_base & out)
-	{
-		out = "Components";
-	}
-
-	virtual bool get_item_description(unsigned n, string_base & out)
-	{
-		if (!n) out = "Open";
-		else out = "Add";
-		out += "s one or more raw files as XA ADPCM files, regardless of name or extension.";
-		return true;
-	}
-
-	virtual GUID get_item_guid(unsigned n)
+	virtual GUID get_command(t_uint32 p_index)
 	{
 		static const GUID guids[] = {
 			{ 0x365b6599, 0x23e2, 0x413f, { 0xa3, 0x6e, 0x8b, 0xf4, 0xdc, 0x80, 0x5e, 0xde } },
 			{ 0x472da356, 0xc5d7, 0x4b6a, { 0x85, 0x40, 0x34, 0xab, 0xa0, 0xcf, 0x3f, 0x18 } }
 		};
 		assert(n < tabsize(guids));
-		return guids[n];
+		return guids[ADD ? 1 : 0];
+	}
+	
+	virtual void get_name(t_uint32 p_index,pfc::string_base & p_out)
+	{
+		if (!ADD) p_out = "Open";
+		else p_out = "Add";
+		p_out += " XA files...";
 	}
 
-	virtual bool get_display_data(unsigned n,const list_base_const_t<metadb_handle_ptr> & data,string_base & out,unsigned & displayflags,const GUID & caller)
+	virtual bool get_description(t_uint32 p_index,pfc::string_base & p_out)
 	{
-		get_item_name(n, out);
+		if (!ADD) p_out = "Open";
+		else p_out = "Add";
+		p_out += "s one or more raw files as XA ADPCM files, regardless of name or extension.";
 		return true;
 	}
 
-	virtual void perform_command(unsigned n,const list_base_const_t<metadb_handle_ptr> & data,const GUID & caller)
+	virtual GUID get_parent()
+	{
+		return ADD ? mainmenu_groups::file_add : mainmenu_groups::file_open;
+	}
+
+	virtual bool get_display(t_uint32 p_index,pfc::string_base & p_text,t_uint32 & p_flags)
+	{
+		p_flags = 0;
+		get_name(p_index,p_text);
+		return true;
+	}
+
+	virtual void execute(t_uint32 p_index,service_ptr_t<service_base> p_callback)
 	{
 		uGetOpenFileNameMultiResult * list;
 
-		list = uGetOpenFileNameMulti(core_api::get_main_window(), "All files|*.*|XA files|*.xa", 0, 0, n ? "Add XA files..." : "Open XA files...", 0);
+		pfc::string8 desc;
+		if ( ADD ) desc = "Add";
+		else desc = "Open";
+		desc += " XA files...";
+		list = uGetOpenFileNameMulti(core_api::get_main_window(), "All files|*.*|XA files|*.xa;*.str", 0, 0, desc, 0);
 
 		if (list)
 		{
-			mem_block_t<char> names;
-			ptr_list_t<const char> urls;
+			pfc::array_t<char> names;
+			pfc::ptr_list_t<const char> urls;
 			unsigned i, count = list->GetCount();
 			for (i = 0; i < count; i++)
 			{
 				const char * fn = list->GetFileName(i);
-				string_extension_8 ext(fn);
+				pfc::string_extension ext(fn);
 				if (stricmp(ext, "xa") && stricmp(ext, "str"))
 				{
-					names.append("xa://", 5);
+					names.append_fromptr("xa://", 5);
 				}
 				else
 				{
-					names.append("file://", 7);
+					names.append_fromptr("file://", 7);
 				}
-				names.append(fn, strlen(fn) + 1);
+				names.append_fromptr(fn, strlen(fn) + 1);
 			}
 			delete list;
 
-			const char * ptr = names;
+			const char * ptr = names.get_ptr();
 			for (i = 0;;)
 			{
 				urls.add_item(ptr);
@@ -2164,16 +2184,15 @@ class mainmenu_xa : public menu_item_legacy
 			}
 
 			static_api_ptr_t<playlist_manager> pm;
-			pm->activeplaylist_add_locations(urls, !n, core_api::get_main_window());
-			if (!n)
+			pm->activeplaylist_add_locations(urls, !ADD, core_api::get_main_window());
+			if (!ADD)
 			{
-				pm->playlist_set_playback_cursor(pm->get_active_playlist(), 0);
+				pm->activeplaylist_set_focus_item(0);
 				standard_commands::main_play();
 			}
 		}
 	}
 };
-#endif
 
 #ifndef FOO_ADPCM_EXPORTS
 
@@ -2220,6 +2239,9 @@ DECLARE_FILE_TYPE("XA files", "*.XA");
 static input_factory_t< input_xa > g_input_xa_factory;
 //static menu_item_factory_t<contextmenu_xa> g_menu_item_context_xa_factory;
 //static menu_item_factory_t<mainmenu_xa> g_menu_item_main_xa_factory;
+
+static mainmenu_commands_factory_t< mainmenu_command_xa<false> > g_menu_item_main_xa_open_factory;
+static mainmenu_commands_factory_t< mainmenu_command_xa<true> >  g_menu_item_main_xa_add_factory;
 
 #ifndef FOO_ADPCM_EXPORTS
 static config_factory<config_xa> g_config_xa_factory;
