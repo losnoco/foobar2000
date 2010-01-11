@@ -1,7 +1,11 @@
-#define MYVERSION "1.65"
+#define MYVERSION "1.66"
 
 /*
 	change log
+
+2009-07-22 03:24 UTC - kode54
+- Implemented RSN archive wrapper for the existing RAR archive reader.
+- Version is now 1.66
 
 2009-07-21 06:28 UTC - kode54
 - Implemented surround removal into the accurate SPC DSP core. Whoops.
