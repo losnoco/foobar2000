@@ -348,7 +348,6 @@ public:
 
 				valid_tag = true;
 			}
-			catch ( const exception_tag_not_found & ) {}
 			catch ( const exception_io_data & ) {}
 
 			if ( ! valid_tag )
@@ -361,8 +360,10 @@ public:
 					emu = gme_spc_type->new_info();
 				else if ( p_reason == input_open_decode )
 				{
+					// XXX needs to be in sync with crap in decode_initialize, or something
 					emu = new Spc_Emu;
 					static_cast<Spc_Emu *> (this->emu)->disable_surround( !! ( cfg_spc_anti_surround ) );
+					//static_cast<Spc_Emu *> (this->emu)->set_cubic_interpolation( !! ( cfg_spc_interpolation ) );
 				}
 				if ( !emu ) throw std::bad_alloc();
 
@@ -435,7 +436,6 @@ public:
 					if (tag.uFade_ms) tag_fade_ms = tag.uFade_ms;
 					voice_mask = tag.bMute;
 				}
-				catch ( const exception_tag_not_found & ) {}
 				catch ( const exception_io_data & ) {}
 #endif
 
@@ -497,7 +497,7 @@ public:
 			//emu->mute_voices( voice_mask );
 
 			emu->disable_surround( !! ( cfg_spc_anti_surround ) );
-			emu->set_cubic_interpolation( !! ( cfg_spc_interpolation ) );
+			//emu->set_cubic_interpolation( !! ( cfg_spc_interpolation ) );
 		}
 
 		input_gep::decode_initialize( 0, p_flags, p_abort );
