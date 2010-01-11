@@ -3,6 +3,9 @@
 /*
 	changelog
 
+2008-06-27 03:37 UTC - kode54
+- Fixed xm_note_off for when instrument number is out of range.
+
 2008-03-22 23:45 UTC - kode54
 - Implemented PTM volume curve.
 
