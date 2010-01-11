@@ -3,6 +3,9 @@
 /*
 	changelog
 
+2006-06-10 18:10 UTC - kode54
+- Fixed volume ramping.
+
 2006-06-09 16:48 UTC - kode54
 - Ported most of DUMB 0.9.3 over, except for the conflicting pattern loop change
 
