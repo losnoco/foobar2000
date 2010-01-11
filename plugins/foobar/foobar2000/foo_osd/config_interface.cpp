@@ -749,7 +749,7 @@ public:
 		return guid;
 	}
 	virtual const char * get_name() {return "On-Screen Display";}
-	GUID get_parent_guid() {return guid_components;}
+	GUID get_parent_guid() {return preferences_page::guid_display;}
 
 	bool reset_query() {return true;}
 	void reset()

@@ -424,7 +424,7 @@ void g_callback_unregister()
 	static_api_ptr_t<playlist_manager>()->unregister_callback( & g_playlist_callback_osd );
 }
 
-static initquit_factory<initquit_osd> g_initquit_osd_factory;
+static initquit_factory_t<initquit_osd> g_initquit_osd_factory;
 
 #define NAME "On-Screen Display"
 

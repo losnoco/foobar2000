@@ -275,6 +275,10 @@ static int get_text_width_color(HDC dc,const char * src,int len)
 
 static void drawtext(HDC dc, const char * text, UINT len, int x, int y, const RECT *clip, DWORD default_color, BOOL outline, BOOL pure_white, int align)
 {
+	// FUCKO
+	string_simple blah( text, len );
+	text = blah.get_ptr();
+
 	if (clip)
 	{
 		if (align == DT_CENTER)

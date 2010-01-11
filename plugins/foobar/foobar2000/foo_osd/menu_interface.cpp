@@ -2,6 +2,7 @@
 #include "main.h"
 #include "config_interface.h"
 
+#if 0
 class menu_item_osd_enable : public menu_item_node
 {
 public:
@@ -429,3 +430,4 @@ public:
 };
 
 static menu_item_factory_t<menu_osd_control> g_menu_item_osd_control_factory;
+#endif
