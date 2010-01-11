@@ -10,8 +10,8 @@
 #define HAVE_IO_H 1
 #define HAVE_WINDOWS_H 1
 
-#define DSOUND_SUPPORT 1
-#define WINMIDI_SUPPORT 1
+/*#define DSOUND_SUPPORT 1
+#define WINMIDI_SUPPORT 1*/
 #define WITH_FLOAT 1
 
 #define snprintf _snprintf

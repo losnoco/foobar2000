@@ -142,7 +142,7 @@ typedef struct _SFData
   SFVersion romver;		/* ROM version */
   unsigned int samplepos;		/* position within sffd of the sample chunk */
   unsigned int samplesize;		/* length within sffd of the sample chunk */
-  char *fname;			/* file name */
+  wchar_t *fname;			/* file name */
   FILE *sffd;			/* loaded sfont file descriptor */
   fluid_list_t *info;		     /* linked list of info strings (1st byte is ID) */
   fluid_list_t *preset;		/* linked list of preset info */
@@ -296,7 +296,7 @@ SFShdr;
 extern char idlist[];
 
 /* functions */
-SFData *sfload_file (const char * fname);
+SFData *sfload_file (const wchar_t * fname);
 
 
 
@@ -376,11 +376,11 @@ typedef struct _fluid_inst_zone_t fluid_inst_zone_t;
 
 fluid_sfloader_t* new_fluid_defsfloader(void);
 int delete_fluid_defsfloader(fluid_sfloader_t* loader);
-fluid_sfont_t* fluid_defsfloader_load(fluid_sfloader_t* loader, const char* filename);
+fluid_sfont_t* fluid_defsfloader_load(fluid_sfloader_t* loader, const wchar_t* filename);
 
 
 int fluid_defsfont_sfont_delete(fluid_sfont_t* sfont);
-char* fluid_defsfont_sfont_get_name(fluid_sfont_t* sfont);
+wchar_t* fluid_defsfont_sfont_get_name(fluid_sfont_t* sfont);
 fluid_preset_t* fluid_defsfont_sfont_get_preset(fluid_sfont_t* sfont, unsigned int bank, unsigned int prenum);
 void fluid_defsfont_sfont_iteration_start(fluid_sfont_t* sfont);
 int fluid_defsfont_sfont_iteration_next(fluid_sfont_t* sfont, fluid_preset_t* preset);
@@ -398,7 +398,7 @@ int fluid_defpreset_preset_noteon(fluid_preset_t* preset, fluid_synth_t* synth, 
  */
 struct _fluid_defsfont_t
 {
-  char* filename;           /* the filename of this soundfont */
+  wchar_t* filename;           /* the filename of this soundfont */
   unsigned int samplepos;   /* the position in the file at which the sample data starts */
   unsigned int samplesize;  /* the size of the sample data */
   short* sampledata;        /* the sample data, loaded in ram */
@@ -412,8 +412,8 @@ struct _fluid_defsfont_t
 
 fluid_defsfont_t* new_fluid_defsfont(void);
 int delete_fluid_defsfont(fluid_defsfont_t* sfont);
-int fluid_defsfont_load(fluid_defsfont_t* sfont, const char* file);
-char* fluid_defsfont_get_name(fluid_defsfont_t* sfont);
+int fluid_defsfont_load(fluid_defsfont_t* sfont, const wchar_t* file);
+wchar_t* fluid_defsfont_get_name(fluid_defsfont_t* sfont);
 fluid_defpreset_t* fluid_defsfont_get_preset(fluid_defsfont_t* sfont, unsigned int bank, unsigned int prenum);
 void fluid_defsfont_iteration_start(fluid_defsfont_t* sfont);
 int fluid_defsfont_iteration_next(fluid_defsfont_t* sfont, fluid_preset_t* preset);

@@ -56,7 +56,7 @@ int delete_fluid_defsfloader(fluid_sfloader_t* loader)
   return FLUID_OK;
 }
 
-fluid_sfont_t* fluid_defsfloader_load(fluid_sfloader_t* loader, const char* filename)
+fluid_sfont_t* fluid_defsfloader_load(fluid_sfloader_t* loader, const wchar_t* filename)
 {
   fluid_defsfont_t* defsfont;
   fluid_sfont_t* sfont;
@@ -104,7 +104,7 @@ int fluid_defsfont_sfont_delete(fluid_sfont_t* sfont)
   return 0;
 }
 
-char* fluid_defsfont_sfont_get_name(fluid_sfont_t* sfont)
+wchar_t* fluid_defsfont_sfont_get_name(fluid_sfont_t* sfont)
 {
   return fluid_defsfont_get_name((fluid_defsfont_t*) sfont->data);
 }
@@ -265,7 +265,7 @@ int delete_fluid_defsfont(fluid_defsfont_t* sfont)
 /*
  * fluid_defsfont_get_name
  */
-char* fluid_defsfont_get_name(fluid_defsfont_t* sfont)
+wchar_t* fluid_defsfont_get_name(fluid_defsfont_t* sfont)
 {
   return sfont->filename;
 }
@@ -274,7 +274,7 @@ char* fluid_defsfont_get_name(fluid_defsfont_t* sfont)
 /*
  * fluid_defsfont_load
  */
-int fluid_defsfont_load(fluid_defsfont_t* sfont, const char* file)
+int fluid_defsfont_load(fluid_defsfont_t* sfont, const wchar_t* file)
 {
   SFData* sfdata;
   fluid_list_t *p;
@@ -283,12 +283,14 @@ int fluid_defsfont_load(fluid_defsfont_t* sfont, const char* file)
   fluid_sample_t* sample;
   fluid_defpreset_t* preset;
 
-  sfont->filename = FLUID_MALLOC(1 + FLUID_STRLEN(file));
+  //sfont->filename = FLUID_MALLOC(1 + FLUID_STRLEN(file));
+  sfont->filename = FLUID_MALLOC(2 + wcslen( file ) * 2);
   if (sfont->filename == NULL) {
     FLUID_LOG(FLUID_ERR, "Out of memory");
     return FLUID_FAILED;
   }
-  FLUID_STRCPY(sfont->filename, file);
+  //FLUID_STRCPY(sfont->filename, file);
+  wcscpy(sfont->filename, file);
 
   /* The actual loading is done in the sfont and sffile files */
   sfdata = sfload_file(file);
@@ -397,7 +399,8 @@ fluid_defsfont_load_sampledata(fluid_defsfont_t* sfont)
 {
   fluid_file fd;
   unsigned short endian;
-  fd = FLUID_FOPEN(sfont->filename, "rb");
+  //fd = FLUID_FOPEN(sfont->filename, "rb");
+  fd = _wfopen(sfont->filename, L"rb");
   if (fd == NULL) {
     FLUID_LOG(FLUID_ERR, "Can't open soundfont file");
     return FLUID_FAILED;
@@ -1784,14 +1787,14 @@ chunkid (unsigned int id)
 }
 
 SFData *
-sfload_file (const char * fname)
+sfload_file (const wchar_t * fname)
 {
   SFData *sf = NULL;
   FILE *fd;
   int fsize = 0;
   int err = FALSE;
 
-  if (!(fd = fopen (fname, "rb")))
+  if (!(fd = _wfopen (fname, L"rb")))
     {
       FLUID_LOG (FLUID_ERR, _("Unable to open file \"%s\""), fname);
       return (NULL);
@@ -1806,7 +1809,8 @@ sfload_file (const char * fname)
   if (!err)
     {
       memset (sf, 0, sizeof (SFData));	/* zero sfdata */
-      sf->fname = FLUID_STRDUP (fname);	/* copy file name */
+      /*sf->fname = FLUID_STRDUP (fname);	/* copy file name */
+	  sf->fname = wcsdup(fname);
       sf->sffd = fd;
     }
 

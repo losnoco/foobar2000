@@ -40,7 +40,7 @@ static fluid_preset_t*
 fluid_synth_get_preset(fluid_synth_t* synth, unsigned int sfontnum,
 		      unsigned int banknum, unsigned int prognum);
 static fluid_preset_t*
-fluid_synth_get_preset2(fluid_synth_t* synth, char* sfont_name,
+fluid_synth_get_preset2(fluid_synth_t* synth, wchar_t* sfont_name,
 			unsigned int banknum, unsigned int prognum);
 static void fluid_synth_update_presets(fluid_synth_t* synth);
 static int fluid_synth_update_gain(fluid_synth_t* synth,
@@ -78,11 +78,11 @@ fluid_sfloader_t* new_fluid_defsfloader(void);
 
 int fluid_synth_program_select2(fluid_synth_t* synth,
 				int chan,
-				char* sfont_name,
+				wchar_t* sfont_name,
 				unsigned int bank_num,
 				unsigned int preset_num);
 
-fluid_sfont_t* fluid_synth_get_sfont_by_name(fluid_synth_t* synth, char *name);
+fluid_sfont_t* fluid_synth_get_sfont_by_name(fluid_synth_t* synth, wchar_t *name);
 
 int fluid_synth_set_gen2(fluid_synth_t* synth, int chan,
 			 int param, float value,
@@ -1244,7 +1244,7 @@ fluid_synth_get_preset(fluid_synth_t* synth, unsigned int sfontnum,
  * fluid_synth_get_preset2
  */
 static fluid_preset_t*
-fluid_synth_get_preset2(fluid_synth_t* synth, char* sfont_name,
+fluid_synth_get_preset2(fluid_synth_t* synth, wchar_t* sfont_name,
 			unsigned int banknum, unsigned int prognum)
 {
   fluid_preset_t* preset = NULL;
@@ -1452,7 +1452,7 @@ int fluid_synth_program_select(fluid_synth_t* synth,
  */
 int fluid_synth_program_select2(fluid_synth_t* synth,
 				int chan,
-				char* sfont_name,
+				wchar_t* sfont_name,
 				unsigned int bank_num,
 				unsigned int preset_num)
 {
@@ -2387,7 +2387,7 @@ void fluid_synth_add_sfloader(fluid_synth_t* synth, fluid_sfloader_t* loader)
  * fluid_synth_sfload
  */
 int
-fluid_synth_sfload(fluid_synth_t* synth, const char* filename, int reset_presets)
+fluid_synth_sfload(fluid_synth_t* synth, const wchar_t* filename, int reset_presets)
 {
   fluid_sfont_t* sfont;
   fluid_list_t* list;
@@ -2507,7 +2507,7 @@ fluid_synth_sfunload(fluid_synth_t* synth, unsigned int id, int reset_presets)
  */
 int fluid_synth_sfreload(fluid_synth_t* synth, unsigned int id)
 {
-  char filename[1024];
+  wchar_t filename[1024];
   fluid_sfont_t* sfont;
   int index = 0;
   fluid_list_t *list;
@@ -2531,7 +2531,8 @@ int fluid_synth_sfreload(fluid_synth_t* synth, unsigned int id)
   }
 
   /* keep a copy of the SoundFont's filename */
-  FLUID_STRCPY(filename, fluid_sfont_get_name(sfont));
+  //FLUID_STRCPY(filename, fluid_sfont_get_name(sfont));
+  wcsncpy( filename, fluid_sfont_get_name(sfont), 1024 );
 
   if (fluid_synth_sfunload(synth, id, 0) != FLUID_OK) {
     return FLUID_FAILED;
@@ -2636,14 +2637,15 @@ fluid_sfont_t* fluid_synth_get_sfont_by_id(fluid_synth_t* synth, unsigned int id
 /* fluid_synth_get_sfont_by_name
  *
  */
-fluid_sfont_t* fluid_synth_get_sfont_by_name(fluid_synth_t* synth, char *name)
+fluid_sfont_t* fluid_synth_get_sfont_by_name(fluid_synth_t* synth, wchar_t *name)
 {
   fluid_list_t* list = synth->sfont;
   fluid_sfont_t* sfont;
 
   while (list) {
     sfont = (fluid_sfont_t*) fluid_list_get(list);
-    if (FLUID_STRCMP(fluid_sfont_get_name(sfont), name) == 0) {
+    /*if (FLUID_STRCMP(fluid_sfont_get_name(sfont), name) == 0)*/
+	if (wcscmp(fluid_sfont_get_name(sfont), name) == 0) {
       return sfont;
     }
     list = fluid_list_next(list);
