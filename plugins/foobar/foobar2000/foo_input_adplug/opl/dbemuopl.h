@@ -57,7 +57,7 @@ public:
 				{
 					for ( unsigned i = 0; i < samples; i++ )
 					{
-						int sample = buffer [i];
+						int sample = buffer [i] << 1;
 						clip(sample);
 						buf [i] = sample;
 					}
@@ -66,7 +66,7 @@ public:
 				{
 					for ( unsigned i = 0; i < samples; i++ )
 					{
-						int sample = buffer [i];
+						int sample = buffer [i] << 1;
 						clip(sample);
 						buf [i * 2 + 0] = sample;
 						buf [i * 2 + 1] = sample;
@@ -80,7 +80,7 @@ public:
 				{
 					for ( unsigned i = 0, j = samples * 2; i < j; i++ )
 					{
-						int sample = buffer [i];
+						int sample = buffer [i] << 1;
 						clip(sample);
 						buf [i] = sample;
 					}
@@ -89,7 +89,7 @@ public:
 				{
 					for ( unsigned i = 0; i < samples; i++ )
 					{
-						int sample = ( buffer [i * 2 + 0] + buffer [i * 2 + 1] ) / 2;
+						int sample = ( buffer [i * 2 + 0] + buffer [i * 2 + 1] ) /* / 2*/;
 						clip(sample);
 						buf [i] = sample;
 					}

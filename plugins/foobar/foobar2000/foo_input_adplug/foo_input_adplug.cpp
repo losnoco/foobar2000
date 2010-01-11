@@ -1,9 +1,14 @@
-#define MYVERSION "1.21"
+#define MYVERSION "1.3"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2009-08-28 07:56 UTC - kode54
+- Updated Harekiet's OPL emulator to latest from Dosbox
+- Doubled the volume output from Harekiet's OPL emulator
+- Version is now 1.3
 
 2009-07-22 04:32 UTC - kode54
 - Disabled the ADL reader until it can be fixed
