@@ -5,6 +5,7 @@
 // foobar component copyright (C) 2004-2006 Janne Hyvärinen
 //
 // Changes:
+//  0.2.3  (2009-03-30): Fixed tag writing
 //  0.2.2  (2008-10-26): Restricted silence generation to DTS WAV files
 //  0.2.1  (2008-09-28): Seeking accuracy improvements, SDK's Decoder Validator was broken and didn't notice the bugs
 //  0.2.0  (2008-09-13): Added preliminary DSP decoder for use with DTS audio CDs and WAVs without changing extension
@@ -27,7 +28,7 @@
 //  0.0.4  (2004-10-15): Simplified packet decoder, added codec reporting, fixed typo in version number
 //  0.0.3  (2004-10-15): Added Matroska packet decoder support
 
-#define FD_VERSION  "0.2.2"
+#define FD_VERSION  "0.2.3"
 
 //#define DTS_DEBUG // print status info to console
 
@@ -709,7 +710,7 @@ public:
 
         if (!id3v2 && !apev2) apev2 = true;
 
-        tag_processor::write_multi(r, p_info, p_abort, id3v1, id3v2, apev2);
+        tag_processor::write_multi(r_, p_info, p_abort, id3v1, id3v2, apev2);
     }
 
     bool decode_run_raw(audio_chunk &p_chunk, mem_block_container &p_raw, abort_callback &p_abort) { throw pfc::exception_not_implemented(); }
