@@ -312,84 +312,114 @@ class initquit_osd : public initquit
 	}
 };
 
-class callback_osd : public play_callback
+class play_callback_osd : public play_callback
 {
 public:
-	virtual void on_playback_starting() {}
-	virtual void on_playback_edited(const metadb_handle_ptr & track) {}
+	void FB2KAPI on_playback_starting(play_control::t_track_command,bool) {}
+	void FB2KAPI on_playback_edited(metadb_handle_ptr) {}
 
-	virtual unsigned get_callback_mask()
+	void FB2KAPI on_playback_new_track(metadb_handle_ptr p_track)
 	{
-		return MASK_on_volume_change | MASK_on_playback_dynamic_info |
-			   MASK_on_playback_seek | MASK_on_playback_pause |
-			   MASK_on_playback_stop |
-			   MASK_on_playback_new_track | MASK_on_playback_time;
+		g_osd.on_playback_new_track(p_track);
 	}
 
-	virtual void on_playback_time(const metadb_handle_ptr & track, double val)
-	{
-		g_osd.on_playback_time();
-	}
-
-	virtual void on_volume_change(int new_val)
-	{
-		g_osd.on_volume_change(new_val);
-	}
-
-	virtual void on_playback_dynamic_info(const file_info *info, bool b_track_change)
-	{
-		g_osd.on_playback_dynamic_info(b_track_change);
-	}
-
-	virtual void on_playback_seek(double time)
-	{
-		g_osd.on_playback_seek();
-	}
-
-	virtual void on_playback_pause(int state)
-	{
-		g_osd.on_playback_pause(state);
-	}
-
-	virtual void on_playback_stop(enum play_control::stop_reason reason)
+	void FB2KAPI on_playback_stop(play_control::t_stop_reason)
 	{
 		g_osd.on_playback_stop();
 	}
 
-	virtual void on_playback_new_track(const metadb_handle_ptr & track)
+	void FB2KAPI on_playback_seek(double)
 	{
-		g_osd.on_playback_new_track(track);
+		g_osd.on_playback_seek();
+	}
+
+	void FB2KAPI on_playback_pause(bool p_state)
+	{
+		g_osd.on_playback_pause(p_state);
+	}
+
+	void FB2KAPI on_playback_dynamic_info(const file_info &)
+	{
+		g_osd.on_playback_dynamic_info(false);
+	}
+
+	void FB2KAPI on_playback_dynamic_info_track(const file_info &)
+	{
+		g_osd.on_playback_dynamic_info(true);
+	}
+
+	void FB2KAPI on_playback_time(double)
+	{
+		g_osd.on_playback_time();
+	}
+
+	void FB2KAPI on_volume_change(float p_new_val)
+	{
+		g_osd.on_volume_change(p_new_val * 100.f);
 	}
 };
 
-class playlist_callback_single_osd : public playlist_callback_single
+class playlist_callback_osd : public playlist_callback
 {
 public:
-	virtual void on_items_added(unsigned start, const list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection) {}
-	virtual void on_items_reordered(const unsigned * order,unsigned count) {}
-	virtual void on_items_removing(const bit_array & mask, unsigned, unsigned) {}
-	virtual void on_items_removed(const bit_array & mask, unsigned, unsigned) {}
-	virtual void on_items_selection_change(const bit_array & affected,const bit_array & state) {}
-	virtual void on_item_focus_change(unsigned from,unsigned to) {}
-	virtual void on_items_modified(const bit_array & p_mask) {}
-	virtual void on_items_replaced(const bit_array & p_mask,const list_base_const_t<playlist_callback::t_on_items_replaced_entry> & p_data) {}
-	virtual void on_item_ensure_visible(unsigned idx) {}
+	void FB2KAPI on_items_added(unsigned,unsigned,const list_base_const_t<metadb_handle_ptr> &,const bit_array &) {}
+	void FB2KAPI on_items_reordered(unsigned,const unsigned *,unsigned) {}
+	void FB2KAPI on_items_removing(unsigned,const bit_array &,unsigned,unsigned) {}
+	void FB2KAPI on_items_removed(unsigned,const bit_array &,unsigned,unsigned) {}
+	void FB2KAPI on_items_selection_change(unsigned,const bit_array &,const bit_array &) {}
+	void FB2KAPI on_item_focus_change(unsigned,unsigned,unsigned) {}
 
-	virtual void on_playlist_renamed(const char * p_new_name,unsigned p_new_name_len) {}
-	virtual void on_playlist_locked(bool p_locked) {}
+	void FB2KAPI on_items_modified(unsigned,const bit_array &) {}
+	void FB2KAPI on_items_modified_fromplayback(unsigned,const bit_array &,play_control::t_display_level) {}
 
-	virtual void on_default_format_changed() {}
-	virtual void on_playback_order_changed(unsigned p_new_index) {}
+	void FB2KAPI on_items_replaced(unsigned,const bit_array &,const list_base_const_t<t_on_items_replaced_entry> &) {}
 
-	virtual void on_playlist_switch()
+	void FB2KAPI on_item_ensure_visible(unsigned,unsigned) {}
+
+	void FB2KAPI on_playlist_created(unsigned,const char *,unsigned) {}
+	void FB2KAPI on_playlists_reorder(const unsigned *,unsigned) {}
+	void FB2KAPI on_playlists_removing(const bit_array &,unsigned,unsigned) {}
+	void FB2KAPI on_playlists_removed(const bit_array &,unsigned,unsigned) {}
+	void FB2KAPI on_playlist_renamed(unsigned,const char *,unsigned) {}
+
+	void FB2KAPI on_default_format_changed() {}
+	void FB2KAPI on_playback_order_changed(unsigned) {}
+	void FB2KAPI on_playlist_locked(unsigned,bool) {}
+
+	void FB2KAPI on_playlist_activate(unsigned,unsigned)
 	{
 		g_osd.on_playlist_switch();
 	}
 };
 
-static play_callback_factory           <callback_osd>                                           g_play_callback_osd_factory;
-static service_factory_single_t        <playlist_callback_single, playlist_callback_single_osd> g_playlist_callback_single_osd_factory;
-static initquit_factory                <initquit_osd>                                           g_initquit_osd_factory;
+play_callback_osd     g_play_callback_osd;
+playlist_callback_osd g_playlist_callback_osd;
+
+void g_callback_register()
+{
+	unsigned play_flags, playlist_flags;
+	g_osd.get_callback_flags( play_flags, playlist_flags );
+	static_api_ptr_t<play_callback_manager>()->register_callback( & g_play_callback_osd, play_flags, false );
+	static_api_ptr_t<playlist_manager>()->register_callback( & g_playlist_callback_osd, playlist_flags );
+}
+
+void g_callback_modify()
+{
+	unsigned play_flags, playlist_flags;
+	g_osd.get_callback_flags( play_flags, playlist_flags );
+	static_api_ptr_t<play_callback_manager> p_pcm;
+	p_pcm->unregister_callback( & g_play_callback_osd );
+	p_pcm->register_callback( & g_play_callback_osd, play_flags, false );
+	static_api_ptr_t<playlist_manager>()->modify_callback( & g_playlist_callback_osd, playlist_flags );
+}
+
+void g_callback_unregister()
+{
+	static_api_ptr_t<play_callback_manager>()->unregister_callback( & g_play_callback_osd );
+	static_api_ptr_t<playlist_manager>()->unregister_callback( & g_playlist_callback_osd );
+}
+
+static initquit_factory<initquit_osd> g_initquit_osd_factory;
 
 #define NAME "On-Screen Display"
 

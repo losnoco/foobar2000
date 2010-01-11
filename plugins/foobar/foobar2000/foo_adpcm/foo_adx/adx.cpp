@@ -1,7 +1,11 @@
-#define MY_VERSION "1.3"
+#define MY_VERSION "1.4"
 
 /*
 	change log
+
+2005-11-17 10:38 UTC - kode54
+- Added version field (?) detection for loop control, and handled potential newer (?) version (from in_adx)
+- Version is now 1.4
 
 2005-10-21 19:31 UTC - kode54
 - Fixed seeking by swallowing whole sets of decoded samples instead of single blocks of 32
@@ -175,7 +179,7 @@ private:
 
 		if ( len < 4 ) return io_result_error_data;
 
-		if ( ! data_buffer.check_size( 0x2C ) )
+		if ( ! data_buffer.check_size( 4 ) )
 			return io_result_error_out_of_memory;
 
 		unsigned char * ptr = data_buffer.get_ptr();
@@ -183,13 +187,16 @@ private:
 		try
 		{
 			static const unsigned char signature[] = { '(', 'c', ')', 'C', 'R', 'I' };
-			m_file->read_object_e(ptr, 0x2C, p_abort);
+			m_file->read_object_e(ptr, 0x4, p_abort);
 			if ( ptr[0] != 0x80 ) throw io_result_error_data;
 			offset = ( read_long( ptr ) & ~0x80000000 ) + 4;
 			if ( t_filesize( offset ) >= len ) throw io_result_error_data;
-			m_file->seek_e( offset - 6, p_abort );
-			m_file->read_object_e( ptr, 6, p_abort );
-			if ( memcmp( ptr, signature, 6 ) ) throw io_result_error_data;
+			if ( offset < 12 + 4 + 6 ) throw io_result_error_data; // need at least srate/size/signature
+			if ( ! data_buffer.check_size( offset ) )
+				throw io_result_error_out_of_memory;
+			ptr = data_buffer.get_ptr();
+			m_file->read_object_e( ptr + 4, offset - 4, p_abort );
+			if ( memcmp( ptr + offset - 6, signature, 6 ) ) throw io_result_error_data;
 			nch = ptr[7];
 			if ( nch < 1 || nch > 2 ) throw io_result_error_data;
 		}
@@ -200,15 +207,35 @@ private:
 
 		srate = read_long( ptr + 8 );
 		size = read_long( ptr + 12 );
-		if ( read_long( ptr + 0x18 ) == 1 )
-		{
-			loop_start = read_long( ptr + 0x1C );
-			loop_start_offset = read_long( ptr + 0x20 );
-			loop_end = read_long( ptr + 0x24 );
 
-			if ( loop_start >= loop_end || loop_end > size ) loop_start = ~0;
+		unsigned version = 0;
+		
+		if ( offset >= 16 + 4 + 6 ) version = read_long( ptr + 16 );
+
+		loop_start = ~0;
+
+		if ( version == 0x01F40300 )
+		{
+			if ( ( offset >= 0x28 + 4 + 6 ) && ( read_long( ptr + 0x18 ) == 1 ) )
+			{
+				loop_start = read_long( ptr + 0x1C );
+				loop_start_offset = read_long( ptr + 0x20 );
+				loop_end = read_long( ptr + 0x24 );
+
+				if ( loop_start >= loop_end || loop_end > size ) loop_start = ~0;
+			}
 		}
-		else loop_start = ~0;
+		else if ( version == 0x01F40400 )
+		{
+			if ( ( offset >= 0x34 + 4 + 6 ) && ( read_long( ptr + 0x24 ) == 1 ) )
+			{
+				loop_start = read_long( ptr + 0x28 );
+				loop_start_offset = read_long( ptr + 0x2C );
+				loop_end = read_long( ptr + 0x30 );
+
+				if ( loop_start >= loop_end || loop_end > size ) loop_start = ~0;
+			}
+		}
 
 		if ( ! srate || ! size ) return io_result_error_data;
 
@@ -412,7 +439,12 @@ more:
 		return true;
 	}
 
-	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta,bool & p_track_change )
+	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta )
+	{
+		return false;
+	}
+
+	bool decode_get_dynamic_info_track( file_info & p_out, double & p_timestamp_delta )
 	{
 		return false;
 	}

@@ -1178,7 +1178,7 @@ string_utf8_nocolor::string_utf8_nocolor(const char * src, int len /* = -1 */)
 	string8 meh(src, len);
 	if (meh.is_empty()) return;
 	if (strchr(meh, 3))
-		titleformat::remove_color_marks(meh, *this);
+		titleformat_compiler::remove_color_marks(meh, *this);
 	else
 		set_string(meh);
 }

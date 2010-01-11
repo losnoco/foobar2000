@@ -603,7 +603,12 @@ public:
 		return m_file.is_valid() ? m_file->can_seek() : false;
 	}
 
-	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta,bool & p_track_change )
+	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta )
+	{
+		return false;
+	}
+
+	bool decode_get_dynamic_info_track( file_info & p_out, double & p_timestamp_delta )
 	{
 		return false;
 	}

@@ -517,6 +517,7 @@ static const char * exts[]=
 	"PSM",
 	"UMX",
 	"AM","J2B",
+	"DSM",
 };
 
 // {0E54B9FA-05DB-46b2-A3A4-C6C3201D57C0}
@@ -2227,7 +2228,7 @@ retry:
 		return true;
 	}
 
-	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta,bool & p_track_change)
+	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta)
 	{
 		bool ret = false;
 		if (dynamic_info && duh && sr)
@@ -2288,6 +2289,11 @@ retry:
 			}
 		}
 		return ret;
+	}
+
+	bool decode_get_dynamic_info_track( file_info & p_out, double & p_timestamp_delta )
+	{
+		return false;
 	}
 
 	void decode_on_idle( abort_callback & p_abort )

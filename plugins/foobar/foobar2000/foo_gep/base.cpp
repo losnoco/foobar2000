@@ -164,7 +164,12 @@ bool input_gep::decode_can_seek()
 	return true;
 }
 
-bool input_gep::decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta,bool & p_track_change )
+bool input_gep::decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta )
+{
+	return false;
+}
+
+bool input_gep::decode_get_dynamic_info_track( file_info & p_out, double & p_timestamp_delta )
 {
 	return false;
 }

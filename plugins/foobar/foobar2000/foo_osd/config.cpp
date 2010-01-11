@@ -73,7 +73,7 @@ osd_state::osd_state(osd_config & _conf) : conf(_conf)
 
 void osd_state::on_change()
 {
-	static_api_ptr_t<titleformat> tf;
+	static_api_ptr_t<titleformat_compiler> tf;
 
 	tf->compile_safe(format, conf.format);
 	tf->compile_safe(formatnext, conf.formatnext);

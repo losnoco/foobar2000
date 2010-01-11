@@ -694,7 +694,12 @@ more:
 		return true;
 	}
 
-	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta,bool & p_track_change )
+	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta )
+	{
+		return false;
+	}
+
+	bool decode_get_dynamic_info_track( file_info & p_out, double & p_timestamp_delta )
 	{
 		return false;
 	}
@@ -1179,6 +1184,7 @@ writeval (service_ptr_t<file> & r, unsigned val, abort_callback & p_abort)
 	r->write_object_e(&out, i, p_abort);
 }
 
+#if 0
 class NOVTABLE converter_brr : public converter_presetless
 {
 public:
@@ -1756,13 +1762,16 @@ private:
 	UINT rate, stereo, remainder;
 	signed short prev[4];
 };
+#endif
 
 DECLARE_FILE_TYPE("BRR files", "*.BRR");
 
 static input_singletrack_factory_t<input_brr> g_input_brr_factory;
+#if 0
 static converter_factory<converter_brr_snes> g_converter_brr_snes_factory;
 static converter_factory<converter_brr_psx> g_converter_brr_psx_factory;
 static converter_factory<converter_xa> g_converter_xa_factory;
+#endif
 
 #ifndef FOO_ADPCM_EXPORTS
 static config_factory<config_brr> g_config_brr_factory;

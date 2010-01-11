@@ -1,5 +1,9 @@
 #include "main.h"
 
+void g_callback_register();
+void g_callback_modify();
+void g_callback_unregister();
+
 // {C36278A8-854D-4763-9D65-2F2077417FE3}
 static const GUID guid_cfg_g_osd = 
 { 0xc36278a8, 0x854d, 0x4763, { 0x9d, 0x65, 0x2f, 0x20, 0x77, 0x41, 0x7f, 0xe3 } };
@@ -88,7 +92,7 @@ public:
 			if (playing == infinite || next >= count) break;
 
 			string8 result;
-			pm->playlist_item_format_title(playing, next, NULL, result, m_format, NULL);
+			pm->playlist_item_format_title(playing, next, NULL, result, m_format, NULL, play_control::display_level_all);
 			if (result.length())
 			{
 				string_utf8_nocolor nc(result);
@@ -146,7 +150,7 @@ t_io_result cfg_osd_list::get_data_raw(stream_writer * p_stream,abort_callback &
 	return io_result_success;
 }
 
-t_io_result cfg_osd_list::set_data_raw(stream_reader * p_stream,abort_callback & p_abort)
+t_io_result cfg_osd_list::set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort)
 {
 	unsigned i, count;
 
@@ -263,12 +267,15 @@ bool cfg_osd_list::init()
 		}
 	}
 
+	g_callback_register();
+
 	return initialized = true;
 }
 
 void cfg_osd_list::quit()
 {
 	insync(sync);
+	g_callback_unregister();
 	osd.delete_all();
 	state.delete_all();
 	initialized = false;
@@ -329,6 +336,8 @@ void cfg_osd_list::set(unsigned n, const osd_config & p_in)
 			if (o->GetState() != COsdWnd::HIDDEN) o->Hide();
 
 			state[n]->on_change();
+
+			g_callback_modify();
 		}
 	}
 }
@@ -349,6 +358,8 @@ unsigned cfg_osd_list::add(osd_config & p_in)
 		{
 			state.add_item(s);
 			osd.add_item(o);
+
+			g_callback_modify();
 		}
 		else
 		{
@@ -372,6 +383,8 @@ unsigned cfg_osd_list::del(unsigned n)
 		{
 			osd.delete_by_idx(n);
 			state.delete_by_idx(n);
+
+			g_callback_modify();
 		}
 
 		val.delete_by_idx(n);
@@ -401,6 +414,33 @@ void cfg_osd_list::get_names(array_t<string_simple> & p_out)
 	for (i = 0; i < count; i++) p_out[i] = val[i]->name;
 }
 
+void cfg_osd_list::get_callback_flags( unsigned & p_play_callback_flags, unsigned & p_playlist_callback_flags )
+{
+	p_play_callback_flags = 0;
+	p_playlist_callback_flags = 0;
+
+	insync(sync);
+
+	unsigned i, count = val.get_count();
+
+	for ( i = 0; i < count; ++i )
+	{
+		osd_config * c = val[ i ];
+		if ( c->flags & osd_interval ) p_play_callback_flags |= play_callback::flag_on_playback_time;
+		if ( c->flags & osd_dynamic_all ) p_play_callback_flags |= play_callback::flag_on_playback_dynamic_info;
+		if ( c->flags & osd_pop )
+		{
+			if ( c->flags & osd_switch ) p_playlist_callback_flags |= playlist_callback::flag_on_playlist_activate;
+			if ( c->flags & osd_play ) p_play_callback_flags |= play_callback::flag_on_playback_new_track;
+			if ( c->flags & osd_pause ) p_play_callback_flags |= play_callback::flag_on_playback_pause;
+			if ( c->flags & osd_seek ) p_play_callback_flags |= play_callback::flag_on_playback_seek;
+			if ( c->flags & osd_dynamic ) p_play_callback_flags |= play_callback::flag_on_playback_dynamic_info_track;
+			if ( c->flags & osd_volume ) p_play_callback_flags |= play_callback::flag_on_volume_change;
+			if ( c->flags & osd_hide_on_stop ) p_play_callback_flags |= play_callback::flag_on_playback_stop;
+		}
+	}
+}
+
 void cfg_osd_list::test(unsigned n)
 {
 	insync(sync);
@@ -411,7 +451,7 @@ void cfg_osd_list::test(unsigned n)
 	COsdWnd    * o = osd[n];
 
 	string8 text;
-	static_api_ptr_t<play_control>()->playback_format_title(&next_extras(s->formatnext), text, s->format, NULL);
+	static_api_ptr_t<play_control>()->playback_format_title(&next_extras(s->formatnext), text, s->format, NULL, play_control::display_level_all);
 
 	if (text.length()) o->Post(text, !!(c->flags & osd_interval));
 	else
@@ -496,7 +536,7 @@ void cfg_osd_list::on_playback_time()
 		COsdWnd    * o = osd[i];
 		if ((c->flags & osd_interval) && o->DoInterval() && o->GetState() != COsdWnd::HIDDEN)
 		{
-			pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL);
+			pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
 			if (cmd.length()) o->Repost(cmd);
 		}
 	}
@@ -536,7 +576,7 @@ void cfg_osd_list::on_playback_dynamic_info(bool b_track_change)
 		{
 			if ((c->flags & (osd_pop | osd_dynamic)) == (osd_pop | osd_dynamic))
 			{
-				pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL);
+				pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
 				if (cmd.length()) o->Post(cmd, !!(c->flags & osd_interval));
 			}
 		}
@@ -544,7 +584,7 @@ void cfg_osd_list::on_playback_dynamic_info(bool b_track_change)
 		{
 			if ((c->flags & osd_dynamic_all) && o->DoInterval() && o->GetState() != COsdWnd::HIDDEN)
 			{
-				pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL);
+				pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
 				if (cmd.length()) o->Repost(cmd);
 			}
 		}
@@ -568,7 +608,7 @@ void cfg_osd_list::on_playback_seek()
 
 		if ((c->flags & (osd_pop | osd_seek)) == (osd_pop | osd_seek))
 		{
-			pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL);
+			pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
 			if (cmd.length()) o->Post(cmd, !!(c->flags & osd_interval));
 		}
 	}
@@ -591,7 +631,7 @@ void cfg_osd_list::on_playback_pause(int _state)
 
 		if ((c->flags & (osd_pop | osd_pause)) == (osd_pop | osd_pause))
 		{
-			pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL);
+			pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
 			if (cmd.length()) o->Post(cmd, !_state && !!(c->flags & osd_interval));
 		}
 	}
@@ -681,7 +721,7 @@ void cfg_osd_list::show_track(unsigned n)
 		COsdWnd    * o = osd[n];
 		string8_fastalloc cmd;
 
-		static_api_ptr_t<play_control>()->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL);
+		static_api_ptr_t<play_control>()->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
 		if (cmd.length()) o->Post(cmd, !!(c->flags & osd_interval));
 	}
 }

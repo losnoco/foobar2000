@@ -388,6 +388,26 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="DSP"
+				>
+				<File
+					RelativePath=".\foo_dsp\decode.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\foo_dsp\dsp.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\foo_dsp\dsp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\foo_dsp\foo_dsp.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath=".\foo_adpcm.rc"

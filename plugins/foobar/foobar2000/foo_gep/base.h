@@ -59,7 +59,8 @@ public:
 	t_io_result decode_run( audio_chunk & p_chunk,abort_callback & p_abort );
 	t_io_result decode_seek( double p_seconds, abort_callback & p_abort );
 	bool decode_can_seek();
-	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta,bool & p_track_change );
+	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta );
+	bool decode_get_dynamic_info_track( file_info & p_out, double & p_timestamp_delta );
 	void decode_on_idle( abort_callback & p_abort );
 
 	t_io_result retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort );

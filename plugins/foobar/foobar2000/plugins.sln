@@ -317,11 +317,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dumb", "..\..\dumb\dumb\vc6
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dumb", "foo_dumb\foo_dumb.vcproj", "{2BD708F1-158B-4153-ABB6-FE0D6ECE1F9F}"
 	ProjectSection(ProjectDependencies) = postProject
-		{612D360C-A51B-4B34-8F49-33F42A2957F5} = {612D360C-A51B-4B34-8F49-33F42A2957F5}
-		{FBF00162-1B31-4CD0-9F78-3ADA304E325F} = {FBF00162-1B31-4CD0-9F78-3ADA304E325F}
 		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4} = {6958D7C2-5871-4B1D-A04D-CAF4235FEED4}
 		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F} = {C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}
+		{FBF00162-1B31-4CD0-9F78-3ADA304E325F} = {FBF00162-1B31-4CD0-9F78-3ADA304E325F}
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA} = {4A5CC722-A067-487F-9DD3-8EDAC8633FDA}
+		{612D360C-A51B-4B34-8F49-33F42A2957F5} = {612D360C-A51B-4B34-8F49-33F42A2957F5}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_uie_volume", "foo_uie_volume\foo_uie_volume.vcproj", "{A366C092-2298-4BBC-8085-BA0B12E8EC5B}"
@@ -363,7 +363,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_gep", "foo_gep\foo_gep.
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA} = {4A5CC722-A067-487F-9DD3-8EDAC8633FDA}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Game_Music_Emu", "..\..\Game_Music_Emu-0.2.4mod\msvc\Game_Music_Emu.vcproj", "{C3E262D2-2D15-4A46-98F1-2CE8A74F3590}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Game_Music_Emu", "..\..\Game_Music_Emu-0.2.6\msvc\Game_Music_Emu.vcproj", "{C3E262D2-2D15-4A46-98F1-2CE8A74F3590}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FBF00162-1B31-4CD0-9F78-3ADA304E325F} = {FBF00162-1B31-4CD0-9F78-3ADA304E325F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_festalon", "foo_festalon\foo_festalon.vcproj", "{E8F9F692-A557-4ECD-B09E-34B3CD4AEFF3}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -676,9 +679,9 @@ Global
 		SccProjectUniqueName71 = ..\\openspc2\\spc_emu\\spc_emu.vcproj
 		SccLocalPath71 = ..\\..
 		SccProjectFilePathRelativizedFromConnection71 = foobar\\openspc2\\spc_emu\\
-		SccProjectUniqueName72 = ..\\..\\Game_Music_Emu-0.2.4mod\\msvc\\Game_Music_Emu.vcproj
+		SccProjectUniqueName72 = ..\\..\\Game_Music_Emu-0.2.6\\msvc\\Game_Music_Emu.vcproj
 		SccLocalPath72 = ..\\..
-		SccProjectFilePathRelativizedFromConnection72 = Game_Music_Emu-0.2.4mod\\msvc\\
+		SccProjectFilePathRelativizedFromConnection72 = Game_Music_Emu-0.2.6\\msvc\\
 		SccProjectUniqueName73 = ..\\..\\gds_sdk\\api\\samples\\common\\GoogleDesktopComponentCommon.vcproj
 		SccLocalPath73 = ..\\..
 		SccProjectFilePathRelativizedFromConnection73 = gds_sdk\\api\\samples\\common\\
@@ -1872,16 +1875,16 @@ Global
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.DLL Release|Win32.Build.0 = Release|Win32
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release ANSI|Win32.ActiveCfg = Release|Win32
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release ANSI|Win32.Build.0 = Release|Win32
-		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release lib staticlink|Win32.ActiveCfg = Release staticlink|Win32
-		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release lib staticlink|Win32.Build.0 = Release staticlink|Win32
-		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release lib|Win32.ActiveCfg = Release staticlink|Win32
-		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release lib|Win32.Build.0 = Release staticlink|Win32
-		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release MT|Win32.ActiveCfg = Release staticlink|Win32
-		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release MT|Win32.Build.0 = Release staticlink|Win32
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release lib staticlink|Win32.ActiveCfg = Release|Win32
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release lib staticlink|Win32.Build.0 = Release|Win32
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release lib|Win32.ActiveCfg = Release|Win32
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release lib|Win32.Build.0 = Release|Win32
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release MT|Win32.ActiveCfg = Release|Win32
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release MT|Win32.Build.0 = Release|Win32
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release profgenx|Win32.ActiveCfg = Release|Win32
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release profgenx|Win32.Build.0 = Release|Win32
-		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release static|Win32.ActiveCfg = Release staticlink|Win32
-		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release static|Win32.Build.0 = Release staticlink|Win32
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release static|Win32.ActiveCfg = Release|Win32
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release static|Win32.Build.0 = Release|Win32
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release staticlink|Win32.ActiveCfg = Release|Win32
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release staticlink|Win32.Build.0 = Release|Win32
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA}.Release Unicode|Win32.ActiveCfg = Release|Win32
@@ -1904,16 +1907,16 @@ Global
 		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.DLL Release|Win32.Build.0 = Release|Win32
 		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release ANSI|Win32.ActiveCfg = Release|Win32
 		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release ANSI|Win32.Build.0 = Release|Win32
-		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release lib staticlink|Win32.ActiveCfg = Release staticlink|Win32
-		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release lib staticlink|Win32.Build.0 = Release staticlink|Win32
-		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release lib|Win32.ActiveCfg = Release staticlink|Win32
-		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release lib|Win32.Build.0 = Release staticlink|Win32
-		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release MT|Win32.ActiveCfg = Release staticlink|Win32
-		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release MT|Win32.Build.0 = Release staticlink|Win32
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release lib staticlink|Win32.ActiveCfg = Release|Win32
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release lib staticlink|Win32.Build.0 = Release|Win32
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release lib|Win32.ActiveCfg = Release|Win32
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release lib|Win32.Build.0 = Release|Win32
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release MT|Win32.ActiveCfg = Release|Win32
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release MT|Win32.Build.0 = Release|Win32
 		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release profgenx|Win32.ActiveCfg = Release|Win32
 		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release profgenx|Win32.Build.0 = Release|Win32
-		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release static|Win32.ActiveCfg = Release staticlink|Win32
-		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release static|Win32.Build.0 = Release staticlink|Win32
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release static|Win32.ActiveCfg = Release|Win32
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release static|Win32.Build.0 = Release|Win32
 		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release staticlink|Win32.ActiveCfg = Release|Win32
 		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release staticlink|Win32.Build.0 = Release|Win32
 		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}.Release Unicode|Win32.ActiveCfg = Release|Win32
@@ -1936,16 +1939,16 @@ Global
 		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.DLL Release|Win32.Build.0 = Release|Win32
 		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release ANSI|Win32.ActiveCfg = Release|Win32
 		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release ANSI|Win32.Build.0 = Release|Win32
-		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release lib staticlink|Win32.ActiveCfg = Release staticlink|Win32
-		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release lib staticlink|Win32.Build.0 = Release staticlink|Win32
-		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release lib|Win32.ActiveCfg = Release staticlink|Win32
-		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release lib|Win32.Build.0 = Release staticlink|Win32
-		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release MT|Win32.ActiveCfg = Release staticlink|Win32
-		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release MT|Win32.Build.0 = Release staticlink|Win32
+		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release lib staticlink|Win32.ActiveCfg = Release|Win32
+		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release lib staticlink|Win32.Build.0 = Release|Win32
+		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release lib|Win32.ActiveCfg = Release|Win32
+		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release lib|Win32.Build.0 = Release|Win32
+		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release MT|Win32.ActiveCfg = Release|Win32
+		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release MT|Win32.Build.0 = Release|Win32
 		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release profgenx|Win32.ActiveCfg = Release|Win32
 		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release profgenx|Win32.Build.0 = Release|Win32
-		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release static|Win32.ActiveCfg = Release staticlink|Win32
-		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release static|Win32.Build.0 = Release staticlink|Win32
+		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release static|Win32.ActiveCfg = Release|Win32
+		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release static|Win32.Build.0 = Release|Win32
 		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release staticlink|Win32.ActiveCfg = Release|Win32
 		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release staticlink|Win32.Build.0 = Release|Win32
 		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}.Release Unicode|Win32.ActiveCfg = Release|Win32
