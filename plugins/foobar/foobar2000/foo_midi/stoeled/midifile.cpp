@@ -243,7 +243,7 @@ static bool load_rmi(MIDI_file* mf,const BYTE* source,int source_size)
 		}
 		else if (*(DWORD*)(source+_p)==_rv('LIST') && *(DWORD*)(source+_p+8)==_rv('INFO'))
 		{
-			DWORD s=*(DWORD*)(source+_p+4);
+			int s=*(int*)(source+_p+4);
 			if (s >= 4)
 			{
 				s -= 4;
