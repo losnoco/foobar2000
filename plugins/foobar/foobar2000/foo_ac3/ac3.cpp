@@ -421,7 +421,7 @@ public:
 
 		if (state) a52_free(state);
 
-		state = a52_init( MM_ACCEL_DJBFFT );
+		state = a52_init( 0 /*MM_ACCEL_DJBFFT*/ );
 		if ( ! state ) throw std::bad_alloc();
 
 		buffer.set_size( 3840 );
