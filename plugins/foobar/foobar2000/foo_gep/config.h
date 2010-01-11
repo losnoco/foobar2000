@@ -8,7 +8,7 @@ extern cfg_int cfg_write;
 
 extern cfg_int cfg_write_nsfe, cfg_nsfe_ignore_playlists;
 
-extern cfg_int cfg_spc_anti_surround;
+extern cfg_int cfg_spc_anti_surround, cfg_spc_interpolation;
 
 extern cfg_int cfg_vgm_gd3_prefers_japanese;
 
