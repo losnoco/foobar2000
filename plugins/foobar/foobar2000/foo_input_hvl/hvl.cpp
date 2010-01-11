@@ -1,7 +1,11 @@
-#define MYVERSION "1.1"
+#define MYVERSION "1.2"
 
 /*
 	changelog
+
+2009-09-30 12:21 UTC - kode54
+- Added division by zero protection for envelope setup code
+- Version is now 1.2
 
 2009-07-31 22:14 UTC - kode54
 - Added null pointer and various buffer length checks to hvl_replay.c
