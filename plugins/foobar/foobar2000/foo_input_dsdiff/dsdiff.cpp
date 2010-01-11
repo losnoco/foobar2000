@@ -1,7 +1,11 @@
-#define MYVERSION "1.0"
+#define MYVERSION "1.1"
 
 /*
 	changelog
+
+2009-11-11 21:00 - kode54
+- Whoops, forgot to uncomment foobar2000 resampler reset code on seek
+- Version is now 1.1
 
 2009-11-10 19:07 - kode54
 - Initial release.
@@ -1100,11 +1104,8 @@ public:
 			}
 		}
 
-#if 0
 		if ( m_resampler.is_valid() ) m_resampler->flush();
-#else
 		for ( unsigned i = 0; i < channels; i++ ) m_resamplers[ i ].reset();
-#endif
 	}
 
 	bool decode_can_seek()
