@@ -1,7 +1,14 @@
-#define MY_VERSION "1.5"
+#define MY_VERSION "1.6"
 
 /*
 	change log
+
+2006-09-19 12:42 UTC - kode54
+- Fixed loop end sample truncation
+- Oops, now version info exposes correct version number
+- Changed description
+- Fixed long standing bug in seeking that was masked by fade on seek
+- Version is now 1.6
 
 2005-12-18 07:49 UTC - kode54
 - Added support for files with 32 bytes of padding before the header (Sonic Mega Collection)
@@ -350,19 +357,19 @@ more:
 			{
 				if (pos >= loop_end)
 				{
-					swallow += pos - loop_end;
+					unsigned swallow_end = pos - loop_end;
 					pos = loop_start - loop_swallow;
 					*context = *loop_context;
 					m_file->seek( head_skip + loop_start_offset, p_abort );
-					if (swallow >= done)
+					if (swallow + swallow_end >= done)
 					{
-						swallow -= done;
+						swallow -= done - swallow_end - loop_swallow;
 						goto more;
 					}
-					if (swallow)
+					if (swallow || swallow_end)
 					{
 						out += swallow * nch;
-						done -= swallow;
+						done -= swallow + swallow_end;
 					}
 					swallow = loop_swallow;
 				}
@@ -396,7 +403,7 @@ more:
 				p_chunk.set_srate(srate);
 				p_chunk.set_channels(nch);
 
-				audio_math::convert_from_int32( out, done * nch, ( audio_sample * ) out, 1 << 16 );
+				audio_math::convert_from_int32( out, done * nch, p_chunk.get_data(), 1 << 16 );
 
 				return true;
 			}
@@ -407,7 +414,9 @@ more:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-		swallow = int( audio_math::time_to_samples( p_seconds, srate ) ) * nch;
+		t_uint64 swallow64 = audio_math::time_to_samples( p_seconds, srate );
+		if ( swallow64 > infinite32 ) swallow = infinite32;
+		else swallow = ( unsigned int ) swallow64;
 		if ( swallow > pos )
 		{
 			swallow -= pos;
@@ -499,4 +508,4 @@ static input_singletrack_factory_t<input_adx> g_input_adx_factory;
 static config_factory<config_adx> g_config_adx_factory;
 #endif
 
-DECLARE_COMPONENT_VERSION("ADX decoder", "1.0", "Decodes Dreamcast ADX files.");
+DECLARE_COMPONENT_VERSION("ADX decoder", MY_VERSION, "Decodes CRI ADX files.");
