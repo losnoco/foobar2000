@@ -2645,6 +2645,8 @@ retry:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
+		first_block = true;
+
 		long from_pos = duh_sigrenderer_get_position( sr );
 		eof = false;
 
