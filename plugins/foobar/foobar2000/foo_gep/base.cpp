@@ -132,7 +132,7 @@ void input_gep::monitor_stop()
 	::monitor_stop( emu );
 }
 
-void input_gep::setup_effects()
+void input_gep::setup_effects( bool echo )
 {
 	if ( effects_enable )
 	{
@@ -147,7 +147,7 @@ void input_gep::setup_effects()
 
 		emu->set_equalizer( eq );
 
-		if ( effects_echo_depth > 0 )
+		if ( echo && effects_echo_depth > 0 )
 		{
 			if ( ! buffer ) buffer = new Effects_Buffer;
 			emu->set_buffer( buffer );

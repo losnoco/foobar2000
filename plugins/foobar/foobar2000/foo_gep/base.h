@@ -62,7 +62,7 @@ protected:
 	void monitor_update();
 	void monitor_stop();
 
-	void setup_effects();
+	void setup_effects( bool echo = true );
 	void setup_effects_2();
 
 public:

@@ -790,11 +790,13 @@ public:
 			p = l_info.info_get( field_length );
 			if (p)
 			{
+				tag_song_ms = atoi(p);
 				l_info.meta_set( field_length, p );
 			}
 			p = l_info.info_get( field_fade );
 			if (p)
 			{
+				tag_fade_ms = atoi(p);
 				l_info.meta_set( field_fade, p );
 			}
 		}
@@ -931,12 +933,12 @@ static BOOL CALLBACK TimeProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			char temp[16];
 			if (!i->song && !i->fade) uSetWindowText(wnd, "Set length");
 			else uSetWindowText(wnd, "Edit length");
-			if (i->song)
+			if (i->song != ~0)
 			{
 				print_time_crap(i->song, (char*)&temp);
 				uSetDlgItemText(wnd, IDC_LENGTH, (char*)&temp);
 			}
-			if (i->fade)
+			if (i->fade != ~0)
 			{
 				print_time_crap(i->fade, (char*)&temp);
 				uSetDlgItemText(wnd, IDC_FADE, (char*)&temp);
@@ -953,10 +955,10 @@ static BOOL CALLBACK TimeProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 				int foo;
 				foo = parse_time_crap(string_utf8_from_window(wnd, IDC_LENGTH));
 				if (foo != BORK_TIME) i->song = foo;
-				else i->song = 0;
+				else i->song = ~0;
 				foo = parse_time_crap(string_utf8_from_window(wnd, IDC_FADE));
 				if (foo != BORK_TIME) i->fade = foo;
-				else i->fade = 0;
+				else i->fade = ~0;
 			}
 			EndDialog(wnd,1);
 			break;
@@ -989,6 +991,64 @@ static bool context_time_dialog(unsigned *song_ms, unsigned *fade_ms)
 	delete i;
 	return ret;
 }
+
+class length_info_filter : public file_info_filter
+{
+	bool set_length, set_fade;
+	unsigned m_length, m_fade;
+
+	const char * m_tag_length;
+	const char * m_tag_fade;
+
+	metadb_handle_list m_handles;
+
+public:
+	length_info_filter( const pfc::list_base_const_t<metadb_handle_ptr> & p_list, const char * p_tag_length, const char * p_tag_fade )
+	{
+		set_length = false;
+		set_fade = false;
+
+		m_tag_length = p_tag_length;
+		m_tag_fade = p_tag_fade;
+
+		pfc::array_t<t_size> order;
+		order.set_size(p_list.get_count());
+		order_helper::g_fill(order.get_ptr(),order.get_size());
+		p_list.sort_get_permutation_t(pfc::compare_t<metadb_handle_ptr,metadb_handle_ptr>,order.get_ptr());
+		m_handles.set_count(order.get_size());
+		for(t_size n = 0; n < order.get_size(); n++) {
+			m_handles[n] = p_list[order[n]];
+		}
+
+	}
+
+	void length( unsigned p_length )
+	{
+		set_length = true;
+		m_length = p_length;
+	}
+
+	void fade( unsigned p_fade )
+	{
+		set_fade = true;
+		m_fade = p_fade;
+	}
+
+	virtual bool apply_filter(metadb_handle_ptr p_location,t_filestats p_stats,file_info & p_info)
+	{
+		t_size index;
+		if (m_handles.bsearch_t(pfc::compare_t<metadb_handle_ptr,metadb_handle_ptr>,p_location,index))
+		{
+			if ( set_length ) p_info.info_set_int( m_tag_length, m_length );
+			if ( set_fade ) p_info.info_set_int( m_tag_fade, m_fade );
+			return set_length | set_fade;
+		}
+		else
+		{
+			return false;
+		}
+	}
+};
 
 class context_spc : public contextmenu_item_simple
 {
@@ -1035,7 +1095,7 @@ public:
 
 	virtual void context_command( unsigned n, const pfc::list_base_const_t< metadb_handle_ptr > & data, const GUID& )
 	{
-		unsigned tag_song_ms = 0, tag_fade_ms = 0;
+		unsigned tag_song_ms = ~0, tag_fade_ms = ~0;
 		unsigned i = data.get_count();
 		file_info_impl info;
 		abort_callback_impl m_abort;
@@ -1055,31 +1115,13 @@ public:
 			handle->metadb_unlock();
 		}
 		if (!context_time_dialog(&tag_song_ms, &tag_fade_ms)) return;
-		static_api_ptr_t<metadb_io> p_imgr;
-		for (unsigned j = 0; j < i; j++)
-		{
-			metadb_handle_ptr foo = data.get_item(j);
-			//foo->metadb_lock();
-			if (foo->get_info(info))
-			{
-				if (tag_song_ms > 0) info.info_set_int(field_length, tag_song_ms);
-				else info.info_remove(field_length);
-				if (tag_fade_ms > 0) info.info_set_int(field_fade, tag_fade_ms);
-				else info.info_remove(field_fade);
-				{
-					if (!tag_song_ms)
-					{
-						tag_song_ms = cfg_default_length;
-						tag_fade_ms = cfg_default_fade;
-					}
-					double length = (double)(tag_song_ms + tag_fade_ms) * .001;
-					info.set_length(length);
-				}
-				if ( metadb_io::update_info_success != p_imgr->update_info( foo, info, core_api::get_main_window(), true ) ) j = i;
-			}
-			else j = i;
-			//foo->metadb_unlock();
-		}
+		static_api_ptr_t<metadb_io_v2> p_imgr;
+
+		service_ptr_t<length_info_filter> p_filter = new service_impl_t< length_info_filter >( data, field_length, field_fade );
+		if ( tag_song_ms != ~0 ) p_filter->length( tag_song_ms );
+		if ( tag_fade_ms != ~0 ) p_filter->fade( tag_fade_ms );
+
+		p_imgr->update_info_async( data, p_filter, core_api::get_main_window(), 0, 0 );
 	}
 };
 

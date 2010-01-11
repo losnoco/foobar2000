@@ -194,6 +194,7 @@ public:
 		{
 			this->emu = emu = new Vgm_Emu();
 			emu->disable_oversampling();
+			setup_effects( false );
 
 			try
 			{
@@ -244,6 +245,7 @@ public:
 		{
 			this->emu = emu = new Vgm_Emu();
 			emu->disable_oversampling();
+			setup_effects( false );
 
 			try
 			{

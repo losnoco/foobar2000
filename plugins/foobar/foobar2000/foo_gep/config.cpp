@@ -1,7 +1,17 @@
-#define MYVERSION "1.66"
+#define MYVERSION "1.67"
 
 /*
 	change log
+
+2009-08-04 08:47 UTC - kode54
+- Updated NSFE and SPC context menu tagging functions to the new metadb_io_v2 API
+- Fixed a bug where newly tagged SPC length and fade would not register on the reread
+  file length after a tag edit operation.
+- Version is now 1.67
+
+2009-08-04 06:43 UTC - kode54
+- Enabled equalizer-only effects control over GYM and VGM inputs.
+- Version is now 1.666
 
 2009-07-22 03:24 UTC - kode54
 - Implemented RSN archive wrapper for the existing RAR archive reader.

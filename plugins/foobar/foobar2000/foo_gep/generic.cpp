@@ -71,7 +71,10 @@ public:
 		if ( p_reason == input_open_decode )
 		{
 			if ( gtype == gme_gym_type )
+			{
 				static_cast<Gym_Emu *>( emu )->disable_oversampling();
+				setup_effects( false );
+			}
 			else
 				setup_effects();
 		}

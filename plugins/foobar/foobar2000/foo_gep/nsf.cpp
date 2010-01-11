@@ -524,6 +524,100 @@ static bool context_playlist_dialog(CNSFFile * pFile, LPCSTR pszTitle)
 	return m_playlist.DoModal(core_api::get_my_instance(),core_api::get_main_window(),IDD_PLAYLISTINFO) == IDOK;
 }
 
+class length_info_filter : public file_info_filter
+{
+	bool set_length, set_fade;
+	unsigned m_length, m_fade;
+
+	const char * m_tag_length;
+	const char * m_tag_fade;
+
+	metadb_handle_list m_handles;
+
+public:
+	length_info_filter( const pfc::list_base_const_t<metadb_handle_ptr> & p_list, const char * p_tag_length, const char * p_tag_fade )
+	{
+		set_length = false;
+		set_fade = false;
+
+		m_tag_length = p_tag_length;
+		m_tag_fade = p_tag_fade;
+
+		pfc::array_t<t_size> order;
+		order.set_size(p_list.get_count());
+		order_helper::g_fill(order.get_ptr(),order.get_size());
+		p_list.sort_get_permutation_t(pfc::compare_t<metadb_handle_ptr,metadb_handle_ptr>,order.get_ptr());
+		m_handles.set_count(order.get_size());
+		for(t_size n = 0; n < order.get_size(); n++) {
+			m_handles[n] = p_list[order[n]];
+		}
+
+	}
+
+	void length( unsigned p_length )
+	{
+		set_length = true;
+		m_length = p_length;
+	}
+
+	void fade( unsigned p_fade )
+	{
+		set_fade = true;
+		m_fade = p_fade;
+	}
+
+	virtual bool apply_filter(metadb_handle_ptr p_location,t_filestats p_stats,file_info & p_info)
+	{
+		t_size index;
+		if (m_handles.bsearch_t(pfc::compare_t<metadb_handle_ptr,metadb_handle_ptr>,p_location,index))
+		{
+			if ( set_length ) p_info.info_set_int( m_tag_length, m_length );
+			if ( set_fade ) p_info.info_set_int( m_tag_fade, m_fade );
+			return set_length | set_fade;
+		}
+		else
+		{
+			return false;
+		}
+	}
+};
+
+class playlist_info_filter : public file_info_filter
+{
+	metadb_handle_list m_handles;
+	pfc::array_t<pfc::string8> m_playlists;
+
+public:
+	playlist_info_filter( const pfc::list_base_const_t< metadb_handle_ptr > & p_list, const pfc::list_base_const_t< pfc::string8 > & p_new_playlists )
+	{
+		pfc::dynamic_assert(p_list.get_count() == p_new_playlists.get_count());
+		pfc::array_t<t_size> order;
+		order.set_size(p_list.get_count());
+		order_helper::g_fill(order.get_ptr(),order.get_size());
+		p_list.sort_get_permutation_t(pfc::compare_t<metadb_handle_ptr,metadb_handle_ptr>,order.get_ptr());
+		m_handles.set_count(order.get_size());
+		m_playlists.set_size(order.get_size());
+		for(t_size n = 0; n < order.get_size(); n++) {
+			m_handles[n] = p_list[order[n]];
+			m_playlists[n] = p_new_playlists[order[n]];
+		}
+	}
+
+	bool apply_filter(metadb_handle_ptr p_location,t_filestats p_stats,file_info & p_info)
+	{
+		t_size index;
+		if (m_handles.bsearch_t(pfc::compare_t<metadb_handle_ptr,metadb_handle_ptr>,p_location,index))
+		{
+			p_info.info_set( field_playlist, m_playlists[index] );
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+};
+
 class context_nsf : public contextmenu_item_simple
 {
 public:
@@ -601,28 +695,13 @@ public:
 				handle->metadb_unlock();
 			}
 			if (!context_time_dialog(&tag_song_ms, &tag_fade_ms)) return;
-			static_api_ptr_t<metadb_io> p_imgr;
-			for (unsigned j = 0; j < i; j++)
-			{
-				metadb_handle_ptr foo = data.get_item(j);
-				//foo->metadb_lock();
-				if (foo->get_info(info))
-				{
-					if (tag_song_ms >= 0) info.info_set_int(field_length, tag_song_ms);
-					else info.info_remove(field_length);
-					if (tag_fade_ms >= 0) info.info_set_int(field_fade, tag_fade_ms);
-					else info.info_remove(field_fade);
-					{
-						if (tag_song_ms < 0) tag_song_ms = cfg_default_length;
-						if (tag_fade_ms < 0) tag_fade_ms = cfg_default_fade;
-						double length = (double)(tag_song_ms + tag_fade_ms) * .001;
-						info.set_length(length);
-					}
-					if ( metadb_io::update_info_success != p_imgr->update_info( foo, info, core_api::get_main_window(), true ) ) j = i;
-				}
-				else j = i;
-				//foo->metadb_unlock();
-			}
+			static_api_ptr_t<metadb_io_v2> p_imgr;
+
+			service_ptr_t<length_info_filter> p_filter = new service_impl_t< length_info_filter >( data, field_length, field_fade );
+			if ( tag_song_ms >= 0 ) p_filter->length( tag_song_ms );
+			if ( tag_fade_ms >= 0 ) p_filter->fade( tag_fade_ms );
+
+			p_imgr->update_info_async( data, p_filter, core_api::get_main_window(), 0, 0 );
 		}
 		else
 		{
@@ -637,16 +716,18 @@ public:
 					unsigned l;
 					for (l = 0; l < k; l++)
 					{
-						if (!stricmp(files.get_item(l)->get_location().get_path(), path)) break;
+						if (!strcmp(files.get_item(l)->get_location().get_path(), path)) break;
 					}
 					if (l < k) continue;
 				}
 				files.add_item(item);
 			}
 			i = files.get_count();
-			file_info_impl info;
+			metadb_handle_list update_files;
+			pfc::list_t< pfc::string8 > playlists;
 			pfc::string8_fastalloc list;
-			static_api_ptr_t<metadb_io> p_imgr;
+			playlists.set_count( i );
+			unsigned files_count = 0;
 			for (unsigned j = 0; j < i; j++)
 			{
 				CNSFFile nsf;
@@ -670,20 +751,17 @@ public:
 					list.add_byte(',');
 					list << pfc::format_int( nsf.pPlaylist[k] );
 				}
-				//item->metadb_lock();
-				if (item->get_info(info))
-				{
-					info.info_set(field_playlist, list);
-					// aww fuck it
-					if ( metadb_io::update_info_success == p_imgr->update_info( item, info, core_api::get_main_window(), true ) )
-					{
-						info.info_remove( field_playlist );
-						if ( metadb_io::update_info_success != p_imgr->update_info( item, info, core_api::get_main_window(), true ) ) j = i;
-					}
-					else j = i;
-				}
-				//item->metadb_unlock();
+				update_files.set_count( files_count + 1 );
+				playlists.set_count( files_count + 1 );
+				update_files[ files_count ] = item;
+				playlists[ files_count ] = list;
+				files_count++;
 			}
+
+			static_api_ptr_t<metadb_io_v2> p_imgr;
+			service_ptr_t<playlist_info_filter> p_filter = new service_impl_t< playlist_info_filter >( update_files, playlists );
+
+			p_imgr->update_info_async( data, p_filter, core_api::get_main_window(), 0, 0 );
 		}
 	}
 };
