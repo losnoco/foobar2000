@@ -223,11 +223,10 @@ public:
 	{
 		ignore_broken_files = ! ( p_flags & input_flag_testing_integrity );
 
-		if ( ! state )
-		{
-			state = a52_init(0);
-			if ( ! state ) throw std::bad_alloc();
-		}
+		if (state) a52_free(state);
+
+		state = a52_init(0);
+		if ( ! state ) throw std::bad_alloc();
 
 		buffer.set_size( 3840 );
 
@@ -378,7 +377,7 @@ public:
 				throw exception_io_data();
 			}
 		}
-		p_chunk.check_data_size( ( 256 - skip_samples ) * meh );
+		p_chunk.set_data_size( ( 256 - skip_samples ) * meh );
 		audio_sample * foo = p_chunk.get_data();
 		sample_t * bar = a52_samples( state ) + skip_samples;
 		if ( flags & A52_LFE )
@@ -568,7 +567,7 @@ public:
 		if ( ! m_file->can_seek() ) throw exception_io_data();
 		if ( p_seconds < 0 ) p_seconds = 0;
 
-		t_uint64 dest_sample = t_uint64( p_seconds * double( srate ) );
+		t_uint64 dest_sample = audio_math::time_to_samples( p_seconds, srate );
 
 		t_uint64 dest_skip = dest_sample % 1536;
 		t_uint64 dest_offset = ( dest_sample - dest_skip ) * ( bitrate >> 3 ) / srate;
@@ -597,6 +596,7 @@ public:
 
 	void decode_on_idle( abort_callback & p_abort )
 	{
+		m_file->on_idle( p_abort );
 	}
 
 	void retag( const file_info & p_info, abort_callback & p_abort )
