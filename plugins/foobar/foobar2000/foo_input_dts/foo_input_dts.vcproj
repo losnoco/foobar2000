@@ -164,6 +164,7 @@
 				ProgramDataBaseFileName=".\Release/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
 				CallingConvention="0"
 			/>
 			<Tool
@@ -184,6 +185,7 @@
 				OutputFile="..\Release/foo_input_dts.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				GenerateDebugInformation="true"
 				ProgramDatabaseFile="Release/foo_input_dts.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"

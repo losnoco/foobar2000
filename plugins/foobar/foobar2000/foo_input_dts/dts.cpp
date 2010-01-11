@@ -5,6 +5,7 @@
 // foobar component copyright (C) 2004-2006 Janne Hyvärinen
 //
 // Changes:
+//  0.2.4  (2009-05-02): Fixed a bug in DTS DSP and packet decoder for when dca_syncinfo fails
 //  0.2.3  (2009-03-30): Fixed tag writing
 //  0.2.2  (2008-10-26): Restricted silence generation to DTS WAV files
 //  0.2.1  (2008-09-28): Seeking accuracy improvements, SDK's Decoder Validator was broken and didn't notice the bugs
@@ -28,7 +29,7 @@
 //  0.0.4  (2004-10-15): Simplified packet decoder, added codec reporting, fixed typo in version number
 //  0.0.3  (2004-10-15): Added Matroska packet decoder support
 
-#define FD_VERSION  "0.2.3"
+#define FD_VERSION  "0.2.4"
 
 //#define DTS_DEBUG // print status info to console
 

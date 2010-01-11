@@ -115,7 +115,7 @@ class dts_dsp : public dsp_impl_base {
         unsigned int samples = 0;
 
         while (1) {
-            int len = end - start;
+            unsigned len = end - start;
             if (!len) break;
             if (len > bufpos - bufptr) len = bufpos - bufptr;
 
