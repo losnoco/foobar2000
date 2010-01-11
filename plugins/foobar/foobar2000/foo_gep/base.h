@@ -36,6 +36,8 @@ protected:
 
 	bool                        stop_on_errors;
 
+	bool                        first_block;
+
 	pfc::array_t<blip_sample_t> sample_buffer;
 
 	service_ptr_t<file>         m_file;

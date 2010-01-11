@@ -62,6 +62,8 @@ void input_gep::decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_c
 	emu->start_track( subsong );
 
 	stop_on_errors = !! ( p_flags & input_flag_testing_integrity );
+
+	first_block = true;
 }
 
 bool input_gep::decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
@@ -166,6 +168,13 @@ bool input_gep::decode_can_seek()
 
 bool input_gep::decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta )
 {
+	if ( first_block )
+	{
+		p_out.info_set_int( "samplerate", sample_rate );
+		p_timestamp_delta = 0.;
+		first_block = false;
+		return true;
+	}
 	return false;
 }
 

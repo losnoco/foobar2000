@@ -1,7 +1,17 @@
-#define MYVERSION "1.3"
+#define MYVERSION "1.4"
 
 /*
 	change log
+
+2006-09-23 09:20 UTC - kode54
+- Fixed DFC dialog code so it uses DialogBoxParam and CreateDialogParam. Somehow,
+  older compiler or Platform SDK allowed passing dialog parameter with DialogBox
+  or CreateDialog macros.
+- Fixed NSFE playlist editor function to check for IDOK return value, as DFC dialog
+  code would otherwise return IDCANCEL, which is also non-zero.
+- Fixed NSFE context menu code so it doesn't lock metadb around the update_info()
+  calls, to prevent deadlock.
+- Version is now 1.4
 
 2005-06-06 14:40 UTC - kode54
 - Updated Game_Music_Emu to v0.2.4mod

@@ -51,7 +51,7 @@ public:
 	{
 		p_info.info_set("codec", "HES");
 
-		p_info.info_set_int("samplerate", sample_rate);
+		//p_info.info_set_int("samplerate", sample_rate);
 		p_info.info_set_int("channels", 2);
 		p_info.info_set_int("bitspersample", 16);
 

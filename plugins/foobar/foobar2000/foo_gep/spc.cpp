@@ -470,6 +470,8 @@ public:
 		}
 
 		input_gep::decode_initialize( 0, p_flags, p_abort );
+
+		first_block = false;
 	}
 
 	void retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )

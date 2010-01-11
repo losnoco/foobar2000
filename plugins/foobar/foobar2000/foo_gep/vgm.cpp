@@ -183,7 +183,7 @@ public:
 	{
 		p_info.info_set("codec", "VGM");
 
-		p_info.info_set_int("samplerate", sample_rate);
+		//p_info.info_set_int("samplerate", sample_rate);
 		p_info.info_set_int("channels", 2);
 		p_info.info_set_int("bitspersample", 16);
 
@@ -277,6 +277,8 @@ public:
 		subsong = 0;
 
 		stop_on_errors = !! ( p_flags & input_flag_testing_integrity );
+
+		first_block = true;
 	}
 };
 
