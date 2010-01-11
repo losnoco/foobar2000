@@ -3,6 +3,9 @@
 /*
 	changelog
 
+2009-08-06 00:34 UTC - kode54
+- Fixed start silence skipping when resetting state in seek function
+
 2009-08-04 09:00 UTC - kode54
 - Updated context menu tag writer to new metadb_io_v2 API
 
@@ -1187,8 +1190,20 @@ public:
 			xsfemu_pos = 0.;
 			if ( startsilence )
 			{
-				unsigned int meh = startsilence;
-				sega_execute( pEmu, 0x7FFFFFFF, 0, & meh );
+				unsigned int silence = startsilence;
+				while ( silence )
+				{
+					p_abort.check();
+
+					unsigned int todo = silence;
+					int err = sega_execute( pEmu, 0x7FFFFFFF, 0, & todo );
+					if ( err < 0 )
+					{
+						eof = true;
+						return;
+					}
+					silence -= todo;
+				}
 			}
 		}
 		unsigned int howmany = ( int )( audio_math::time_to_samples( p_seconds - xsfemu_pos, 44100 ) );
@@ -1436,7 +1451,6 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 	{
 	case WM_INITDIALOG:
 		{
-			int n;
 			uSendDlgItemMessage(wnd, IDC_INDEFINITE, BM_SETCHECK, cfg_infinite, 0);
 			uSendDlgItemMessage(wnd, IDC_SOS, BM_SETCHECK, cfg_suppressopeningsilence, 0);
 			uSendDlgItemMessage(wnd, IDC_SES, BM_SETCHECK, cfg_suppressendsilence, 0);

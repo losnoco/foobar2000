@@ -3,6 +3,9 @@
 /*
 	changelog
 
+2009-08-06 00:34 UTC - kode54
+- Fixed start silence skipping when resetting state in seek function
+
 2009-08-04 09:00 UTC - kode54
 - Updated context menu tag writer to new metadb_io_v2 API
 - Version is now 2.0.9
@@ -1269,8 +1272,20 @@ public:
 			psfemu_pos = 0.;
 			if ( startsilence )
 			{
-				unsigned int meh = startsilence;
-				psx_execute( pEmu, 0x7FFFFFFF, 0, & meh, 0 );
+				unsigned int silence = startsilence;
+				while ( silence )
+				{
+					p_abort.check();
+
+					unsigned int todo = silence;
+					int err = psx_execute( pEmu, 0x7FFFFFFF, 0, & todo, 0 );
+					if ( err < 0 )
+					{
+						eof = true;
+						return;
+					}
+					silence -= todo;
+				}
 			}
 		}
 		unsigned int howmany = ( int )( audio_math::time_to_samples( p_seconds - psfemu_pos, psf_version == 2 ? 48000 : 44100 ) );
