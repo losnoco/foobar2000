@@ -25,7 +25,7 @@ void CLhaArchive::make_table(unsigned int nchar, unsigned char *bitlen, unsigned
         if (bitlen[i] > 16) {
             /* CVE-2006-4335 */
 		#ifdef _DEBUG
-            OutputDebugStringA("Bad table (case a)");
+            OutputDebugStringA("Bad table (case a)\n");
 		#endif
             throw lha_error_bad_huffman_table();
         }
@@ -42,7 +42,7 @@ void CLhaArchive::make_table(unsigned int nchar, unsigned char *bitlen, unsigned
 	if ((total & 0xffff) != 0 || tablebits > 16) /* 16 for weight below */
 	{
 	#ifdef _DEBUG
-		OutputDebugString("Bad table (case b)\n");
+		OutputDebugStringA("Bad table (case b)\n");
 	#endif
 		throw lha_error_bad_huffman_table();
 	}
@@ -75,7 +75,7 @@ void CLhaArchive::make_table(unsigned int nchar, unsigned char *bitlen, unsigned
             if ((i >> m) > 4096) {
                 /* CVE-2006-4337 */
 			#ifdef _DEBUG
-                OutputDebugString("Bad table (case c)");
+                OutputDebugStringA("Bad table (case c)\n");
 			#endif
                 throw lha_error_bad_huffman_table();
             }

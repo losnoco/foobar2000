@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="foo_unpack_lha"
 	ProjectGUID="{53EF4D95-3B4D-43BA-9B47-6F510CCA8EF2}"
+	RootNamespace="foo_unpack_lha"
 	SccProjectName="SAK"
 	SccAuxPath="SAK"
 	SccLocalPath="SAK"
@@ -585,10 +586,6 @@
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath=".\file_cached.h"
-			>
-		</File>
 		<File
 			RelativePath=".\unpack_lha.cpp"
 			>

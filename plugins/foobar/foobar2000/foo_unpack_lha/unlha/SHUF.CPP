@@ -16,7 +16,7 @@ void CLhaArchive::decode_start_st0()
 	n_max = 286;
 	maxmatch = MAXMATCH;
 	init_getbits();
-	np = 1 << (MAX_DICBIT - 6);
+	np = 1 << (LZHUFF3_DICBIT - 6);
 }
 
 const int fixed[2][16] = 
@@ -89,7 +89,7 @@ void CLhaArchive::decode_start_fix()
 	n_max = 314;
 	maxmatch = 60;
 	init_getbits();
-	np = 1 << (12 - 6);
+	np = 1 << (LZHUFF1_DICBIT - 6);
 	start_c_dyn();
 	ready_made(0);
 	make_table(np, gpHufData->pt_len, 8, gpHufData->pt_table);

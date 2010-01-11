@@ -57,7 +57,7 @@ void CLhaArchive::decode(LzInterfacing *pinterface)
 	Log("Starting Decode (original size=%d)...\n", pinterface->original);
 #endif
 	dicsiz1 = dicsiz - 1;
-	offset = (pinterface->method == 8) ? 0x100 - 2 : 0x100 - 3;
+	offset = (pinterface->method == LARC_METHOD_NUM) ? 0x100 - 2 : 0x100 - THRESHOLD;
 	count = 0;
 	loc = 0;
 	while (count < pinterface->original)

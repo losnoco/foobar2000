@@ -1,7 +1,15 @@
-#define MY_VERSION "1.2"
+#define MY_VERSION "1.3"
 
 /*
 	changelog
+
+2007-02-06 20:01 UTC - kode54
+- Minor changes to unlha code.
+- Removed m_abort reset, as it was unnecessary, and it interfered with nested
+  extraction in archive_list.
+- Removed modified file_cached class, as it wasn't being used appropriately.
+  Replaced with the original implementation, now caching all file access.
+- Version is now 1.3
 
 2007-01-11 05:50 UTC - kode54
 - Integrated security fixes from 1.14i-ac20050924p1, and two sanity checks
@@ -21,7 +29,7 @@
 
 #include <foobar2000.h>
 
-#include "file_cached.h"
+#include "../helpers/file_cached.h"
 
 #include "unlha/unlha32.h"
 
@@ -224,47 +232,23 @@ protected:
 
 		crc = 0;
 
-		t_filesize data_offset = m_in->get_position( p_abort );
-
 		try
 		{
 			m_abort = &p_abort;
 			m_out = p_out;
 
-			{
-				service_ptr_t< file > p_orig = m_in;
-
-				try
-				{
-					service_ptr_t< file > p_temp;
-					file_cached< 4096 >::g_create( p_temp, m_in, p_abort, hdr.packed_size );
-					m_in = p_temp;
-					decode_lzhuf( hdr.original_size, hdr.packed_size, method );
-					m_in = p_orig;
-				}
-				catch (...)
-				{
-					m_in = p_orig;
-				}
-			}
+			decode_lzhuf( hdr.original_size, hdr.packed_size, method );
 
 			if ( hdr.has_crc && crc != hdr.crc )
 				throw exception_io_data( "header crc mismatch" );
 
-			t_sfilesize pos = m_in->get_position( p_abort );
-			pos = data_offset + hdr.packed_size - pos;
-			if ( pos )
-				m_in->seek_ex( pos, file::seek_from_current, p_abort );
-
 			m_out.release();
-			m_abort = 0;
 
 			p_out->reopen( p_abort );
 		}
 		catch (...)
 		{
 			m_out.release();
-			m_abort = 0;
 
 			throw;
 		}
@@ -286,56 +270,46 @@ public:
 protected:
 	t_filestats get_stats_in_archive( const char * p_archive, const char * p_file, abort_callback & p_abort )
 	{
-		filesystem::g_open( m_in, p_archive, filesystem::open_mode_read, p_abort );
+		service_ptr_t< file > p_temp;
+		filesystem::g_open( p_temp, p_archive, filesystem::open_mode_read, p_abort );
+		file_cached< 4096 >::g_create( m_in, p_temp, p_abort );
 
-		try
-		{
-			m_abort = &p_abort;
+		m_abort = &p_abort;
 
-			LzHeader hdr;
+		LzHeader hdr;
 
-			walk_to_file( p_file, hdr, p_abort );
+		walk_to_file( p_file, hdr, p_abort );
 
-			return get_stats_in_archive( hdr );
-		}
-		catch (...)
-		{
-			m_abort = 0;
-			throw;
-		}
+		return get_stats_in_archive( hdr );
 	}
 
-	void open_archive( service_ptr_t< file > & p_out, const char * archive, const char * file, abort_callback & p_abort )
+	void open_archive( service_ptr_t< file > & p_out, const char * p_archive, const char * p_file, abort_callback & p_abort )
 	{
-		filesystem::g_open( m_in, archive, filesystem::open_mode_read, p_abort );
+		service_ptr_t< file > p_temp;
+		filesystem::g_open( p_temp, p_archive, filesystem::open_mode_read, p_abort );
+		file_cached< 4096 >::g_create( m_in, p_temp, p_abort );
 
-		try
-		{
-			LzHeader hdr;
+		LzHeader hdr;
 
-			m_abort = &p_abort;
+		m_abort = &p_abort;
 
-			walk_to_file( file, hdr, p_abort );
+		walk_to_file( p_file, hdr, p_abort );
 
-			filesystem::g_open_tempmem( p_out, p_abort );
+		filesystem::g_open_tempmem( p_out, p_abort );
 
-			extract_file( hdr, p_out, p_abort );
-		}
-		catch (...)
-		{
-			m_abort = 0;
-			throw;
-		}
+		extract_file( hdr, p_out, p_abort );
 	}
 
 	void archive_list( foobar2000_io::archive * p_owner, const char * path, const service_ptr_t< file > & p_reader, archive_callback & p_out, bool p_want_readers )
 	{
+		service_ptr_t< file > p_temp;
 		if ( p_reader.is_valid() )
 		{
-			m_in = p_reader;
-			m_in->reopen( p_out );
+			p_temp = p_reader;
+			p_temp->reopen( p_out );
 		}
-		else filesystem::g_open( m_in, path, filesystem::open_mode_read, p_out );
+		else filesystem::g_open( p_temp, path, filesystem::open_mode_read, p_out );
+		file_cached< 4096 >::g_create( m_in, p_temp, p_out );
 
 		if ( ! table_initialized )
 		{
@@ -343,61 +317,47 @@ protected:
 			make_crctable();
 		}
 
-		try
+		m_abort = &p_out;
+
+		bool item_found = false;
+
+		LzHeader hdr;
+
+		pfc::string8_fastalloc temp, tempname;
+
+		while ( get_header( &hdr ) )
 		{
-			m_abort = &p_out;
+			p_out.check();
 
-			bool item_found = false;
+			item_found = true;
 
-			LzHeader hdr;
-
-			pfc::string8_fastalloc temp, tempname;
-
-			while ( get_header( &hdr ) )
+			if ( ( hdr.unix_mode & UNIX_FILE_TYPEMASK ) == UNIX_FILE_REGULAR )
 			{
-				p_out.check();
+				t_filestats stats = get_stats_in_archive( hdr );
 
-				item_found = true;
+				service_ptr_t< file > p_file;
 
-				if ( ( hdr.unix_mode & UNIX_FILE_TYPEMASK ) == UNIX_FILE_REGULAR )
+				if ( p_want_readers )
 				{
-					t_filestats stats = get_stats_in_archive( hdr );
+					filesystem::g_open_tempmem( p_file, p_out );
 
-					service_ptr_t< file > p_file;
-
-					if ( p_want_readers )
-					{
-						filesystem::g_open_tempmem( p_file, p_out );
-
-						t_filesize data_position = m_in->get_position( p_out );
-
-						extract_file( hdr, p_file, p_out );
-
-						t_filesize pos = m_in->get_position( p_out );
-						pos = data_position + hdr.packed_size - pos;
-						if ( pos ) m_in->skip( pos, p_out );
-					}
-					else m_in->skip( hdr.packed_size, p_out );
-
-					for ( unsigned i = 0, j = strnlen( hdr.name, sizeof( hdr.name ) ); i < j; ++i )
-					{
-						if ( hdr.name[ i ] == '\xFF' ) hdr.name[ i ] = '/';
-					}
-					convert_mess_to_utf8( hdr.name, sizeof( hdr.name ), tempname );
-
-					archive_impl::g_make_unpack_path( temp, path, tempname, "lha" );
-
-					if ( ! p_out.on_entry( p_owner, temp, stats, p_file ) ) break;
+					extract_file( hdr, p_file, p_out );
 				}
-			}
+				else m_in->skip( hdr.packed_size, p_out );
 
-			if ( ! item_found ) throw exception_io_data();
+				for ( unsigned i = 0, j = strnlen( hdr.name, sizeof( hdr.name ) ); i < j; ++i )
+				{
+					if ( hdr.name[ i ] == '\xFF' ) hdr.name[ i ] = '/';
+				}
+				convert_mess_to_utf8( hdr.name, sizeof( hdr.name ), tempname );
+
+				archive_impl::g_make_unpack_path( temp, path, tempname, "lha" );
+
+				if ( ! p_out.on_entry( p_owner, temp, stats, p_file ) ) break;
+			}
 		}
-		catch (...)
-		{
-			m_abort = 0;
-			throw;
-		}
+
+		if ( ! item_found ) throw exception_io_data();
 	}
 };
 
