@@ -1,7 +1,12 @@
-#define MYVERSION "0.9.9"
+#define MYVERSION "0.9.9.5"
 
 /*
 	changelog
+
+2009-10-12 18:01 UTC - kode54
+- Implemented DSMI AMF reader
+- Changed MO3 unpacker to use unmo3.dll
+- Version is now 0.9.9.5
 
 2009-08-31 08:40 UTC - kode54
 - Added somewhat shoddy support for MO3. I hope some day I can make it fully piped.
@@ -1711,6 +1716,12 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 	{
 		duh = dumb_read_asy_quick(f);
 	}
+	else if ( size >= 3 &&
+		ptr[0] == 'A' && ptr[1] == 'M' &&
+		ptr[2] == 'F')
+	{
+		duh = dumb_read_amf_quick(f);
+	}
 
 	if ( ! duh )
 	{
@@ -2354,6 +2365,74 @@ void unpack_j2b( service_ptr_t<file> & p_out, const service_ptr_t<file> & p_sour
 	}
 }
 
+#if 1
+
+// decode a MO3 file (returns the same "exit codes" as UNMO3.EXE, eg. 0=success)
+// IN: data/len = MO3 data/len
+// OUT: data/len = decoded data/len (if successful)
+typedef int (WINAPI * UNMO3_DECODE)(void **data, int *len);
+// free the data returned by UNMO3_Decode
+typedef void (WINAPI * UNMO3_FREE)(void *data);
+
+void unpack_mo3( service_ptr_t<file> & p_out, const service_ptr_t<file> & p_source, abort_callback & p_abort )
+{
+	pfc::string8 module_path = core_api::get_my_full_path();
+	module_path.truncate( module_path.scan_filename() );
+	module_path += "unmo3.dll";
+	HMODULE hMod = uLoadLibrary( module_path );
+	if ( !hMod ) hMod = uLoadLibrary( "unmo3.dll" );
+	if ( hMod )
+	{
+		UNMO3_DECODE UNMO3_Decode = (UNMO3_DECODE)GetProcAddress(hMod, "UNMO3_Decode");
+		UNMO3_FREE UNMO3_Free = (UNMO3_FREE)GetProcAddress(hMod, "UNMO3_Free");
+
+		if( UNMO3_Decode != NULL && UNMO3_Free != NULL )
+		{
+			try
+			{
+				void * ptr;
+				t_filesize sz64 = p_source->get_size_ex( p_abort );
+				if ( sz64 > INT_MAX ) sz64 = INT_MAX;
+				int size = ( int ) sz64;
+
+				pfc::array_t< t_uint8 > buffer;
+				buffer.set_size( size );
+
+				p_source->read_object( buffer.get_ptr(), size, p_abort );
+
+				ptr = buffer.get_ptr();
+
+				if ( UNMO3_Decode( &ptr, &size ) == 0 )
+				{
+					try
+					{
+						filesystem::g_open_tempmem( p_out, p_abort );
+						p_out->write_object( ptr, size, p_abort );
+						p_out->reopen( p_abort );
+						UNMO3_Free( ptr );
+						FreeLibrary( hMod );
+						return;
+					}
+					catch (...)
+					{
+						UNMO3_Free( ptr );
+						throw;
+					}
+				}
+			}
+			catch (...)
+			{
+				FreeLibrary( hMod );
+				throw;
+			}
+		}
+
+		FreeLibrary( hMod );
+	}
+
+	throw foobar2000_io::exception_io_data();
+}
+#else
 #define MO3_USE_TEMPFILE
 
 class unpack_mo3
@@ -2563,6 +2642,7 @@ public:
 };
 #ifdef MO3_USE_TEMPFILE
 #undef MO3_USE_TEMPFILE
+#endif
 #endif
 
 class input_mod
