@@ -57,7 +57,7 @@ typedef struct {
 
 //#define    CLIP(s)    if (s>32767) s=32767; else if (s<-32768) s=-32768
 
-static void adx_decode(audio_sample *out,const unsigned char *in,PREV *prev)
+static void adx_decode(t_int32 *out,const unsigned char *in,PREV *prev)
 {
 	int scale = ((in[0]<<8)|(in[1]));
 	int i;
@@ -74,7 +74,7 @@ static void adx_decode(audio_sample *out,const unsigned char *in,PREV *prev)
 		d >>= 4;
 		s0 = (BASEVOL*d*scale + SCALE1*s1 - SCALE2*s2)>>14;
 		//CLIP(s0);
-		*out++=audio_sample(s0) * (1. / 32768.);
+		*out++=s0;
 		s2 = s1;
 		s1 = s0;
 
@@ -83,7 +83,7 @@ static void adx_decode(audio_sample *out,const unsigned char *in,PREV *prev)
 		d = (signed char)(d<<4) >> 4;
 		s0 = (BASEVOL*d*scale + SCALE1*s1 - SCALE2*s2)>>14;
 		//CLIP(s0);
-		*out++=audio_sample(s0) * (1. / 32768.);
+		*out++=s0;
 		s2 = s1;
 		s1 = s0;
 	}
@@ -92,9 +92,9 @@ static void adx_decode(audio_sample *out,const unsigned char *in,PREV *prev)
 
 }
 
-static void adx_decode_stereo(audio_sample *out,const unsigned char *in,PREV *prev)
+static void adx_decode_stereo(t_int32 *out,const unsigned char *in,PREV *prev)
 {
-	audio_sample tmp[32*2];
+	t_int32 tmp[32*2];
 	int i;
 
 	adx_decode(tmp   ,in   ,prev);
@@ -142,6 +142,7 @@ class input_adx
 	*/
 
 	/* for loops: */
+	bool                       loop;
 	unsigned                   loop_start;
 	unsigned                   loop_start_offset;
 	unsigned                   loop_end;
@@ -267,24 +268,28 @@ public:
 	{
 		if ( ! srate ) open_internal( p_abort );
 
-		if ( ! cfg_loop || ( p_flags & input_flag_no_looping ) ) loop_start = ~0;
+		loop = cfg_loop && ! ( p_flags & input_flag_no_looping );
 
-		context = new ADXContext;
+		if ( ! context ) context = new ADXContext;
 		memset( context, 0, sizeof( * context ) );
 
 		pos = 0;
 		swallow = 0;
+
+		m_file->seek( head_skip + offset, p_abort );
 	}
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
 		if (pos >= size) return false;
 
+		pfc::static_assert_t< sizeof( audio_sample ) == sizeof( t_int32 ) >();
+
 		data_buffer.grow_size( 18 * 32 * nch );
 		p_chunk.check_data_size( 32 * 32 * nch );
 
 		unsigned char * in = data_buffer.get_ptr();
-		audio_sample * out = p_chunk.get_data();
+		t_int32 * out = ( t_int32 * ) p_chunk.get_data();
 
 		unsigned done, read, n;
 
@@ -309,7 +314,7 @@ more:
 						dprintf(_T("expected offset: %I64u\ncurrent offset: %I64u\n"), t_filesize( offset + pos * nch * 18 / 32 ), current_offset );
 						assert(0);
 					}*/
-					if (loop_start != ~0)
+					if (loop && loop_start != ~0)
 					{
 						if (loop_start - pos < 32)
 						{
@@ -334,14 +339,14 @@ more:
 						done = 0;
 					}
 				}
-				if (loop_start != ~0)
+				if (loop && loop_start != ~0)
 				{
 					if (pos >= loop_end) break;
 				}
 				if (pos >= size) break;
 			}
 
-			if (loop_start != ~0)
+			if (loop && loop_start != ~0)
 			{
 				if (pos >= loop_end)
 				{
@@ -390,6 +395,9 @@ more:
 				p_chunk.set_sample_count(done);
 				p_chunk.set_srate(srate);
 				p_chunk.set_channels(nch);
+
+				audio_math::convert_from_int32( out, done * nch, ( audio_sample * ) out, 1 << 16 );
+
 				return true;
 			}
 		}
@@ -399,7 +407,6 @@ more:
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-//		memset(context, 0, sizeof(*context));
 		swallow = int( p_seconds * double( srate ) + .5 );
 		if ( swallow > pos )
 		{
@@ -408,6 +415,7 @@ more:
 		}
 		pos = 0;
 		m_file->seek( head_skip + offset, p_abort );
+		memset(context, 0, sizeof(*context));
 	}
 
 	bool decode_can_seek()

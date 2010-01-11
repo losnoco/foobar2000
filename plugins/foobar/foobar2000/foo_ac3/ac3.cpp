@@ -201,7 +201,6 @@ public:
 				end -= t_filesize( byte_order::dword_le_to_native( * ( ( t_uint32 * ) & T.Length ) ) );
 				if ( T.Flags[3] & 0x80 ) end -= sizeof(T);
 			}
-			catch ( const exception_tag_not_found & ) {}
 			catch ( const exception_io_data & ) {}
 
 			p_info.info_set_int( "bitrate", bitrate / 1000 );
@@ -222,8 +221,11 @@ public:
 
 	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
-		state = a52_init(0);
-		if (!state) throw std::bad_alloc();
+		if ( ! state )
+		{
+			state = a52_init(0);
+			if ( ! state ) throw std::bad_alloc();
+		}
 
 		buffer.set_size( 3840 );
 

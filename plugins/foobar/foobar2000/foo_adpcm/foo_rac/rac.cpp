@@ -65,6 +65,12 @@ public:
 		position = 0;
 	}
 
+	inline void reset_state( int loop_start )
+	{
+		this->loop_start = loop_start;
+		reset_state();
+	}
+
 	void reload_state()
 	{
 		state = statel;
@@ -159,6 +165,12 @@ public:
 		memset(&state, 0, sizeof(state));
 		i = 0;
 		position = 0;
+	}
+
+	inline void reset_state( int loop_start )
+	{
+		this->loop_start = loop_start;
+		reset_state();
 	}
 
 	void reload_state()
@@ -344,10 +356,13 @@ public:
 	{
 		if ( ! file_length ) open_internal( p_abort );
 
-		if ( ! cfg_loop || ( p_flags & input_flag_no_looping ) ) loop_start = -1;
+		bool loop = cfg_loop && ! ( p_flags & input_flag_no_looping );
 
-		inf = new foofile( m_file );
-		expand_s = new ImaExpandS( inf, loop_start );
+		if ( ! inf ) inf = new foofile( m_file );
+		else inf->seek( 0, p_abort );
+
+		if ( ! expand_s ) expand_s = new ImaExpandS( inf, loop ? loop_start : -1 );
+		else expand_s->reset_state( loop ? loop_start : -1 );
 
 		pos = 0;
 		filled = 0;

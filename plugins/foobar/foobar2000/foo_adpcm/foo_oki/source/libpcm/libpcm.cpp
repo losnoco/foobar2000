@@ -203,9 +203,16 @@ struct LIBPCM_DECODER_tag
 	uint_t bps;
 	uint_t headlen;
 	uint_t loop_enable;
+
+	/*
 	signed char adp_scale[LIBPCM_MAX_CH];
 	unsigned char bit_buf, bit_pos;
 	unsigned char codec;
+	*/
+
+	sint_t adp_scale[LIBPCM_MAX_CH];
+	uint_t bit_buf, bit_pos;
+	uint_t codec;
 
 	union
 	{
@@ -1703,7 +1710,7 @@ static void libpcm_seek_gungage(LIBPCM_DECODER *d, uint_t nsamples)
 	オリジナルとは異なる独自のテーブル
 	デルタ値演算結果の92個所に+-1の誤差有り
 */
-static const uint16_t dvi_dlt_tbl[89] =
+static const uint_t dvi_dlt_tbl[89] =
 {
 	0x000c, 0x0010, 0x0012, 0x0014, 0x0015, 0x0018, 0x0019, 0x001b,
 	0x0020, 0x0022, 0x0025, 0x0029, 0x002c, 0x0032, 0x0038, 0x003c,

@@ -18,7 +18,7 @@ class input_acm
 	service_ptr_t<file>         m_file;
 	CACMUnpacker              * m_unpacker;
 
-	pfc::array_t<int>           data_buffer;
+	//pfc::array_t<int>           data_buffer;
 
 	int srate, nch, size;
 
@@ -59,10 +59,14 @@ public:
 private:
 	void open_internal( abort_callback & p_abort )
 	{
+		m_file->seek( 0, p_abort );
+
 		m_unpacker = new CACMUnpacker;
 
 		m_abort = &p_abort;
 		if ( ! m_unpacker->init( reader_callback, this, nch, srate, size) ) throw exception_io_data();
+
+		pos = 0;
 	}
 
 public:
@@ -84,9 +88,12 @@ public:
 
 	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
-		if ( ! m_unpacker ) open_internal( p_abort );
+		if ( ! m_unpacker || pos )
+		{
+			delete m_unpacker;
+			open_internal( p_abort );
+		}
 
-		pos = 0;
 		swallow = 0;
 	}
 
@@ -94,11 +101,19 @@ public:
 	{
 		if (pos >= size) return false;
 
-		int todo = 588 * nch, done;
+		pfc::static_assert_t< sizeof( audio_sample ) == sizeof( int ) >();
 
-		data_buffer.grow_size( todo );
+		int todo = size - pos, done;
 
-		int * out = data_buffer.get_ptr();
+		if ( todo > 512 * nch ) todo = 512 * nch;
+
+		//data_buffer.grow_size( todo );
+
+		//int * out = data_buffer.get_ptr();
+
+		p_chunk.check_data_size( todo );
+
+		int * out = ( int * ) p_chunk.get_data();
 
 		//try
 		{
@@ -127,8 +142,8 @@ public:
 
 		if (done)
 		{
-			p_chunk.check_data_size( done );
-			audio_math::convert_from_int32( out, done, p_chunk.get_data(), 1 << 16 );
+			//p_chunk.check_data_size( done );
+			audio_math::convert_from_int32( out, done, ( audio_sample * ) out/*p_chunk.get_data()*/, 1 << 16 );
 			p_chunk.set_srate(srate);
 			p_chunk.set_channels(nch);
 			p_chunk.set_sample_count(done / nch);
@@ -141,21 +156,14 @@ public:
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		swallow = int( p_seconds * double( srate ) + .5 ) * nch;
-		if ( swallow > pos )
+		if ( swallow >= pos )
 		{
 			swallow -= pos;
 			return;
 		}
 
-		pos = 0;
 		delete m_unpacker;
-
-		m_file->seek( 0, p_abort );
-
-		m_unpacker = new CACMUnpacker;
-
-		m_abort = &p_abort;
-		if ( ! m_unpacker->init( reader_callback, this, nch, srate, size ) ) throw exception_io_data();
+		open_internal( p_abort );
 	}
 
 	bool decode_can_seek()

@@ -845,8 +845,7 @@ public:
 			section & sec = sections[ i ];
 
 			sec.m_decoder.open( m_file2, "", p_reason, p_abort );
-			sec.m_decoder.get_info( sections[ i ].m_info, p_abort );
-			sec.m_decoder.decode_initialize( input_flag_playback | input_flag_no_looping, p_abort );
+			sec.m_decoder.get_info( sections[ i ].m_info, p_abort );			
 
 			sec.next_section = s[ 6 ];
 		}
@@ -856,10 +855,18 @@ public:
 	{
 		p_info.copy( sections[ 0 ].m_info );
 
+		pfc::array_t< t_uint8 > played;
+
+		unsigned section_count = sections.get_size();
+		played.set_size( section_count );
+		memset( played.get_ptr(), 0, section_count );
+
 		double length = 0;
-		for ( unsigned i = 0, j = sections.get_size(); i < j; ++i )
+		for ( unsigned i = first_section; !played[ i ];)
 		{
 			length += sections[ i ].m_info.get_length();
+			played[ i ] = 1;
+			i = sections[ i ].next_section;
 		}
 		p_info.set_length( length );
 	}
@@ -880,7 +887,7 @@ public:
 			sections[ i ].played = false;
 		}
 
-		sections[ current_section ].m_decoder.decode_seek( 0, p_abort );
+		sections[ current_section ].m_decoder.decode_initialize( input_flag_no_looping, p_abort );
 	}
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
@@ -901,7 +908,7 @@ public:
 
 			s.played = true;
 			current_section = s.next_section;
-			sections[ current_section ].m_decoder.decode_seek( 0, p_abort );
+			sections[ current_section ].m_decoder.decode_initialize( input_flag_no_looping, p_abort );
 		}
 	}
 
@@ -925,6 +932,7 @@ public:
 			if ( !loop && sections[ current_section ].played ) return;
 		}
 
+		sections[ current_section ].m_decoder.decode_initialize( input_flag_no_looping, p_abort );
 		sections[ current_section ].m_decoder.decode_seek( p_seconds, p_abort );
 	}
 

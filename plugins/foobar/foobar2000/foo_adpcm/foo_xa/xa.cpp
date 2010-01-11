@@ -1523,7 +1523,6 @@ public:
 			if ( p_reason == input_open_info_write ) throw exception_io_data();
 
 			m_raw = new service_impl_t<reader_raw>;
-			t_filetimestamp p_timestamp;
 			m_raw->set_timestamp( m_file->get_timestamp( p_abort ) );
 			m_file = m_raw.get_ptr();
 			if ( ! m_raw->open( fn, p_abort ) )
@@ -1557,7 +1556,6 @@ public:
 			{
 				tag_processor::read_trailing( m_file, p_info, p_abort);
 			}
-			catch ( const exception_tag_not_found & ) {}
 			catch ( const exception_io_data & ) {}
 			m_file->seek( ptr, p_abort );
 		}

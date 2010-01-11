@@ -425,7 +425,7 @@ class input_brr
 
 	service_ptr_t<file>        m_file;
 
-	unsigned start, stereo, rate, size, loopstart, psx, eof, dontloop;
+	unsigned start, stereo, rate, size, loopstart, psx, eof, dontloop_file, dontloop_instance;
 
 	chanprev prev;
 
@@ -453,7 +453,7 @@ private:
 			unsigned flags = readval( m_file, p_abort );
 			stereo = flags & 1;
 			psx = flags & 16;
-			dontloop = ! cfg_loop || ( flags & 32 );
+			dontloop_file = ( flags & 32 );
 			if (flags & 2)
 				rate = readval( m_file, p_abort );
 			else
@@ -499,7 +499,6 @@ public:
 		{
 			tag_processor::read_trailing( m_file, p_info, p_abort );
 		}
-		catch ( const exception_tag_not_found & ) {}
 		catch ( const exception_io_data & ) {}
 
 		if ( saved_offset ) m_file->seek( offset, p_abort );
@@ -523,6 +522,7 @@ public:
 	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
 		if ( ! start ) open_internal( p_abort );
+		else m_file->seek( start, p_abort );
 
 		eof = 0;
 		pos = 0;
@@ -530,7 +530,7 @@ public:
 		prev.prev0 = prev.prev1 = 0;
 		if (stereo) prev.prev2 = prev.prev3 = 0;
 
-		if ( ! dontloop && ( p_flags & input_flag_no_looping ) ) dontloop = 1;
+		dontloop_instance = dontloop_file || !cfg_loop || ( p_flags & input_flag_no_looping );
 
 		sample_buffer.set_size( 576 << stereo );
 	}
@@ -614,7 +614,7 @@ more:
 
 		if (end == 1)
 		{
-			if (!dontloop)
+			if (!dontloop_instance)
 			{
 				if (loopstart != ~0)
 				{

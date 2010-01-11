@@ -92,8 +92,11 @@ bool CACMUnpacker::init (FileReadFunction readFunc, void * fileHandle, int &chan
 
 		if ((getBits (24) & 0xFFFFFF) != 0x032897) break;
 		if ((getBits (8) & 0xFF) != 1) break;
+		/* f u optimizer
 		valsToGo = (getBits (16) & 0xFFFF) |
-			((getBits (16) & 0xFFFF) << 16);
+			((getBits (16) & 0xFFFF) << 16);*/
+		valsToGo = getBits (16) & 0xFFFF;
+		valsToGo |= ( ( getBits (16) & 0xFFFF ) << 16 );
 		channels = getBits (16) & 0xFFFF;
 		frequency = getBits (16) & 0xFFFF;
 		samples = valsToGo;

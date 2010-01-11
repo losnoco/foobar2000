@@ -790,14 +790,12 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 	ver = "IT v";
 	ver << format_int( pifh->cmwt >> 8 );
 	ver.add_byte('.');
-	ver << format_int( ( pifh->cmwt >> 4 ) & 15, 16 );
-	ver << format_int( pifh->cmwt & 15, 16);
+	ver << format_int( pifh->cmwt & 255, 2, 16 );
 	info.info_set( "codec", ver );
 
 	ver = format_int( pifh->cwtv >> 8 );
 	ver.add_byte('.');
-	ver << format_int( ( pifh->cwtv >> 4 ) & 15, 16);
-	ver << format_int( pifh->cwtv & 15, 16 );
+	ver << format_int( pifh->cwtv & 255, 2, 16 );
 	info.info_set( field_trackerver, ver );
 
 	if ( pifh->smpnum ) info.info_set_int( field_samples, pifh->smpnum );
@@ -1820,7 +1818,7 @@ class input_mod
 	DUH_SIGRENDERER *sr;
 	sample_t **buf;
 
-	pfc::array_t< sample_t > dbuf;
+	//pfc::array_t< sample_t > dbuf;
 
 	string_simple extension;
 	service_ptr_t< file > m_file;
@@ -2069,8 +2067,8 @@ public:
 			if ( ! buf ) throw std::bad_alloc();
 		}
 
-		dbuf.grow_size( 2048 * 2 );
-
+		pfc::static_assert_t< sizeof( audio_sample ) == sizeof( sample_t ) >();
+		//dbuf.grow_size( 2048 * 2 );
 retry:
 		p_abort.check();
 
@@ -2109,16 +2107,18 @@ retry:
 		if      ( written == 0 )  return false;
 		else if ( written == -1 ) throw exception_io_data();
 
+		p_chunk.check_data_size( written * 2 );
+
 		sample_t * in_l = buf[0];
 		sample_t * in_r = buf[1];
-		sample_t * out = dbuf.get_ptr();
+		sample_t * out = ( sample_t * ) p_chunk.get_data(); //dbuf.get_ptr();
 		for ( unsigned i = 0; i < written; ++i )
 		{
 			*out++ = *in_l++;
 			*out++ = *in_r++;
 		}
-		p_chunk.check_data_size( written * 2 );
-		audio_math::convert_from_int32( dbuf.get_ptr(), written * 2, p_chunk.get_data(), 1 << 8 );
+		//p_chunk.check_data_size( written * 2 );
+		audio_math::convert_from_int32( ( const t_int32 * ) p_chunk.get_data() /*dbuf.get_ptr()*/, written * 2, p_chunk.get_data(), 1 << 8 );
 		p_chunk.set_srate( srate );
 		p_chunk.set_channels( 2 );
 		p_chunk.set_sample_count( written );
