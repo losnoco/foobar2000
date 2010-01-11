@@ -1,5 +1,17 @@
 #define MYVERSION "1.0"
 
+/*
+	change log
+
+2008-10-16 02:48 UTC - kode54
+- Implemented database checking for live updates.
+- Added artist and comment meta fields.
+
+2008-10-07 - kode54
+- Initial release.
+
+*/
+
 #include "fileprovider.h"
 
 #include "../helpers/dropdown_helper.h"
@@ -22,7 +34,38 @@ static const GUID guid_cfg_play_indefinitely =
 static cfg_int cfg_samplerate( guid_cfg_samplerate, 44100 );
 static cfg_int cfg_play_indefinitely( guid_cfg_play_indefinitely, 0 );
 
-CAdPlugDatabase g_database;
+static critical_section  g_database_lock;
+static t_filestats       g_database_stats = {0};
+static CAdPlugDatabase * g_database = NULL;
+
+static void refresh_database( abort_callback & p_abort )
+{
+	service_ptr_t<file> m_file;
+	t_filestats m_stats;
+	pfc::string8 path = core_api::get_my_full_path();
+	path.truncate( path.scan_filename() );
+	path += "adplug.db";
+	filesystem::g_open( m_file, path, filesystem::open_mode_read, p_abort );
+	m_stats = m_file->get_stats( p_abort );
+	if ( m_stats != g_database_stats )
+	{
+		delete g_database;
+		g_database = 0;
+
+		CProvider_foobar2000 fp( path.get_ptr() , m_file, p_abort );
+		binistream * f = fp.open( path.get_ptr() );
+		if ( f )
+		{
+			g_database = new CAdPlugDatabase;
+			g_database->load( *f );
+			fp.close( f );
+		}
+
+		CAdPlug::set_database( g_database );
+
+		g_database_stats = m_stats;
+	}
+}
 
 class initquit_adplug : public initquit
 {
@@ -32,17 +75,8 @@ public:
 		try
 		{
 			abort_callback_impl  m_abort;
-			CProvider_foobar2000 fp( m_abort );
-			pfc::string8 path = core_api::get_my_full_path();
-			path.truncate( path.scan_filename() );
-			path += "adplug.db";
-			binistream * f = fp.open( path.get_ptr() );
-			if ( f )
-			{
-				if ( g_database.load( *f ) )
-					CAdPlug::set_database( &g_database );
-				fp.close( f );
-			}
+			insync( g_database_lock );
+			refresh_database( m_abort );
 		}
 		catch (...) {}
 	}
@@ -59,7 +93,7 @@ class input_adplug
 
 	bool first_block, dont_loop, is_adl;
 
-	unsigned subsong;
+	unsigned subsong, samples_todo;
 
 	double seconds;
 
@@ -95,9 +129,14 @@ public:
 		srate = cfg_samplerate;
 
 		m_emu = new CEmuopl( srate, true, true );
-		m_player = CAdPlug::factory( std::string( p_path ), m_emu, CAdPlug::players, CProvider_foobar2000( std::string( p_path ), m_file, p_abort ) );
-		if ( ! m_player )
-			throw exception_io_data();
+
+		{
+			insync( g_database_lock );
+			refresh_database( p_abort );
+			m_player = CAdPlug::factory( std::string( p_path ), m_emu, CAdPlug::players, CProvider_foobar2000( std::string( p_path ), m_file, p_abort ) );
+			if ( ! m_player )
+				throw exception_io_data();
+		}
 
 		if ( !strcmp( m_player->gettype().c_str(), "Westwood ADL" ) )
 		{
@@ -132,6 +171,10 @@ public:
 		p_info.info_set_int( "channels", 2 );
 		if ( !m_player->gettitle().empty() )
 			p_info.meta_set( "title", pfc::stringcvt::string_utf8_from_ansi( m_player->gettitle().c_str() ) );
+		if ( !m_player->getauthor().empty() )
+			p_info.meta_set( "artist", pfc::stringcvt::string_utf8_from_ansi( m_player->getauthor().c_str() ) );
+		if ( !m_player->getdesc().empty() )
+			p_info.meta_set( "comment", pfc::stringcvt::string_utf8_from_ansi( m_player->getdesc().c_str() ) );
 		if ( !m_player->gettype().empty() )
 			p_info.info_set( "codec_profile", pfc::stringcvt::string_utf8_from_ansi( m_player->gettype().c_str() ) );
 
@@ -150,6 +193,8 @@ public:
 	{
 		first_block = true;
 
+		samples_todo = 0;
+
 		seconds = 0;
 
 		subsong = p_subsong;
@@ -159,22 +204,30 @@ public:
 
 		m_player->rewind( subsong );
 
+		sample_buffer.set_size( 2048 * 2 );
+
 		dont_loop = !! ( p_flags & input_flag_no_looping ) || !cfg_play_indefinitely;
 	}
 
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 	{
-		bool ret = m_player->update();
+		if ( !samples_todo )
+		{
+			bool ret = m_player->update();
 
-		if ( dont_loop && !ret ) return false;
+			if ( dont_loop && !ret ) return false;
 
-		int sample_count = srate / m_player->getrefresh();
+			samples_todo = srate / m_player->getrefresh();
 
-		sample_buffer.set_size( sample_count * 2 );
+			seconds += 1. / m_player->getrefresh();
+		}
+
+		unsigned sample_count = samples_todo;
+		if ( sample_count > 2048 ) sample_count = 2048;
 
 		m_emu->update( sample_buffer.get_ptr(), sample_count );
 
-		seconds += 1. / m_player->getrefresh();
+		samples_todo -= sample_count;
 
 		p_chunk.set_data_fixedpoint( sample_buffer.get_ptr(), sample_count * 4, srate, 2, 16, audio_chunk::channel_config_stereo );
 		
@@ -184,6 +237,8 @@ public:
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		first_block = true;
+
+		samples_todo = 0;
 
 		if ( p_seconds < seconds )
 		{
@@ -197,6 +252,8 @@ public:
 			m_player->update();
 			seconds += 1. / m_player->getrefresh();
 		}
+
+		samples_todo = ( seconds - p_seconds ) * srate;
 	}
 
 	bool decode_can_seek()
@@ -241,10 +298,10 @@ public:
 
 	static bool g_is_our_path( const char * p_path, const char * p_extension )
 	{
-		if ( !stricmp_utf8( p_extension, "mid" ) || !stricmp_utf8( p_extension, "s3m" ) )
+		if ( !stricmp_utf8( p_extension, "mid" ) || !stricmp_utf8( p_extension, "s3m" ) || !stricmp_utf8( p_extension, "msc" ) )
 			return false;
 
-		if ( !stricmp_utf8( p_extension, "mida" ) || !stricmp_utf8( p_extension, "s3ma" ) )
+		if ( !stricmp_utf8( p_extension, "mida" ) || !stricmp_utf8( p_extension, "s3ma" ) || !stricmp_utf8( p_extension, "msca" ) )
 			return true;
 
 		const CPlayers & pl = CAdPlug::players;
@@ -297,7 +354,7 @@ class adplug_file_types : public input_file_type
 			out.add_byte( '*' );
 			const char * ext = p->get_extension( i );
 			out += ext;
-			if ( !stricmp( ext + 1, "s3m" ) || !stricmp( ext + 1, "mid" ) )
+			if ( !stricmp( ext + 1, "s3m" ) || !stricmp( ext + 1, "mid" ) || !stricmp( ext + 1, "msc" ) )
 				out.add_byte( 'a' );
 		}
 		return true;
