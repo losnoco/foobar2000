@@ -250,7 +250,6 @@
 				AdditionalIncludeDirectories="..\SDK"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_INPUT_HVL_EXPORTS"
 				StringPooling="true"
-				ExceptionHandling="0"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="true"

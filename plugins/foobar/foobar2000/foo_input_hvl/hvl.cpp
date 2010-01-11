@@ -1,7 +1,11 @@
-#define MYVERSION "1.2"
+#define MYVERSION "1.3"
 
 /*
 	changelog
+
+2009-12-12 15:02 UTC - kode54
+- Updated Hively Tracker player to 1.6
+- Version is now 1.3
 
 2009-09-30 12:21 UTC - kode54
 - Added division by zero protection for envelope setup code
