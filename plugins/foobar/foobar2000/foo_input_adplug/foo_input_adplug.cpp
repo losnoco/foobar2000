@@ -1,7 +1,11 @@
-#define MYVERSION "1.1"
+#define MYVERSION "1.2"
 
 /*
 	change log
+
+2009-05-03 04:38 UTC - kode54
+- Implemented Harekiet's OPL emulator core and configuration
+- Version is now 1.2
 
 2009-03-30 01:00 UTC - kode54
 - Implemented Ken Silverman's Adlib emulator core and configuration
@@ -25,6 +29,7 @@
 #include <adplug.h>
 #include <emuopl.h>
 #include <kemuopl.h>
+#include "opl/dbemuopl.h"
 
 // {0BD2647E-90FE-4d99-BE78-D3DCC5B22E87}
 static const GUID guid_cfg_samplerate = 
@@ -139,12 +144,14 @@ public:
 
 		switch (cfg_adlib_core)
 		{
-		case 0:
+		case 2:
 			m_emu = new CEmuopl( srate, true, true );
 			break;
 		case 1:
 			m_emu = new CKemuopl( srate, true, true );
 			break;
+		case 0:
+			m_emu = new DBemuopl( srate, true );
 		}
 
 		{
@@ -413,8 +420,9 @@ class preferences_page_adplug : public preferences_page
 				uSendMessage(w, CB_SETCURSEL, 0, 0);
 
 				w = GetDlgItem(wnd, IDC_ADLIBCORE);
-				uSendMessageText(w, CB_ADDSTRING, 0, "Jarek Burczynski's");
+				uSendMessageText(w, CB_ADDSTRING, 0, "Harekiet's");
 				uSendMessageText(w, CB_ADDSTRING, 0, "Ken Silverman's");
+				uSendMessageText(w, CB_ADDSTRING, 0, "Jarek Burczynski's");
 				uSendMessage(w, CB_SETCURSEL, cfg_adlib_core, 0);
 
 				uSendDlgItemMessage(wnd, IDC_PLAY_INDEFINITELY, BM_SETCHECK, cfg_play_indefinitely, 0);

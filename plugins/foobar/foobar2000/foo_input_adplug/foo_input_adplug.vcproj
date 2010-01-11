@@ -315,6 +315,26 @@
 	<References>
 	</References>
 	<Files>
+		<Filter
+			Name="OPL"
+			>
+			<File
+				RelativePath=".\opl\adlib.h"
+				>
+			</File>
+			<File
+				RelativePath=".\opl\dbemuopl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\opl\dbopl.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\opl\dbopl.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\fileprovider.cpp"
 			>
