@@ -3,6 +3,9 @@
 /*
 	changelog
 
+2006-06-09 16:48 UTC - kode54
+- Ported most of DUMB 0.9.3 over, except for the conflicting pattern loop change
+
 2006-06-03 02:13 UTC - kode54
 - Implemented ASYLUM Music Format support.
 
@@ -1341,21 +1344,21 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 					is_it = true;
 					ptr += memdata.offset = pkg.object_offset(i);
 					size = memdata.size = memdata.offset + pkg.object_size(i);
-					duh = dumb_read_it(f);
+					duh = dumb_read_it_quick(f);
 					break;
 					}
 					else if (!stricmp(type, "s3m"))
 					{
 					memdata.offset = pkg.object_offset(i);
 					memdata.size = memdata.offset + pkg.object_size(i);
-					duh = dumb_read_s3m(f);
+					duh = dumb_read_s3m_quick(f);
 					break;
 					}
 					else if (!stricmp(type, "xm"))
 					{
 					memdata.offset = pkg.object_offset(i);
 					memdata.size = memdata.offset + pkg.object_size(i);
-					duh = dumb_read_xm(f);
+					duh = dumb_read_xm_quick(f);
 					break;
 					}
 					*/
@@ -1367,15 +1370,15 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 						if (size >= 4 && ptr[0] == 'I' && ptr[1] == 'M' && ptr[2] == 'P' && ptr[3] == 'M')
 						{
 							is_it = true;
-							duh = dumb_read_it(f);
+							duh = dumb_read_it_quick(f);
 						}
 						else if (size >= 42 && ptr[38] == 'F' && ptr[39] == 'a' && ptr[40] == 's' && ptr[41] == 't')
 						{
-							duh = dumb_read_xm(f);
+							duh = dumb_read_xm_quick(f);
 						}
 						else if (size >= 48 && ptr[44] == 'S' && ptr[45] == 'C' && ptr[46] == 'R' && ptr[47] == 'M')
 						{
-							duh = dumb_read_s3m(f);
+							duh = dumb_read_s3m_quick(f);
 						}
 
 						break;
@@ -1389,17 +1392,17 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 		ptr[2] == 'P' && ptr[3] == 'M')
 	{
 		is_it = true;
-		duh = dumb_read_it(f);
+		duh = dumb_read_it_quick(f);
 	}
 	else if (size >= 17 && !memcmp(ptr, "Extended Module: ", 17))
 	{
-		duh = dumb_read_xm(f);
+		duh = dumb_read_xm_quick(f);
 	}
 	else if (size >= 0x30 &&
 		ptr[0x2C] == 'S' && ptr[0x2D] == 'C' &&
 		ptr[0x2E] == 'R' && ptr[0x2F] == 'M')
 	{
-		duh = dumb_read_s3m(f);
+		duh = dumb_read_s3m_quick(f);
 	}
 	else if (size >= 1168 &&
 		ptr[28] == 0x1A && ptr[29] == 2 &&
@@ -1407,56 +1410,56 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 		! strnicmp( ( const char * ) ptr + 20, "BMOD2STM", 8 ) ||
 		! strnicmp( ( const char * ) ptr + 20, "WUZAMOD!", 8 ) ) )
 	{
-		duh = dumb_read_stm(f);
+		duh = dumb_read_stm_quick(f);
 	}
 	else if (size >= 2 &&
 		((ptr[0] == 0x69 && ptr[1] == 0x66) ||
 		(ptr[0] == 0x4A && ptr[1] == 0x4E)))
 	{
-		duh = dumb_read_669(f);
+		duh = dumb_read_669_quick(f);
 	}
 	else if (size >= 0x30 &&
 		ptr[0x2C] == 'P' && ptr[0x2D] == 'T' &&
 		ptr[0x2E] == 'M' && ptr[0x2F] == 'F')
 	{
-		duh = dumb_read_ptm(f);
+		duh = dumb_read_ptm_quick(f);
 	}
 	else if (size >= 4 &&
 		ptr[0] == 'P' && ptr[1] == 'S' &&
 		ptr[2] == 'M' && ptr[3] == ' ')
 	{
-		duh = dumb_read_psm(f, start_order);
+		duh = dumb_read_psm_quick(f, start_order);
 		start_order = 0;
 	}
 	else if (size >= 4 &&
 		ptr[0] == 'P' && ptr[1] == 'S' &&
 		ptr[2] == 'M' && ptr[3] == 254)
 	{
-		duh = dumb_read_old_psm(f);
+		duh = dumb_read_old_psm_quick(f);
 	}
 	else if (size >= 3 &&
 		ptr[0] == 'M' && ptr[1] == 'T' &&
 		ptr[2] == 'M')
 	{
-		duh = dumb_read_mtm(f);
+		duh = dumb_read_mtm_quick(f);
 	}
 	else if ( size >= 4 &&
 		ptr[0] == 'R' && ptr[1] == 'I' &&
 		ptr[2] == 'F' && ptr[3] == 'F')
 	{
-		duh = dumb_read_riff(f);
+		duh = dumb_read_riff_quick(f);
 	}
 	else if ( size >= 32 &&
 		!memcmp( ptr, "ASYLUM Music Format", 19 ) &&
 		!memcmp( ptr + 19, " V1.0", 5 ) )
 	{
-		duh = dumb_read_asy(f);
+		duh = dumb_read_asy_quick(f);
 	}
 
 	if ( ! duh )
 	{
 		is_dos = false;
-		duh = dumb_read_mod(f, ( ! stricmp( ext, exts[ 0 ] ) || ! stricmp( ext, exts[ 1 ] ) ) ? 0 : 1 );
+		duh = dumb_read_mod_quick(f, ( ! stricmp( ext, exts[ 0 ] ) || ! stricmp( ext, exts[ 1 ] ) ) ? 0 : 1 );
 	}
 
 	dumbfile_close(f);
@@ -1476,25 +1479,28 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 				IT_SAMPLE * sample = &itsd->sample[i];
 				if (sample->flags & IT_SAMPLE_EXISTS)
 				{
+					int channels = sample->flags & IT_SAMPLE_STEREO ? 2 : 1;
 					if (sample->length < size_force) sample->max_resampling_quality = 0;
 					else if (sample->length < size_scan)
 					{
 						if ((sample->flags & (IT_SAMPLE_LOOP|IT_SAMPLE_PINGPONG_LOOP)) == IT_SAMPLE_LOOP)
 						{
+							int loop_start = sample->loop_start * channels;
+							int loop_end = sample->loop_end * channels;
 							int s1, s2;
 							if (sample->flags & IT_SAMPLE_16BIT)
 							{
-								s1 = ((signed short *)sample->left)[sample->loop_start];
-								s2 = ((signed short *)sample->left)[sample->loop_end-1];
+								s1 = ((signed short *)sample->data)[loop_start];
+								s2 = ((signed short *)sample->data)[loop_end - channels];
 								if (abs(s1 - s2) > scan_threshold_16)
 								{
 									sample->max_resampling_quality = 0;
 									continue;
 								}
-								if (sample->flags & IT_SAMPLE_STEREO)
+								if (channels == 2)
 								{
-									s1 = ((signed short *)sample->right)[sample->loop_start];
-									s2 = ((signed short *)sample->right)[sample->loop_end-1];
+									s1 = ((signed short *)sample->data)[loop_start + 1];
+									s2 = ((signed short *)sample->data)[loop_end - 1];
 									if (abs(s1 - s2) > scan_threshold_16)
 									{
 										sample->max_resampling_quality = 0;
@@ -1504,17 +1510,17 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 							}
 							else
 							{
-								s1 = ((signed char *)sample->left)[sample->loop_start];
-								s2 = ((signed char *)sample->left)[sample->loop_end-1];
+								s1 = ((signed char *)sample->data)[loop_start];
+								s2 = ((signed char *)sample->data)[loop_end - channels];
 								if (abs(s1 - s2) > scan_threshold_8)
 								{
 									sample->max_resampling_quality = 0;
 									continue;
 								}
-								if (sample->flags & IT_SAMPLE_STEREO)
+								if (channels == 2)
 								{
-									s1 = ((signed char *)sample->right)[sample->loop_start];
-									s2 = ((signed char *)sample->right)[sample->loop_end-1];
+									s1 = ((signed char *)sample->data)[loop_start + 1];
+									s2 = ((signed char *)sample->data)[loop_end - 1];
 									if (abs(s1 - s2) > scan_threshold_8)
 									{
 										sample->max_resampling_quality = 0;
@@ -1525,20 +1531,22 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 						}
 						if ((sample->flags & (IT_SAMPLE_SUS_LOOP|IT_SAMPLE_PINGPONG_SUS_LOOP)) == IT_SAMPLE_SUS_LOOP)
 						{
+							int sus_loop_start = sample->sus_loop_start * channels;
+							int sus_loop_end = sample->sus_loop_end * channels;
 							int s1, s2;
 							if (sample->flags & IT_SAMPLE_16BIT)
 							{
-								s1 = ((signed short *)sample->left)[sample->sus_loop_start];
-								s2 = ((signed short *)sample->left)[sample->sus_loop_end-1];
+								s1 = ((signed short *)sample->data)[sus_loop_start];
+								s2 = ((signed short *)sample->data)[sus_loop_end - channels];
 								if (abs(s1 - s2) > scan_threshold_16)
 								{
 									sample->max_resampling_quality = 0;
 									continue;
 								}
-								if (sample->flags & IT_SAMPLE_STEREO)
+								if (channels == 2)
 								{
-									s1 = ((signed short *)sample->right)[sample->sus_loop_start];
-									s2 = ((signed short *)sample->right)[sample->sus_loop_end-1];
+									s1 = ((signed short *)sample->data)[sus_loop_start + 1];
+									s2 = ((signed short *)sample->data)[sus_loop_end - 1];
 									if (abs(s1 - s2) > scan_threshold_16)
 									{
 										sample->max_resampling_quality = 0;
@@ -1548,17 +1556,17 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 							}
 							else
 							{
-								s1 = ((signed char *)sample->left)[sample->sus_loop_start];
-								s2 = ((signed char *)sample->left)[sample->sus_loop_end-1];
+								s1 = ((signed char *)sample->data)[sus_loop_start];
+								s2 = ((signed char *)sample->data)[sus_loop_end - channels];
 								if (abs(s1 - s2) > scan_threshold_8)
 								{
 									sample->max_resampling_quality = 0;
 									continue;
 								}
-								if (sample->flags & IT_SAMPLE_STEREO)
+								if (channels == 2)
 								{
-									s1 = ((signed char *)sample->right)[sample->sus_loop_start];
-									s2 = ((signed char *)sample->right)[sample->sus_loop_end-1];
+									s1 = ((signed char *)sample->data)[sus_loop_start + 1];
+									s2 = ((signed char *)sample->data)[sus_loop_end - 1];
 									if (abs(s1 - s2) > scan_threshold_8)
 									{
 										sample->max_resampling_quality = 0;
@@ -1568,13 +1576,13 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 							}
 						}
 
-						int k, l = sample->length;
-						if (sample->flags & IT_SAMPLE_LOOP) l = sample->loop_end;
+						int k, l = sample->length * channels;
+						if (sample->flags & IT_SAMPLE_LOOP) l = sample->loop_end * channels;
 						if (sample->flags & IT_SAMPLE_16BIT)
 						{
-							for (k = 1; k < l; k++)
+							for (k = channels; k < l; k += channels)
 							{
-								if (abs(((signed short *)sample->left)[k-1] - ((signed short *)sample->left)[k]) > scan_threshold_16)
+								if (abs(((signed short *)sample->data)[k - channels] - ((signed short *)sample->data)[k]) > scan_threshold_16)
 								{
 									break;
 								}
@@ -1584,11 +1592,11 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 								sample->max_resampling_quality = 0;
 								continue;
 							}
-							if (sample->flags & IT_SAMPLE_STEREO)
+							if (channels == 2)
 							{
-								for (k = 1; k < l; k++)
+								for (k = 2 + 1; k < l; k += 2)
 								{
-									if (abs(((signed short *)sample->right)[k-1] - ((signed short *)sample->right)[k]) > scan_threshold_16)
+									if (abs(((signed short *)sample->data)[k - 2] - ((signed short *)sample->data)[k]) > scan_threshold_16)
 									{
 										break;
 									}
@@ -1602,9 +1610,9 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 						}
 						else
 						{
-							for (k = 1; k < l; k++)
+							for (k = channels; k < l; k += channels)
 							{
-								if (abs(((signed char *)sample->left)[k-1] - ((signed char *)sample->left)[k]) > scan_threshold_8)
+								if (abs(((signed char *)sample->data)[k - channels] - ((signed char *)sample->data)[k]) > scan_threshold_8)
 								{
 									break;
 								}
@@ -1614,11 +1622,11 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 								sample->max_resampling_quality = 0;
 								continue;
 							}
-							if (sample->flags & IT_SAMPLE_STEREO)
+							if (channels == 2)
 							{
-								for (k = 1; k < l; k++)
+								for (k = 2 + 1; k < l; k += 2)
 								{
-									if (abs(((signed char *)sample->right)[k-1] - ((signed char *)sample->right)[k]) > scan_threshold_8)
+									if (abs(((signed char *)sample->data)[k - 2] - ((signed char *)sample->data)[k]) > scan_threshold_8)
 									{
 										break;
 									}
@@ -1752,7 +1760,7 @@ public:
 				dumb_subsong_info * song = new dumb_subsong_info;
 
 				song->start_order = i;
-				song->length = _dumb_it_build_checkpoints( duh_get_it_sigdata( duh ), 0 );
+				song->length = dumb_it_build_checkpoints( duh_get_it_sigdata( duh ), 0 );
 
 				unload_duh( duh );
 				duh = 0;
@@ -2140,7 +2148,7 @@ public:
 
 		if ( ! info )
 		{
-			int length = _dumb_it_build_checkpoints( duh_get_it_sigdata( duh ), p_subsong );
+			int length = dumb_it_build_checkpoints( duh_get_it_sigdata( duh ), p_subsong );
 			if ( length >= 0 ) p_info.set_length( double( length ) / 65536. );
 		}
 		else
@@ -2199,7 +2207,7 @@ private:
 		if ( start_order )
 		{
 			sr = dumb_it_start_at_order( duh, 2, start_order );
-			if ( sr && pos ) duh_sigrenderer_get_samples( sr, 0., 1.f, pos, 0 );
+			if ( sr && pos ) duh_sigrenderer_generate_samples( sr, 0., 1.f, pos, 0 );
 		}
 		else
 			sr = duh_start_sigrenderer( duh, 0, 2, pos );
@@ -2236,7 +2244,7 @@ public:
 
 		if ( ! buf )
 		{
-			buf = create_sample_buffer( 2, 2048 );
+			buf = allocate_sample_buffer( 2, 2048 );
 			if ( ! buf ) throw std::bad_alloc();
 		}
 
@@ -2246,7 +2254,7 @@ retry:
 		p_abort.check();
 
 		dumb_silence( buf[0], 2048 * 2 );
-		written = duh_sigrenderer_get_samples( sr, 1.f, delta, samples, buf );
+		written = duh_sigrenderer_generate_samples( sr, 1.f, delta, samples, buf );
 
 		if (written < samples)
 		{
@@ -2299,27 +2307,18 @@ retry:
 
 		p_chunk.set_data_size( written * 2 );
 
-		sample_t * in_l = buf[0];
-		sample_t * in_r = buf[1];
-		sample_t * out = ( sample_t * ) p_chunk.get_data(); //dbuf.get_ptr();
 		if ( limit_info.fading && fade_time_left < fade_time )
 		{
+			sample_t * data = buf [0];
 			for ( unsigned i = 0; i < written; ++i )
 			{
-				*out++ = MulDiv( *in_l++, fade_time_left + written - i, fade_time );
-				*out++ = MulDiv( *in_r++, fade_time_left + written - i, fade_time );
-			}
-		}
-		else
-		{
-			for ( unsigned i = 0; i < written; ++i )
-			{
-				*out++ = *in_l++;
-				*out++ = *in_r++;
+				data [0] = MulDiv( data [0], fade_time_left + written - i, fade_time );
+				data [1] = MulDiv( data [1], fade_time_left + written - i, fade_time );
+				data += 2;
 			}
 		}
 		//p_chunk.check_data_size( written * 2 );
-		audio_math::convert_from_int32( ( const t_int32 * ) p_chunk.get_data() /*dbuf.get_ptr()*/, written * 2, p_chunk.get_data(), 1 << 8 );
+		audio_math::convert_from_int32( buf [0], written * 2, p_chunk.get_data(), 1 << 8 );
 		p_chunk.set_srate( srate );
 		p_chunk.set_channels( 2 );
 		p_chunk.set_sample_count( written );
@@ -2345,7 +2344,7 @@ retry:
 		}
 		else if ( to_pos > from_pos )
 		{
-			duh_sigrenderer_get_samples( sr, 0., 1.f, to_pos - from_pos, 0 );
+			duh_sigrenderer_generate_samples( sr, 0., 1.f, to_pos - from_pos, 0 );
 		}
 	}
 
@@ -3214,4 +3213,4 @@ static preferences_page_factory_t<preferences_page_mod>           g_config_mod_f
 static service_factory_single_t  <mod_file_types> g_input_file_type_mod_factory;
 //static menu_item_factory_t       <context_mod>                    g_menu_item_mod_factory;
 
-DECLARE_COMPONENT_VERSION( "DUMB module decoder", MYVERSION, "Using DUMB v" DUMB_VERSION_STR "-cvs-" DUMB_YEAR_STR4 DUMB_MONTH_STR2 DUMB_DAY_STR2 ",\nwith several modifications.\n\nhttp://dumb.sourceforge.net/");
+DECLARE_COMPONENT_VERSION( "DUMB module decoder", MYVERSION, "Using DUMB v" DUMB_VERSION_STR ",\nwith several modifications.\n\nhttp://dumb.sourceforge.net/");

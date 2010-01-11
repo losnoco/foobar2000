@@ -464,6 +464,9 @@ public:
 			emu->mute_voices( voice_mask );
 
 			emu->disable_surround( !! ( cfg_spc_anti_surround ) );
+			static bool woot = false;
+			woot = !woot;
+			if ( woot ) emu->set_cubic_interpolation();
 		}
 
 		input_gep::decode_initialize( 0, p_flags, p_abort );
