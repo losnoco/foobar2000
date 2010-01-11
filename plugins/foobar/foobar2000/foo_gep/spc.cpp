@@ -4,7 +4,7 @@
 
 #include <gme/blargg_endian.h>
 #include <gme/Spc_Emu.h>
-#include <gme/SPC_Filter.h>
+//#include <gme/SPC_Filter.h>
 
 #include "../helpers/window_placement_helper.h"
 
@@ -533,7 +533,7 @@ public:
 	}
 };
 
-class Spc_Emu_Filtered : public Spc_Emu
+/*class Spc_Emu_Filtered : public Spc_Emu
 {
 	SPC_Filter filter;
 
@@ -550,7 +550,7 @@ protected:
 		if ( ! ret ) filter.run( out, count );
 		return ret;
 	}
-};
+};*/
 
 class input_spc : public input_gep
 {
@@ -630,9 +630,10 @@ public:
 				else
 				{
 					// XXX needs to be in sync with crap in decode_initialize, or something
-					emu = new Spc_Emu_Filtered;
+					emu = new Spc_Emu; //_Filtered;
 					static_cast<Spc_Emu *> (this->emu)->disable_surround( !! ( cfg_spc_anti_surround ) );
 					static_cast<Spc_Emu *> (this->emu)->cubic_interpolation( !! ( cfg_spc_interpolation ) );
+					emu->enable_accuracy();
 				}
 				if ( !emu ) throw std::bad_alloc();
 
@@ -742,7 +743,8 @@ public:
 		Spc_Emu * emu = ( Spc_Emu * ) this->emu;
 		if ( ! emu )
 		{
-			this->emu = emu = new Spc_Emu_Filtered;
+			this->emu = emu = new Spc_Emu;//_Filtered;
+			emu->enable_accuracy();
 
 			try
 			{
