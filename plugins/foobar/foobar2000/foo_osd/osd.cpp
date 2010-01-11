@@ -367,8 +367,8 @@ class playlist_callback_single_osd : public playlist_callback_single
 public:
 	virtual void on_items_added(unsigned start, const list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection) {}
 	virtual void on_items_reordered(const unsigned * order,unsigned count) {}
-	virtual void on_items_removing(const bit_array & mask) {}
-	virtual void on_items_removed(const bit_array & mask) {}
+	virtual void on_items_removing(const bit_array & mask, unsigned, unsigned) {}
+	virtual void on_items_removed(const bit_array & mask, unsigned, unsigned) {}
 	virtual void on_items_selection_change(const bit_array & affected,const bit_array & state) {}
 	virtual void on_item_focus_change(unsigned from,unsigned to) {}
 	virtual void on_items_modified(const bit_array & p_mask) {}

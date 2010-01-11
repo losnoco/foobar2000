@@ -436,7 +436,8 @@ eof:
 				done = (pos - filled) & 0x7FF;
 				todo = 2048 - done;
 				if (todo > filled) todo = filled;
-				p_chunk.set_data_fixedpoint( buffer + done, todo * 2, 22050, 2, 16, audio_chunk::channel_config_stereo );
+				if ( ! p_chunk.set_data_fixedpoint( buffer + done, todo * 2, 22050, 2, 16, audio_chunk::channel_config_stereo ) )
+					return io_result_error_out_of_memory;
 				filled -= todo;
 				return io_result_success;
 			}
@@ -512,7 +513,8 @@ eof:
 		done = ( pos - filled ) & 0x7FF;
 		todo = 2048 - done;
 		if ( todo > ( filled - xfade_size * 2 ) ) todo = filled - xfade_size * 2;
-		p_chunk.set_data_fixedpoint( buffer + done, todo * 2, 22050, 2, 16, audio_chunk::channel_config_stereo );
+		if ( ! p_chunk.set_data_fixedpoint( buffer + done, todo * 2, 22050, 2, 16, audio_chunk::channel_config_stereo ) )
+			return io_result_error_out_of_memory;
 		filled -= todo;
 
 		return io_result_success;

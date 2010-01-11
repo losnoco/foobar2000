@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="Game_Music_Emu"
 	ProjectGUID="{C3E262D2-2D15-4A46-98F1-2CE8A74F3590}"
+	RootNamespace="Game_Music_Emu"
 	SccProjectName="&quot;$/foobar2000/plugins.root/plugins&quot;, CEAAAAAA"
 	SccLocalPath="..\.."
 	SccProvider="MSSCCI:Microsoft Visual SourceSafe"
@@ -150,7 +151,7 @@
 			ConfigurationType="4"
 			InheritedPropertySheets="..\..\..\Program Files\Microsoft Visual Studio 8\VC\VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
-			WholeProgramOptimization="0"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -261,6 +262,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Hes_Emu.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\Multi_Buffer.cpp"
 				>
 			</File>
@@ -278,6 +283,10 @@
 			</File>
 			<File
 				RelativePath="..\Nes_Fme07_Apu.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Nes_Mmc5.cpp"
 				>
 			</File>
 			<File
@@ -399,6 +408,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Hes_Emu.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Multi_Buffer.h"
 				>
 			</File>
@@ -416,6 +429,10 @@
 			</File>
 			<File
 				RelativePath="..\Nes_Fme07_Apu.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Nes_Mmc5.h"
 				>
 			</File>
 			<File
@@ -480,6 +497,118 @@
 			</File>
 			<File
 				RelativePath="..\ym2612.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="hes"
+			>
+			<File
+				RelativePath="..\hes\cpuintrf.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\emu.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\h6280.c"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\h6280.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\h6280ops.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\hes.c"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\hes.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\osd_cpu.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\pce.c"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\pce.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\psg-loop.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\psg.c"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\psg.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\shared.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\synth_wrapper.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\synth_wrapper.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\system.c"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\system.h"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\tblh6280.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release staticlink|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\hes\vdc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\hes\vdc.h"
 				>
 			</File>
 		</Filter>

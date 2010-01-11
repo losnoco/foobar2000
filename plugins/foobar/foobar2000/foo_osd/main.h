@@ -14,8 +14,8 @@ class cfg_osd_list : public cfg_var
 	ptr_list_t<osd_state>  state;
 	ptr_list_t<COsdWnd>    osd;
 
-	virtual bool get_raw_data(write_config_callback * out);
-	virtual void set_raw_data(const void * data,int size);
+	virtual t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort);
+	virtual t_io_result set_data_raw(stream_reader * p_stream,abort_callback & p_abort);
 
 public:
 	cfg_osd_list(const GUID & p_guid);

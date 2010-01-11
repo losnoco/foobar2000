@@ -208,7 +208,7 @@ static LRESULT CALLBACK GEPProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
 	return uDefWindowProc(wnd, msg, wp, lp);
 }
-static const char class_name[] = "F8257899-79EC-4860-96E0-6CC6EC80A367";
+static const TCHAR class_name[] = _T( "F8257899-79EC-4860-96E0-6CC6EC80A367" );
 
 class register_window_class
 {
@@ -240,21 +240,21 @@ public:
 private:
 	void _register()
 	{
-		uWNDCLASS wc;
+		WNDCLASS wc;
 		memset(&wc, 0, sizeof(wc));
 		wc.lpfnWndProc   = GEPProc;
 		wc.hInstance     = core_api::get_my_instance();
-		wc.hCursor       = uLoadCursor(NULL, MAKEINTRESOURCEA(32512)); // IDC_ARROW FUCKO
+		wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
 		wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
 		wc.lpszClassName = class_name;
-		class_atom = uRegisterClass(&wc);
+		class_atom = RegisterClass(&wc);
 	}
 
 	void _unregister()
 	{
 		if (class_atom)
 		{
-			uUnregisterClass((const char *)class_atom, core_api::get_my_instance());
+			UnregisterClass((const TCHAR *)class_atom, core_api::get_my_instance());
 			class_atom = 0;
 		}
 	}
@@ -265,7 +265,7 @@ static register_window_class rwc;
 bool CreateLogo( HWND parent, HMENU menu , int x, int y )
 {
 	ATOM wnd_class = rwc.Register();
-	if (wnd_class) return !!uCreateWindowEx(0, (const char *)wnd_class, 0, WS_CHILD | WS_VISIBLE, x, y, CW_USEDEFAULT, CW_USEDEFAULT, parent, menu, core_api::get_my_instance(), 0);
+	if (wnd_class) return !!CreateWindowEx(0, (const TCHAR *)wnd_class, 0, WS_CHILD | WS_VISIBLE, x, y, CW_USEDEFAULT, CW_USEDEFAULT, parent, menu, core_api::get_my_instance(), 0);
 	return false;
 }
 

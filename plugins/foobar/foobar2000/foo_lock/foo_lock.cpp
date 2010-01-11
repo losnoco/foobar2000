@@ -92,10 +92,12 @@ static void unlock()
 	console::info(info);
 }
 
+static const TCHAR class_name[] = _T( "870AC6B2-D141-46f4-A196-ADCB72B8AE4E" );
+
 class CSessionWnd
 {
 public:
-	CSessionWnd() : m_lpszClassName("870AC6B2-D141-46f4-A196-ADCB72B8AE4E")
+	CSessionWnd()
 	{
 		m_bRegistered = FALSE;
 		m_hWnd = NULL;
@@ -115,16 +117,17 @@ public:
 		unregister_session = (pWTSUnRegisterSessionNotification) GetProcAddress(hWTSAPI, "WTSUnRegisterSessionNotification");
 		if (!unregister_session) return false;
 
-		uWNDCLASS wcl;
-		memset(&wcl, 0, sizeof(uWNDCLASS));
+		WNDCLASS wcl;
+		memset(&wcl, 0, sizeof(wcl));
 		wcl.hInstance = hInstance;
 		wcl.lpfnWndProc = (WNDPROC)WndProc;
-		wcl.lpszClassName = m_lpszClassName;
-		if (!uRegisterClass(&wcl)) return false;
+		wcl.lpszClassName = class_name;
+		m_lpszClassName = ( const TCHAR * ) RegisterClass( & wcl );
+		if ( ! m_lpszClassName ) return false;
 
 		m_bRegistered = TRUE;
 
-		m_hWnd = uCreateWindowEx(0, m_lpszClassName, "uninteresting", 0, 0, 0, 0, 0, 0, 0, hInstance, this);
+		m_hWnd = CreateWindowEx(0, m_lpszClassName, _T( "uninteresting" ), 0, 0, 0, 0, 0, 0, 0, hInstance, this);
 
 		if (m_hWnd)
 		{
@@ -141,7 +144,7 @@ public:
 	{
 		if (IsWindow(m_hWnd)) DestroyWindow(m_hWnd);
 		if (m_bRegistered)
-			uUnregisterClass(m_lpszClassName, m_hInstance);
+			UnregisterClass( m_lpszClassName, m_hInstance );
 		if (hWTSAPI) FreeLibrary(hWTSAPI);
 	}
 
@@ -228,10 +231,10 @@ private:
 		return 0;
 	}
 
-	HINSTANCE	m_hInstance;
-	HWND		m_hWnd;
-	const char *m_lpszClassName;
-	BOOL		m_bRegistered;
+	HINSTANCE     m_hInstance;
+	HWND          m_hWnd;
+	const TCHAR * m_lpszClassName;
+	BOOL          m_bRegistered;
 
 	HMODULE								hWTSAPI;
 	pWTSRegisterSessionNotification		register_session;

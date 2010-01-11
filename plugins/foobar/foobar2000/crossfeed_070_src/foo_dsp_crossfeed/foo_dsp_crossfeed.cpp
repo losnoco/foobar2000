@@ -7,9 +7,9 @@
 
 using namespace naive_dsp;
 
-inline double white_noise()
+inline audio_sample white_noise()
 {
-    return (double(rand()) / double(RAND_MAX)) * 0.000005;
+    return (audio_sample(rand()) / audio_sample(RAND_MAX)) * 0.000005;
 }
 
 class foo_dsp_crossfeed : public dsp_i_base

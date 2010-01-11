@@ -106,87 +106,98 @@ public:
 	}
 };
 
-bool cfg_osd_list::get_raw_data(write_config_callback * out)
+t_io_result cfg_osd_list::get_data_raw(stream_writer * p_stream,abort_callback & p_abort)
 {
-	unsigned i, count = val.get_count();
-	out->write_dword_le(count);
-
-	for (i = 0; i < count; i++)
+	try
 	{
-		const osd_config * c = val[i];
-		out->write_string(c->name);
-		out->write_dword_le(c->flags);
-		out->write(&c->font, sizeof(c->font));
-		out->write_dword_le(c->displaytime);
-		out->write_dword_le(c->x);
-		out->write_dword_le(c->y);
-		out->write_dword_le(c->pos);
-		out->write_dword_le(c->align);
-		out->write_dword_le(c->vwidth);
-		out->write_dword_le(c->vheight);
-		out->write_dword_le(c->vsteps);
-		out->write_dword_le(c->vmin);
-		out->write_string(c->format);
-		out->write_string(c->formatnext);
-		out->write_dword_le(c->color);
-		out->write_dword_le(c->bgcolor);
-		out->write_dword_le(c->alphalev);
-		out->write_dword_le(c->alphaback);
-		out->write_dword_le(c->fadetime);
-		out->write_dword_le(c->dissolve_decay);
+		unsigned i, count = val.get_count();
+		p_stream->write_lendian_e_t( count, p_abort );
+
+		for (i = 0; i < count && !p_abort.is_aborting(); i++)
+		{
+			const osd_config * c = val[ i ];
+			p_stream->write_string_e( c->name, p_abort );
+			p_stream->write_lendian_e_t( c->flags, p_abort );
+			p_stream->write_object_e_t( c->font, p_abort );
+			p_stream->write_lendian_e_t( c->displaytime, p_abort );
+			p_stream->write_lendian_e_t( c->x, p_abort );
+			p_stream->write_lendian_e_t( c->y, p_abort );
+			p_stream->write_lendian_e_t( c->pos, p_abort );
+			p_stream->write_lendian_e_t( c->align, p_abort );
+			p_stream->write_lendian_e_t( c->vwidth, p_abort );
+			p_stream->write_lendian_e_t( c->vheight, p_abort );
+			p_stream->write_lendian_e_t( c->vsteps, p_abort );
+			p_stream->write_lendian_e_t( c->vmin, p_abort );
+			p_stream->write_string_e( c->format, p_abort );
+			p_stream->write_string_e( c->formatnext, p_abort );
+			p_stream->write_lendian_e_t( c->color, p_abort );
+			p_stream->write_lendian_e_t( c->bgcolor, p_abort );
+			p_stream->write_lendian_e_t( c->alphalev, p_abort );
+			p_stream->write_lendian_e_t( c->alphaback, p_abort );
+			p_stream->write_lendian_e_t( c->fadetime, p_abort );
+			p_stream->write_lendian_e_t( c->dissolve_decay, p_abort );
+		}
+	}
+	catch ( t_io_result code )
+	{
+		return code;
 	}
 
-	return true;
+	return io_result_success;
 }
 
-void cfg_osd_list::set_raw_data(const void * data,int size)
+t_io_result cfg_osd_list::set_data_raw(stream_reader * p_stream,abort_callback & p_abort)
 {
-	read_config_helper r(data, size);
-
 	unsigned i, count;
 
 	val.delete_all();
 
-	if (r.read_dword_le(count))
+	osd_config * c = 0;
+
+	try
 	{
+		p_stream->read_lendian_e_t( count, p_abort );
+
 		string8_fastalloc name, format, formatnext;
 		for (i = 0; i < count; i++)
 		{
-			osd_config * c = new osd_config;
-			if (!r.read_string(name) ||
-				!r.read_dword_le(c->flags) ||
-				!r.read(&c->font, sizeof(c->font)) ||
-				!r.read_dword_le(c->displaytime) ||
-				!r.read_dword_le(c->x) ||
-				!r.read_dword_le(c->y) ||
-				!r.read_dword_le(c->pos) ||
-				!r.read_dword_le(c->align) ||
-				!r.read_dword_le(c->vwidth) ||
-				!r.read_dword_le(c->vheight) ||
-				!r.read_dword_le(c->vsteps) ||
-				!r.read_dword_le(*(t_uint32*)&c->vmin) ||
-				!r.read_string(format) ||
-				!r.read_string(formatnext) ||
-				!r.read_dword_le(c->color) ||
-				!r.read_dword_le(c->bgcolor) ||
-				!r.read_dword_le(c->alphalev) ||
-				!r.read_dword_le(c->alphaback) ||
-				!r.read_dword_le(c->fadetime) ||
-				!r.read_dword_le(c->dissolve_decay))
-			{
-				delete c;
-				reset();
-				break;
-			}
-			else
-			{
-				c->name = name;
-				c->format = format;
-				c->formatnext = formatnext;
-				val.add_item(c);
-			}
+			c = 0;
+			c = new osd_config;
+			p_stream->read_string_e( name, p_abort );
+			p_stream->read_lendian_e_t( c->flags, p_abort );
+			p_stream->read_object_e_t( c->font, p_abort );
+			p_stream->read_lendian_e_t( c->displaytime, p_abort );
+			p_stream->read_lendian_e_t( c->x, p_abort );
+			p_stream->read_lendian_e_t( c->y, p_abort );
+			p_stream->read_lendian_e_t( c->pos, p_abort );
+			p_stream->read_lendian_e_t( c->align, p_abort );
+			p_stream->read_lendian_e_t( c->vwidth, p_abort );
+			p_stream->read_lendian_e_t( c->vheight, p_abort );
+			p_stream->read_lendian_e_t( c->vsteps, p_abort );
+			p_stream->read_lendian_e_t( c->vmin, p_abort );
+			p_stream->read_string_e( format, p_abort );
+			p_stream->read_string_e( formatnext, p_abort );
+			p_stream->read_lendian_e_t( c->color, p_abort );
+			p_stream->read_lendian_e_t( c->bgcolor, p_abort );
+			p_stream->read_lendian_e_t( c->alphalev, p_abort );
+			p_stream->read_lendian_e_t( c->alphaback, p_abort );
+			p_stream->read_lendian_e_t( c->fadetime, p_abort );
+			p_stream->read_lendian_e_t( c->dissolve_decay, p_abort );
+
+			c->name = name;
+			c->format = format;
+			c->formatnext = formatnext;
+			val.add_item( c );
 		}
 	}
+	catch ( t_io_result code )
+	{
+		if ( c ) delete c;
+		reset();
+		return code;
+	}
+
+	return io_result_success;
 }
 
 void cfg_osd_list::reset()

@@ -1,4 +1,4 @@
-//Microsoft Developer Studio generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -27,18 +27,18 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE 
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
@@ -52,59 +52,48 @@ END
 // Bitmap
 //
 
-IDC_LOGOBMP             BITMAP  MOVEABLE PURE   "highly_experimental.bmp"
-IDB_LOGOBMP2            BITMAP  DISCARDABLE     "highly_experimental_2.bmp"
+IDC_LOGOBMP             BITMAP                  "highly_experimental.bmp"
+IDB_LOGOBMP2            BITMAP                  "highly_experimental_2.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
 //
 
-IDD_PSF_CONFIG DIALOG DISCARDABLE  0, 0, 287, 164
-STYLE WS_CHILD
-FONT 8, "Tahoma"
+IDD_PSF_CONFIG DIALOGEX 0, 0, 287, 164
+STYLE DS_SETFONT | WS_CHILD
+FONT 8, "Tahoma", 0, 0, 0x0
 BEGIN
     GROUPBOX        "Length",-1,7,7,131,64
     CONTROL         "Force all songs to play indefinitely",IDC_INDEFINITE,
-                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,14,19,
-                    121,10
+                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,14,19,121,10
     RTEXT           "Default length is:",-1,10,36,58,8
-    EDITTEXT        IDC_DLENGTH,72,34,47,12,ES_AUTOHSCROLL | ES_WANTRETURN | 
-                    WS_GROUP
+    EDITTEXT        IDC_DLENGTH,72,34,47,12,ES_AUTOHSCROLL | ES_WANTRETURN | WS_GROUP
     LTEXT           "m:s",-1,121,36,12,8
     RTEXT           "Fade out for:",-1,14,52,54,8
     EDITTEXT        IDC_DFADE,72,50,47,12,ES_AUTOHSCROLL | WS_GROUP
     LTEXT           "m:s",-1,121,52,12,8
-    CONTROL         "Suppress opening silence",IDC_SOS,"Button",
-                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,146,13,97,10
-    CONTROL         "Stop after",IDC_SES,"Button",BS_AUTOCHECKBOX | WS_GROUP | 
-                    WS_TABSTOP,146,27,47,10
+    CONTROL         "Suppress opening silence",IDC_SOS,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,146,13,97,10
+    CONTROL         "Stop after",IDC_SES,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,146,27,47,10
     EDITTEXT        IDC_SILENCE,193,26,25,12,ES_AUTOHSCROLL | WS_GROUP
     LTEXT           "sec. of silence",-1,220,28,46,8
-    CONTROL         "Output debug info to console",IDC_INFO,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,146,41,107,10
+    CONTROL         "Output debug info to console",IDC_INFO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,146,41,107,10
     GROUPBOX        "Sound",-1,7,75,131,42
-    CONTROL         "Enable Reverb effects",IDC_REVERB,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,14,86,85,10
-    CONTROL         "Simulate frequency response",IDC_FREQ,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,14,100,107,10
+    CONTROL         "Enable Reverb effects",IDC_REVERB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,86,85,10
+    CONTROL         "Simulate frequency response",IDC_FREQ,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,100,107,10
     GROUPBOX        "Emulation",-1,7,122,163,35
-    CONTROL         "Harsh compatibility mode (debugging)",IDC_HARSH,"Button",
-                    BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,13,132,136,10
-    CONTROL         "Friendly compatibility mode (normal playing)",
-                    IDC_FRIENDLY,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,13,
-                    143,154,10
+    CONTROL         "Harsh compatibility mode (debugging)",IDC_HARSH,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,13,132,136,10
+    CONTROL         "Friendly compatibility mode (normal playing)",IDC_FRIENDLY,
+                    "Button",BS_AUTORADIOBUTTON | WS_TABSTOP,13,143,154,10
     CONTROL         1014,IDC_LOGO,"Static",SS_BITMAP,179,70,101,58
-    CTEXT           "Neill Corlett's Home Page",IDC_URL,190,134,79,8,NOT 
-                    WS_GROUP
-    CTEXT           "kode's Foobar2000 plug-ins",IDC_K54,186,146,87,8,NOT 
-                    WS_GROUP
+    CTEXT           "",IDC_URL,179,134,101,8,NOT WS_GROUP
+    CTEXT           "",IDC_K54,179,146,101,8,NOT WS_GROUP
 END
 
 IDD_TIME DIALOGEX 31, 26, 140, 44
-STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
-FONT 8, "Tahoma"
+FONT 8, "Tahoma", 0, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,83,6,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,83,23,50,14
@@ -121,7 +110,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+GUIDELINES DESIGNINFO 
 BEGIN
     IDD_PSF_CONFIG, DIALOG
     BEGIN

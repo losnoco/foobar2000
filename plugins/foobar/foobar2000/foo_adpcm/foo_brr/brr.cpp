@@ -668,7 +668,8 @@ more:
 
 		if (now)
 		{
-			p_chunk.set_data_fixedpoint(output, now << 1, rate, 1 + stereo, 16, audio_chunk::g_guess_channel_config(1 + stereo));
+			if ( ! p_chunk.set_data_fixedpoint(output, now << 1, rate, 1 + stereo, 16, audio_chunk::g_guess_channel_config( 1 + stereo ) ) )
+				return io_result_error_out_of_memory;
 			return io_result_success;
 		}
 		else return eof ? io_result_eof : io_result_error_generic;
@@ -1257,8 +1258,7 @@ public:
 			}
 		}
 		mem_block_container_impl out_chunk;
-		bool useless;
-		m_cvt->run( src, out_chunk, 16, dither, 0, 1.0, useless);
+		m_cvt->run( src, out_chunk, 16, 16, dither, 1.0);
 
 		if ( ! sample_buffer.check_size( src.get_sample_count() << stereo ) )
 			return io_result_error_out_of_memory;
@@ -1580,8 +1580,7 @@ public:
 			}
 		}
 		mem_block_container_impl out_chunk;
-		bool useless;
-		m_cvt->run( src, out_chunk, 16, dither, 0, 1.0, useless );
+		m_cvt->run( src, out_chunk, 16, 16, dither, 1.0);
 
 		if ( ! sample_buffer.check_size( src.get_sample_count() << stereo ) )
 			return io_result_error_out_of_memory;

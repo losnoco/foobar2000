@@ -139,6 +139,12 @@
 #include "../../psfemucore/spu.h"
 #include "../../psfemucore/psf2fs.h"
 
+#include <atlbase.h>
+#include <atlapp.h>
+#include <atlwin.h>
+#include <atlctrls.h>
+#include <atlctrlx.h>
+
 //#define DBG(a) OutputDebugString(a)
 #define DBG(a)
 
@@ -288,7 +294,7 @@ public:
 		Reset();
 	}
 
-	void Process(double *stereobuffer, int nSamples)
+	void Process(audio_sample *stereobuffer, int nSamples)
 	{
 #define OVERALL_SCALE (0.87)
 		
@@ -1609,10 +1615,14 @@ int input_psf::load_psf(const service_ptr_t<file> & r, const char * p_path, file
 	return 0;
 }
 
-void SetDlgItemUrl(HWND hdlg,int id,const char *url); 
-
 static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
+	struct config_data
+	{
+		CHyperLink m_link_neill;
+		CHyperLink m_link_kode54;
+	};
+
 	switch(msg)
 	{
 	case WM_INITDIALOG:
@@ -1643,8 +1653,31 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 				uSetDlgItemText(wnd, IDC_DFADE, (char *)&temp);
 			}
 
-			SetDlgItemUrl(wnd, IDC_URL, "http://www.neillcorlett.com/");
-			SetDlgItemUrl(wnd, IDC_K54, "http://www.saunalahti.fi/cse/kode54/");
+			config_data * data = new config_data;
+
+			data->m_link_neill.SetLabel( _T( "Neill Corlett's Home Page" ) );
+			data->m_link_neill.SetHyperLink( _T( "http://www.neillcorlett.com/" ) );
+			data->m_link_neill.SubclassWindow( GetDlgItem( wnd, IDC_URL ) );
+
+			data->m_link_kode54.SetLabel( _T( "kode's Foobar2000 plug-ins" ) );
+			data->m_link_kode54.SetHyperLink( _T( "http://static.morbo.org/kode54/" ) );
+			data->m_link_kode54.SubclassWindow( GetDlgItem( wnd, IDC_K54 ) );
+
+			{
+				OSVERSIONINFO ovi = { 0 };
+				ovi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+				BOOL bRet = ::GetVersionEx(&ovi);
+				if ( bRet && ( ovi.dwMajorVersion >= 5 ) )
+				{
+					DWORD color = GetSysColor( 26 /* COLOR_HOTLIGHT */ );
+					data->m_link_neill.m_clrLink = color;
+					data->m_link_neill.m_clrVisited = color;
+					data->m_link_kode54.m_clrLink = color;
+					data->m_link_kode54.m_clrVisited = color;
+				}
+			}
+
+			SetWindowLong( wnd, DWL_USER, (LONG) data );
 
 			unsigned long psfc = psf_count;
 			unsigned long psf2c = psf2_count;
@@ -1660,6 +1693,19 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			}
 		}
 		return 1;
+
+	case WM_DESTROY:
+		{
+			config_data * data = reinterpret_cast< config_data * > ( GetWindowLong( wnd, DWL_USER ) );
+			if ( data )
+			{
+				data->m_link_neill.DestroyWindow();
+				data->m_link_kode54.DestroyWindow();
+				delete data;
+			}
+		}
+		break;
+
 	case WM_COMMAND:
 		switch(wp)
 		{

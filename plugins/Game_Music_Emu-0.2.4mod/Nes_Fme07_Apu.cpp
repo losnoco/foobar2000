@@ -1,10 +1,7 @@
 
-// $package. http://www.slack.net/~ant/libs/
+// Nes_Emu 0.5.6. http://www.slack.net/~ant/libs/
 
 #include "Nes_Fme07_Apu.h"
-
-#include "blargg_endian.h"
-#include "blargg_source.h"
 
 #include <string.h>
 
@@ -19,32 +16,7 @@ more details. You should have received a copy of the GNU Lesser General
 Public License along with this module; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA */
 
-int const period_factor = 16;
-
-int Nes_Fme07_Apu::amp_table [16] = {
-	0.0055*amp_range, 0.0078*amp_range, 0.0110*amp_range, 0.0156*amp_range, 
-	0.0221*amp_range, 0.0312*amp_range, 0.0441*amp_range, 0.0624*amp_range, 
-	0.0883*amp_range, 0.1249*amp_range, 0.1766*amp_range, 0.2498*amp_range, 
-	0.3534*amp_range, 0.4998*amp_range, 0.7070*amp_range, 1.0000*amp_range,
-};
-
-void fme07_snapshot_t::swap()
-{
-	set_le32( &noise_bits, noise_bits );
-	for ( int i = 0; i < 5; i++ )
-		set_le16( &counters [i], counters [i] );
-}
-
-Nes_Fme07_Apu::Nes_Fme07_Apu()
-{
-	output( NULL );
-	volume( 1.0 );
-	reset();
-}
-
-Nes_Fme07_Apu::~Nes_Fme07_Apu()
-{
-}
+#include BLARGG_SOURCE_BEGIN
 
 void Nes_Fme07_Apu::reset()
 {
@@ -57,126 +29,93 @@ void Nes_Fme07_Apu::reset()
 	memset( state, 0, sizeof *state );
 }
 
-void Nes_Fme07_Apu::volume( double v )
-{
-	v *= 0.4; // to do: adjust
-	synth.volume( v );
-	//noise_synth.volume( v );
-}
+#include BLARGG_ENABLE_OPTIMIZER
 
-void Nes_Fme07_Apu::treble_eq( blip_eq_t const& eq )
+unsigned char Nes_Fme07_Apu::amp_table [16] =
 {
-	synth.treble_eq( eq );
-	//noise_synth.treble_eq( eq );
-}
+	#define ENTRY( n ) (n * amp_range) + 0.5
+	ENTRY(0.0000), ENTRY(0.0078), ENTRY(0.0110), ENTRY(0.0156),
+	ENTRY(0.0221), ENTRY(0.0312), ENTRY(0.0441), ENTRY(0.0624),
+	ENTRY(0.0883), ENTRY(0.1249), ENTRY(0.1766), ENTRY(0.2498),
+	ENTRY(0.3534), ENTRY(0.4998), ENTRY(0.7070), ENTRY(1.0000)
+	#undef ENTRY
+};
 
-void Nes_Fme07_Apu::output( Blip_Buffer* buf )
+void Nes_Fme07_Apu::run_until( blip_time_t end_time )
 {
-	for ( int i = 0; i < osc_count; i++ )
-		osc_output( i, buf );
-}
-
-void Nes_Fme07_Apu::save_snapshot( fme07_snapshot_t* out ) const
-{
-	*out = *this;
-}
-
-void Nes_Fme07_Apu::load_snapshot( fme07_snapshot_t const& in )
-{
-	reset();
-	fme07_snapshot_t* out = this;
-	*out = in;
-}
-
-void Nes_Fme07_Apu::run_square( int index, int volume, blip_time_t time, blip_time_t end_time )
-{
-	unsigned period = (regs [index * 2 + 1] & 0x0f) * 0x100 + regs [index * 2];
-	if ( !period )
-		period = 1;
-	period *= period_factor;
+	require( end_time >= last_time );
 	
-	osc_t& osc = oscs [index];
-	if ( !volume || period < 41 )
+	for ( int index = 0; index < osc_count; index++ )
 	{
-		if ( osc.last_amp )
+		int mode = regs [7] >> index;
+		int vol_mode = regs [010 + index];
+		int volume = amp_table [vol_mode & 0x0f];
+		
+		if ( !oscs [index].output )
+			continue;
+		
+		// check for unsupported mode
+		#ifndef NDEBUG
+			if ( (mode & 011) <= 001 && vol_mode & 0x1f )
+				dprintf( "FME07 used unimplemented sound mode: %02X, vol_mode: %02X\n",
+						mode, vol_mode & 0x1f );
+		#endif
+		
+		if ( (mode & 001) | (vol_mode & 0x10) )
+			volume = 0; // noise and envelope aren't supported
+		
+		// period
+		int const period_factor = 16;
+		unsigned period = (regs [index * 2 + 1] & 0x0f) * 0x100 * period_factor +
+				regs [index * 2] * period_factor;
+		if ( period < 50 ) // around 22 kHz
 		{
-			synth.offset( time, -osc.last_amp, osc.output );
-			osc.last_amp = 0;
+			volume = 0;
+			if ( !period ) // on my AY-3-8910A, period doesn't have extra one added
+				period = period_factor;
 		}
 		
-		time += counters [index];
-		if ( time < end_time )
-		{
-			int count = (end_time - time + period - 1) / period;
-			phases [index] ^= count & 1;
-			time += (long) count * period;
-		}
-	}
-	else
-	{
-		int amp = phases [index] * volume;
-		int delta = amp - osc.last_amp;
+		// current amplitude
+		int amp = volume;
+		if ( !phases [index] )
+			amp = 0;
+		int delta = amp - oscs [index].last_amp;
 		if ( delta )
 		{
-			osc.last_amp = amp;
-			synth.offset( time, delta, osc.output );
+			oscs [index].last_amp = amp;
+			synth.offset( last_time, delta, oscs [index].output );
 		}
 		
-		time += counters [index];
+		blip_time_t time = last_time + delays [index];
 		if ( time < end_time )
 		{
+			Blip_Buffer* const osc_output = oscs [index].output;
 			int delta = amp * 2 - volume;
-			Blip_Buffer* osc_output = osc.output;
 			
-			do
+			if ( volume )
 			{
-				delta = -delta;
-				synth.offset_inline( time, delta, osc_output );
-				time += period;
+				do
+				{
+					delta = -delta;
+					synth.offset_inline( time, delta, osc_output );
+					time += period;
+				}
+				while ( time < end_time );
+				
+				oscs [index].last_amp = (delta + volume) >> 1;
+				phases [index] = (delta > 0);
 			}
-			while ( time < end_time );
-			
-			osc.last_amp = (delta + volume) >> 1;
-			phases [index] = (delta > 0);
+			else
+			{
+				// maintain phase when silent
+				int count = (end_time - time + period - 1) / period;
+				phases [index] ^= count & 1;
+				time += (long) count * period;
+			}
 		}
+		
+		delays [index] = time - end_time;
 	}
 	
-	counters [index] = time - end_time;
+	last_time = end_time;
 }
-
-void Nes_Fme07_Apu::run_until( blip_time_t time )
-{
-	require( time >= last_time );
-	
-	int disables = regs [7];
-	for ( int i = 0; i < osc_count; i++, disables >>= 1 )
-	{
-		if ( ! oscs [i].output ) continue;
-		int vol = regs [010 + i];
-		if ( (disables & 011) == 010 && !(vol & 0x10) )
-			run_square( i, amp_table [vol & 0x0f], last_time, time );
-		else if ( ~disables & 011 && vol & 0x1f )
-			dprintf( "FME07 %02X %02X\n", disables & 011, vol & 0x1f );
-	}
-	
-	last_time = time;
-}
-
-void Nes_Fme07_Apu::write_data( blip_time_t time, int data )
-{
-	int const latch = this->latch;
-	if ( (unsigned) latch <reg_count )
-	{
-		run_until( time );
-		regs [latch] = data;
-	}
-}
-
-void Nes_Fme07_Apu::end_frame( blip_time_t time )
-{
-	if ( time > last_time )
-		run_until( time );
-	last_time -= time;
-	assert( last_time >= 0 );
-}
-

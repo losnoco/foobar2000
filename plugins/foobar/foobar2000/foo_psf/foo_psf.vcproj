@@ -51,7 +51,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\SDK"
+				AdditionalIncludeDirectories="..\SDK;c:\programming\zlib"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FOO_PSF_EXPORTS"
 				ExceptionHandling="1"
 				BasicRuntimeChecks="3"
@@ -80,12 +80,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalDependencies="libmmt"
+				AdditionalOptions="/nodefaultlib:msvcrtd /nodefaultlib:msvcrt"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="C:\Program Files\Intel\CPP\Compiler80\Ia32\Lib"
-				IgnoreDefaultLibraryNames="libmmd"
+				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				ImportLibrary="$(OutDir)\$(ProjectName).lib"
@@ -152,7 +152,7 @@
 				Optimization="1"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\SDK"
+				AdditionalIncludeDirectories="..\SDK;c:\programming\zlib"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_PSF_EXPORTS"
 				StringPooling="true"
 				ExceptionHandling="1"
@@ -164,7 +164,6 @@
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\"
-				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -254,7 +253,7 @@
 				Optimization="1"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="..\SDK"
+				AdditionalIncludeDirectories="..\SDK;c:\programming\zlib"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_PSF_EXPORTS"
 				StringPooling="true"
 				ExceptionHandling="1"
@@ -266,7 +265,6 @@
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\"
-				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -351,10 +349,6 @@
 		</File>
 		<File
 			RelativePath=".\resource.h"
-			>
-		</File>
-		<File
-			RelativePath="..\..\seturl.cpp"
 			>
 		</File>
 		<File

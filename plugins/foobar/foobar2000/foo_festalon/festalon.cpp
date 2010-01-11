@@ -491,7 +491,8 @@ public:
 		int32 size;
 		if ( no_infinite && d_end >= song_len + fade_len ) size = ( song_len + fade_len - d_start );
 		else size = rendered;
-		p_chunk.set_data_32( sample_buffer, size, hfest->OutChannels, rate );
+		if ( ! p_chunk.set_data_32( sample_buffer, size, hfest->OutChannels, rate ) )
+			return io_result_error_out_of_memory;
 
 		rendered = 0;
 

@@ -271,11 +271,12 @@ public:
 	{
 		if (pos >= size) return io_result_eof;
 
-		if ( ! data_buffer.check_size( 18 * 32 * nch ) )
+		if ( ! data_buffer.check_size( 18 * 32 * nch ) ||
+			! p_chunk.check_data_size(32 * 32 * nch) )
 			return io_result_error_out_of_memory;
 
 		unsigned char * in = data_buffer.get_ptr();
-		audio_sample * out = p_chunk.check_data_size(32 * 32 * nch);
+		audio_sample * out = p_chunk.get_data();
 
 		unsigned done, read, n;
 

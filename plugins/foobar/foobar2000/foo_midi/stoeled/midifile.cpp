@@ -231,7 +231,7 @@ static bool load_rmi(MIDI_file* mf,const BYTE* source,int source_size)
 		{
 			DWORD s=*(DWORD*)(source+_p+4)-4;
 			char * src=(char*)(source+_p+12);	//remove eol's
-			char * dst=mf->title.buffer_get(s+1);
+			char * dst=mf->title.lock_buffer(s);
 			char * src_b=src;
 			while(*src && (UINT)(src-src_b)<s)
 			{
@@ -239,7 +239,7 @@ static bool load_rmi(MIDI_file* mf,const BYTE* source,int source_size)
 				src++;
 			}
 			*dst=0;
-			mf->title.buffer_done();
+			mf->title.unlock_buffer();
 		}
 		else if (*(DWORD*)(source+_p)==_rv('LIST') && *(DWORD*)(source+_p+8)==_rv('INFO'))
 		{

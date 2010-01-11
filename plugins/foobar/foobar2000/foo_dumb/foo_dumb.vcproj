@@ -218,7 +218,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="1"
-			WholeProgramOptimization="4"
+			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -279,7 +279,6 @@
 				IgnoreDefaultLibraryNames=""
 				ProgramDatabaseFile=".\../Release/foo_dumb.pdb"
 				SubSystem="2"
-				LinkTimeCodeGeneration="0"
 				ImportLibrary="$(OutDir)\$(ProjectName).lib"
 			/>
 			<Tool

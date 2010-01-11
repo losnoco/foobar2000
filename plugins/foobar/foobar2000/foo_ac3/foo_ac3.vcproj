@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="foo_ac3"
 	ProjectGUID="{1F53196F-F7C9-42EE-8EE9-BD4BD58FD2EC}"
+	RootNamespace="foo_ac3"
 	SccProjectName="SAK"
 	SccAuxPath="SAK"
 	SccLocalPath="SAK"
@@ -319,7 +320,6 @@
 					Name="VCCLCompilerTool"
 					Optimization="0"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_UNICODE;UNICODE;_USRDLL;FOO_AC3_EXPORTS;LIBA52_DOUBLE;$(NoInherit)"
 					BasicRuntimeChecks="3"
 				/>
 			</FileConfiguration>
@@ -330,7 +330,6 @@
 					Name="VCCLCompilerTool"
 					Optimization="1"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_UNICODE;UNICODE;_USRDLL;FOO_AC3_EXPORTS;LIBA52_DOUBLE;$(NoInherit)"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -340,7 +339,6 @@
 					Name="VCCLCompilerTool"
 					Optimization="1"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_UNICODE;UNICODE;_USRDLL;FOO_AC3_EXPORTS;LIBA52_DOUBLE;$(NoInherit)"
 				/>
 			</FileConfiguration>
 		</File>

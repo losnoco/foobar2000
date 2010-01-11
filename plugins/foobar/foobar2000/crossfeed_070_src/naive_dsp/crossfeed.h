@@ -7,7 +7,7 @@ namespace naive_dsp
     {
     public:
         crossfeed(int sample_rate);
-        void process(double & left_sample, double & right_sample);
+        void process(float & left_sample, float & right_sample);
 
     private:
         delay_line m_delay[2];

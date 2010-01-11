@@ -19,7 +19,7 @@ crossfeed::crossfeed(int sample_rate)
     m_mixer.set_levels(0.999969f - 0.27f, 0.27f);
 }
 
-void crossfeed::process(double & left_sample, double & right_sample)
+void crossfeed::process(float & left_sample, float & right_sample)
 {
     // crossfeed signal processing
     double left_crossfeed = m_crossfeed_filter[0].process(m_delay[0].process(left_sample));

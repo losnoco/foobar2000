@@ -104,7 +104,8 @@ t_io_result input_gep::decode_run( audio_chunk & p_chunk,abort_callback & p_abor
 			}
 		}
 
-		p_chunk.set_data_fixedpoint( buf, 1024 * sizeof( blip_sample_t ), sample_rate, 2, sizeof( blip_sample_t ) * 8, audio_chunk::channel_config_stereo );
+		if ( ! p_chunk.set_data_fixedpoint( buf, 1024 * sizeof( blip_sample_t ), sample_rate, 2, sizeof( blip_sample_t ) * 8, audio_chunk::channel_config_stereo ) )
+			return io_result_error_out_of_memory;
 
 		return io_result_success;
 	}

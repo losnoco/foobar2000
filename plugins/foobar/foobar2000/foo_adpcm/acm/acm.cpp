@@ -159,7 +159,10 @@ public:
 
 		if (done)
 		{
-			audio_sample * final = p_chunk.check_data_size(done);
+			if ( ! p_chunk.check_data_size( done ) )
+				return io_result_error_out_of_memory;
+
+			audio_sample * final = p_chunk.get_data();
 			for (int i = 0; i < done; i++)
 			{
 				*final++ = audio_sample(*out++) * (1. / 32768.);

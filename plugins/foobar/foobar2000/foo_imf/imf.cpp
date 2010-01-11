@@ -368,7 +368,8 @@ public:
 			{
 				render(p, 576);
 				remainder -= 576;
-				p_chunk.set_data(p, 576, 1, srate);
+				if ( ! p_chunk.set_data(p, 576, 1, srate) )
+					return io_result_error_out_of_memory;
 				return io_result_success;
 			}
 			render(p, remainder);
@@ -379,7 +380,8 @@ public:
 			{
 				if (no_loop)
 				{
-					p_chunk.set_data(outbuffer.get_ptr(), rendered, 1, srate);
+					if ( ! p_chunk.set_data(outbuffer.get_ptr(), rendered, 1, srate) )
+						return io_result_error_out_of_memory;
 					return io_result_success;
 				}
 				else
@@ -439,7 +441,8 @@ another:
 
 		if (rendered)
 		{
-			p_chunk.set_data(outbuffer.get_ptr(), rendered, 1, srate);
+			if ( ! p_chunk.set_data(outbuffer.get_ptr(), rendered, 1, srate) )
+				return io_result_error_out_of_memory;
 			return io_result_success;
 		}
 		else

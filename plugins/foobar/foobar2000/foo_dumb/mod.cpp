@@ -475,6 +475,10 @@
 
 */
 
+#ifndef NDEBUG
+#include <crtdbg.h>
+#endif
+
 #include "../SDK/foobar2000.h"
 #include "../helpers/dropdown_helper.h"
 
@@ -575,6 +579,9 @@ public:
 	{
 		dumb_it_max_to_mix = DUMB_IT_TOTAL_CHANNELS;
 		init_cubic();
+#ifndef NDEBUG
+		_CrtSetDbgFlag( _CRTDBG_CHECK_ALWAYS_DF | _CRTDBG_LEAK_CHECK_DF | _CrtSetDbgFlag( _CRTDBG_REPORT_FLAG ) );
+#endif
 	}
 
 	~init_stuff() {}
@@ -1613,6 +1620,8 @@ public:
 				song->start_order = i;
 				song->length = _dumb_it_build_checkpoints( duh_get_it_sigdata( duh ), 0 );
 
+				unload_duh( duh );
+
 				m_info.add_item( song );
 			}
 		}
@@ -2048,9 +2057,12 @@ retry:
 		if      ( written == 0 )  return io_result_eof;
 		else if ( written == -1 ) return io_result_error_data;
 
+		if ( ! p_chunk.check_data_size( written * 2 ) )
+			return io_result_error_out_of_memory;
+
 		sample_t * in_l = buf[0];
 		sample_t * in_r = buf[1];
-		audio_sample * out = p_chunk.check_data_size( written * 2 );
+		audio_sample * out = p_chunk.get_data();
 		p_chunk.set_srate( srate );
 		p_chunk.set_channels( 2 );
 		p_chunk.set_sample_count( written );

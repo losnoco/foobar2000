@@ -605,6 +605,8 @@ public:
 		p_info.info_set_int( "bitrate", 16282 * 2 * channels / 125 );
 		p_info.info_set( "codec", "Lunar:EB PCM" );
 		p_info.set_length( double( loop_end ) / 16282. );
+
+		return io_result_success;
 	}
 
 	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
@@ -684,9 +686,14 @@ public:
 		{
 			n = 1024 * channels;
 		}
-		if (postmp) p_chunk.set_data_fixedpoint( p + postmp * channels, n - postmp * channels, 16282, channels, 8, audio_chunk::g_guess_channel_config( channels ) ), postmp = 0;
-		else p_chunk.set_data_fixedpoint( p, n, 16282, channels, 8, audio_chunk::g_guess_channel_config( channels ) );
-		return io_result_success;
+		bool res;
+		if (postmp)
+		{
+			res = p_chunk.set_data_fixedpoint( p + postmp * channels, n - postmp * channels, 16282, channels, 8, audio_chunk::g_guess_channel_config( channels ) );
+			postmp = 0;
+		}
+		else res = p_chunk.set_data_fixedpoint( p, n, 16282, channels, 8, audio_chunk::g_guess_channel_config( channels ) );
+		return res ? io_result_success : io_result_error_out_of_memory;
 	}
 
 	t_io_result decode_seek( double p_seconds, abort_callback & p_abort )

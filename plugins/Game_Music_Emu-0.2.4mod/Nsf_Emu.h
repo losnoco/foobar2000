@@ -16,6 +16,7 @@
 	#include "Nes_Namco.h"
 	#include "Nes_Vrc7.h"
 	#include "Nes_Fme07_Apu.h"
+	#include "Nes_Mmc5.h"
 #endif
 
 class Nsf_Emu : public Classic_Emu {
@@ -119,9 +120,28 @@ private:
 	Nes_Vrc7 vrc7;
 	static void write_vrc7( Nsf_Emu*, nes_addr_t, int );
 
-	// fme-07
-	Nes_Fme07_Apu fme07;
-	static void write_fme07( Nsf_Emu*, nes_addr_t, int );
+	// fme-7
+	Nes_Fme07_Apu fme7;
+	static void write_fme7( Nsf_Emu*, nes_addr_t, int );
+
+	// mmc5
+	Nes_Mmc5 mmc5;
+	byte mmc5_mul [2];
+	byte mmc5_exram [1024];
+	static int read_mmc5( Nsf_Emu*, nes_addr_t );
+	static void write_mmc5( Nsf_Emu*, nes_addr_t, int );
+	static int read_mmc5_exram( Nsf_Emu*, nes_addr_t );
+	static void write_mmc5_exram( Nsf_Emu*, nes_addr_t, int );
+
+	// fds
+	/*
+	Nes_Fds fds;
+	byte fds_ram [2048];
+	static int read_fds( Nsf_Emu*, nes_addr_t );
+	static void write_fds( Nsf_Emu*, nes_addr_t, int );
+	static int read_fds_ram( Nsf_Emu*, nes_addr_t );
+	static void write_fds_ram( Nes_Emu*, nes_addr_t, int );
+	*/
 
 	// blah
 	static void write_ext( Nsf_Emu*, nes_addr_t, int );

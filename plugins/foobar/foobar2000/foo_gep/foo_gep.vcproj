@@ -160,7 +160,6 @@
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\"
-				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -221,7 +220,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="1"
-			WholeProgramOptimization="0"
+			WholeProgramOptimization="4"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -259,7 +258,6 @@
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\"
-				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -324,6 +322,10 @@
 			</File>
 			<File
 				RelativePath=".\gym.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\hes.cpp"
 				>
 			</File>
 			<File

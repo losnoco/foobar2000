@@ -52,7 +52,7 @@ Revision History:
 #define INLINE		__inline
 #define HAS_YM3812	1
 
-#include "../sdk/utf8api.h"
+#include "../shared/shared.h"
 
 #include <string.h>
 #include <math.h>
@@ -1641,7 +1641,7 @@ int OPLTimerOver(FM_OPL *OPL,int c)
 ** '*buffer' is the output buffer pointer
 ** 'length' is the number of samples that should be generated
 */
-void YMF::Update(double *buffer, int length)
+void YMF::Update(sample_type *buffer, int length)
 {
 	UINT8		rhythm = OPL->rhythm&0x20;
 	int i;
@@ -1690,7 +1690,7 @@ void YMF::Update(double *buffer, int length)
 		#endif
 
 		/* store to sound buffer */
-		buffer[i*2] += (double)lt * (1. / 32768);
+		buffer[i*2] += (sample_type)lt * (1. / 32768);
 
 		lt = output[2];
 
@@ -1704,7 +1704,7 @@ void YMF::Update(double *buffer, int length)
 		#endif
 
 		/* store to sound buffer */
-		buffer[i*2+1] += (double)lt * (1. / 32768.);
+		buffer[i*2+1] += (sample_type)lt * (1. / 32768.);
 #else
 		lt = output[0];
 
@@ -1718,7 +1718,7 @@ void YMF::Update(double *buffer, int length)
 		#endif
 
 		/* store to sound buffer */
-		buffer[i] += (double)lt * (1. / 32768.);
+		buffer[i] += (sample_type)lt * (1. / 32768.);
 #endif
 
 		advance();

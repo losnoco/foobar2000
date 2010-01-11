@@ -1408,7 +1408,6 @@ static xa_subsong_info_cache g_cache;
 class input_xa
 {
 	mem_block_t<BYTE> xabuffer;
-	mem_block_aligned_t<audio_sample> sample_buffer;
 
 	reader_raw        * m_raw;
 	service_ptr_t<file> m_file;
@@ -1530,7 +1529,7 @@ public:
 		if ( m_info.get_count() == 1 )
 		{
 			t_filesize ptr;
-			t_io_result status = m_file->get_size( ptr, p_abort );
+			t_io_result status = m_file->get_position( ptr, p_abort );
 			if ( io_result_failed( status ) ) return status;
 			status = tag_processor::read_trailing( m_file, p_info, p_abort);
 			if ( status != io_result_error_data && status != io_result_error_not_found && io_result_failed( status ) ) return status;
@@ -1547,20 +1546,18 @@ public:
 
 		p_info.info_set_int( "xa_sector_start", info->sector_offset );
 		p_info.info_set_int( "xa_sector_end", info->sector_offset_end );
-		p_info.info_set_int( "xa_sector_loop_start", info->loop_start );
+		if ( info->loop_start != ~0 ) p_info.info_set_int( "xa_sector_loop_start", info->loop_start );
 		p_info.info_set_int( "xa_channel", info->channel );
 		p_info.info_set_int( "xa_file_number", info->file_number );
 
-		p_info.set_length( 4032. / double( info->srate * info->nch * ( info->bits_per_sample + 1 ) ) * double( info->sector_count ) );
+		double seconds_per_sector = 4032. / double( info->srate * info->nch * ( info->bits_per_sample + 1 ) );
+		p_info.set_length( seconds_per_sector * double( info->sector_count ) );
 
-		if ( m_info.get_count() == 1 )
+		//if ( m_info.get_count() == 1 )
 		{
-			t_filesize size;
-			t_io_result status = m_file->get_size( size, p_abort );
-			if ( io_result_failed( status ) ) return status;
-			p_info.info_set_bitrate( t_int64( double( size ) * 8. / p_info.get_length() / 1000. ) );
+			p_info.info_set_bitrate( t_int64( 2352. / seconds_per_sector * 8. / 1000. + .5 ) );
 		}
-		else p_info.info_set_bitrate( 2400 );
+		//else p_info.info_set_bitrate( 2458 ); // 2457.6
 
 		return io_result_success;
 	}
@@ -1704,17 +1701,17 @@ retry2:
 
 			if (bits_per_sample)
 			{
-				if ( ! sample_buffer.check_size( 2016 ) )
+				if ( ! p_chunk.check_data_size( 2016 ) )
 					throw io_result_error_out_of_memory;
-				out = sample_buffer.get_ptr();
+				out = p_chunk.get_data();
 				if (stereo) xa_decode_8s(out, xa, temp), samples = 1008;
 				else xa_decode_8m(out, xa, temp), samples = 2016;
 			}
 			else
 			{
-				if ( ! sample_buffer.check_size( 4032 ) )
+				if ( ! p_chunk.check_data_size( 4032 ) )
 					throw io_result_error_out_of_memory;
-				out = sample_buffer.get_ptr();
+				out = p_chunk.get_data();
 				if (stereo) xa_decode_4s(out, xa, temp), samples = 2016;
 				else xa_decode_4m(out, xa, temp), samples = 4032;
 			}
@@ -1730,7 +1727,8 @@ retry2:
 				int iswallowed = int(swallowed * double(srate) + .5);
 				samples -= iswallowed;
 				if (samples <= 0) goto retry1;
-				out += iswallowed << stereo;
+				//out += iswallowed << stereo;
+				memmove(out, out + ( iswallowed << stereo ), sizeof(audio_sample) * iswallowed << stereo);
 			}
 		}
 		catch(t_io_result code)
@@ -1740,7 +1738,10 @@ retry2:
 
 		if (samples)
 		{
-			p_chunk.set_data(out, samples, stereo + 1, srate);
+			//p_chunk.set_data(out, samples, stereo + 1, srate);
+			p_chunk.set_sample_rate( srate );
+			p_chunk.set_channels( stereo + 1 );
+			p_chunk.set_sample_count( samples );
 			return io_result_success;
 		}
 

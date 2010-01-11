@@ -15,7 +15,6 @@ using namespace Gdiplus;
 
 #include "overlay.h"
 #include "dissolve.h"
-#include "../ui_extension/utf8api.h"
 
 #define IDT_DUE_TIME		1
 #define IDT_FADE_TIME		2
@@ -352,7 +351,7 @@ static SIZE get_text_size_lines(HDC dc, const char * text, UINT len)
 }
 #endif
 
-static const char class_name[] = "1FCD54F1-335E-4bed-9128-0E83807381CE";
+static const TCHAR class_name[] = _T( "1FCD54F1-335E-4bed-9128-0E83807381CE" );
 
 class register_window_class
 {
@@ -384,19 +383,19 @@ public:
 private:
 	void _register()
 	{
-		uWNDCLASS wc;
+		WNDCLASS wc;
 		memset(&wc, 0, sizeof(wc));
 		wc.lpfnWndProc   = (WNDPROC)COsdWnd::WndProc;
 		wc.hInstance     = core_api::get_my_instance();
 		wc.lpszClassName = class_name;
-		class_atom = uRegisterClass(&wc);
+		class_atom = RegisterClass(&wc);
 	}
 
 	void _unregister()
 	{
 		if (class_atom)
 		{
-			uUnregisterClass((const char *)class_atom, core_api::get_my_instance());
+			UnregisterClass((const TCHAR *)class_atom, core_api::get_my_instance());
 			class_atom = 0;
 		}
 	}
@@ -413,6 +412,23 @@ COsdWnd::COsdWnd(osd_state & _state) : m_state(_state)
 
 typedef const char * pconst;
 
+BOOL uFormatMessage(DWORD dw_error, string_base & out)
+{
+	PVOID buffer;
+	size_t length = FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, 0, dw_error, 0, (LPTSTR) &buffer, 256, 0 );
+	if ( length )
+	{
+#ifdef UNICODE
+		out.set_string_utf16( ( const WCHAR * ) buffer );
+#else
+		out.set_string_ansi( ( const char * ) buffer );
+#endif
+		LocalFree( buffer );
+		return TRUE;
+	}
+	return FALSE;
+}
+
 bool COsdWnd::Initialize()
 {
 	ATOM wnd_class = rwc.Register();
@@ -427,8 +443,8 @@ bool COsdWnd::Initialize()
 
 	HWND hWndDesktop = GetDesktopWindow();
 
-	m_hWnd = uCreateWindowEx(WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_TRANSPARENT,
-		(const char *)wnd_class, NULL, WS_POPUP, 0, 0, 0, 0, hWndDesktop, NULL, core_api::get_my_instance(), this);
+	m_hWnd = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_TRANSPARENT,
+		(const TCHAR *)wnd_class, NULL, WS_POPUP, 0, 0, 0, 0, hWndDesktop, NULL, core_api::get_my_instance(), this);
 
 	if (!m_hWnd)
 	{

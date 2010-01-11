@@ -31,8 +31,9 @@ const int master_clock_divisor = 12;
 
 const int vrc6_flag = 0x01;
 const int vrc7_flag = 0x02;
+const int mmc5_flag = 0x08;
 const int namco_flag = 0x10;
-const int fme07_flag = 0x20;
+const int fme7_flag = 0x20;
 
 // ROM
 
@@ -103,13 +104,13 @@ void Nsf_Emu::write_sram( Nsf_Emu* emu, nes_addr_t addr, int data )
 
 #if !NSF_EMU_APU_ONLY
 
-// dear god
+// dear god ( 8000 - FFFF mess )
 void Nsf_Emu::write_ext( Nsf_Emu* emu, nes_addr_t addr, int data )
 {
 	if ( emu->exp_flags & vrc6_flag ) emu->write_vrc6( emu, addr, data );
 	if ( emu->exp_flags & vrc7_flag ) emu->write_vrc7( emu, addr, data );
 	if ( emu->exp_flags & namco_flag ) emu->write_namco_addr( emu, addr, data );
-	if ( emu->exp_flags & fme07_flag ) emu->write_fme07( emu, addr, data );
+	if ( emu->exp_flags & fme7_flag ) emu->write_fme7( emu, addr, data );
 }
 
 // Namco
@@ -152,14 +153,81 @@ void Nsf_Emu::write_vrc7( Nsf_Emu* emu, nes_addr_t addr, int data )
 	}
 }
 
-// FME-07
-void Nsf_Emu::write_fme07( Nsf_Emu* emu, nes_addr_t addr, int data )
+// FME-7
+void Nsf_Emu::write_fme7( Nsf_Emu* emu, nes_addr_t addr, int data )
 {
 	if ( ( unsigned ) ( addr - 0xC000 ) < 0x4000 )
 	{
-		if ( addr & 0x2000 ) emu->fme07.write_data( emu->cpu.time(), data );
-		else emu->fme07.write_latch( data );
+		if ( addr & 0x2000 ) emu->fme7.write_data( emu->cpu.time(), data );
+		else emu->fme7.write_latch( data );
 	}
+}
+
+// MMC5
+int Nsf_Emu::read_mmc5( Nsf_Emu* emu, nes_addr_t addr )
+{
+	if ( unsigned ( addr - 0x5205 ) < 2 )
+	{
+		unsigned total = emu->mmc5_mul [ 0 ] * emu->mmc5_mul [ 1 ];
+		return ( total >> ( ( addr - 0x5205 ) * 8 ) ) & 255;
+	}
+	return addr >> 8;
+}
+
+// FDS
+/*
+int Nsf_Emu::read_fds( Nsf_Emu* emu, nes_addr_t addr )
+{
+	return emu->read_snd( emu, addr );
+}
+
+void Nsf_Emu::write_fds( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	emu->write_snd( emu, addr, data );
+}
+
+int Nsf_Emu::read_fds_ram( Nsf_Emu* emu, nes_addr_t addr )
+{
+	if ( unsigned ( addr - 0x6000 ) < 0x2000 )
+	{
+		return emu->fds_ram [ addr - 0x6000 ];
+	}
+	return addr >> 8;
+}
+
+void Nsf_Emu::write_fds_ram( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	if ( unsigned ( addr - 0x6000 ) < 0x8000 )
+	{
+		if ( unsigned ( addr - 0x6000 ) < 0x2000 )
+			emu->fds_ram [ addr - 0x6000 ] = data;
+		else
+			*emu->cpu.get_code( addr ) = data;
+	}
+}
+*/
+
+void Nsf_Emu::write_mmc5( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	if ( unsigned ( addr - Nes_Mmc5::start_addr ) <= Nes_Mmc5::end_addr - Nes_Mmc5::start_addr )
+		emu->mmc5.write_register( emu->cpu.time(), addr, data );
+	else if ( unsigned ( addr - 0x5205 ) < 2 )
+		emu->mmc5_mul [ addr - 0x5205 ] = data;
+}
+
+int Nsf_Emu::read_mmc5_exram( Nsf_Emu* emu, nes_addr_t addr )
+{
+	if ( unsigned ( addr - 0x5C00 ) < 0x3F8 )
+		return emu->mmc5_exram [ addr - 0x5C00 ];
+	return addr >> 8;
+}
+
+void Nsf_Emu::write_mmc5_exram( Nsf_Emu* emu, nes_addr_t addr, int data )
+{
+	if ( unsigned ( addr - 0x5C00 ) < 0x3F8 )
+		emu->mmc5_exram [ addr - 0x5C00 ] = data;
+	else
+		emu->write_exram( emu, addr, data );
 }
 
 #endif
@@ -245,7 +313,7 @@ void Nsf_Emu::unload()
 
 blargg_err_t Nsf_Emu::init_sound()
 {
-	if ( exp_flags & ~(namco_flag | vrc6_flag | vrc7_flag | fme07_flag) )
+	if ( exp_flags & ~(namco_flag | vrc6_flag | vrc7_flag | fme7_flag | mmc5_flag) )
 		return "NSF requires unsupported expansion audio hardware";
 	
 	// map memory
@@ -297,15 +365,22 @@ blargg_err_t Nsf_Emu::init_sound()
 		/*cpu.map_memory( 0x9000, Nes_Cpu::page_size, read_code, write_vrc7 );*/
 	}
 
-	// fme-07
-	if ( exp_flags & fme07_flag )
+	// fme-7
+	if ( exp_flags & fme7_flag )
 	{
 		adjusted_gain *= 0.75;
-		/*cpu.map_memory( 0x8000, Nes_Cpu::page_size, read_code, write_fme07 );
-		cpu.map_memory( 0xA000, Nes_Cpu::page_size, read_code, write_fme07 );*/
+		/*cpu.map_memory( 0x8000, Nes_Cpu::page_size, read_code, write_fme7 );
+		cpu.map_memory( 0xA000, Nes_Cpu::page_size, read_code, write_fme7 );*/
 	}
 
-	if ( exp_flags )
+	if ( exp_flags & mmc5_flag )
+	{
+		adjusted_gain *= 0.75;
+		cpu.map_memory( 0x5000, Nes_Cpu::page_size, read_mmc5, write_mmc5 );
+		cpu.map_memory( 0x5800, Nes_Cpu::page_size, read_mmc5_exram, write_mmc5_exram );
+	}
+
+	if ( exp_flags & (namco_flag | vrc6_flag | vrc7_flag | fme7_flag) )
 	{
 		cpu.map_memory( 0x8000, 0x8000, read_code, write_ext );
 	}
@@ -313,7 +388,8 @@ blargg_err_t Nsf_Emu::init_sound()
 	namco.volume( adjusted_gain );
 	vrc6.volume( adjusted_gain );
 	vrc7.volume( adjusted_gain );
-	fme07.volume( adjusted_gain );
+	fme7.volume( adjusted_gain );
+	mmc5.volume( adjusted_gain );
 #endif
 	
 	apu.volume( adjusted_gain );
@@ -327,7 +403,8 @@ void Nsf_Emu::update_eq( blip_eq_t const& eq )
 	vrc6.treble_eq( eq );
 	namco.treble_eq( eq );
 	vrc7.treble_eq( eq );
-	fme07.treble_eq( eq );
+	fme7.treble_eq( eq );
+	mmc5.treble_eq( eq );
 #endif
 	apu.treble_eq( eq );
 }
@@ -428,17 +505,21 @@ void Nsf_Emu::set_voice( int i, Blip_Buffer* buf, Blip_Buffer*, Blip_Buffer* )
 	if ( i >= Nes_Apu::osc_count )
 	{
 		vrc6.osc_output( i - Nes_Apu::osc_count, buf );
-		fme07.osc_output( i - Nes_Apu::osc_count, buf );
+		fme7.osc_output( i - Nes_Apu::osc_count, buf );
 		vrc7.osc_output( i - Nes_Apu::osc_count, buf );
 		vrc7.osc_output( i - Nes_Apu::osc_count + 3, buf );
 		if ( i < 7 ) {
 			i &= 1;
 			namco.osc_output( i + 4, buf );
 			namco.osc_output( i + 6, buf );
+			mmc5.osc_output( i ^ 1, buf );
 		}
 		else {
-			for ( int n = 0; n < namco.osc_count / 2; n++ )
+			int n;
+			for ( n = 0; n < namco.osc_count / 2; n++ )
 				namco.osc_output( n, buf );
+			for ( n = 2; n < mmc5.osc_count; n++ )
+				mmc5.osc_output( n, buf );
 		}
 		return;
 	}
@@ -470,7 +551,8 @@ blargg_err_t Nsf_Emu::start_track( int track )
 		namco.reset();
 		vrc6.reset();
 		vrc7.reset();
-		fme07.reset();
+		fme7.reset();
+		mmc5.reset();
 	}
 #endif
 	
@@ -546,8 +628,10 @@ blip_time_t Nsf_Emu::run( int msec, bool* )
 		vrc6.end_frame( duration );
 	if ( exp_flags & vrc7_flag )
 		vrc7.end_frame( duration );
-	if ( exp_flags & fme07_flag )
-		fme07.end_frame( duration );
+	if ( exp_flags & fme7_flag )
+		fme7.end_frame( duration );
+	if ( exp_flags & mmc5_flag )
+		mmc5.end_frame( duration );
 #endif
 	
 	return duration;
