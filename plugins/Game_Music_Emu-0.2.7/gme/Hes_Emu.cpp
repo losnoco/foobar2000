@@ -40,9 +40,9 @@ blargg_err_t Hes_Emu::load( const header_t& h, Data_Reader& in )
 	unload();
 	
 	// check compatibility
-	if ( 0 != memcmp( h.tag, "HESM", 4 ) )
+	if ( 0 != memcmp( h.signature, "HESM", 4 ) )
 		return "Not a HES file";
-	if ( h.vers != 0 )
+	if ( h.version != 0 )
 		return "Unsupported HES version";
 	
 	set_voice_count( 6 );

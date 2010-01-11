@@ -9,7 +9,7 @@ class input_hes : public input_gep
 public:
 	static bool g_is_our_path( const char * p_path, const char * p_extension )
 	{
-		return ! stricmp( p_extension, "hes" ) || ! stricmp( p_extension, "pce" );
+		return ! stricmp( p_extension, "hes" );
 	}
 
 	t_io_result open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
@@ -25,13 +25,13 @@ public:
 		{
 			ERRCHK( rdr.read( & m_header, sizeof( m_header ) ) );
 
-			if ( 0 != memcmp( m_header.tag, "HESM", 4 ) )
+			if ( 0 != memcmp( m_header.signature, "HESM", 4 ) )
 			{
 				console::print("Not a HES file");
 				return io_result_error_data;
 			}
 
-			if ( m_header.vers != 0 )
+			if ( m_header.version != 0 )
 			{
 				console::print("Unsupported HES format");
 				return io_result_error_data;

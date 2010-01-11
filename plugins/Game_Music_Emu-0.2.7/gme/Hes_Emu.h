@@ -16,8 +16,8 @@ public:
 	~Hes_Emu();
 	
 	struct header_t {
-		char tag [4];
-		char vers;
+		char signature [4];
+		char version;
 		char first_track;
 		
 		enum { game = 0, author = 0, copyright = 0, song = 0 }; // no metadata

@@ -21,6 +21,7 @@ typedef enum {
 	type_spt,   // SPT+SPD (DSP)
 	type_mss,   // MSS (DSP)
 	type_gcm,   // GCM (DSP)
+	type_mpdsp, // MPDSP (Monopoly Party, single header stereo)
 	type_adp	// ADP
 } headertype;
 

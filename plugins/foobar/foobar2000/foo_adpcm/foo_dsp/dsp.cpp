@@ -430,9 +430,9 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 				// stereo
 				dsp->NCH=2;
 				if (idsp) {
-					dsp->ch[0].interleave=dsp->ch[1].interleave=0x6b40;
+					dsp->ch[0].interleave=dsp->ch[1].interleave=get32bit(readbuf+4); //0x6b40;
 					dsp->ch[0].chanstart=0xcc;
-					dsp->ch[1].chanstart=0x6b40+0xcc;
+					dsp->ch[1].chanstart=0xcc+dsp->ch[1].interleave;
 					dsp->ch[0].type = dsp->ch[1].type = type_idsp;
 				} else if (type == type_mss) {
 					dsp->ch[0].interleave=dsp->ch[1].interleave=0x1000;
@@ -444,10 +444,6 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 					dsp->ch[0].chanstart=0xc0;
 					dsp->ch[1].chanstart=0x80c0;
 					dsp->ch[0].type = dsp->ch[1].type = type_std;
-
-					//dsp->ch[0].interleave=dsp->ch[1].interleave=0x4000;
-					//dsp->ch[0].chanstart=0xc0;
-					//dsp->ch[1].chanstart=0xc0+0x7ea0/2;
 				} else {
 					dsp->ch[0].interleave=dsp->ch[1].interleave=0x14180;
 					dsp->ch[0].chanstart=0xc0;
@@ -492,8 +488,22 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 					dsp->ch[1].chanstart=0x60;
 
 				} else dsp->NCH=1; // if dual-file stereo
+
+				// Single header stereo (Monopoly Party)
+				if (type == type_mpdsp) {
+					//DisplayError("monopoly");
+					dsp->NCH=2;
+
+					dsp->ch[0].interleave=0xf000;
+					dsp->ch[0].header.num_samples/=2;
+					dsp->ch[1] = dsp->ch[0];
+					dsp->ch[0].chanstart=0x60;
+					dsp->ch[1].chanstart=0x60+0xf000;
+
+					dsp->ch[0].type=dsp->ch[1].type=type_mpdsp;
+				}
+
 			} // if valid second header (standard)
-		//} // if MP2 demo
 	}
 
 	dsp->ch[0].offs=dsp->ch[0].chanstart;

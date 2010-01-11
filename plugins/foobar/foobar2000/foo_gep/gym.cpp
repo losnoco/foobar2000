@@ -125,11 +125,12 @@ public:
 			m_file.release();
 		}
 
-		if (m_header.loop_start > 0 && no_infinite)
+		if (byte_order::dword_le_to_native( * ( ( t_uint32 * ) &m_header.loop_start ) ) > 0)
 		{
 			tag_song_ms = MulDiv( emu->track_length(), 1000, 60 );
 			tag_fade_ms = 0;
 		}
+		else p_flags |= input_flag_no_looping;
 
 		return input_gep::decode_initialize( 0, p_flags, p_abort );
 	}

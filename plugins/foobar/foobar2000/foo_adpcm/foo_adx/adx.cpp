@@ -1,7 +1,11 @@
-#define MY_VERSION "1.4"
+#define MY_VERSION "1.5"
 
 /*
 	change log
+
+2005-12-18 07:49 UTC - kode54
+- Added support for files with 32 bytes of padding before the header (Sonic Mega Collection)
+- Version is now 1.5
 
 2005-11-17 10:38 UTC - kode54
 - Added version field (?) detection for loop control, and handled potential newer (?) version (from in_adx)
@@ -128,7 +132,7 @@ class input_adx
 
 	unsigned srate, nch, size;
 
-	unsigned offset, pos, swallow;
+	unsigned head_skip, offset, pos, swallow;
 
 	/*
 	unsigned pos, filled, swallow;
@@ -179,13 +183,21 @@ private:
 		if ( ! data_buffer.check_size( 4 ) )
 			return io_result_error_out_of_memory;
 
+		head_skip = 0;
+
 		unsigned char * ptr = data_buffer.get_ptr();
 
 		//try
 		{
 			static const unsigned char signature[] = { '(', 'c', ')', 'C', 'R', 'I' };
 			m_file->read_object_e(ptr, 0x4, p_abort);
-			if ( ptr[0] != 0x80 ) return io_result_error_data;
+			if ( ptr[0] != 0x80 )
+			{
+				m_file->seek_e( 0x20, p_abort );
+				m_file->read_object_e( ptr, 0x4, p_abort );
+				if ( ptr[0] != 0x80 ) return io_result_error_data;
+				head_skip = 0x20;
+			}
 			offset = ( read_long( ptr ) & ~0x80000000 ) + 4;
 			if ( t_filesize( offset ) >= len ) return io_result_error_data;
 			if ( offset < 12 + 4 + 6 ) return io_result_error_data; // need at least srate/size/signature
@@ -363,7 +375,7 @@ more:
 					swallow += pos - loop_end;
 					pos = loop_start - loop_swallow;
 					*context = *loop_context;
-					m_file->seek_e(loop_start_offset, p_abort);
+					m_file->seek_e( head_skip + loop_start_offset, p_abort );
 					if (swallow >= done)
 					{
 						swallow -= done;
@@ -423,7 +435,7 @@ more:
 			return io_result_success;
 		}
 		pos = 0;
-		return m_file->seek( offset, p_abort );
+		return m_file->seek( head_skip + offset, p_abort );
 	}
 
 	bool decode_can_seek()

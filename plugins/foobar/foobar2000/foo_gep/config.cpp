@@ -300,4 +300,4 @@ public:
 };
 
 static preferences_page_factory_t<preferences_page_gep> foo1;
-DECLARE_COMPONENT_VERSION("Game Emu Player", MYVERSION, "Based on Game_Music_Emu v0.2.2 by Shay Green\n\nhttp://www.slack.net/~ant/")
+DECLARE_COMPONENT_VERSION("Game Emu Player", MYVERSION, "Based on Game_Music_Emu v0.2.7 by Shay Green\n\nhttp://www.slack.net/~ant/")

@@ -87,7 +87,7 @@ t_io_result input_gep::decode_run( audio_chunk & p_chunk,abort_callback & p_abor
 		played += 512;
 		d_end   = played;
 
-		if ( no_infinite && tag_song_ms && d_end > song_len )
+		if ( no_infinite && song_len && d_end > song_len )
 		{
 			blip_sample_t * foo = buf;
 			for(int n = d_start; n < d_end; n++)

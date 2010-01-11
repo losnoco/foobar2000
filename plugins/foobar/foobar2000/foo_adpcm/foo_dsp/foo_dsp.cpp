@@ -146,7 +146,8 @@ public:
 					"IDSP",
 					"SPT+SPD",
 					"MSS",
-					"GCM"
+					"GCM",
+					"Monopoly Party"
 				};
 				p_info.info_set( "dsp_header_type", header_type[ dsp.ch[0].type ] );
 			}

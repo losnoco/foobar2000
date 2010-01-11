@@ -4,8 +4,6 @@ extern cfg_int cfg_sample_rate;
 
 extern cfg_int cfg_indefinite, cfg_default_length, cfg_default_fade;
 
-extern cfg_int cfg_nsf_disable;
-
 extern cfg_int cfg_write;
 
 extern cfg_int cfg_write_nsfe, cfg_nsfe_ignore_playlists;

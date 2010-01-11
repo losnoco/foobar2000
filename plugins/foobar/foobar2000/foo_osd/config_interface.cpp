@@ -184,6 +184,7 @@ class preferences_page_osd : public preferences_page
 		check_flag(c.flags, osd_dynamic, uSendDlgItemMessage(w, IDC_POP_DYNAMIC, BM_GETCHECK, 0, 0));
 		check_flag(c.flags, osd_dynamic_all, uSendDlgItemMessage(w, IDC_POP_DYNAMIC_ALL, BM_GETCHECK, 0, 0));
 		check_flag(c.flags, osd_volume, uSendDlgItemMessage(w, IDC_POP_VOLUME, BM_GETCHECK, 0, 0));
+		check_flag(c.flags, osd_hide_on_stop, uSendDlgItemMessage(w, IDC_POP_STOP, BM_GETCHECK, 0, 0));
 
 		check_flag(c.flags, osd_permanent, uSendDlgItemMessage(w, IDC_PERMANENT, BM_GETCHECK, 0, 0));
 		check_flag(c.flags, osd_interval, uSendDlgItemMessage(w, IDC_INTERVAL, BM_GETCHECK, 0, 0));
