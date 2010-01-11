@@ -2,7 +2,7 @@
 
 void chapter_list::copy(const chapter_list & p_source)
 {
-	unsigned n, count = p_source.get_chapter_count();
+	t_size n, count = p_source.get_chapter_count();
 	set_chapter_count(count);
 	for(n=0;n<count;n++)
 		set_info(n,p_source.get_info(n));

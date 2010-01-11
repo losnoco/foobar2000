@@ -2,7 +2,7 @@
 
 #ifdef WIN32
 
-static void fix_ampersand(const char * src,string_base & out)
+static void fix_ampersand(const char * src,pfc::string_base & out)
 {
 	unsigned ptr = 0;
 	while(src[ptr])
@@ -35,7 +35,7 @@ void menu_manager::win32_build_menu(HMENU menu,menu_node * parent,int base_id,in
 	if (parent!=0 && parent->get_type()==menu_item_node::TYPE_POPUP)
 	{
 		string8_fastalloc temp;
-		int child_idx,child_num = parent->get_num_children();
+		t_size child_idx,child_num = parent->get_num_children();
 		for(child_idx=0;child_idx<child_num;child_idx++)
 		{
 			menu_node * child = parent->get_child(child_idx);
@@ -47,7 +47,7 @@ void menu_manager::win32_build_menu(HMENU menu,menu_node * parent,int base_id,in
 				if (type==menu_item_node::TYPE_POPUP)
 				{
 					HMENU new_menu = CreatePopupMenu();
-					uAppendMenu(menu,MF_STRING|MF_POPUP | flags_to_win32(child->get_display_flags()),(UINT)new_menu,name);
+					uAppendMenu(menu,MF_STRING|MF_POPUP | flags_to_win32(child->get_display_flags()),(UINT_PTR)new_menu,name);
 					win32_build_menu(new_menu,child,base_id,max_id);
 				}
 				else if (type==menu_item_node::TYPE_SEPARATOR)
@@ -157,7 +157,7 @@ namespace {
 
 
 
-		void insert(const char * src,unsigned idx,string_base & out)
+		void insert(const char * src,unsigned idx,pfc::string_base & out)
 		{
 			out.reset();
 			out.add_string(src,idx);
@@ -184,7 +184,7 @@ namespace {
 			}
 			return false;
 		}
-		bool process_string(const char * src,string_base & out)//returns if changed
+		bool process_string(const char * src,pfc::string_base & out)//returns if changed
 		{
 			if (check_string(src)) {out=src;return false;}
 			unsigned idx=0;
@@ -272,7 +272,7 @@ static bool test_key(unsigned k)
 
 static unsigned get_key_code(WPARAM wp)
 {
-	unsigned code = wp & 0xFF;
+	unsigned code = (unsigned)(wp & 0xFF);
 	if (test_key(VK_CONTROL)) code|=F_CTRL;
 	if (test_key(VK_SHIFT)) code|=F_SHIFT;
 	if (test_key(VK_MENU)) code|=F_ALT;

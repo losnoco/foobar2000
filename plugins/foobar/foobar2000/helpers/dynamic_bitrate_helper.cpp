@@ -3,8 +3,9 @@
 static unsigned g_query_settings()
 {
 	t_int32 temp;
-	if (io_result_failed(config_object::g_get_data_int32(standard_config_objects::int32_dynamic_bitrate_display_rate,temp)))
-		return 0;
+	try {
+		config_object::g_get_data_int32(standard_config_objects::int32_dynamic_bitrate_display_rate,temp);
+	} catch(std::exception const &) {return 9;}
 	if (temp < 0) return 0;
 	return (unsigned) temp;
 }
@@ -29,7 +30,7 @@ void dynamic_bitrate_helper::init()
 	}
 }
 
-void dynamic_bitrate_helper::on_frame(double p_duration,unsigned p_bits)
+void dynamic_bitrate_helper::on_frame(double p_duration,t_size p_bits)
 {
 	init();
 	m_last_duration = p_duration;

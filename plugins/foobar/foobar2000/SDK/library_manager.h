@@ -13,7 +13,7 @@ public:
 	virtual bool is_item_in_library(const metadb_handle_ptr & p_item) = 0;
 	virtual bool is_item_addable(const metadb_handle_ptr & p_item) = 0;
 	virtual bool is_path_addable(const char * p_path) = 0;
-	virtual bool get_relative_path(const metadb_handle_ptr & p_item,string_base & out) = 0;
+	virtual bool get_relative_path(const metadb_handle_ptr & p_item,pfc::string_base & out) = 0;
 	virtual void enum_items(enum_callback * p_callback) = 0;
 	virtual void add_items(const list_base_const_t<metadb_handle_ptr> & p_data) = 0;
 	virtual void remove_items(const list_base_const_t<metadb_handle_ptr> & p_data) = 0;

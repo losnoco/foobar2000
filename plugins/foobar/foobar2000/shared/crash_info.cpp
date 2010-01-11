@@ -1,6 +1,12 @@
 #include "shared.h"
 #include <imagehlp.h>
 
+static __declspec(thread) char g_thread_call_stack[1024];
+static __declspec(thread) t_size g_thread_call_stack_length;
+
+
+#ifdef _M_IX86
+
 typedef BOOL (__stdcall * t_SymInitialize)(IN HANDLE hProcess,IN LPSTR UserSearchPath,IN BOOL fInvadeProcess);
 typedef BOOL (__stdcall * t_SymCleanup)(IN HANDLE hProcess);
 typedef BOOL (__stdcall * t_SymGetModuleInfo)(IN HANDLE hProcess,IN DWORD dwAddr,OUT PIMAGEHLP_MODULE ModuleInfo);
@@ -25,8 +31,6 @@ static long crash_no;
 
 static string_simple g_extra_info;
 
-static __declspec(thread) char g_thread_call_stack[1024];
-static __declspec(thread) unsigned g_thread_call_stack_length;
 
 static bool load_imagehelp()
 {
@@ -71,7 +75,7 @@ static HANDLE create_failure_log(char * filename_used,TCHAR * fullpath_used)
 	{
 		_tcsncpy(path,g_dump_path,MAX_PATH);
 		path[MAX_PATH] = 0;
-		unsigned len = _tcslen(path);
+		t_size len = _tcslen(path);
 		if (len == 0 || path[len-1] != '\\')
 		{
 			path[len] = '\\';
@@ -105,7 +109,7 @@ static HANDLE create_failure_log(char * filename_used,TCHAR * fullpath_used)
 	return hFile;
 }
 
-static void WriteFileString_internal(HANDLE hFile,const char * ptr,unsigned len)
+static void WriteFileString_internal(HANDLE hFile,const char * ptr,t_size len)
 {
 	DWORD bah;
 	WriteFile(hFile,ptr,len,&bah,0);
@@ -132,7 +136,7 @@ static void WriteFileString(HANDLE hFile,const char * str)
 	}
 }
 
-static char * hexdump8(char * out,unsigned address,const char * msg,int from,int to)
+static char * hexdump8(char * out,t_size address,const char * msg,int from,int to)
 {
 	unsigned max = (to-from)*16;
 	if (!IsBadReadPtr((const void*)(address+(from*16)),max))
@@ -169,10 +173,10 @@ static char * hexdump32(char * out,unsigned address,const char * msg,int from,in
 		{
 			if (n%16==0)
 			{
-				out += sprintf(out,"\n%08Xh: ",src);
+				out += sprintf(out,"\n%08Xh: ",(t_size)src);
 			}
 
-			out += sprintf(out," %08X",*(long*)src);
+			out += sprintf(out," %08X",*(t_size*)src);
 			src += 4;
 		}
 		*(out++) = '\n';
@@ -181,21 +185,21 @@ static char * hexdump32(char * out,unsigned address,const char * msg,int from,in
 	return out;
 }
 
-static bool read_int(unsigned src,unsigned * out)
+static bool read_int(t_size src,t_size * out)
 {
 	__try
 	{
-		*out = *(unsigned*)src;
+		*out = *(t_size*)src;
 		return true;
 	}
 	__except(1) {return false;}
 }
 
-static bool test_address(unsigned address)
+static bool test_address(t_size address)
 {
 	__try
 	{
-		unsigned temp = *(unsigned*)address;
+		t_size temp = *(t_size*)address;
 		return temp != 0;
 	}
 	__except(1) {return false;}
@@ -204,53 +208,49 @@ static bool test_address(unsigned address)
 static void call_stack_parse(unsigned address,HANDLE hFile,char * temp,HANDLE hProcess)
 {
 	bool inited = false;
-	unsigned data;
-	unsigned count_done = 0;
+	t_size data;
+	t_size count_done = 0;
 	while(count_done<256 && read_int(address, &data))
 	{
-		unsigned data;
-		if (read_int(address, &data))
+		if (test_address(data))
 		{
-			if (test_address(data))
+			bool found = false;
 			{
-				bool found = false;
+				IMAGEHLP_MODULE mod;
+				memset(&mod,0,sizeof(mod));
+				mod.SizeOfStruct = sizeof(mod);
+				if (p_SymGetModuleInfo(hProcess,data,&mod))
 				{
-					IMAGEHLP_MODULE mod;
-					memset(&mod,0,sizeof(mod));
-					mod.SizeOfStruct = sizeof(mod);
-					if (p_SymGetModuleInfo(hProcess,data,&mod))
+					if (!inited)
 					{
-						if (!inited)
-						{
-							WriteFileString(hFile,"\nStack dump analysis:\n");
-							inited = true;
-						}
-						sprintf(temp,"Address: %08Xh, location: \"%s\", loaded at %08Xh - %08Xh\n",data,mod.ModuleName,mod.BaseOfImage,mod.BaseOfImage+mod.ImageSize);
-						WriteFileString(hFile,temp);
-						found = true;
+						WriteFileString(hFile,"\nStack dump analysis:\n");
+						inited = true;
 					}
+					sprintf(temp,"Address: %08Xh, location: \"%s\", loaded at %08Xh - %08Xh\n",data,mod.ModuleName,mod.BaseOfImage,mod.BaseOfImage+mod.ImageSize);
+					WriteFileString(hFile,temp);
+					found = true;
 				}
+			}
 
 
-				if (found)
+			if (found)
+			{
+				union
 				{
-					union
+					char buffer[128];
+					IMAGEHLP_SYMBOL symbol;
+				};
+				memset(buffer,0,sizeof(buffer));
+				symbol.SizeOfStruct = sizeof(symbol);
+				symbol.MaxNameLength = buffer + sizeof(buffer) - symbol.Name;
+				DWORD offset = 0;
+				if (p_SymGetSymFromAddr(hProcess,data,&offset,&symbol))
+				{
+					buffer[tabsize(buffer)-1]=0;
+					if (symbol.Name[0])
 					{
-						char buffer[128];
-						IMAGEHLP_SYMBOL symbol;
-					};
-					memset(buffer,0,sizeof(buffer));
-					symbol.SizeOfStruct = sizeof(symbol);
-					symbol.MaxNameLength = buffer + sizeof(buffer) - symbol.Name;
-					DWORD offset = 0;
-					if (p_SymGetSymFromAddr(hProcess,data,&offset,&symbol))
-					{
-						buffer[tabsize(buffer)-1]=0;
-						if (symbol.Name[0])
-						{
-							sprintf(temp,"Symbol: \"%s\" (+%08Xh)\n",symbol.Name,offset);
-							WriteFileString(hFile,temp);
-						}
+						sprintf(temp,"Symbol: \"%s\" (+%08Xh)\n",symbol.Name,offset);
+						WriteFileString(hFile,temp);
 					}
 				}
 			}
@@ -260,7 +260,7 @@ static void call_stack_parse(unsigned address,HANDLE hFile,char * temp,HANDLE hP
 	}
 }
 
-static BOOL CALLBACK EnumModulesCallback(LPSTR ModuleName,ULONG BaseOfDll,PVOID UserContext)
+static INT_PTR CALLBACK EnumModulesCallback(LPSTR ModuleName,ULONG BaseOfDll,PVOID UserContext)
 {
 	IMAGEHLP_MODULE mod;
 	memset(&mod,0,sizeof(mod));
@@ -272,7 +272,7 @@ static BOOL CALLBACK EnumModulesCallback(LPSTR ModuleName,ULONG BaseOfDll,PVOID 
 		strcpy(temp2,mod.ModuleName);
 
 		{
-			unsigned ptr;
+			t_size ptr;
 			for(ptr=strlen(temp2);ptr<tabsize(temp2)-1;ptr++)
 				temp2[ptr]=' ';
 			temp2[ptr]=0;
@@ -293,7 +293,7 @@ void SHARED_EXPORT uDumpCrashInfo(LPEXCEPTION_POINTERS param)
 	HANDLE hFile = create_failure_log(0,log_path);
 	if (hFile!=INVALID_HANDLE_VALUE)
 	{
-		unsigned address = (unsigned)param->ExceptionRecord->ExceptionAddress;
+		t_size address = (t_size)param->ExceptionRecord->ExceptionAddress;
 		sprintf(temp,"Illegal operation:\nCode: %08Xh, flags: %08Xh, address: %08Xh\n",param->ExceptionRecord->ExceptionCode,param->ExceptionRecord->ExceptionFlags,address);
 		WriteFileString(hFile,temp);
 
@@ -507,7 +507,7 @@ UINT SHARED_EXPORT uPrintCrashInfo(LPEXCEPTION_POINTERS param,const char * extra
 		}
 		if (extra_info && *extra_info)
 		{
-			unsigned len = strlen_max(extra_info,256);
+			t_size len = strlen_max(extra_info,256);
 			out += sprintf(out,"\nAdditional info: ");
 			memcpy(out,extra_info,len);
 			out+=len;
@@ -571,11 +571,25 @@ void SHARED_EXPORT uPrintCrashInfo_SetDumpPath(const char * p_path)
 {
 	g_dump_path = pfc::stringcvt::string_os_from_utf8(p_path ? p_path : "");
 }
+#else
+void SHARED_EXPORT uPrintCrashInfo_Init(const char * name)//called only by exe on startup
+{
+}
+
+void SHARED_EXPORT uPrintCrashInfo_AddInfo(const char * p_info)
+{
+}
+
+void SHARED_EXPORT uPrintCrashInfo_SetDumpPath(const char * p_path)
+{
+}
+
+#endif
 
 static void callstack_add(const char * param)
 {
 	enum { MAX = tabsize(g_thread_call_stack) - 1} ;
-	unsigned len = strlen(param);
+	t_size len = strlen(param);
 	if (g_thread_call_stack_length + len > MAX) len = MAX - g_thread_call_stack_length;
 	if (len>0)
 	{

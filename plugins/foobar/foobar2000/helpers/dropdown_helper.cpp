@@ -20,9 +20,8 @@ void cfg_dropdown_history::build_list(ptr_list_t<char> & out)
 
 void cfg_dropdown_history::parse_list(const ptr_list_t<char> & src)
 {
-	unsigned n;
-	string8 temp;
-	temp.set_mem_logic(mem_block::ALLOC_FAST);
+	t_size n;
+	string8_fastalloc temp;
 	for(n=0;n<src.get_count();n++)
 	{
 		temp.add_string(src[n]);
@@ -33,7 +32,7 @@ void cfg_dropdown_history::parse_list(const ptr_list_t<char> & src)
 
 static void g_setup_dropdown_fromlist(HWND wnd,const ptr_list_t<char> & list)
 {
-	unsigned n, m = list.get_count();
+	t_size n, m = list.get_count();
 	uSendMessage(wnd,CB_RESETCONTENT,0,0);
 	for(n=0;n<m;n++)
 		uSendMessageText(wnd,CB_ADDSTRING,0,list[n]);
@@ -128,7 +127,7 @@ void cfg_dropdown_history::on_context(HWND wnd,LPARAM coords)
 			uGetWindowText(wnd,value);
 
 			ptr_list_t<char> list;
-			unsigned n,m;
+			t_size n,m;
 			bool found;
 			build_list(list);
 			m = list.get_count();

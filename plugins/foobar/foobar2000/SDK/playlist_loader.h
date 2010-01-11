@@ -16,7 +16,7 @@ public:
 	virtual bool want_info(const metadb_handle_ptr & ptr,t_entry_type type,const t_filestats & p_stats,bool p_fresh) = 0;
 	virtual void on_entry_info(const metadb_handle_ptr & ptr,t_entry_type type,const t_filestats & p_stats,const file_info & p_info,bool p_fresh) = 0;
 
-	virtual bool handle_create(metadb_handle_ptr & p_out,const playable_location & p_location) = 0;
+	virtual void handle_create(metadb_handle_ptr & p_out,const playable_location & p_location) = 0;
 };
 
 class playlist_loader_callback_i : public playlist_loader_callback
@@ -31,9 +31,9 @@ public:
 
 	bool FB2KAPI is_aborting() {return m_abort.is_aborting();}
 
-	const metadb_handle_ptr & get_item(unsigned idx) const {return m_data[idx];}
-	const metadb_handle_ptr & operator[](unsigned idx) const {return m_data[idx];}
-	unsigned get_count() const {return m_data.get_count();}
+	const metadb_handle_ptr & get_item(t_size idx) const {return m_data[idx];}
+	const metadb_handle_ptr & operator[](t_size idx) const {return m_data[idx];}
+	t_size get_count() const {return m_data.get_count();}
 	
 	const metadb_handle_list & get_data() const {return m_data;}
 
@@ -43,25 +43,23 @@ public:
 	bool want_info(const metadb_handle_ptr & ptr,t_entry_type type,const t_filestats & p_stats,bool p_fresh) {return false;}
 	void on_entry_info(const metadb_handle_ptr & ptr,t_entry_type type,const t_filestats & p_stats,const file_info & p_info,bool p_fresh) {m_data.add_item(ptr);}
 
-	bool handle_create(metadb_handle_ptr & p_out,const playable_location & p_location) {return m_api->handle_create(p_out,p_location);}
+	void handle_create(metadb_handle_ptr & p_out,const playable_location & p_location) {m_api->handle_create(p_out,p_location);}
 
 };
 
 class NOVTABLE playlist_loader : public service_base
 {
 public:
-	virtual t_io_result open(const char * filename, const service_ptr_t<file> & r,playlist_loader_callback & callback)=0;	//send new entries to callback
-	virtual t_io_result write(const char * filename, const service_ptr_t<file> & r,const list_base_const_t<metadb_handle_ptr> & data,abort_callback & p_abort)=0;
+	virtual void open(const char * filename, const service_ptr_t<file> & r,playlist_loader_callback & callback)=0;	//send new entries to callback
+	virtual void write(const char * filename, const service_ptr_t<file> & r,const list_base_const_t<metadb_handle_ptr> & data,abort_callback & p_abort)=0;
 	virtual const char * get_extension()=0;
 	virtual bool can_write()=0;
 	virtual bool is_our_content_type(const char*) = 0;
 	virtual bool is_associatable() = 0;
 
-	static t_io_result g_load_playlist(const char * filename,playlist_loader_callback & callback);
-	//attempts to load file as a playlist, return 0 on failure
+	static void g_load_playlist(const char * filename,playlist_loader_callback & callback);
 
-	static t_io_result g_save_playlist(const char * filename,const list_base_const_t<metadb_handle_ptr> & data,abort_callback & p_abort);
-	//saves playlist into file
+	static void g_save_playlist(const char * filename,const list_base_const_t<metadb_handle_ptr> & data,abort_callback & p_abort);
 
 	static void g_process_path(const char * filename,playlist_loader_callback & callback,playlist_loader_callback::t_entry_type type = playlist_loader_callback::entry_user_requested);
 	//adds contents of filename (can be directory) to playlist, doesnt load playlists
@@ -70,12 +68,13 @@ public:
 	//return true if loaded as playlist, false if loaded as files
 	static bool g_process_path_ex(const char * filename,playlist_loader_callback & callback,playlist_loader_callback::t_entry_type type = playlist_loader_callback::entry_user_requested)
 	{
-		if (io_result_failed(g_load_playlist(filename,callback)))
-		{
+		try {
+			g_load_playlist(filename,callback);
+			return true;
+		} catch(exception_io const &) {
 			g_process_path(filename,callback,type);
 			return false;
 		}
-		else return true;
 	}
 
 	static const GUID class_guid;

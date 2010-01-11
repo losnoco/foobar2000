@@ -14,15 +14,15 @@ namespace listview_helper {
 		LVITEM item;
 		memset(&item,0,sizeof(item));
 
-		pfc::stringcvt::string_os_from_utf8 os_string_temp;
-		if (!os_string_temp.convert(p_name)) return infinite;
+		pfc::stringcvt::string_os_from_utf8 os_string_temp(p_name);
+		os_string_temp.convert(p_name);
 
 		item.mask = LVIF_TEXT | LVIF_PARAM;
 		item.iItem = p_index;
 		item.lParam = p_param;
 		item.pszText = const_cast<TCHAR*>(os_string_temp.get_ptr());
 		
-		int ret = uSendMessage(p_listview,uLVM_INSERTITEM,0,(LPARAM)&item);
+		LRESULT ret = uSendMessage(p_listview,uLVM_INSERTITEM,0,(LPARAM)&item);
 		if (ret < 0) return infinite;
 		else return (unsigned) ret;
 	}
@@ -32,7 +32,7 @@ namespace listview_helper {
 	unsigned insert_column(HWND p_listview,unsigned p_index,const char * p_name,unsigned p_width_dlu)
 	{
 		pfc::stringcvt::string_os_from_utf8 os_string_temp;
-		if (!os_string_temp.convert(p_name)) return infinite;
+		os_string_temp.convert(p_name);
 
 		RECT rect = {0,0,p_width_dlu,0};
 		MapDialogRect(GetParent(p_listview),&rect);
@@ -44,7 +44,7 @@ namespace listview_helper {
 		data.cx = rect.right;
 		data.pszText = const_cast<TCHAR*>(os_string_temp.get_ptr());
 		
-		int ret = uSendMessage(p_listview,uLVM_INSERTCOLUMN,p_index,(LPARAM)&data);
+		LRESULT ret = uSendMessage(p_listview,uLVM_INSERTCOLUMN,p_index,(LPARAM)&data);
 		if (ret < 0) return infinite;
 		else return (unsigned) ret;
 	}
@@ -55,7 +55,7 @@ namespace listview_helper {
 		memset(&item,0,sizeof(item));
 
 		pfc::stringcvt::string_os_from_utf8 os_string_temp;
-		if (!os_string_temp.convert(p_name)) return false;
+		os_string_temp.convert(p_name);
 
 		item.mask = LVIF_TEXT;
 		item.iItem = p_index;
@@ -88,8 +88,9 @@ namespace listview_helper {
 
 	bool select_single_item(HWND p_listview,unsigned p_index)
 	{
-		unsigned n; const unsigned m = uSendMessage(p_listview,LVM_GETITEMCOUNT,0,0);
-		if (m == infinite) return false;
+		LRESULT temp = SendMessage(p_listview,LVM_GETITEMCOUNT,0,0);
+		if (temp < 0) return false;
+		unsigned n; const unsigned m = pfc::downcast_guarded<unsigned>(temp);
 		for(n=0;n<m;n++)
 		{
 			if (!set_item_selection(p_listview,n,p_index == n)) return false;

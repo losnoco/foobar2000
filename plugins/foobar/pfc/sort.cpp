@@ -2,10 +2,10 @@
 
 namespace pfc {
 
-PFC_DLL_EXPORT void swap_void(void * item1,void * item2,unsigned width)
+PFC_DLL_EXPORT void swap_void(void * item1,void * item2,t_size width)
 {
 	unsigned char * ptr1 = (unsigned char*)item1, * ptr2 = (unsigned char*)item2;
-	unsigned n;
+	t_size n;
 	unsigned char temp;
 	for(n=0;n<width;n++)
 	{
@@ -17,19 +17,19 @@ PFC_DLL_EXPORT void swap_void(void * item1,void * item2,unsigned width)
 	}
 }
 
-PFC_DLL_EXPORT void reorder(reorder_callback & p_callback,const unsigned * p_order,unsigned p_count)
+PFC_DLL_EXPORT void reorder(reorder_callback & p_callback,const t_size * p_order,t_size p_count)
 {
-	unsigned done_size = bit_array_bittable::g_estimate_size(p_count);
-	mem_block_t<unsigned char> done_block;
-	unsigned char * done = done_size > PFC_ALLOCA_LIMIT ? (done_block.set_size(done_size) ? done_block.get_ptr() : 0): (unsigned char*)alloca(done_size);
-	memset(done,0,done_size);
-	unsigned n;
+	t_size done_size = bit_array_bittable::g_estimate_size(p_count);
+	pfc::array_hybrid_t<unsigned char,1024> done;
+	done.set_size(done_size);
+	pfc::memset_t(done,(unsigned char)0);
+	t_size n;
 	for(n=0;n<p_count;n++)
 	{
-		unsigned next = p_order[n];
+		t_size next = p_order[n];
 		if (next!=n && !bit_array_bittable::g_get(done,n))
 		{
-			unsigned prev = n;
+			t_size prev = n;
 			do
 			{
 				assert(!bit_array_bittable::g_get(done,next));
@@ -45,20 +45,20 @@ PFC_DLL_EXPORT void reorder(reorder_callback & p_callback,const unsigned * p_ord
 	}
 }
 
-PFC_DLL_EXPORT void reorder_void(void * data,unsigned width,const unsigned * order,unsigned num,void (*swapfunc)(void * item1,void * item2,unsigned width))
+PFC_DLL_EXPORT void reorder_void(void * data,t_size width,const t_size * order,t_size num,void (*swapfunc)(void * item1,void * item2,t_size width))
 {
 	unsigned char * base = (unsigned char *) data;
-	unsigned done_size = bit_array_bittable::g_estimate_size(num);
-	mem_block_t<unsigned char> done_block;
-	unsigned char * done = done_size > PFC_ALLOCA_LIMIT ? (done_block.set_size(done_size) ? done_block.get_ptr() : 0) : (unsigned char*)alloca(done_size);
-	memset(done,0,done_size);
-	unsigned n;
+	t_size done_size = bit_array_bittable::g_estimate_size(num);
+	pfc::array_hybrid_t<unsigned char,1024> done;
+	done.set_size(done_size);
+	pfc::memset_t(done,(unsigned char)0);
+	t_size n;
 	for(n=0;n<num;n++)
 	{
-		unsigned next = order[n];
+		t_size next = order[n];
 		if (next!=n && !bit_array_bittable::g_get(done,n))
 		{
-			unsigned prev = n;
+			t_size prev = n;
 			do
 			{
 				assert(!bit_array_bittable::g_get(done,next));
@@ -80,9 +80,9 @@ class sort_callback_impl_legacy : public sort_callback
 {
 public:
 	sort_callback_impl_legacy(
-		void * p_base,unsigned p_width, 
+		void * p_base,t_size p_width, 
 		int (*p_comp)(const void *, const void *),
-		void (*p_swap)(void *, void *, unsigned)
+		void (*p_swap)(void *, void *, t_size)
 		) :
 	m_base((char*)p_base), m_width(p_width),
 	m_comp(p_comp), m_swap(p_swap)
@@ -90,30 +90,30 @@ public:
 	}
 
 
-	int compare(unsigned p_index1, unsigned p_index2) const
+	int compare(t_size p_index1, t_size p_index2) const
 	{
 		return m_comp(m_base + p_index1 * m_width, m_base + p_index2 * m_width);
 	}
 	
-	void swap(unsigned p_index1, unsigned p_index2)
+	void swap(t_size p_index1, t_size p_index2)
 	{
 		m_swap(m_base + p_index1 * m_width, m_base + p_index2 * m_width, m_width);
 	}
 
 private:
 	char * m_base;
-	unsigned m_width;
+	t_size m_width;
     int (*m_comp)(const void *, const void *);
-	void (*m_swap)(void *, void *, unsigned);
+	void (*m_swap)(void *, void *, t_size);
 };
 }
 
 PFC_DLL_EXPORT void sort_void_ex (
     void *base,
-    unsigned num,
-    unsigned width,
+    t_size num,
+    t_size width,
     int (*comp)(const void *, const void *),
-	void (*swap)(void *, void *, unsigned) )
+	void (*swap)(void *, void *, t_size) )
 {
 	sort(sort_callback_impl_legacy(base,width,comp,swap),num);
 }
@@ -133,7 +133,7 @@ PFC_DLL_EXPORT void sort_void_ex (
 
 
 /* prototypes for local routines */
-static void shortsort(unsigned lo, unsigned hi, sort_callback & p_callback);
+static void shortsort(t_size lo, t_size hi, sort_callback & p_callback);
 
 /* this parameter defines the cutoff between using quick sort and
    insertion sort for arrays; arrays with lengths shorter or equal to the
@@ -170,15 +170,15 @@ static void shortsort(unsigned lo, unsigned hi, sort_callback & p_callback);
 
 #define STKSIZ (8*sizeof(void*) - 2)
 
-PFC_DLL_EXPORT void sort(sort_callback & p_callback,unsigned num)
+PFC_DLL_EXPORT void sort(sort_callback & p_callback,t_size num)
 {
     /* Note: the number of stack entries required is no more than
        1 + log2(num), so 30 is sufficient for any array */
-    unsigned lo, hi;              /* ends of sub-array currently sorting */
-    unsigned mid;                  /* points to middle of subarray */
-    unsigned loguy, higuy;        /* traveling pointers for partition step */
-    unsigned size;                /* size of the sub-array */
-    unsigned lostk[STKSIZ], histk[STKSIZ];
+    t_size lo, hi;              /* ends of sub-array currently sorting */
+    t_size mid;                  /* points to middle of subarray */
+    t_size loguy, higuy;        /* traveling pointers for partition step */
+    t_size size;                /* size of the sub-array */
+    t_size lostk[STKSIZ], histk[STKSIZ];
     int stkptr;                 /* stack for saving sub-array to be processed */
 
 	enum {base = 0, width = 1};
@@ -387,9 +387,9 @@ recurse:
 *
 *******************************************************************************/
 
-static void shortsort(unsigned lo, unsigned hi, sort_callback & p_callback)
+static void shortsort(t_size lo, t_size hi, sort_callback & p_callback)
 {
-    unsigned p, max;
+    t_size p, max;
 	enum { width = 1 } ;
 
     /* Note: in assertions below, i and j are alway inside original bound of
@@ -457,7 +457,7 @@ static void __cdecl swap (
 }
 
 
-PFC_DLL_EXPORT void sort_void(void * base,unsigned num,unsigned width,int (*comp)(const void *, const void *) )
+PFC_DLL_EXPORT void sort_void(void * base,t_size num,t_size width,int (*comp)(const void *, const void *) )
 {
 	sort_void_ex(base,num,width,comp,swap_void);
 }
@@ -465,29 +465,29 @@ PFC_DLL_EXPORT void sort_void(void * base,unsigned num,unsigned width,int (*comp
 
 
 
-sort_callback_stabilizer::sort_callback_stabilizer(sort_callback & p_chain,unsigned p_count)
+sort_callback_stabilizer::sort_callback_stabilizer(sort_callback & p_chain,t_size p_count)
 : m_chain(p_chain)
 {
 	m_order.set_size(p_count);
-	unsigned n;
+	t_size n;
 	for(n=0;n<p_count;n++) m_order[n] = n;
 }
 
-int sort_callback_stabilizer::compare(unsigned p_index1, unsigned p_index2) const
+int sort_callback_stabilizer::compare(t_size p_index1, t_size p_index2) const
 {
 	int ret = m_chain.compare(p_index1,p_index2);
-	if (ret == 0) ret = m_order[p_index1] - m_order[p_index2];
+	if (ret == 0) ret = pfc::sgn_t(m_order[p_index1] - m_order[p_index2]);
 	return ret;
 }
 
-void sort_callback_stabilizer::swap(unsigned p_index1, unsigned p_index2)
+void sort_callback_stabilizer::swap(t_size p_index1, t_size p_index2)
 {
 	m_chain.swap(p_index1,p_index2);
-	m_order.swap(p_index1,p_index2);
+	pfc::swap_t(m_order[p_index1],m_order[p_index2]);
 }
 
 
-PFC_DLL_EXPORT void sort_stable(sort_callback & p_callback,unsigned p_count)
+PFC_DLL_EXPORT void sort_stable(sort_callback & p_callback,t_size p_count)
 {
 	sort(sort_callback_stabilizer(p_callback,p_count),p_count);
 }

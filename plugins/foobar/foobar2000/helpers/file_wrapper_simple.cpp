@@ -1,61 +1,75 @@
 #include "stdafx.h"
 
-unsigned file_wrapper_simple::read(void * p_buffer,unsigned p_bytes)
-{
-	if (io_result_failed(m_status)) return 0;
-	unsigned done = 0;
-	m_status = m_file->read(p_buffer,p_bytes,done,m_abort);
-	if (io_result_failed(m_status)) return 0;
-	return done;
+t_size file_wrapper_simple::read(void * p_buffer,t_size p_bytes) {
+	if (m_has_failed) return 0;
+	try {
+		return m_file->read(p_buffer,p_bytes,m_abort);
+	} catch(std::exception const &) {
+		m_has_failed = true;
+		return 0;
+	}
 }
 
-unsigned file_wrapper_simple::write(const void * p_buffer,unsigned p_bytes)
-{
-	if (io_result_failed(m_status)) return 0;
-	unsigned done = 0;
-	m_status = m_file->write(p_buffer,p_bytes,done,m_abort);
-	if (io_result_failed(m_status)) return 0;
-	return done;
+t_size file_wrapper_simple::write(const void * p_buffer,t_size p_bytes) {
+	if (m_has_failed) return 0;
+	try {
+		m_file->write(p_buffer,p_bytes,m_abort);
+		return p_bytes;
+	} catch(std::exception const &) {
+		m_has_failed = true;
+		return 0;
+	}
 }
 
-bool file_wrapper_simple::seek(t_uint64 p_offset)
-{
-	if (io_result_failed(m_status)) return false;
-	m_status = m_file->seek(p_offset,m_abort);
-	if (io_result_failed(m_status)) return false;
-	return true;
+bool file_wrapper_simple::seek(t_filesize p_offset) {
+	if (m_has_failed) return false;
+	try {
+		m_file->seek(p_offset,m_abort);
+		return true;
+	} catch(std::exception const &) {
+		m_has_failed = true;
+		return false;
+	}
 }
 
-t_uint64 file_wrapper_simple::get_position()
-{
-	t_uint64 ret;
-	if (io_result_failed(m_status)) return (t_uint64)(-1);
-	m_status = m_file->get_position(ret,m_abort);
-	if (io_result_failed(m_status)) return (t_uint64)(-1);
-	return ret;
+t_filesize file_wrapper_simple::get_position() {
+	if (m_has_failed) return filesize_invalid;
+	try {
+		return m_file->get_position(m_abort);
+	} catch(std::exception const &) {
+		m_has_failed = true;
+		return filesize_invalid;
+	}
 }
 
-bool file_wrapper_simple::truncate()
-{
-	if (io_result_failed(m_status)) return false;
-	m_status = m_file->set_eof(m_abort);
-	if (io_result_failed(m_status)) return false;
-	return true;
+bool file_wrapper_simple::truncate() {
+	if (m_has_failed) return false;
+	try {
+		m_file->set_eof(m_abort);
+		return true;
+	} catch(std::exception) {
+		m_has_failed = true;
+		return true;
+	}
 }
 
 
-t_uint64 file_wrapper_simple::get_size()
-{
-	t_uint64 ret;
-	if (io_result_failed(m_status)) return (t_uint64)(-1);
-	m_status = m_file->get_size(ret,m_abort);
-	if (io_result_failed(m_status)) return (t_uint64)(-1);
-	return ret;
-
+t_filesize file_wrapper_simple::get_size() {
+	if (m_has_failed) return filesize_invalid;
+	try {
+		return m_file->get_size(m_abort);
+	} catch(std::exception const &) {
+		m_has_failed = true;
+		return filesize_invalid;
+	}
 }
 
-bool file_wrapper_simple::can_seek()
-{
-	if (io_result_failed(m_status)) return false;
-	return m_file->can_seek();
+bool file_wrapper_simple::can_seek() {
+	if (m_has_failed) return false;
+	try {
+		return m_file->can_seek();
+	} catch(std::exception const &) {
+		m_has_failed = true;
+		return false;
+	}
 }

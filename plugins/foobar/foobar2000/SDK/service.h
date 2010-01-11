@@ -7,18 +7,19 @@
 
 typedef const void* service_class_ref;
 
+PFC_DECLARE_EXCEPTION(exception_service_not_found,pfc::exception,"Service not found");
 
 #ifdef _WINDOWS
 
 inline long interlocked_increment(long * var)
 {
-	assert(!((unsigned)var&3));
+	assert(!((t_size)var&3));
 	return InterlockedIncrement(var);
 }
 
 inline long interlocked_decrement(long * var)
 {
-	assert(!((unsigned)var&3));
+	assert(!((t_size)var&3));
 	return InterlockedDecrement(var);
 }
 
@@ -65,45 +66,9 @@ private:
 	service_ptr_t<E> m_ptr;
 };
 
-template<typename T, typename A = array_fast_t<service_ptr_t<T> > >
-class service_list_t : public list_t<service_ptr_t<T>, A>
+template<typename T, template<typename> class t_alloc = pfc::alloc_fast>
+class service_list_t : public list_t<service_ptr_t<T>, t_alloc >
 {
-public:
-	inline static void g_swap(service_list_t<T,A> & item1, service_list_t<T,A> & item2)
-	{
-		pfc::swap_t(
-			*(list_t<service_ptr_t<T>, A>*)&item1,
-			*(list_t<service_ptr_t<T>, A>*)&item2
-			);
-	}
-};
-
-template<typename T>
-class service_list_fast_aggressive_t : public service_list_t<service_ptr_t<T>, array_fast_aggressive_t<T> >
-{
-public:
-	inline static void g_swap(service_list_fast_aggressive_t<T> & item1, service_list_fast_aggressive_t<T> & item2)
-	{
-		pfc::swap_t(
-			*(service_list_t<service_ptr_t<T>, array_fast_aggressive_t<T> >*)&item1,
-			*(service_list_t<service_ptr_t<T>, array_fast_aggressive_t<T> >*)&item2
-			);
-	}
-};
-
-namespace pfc {
-	template<typename S,typename A>
-	inline void swap_t(service_list_t<S,A> & item1, service_list_t<S,A> & item2)
-	{
-		service_list_t<S,A>::g_swap(item1,item2);
-	}
-
-	template<typename S>
-	inline void swap_t(service_list_fast_aggressive_t<S> & item1, service_list_fast_aggressive_t<S> & item2)
-	{
-		service_list_fast_aggressive_t<S>::g_swap(item1,item2);
-	}
-
 };
 
 class service_base;
@@ -145,48 +110,42 @@ public:
 
 #include "service_impl.h"
 
-class NOVTABLE service_factory_base
-{
-private:
-	static service_factory_base *list;
-	service_factory_base * next;	
-	const GUID & m_guid;
+class NOVTABLE service_factory_base {
 protected:
-	inline service_factory_base(const GUID & p_guid) : m_guid(p_guid) {assert(!core_api::are_services_available());next=list;list=this;}
+	inline service_factory_base(const GUID & p_guid) : m_guid(p_guid) {assert(!core_api::are_services_available());__internal__next=__internal__list;__internal__list=this;}
 public:
-
 	inline const GUID & get_class_guid() const {return m_guid;}
 
-	inline static service_factory_base * list_get_pointer() {return list;}
-	inline service_factory_base * list_get_next() {return next;}
-
 	static service_class_ref FB2KAPI enum_find_class(const GUID & p_guid);
-	static bool FB2KAPI enum_create(service_ptr_t<service_base> & p_out,service_class_ref p_class,unsigned p_index);
-	static unsigned FB2KAPI enum_get_count(service_class_ref p_class);
+	static bool FB2KAPI enum_create(service_ptr_t<service_base> & p_out,service_class_ref p_class,t_size p_index);
+	static t_size FB2KAPI enum_get_count(service_class_ref p_class);
 
 	inline static bool is_service_present(const GUID & g) {return enum_get_count(enum_find_class(g))>0;}
 
+	//! Throws std::bad_alloc or another exception on failure.
+	virtual void FB2KAPI instance_create(service_ptr_t<service_base> & p_out) = 0;
 
-#ifdef FOOBAR2000_EXE
-	static void process_components_directory(const char * path,service_factory_base ** & blah);
-	static void on_app_init(const char * exe_path);
-	static void on_app_shutdown();
-	static void config_reset(const char * name = 0);
-	static void on_app_post_init();
-	static void on_saveconfig(bool b_reset=false);
-#endif
+	//! FOR INTERNAL USE ONLY
+	static service_factory_base *__internal__list;
+	//! FOR INTERNAL USE ONLY
+	service_factory_base * __internal__next;
+private:
+	const GUID & m_guid;
+};
 
-	virtual bool FB2KAPI instance_create(service_ptr_t<service_base> & p_out) = 0;
+
+template<typename B>
+class service_factory_base_t : public service_factory_base {
+public:
+	service_factory_base_t() : service_factory_base(B::class_guid) {}
 
 };
 
 
 
 
-
-
 template<class T>
-static bool FB2KAPI service_enum_create_t(service_ptr_t<T> & p_out,unsigned p_index)
+static bool FB2KAPI service_enum_create_t(service_ptr_t<T> & p_out,t_size p_index)
 {
 	service_ptr_t<service_base> ptr;
 	if (service_factory_base::enum_create(ptr,service_factory_base::enum_find_class(T::class_guid),p_index))
@@ -210,12 +169,12 @@ class service_class_helper_t
 {
 public:
 	service_class_helper_t() : m_class(service_factory_base::enum_find_class(T::class_guid)) {}
-	unsigned FB2KAPI get_count() const
+	t_size FB2KAPI get_count() const
 	{
 		return service_factory_base::enum_get_count(m_class);
 	}
 
-	bool FB2KAPI create(service_ptr_t<T> & p_out,unsigned p_index) const
+	bool FB2KAPI create(service_ptr_t<T> & p_out,t_size p_index) const
 	{
 		service_ptr_t<service_base> temp;
 		if (!service_factory_base::enum_create(temp,m_class,p_index)) return false;
@@ -249,56 +208,36 @@ private:
 
 
 template<class B,class T>
-class service_factory_t : public service_factory_base
+class service_factory_t : public service_factory_base_t<B>
 {
 public:
-	service_factory_t() : service_factory_base(B::class_guid)
-	{
-	}
-
-	~service_factory_t()
-	{
-	}
-
-	virtual bool FB2KAPI instance_create(service_ptr_t<service_base> & p_out)
-	{
-		service_impl_t<T> * item = new service_impl_t<T>;
-		if (item == 0) return false;
-		p_out = __safe_cast<service_base*>(__safe_cast<B*>(__safe_cast<T*>(item)));
-		return true;
+	void FB2KAPI instance_create(service_ptr_t<service_base> & p_out) {
+		p_out = pfc::safe_cast<service_base*>(pfc::safe_cast<B*>(pfc::safe_cast<T*>(  new service_impl_t<T>  )));
 	}
 };
 
 template<class B,class T>
-class service_factory_single_t : public service_factory_base
+class service_factory_single_t : public service_factory_base_t<B>
 {
 	service_impl_single_t<T> g_instance;
 public:
-	service_factory_single_t() : service_factory_base(B::class_guid) {}
-
-	~service_factory_single_t() {}
-
-	virtual bool FB2KAPI instance_create(service_ptr_t<service_base> & p_out)
-	{
-		p_out = __safe_cast<service_base*>(__safe_cast<B*>(__safe_cast<T*>(&g_instance)));
-		return true;
+	void FB2KAPI instance_create(service_ptr_t<service_base> & p_out) {
+		p_out = pfc::safe_cast<service_base*>(pfc::safe_cast<B*>(pfc::safe_cast<T*>(&g_instance)));
 	}
 
 	inline T& get_static_instance() {return g_instance;}
 };
 
 template<class B,class T>
-class service_factory_single_ref_t : public service_factory_base
+class service_factory_single_ref_t : public service_factory_base_t<B>
 {
 private:
 	T & instance;
 public:
-	service_factory_single_ref_t(T& param) : instance(param), service_factory_base(B::class_guid) {}
+	service_factory_single_ref_t(T& param) : instance(param) {}
 
-	virtual bool FB2KAPI instance_create(service_ptr_t<service_base> & p_out)
-	{
-		p_out = __safe_cast<service_base*>(&instance);
-		return true;
+	virtual void FB2KAPI instance_create(service_ptr_t<service_base> & p_out) {
+		p_out = pfc::safe_cast<service_base*>(&instance);
 	}
 
 	inline T& get_static_instance() {return instance;}
@@ -308,79 +247,13 @@ public:
 
 
 template<class B,class T>
-class service_factory_single_transparent_t : public service_factory_base, public service_impl_single_t<T>
+class service_factory_single_transparent_t : public service_factory_base_t<B>, public service_impl_single_t<T>
 {	
 public:
-	service_factory_single_transparent_t() : service_factory_base(B::class_guid) {}
+	TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(service_factory_single_transparent_t,service_impl_single_t<T>)
 
-	virtual bool FB2KAPI instance_create(service_ptr_t<service_base> & p_out)
-	{
-		p_out = __safe_cast<service_base*>(__safe_cast<B*>(__safe_cast<T*>(this)));
-		return true;
-	}
-
-	inline T& get_static_instance() {return *(T*)this;}
-};
-
-template<class B,class T,class P1>
-class service_factory_single_transparent_p1_t : public service_factory_base, public service_impl_single_p1_t<T,P1>
-{	
-public:
-	service_factory_single_transparent_p1_t(P1 p1) : service_factory_base(B::class_guid), service_impl_single_p1_t<T,P1>(p1) {}
-
-
-	virtual bool FB2KAPI instance_create(service_ptr_t<service_base> & p_out)
-	{
-		p_out = __safe_cast<service_base*>(__safe_cast<B*>(__safe_cast<T*>(this)));
-		return true;
-	}
-
-	inline T& get_static_instance() {return *(T*)this;}
-};
-
-template<class B,class T,class P1,class P2>
-class service_factory_single_transparent_p2_t : public service_factory_base, public service_impl_single_p2_t<T,P1,P2>
-{	
-public:
-	service_factory_single_transparent_p2_t(P1 p1,P2 p2) : service_factory_base(B::class_guid), service_impl_single_p2_t<T,P1,P2>(p1,p2) {}
-
-
-	virtual bool FB2KAPI instance_create(service_ptr_t<service_base> & p_out)
-	{
-		p_out = __safe_cast<service_base*>(__safe_cast<B*>(__safe_cast<T*>(this)));
-		return true;
-	}
-
-	inline T& get_static_instance() {return *(T*)this;}
-};
-
-template<class B,class T,class P1,class P2,class P3>
-class service_factory_single_transparent_p3_t : public service_factory_base, public service_impl_single_p3_t<T,P1,P2,P3>
-{	
-public:
-	service_factory_single_transparent_p3_t(P1 p1,P2 p2,P3 p3) : service_factory_base(B::class_guid), service_impl_single_p3_t<T,P1,P2,P3>(p1,p2,p3) {}
-
-
-	virtual bool FB2KAPI instance_create(service_ptr_t<service_base> & p_out)
-	{
-		p_out = __safe_cast<service_base*>(__safe_cast<B*>(__safe_cast<T*>(this)));
-		return true;
-	}
-
-	inline T& get_static_instance() {return *(T*)this;}
-};
-
-template<class B,class T,class P1,class P2,class P3,class P4>
-class service_factory_single_transparent_p4_t : public service_factory_base, public service_impl_single_p4_t<T,P1,P2,P3,P4>
-{	
-public:
-	service_factory_single_transparent_p4_t(P1 p1,P2 p2,P3 p3,P4 p4) : service_factory_base(B::class_guid), service_impl_single_p4_t<T,P1,P2,P3,P4>(p1,p2,p3,p4) {}
-
-
-	virtual bool FB2KAPI instance_create(service_ptr_t<service_base> & p_out)
-	{
-		p_out = __safe_cast<service_base*>(__safe_cast<B*>(__safe_cast<T*>(this)));
-		return true;
+	virtual void FB2KAPI instance_create(service_ptr_t<service_base> & p_out) {
+		p_out = pfc::safe_cast<service_base*>(pfc::safe_cast<B*>(pfc::safe_cast<T*>(this)));
 	}
 
 	inline T& get_static_instance() {return *(T*)this;}

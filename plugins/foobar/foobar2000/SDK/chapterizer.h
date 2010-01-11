@@ -3,18 +3,18 @@ class NOVTABLE chapter_list
 {
 public:
 	//! Returns number of chapters.
-	virtual unsigned get_chapter_count() const = 0;
+	virtual t_size get_chapter_count() const = 0;
 	//! Queries description of specified chapter.
 	//! @param p_chapter Index of chapter to query, greater or equal zero and less than get_chapter_count() value. If p_chapter value is out of valid range, results are undefined (e.g. crash).
 	//! @returns reference to file_info object describing specified chapter (length part of file_info indicates distance between beginning of this chapter and next chapter mark). Returned reference value for temporary use only, becomes invalid after any non-const operation on the chapter_list object.
-	virtual const file_info & get_info(unsigned p_chapter) const = 0;
+	virtual const file_info & get_info(t_size p_chapter) const = 0;
 	
 	//! Sets number of chapters.
-	virtual void set_chapter_count(unsigned p_count) = 0;
+	virtual void set_chapter_count(t_size p_count) = 0;
 	//! Modifies description of specified chapter.
 	//! @param p_chapter_index Index of chapter to modify, greater or equal zero and less than get_chapter_count() value. If p_chapter value is out of valid range, results are undefined (e.g. crash).
 	//! @param p_info New chapter description. Note that length part of file_info is used to calculate chapter marks.
-	virtual void set_info(unsigned p_chapter,const file_info & p_info) = 0;
+	virtual void set_info(t_size p_chapter,const file_info & p_info) = 0;
 
 	//! Copies contents of specified chapter_list object to this object.
 	void copy(const chapter_list & p_source);
@@ -37,13 +37,13 @@ public:
 	const chapter_list_impl & operator=(const chapter_list_impl & p_source) {copy(p_source); return *this;}
 	const chapter_list_impl & operator=(const chapter_list & p_source) {copy(p_source); return *this;}
 
-	unsigned get_chapter_count() const {return m_infos.get_size();}
-	const file_info & get_info(unsigned p_chapter) const {return m_infos[p_chapter];}
+	t_size get_chapter_count() const {return m_infos.get_size();}
+	const file_info & get_info(t_size p_chapter) const {return m_infos[p_chapter];}
 
-	void set_chapter_count(unsigned p_count) {m_infos.set_size(p_count);}
-	void set_info(unsigned p_chapter,const file_info & p_info) {m_infos[p_chapter] = p_info;}
+	void set_chapter_count(t_size p_count) {m_infos.set_size(p_count);}
+	void set_info(t_size p_chapter,const file_info & p_info) {m_infos[p_chapter] = p_info;}
 private:
-	array_t<file_info_impl> m_infos;
+	pfc::array_t<file_info_impl> m_infos;
 };
 
 
@@ -60,12 +60,12 @@ public:
 	//! @param p_path Path of file to modify.
 	//! @param p_list New chapter list to write.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
-	virtual t_io_result set_chapters(const char * p_path,chapter_list const & p_list,abort_callback & p_abort) = 0;
+	virtual void set_chapters(const char * p_path,chapter_list const & p_list,abort_callback & p_abort) = 0;
 	//! Retrieves chapter list from specified file.
 	//! @param p_path Path of file to examine.
 	//! @param p_list Object receiving chapter list.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
-	virtual t_io_result get_chapters(const char * p_path,chapter_list & p_list,abort_callback & p_abort) = 0;
+	virtual void get_chapters(const char * p_path,chapter_list & p_list,abort_callback & p_abort) = 0;
 
 	//! Static helper, tries to find chapterizer interface that supports specified file.
 	static bool g_find(service_ptr_t<chapterizer> & p_out,const char * p_path,abort_callback & p_abort);

@@ -1,358 +1,95 @@
 #ifndef _PFC_ARRAY_H_
 #define _PFC_ARRAY_H_
 
-template<class T>
-class array_t
-{
-public:
-	inline array_t() : m_data(0), m_size(0) {}
-	
-	array_t(unsigned p_size) : m_data(0), m_size(0) {
-		set_size_e(p_size);
-	}
-
-	inline const T& operator[](unsigned n) const
-	{
-		assert(n<m_size); assert(m_data);
-		return m_data[n];
-	}
-
-	inline T& operator[](unsigned n)
-	{
-		assert(n<m_size); assert(m_data);
-		return m_data[n];
-	}
-	
-	bool set_size(unsigned new_size)
-	{
-		if (new_size == m_size) //do nothing
-		{
-		}
-		else if (new_size == 0)
-		{
-			if (m_data)
-			{
-				delete[] m_data;
-				m_data = 0;
-			}
-			m_size = 0;
-		}
-		else
-		{
-			T* new_data = new(std::nothrow) T[new_size];
-			if (new_data == 0) return false;
-			if (m_data)
-			{
-				unsigned n,tocopy = new_size > m_size ? m_size : new_size;
-				for(n=0;n<tocopy;n++)
-					pfc::swap_t(new_data[n],m_data[n]);
-				delete[] m_data;
-				
-			}
-			m_data = new_data;
-			m_size = new_size;
-		}
-		return true;
-	}
-
-	void set_size_e(unsigned p_size) {
-		if (!set_size(p_size)) throw std::bad_alloc();
-	}
-
-
-	inline unsigned get_size() const {return m_size;}
-
-	inline void prealloc(unsigned) {}
-
-	inline T* get_ptr() {return m_data;}
-	inline const T* get_ptr() const {return m_data;}
-
-	inline void swap(unsigned p_index1,unsigned p_index2)
-	{
-		pfc::swap_t(m_data[p_index1],m_data[p_index2]);
-	}
-
-	~array_t()
-	{
-		if (m_data) delete[] m_data;
-	}
-
-	inline static void g_swap(array_t<T> & item1, array_t<T> & item2)
-	{
-		pfc::swap_t(item1.m_data,item2.m_data);
-		pfc::swap_t(item1.m_size,item2.m_size);
-	}
-
-	inline void fill(const T & p_value)
-	{
-		pfc::fill_ptr_t(m_data,m_size,p_value);
-	}
-	
-
-	array_t(const array_t<T> & p_source) : m_data(0), m_size(0) {
-		*this = p_source;
-	}
-
-	const array_t<T> & operator=(const array_t<T> & p_source) {
-		unsigned n, m = p_source.get_size();
-		set_size_e(m);
-		for(n=0;n<m;n++) m_data[n] = p_source[n];
-		return *this;
-	}
-
-private:
-
-
-	T* m_data;
-	unsigned m_size;
-};
-
-template<class T>
-class array_fast_t
-{
-public:
-	array_fast_t() : m_size(0) {}
-
-	array_fast_t(unsigned p_size) : m_size(0) {set_size_e(p_size);}
-
-	array_fast_t(const array_fast_t<T> & p_source) : m_data(p_source.m_data), m_size(p_source.m_size) {}
-
-	const array_fast_t<T> & operator=(const array_fast_t<T> & p_source) {m_data = p_source.m_data; m_size = p_source.m_size; return *this;}
-
-	const T& operator[](unsigned n) const
-	{
-		assert(n<m_size);
-		return m_data[n];
-	}
-
-	T& operator[](unsigned n)
-	{
-		assert(n<m_size);
-		return m_data[n];
-	}
-
-	unsigned get_size() const {return m_size;}
-
-	bool set_size(unsigned p_size)
-	{
-		unsigned new_size;
-		if (p_size == 0) new_size = 0;
-		else
-		{
-			
-			if (p_size >= PFC_MEMORY_SPACE_LIMIT/2) new_size = p_size;
-			else
-			{
-				new_size = m_data.get_size();
-				if (new_size == 0) new_size = 1;
-				while(new_size < p_size) new_size <<= 1;
-				while(new_size>>1 >= p_size) new_size >>= 1;
-			}
-		}
-		if (m_data.set_size(new_size))
-		{
-			m_size = p_size;
-			return true;
-		}
-		else return false;
-	}
-
-	void set_size_e(unsigned p_size) {
-		if (!set_size(p_size)) throw std::bad_alloc();
-	}
-
-	void prealloc(unsigned) {}
-
-	T* get_ptr() {return m_data.get_ptr();}
-	const T* get_ptr() const {return m_data.get_ptr();}
-
-	inline void swap(unsigned p_index1,unsigned p_index2)
-	{
-		pfc::swap_t(m_data[p_index1],m_data[p_index2]);
-	}
-
-	inline static void g_swap(array_fast_t<T> & item1, array_fast_t<T> & item2)
-	{
-		pfc::swap_t(item1.m_data,item2.m_data);
-		pfc::swap_t(item1.m_size,item2.m_size);
-	}
-
-	inline void fill(const T & p_value)
-	{
-		pfc::fill_t(m_data,m_size,p_value);
-	}
-
-private:
-	array_t<T> m_data;
-	unsigned m_size;
-};
-
-
-template<class T>
-class array_fast_aggressive_t
-{
-public:
-	inline array_fast_aggressive_t() : m_size(0) {}
-
-	inline array_fast_aggressive_t(unsigned p_size) : m_size(0) {set_size_e(p_size);}
-
-	inline array_fast_aggressive_t(const array_fast_aggressive_t<T> & p_source) : m_data(p_source.m_data), m_size(p_source.m_size) {}
-
-	const array_fast_aggressive_t<T> & operator=(const array_fast_aggressive_t<T> & p_source) {m_data = p_source.m_data; m_size = p_source.m_size; return *this;}
-
-
-	inline const T& operator[](unsigned n) const
-	{
-		assert(n<m_size);
-		return m_data[n];
-	}
-
-	inline T& operator[](unsigned n)
-	{
-		assert(n<m_size);
-		return m_data[n];
-	}
-
-	inline unsigned get_size() const {return m_size;}
-
-	bool set_size(unsigned p_size)
-	{
-		unsigned new_size;
-		if (p_size == 0) new_size = 0;
-		else
-		{
-			new_size = m_data.get_size();
-			if (new_size == 0) new_size = 1;
-			while(new_size < p_size) new_size <<= 1;
-		}
-		if (m_data.set_size(new_size))
-		{
-			m_size = p_size;
-			return true;
-		}
-		else return false;
-	}
-
-	void set_size_e(unsigned p_size) {
-		if (!set_size(p_size)) throw std::bad_alloc();
-	}
-
-	inline void prealloc(unsigned) {}
-
-	inline T* get_ptr() {return m_data.get_ptr();}
-	inline const T* get_ptr() const {return m_data.get_ptr();}
-
-
-	inline void swap(unsigned p_index1,unsigned p_index2)
-	{
-		pfc::swap_t(m_data[p_index1],m_data[p_index2]);
-	}
-
-	inline static void g_swap(array_fast_aggressive_t<T> & item1, array_fast_aggressive_t<T> & item2)
-	{
-		pfc::swap_t(item1.m_data,item2.m_data);
-		pfc::swap_t(item1.m_size,item2.m_size);
-	}
-
-	inline void fill(const T & p_value)
-	{
-		pfc::fill_t(m_data,m_size,p_value);
-	}
-
-private:
-
-	array_t<T> m_data;
-	unsigned m_size;
-};
-
-
-template<typename T,unsigned t_fixed_count,typename t_variable_storage = array_t<T> >
-class array_hybrid_t
-{
-public:
-	inline array_hybrid_t() : m_size(0) {}
-	inline array_hybrid_t(unsigned p_size) : m_size(0) {set_size_e(p_size);}
-	inline array_hybrid_t(const array_hybrid_t<T,t_fixed_count,t_variable_storage> & p_source)
-		: m_fixed(p_source.m_fixed), m_variable(p_source.m_variable), m_size(p_source.m_size)
-	{
-	}
-
-	inline const array_hybrid_t<T,t_fixed_count,t_variable_storage> & operator=(const array_hybrid_t<T,t_fixed_count,t_variable_storage> & p_source)
-	{
-		unsigned n;
-		for(n=0;n<t_fixed_count;n++) m_fixed[n] = p_source.m_fixed[n];
-		m_variable = p_source.m_variable;
-		m_size = p_source.m_size;
-		return *this;
-	}
-
-	inline bool set_size(unsigned p_size)
-	{
-		m_size = p_size;
-		return m_variable.set_size(p_size > t_fixed_count ? p_size - t_fixed_count : 0);
-	}
-
-	void set_size_e(unsigned p_size) {
-		if (!set_size(p_size)) throw std::bad_alloc();
-	}
-
-	inline T& operator[](unsigned p_index)
-	{
-		assert(p_index < m_size);
-		if (p_index < t_fixed_count) return m_fixed[p_index];
-		else return m_variable[p_index - t_fixed_count];
-	}
-
-	inline const T& operator[](unsigned p_index) const
-	{
-		assert(p_index < m_size);
-		if (p_index < t_fixed_count) return m_fixed[p_index];
-		else return m_variable[p_index - t_fixed_count];
-	}
-
-	inline unsigned get_size() const {return m_size;}
-
-	static void g_swap(array_hybrid_t<T,t_fixed_count,t_variable_storage> & p_item1,array_hybrid_t<T,t_fixed_count,t_variable_storage> & p_item2)
-	{
-		unsigned n;
-		for(n=0;n<t_fixed_count;n++) pfc::swap_t(p_item1.m_fixed[n],p_item2.m_fixed[n]);
-
-		pfc::swap_t(p_item1.m_variable,p_item2.m_variable);
-		pfc::swap_t(p_item1.m_size,p_item2.m_size);
-	}
-
-private:
-	T m_fixed[t_fixed_count];
-	t_variable_storage m_variable;
-	unsigned m_size;
-};
-
 namespace pfc {
-
-	template<typename T>
-	inline void swap_t(array_t<T> & item1, array_t<T> & item2)
-	{
-		array_t<T>::g_swap(item1,item2);
+	template<typename t_exception,typename t_int>
+	inline t_int safe_shift_left_t(t_int p_val,t_size p_shift = 1) {
+		t_int newval = p_val << p_shift;
+		if (newval >> p_shift != p_val) throw t_exception();
+		return newval;
 	}
 
-	template<typename T>
-	inline void swap_t(array_fast_t<T> & item1, array_fast_t<T> & item2)
-	{
-		array_fast_t<T>::g_swap(item1,item2);
+	template<typename t_item, template<typename> class t_alloc = alloc_standard> class array_t;
+
+	template<typename t_to,typename t_from>
+	inline void copy_array_t(t_to & p_to,const t_from & p_from) {
+		const t_size size = array_size_t(p_from);
+		p_to.set_size(size);
+		for(t_size n=0;n<size;n++) p_to[n] = p_from[n];
 	}
 
-	template<typename T>
-	inline void swap_t(array_fast_aggressive_t<T> & item1, array_fast_aggressive_t<T> & item2)
-	{
-		array_fast_aggressive_t<T>::g_swap(item1,item2);
+	template<typename t_array,typename t_value>
+	inline void fill_array_t(t_array & p_array,const t_value & p_value) {
+		const t_size size = array_size_t(p_array);
+		for(t_size n=0;n<size;n++) p_array[n] = p_value;
 	}
 
-	template<typename T,unsigned t_fixed_count,typename t_variable_storage>
-	inline void swap_t(array_hybrid_t<T,t_fixed_count,t_variable_storage> & p_item1,array_hybrid_t<T,t_fixed_count,t_variable_storage> & p_item2)
-	{
-		array_hybrid_t<T,t_fixed_count,t_variable_storage>::g_swap(p_item1,p_item2);
-	}
-};
+	template<typename t_item, template<typename> class t_alloc> class array_t {
+	private: typedef array_t<t_item,t_alloc> t_self;
+	public:
+		array_t() {}
+		array_t(const t_self & p_source) {copy_array_t(*this,p_source);}
+		template<typename t_source> array_t(const t_source & p_source) {copy_array_t(*this,p_source);}
+		const t_self & operator=(const t_self & p_source) {copy_array_t(*this,p_source); return *this;}
+		template<typename t_source> const t_self & operator=(const t_source & p_source) {copy_array_t(*this,p_source); return *this;}
+		
+		void set_size(t_size p_size) {m_alloc.set_size(p_size);}
+		t_size get_size() const {return m_alloc.get_size();}
+		
+		const t_item & operator[](t_size p_index) const {assert(p_index < get_size());return m_alloc[p_index];}
+		t_item & operator[](t_size p_index) {assert(p_index < get_size());return m_alloc[p_index];}
+
+		template<typename t_source>
+		void set_data_fromptr(const t_source * p_buffer,t_size p_count) {
+			set_size(p_count);
+			pfc::memcpy_t(*this,p_buffer,p_count);
+//			for(t_size n=0;n<p_count;n++) m_alloc[n] = p_buffer[n];
+		}
+
+		template<typename t_append>
+		void append_fromptr(const t_append * p_buffer,t_size p_count) {
+			t_size base = get_size();
+			increase_size(p_count);
+			for(t_size n=0;n<p_count;n++) m_alloc[base+n] = p_buffer[n];
+		}
+
+		void increase_size(t_size p_delta) {
+			t_size new_size = get_size() + p_delta;
+			if (new_size < p_delta) throw std::bad_alloc();
+			set_size(new_size);
+		}
+
+		template<typename t_append>
+		void append_single(const t_append & p_item) {
+			t_size base = get_size();
+			increase_size(1);
+			m_alloc[base] = p_item;
+		}
+
+		template<typename t_filler>
+		void fill(const t_filler & p_filler) {
+			const t_size max = get_size();
+			for(t_size n=0;n<max;n++) m_alloc[n] = p_filler;
+		}
+
+		void grow_size(t_size p_size) {
+			if (p_size > get_size()) set_size(p_size);
+		}
+
+		//not supported by some allocs
+		const t_item * get_ptr() const {return m_alloc.get_ptr();}
+		t_item * get_ptr() {return m_alloc.get_ptr();}
+
+		void prealloc(t_size p_size) {m_alloc.prealloc(p_size);}
+
+	private:
+		t_alloc<t_item> m_alloc;
+	};
+
+	template<typename t_item,t_size p_width,template<typename> class t_alloc = alloc_standard >
+	class array_hybrid_t : public array_t<t_item, pfc::alloc_hybrid<p_width,t_alloc>::alloc >
+	{};
+}
 
 
 #endif //_PFC_ARRAY_H_

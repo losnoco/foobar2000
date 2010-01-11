@@ -3,7 +3,7 @@
 
 //void on_change(const char * p_name,const char * p_value,unsigned p_value_length) ;
 
-void titleformat_config_callback::g_on_change(const GUID & p_guid,const char * p_name,const char * p_value,unsigned p_value_length)
+void titleformat_config_callback::g_on_change(const GUID & p_guid,const char * p_name,const char * p_value,t_size p_value_length)
 {
 	service_ptr_t<titleformat_config_callback> ptr;
 	service_enum_t<titleformat_config_callback> e;
@@ -16,7 +16,8 @@ const char * titleformat_config_impl::get_name()
 	return m_name;
 }
 
-void titleformat_config_impl::get_data(string_base & p_out)
+
+void titleformat_config_impl::get_data(pfc::string_base & p_out)
 {
 	insync(m_sync);
 	p_out = m_value;
@@ -59,23 +60,18 @@ void titleformat_config_impl::reset()
 }
 
 
-t_io_result titleformat_config_impl::get_data_raw(stream_writer * p_stream,abort_callback & p_abort)
+void titleformat_config_impl::get_data_raw(stream_writer * p_stream,abort_callback & p_abort)
 {
-	return p_stream->write_string_raw(m_value,p_abort);
+	p_stream->write_string_raw(m_value,p_abort);
 }
 
-t_io_result titleformat_config_impl::set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort)
+void titleformat_config_impl::set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort)
 {
 	string8_fastalloc temp;
-	t_io_result status;
-	status = p_stream->read_string_raw(temp,p_abort);
-	if (io_result_succeeded(status))
-	{
-		m_instance.release();
-		m_compilation_failed = false;
-		m_value = temp;
-	}
-	return status;
+	p_stream->read_string_raw(temp,p_abort);
+	m_instance.release();
+	m_compilation_failed = false;
+	m_value = temp;
 }
 
 titleformat_config_impl::titleformat_config_impl(const GUID & p_guid,const char * p_name,const char * p_initvalue,double p_order) :
@@ -107,7 +103,7 @@ bool titleformat_config::g_compile(const GUID & p_guid,service_ptr_t<titleformat
 	return ptr->compile(p_out);
 }
 
-bool titleformat_config::g_get_data(const GUID & p_guid,string_base & p_out)
+bool titleformat_config::g_get_data(const GUID & p_guid,pfc::string_base & p_out)
 {
 	service_ptr_t<titleformat_config> ptr;
 	if (!g_find(p_guid,ptr)) return false;

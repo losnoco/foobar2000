@@ -7,7 +7,7 @@ void dsp_manager::set_config( const dsp_chain_config & p_data )
 	m_config_changed = true;
 }
 
-void dsp_manager::dsp_run(unsigned idx,dsp_chunk_list * list,const metadb_handle_ptr & cur_file,unsigned flags,double & latency)
+void dsp_manager::dsp_run(t_size idx,dsp_chunk_list * list,const metadb_handle_ptr & cur_file,unsigned flags,double & latency)
 {
 	list->remove_bad_chunks();
 
@@ -19,61 +19,66 @@ double dsp_manager::run(dsp_chunk_list * list,const metadb_handle_ptr & cur_file
 {
 	TRACK_CALL_TEXT("dsp_manager::run");
 
-	fpu_control_default l_fpu_control;
+	try {
+		fpu_control_default l_fpu_control;
 
-	unsigned n;
+		t_size n;
 
-	
-	double latency=0;
-	bool done = false;
+		
+		double latency=0;
+		bool done = false;
 
-	if (m_config_changed)
-	{
-		if (m_dsp_list.get_count()>0)
+		if (m_config_changed)
 		{
+			if (m_dsp_list.get_count()>0)
+			{
+				for(n=0;n<m_dsp_list.get_count();n++)
+				{
+					dsp_run(n,list,cur_file,flags|dsp::FLUSH,latency);
+				}
+				done = true;
+			}
+
+			m_config.instantiate(m_dsp_list);
+			m_config_changed = false;
+		}
+		
+		if (!done)
+		{
+			t_size num_flush = 0;
+			if ((flags & dsp::END_OF_TRACK) && ! (flags & dsp::FLUSH))
+			{
+				for(n=0;n<m_dsp_list.get_count();n++)
+				{
+					if (m_dsp_list[n].is_valid())
+					{
+						if (m_dsp_list[n]->need_track_change_mark())
+							num_flush = n;
+					}
+				}
+			}
+
 			for(n=0;n<m_dsp_list.get_count();n++)
 			{
-				dsp_run(n,list,cur_file,flags|dsp::FLUSH,latency);
+				unsigned flags2 = flags;
+				if (n<num_flush) flags2|=dsp::FLUSH;
+				dsp_run(n,list,cur_file,flags2,latency);
 			}
 			done = true;
 		}
+		
+		list->remove_bad_chunks();
 
-		m_config.instantiate(m_dsp_list);
-		m_config_changed = false;
+		return latency;
+	} catch(...) {
+		list->remove_all();
+		throw;
 	}
-	
-	if (!done)
-	{
-		unsigned num_flush = 0;
-		if ((flags & dsp::END_OF_TRACK) && ! (flags & dsp::FLUSH))
-		{
-			for(n=0;n<m_dsp_list.get_count();n++)
-			{
-				if (m_dsp_list[n].is_valid())
-				{
-					if (m_dsp_list[n]->need_track_change_mark())
-						num_flush = n;
-				}
-			}
-		}
-
-		for(n=0;n<m_dsp_list.get_count();n++)
-		{
-			unsigned flags2 = flags;
-			if (n<num_flush) flags2|=dsp::FLUSH;
-			dsp_run(n,list,cur_file,flags2,latency);
-		}
-		done = true;
-	}
-	
-	list->remove_bad_chunks();
-
-	return latency;
 }
 
 void dsp_manager::flush()
 {
-	unsigned n, m = m_dsp_list.get_count();
+	t_size n, m = m_dsp_list.get_count();
 	for(n=0;n<m;n++) {
 		TRACK_CODE("dsp::flush",m_dsp_list[n]->flush());
 	}

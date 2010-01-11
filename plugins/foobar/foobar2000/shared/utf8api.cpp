@@ -8,17 +8,18 @@
 #define BIF_NEWDIALOGSTYLE 0x0040
 #endif
 
+using namespace pfc;
 
 class param_os_from_utf8
 {
 	bool m_is_null;
 	WORD m_low_word;
-	pfc::stringcvt::string_os_from_utf8 m_cvt;
+	stringcvt::string_os_from_utf8 m_cvt;
 public:
 	param_os_from_utf8(const char * p) : 
-		m_is_null(p==0), 
-		m_low_word( HIWORD((DWORD)p)==0 ? LOWORD((DWORD)p) : 0),
-		m_cvt( p && HIWORD((DWORD)p)!=0 ?p:"") 
+		m_is_null(p==NULL), 
+		m_low_word( ((t_size)p & ~0xFFFF) == 0 ? (WORD)((t_size)p & 0xFFFF) : 0),
+		m_cvt( p != NULL && ((t_size)p & ~0xFFFF) != 0 ? p : "") 
 		{}
 	operator const TCHAR *()
 	{
@@ -26,7 +27,7 @@ public:
 	}
 	const TCHAR * get_ptr()
 	{
-		return m_low_word ? (const TCHAR*)(DWORD)m_low_word : m_is_null ? 0 : m_cvt.get_ptr();
+		return m_low_word ? (const TCHAR*)(t_size)m_low_word : m_is_null ? 0 : m_cvt.get_ptr();
 	}
 	
 };
@@ -53,13 +54,13 @@ static void browse_proc_check_okbutton(HWND wnd,const browse_for_dir_struct * p_
 	_tcsncpy(temp,p_path,MAX_PATH);
 	temp[MAX_PATH] = 0;
 
-	unsigned len = _tcslen(temp);
+	t_size len = _tcslen(temp);
 	if (len < MAX_PATH && len > 0)
 	{
 		if (temp[len-1] != '\\')
 			temp[len++] = '\\';
 	}
-	unsigned idx = 0;
+	t_size idx = 0;
 	while(p_struct->m_tofind[idx] && idx+len < MAX_PATH)
 	{
 		temp[len+idx] = p_struct->m_tofind[idx];
@@ -104,7 +105,7 @@ static int _stdcall browse_proc(HWND wnd,UINT msg,LPARAM lp,LPARAM dat)
 
 static int browse_for_dir(HWND p_parent,const TCHAR * p_title,TCHAR * p_out,const TCHAR * p_file_to_find)
 {
-	pfc::com_ptr_t<IMalloc> mallocptr;
+	com_ptr_t<IMalloc> mallocptr;
 	
 	SHGetMalloc((IMalloc**)&mallocptr);
 	if (mallocptr.is_empty()) return 0;
@@ -127,7 +128,7 @@ static int browse_for_dir(HWND p_parent,const TCHAR * p_title,TCHAR * p_out,cons
 	};
 
 	int rv = 0;
-	ITEMIDLIST* li=SHBrowseForFolder(&bi);
+	__unaligned ITEMIDLIST* li=SHBrowseForFolder(&bi);
 	if (li)
 	{
 		SHGetPathFromIDList(li,p_out);
@@ -146,9 +147,9 @@ LRESULT SHARED_EXPORT uSendMessageText(HWND wnd,UINT msg,WPARAM wp,const char * 
 	if (p_text == NULL)
 		return SendMessage(wnd,msg,wp,0);
 	else {
-		pfc::stringcvt::string_os_from_utf8 temp;
-		if (!temp.convert(p_text)) return -1;
-		return SendMessage(wnd,msg,wp,(long)temp.get_ptr());
+		stringcvt::string_os_from_utf8 temp;
+		temp.convert(p_text);
+		return SendMessage(wnd,msg,wp,(LPARAM)temp.get_ptr());
 	}
 }
 
@@ -163,11 +164,12 @@ BOOL SHARED_EXPORT uGetWindowText(HWND wnd,string_base & out)
 	if (len>0)
 	{
 		len++;
-		mem_block_t<TCHAR> temp(len);
+		pfc::array_t<TCHAR> temp;
+		temp.set_size(len);
 		temp[0]=0;		
-		if (GetWindowText(wnd,temp,len)>0)
+		if (GetWindowText(wnd,temp.get_ptr(),len)>0)
 		{
-			out = pfc::stringcvt::string_utf8_from_os(temp,len);
+			out = stringcvt::string_utf8_from_os(temp.get_ptr(),len);
 			return TRUE;
 		}
 		else return FALSE;
@@ -181,8 +183,7 @@ BOOL SHARED_EXPORT uGetWindowText(HWND wnd,string_base & out)
 
 BOOL SHARED_EXPORT uSetWindowTextEx(HWND wnd,const char * p_text,unsigned p_text_length)
 {
-	pfc::stringcvt::string_os_from_utf8 temp;
-	if (!temp.convert(p_text,p_text_length)) return FALSE;
+	stringcvt::string_os_from_utf8 temp(p_text,p_text_length);
 	return SetWindowText(wnd,temp);
 }
 
@@ -194,19 +195,18 @@ BOOL SHARED_EXPORT uGetDlgItemText(HWND wnd,UINT id,string_base & out)
 
 BOOL SHARED_EXPORT uSetDlgItemTextEx(HWND wnd,UINT id,const char * p_text,unsigned p_text_length)
 {
-	pfc::stringcvt::string_os_from_utf8 temp;
-	if (!temp.convert(p_text,p_text_length)) return FALSE;
+	stringcvt::string_os_from_utf8 temp(p_text,p_text_length);
 	return SetDlgItemText(wnd,id,temp);
 }
 
 BOOL SHARED_EXPORT uBrowseForFolder(HWND parent,const char * p_title,string_base & p_out)
 {
 	TCHAR temp[MAX_PATH];
-	tcsncpy_addnull(temp,pfc::stringcvt::string_os_from_utf8(p_out),tabsize(temp));
-	BOOL rv = browse_for_dir(parent,pfc::stringcvt::string_os_from_utf8(p_title),temp,0);
+	tcsncpy_addnull(temp,stringcvt::string_os_from_utf8(p_out),tabsize(temp));
+	BOOL rv = browse_for_dir(parent,stringcvt::string_os_from_utf8(p_title),temp,0);
 	if (rv)
 	{
-		p_out.set_string(pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp)));
+		p_out.set_string(stringcvt::string_utf8_from_os(temp,tabsize(temp)));
 	}
 	return rv;
 }
@@ -214,11 +214,11 @@ BOOL SHARED_EXPORT uBrowseForFolder(HWND parent,const char * p_title,string_base
 BOOL SHARED_EXPORT uBrowseForFolderWithFile(HWND parent,const char * title,string_base & out,const char * p_file_to_find)
 {
 	TCHAR temp[MAX_PATH];
-	tcsncpy_addnull(temp,pfc::stringcvt::string_os_from_utf8(out),tabsize(temp));
-	BOOL rv = browse_for_dir(parent,pfc::stringcvt::string_os_from_utf8(title),temp,pfc::stringcvt::string_os_from_utf8(p_file_to_find));
+	tcsncpy_addnull(temp,stringcvt::string_os_from_utf8(out),tabsize(temp));
+	BOOL rv = browse_for_dir(parent,stringcvt::string_os_from_utf8(title),temp,stringcvt::string_os_from_utf8(p_file_to_find));
 	if (rv)
 	{
-		out.set_string(pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp)));
+		out.set_string(stringcvt::string_utf8_from_os(temp,tabsize(temp)));
 	}
 	return rv;
 }
@@ -229,14 +229,14 @@ int SHARED_EXPORT uMessageBox(HWND wnd,const char * text,const char * caption,UI
 	return MessageBox(wnd,param_os_from_utf8(text),param_os_from_utf8(caption),type);
 }
 
-void SHARED_EXPORT uOutputDebugString(const char * msg) {OutputDebugString(pfc::stringcvt::string_os_from_utf8(msg));}
+void SHARED_EXPORT uOutputDebugString(const char * msg) {OutputDebugString(stringcvt::string_os_from_utf8(msg));}
 
-BOOL SHARED_EXPORT uAppendMenu(HMENU menu,UINT flags,UINT id,const char * content)
+BOOL SHARED_EXPORT uAppendMenu(HMENU menu,UINT flags,UINT_PTR id,const char * content)
 {
 	return AppendMenu(menu,flags,id,param_os_from_utf8(content));
 }
 
-BOOL SHARED_EXPORT uInsertMenu(HMENU menu,UINT position,UINT flags,UINT id,const char * content)
+BOOL SHARED_EXPORT uInsertMenu(HMENU menu,UINT position,UINT flags,UINT_PTR id,const char * content)
 {
 	return InsertMenu(menu,position,flags,id,param_os_from_utf8(content));
 }
@@ -244,10 +244,10 @@ BOOL SHARED_EXPORT uInsertMenu(HMENU menu,UINT position,UINT flags,UINT id,const
 int SHARED_EXPORT uStringCompare(const char * elem1, const char * elem2)
 {
 #ifdef UNICODE
-	WCHAR temp1[4],temp2[4];
+	wchar_t temp1[4],temp2[4];
 	for(;;)
 	{
-		UINT c1,c2,l1,l2;
+		unsigned c1,c2; t_size l1,l2;
 		l1 = utf8_decode_char(elem1,&c1);
 		l2 = utf8_decode_char(elem2,&c2);
 		if (l1==0 && l2==0) return 0;
@@ -262,11 +262,11 @@ int SHARED_EXPORT uStringCompare(const char * elem1, const char * elem2)
 		elem2 += l2;
 	}
 #else
-	WCHAR temp1[4],temp2[4];
+	wchar_t temp1[4],temp2[4];
 	char ctemp1[20],ctemp2[20];
 	for(;;)
 	{
-		UINT c1,c2,l1,l2;
+		unsigned c1,c2; t_size l1,l2;
 		l1 = utf8_decode_char(elem1,&c1);
 		l2 = utf8_decode_char(elem2,&c2);
 		if (l1==0 && l2==0) return 0;
@@ -303,7 +303,7 @@ DWORD SHARED_EXPORT uGetModuleFileName(HMODULE hMod,string_base & out)
 	DWORD ret = GetModuleFileName(hMod,temp,tabsize(temp));
 	if (ret)
 	{
-		out = pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp));
+		out = stringcvt::string_utf8_from_os(temp,tabsize(temp));
 	}
 	return ret;
 }
@@ -314,9 +314,7 @@ BOOL SHARED_EXPORT uSetClipboardString(const char * ptr)
 	{
 		EmptyClipboard();
 
-		pfc::stringcvt::string_os_from_utf8 temp;
-		
-		if (!temp.convert(ptr)) return FALSE;
+		stringcvt::string_os_from_utf8 temp(ptr);
 
 		HANDLE h_global = GlobalAlloc(GMEM_DDESHARE, (_tcslen(temp) + 1) * sizeof(TCHAR)); 
 		if (h_global!=0)
@@ -344,25 +342,26 @@ BOOL SHARED_EXPORT uGetClassName(HWND wnd,string_base & out)
 	temp[0]=0;
 	if (GetClassName(wnd,temp,tabsize(temp))>0)
 	{
-		out = pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp));
+		out = stringcvt::string_utf8_from_os(temp,tabsize(temp));
 		return TRUE;
 	}
 	else return FALSE;
 }
 
-UINT SHARED_EXPORT uCharLength(const char * src) {return utf8_char_len(src);}
+t_size SHARED_EXPORT uCharLength(const char * src) {return utf8_char_len(src);}
 
 BOOL SHARED_EXPORT uDragQueryFile(HDROP hDrop,UINT idx,string_base & out)
 {
 	UINT len = DragQueryFile(hDrop,idx,0,0);
-	if (len>0 && len!=(UINT)(-1))
+	if (len>0 && len!=(UINT)(~0))
 	{
 		len++;
-		mem_block_t<TCHAR> temp;
-		if (!temp.set_size(len)) return FALSE;
-		if (DragQueryFile(hDrop,idx,temp,len)>0)
+		array_t<TCHAR> temp;
+		temp.set_size(len);
+		temp[0] =0 ;
+		if (DragQueryFile(hDrop,idx,temp.get_ptr(),len)>0)
 		{
-			out = pfc::stringcvt::string_utf8_from_os(temp,len);
+			out = stringcvt::string_utf8_from_os(temp.get_ptr(),len);
 			return TRUE;
 		}
 	}
@@ -378,14 +377,14 @@ UINT SHARED_EXPORT uDragQueryFileCount(HDROP hDrop)
 
 BOOL SHARED_EXPORT uGetTextExtentPoint32(HDC dc,const char * text,UINT cb,LPSIZE size)
 {
-	pfc::stringcvt::string_os_from_utf8 temp(text,cb);
-	return GetTextExtentPoint32(dc,temp,_tcslen(temp),size);
+	stringcvt::string_os_from_utf8 temp(text,cb);
+	return GetTextExtentPoint32(dc,temp,pfc::downcast_guarded<int>(_tcslen(temp)),size);
 }
 
 BOOL SHARED_EXPORT uExtTextOut(HDC dc,int x,int y,UINT flags,const RECT * rect,const char * text,UINT cb,const int * lpdx)
 {
-	pfc::stringcvt::string_os_from_utf8 temp(text,cb);
-	return ExtTextOut(dc,x,y,flags,rect,temp,_tcslen(temp),lpdx);
+	stringcvt::string_os_from_utf8 temp(text,cb);
+	return ExtTextOut(dc,x,y,flags,rect,temp,pfc::downcast_guarded<int>(_tcslen(temp)),lpdx);
 }
 
 static UINT_PTR CALLBACK choose_color_hook(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
@@ -444,17 +443,17 @@ HMENU SHARED_EXPORT uLoadMenu(HINSTANCE hIns,const char * name)
 
 BOOL SHARED_EXPORT uGetEnvironmentVariable(const char * name,string_base & out)
 {
-	pfc::stringcvt::string_os_from_utf8 name_t(name);
+	stringcvt::string_os_from_utf8 name_t(name);
 	DWORD size = GetEnvironmentVariable(name_t,0,0);
 	if (size>0)
 	{
 		size++;
-		mem_block_t<TCHAR> temp;
-		if (!temp.set_size(size)) return FALSE;
+		array_t<TCHAR> temp;
+		temp.set_size(size);
 		temp[0]=0;
-		if (GetEnvironmentVariable(name_t,temp,size)>0)
+		if (GetEnvironmentVariable(name_t,temp.get_ptr(),size)>0)
 		{
-			out = pfc::stringcvt::string_utf8_from_os(temp,size);
+			out = stringcvt::string_utf8_from_os(temp.get_ptr(),size);
 			return TRUE;
 		}
 	}
@@ -468,54 +467,54 @@ HMODULE SHARED_EXPORT uGetModuleHandle(const char * name)
 
 UINT SHARED_EXPORT uRegisterWindowMessage(const char * name)
 {
-	return RegisterWindowMessage(pfc::stringcvt::string_os_from_utf8(name));
+	return RegisterWindowMessage(stringcvt::string_os_from_utf8(name));
 }
 
 BOOL SHARED_EXPORT uMoveFile(const char * src,const char * dst)
 {
-	return MoveFile(pfc::stringcvt::string_os_from_utf8(src),pfc::stringcvt::string_os_from_utf8(dst));
+	return MoveFile(stringcvt::string_os_from_utf8(src),stringcvt::string_os_from_utf8(dst));
 }
 
 BOOL SHARED_EXPORT uDeleteFile(const char * fn)
 {
-	return DeleteFile(pfc::stringcvt::string_os_from_utf8(fn));
+	return DeleteFile(stringcvt::string_os_from_utf8(fn));
 }
 
 DWORD SHARED_EXPORT uGetFileAttributes(const char * fn)
 {
-	return GetFileAttributes(pfc::stringcvt::string_os_from_utf8(fn));
+	return GetFileAttributes(stringcvt::string_os_from_utf8(fn));
 }
 
 BOOL SHARED_EXPORT uRemoveDirectory(const char * fn)
 {
-	return RemoveDirectory(pfc::stringcvt::string_os_from_utf8(fn));
+	return RemoveDirectory(stringcvt::string_os_from_utf8(fn));
 }
 
 HANDLE SHARED_EXPORT uCreateFile(const char * fn,DWORD access,DWORD share,LPSECURITY_ATTRIBUTES blah,DWORD creat,DWORD flags,HANDLE tmpl)
 {
-	return CreateFile(pfc::stringcvt::string_os_from_utf8(fn),access,share,blah,creat,flags,tmpl);
+	return CreateFile(stringcvt::string_os_from_utf8(fn),access,share,blah,creat,flags,tmpl);
 }
 
 BOOL SHARED_EXPORT uCreateDirectory(const char * fn,LPSECURITY_ATTRIBUTES blah)
 {
-	return CreateDirectory(pfc::stringcvt::string_os_from_utf8(fn),blah);
+	return CreateDirectory(stringcvt::string_os_from_utf8(fn),blah);
 }
 
 HANDLE SHARED_EXPORT uCreateMutex(LPSECURITY_ATTRIBUTES blah,BOOL bInitialOwner,const char * name)
 {
-	return name ? CreateMutex(blah,bInitialOwner,pfc::stringcvt::string_os_from_utf8(name)) : CreateMutex(blah,bInitialOwner,0);
+	return name ? CreateMutex(blah,bInitialOwner,stringcvt::string_os_from_utf8(name)) : CreateMutex(blah,bInitialOwner,0);
 }
 
 BOOL SHARED_EXPORT uGetFullPathName(const char * name,string_base & out)
 {
-	pfc::stringcvt::string_os_from_utf8 name_os(name);
+	stringcvt::string_os_from_utf8 name_os(name);
 	unsigned len = GetFullPathName(name_os,0,0,0);
 	if (len==0) return FALSE;
-	mem_block_t<TCHAR> temp;
-	if (!temp.set_size(len+1)) return FALSE;
+	array_t<TCHAR> temp;
+	temp.set_size(len+1);
 	TCHAR * blah;
-	if (GetFullPathName(name_os,len+1,temp,&blah)==0) return FALSE;
-	out = pfc::stringcvt::string_utf8_from_os(temp,len);
+	if (GetFullPathName(name_os,len+1,temp.get_ptr(),&blah)==0) return FALSE;
+	out = stringcvt::string_utf8_from_os(temp.get_ptr(),len);
 	return TRUE;
 }
 
@@ -539,9 +538,9 @@ BOOL SHARED_EXPORT uGetLongPathName(const char * name,string_base & out)
 	{
 		TCHAR temp[4096];
 		temp[0]=0;
-		if (pGetLongPathName(pfc::stringcvt::string_os_from_utf8(name),temp,tabsize(temp)))
+		if (pGetLongPathName(stringcvt::string_os_from_utf8(name),temp,tabsize(temp)))
 		{
-			out = pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp));
+			out = stringcvt::string_utf8_from_os(temp,tabsize(temp));
 			return TRUE;
 		}
 	}
@@ -550,7 +549,7 @@ BOOL SHARED_EXPORT uGetLongPathName(const char * name,string_base & out)
 
 void SHARED_EXPORT uGetCommandLine(string_base & out)
 {
-	out = pfc::stringcvt::string_utf8_from_os(GetCommandLine());
+	out = stringcvt::string_utf8_from_os(GetCommandLine());
 }
 
 BOOL SHARED_EXPORT uGetTempPath(string_base & out)
@@ -559,7 +558,7 @@ BOOL SHARED_EXPORT uGetTempPath(string_base & out)
 	temp[0]=0;
 	if (GetTempPath(tabsize(temp),temp))
 	{
-		out = pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp));
+		out = stringcvt::string_utf8_from_os(temp,tabsize(temp));
 		return TRUE;
 	}
 	return FALSE;
@@ -570,9 +569,9 @@ BOOL SHARED_EXPORT uGetTempFileName(const char * path_name,const char * prefix,U
 	if (path_name==0 || prefix==0) return FALSE;
 	TCHAR temp[MAX_PATH+1];
 	temp[0]=0;
-	if (GetTempFileName(pfc::stringcvt::string_os_from_utf8(path_name),pfc::stringcvt::string_os_from_utf8(prefix),unique,temp))
+	if (GetTempFileName(stringcvt::string_os_from_utf8(path_name),stringcvt::string_os_from_utf8(prefix),unique,temp))
 	{
-		out = pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp));
+		out = stringcvt::string_utf8_from_os(temp,tabsize(temp));
 		return TRUE;
 	}
 	return FALSE;
@@ -587,16 +586,16 @@ public:
 	uFindFile_i() {hFF = INVALID_HANDLE_VALUE;}
 	bool FindFirst(const char * path)
 	{
-		hFF = FindFirstFile(pfc::stringcvt::string_os_from_utf8(path),&fd);
+		hFF = FindFirstFile(stringcvt::string_os_from_utf8(path),&fd);
 		if (hFF==INVALID_HANDLE_VALUE) return false;
-		fn = pfc::stringcvt::string_utf8_from_os(fd.cFileName,tabsize(fd.cFileName));
+		fn = stringcvt::string_utf8_from_os(fd.cFileName,tabsize(fd.cFileName));
 		return true;
 	}
 	virtual BOOL FindNext()
 	{
 		if (hFF==INVALID_HANDLE_VALUE) return FALSE;
 		BOOL rv = FindNextFile(hFF,&fd);
-		if (rv) fn = pfc::stringcvt::string_utf8_from_os(fd.cFileName,tabsize(fd.cFileName));
+		if (rv) fn = stringcvt::string_utf8_from_os(fd.cFileName,tabsize(fd.cFileName));
 		return rv;
 	}
 
@@ -674,10 +673,10 @@ BOOL SHARED_EXPORT uGetOpenFileName(HWND parent,const char * p_ext_mask,unsigned
 {
 	modal_dialog_scope scope;
 
-	pfc::stringcvt::string_os_from_utf8 ext_mask_t(p_ext_mask);
-	mem_block_t<TCHAR> ext_mask(_tcslen(ext_mask_t)+2);
-	ext_mask.zeromemory();
-	_tcscpy(ext_mask,ext_mask_t);
+	stringcvt::string_os_from_utf8 ext_mask_t(p_ext_mask);
+	array_t<TCHAR> ext_mask; ext_mask.set_size(_tcslen(ext_mask_t)+2);
+	pfc::memset_t(ext_mask,(TCHAR)0);
+	_tcscpy(ext_mask.get_ptr(),ext_mask_t);
 
 	{
 		UINT n;
@@ -688,9 +687,9 @@ BOOL SHARED_EXPORT uGetOpenFileName(HWND parent,const char * p_ext_mask,unsigned
 	
 	TCHAR buffer[4096];
 
-	tcsncpy_addnull(buffer,pfc::stringcvt::string_os_from_utf8(p_filename),tabsize(buffer));
+	tcsncpy_addnull(buffer,stringcvt::string_os_from_utf8(p_filename),tabsize(buffer));
 
-	pfc::stringcvt::string_os_from_utf8 def_ext(p_def_ext ? p_def_ext : ""),title(p_title ? p_title : ""),
+	stringcvt::string_os_from_utf8 def_ext(p_def_ext ? p_def_ext : ""),title(p_title ? p_title : ""),
 		directory(p_directory ? p_directory : "");
 
 	OPENFILENAME ofn;
@@ -698,7 +697,7 @@ BOOL SHARED_EXPORT uGetOpenFileName(HWND parent,const char * p_ext_mask,unsigned
 	memset(&ofn,0,sizeof(ofn));
 	ofn.lStructSize=sizeof(ofn);
 	ofn.hwndOwner = parent;
-	ofn.lpstrFilter = ext_mask;
+	ofn.lpstrFilter = ext_mask.get_ptr();
 	ofn.nFilterIndex = def_ext_mask + 1;
 	ofn.lpstrFile = buffer;
 	ofn.lpstrInitialDir = directory;
@@ -713,11 +712,11 @@ BOOL SHARED_EXPORT uGetOpenFileName(HWND parent,const char * p_ext_mask,unsigned
 		buffer[tabsize(buffer)-1]=0;
 
 		{
-			unsigned ptr = _tcslen(buffer);
+			t_size ptr = _tcslen(buffer);
 			while(ptr>0 && buffer[ptr-1]==' ') buffer[--ptr] = 0;
 		}
 
-		p_filename = pfc::stringcvt::string_utf8_from_os(buffer,tabsize(buffer));
+		p_filename = stringcvt::string_utf8_from_os(buffer,tabsize(buffer));
 		return TRUE;
 	}
 	else return FALSE;
@@ -729,8 +728,8 @@ class uGetOpenFileNameMultiResult_i : public uGetOpenFileNameMultiResult
 public:
 	void AddItem(const char * param) {m_data.add_item(strdup(param));}
 
-	unsigned get_count() const {return m_data.get_count();}
-	void get_item_ex(const char * & p_out,unsigned n) const {char * temp;m_data.get_item_ex(temp,n);p_out = temp;}
+	t_size get_count() const {return m_data.get_count();}
+	void get_item_ex(const char * & p_out,t_size n) const {char * temp;m_data.get_item_ex(temp,n);p_out = temp;}
 	virtual ~uGetOpenFileNameMultiResult_i() {m_data.free_all();}
 };
 
@@ -738,10 +737,10 @@ puGetOpenFileNameMultiResult SHARED_EXPORT uGetOpenFileNameMulti(HWND parent,con
 {
 	modal_dialog_scope scope;
 
-	pfc::stringcvt::string_os_from_utf8 ext_mask_t(p_ext_mask);
-	mem_block_t<TCHAR> ext_mask(_tcslen(ext_mask_t)+2);
-	ext_mask.zeromemory();
-	_tcscpy(ext_mask,ext_mask_t);
+	stringcvt::string_os_from_utf8 ext_mask_t(p_ext_mask);
+	array_t<TCHAR> ext_mask; ext_mask.set_size(_tcslen(ext_mask_t)+2);
+	pfc::memset_t(ext_mask,(TCHAR)0);
+	_tcscpy(ext_mask.get_ptr(),ext_mask_t);
 
 	{
 		UINT n;
@@ -753,7 +752,7 @@ puGetOpenFileNameMultiResult SHARED_EXPORT uGetOpenFileNameMulti(HWND parent,con
 	TCHAR buffer[0x4000];
 	buffer[0]=0;
 
-	pfc::stringcvt::string_os_from_utf8 def_ext(p_def_ext ? p_def_ext : ""),title(p_title ? p_title : ""),
+	stringcvt::string_os_from_utf8 def_ext(p_def_ext ? p_def_ext : ""),title(p_title ? p_title : ""),
 		directory(p_directory ? p_directory : "");
 
 	OPENFILENAME ofn;
@@ -761,7 +760,7 @@ puGetOpenFileNameMultiResult SHARED_EXPORT uGetOpenFileNameMulti(HWND parent,con
 	memset(&ofn,0,sizeof(ofn));
 	ofn.lStructSize=sizeof(ofn);
 	ofn.hwndOwner = parent;
-	ofn.lpstrFilter = ext_mask;
+	ofn.lpstrFilter = ext_mask.get_ptr();
 	ofn.nFilterIndex = def_ext_mask + 1;
 	ofn.lpstrFile = buffer;
 	ofn.lpstrInitialDir = directory;
@@ -784,22 +783,21 @@ puGetOpenFileNameMultiResult SHARED_EXPORT uGetOpenFileNameMulti(HWND parent,con
 		if (!*p)
 		{
 			{
-				unsigned ptr = _tcslen(buffer);
+				t_size ptr = _tcslen(buffer);
 				while(ptr>0 && buffer[ptr-1]==' ') buffer[--ptr] = 0;
 			}
 
-			result->AddItem(pfc::stringcvt::string_utf8_from_os(buffer));
+			result->AddItem(stringcvt::string_utf8_from_os(buffer));
 		}
 		else
 		{
-			string8 s;
-			s = pfc::stringcvt::string_utf8_from_os(buffer,tabsize(buffer));
-			int ofs=s.length();
-			if (s[ofs-1]!='\\') {s.add_char('\\');ofs++;}
+			string8 s = stringcvt::string_utf8_from_os(buffer,tabsize(buffer));
+			t_size ofs = s.length();
+			if (ofs>0 && s[ofs-1]!='\\') {s.add_char('\\');ofs++;}
 			while(*p)
 			{
 				s.truncate(ofs);
-				s += pfc::stringcvt::string_utf8_from_os(p);
+				s += stringcvt::string_utf8_from_os(p);
 				s.skip_trailing_char(' ');
 				result->AddItem(s);
 				while(*p) p++;
@@ -836,10 +834,10 @@ BOOL SHARED_EXPORT uGetSystemDirectory(string_base & out)
 	UINT len = GetSystemDirectory(0,0);
 	if (len==0) len = MAX_PATH;
 	len++;
-	mem_block_t<TCHAR> temp;
-	if (!temp.set_size(len)) return FALSE;
-	if (GetSystemDirectory(temp,len)==0) return FALSE;
-	out = pfc::stringcvt::string_utf8_from_os(temp,len);
+	array_t<TCHAR> temp;
+	temp.set_size(len);
+	if (GetSystemDirectory(temp.get_ptr(),len)==0) return FALSE;
+	out = stringcvt::string_utf8_from_os(temp.get_ptr(),len);
 	return TRUE;	
 }
 
@@ -848,16 +846,16 @@ BOOL SHARED_EXPORT uGetWindowsDirectory(string_base & out)
 	UINT len = GetWindowsDirectory(0,0);
 	if (len==0) len = MAX_PATH;
 	len++;
-	mem_block_t<TCHAR> temp;
-	if (!temp.set_size(len)) return FALSE;
-	if (GetWindowsDirectory(temp,len)==0) return FALSE;
-	out = pfc::stringcvt::string_utf8_from_os(temp,len);
+	array_t<TCHAR> temp;
+	temp.set_size(len);
+	if (GetWindowsDirectory(temp.get_ptr(),len)==0) return FALSE;
+	out = stringcvt::string_utf8_from_os(temp.get_ptr(),len);
 	return TRUE;	
 }
 
 BOOL SHARED_EXPORT uSetCurrentDirectory(const char * path)
 {
-	return SetCurrentDirectory(pfc::stringcvt::string_os_from_utf8(path));
+	return SetCurrentDirectory(stringcvt::string_os_from_utf8(path));
 }
 
 BOOL SHARED_EXPORT uGetCurrentDirectory(string_base & out)
@@ -865,23 +863,23 @@ BOOL SHARED_EXPORT uGetCurrentDirectory(string_base & out)
 	UINT len = GetCurrentDirectory(0,0);
 	if (len==0) len = MAX_PATH;
 	len++;
-	mem_block_t<TCHAR> temp;
-	if (!temp.set_size(len)) return FALSE;
-	if (GetCurrentDirectory(len,temp)==0) return FALSE;
-	out = pfc::stringcvt::string_utf8_from_os(temp,len);
+	array_t<TCHAR> temp;
+	temp.set_size(len);
+	if (GetCurrentDirectory(len,temp.get_ptr())==0) return FALSE;
+	out = stringcvt::string_utf8_from_os(temp.get_ptr(),len);
 	return TRUE;		
 }
 
 BOOL SHARED_EXPORT uExpandEnvironmentStrings(const char * src,string_base & out)
 {
-	pfc::stringcvt::string_os_from_utf8 src_os(src);
+	stringcvt::string_os_from_utf8 src_os(src);
 	UINT len = ExpandEnvironmentStrings(src_os,0,0);
 	if (len==0) len = 256;
 	len++;
-	mem_block_t<TCHAR> temp;
-	if (!temp.set_size(len)) return FALSE;
-	if (ExpandEnvironmentStrings(src_os,temp,len)==0) return FALSE;
-	out = pfc::stringcvt::string_utf8_from_os(temp,len);
+	array_t<TCHAR> temp;
+	temp.set_size(len);
+	if (ExpandEnvironmentStrings(src_os,temp.get_ptr(),len)==0) return FALSE;
+	out = stringcvt::string_utf8_from_os(temp.get_ptr(),len);
 	return TRUE;
 }
 
@@ -891,7 +889,7 @@ BOOL SHARED_EXPORT uGetUserName(string_base & out)
 	DWORD len = tabsize(temp);
 	if (GetUserName(temp,&len))
 	{
-		out = pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp));
+		out = stringcvt::string_utf8_from_os(temp,tabsize(temp));
 		return TRUE;
 	}
 	else return FALSE;
@@ -899,23 +897,19 @@ BOOL SHARED_EXPORT uGetUserName(string_base & out)
 
 BOOL SHARED_EXPORT uGetShortPathName(const char * src,string_base & out)
 {
-	pfc::stringcvt::string_os_from_utf8 src_os(src);
+	stringcvt::string_os_from_utf8 src_os(src);
 	UINT len = GetShortPathName(src_os,0,0);
 	if (len==0) len = MAX_PATH;
 	len++;
-	mem_block_t<TCHAR> temp(len);
-	if (GetShortPathName(src_os,temp,len))
+	array_t<TCHAR> temp; temp.set_size(len);
+	if (GetShortPathName(src_os,temp.get_ptr(),len))
 	{
-		out = pfc::stringcvt::string_utf8_from_os(temp,len);
+		out = stringcvt::string_utf8_from_os(temp.get_ptr(),len);
 		return TRUE;
 	}
 	else return FALSE;
 }
 
-BOOL SHARED_EXPORT uUnregisterClass(const char * name,HINSTANCE ins)
-{
-	return UnregisterClass(param_os_from_utf8(name),ins);
-}
 
 #ifdef UNICODE
 #define DDE_CODEPAGE CP_WINUNICODE
@@ -926,19 +920,19 @@ BOOL SHARED_EXPORT uUnregisterClass(const char * name,HINSTANCE ins)
 
 HSZ SHARED_EXPORT uDdeCreateStringHandle(DWORD ins,const char * src)
 {
-	return DdeCreateStringHandle(ins,pfc::stringcvt::string_os_from_utf8(src),DDE_CODEPAGE);
+	return DdeCreateStringHandle(ins,stringcvt::string_os_from_utf8(src),DDE_CODEPAGE);
 }
 
 BOOL SHARED_EXPORT uDdeQueryString(DWORD ins,HSZ hsz,string_base & out)
 {
-	mem_block_t<TCHAR> temp;
+	array_t<TCHAR> temp;
 	UINT len = DdeQueryString(ins,hsz,0,0,DDE_CODEPAGE);
 	if (len==0) len = MAX_PATH;
 	len++;
-	if (!temp.set_size(len)) return FALSE;
-	if (DdeQueryString(ins,hsz,temp,len,DDE_CODEPAGE))
+	temp.set_size(len);
+	if (DdeQueryString(ins,hsz,temp.get_ptr(),len,DDE_CODEPAGE))
 	{
-		out = pfc::stringcvt::string_utf8_from_os(temp,len);
+		out = stringcvt::string_utf8_from_os(temp.get_ptr(),len);
 		return TRUE;
 	}
 	else return FALSE;
@@ -954,7 +948,7 @@ BOOL SHARED_EXPORT uDdeAccessData_Text(HDDEDATA data,string_base & out)
 	const TCHAR * ptr = (const TCHAR*) DdeAccessData(data,0);
 	if (ptr)
 	{
-		out = pfc::stringcvt::string_utf8_from_os(ptr);
+		out = stringcvt::string_utf8_from_os(ptr);
 		return TRUE;
 	}
 	else return FALSE;
@@ -962,10 +956,9 @@ BOOL SHARED_EXPORT uDdeAccessData_Text(HDDEDATA data,string_base & out)
 
 HANDLE SHARED_EXPORT uSortStringCreate(const char * src)
 {
-	pfc::stringcvt::string_os_from_utf8 temp;
-	if (!temp.convert(src)) return NULL;
-	TCHAR * ret = mem_ops<TCHAR>::alloc(temp.length() + 1);
-	if (ret == NULL) return NULL;;
+	stringcvt::string_os_from_utf8 temp;
+	temp.convert(src);
+	TCHAR * ret = pfc::malloc_t<TCHAR>(temp.length() + 1);
 	_tcscpy(ret,temp);
 	return (HANDLE) ret;
 }
@@ -982,12 +975,12 @@ int SHARED_EXPORT uSortStringCompare(HANDLE string1,HANDLE string2)
 
 void SHARED_EXPORT uSortStringFree(HANDLE string)
 {
-	mem_ops<TCHAR>::free(reinterpret_cast<TCHAR*>(string));
+	pfc::free_t(reinterpret_cast<TCHAR*>(string));
 }
 
 HTREEITEM SHARED_EXPORT uTreeView_InsertItem(HWND wnd,const uTVINSERTSTRUCT * param)
 {
-	pfc::stringcvt::string_os_from_utf8 temp;
+	stringcvt::string_os_from_utf8 temp;
 	temp.convert(param->item.pszText);
 
 
@@ -1029,7 +1022,7 @@ HIMAGELIST SHARED_EXPORT uImageList_LoadImage(HINSTANCE hi, const char * lpbmp, 
 	return ImageList_LoadImage(hi,param_os_from_utf8(lpbmp),cx,cGrow,crMask,uType,uFlags);
 }
 
-int SHARED_EXPORT uTabCtrl_InsertItem(HWND wnd,int idx,const uTCITEM * item)
+int SHARED_EXPORT uTabCtrl_InsertItem(HWND wnd,t_size idx,const uTCITEM * item)
 {
 	param_os_from_utf8 text((item->mask & TCIF_TEXT) ? item->pszText : 0);
 	TCITEM l_item;
@@ -1040,7 +1033,7 @@ int SHARED_EXPORT uTabCtrl_InsertItem(HWND wnd,int idx,const uTCITEM * item)
 	return TabCtrl_InsertItem(wnd,idx,&l_item);
 }
 
-int SHARED_EXPORT uTabCtrl_SetItem(HWND wnd,int idx,const uTCITEM * item)
+int SHARED_EXPORT uTabCtrl_SetItem(HWND wnd,t_size idx,const uTCITEM * item)
 {
 	param_os_from_utf8 text((item->mask & TCIF_TEXT) ? item->pszText : 0);
 	TCITEM l_item;
@@ -1056,7 +1049,7 @@ int SHARED_EXPORT uGetKeyNameText(LONG lparam,string_base & out)
 	TCHAR temp[256];
 	temp[0]=0;
 	if (!GetKeyNameText(lparam,temp,tabsize(temp))) return 0;
-	out = pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp));
+	out = stringcvt::string_utf8_from_os(temp,tabsize(temp));
 	return 1;
 }
 
@@ -1067,16 +1060,15 @@ HANDLE SHARED_EXPORT uCreateFileMapping(HANDLE hFile,LPSECURITY_ATTRIBUTES lpFil
 
 BOOL SHARED_EXPORT uListBox_GetText(HWND listbox,UINT index,string_base & out)
 {
-	unsigned len = uSendMessage(listbox,LB_GETTEXTLEN,index,0);
+	t_size len = uSendMessage(listbox,LB_GETTEXTLEN,index,0);
 	if (len==LB_ERR || len>16*1024*1024) return FALSE;
 	if (len==0) {out.reset();return TRUE;}
 
-	mem_block_t<TCHAR> temp(len+1);
-	if (temp.get_ptr()==0) return FALSE;
-	temp.zeromemory();
+	array_t<TCHAR> temp; temp.set_size(len+1);
+	pfc::memset_t(temp,(TCHAR)0);
 	len = uSendMessage(listbox,LB_GETTEXT,index,(LPARAM)temp.get_ptr());
 	if (len==LB_ERR) return false;
-	out = pfc::stringcvt::string_utf8_from_os(temp);
+	out = stringcvt::string_utf8_from_os(temp.get_ptr());
 	return TRUE;
 }
 /*
@@ -1095,7 +1087,7 @@ void SHARED_EXPORT uPrintfV(string_base & out,const char * fmt,va_list arglist)
 
 int SHARED_EXPORT uCompareString(DWORD flags,const char * str1,unsigned len1,const char * str2,unsigned len2)
 {
-	return CompareString(LOCALE_USER_DEFAULT,flags,pfc::stringcvt::string_os_from_utf8(str1,len1),-1,pfc::stringcvt::string_os_from_utf8(str2,len2),-1);
+	return CompareString(LOCALE_USER_DEFAULT,flags,stringcvt::string_os_from_utf8(str1,len1),-1,stringcvt::string_os_from_utf8(str2,len2),-1);
 }
 
 class uResource_i : public uResource
@@ -1171,7 +1163,7 @@ BOOL SHARED_EXPORT uLoadString(HINSTANCE ins,UINT id,string_base & out)
 			unsigned len = *(const WORD*)(ptr+1);
 			if (len * 2 + 4 <= size)
 			{
-				out = pfc::stringcvt::string_utf8_from_wide(ptr+2,len);
+				out = stringcvt::string_utf8_from_wide(ptr+2,len);
 			}
 		}
 		
@@ -1189,18 +1181,13 @@ BOOL SHARED_EXPORT uGetMenuString(HMENU menu,UINT id,string_base & out,UINT flag
 		out.reset();
 		return FALSE;
 	}
-	mem_block_t<TCHAR> temp;
-	if (!temp.set_size(len+1))
-	{
+	array_t<TCHAR> temp;
+	temp.set_size(len+1);
+	if (GetMenuString(menu,id,temp.get_ptr(),len+1,flag)==0) {
 		out.reset();
 		return FALSE;
 	}
-	if (GetMenuString(menu,id,temp,len+1,flag)==0)
-	{
-		out.reset();
-		return FALSE;
-	}
-	out = pfc::stringcvt::string_utf8_from_os(temp);
+	out = stringcvt::string_utf8_from_os(temp.get_ptr());
 	return TRUE;
 }
 
@@ -1245,7 +1232,7 @@ int SHARED_EXPORT uSortPathCompare(HANDLE string1,HANDLE string2)
 
 		if ((!*p1 && !*p2) || (*p1 && *p2))
 		{
-			int test = CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE | NORM_IGNOREKANATYPE | NORM_IGNOREWIDTH, s1, p1 - s1, s2, p2 - s2);
+			int test = CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE | NORM_IGNOREKANATYPE | NORM_IGNOREWIDTH, s1, pfc::downcast_guarded<int>(p1 - s1), s2, pfc::downcast_guarded<int>(p2 - s2));
 			if (test && test != 2) return test - 2;
 			if (!*p1) return 0;
 		}
@@ -1264,14 +1251,14 @@ int SHARED_EXPORT uSortPathCompare(HANDLE string1,HANDLE string2)
 
 UINT SHARED_EXPORT uRegisterClipboardFormat(const char * name)
 {
-	return RegisterClipboardFormat(pfc::stringcvt::string_os_from_utf8(name));
+	return RegisterClipboardFormat(stringcvt::string_os_from_utf8(name));
 }
 
 BOOL SHARED_EXPORT uGetClipboardFormatName(UINT format,string_base & out)
 {
 	TCHAR temp[1024];
 	if (!GetClipboardFormatName(format,temp,tabsize(temp))) return FALSE;
-	out = pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp));
+	out = stringcvt::string_utf8_from_os(temp,tabsize(temp));
 	return TRUE;
 }
 
@@ -1286,22 +1273,22 @@ BOOL SHARED_EXPORT uSearchPath(const char * path, const char * filename, const c
 {
 	enum {temp_size = 1024};
 	param_os_from_utf8 path_os(path), filename_os(filename), extension_os(extension);
-	mem_block_t<TCHAR> temp(temp_size);
+	array_t<TCHAR> temp; temp.set_size(temp_size);
 	LPTSTR dummy;
 	unsigned len;
 
-	len = SearchPath(path_os,filename_os,extension_os,temp_size,temp,&dummy);
+	len = SearchPath(path_os,filename_os,extension_os,temp_size,temp.get_ptr(),&dummy);
 	if (len == 0) return FALSE;
 	if (len >= temp_size)
 	{
 		unsigned len2;
-		if (!temp.set_size(len + 1)) return FALSE;
-		len2 = SearchPath(path_os,filename_os,extension_os,len+1,temp,&dummy);
+		temp.set_size(len + 1);
+		len2 = SearchPath(path_os,filename_os,extension_os,len+1,temp.get_ptr(),&dummy);
 		if (len2 == 0 || len2 > len) return FALSE;
 		len = len2;
 	}
 
-	p_out = pfc::stringcvt::string_utf8_from_os(temp,len);
+	p_out = stringcvt::string_utf8_from_os(temp.get_ptr(),len);
 
 	return TRUE;
 
@@ -1355,8 +1342,8 @@ BOOL SHARED_EXPORT uFixPathCaps(const char * path,string_base & p_out)
 
 	for(;;)
 	{
-		unsigned truncat = temp.length();
-		unsigned delta = 0;
+		t_size truncat = temp.length();
+		t_size delta = 0;
 		while(path[delta]!=0 && path[delta]!='\\') delta++;
 		if (delta == 0) break;
 		temp.add_string(path,delta);
@@ -1415,7 +1402,7 @@ bool SHARED_EXPORT uTreeView_GetText(HWND p_tree,HTREEITEM p_item,string_base & 
 	item.cchTextMax = tabsize(temp);
 	if (uSendMessage(p_tree,TVM_GETITEM,0,(LPARAM)&item))
 	{
-		p_out = pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp));
+		p_out = stringcvt::string_utf8_from_os(temp,tabsize(temp));
 		return true;
 	}
 	else return false;
@@ -1472,7 +1459,7 @@ BOOL SHARED_EXPORT uFormatSystemErrorMessage(string_base & p_out,DWORD p_code) {
 		{
 			TCHAR temp[512];
 			if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,0,p_code,0,temp,tabsize(temp),0) == 0) return FALSE;
-			p_out = pfc::stringcvt::string_utf8_from_os(temp,tabsize(temp));
+			p_out = stringcvt::string_utf8_from_os(temp,tabsize(temp));
 			return TRUE;
 		}
 		break;

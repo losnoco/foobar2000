@@ -2,6 +2,8 @@
 
 #include <locale.h>
 
+using namespace pfc;
+
 extern "C" {
 
 #if 0
@@ -118,7 +120,7 @@ int SHARED_EXPORT stricmp_utf8(const char * p1,const char * p2)
 		}
 		else
 		{
-			unsigned w1,w2,d1,d2;
+			unsigned w1,w2; t_size d1,d2;
 			d1 = utf8_decode_char(p1,&w1);
 			d2 = utf8_decode_char(p2,&w2);
 			if (d1==0) return -1;
@@ -131,16 +133,16 @@ int SHARED_EXPORT stricmp_utf8(const char * p1,const char * p2)
 	}
 }
 
-int SHARED_EXPORT stricmp_utf8_stringtoblock(const char * p1,const char * p2,unsigned p2_bytes)
+int SHARED_EXPORT stricmp_utf8_stringtoblock(const char * p1,const char * p2,t_size p2_bytes)
 {
 	return stricmp_utf8_ex(p1,-1,p2,p2_bytes);
 }
 
-int SHARED_EXPORT stricmp_utf8_partial(const char * p1,const char * p2,unsigned num)
+int SHARED_EXPORT stricmp_utf8_partial(const char * p1,const char * p2,t_size num)
 {
 	for(;num;)
 	{
-		unsigned int w1,w2,d1,d2;
+		unsigned w1,w2; t_size d1,d2;
 		d1 = utf8_decode_char(p1,&w1);
 		d2 = utf8_decode_char(p2,&w2);
 		if (w2==0 || d2==0) return 0;
@@ -153,22 +155,22 @@ int SHARED_EXPORT stricmp_utf8_partial(const char * p1,const char * p2,unsigned 
 	return 0;
 }
 
-int SHARED_EXPORT stricmp_utf8_max(const char * p1,const char * p2,unsigned p1_bytes)
+int SHARED_EXPORT stricmp_utf8_max(const char * p1,const char * p2,t_size p1_bytes)
 {
 	return stricmp_utf8_ex(p1,p1_bytes,p2,-1);
 }
 
 namespace {
-	typedef bool (*t_replace_test)(const char * src,const char * test,unsigned len);
+	typedef bool (*t_replace_test)(const char * src,const char * test,t_size len);
 
-	static bool replace_test_i(const char * src,const char * test,unsigned len)
+	static bool replace_test_i(const char * src,const char * test,t_size len)
 	{
 		return stricmp_utf8_max(src,test,len)==0;
 	}
 
-	static bool replace_test(const char * src,const char * test,unsigned len)
+	static bool replace_test(const char * src,const char * test,t_size len)
 	{
-		unsigned ptr;
+		t_size ptr;
 		bool rv = true;
 		for(ptr=0;ptr<len;ptr++)
 		{
@@ -178,19 +180,19 @@ namespace {
 	}
 }
 
-unsigned SHARED_EXPORT uReplaceStringAdd(string_base & out,const char * src,unsigned src_len,const char * s1,unsigned len1,const char * s2,unsigned len2,bool casesens)
+t_size SHARED_EXPORT uReplaceStringAdd(string_base & out,const char * src,t_size src_len,const char * s1,t_size len1,const char * s2,t_size len2,bool casesens)
 {
 	t_replace_test testfunc = casesens ? replace_test : replace_test_i;
 
 	len1 = strlen_max(s1,len1), len2 = strlen_max(s2,len2);
 
-	unsigned len = strlen_max(src,src_len);
+	t_size len = strlen_max(src,src_len);
 	
-	unsigned count = 0;
+	t_size count = 0;
 
 	if (len1>0)
 	{
-		unsigned ptr = 0;
+		t_size ptr = 0;
 		while(ptr+len1<=len)
 		{
 			if (testfunc(src+ptr,s1,len1))
@@ -206,23 +208,23 @@ unsigned SHARED_EXPORT uReplaceStringAdd(string_base & out,const char * src,unsi
 	return count;
 }
 
-unsigned SHARED_EXPORT uReplaceCharAdd(string_base & out,const char * src,unsigned src_len,unsigned c1,unsigned c2,bool casesens)
+t_size SHARED_EXPORT uReplaceCharAdd(string_base & out,const char * src,t_size src_len,unsigned c1,unsigned c2,bool casesens)
 {
 	assert(c1>0);
 	assert(c2>0);
 	char s1[8],s2[8];
-	unsigned len1,len2;
+	t_size len1,len2;
 	len1 = utf8_encode_char(c1,s1);
 	len2 = utf8_encode_char(c2,s2);
 	return uReplaceString(out,src,src_len,s1,len1,s2,len2,casesens);
 }
 
 
-void SHARED_EXPORT uAddStringLower(string_base & out,const char * src,unsigned len)
+void SHARED_EXPORT uAddStringLower(string_base & out,const char * src,t_size len)
 {
 	while(*src && len)
 	{
-		unsigned int c,d;
+		unsigned c; t_size d;
 		d = utf8_decode_char(src,&c);
 		if (d==0 || d>len) break;
 		out.add_char(char_lower(c));
@@ -231,11 +233,11 @@ void SHARED_EXPORT uAddStringLower(string_base & out,const char * src,unsigned l
 	}
 }
 
-void SHARED_EXPORT uAddStringUpper(string_base & out,const char * src,unsigned len)
+void SHARED_EXPORT uAddStringUpper(string_base & out,const char * src,t_size len)
 {
 	while(*src && len)
 	{
-		unsigned int c,d;
+		unsigned c; t_size d;
 		d = utf8_decode_char(src,&c);
 		if (d==0 || d>len) break;
 		out.add_char(char_upper(c));
@@ -244,7 +246,7 @@ void SHARED_EXPORT uAddStringUpper(string_base & out,const char * src,unsigned l
 	}
 }
 
-int SHARED_EXPORT stricmp_utf8_ex(const char * p1,unsigned p1_bytes,const char * p2,unsigned p2_bytes)
+int SHARED_EXPORT stricmp_utf8_ex(const char * p1,t_size p1_bytes,const char * p2,t_size p2_bytes)
 {
 	p1_bytes = strlen_max(p1,p1_bytes);
 	p2_bytes = strlen_max(p2,p2_bytes);

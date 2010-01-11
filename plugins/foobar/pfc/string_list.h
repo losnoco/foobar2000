@@ -6,14 +6,14 @@ typedef list_base_const_t<const char*> string_list_const;
 class string_list_impl : public string_list_const
 {
 public:
-	unsigned get_count() const {return m_data.get_size();}
-	void get_item_ex(const char* & p_out, unsigned n) const {p_out = m_data[n];}
+	t_size get_count() const {return m_data.get_size();}
+	void get_item_ex(const char* & p_out, t_size n) const {p_out = m_data[n];}
 
-	inline const char * operator[] (unsigned n) const {return m_data[n];}
+	inline const char * operator[] (t_size n) const {return m_data[n];}
 
 	void add_item(const char * p_string)
 	{
-		unsigned idx = m_data.get_size();
+		t_size idx = m_data.get_size();
 		m_data.set_size(idx + 1);
 		m_data[idx] = strdup(p_string);
 	}
@@ -40,20 +40,20 @@ private:
 
 	void _append(const string_list_const & p_source)
 	{
-		const unsigned toadd = p_source.get_count(), base = m_data.get_size();
+		const t_size toadd = p_source.get_count(), base = m_data.get_size();
 		m_data.set_size(base+toadd);
-		for(unsigned n=0;n<toadd;n++) m_data[base+n] = strdup(p_source[n]);
+		for(t_size n=0;n<toadd;n++) m_data[base+n] = strdup(p_source[n]);
 	}
 
 	void _copy(const string_list_const & p_source)
 	{
-		const unsigned newcount = p_source.get_count();
-		for(unsigned n=0;n<m_data.get_size();n++) free(m_data[n]);		
+		const t_size newcount = p_source.get_count();
+		for(t_size n=0;n<m_data.get_size();n++) free(m_data[n]);		
 		m_data.set_size(newcount);
-		for(unsigned n=0;n<newcount;n++) m_data[n] = strdup(p_source[n]);
+		for(t_size n=0;n<newcount;n++) m_data[n] = strdup(p_source[n]);
 	}
 
-	mem_block_fast_t<char*> m_data;
+	pfc::array_t<char*,pfc::alloc_fast> m_data;
 };
 
 #endif //_PFC_STRING_LIST_H_

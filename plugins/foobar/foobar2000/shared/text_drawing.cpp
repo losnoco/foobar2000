@@ -215,16 +215,18 @@ extern "C" {
 
 BOOL SHARED_EXPORT uTextOutColors(HDC dc,const char * p_text,UINT len,int x,int y,const RECT * clip,BOOL is_selected,DWORD default_color)
 {
-	pfc::stringcvt::string_os_from_utf8 temp;
-	if (!temp.convert(p_text)) return FALSE;
-	return text_out_colors(dc,temp,temp.length(),x,y,clip,!!is_selected,default_color);
+	try {
+		pfc::stringcvt::string_os_from_utf8 temp(p_text);
+		return text_out_colors(dc,temp,temp.length(),x,y,clip,!!is_selected,default_color);
+	} catch(std::exception const &) {return FALSE;}
 }
 
 BOOL SHARED_EXPORT uTextOutColorsTabbed(HDC dc,const char * p_text,UINT len,const RECT * item,int border,const RECT * clip,BOOL selected,DWORD default_color,BOOL use_columns)
 {
-	pfc::stringcvt::string_os_from_utf8 temp;
-	if (!temp.convert(p_text)) return FALSE;
-	return text_out_colors_tab(dc,temp,temp.length(),item,border,clip,!!selected,default_color,!!use_columns);
+	try {
+		pfc::stringcvt::string_os_from_utf8 temp(p_text);
+		return text_out_colors_tab(dc,temp,temp.length(),item,border,clip,!!selected,default_color,!!use_columns);
+	} catch(std::exception const &) {return FALSE;}
 }
 
 }

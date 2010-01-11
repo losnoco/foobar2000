@@ -19,17 +19,7 @@ namespace pfc {
 	template<typename t_object>
 	class rc_container_t : public rc_container_base {
 	public:
-		rc_container_t() {}
-		template<typename t_param1>
-		rc_container_t(t_param1 const & p_param1) : m_object(p_param1) {}
-		template<typename t_param1,typename t_param2>
-		rc_container_t(t_param1 const & p_param1,t_param2 const & p_param2) : m_object(p_param1,p_param2) {}
-		template<typename t_param1,typename t_param2,typename t_param3>
-		rc_container_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3) : m_object(p_param1,p_param2,p_param3) {}
-		template<typename t_param1,typename t_param2,typename t_param3,typename t_param4>
-		rc_container_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3,t_param4 const & p_param4) : m_object(p_param1,p_param2,p_param3,p_param4) {}
-		template<typename t_param1,typename t_param2,typename t_param3,typename t_param4,typename t_param5>
-		rc_container_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3,t_param4 const & p_param4,t_param5 const & p_param5) : m_object(p_param1,p_param2,p_param3,p_param4,p_param5) {}
+		TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(rc_container_t,m_object)
 
 		t_object m_object;
 	};
@@ -42,6 +32,7 @@ namespace pfc {
 	private:
 		typedef rcptr_const_t<t_object> t_self;
 	public:
+
 		rcptr_const_t() : m_container(NULL), m_ptr(NULL) {}
 		rcptr_const_t(const t_self & p_source) : m_container(NULL), m_ptr(NULL) {*this = p_source;}
 
@@ -77,11 +68,6 @@ namespace pfc {
 		const t_object & operator*() const {return *m_ptr;}
 		const t_object * operator->() const {return m_ptr;}
 
-		static void g_swap(t_self & p_item1,t_self & p_item2) {
-			pfc::swap_t(p_item1.m_ptr,p_item2.m_ptr);
-			pfc::swap_t(p_item1.m_container,p_item2.m_container);
-		}
-
 		template<typename t_object_cast>
 		operator rcptr_const_t<t_object_cast>() const {
 			rcptr_const_t<t_object_cast> temp;
@@ -94,6 +80,14 @@ namespace pfc {
 			rcptr_const_t<t_object_cast> temp;
 			if (is_valid()) temp.__set_from_cast(m_container,static_cast<t_object_cast*>(m_ptr));
 			return temp;
+		}
+
+		bool operator==(const t_self & p_other) const {
+			return m_container == p_other.m_container;
+		}
+
+		bool operator!=(const t_self & p_other) const {
+			return m_container != p_other.m_container;
 		}
 
 	protected:
@@ -158,6 +152,11 @@ namespace pfc {
 		void new_t(t_param1 const & p_param1, t_param2 const & p_param2,t_param3 const & p_param3,t_param4 const & p_param4,t_param5 const & p_param5) {
 			on_new(new t_container_impl(p_param1,p_param2,p_param3,p_param4,p_param5));
 		}
+		
+		template<typename t_param1,typename t_param2,typename t_param3,typename t_param4,typename t_param5,typename t_param6>
+		void new_t(t_param1 const & p_param1, t_param2 const & p_param2,t_param3 const & p_param3,t_param4 const & p_param4,t_param5 const & p_param5,t_param6 const & p_param6) {
+			on_new(new t_container_impl(p_param1,p_param2,p_param3,p_param4,p_param5,p_param6));
+		}
 
 		static t_self g_new_t() {
 			t_self temp;
@@ -214,18 +213,6 @@ namespace pfc {
 	};
 
 	template<typename t_object>
-	void swap_t(rcptr_const_t<t_object> & p_item1,rcptr_const_t<t_object> & p_item2) {
-		rcptr_const_t<t_object>::g_swap(p_item1,p_item2);
-	}
-
-
-	template<typename t_object>
-	void swap_t(rcptr_t<t_object> & p_item1,rcptr_t<t_object> & p_item2) {
-		rcptr_t<t_object>::g_swap(p_item1,p_item2);
-	}
-
-
-	template<typename t_object>
 	rcptr_t<t_object> rcnew_t() {
 		rcptr_t<t_object> temp;
 		temp.new_t();
@@ -264,6 +251,21 @@ namespace pfc {
 	rcptr_t<t_object> rcnew_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3,t_param4 const & p_param4,t_param5 const & p_param5) {
 		rcptr_t<t_object> temp;
 		temp.new_t<t_param1,t_param2,t_param3,t_param4>(p_param1,p_param2,p_param3,p_param4,p_param5);
-		return temp;		
+		return temp;
 	}
+
+	template<typename t_object,typename t_param1,typename t_param2,typename t_param3,typename t_param4,typename t_param5,typename t_param6>
+	rcptr_t<t_object> rcnew_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3,t_param4 const & p_param4,t_param5 const & p_param5,t_param6 const & p_param6) {
+		rcptr_t<t_object> temp;
+		temp.new_t<t_param1,t_param2,t_param3,t_param4>(p_param1,p_param2,p_param3,p_param4,p_param5,p_param6);
+		return temp;
+	}
+
+	class traits_rcptr : public traits_default {
+	public:
+		enum { realloc_safe = true, constructor_may_fail = false };
+	};
+
+	template<typename T> class traits_t<rcptr_const_t<T> > : public traits_rcptr {};
+	template<typename T> class traits_t<rcptr_t<T> > : public traits_rcptr {};
 }

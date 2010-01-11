@@ -13,9 +13,8 @@ public:
 	//! @param p_out_bps_physical Desired physical word width of output. Must be either 8, 16, 24 or 32, greater or equal to p_out_bps. This is typically set to same value as p_out_bps.
 	//! @param p_dither Indicates whether dithering should be used. Note that dithering is CPU-heavy.
 	//! @param p_prescale Value to scale all audio samples by when converting. Set to 1.0 to do nothing.
-	//! @returns One of t_io_result codes. Possible values are: io_result_success, io_result_error_data (invalid parameters), io_result_error_out_of_memory.
 
-	virtual t_io_result run(const audio_chunk & p_chunk,
+	virtual void run(const audio_chunk & p_chunk,
 		mem_block_container & p_output,
 		unsigned p_out_bps,
 		unsigned p_out_bps_physical,

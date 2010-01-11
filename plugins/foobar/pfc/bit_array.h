@@ -4,29 +4,29 @@
 class NOVTABLE bit_array
 {
 public:
-	virtual bool get(int n) const = 0;
-	virtual int find(bool val,int start,int count) const//can be overridden for improved speed; returns first occurance of val between start and start+count (excluding start+count), or start+count if not found; count may be negative if we're searching back
+	virtual bool get(t_size n) const = 0;
+	virtual t_size find(bool val,t_size start,t_ssize count) const//can be overridden for improved speed; returns first occurance of val between start and start+count (excluding start+count), or start+count if not found; count may be negative if we're searching back
 	{
-		int d, todo, ptr = start;
+		t_ssize d, todo, ptr = start;
 		if (count==0) return start;
 		else if (count<0) {d = -1; todo = -count;}
 		else {d = 1; todo = count;}
 		while(todo>0 && get(ptr)!=val) {ptr+=d;todo--;}
 		return ptr;
 	}
-	inline bool operator[](int n) const {return get(n);}
+	inline bool operator[](t_size n) const {return get(n);}
 
-	unsigned calc_count(bool val,int start,unsigned count,unsigned count_max = infinite) const//counts number of vals for start<=n<start+count
+	t_size calc_count(bool val,t_size start,t_size count,t_size count_max = ~0) const//counts number of vals for start<=n<start+count
 	{
-		unsigned found = 0;
-		int max = start+count;
-		int ptr;
+		t_size found = 0;
+		t_size max = start+count;
+		t_size ptr;
 		for(ptr=find(val,start,count);found<count_max && ptr<max;ptr=find(val,ptr+1,max-ptr-1)) found++;
 		return found;
 	}
 
-	inline unsigned find_first(bool val,unsigned start,unsigned max) const {return find(val,start,max-start);}
-	inline unsigned find_next(bool val,unsigned previous,unsigned max) const {return find(val,previous+1,max-(previous+1));}
+	inline t_size find_first(bool val,t_size start,t_size max) const {return find(val,start,max-start);}
+	inline t_size find_next(bool val,t_size previous,t_size max) const {return find(val,previous+1,max-(previous+1));}
 	//for(n = mask.find_first(true,0,m); n < m; n = mask.find_next(true,n,m) )
 
 };
@@ -34,33 +34,25 @@ public:
 class NOVTABLE bit_array_var : public bit_array
 {
 public:
-	virtual void set(int n,bool val)=0;
+	virtual void set(t_size n,bool val)=0;
 };
 
-
-template<class T> class mem_block_t; //blah
 
 template<class T>
 class bit_array_table_t : public bit_array
 {
 	const T * data;
-	int count;
-	bool before,after;
+	t_size count;
+	bool after;
 public:
-	inline bit_array_table_t(const T * p_data,int p_count,bool p_before = false,bool p_after = false)
-		: data(p_data), count(p_count), before(p_before), after(p_after)
+	inline bit_array_table_t(const T * p_data,t_size p_count,bool p_after = false)
+		: data(p_data), count(p_count), after(p_after)
 	{
 	}
 
-	inline bit_array_table_t(const mem_block_t<T> & p_data,bool p_before = false,bool p_after = false)
-		: data(p_data.get_ptr()), count(p_data.get_size()), before(p_before), after(p_after)
+	bool get(t_size n) const
 	{
-	}
-
-	virtual bool get(int n) const
-	{
-		if (n<0) return before;
-		else if (n<count) return !!data[n];
+		if (n<count) return !!data[n];
 		else return after;
 	}
 };
@@ -69,29 +61,21 @@ template<class T>
 class bit_array_var_table_t : public bit_array_var
 {
 	T * data;
-	int count;
-	bool before,after;
+	t_size count;
+	bool after;
 public:
-	inline bit_array_var_table_t(T * p_data,int p_count,bool p_before = false,bool p_after = false)
-		: data(p_data), count(p_count), before(p_before), after(p_after)
+	inline bit_array_var_table_t(T * p_data,t_size p_count,bool p_after = false)
+		: data(p_data), count(p_count), after(p_after)
 	{
 	}
 
-	inline bit_array_var_table_t(mem_block_t<T> & p_data,bool p_before = false,bool p_after = false)
-		: data(p_data.get_ptr()), count(p_data.get_size()), before(p_before), after(p_after)
-	{
-	}
-
-	virtual bool get(int n) const
-	{
-		if (n<0) return before;
-		else if (n<count) return !!data[n];
+	bool get(t_size n) const {
+		if (n<count) return !!data[n];
 		else return after;
 	}
 
-	virtual void set(int n,bool val)
-	{
-		if (n>=0 && n<count) data[n] = !!val;
+	void set(t_size n,bool val) {
+		if (n<count) data[n] = !!val;
 	}
 };
 
@@ -101,12 +85,12 @@ typedef bit_array_var_table_t<bool> bit_array_var_table;
 
 class bit_array_range : public bit_array
 {
-	int begin,end;
+	t_size begin,end;
 	bool state;
 public:
-	bit_array_range(int first,int count,bool p_state = true) : begin(first), end(first+count), state(p_state) {}
+	bit_array_range(t_size first,t_size count,bool p_state = true) : begin(first), end(first+count), state(p_state) {}
 	
-	virtual bool get(int n) const
+	bool get(t_size n) const
 	{
 		bool rv = n>=begin && n<end;
 		if (!state) rv = !rv;
@@ -119,7 +103,7 @@ class bit_array_and : public bit_array
 	const bit_array & a1, & a2;
 public:
 	bit_array_and(const bit_array & p_a1, const bit_array & p_a2) : a1(p_a1), a2(p_a2) {}
-	virtual bool get(int n) const {return a1.get(n) && a2.get(n);}
+	bool get(t_size n) const {return a1.get(n) && a2.get(n);}
 };
 
 class bit_array_or : public bit_array
@@ -127,7 +111,7 @@ class bit_array_or : public bit_array
 	const bit_array & a1, & a2;
 public:
 	bit_array_or(const bit_array & p_a1, const bit_array & p_a2) : a1(p_a1), a2(p_a2) {}
-	virtual bool get(int n) const {return a1.get(n) || a2.get(n);}
+	bool get(t_size n) const {return a1.get(n) || a2.get(n);}
 };
 
 class bit_array_xor : public bit_array
@@ -135,7 +119,7 @@ class bit_array_xor : public bit_array
 	const bit_array & a1, & a2;
 public:
 	bit_array_xor(const bit_array & p_a1, const bit_array & p_a2) : a1(p_a1), a2(p_a2) {}
-	virtual bool get(int n) const
+	bool get(t_size n) const
 	{
 		bool v1 = a1.get(n), v2 = a2.get(n);
 		return (v1 && !v2) || (!v1 && v2);
@@ -147,8 +131,8 @@ class bit_array_not : public bit_array
 	const bit_array & a1;
 public:
 	bit_array_not(const bit_array & p_a1) : a1(p_a1) {}
-	virtual bool get(int n) const {return !a1.get(n);}
-	virtual int find(bool val,int start,int count) const
+	bool get(t_size n) const {return !a1.get(n);}
+	t_size find(bool val,t_size start,t_ssize count) const
 	{return a1.find(!val,start,count);}
 
 };
@@ -156,16 +140,16 @@ public:
 class bit_array_true : public bit_array
 {
 public:
-	virtual bool get(int n) const {return true;}
-	virtual int find(bool val,int start,int count) const
+	bool get(t_size n) const {return true;}
+	t_size find(bool val,t_size start,t_ssize count) const
 	{return val ? start : start+count;}
 };
 
 class bit_array_false : public bit_array
 {
 public:
-	virtual bool get(int n) const {return false;}
-	virtual int find(bool val,int start,int count) const
+	bool get(t_size n) const {return false;}
+	t_size find(bool val,t_size start,t_ssize count) const
 	{return val ? start+count : start;}
 };
 
@@ -174,30 +158,19 @@ class bit_array_val : public bit_array
 	bool val;
 public:
 	bit_array_val(bool v) : val(v) {}
-	virtual bool get(int n) const {return val;}
-	virtual int find(bool p_val,int start,int count) const
+	bool get(t_size n) const {return val;}
+	t_size find(bool p_val,t_size start,t_ssize count) const
 	{return val==p_val ? start : start+count;}
-};
-
-class bit_array_shift : public bit_array
-{
-	int offset;
-	const bit_array & a1;
-public:
-	bit_array_shift(const bit_array & p_a1,int p_offset) : a1(p_a1), offset(p_offset) {}
-	virtual bool get(int n) const {return a1.get(n-offset);}
-	virtual int find(bool val,int start,int count) const
-	{return a1.find(val,start-offset,count)+offset;}
 };
 
 class bit_array_one : public bit_array
 {
-	int val;
+	t_size val;
 public:
-	bit_array_one(int p_val) : val(p_val) {}
-	virtual bool get(int n) const {return n==val;}
+	bit_array_one(t_size p_val) : val(p_val) {}
+	virtual bool get(t_size n) const {return n==val;}
 
-	virtual int find(bool p_val,int start,int count) const
+	virtual t_size find(bool p_val,t_size start,t_ssize count) const
 	{
 		if (count==0) return start;
 		else if (p_val)
@@ -218,67 +191,60 @@ public:
 class bit_array_bittable : public bit_array_var
 {
 	unsigned char * m_data;
-	unsigned m_count;
+	t_size m_count;
 public:
 	//helpers
-	inline static bool g_get(const unsigned char * ptr,unsigned idx)
+	template<typename t_array>
+	inline static bool g_get(const t_array & p_array,t_size idx)
 	{
-		return !! (ptr[idx>>3] & (1<<(idx&7)));
+		return !! (p_array[idx>>3] & (1<<(idx&7)));
 	}
 
-	inline static void g_set(unsigned char * ptr,unsigned idx,bool val)
+	template<typename t_array>
+	inline static void g_set(t_array & p_array,t_size idx,bool val)
 	{
-		unsigned char & dst = ptr[idx>>3];
+		unsigned char & dst = p_array[idx>>3];
 		unsigned char mask = 1<<(idx&7);
 		dst = val ? dst|mask : dst&~mask;
 	}
 
-	inline static unsigned g_estimate_size(unsigned p_count) {return (p_count+7)>>3;}
+	inline static t_size g_estimate_size(t_size p_count) {return (p_count+7)>>3;}
 
-	bool resize(unsigned p_count)
+	void resize(t_size p_count)
 	{
-		unsigned old_bytes = g_estimate_size(m_count);
+		t_size old_bytes = g_estimate_size(m_count);
 		m_count = p_count;
-		unsigned bytes = g_estimate_size(m_count);
+		t_size bytes = g_estimate_size(m_count);
 		if (bytes==0)
 		{
-			if (m_data != NULL) {free(m_data);m_data=NULL;}
+			if (m_data != NULL) {pfc::free_t(m_data);m_data=NULL;}
 		}
 		else
 		{
 			if (m_data == NULL) {
-				m_data = (unsigned char*) malloc(bytes);
-				if (m_data == NULL) return false;
+				m_data = pfc::malloc_t<unsigned char>(bytes);
 			} else {
-				unsigned char * newdata = (unsigned char*) realloc(m_data,bytes);
-				if (newdata == NULL) return false;
-				m_data = newdata;
+				m_data = pfc::realloc_t(m_data,bytes);
 			}
-			if (bytes > old_bytes) memset(m_data+old_bytes,0,bytes-old_bytes);
+			if (bytes > old_bytes) pfc::memset_t(m_data+old_bytes,(unsigned char)0,bytes-old_bytes);
 		}
-		return true;
 	}
 
-	void resize_e(unsigned p_count) {
-		if (!resize(p_count)) throw std::bad_alloc();
-	}
-
-	bit_array_bittable(unsigned p_count) : m_count(0), m_data(NULL) {resize_e(p_count);}
-	~bit_array_bittable() {if (m_data != NULL) free(m_data);}
+	bit_array_bittable(t_size p_count) : m_count(0), m_data(NULL) {resize(p_count);}
+	~bit_array_bittable() {if (m_data != NULL) pfc::free_t(m_data);}
 	
-	virtual void set(int n,bool val)
+	void set(t_size n,bool val)
 	{
-		if ((unsigned)n<m_count)
+		if (n<m_count)
 		{
 			g_set(m_data,n,val);
 		}
 	}
 
-	virtual bool get(int n) const
+	bool get(t_size n) const
 	{
 		bool rv = false;
-		if ((unsigned)n<m_count)
-		{
+		if (n<m_count) {
 			rv = g_get(m_data,n);
 		}
 		return rv;
@@ -289,14 +255,14 @@ public:
 class bit_array_order_changed : public bit_array
 {
 public:
-	bit_array_order_changed(const unsigned * p_order) : m_order(p_order) {}
-	bool get(int n) const
+	bit_array_order_changed(const t_size * p_order) : m_order(p_order) {}
+	bool get(t_size n) const
 	{
-		return m_order[(unsigned)n] != (unsigned)n;
+		return m_order[n] != n;
 	}
 
 private:
-	const unsigned * m_order;
+	const t_size * m_order;
 };
 
 #define for_each_bit_array(var,mask,val,start,count) for(var = mask.find(val,start,count);var<start+count;var=mask.find(val,var+1,count-(var+1-start)))

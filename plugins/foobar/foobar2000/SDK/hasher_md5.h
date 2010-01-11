@@ -13,14 +13,17 @@ class NOVTABLE hasher_md5 : public service_base
 public:
 
 	virtual void initialize(hasher_md5_state & p_state) = 0;
-	virtual void process(hasher_md5_state & p_state,const void * p_buffer,unsigned p_bytes) = 0;
+	virtual void process(hasher_md5_state & p_state,const void * p_buffer,t_size p_bytes) = 0;
 	virtual hasher_md5_result get_result(const hasher_md5_state & p_state) = 0;
 
 	static GUID guid_from_result(const hasher_md5_result & param);
 
-	hasher_md5_result process_single(const void * p_buffer,unsigned p_bytes);
-	GUID process_single_guid(const void * p_buffer,unsigned p_bytes);
+	hasher_md5_result process_single(const void * p_buffer,t_size p_bytes);
+	GUID process_single_guid(const void * p_buffer,t_size p_bytes);
 
+	
+	//! Helper
+	void process_string(hasher_md5_state & p_state,const char * p_string,t_size p_length = infinite) {return process(p_state,p_string,strlen_max(p_string,p_length));}
 
 	static const GUID class_guid;
 

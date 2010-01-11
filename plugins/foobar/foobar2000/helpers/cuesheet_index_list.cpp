@@ -35,10 +35,12 @@ static bool parse_value(const char * p_name,double & p_out)
 	return true;
 }
 
-void t_cuesheet_index_list::from_infos(file_info const & p_in,double p_base)
+bool t_cuesheet_index_list::from_infos(file_info const & p_in,double p_base)
 {
 	double pregap;
+	bool found = false;
 	if (!parse_value(p_in.info_get("pregap"),pregap)) pregap = 0;
+	else found = true;
 	m_positions[0] = p_base - pregap;
 	m_positions[1] = p_base;
 	for(unsigned n=2;n<count;n++)
@@ -46,12 +48,13 @@ void t_cuesheet_index_list::from_infos(file_info const & p_in,double p_base)
 		char namebuffer[16];
 		sprintf(namebuffer,"index %02u",n);
 		double temp;
-		if (parse_value(p_in.info_get(namebuffer),temp))
-			m_positions[n] = temp + p_base;
-		else
+		if (parse_value(p_in.info_get(namebuffer),temp)) {
+			m_positions[n] = temp + p_base; found = true;
+		} else {
 			m_positions[n] = 0;
+		}
 	}
-	
+	return found;	
 }
 
 cuesheet_format_index_time::cuesheet_format_index_time(double p_time)
@@ -62,16 +65,16 @@ cuesheet_format_index_time::cuesheet_format_index_time(double p_time)
 	m_buffer << format_uint(minutes,2) << ":" << format_uint(seconds,2) << ":" << format_uint(ticks,2);
 }
 
-double cuesheet_parse_index_time_e(const char * p_string,unsigned p_length)
+double cuesheet_parse_index_time_e(const char * p_string,t_size p_length)
 {
 	return (double) cuesheet_parse_index_time_ticks_e(p_string,p_length) / 75.0;
 }
 
-unsigned cuesheet_parse_index_time_ticks_e(const char * p_string,unsigned p_length)
+unsigned cuesheet_parse_index_time_ticks_e(const char * p_string,t_size p_length)
 {
-	unsigned ptr = 0;
-	unsigned splitmarks[2];
-	unsigned splitptr = 0;
+	t_size ptr = 0;
+	t_size splitmarks[2];
+	t_size splitptr = 0;
 	for(ptr=0;ptr<p_length;ptr++)
 	{
 		if (p_string[ptr] == ':')
@@ -82,7 +85,7 @@ unsigned cuesheet_parse_index_time_ticks_e(const char * p_string,unsigned p_leng
 		else if (!is_numeric(p_string[ptr])) throw std::exception("invalid INDEX time syntax",0);
 	}
 	
-	unsigned minutes_base = 0, minutes_length = 0, seconds_base = 0, seconds_length = 0, frames_base = 0, frames_length = 0;
+	t_size minutes_base = 0, minutes_length = 0, seconds_base = 0, seconds_length = 0, frames_base = 0, frames_length = 0;
 
 	switch(splitptr)
 	{
@@ -113,4 +116,10 @@ unsigned cuesheet_parse_index_time_ticks_e(const char * p_string,unsigned p_leng
 	if (minutes_length > 0) ret += 60 * 75 * atoui_ex(p_string + minutes_base,minutes_length);
 
 	return ret;	
+}
+
+
+bool t_cuesheet_index_list::is_empty() const {
+	for(unsigned n=0;n<count;n++) if (m_positions[n] != m_positions[1]) return false;
+	return true;
 }

@@ -1,6 +1,7 @@
 #include "shared.h"
 #include <shellapi.h>
 
+using namespace pfc;
 
 #define NIIF_NOSOUND    0x00000010
 

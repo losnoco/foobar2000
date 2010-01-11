@@ -9,15 +9,15 @@ public:
 
 	double		get_length() const {return m_length;}
 	
-	unsigned	meta_get_count() const {return m_meta_count;}
-	const char*	meta_enum_name(unsigned p_index) const {return m_meta[p_index].m_name;}
-	unsigned	meta_enum_value_count(unsigned p_index) const;
-	const char*	meta_enum_value(unsigned p_index,unsigned p_value_number) const;
-	unsigned	meta_find_ex(const char * p_name,unsigned p_name_length) const;
+	t_size		meta_get_count() const {return m_meta_count;}
+	const char*	meta_enum_name(t_size p_index) const {return m_meta[p_index].m_name;}
+	t_size		meta_enum_value_count(t_size p_index) const;
+	const char*	meta_enum_value(t_size p_index,t_size p_value_number) const;
+	t_size		meta_find_ex(const char * p_name,t_size p_name_length) const;
 
-	unsigned	info_get_count() const {return m_info_count;}
-	const char*	info_enum_name(unsigned p_index) const {return m_info[p_index].m_name;}
-	const char*	info_enum_value(unsigned p_index) const {return m_info[p_index].m_value;}
+	t_size		info_get_count() const {return m_info_count;}
+	const char*	info_enum_name(t_size p_index) const {return m_info[p_index].m_name;}
+	const char*	info_enum_value(t_size p_index) const {return m_info[p_index].m_value;}
 
 
 	const file_info_const_impl & operator=(const file_info & p_source) {copy(p_source); return *this;}
@@ -28,26 +28,26 @@ public:
 	replaygain_info	get_replaygain() const {return m_replaygain;}
 
 private:
-	void		set_length(double p_length) {assert(0);}
+	void		set_length(double p_length) {throw pfc::exception_bug_check();}
 
-	unsigned	meta_set_ex(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length) {assert(0); return infinite;}
-	void		meta_insert_value_ex(unsigned p_index,unsigned p_value_index,const char * p_value,unsigned p_value_length) {assert(0);}
-	void		meta_remove_mask(const bit_array & p_mask) {assert(0);}
-	void		meta_reorder(const unsigned * p_order) {assert(0);}
-	void		meta_remove_values(unsigned p_index,const bit_array & p_mask) {assert(0);}
-	void		meta_modify_value_ex(unsigned p_index,unsigned p_value_index,const char * p_value,unsigned p_value_length) {assert(0);}
+	t_size		meta_set_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) {throw pfc::exception_bug_check();}
+	void		meta_insert_value_ex(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length) {throw pfc::exception_bug_check();}
+	void		meta_remove_mask(const bit_array & p_mask) {throw pfc::exception_bug_check();}
+	void		meta_reorder(const t_size * p_order) {throw pfc::exception_bug_check();}
+	void		meta_remove_values(t_size p_index,const bit_array & p_mask) {throw pfc::exception_bug_check();}
+	void		meta_modify_value_ex(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length) {throw pfc::exception_bug_check();}
 
-	unsigned	info_set_ex(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length) {assert(0); return infinite;}
-	void		info_remove_mask(const bit_array & p_mask) {assert(0);}
+	t_size		info_set_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) {throw pfc::exception_bug_check();}
+	void		info_remove_mask(const bit_array & p_mask) {throw pfc::exception_bug_check();}
 
-	void			set_replaygain(const replaygain_info & p_info) {assert(0);}
+	void			set_replaygain(const replaygain_info & p_info) {throw pfc::exception_bug_check();}
 	
-	unsigned	meta_set_nocheck_ex(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length) {assert(0); return infinite;}
-	unsigned	info_set_nocheck_ex(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length) {assert(0); return infinite;}
+	t_size		meta_set_nocheck_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) {throw pfc::exception_bug_check();}
+	t_size		info_set_nocheck_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) {throw pfc::exception_bug_check();}
 public:
 	struct meta_entry {
 		const char * m_name;
-		unsigned m_valuecount;
+		t_size m_valuecount;
 		const char * const * m_valuemap;
 	};
 
@@ -60,7 +60,7 @@ public:
 	typedef t_uint16 t_hintentry;
 #endif//__file_info_const_impl_have_hintmap__
 private:
-	mem_block_t<char> m_buffer;
+	pfc::array_t<char> m_buffer;
 	t_uint16 m_meta_count;
 	t_uint16 m_info_count;
 	

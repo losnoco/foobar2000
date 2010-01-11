@@ -8,49 +8,48 @@ namespace {
 	{
 		HANDLE text;
 		int subsong;
-		unsigned index;
+		t_size index;
 	};
 }
 static int __cdecl custom_sort_compare(const custom_sort_data & elem1, const custom_sort_data & elem2 )
 {//depends on unicode/ansi, nonportable (win32 lstrcmpi)
 	int ret = uSortStringCompare(elem1.text,elem2.text);//uStringCompare
 //	if (ret == 0) ret = elem1.subsong - elem2.subsong;
-	if (ret == 0) ret = elem1.index - elem2.index;
+	if (ret == 0) ret = pfc::sgn_t(elem1.index - elem2.index);
 	return ret;
 }
 
-void metadb_handle_list_helper::sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,const char * spec,titleformat_hook * p_hook)
+void metadb_handle_list_helper::sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const char * spec,titleformat_hook * p_hook)
 {
 	service_ptr_t<titleformat_object> script;
 	if (static_api_ptr_t<titleformat_compiler>()->compile(script,spec))
 		sort_by_format_partial(p_list,base,count,script,p_hook);
 }
 
-void metadb_handle_list_helper::sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,unsigned* order,const char * spec,titleformat_hook * p_hook)
+void metadb_handle_list_helper::sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const char * spec,titleformat_hook * p_hook)
 {
 	service_ptr_t<titleformat_object> script;
 	if (static_api_ptr_t<titleformat_compiler>()->compile(script,spec))
 		sort_by_format_get_order_partial(p_list,base,count,order,script,p_hook);
 }
 
-void metadb_handle_list_helper::sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook)
+void metadb_handle_list_helper::sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook)
 {
-	mem_block_t<unsigned> order(count);
-	sort_by_format_get_order_partial(p_list,base,count,order,p_script,p_hook);
-	p_list.reorder_partial(base,order,count);
+	pfc::array_t<t_size> order; order.set_size(count);
+	sort_by_format_get_order_partial(p_list,base,count,order.get_ptr(),p_script,p_hook);
+	p_list.reorder_partial(base,order.get_ptr(),count);
 }
 
-void metadb_handle_list_helper::sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,unsigned* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook)
+void metadb_handle_list_helper::sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook)
 {
 	assert(base+count<=p_list.get_count());
-	unsigned n;
-	array_t<custom_sort_data> data(count);
+	t_size n;
+	pfc::array_t<custom_sort_data> data;
+	data.set_size(count);
 	
-	string8 temp;
-	string8 temp2;
-	temp.set_mem_logic(mem_block::ALLOC_FAST_DONTGODOWN);
+	string8_fastalloc temp;
+	string8_fastalloc temp2;
 	temp.prealloc(512);
-	temp2.set_mem_logic(mem_block::ALLOC_FAST_DONTGODOWN);
 	for(n=0;n<count;n++)
 	{
 		metadb_handle_ptr item;
@@ -73,24 +72,24 @@ void metadb_handle_list_helper::sort_by_format_get_order_partial(const list_base
 	}
 }
 
-void metadb_handle_list_helper::sort_by_relative_path_partial(list_base_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count)
+void metadb_handle_list_helper::sort_by_relative_path_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count)
 {
 	assert(base+count<=p_list.get_count());
-	mem_block_t<unsigned> order(count);
-	sort_by_relative_path_get_order_partial(p_list,base,count,order);
-	p_list.reorder_partial(base,order,count);
+	pfc::array_t<t_size> order; order.set_size(count);
+	sort_by_relative_path_get_order_partial(p_list,base,count,order.get_ptr());
+	p_list.reorder_partial(base,order.get_ptr(),count);
 }
 
-void metadb_handle_list_helper::sort_by_relative_path_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,unsigned* order)
+void metadb_handle_list_helper::sort_by_relative_path_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order)
 {
 	assert(base+count<=p_list.get_count());
-	unsigned n;
-	array_t<custom_sort_data> data(count);
+	t_size n;
+	pfc::array_t<custom_sort_data> data;
+	data.set_size(count);
 	service_ptr_t<library_manager> api;
 	library_manager::g_get(api);
 	
-	string8 temp;
-	temp.set_mem_logic(mem_block::ALLOC_FAST_DONTGODOWN);
+	string8_fastalloc temp;
 	temp.prealloc(512);
 	for(n=0;n<count;n++)
 	{
@@ -114,16 +113,16 @@ void metadb_handle_list_helper::sort_by_relative_path_get_order_partial(const li
 
 void metadb_handle_list_helper::remove_duplicates(list_base_t<metadb_handle_ptr> & p_list)
 {
-	unsigned count = p_list.get_count();
+	t_size count = p_list.get_count();
 	if (count>0)
 	{
 		bit_array_bittable mask(count);
-		mem_block_t<unsigned> order(count);
-		order_helper::g_fill(order,count);
+		pfc::array_t<t_size> order; order.set_size(count);
+		order_helper::g_fill(order);
 
 		p_list.sort_get_permutation_t(pfc::compare_t<metadb_handle_ptr>,order.get_ptr());
 		
-		unsigned n;
+		t_size n;
 		bool found = false;
 		for(n=0;n<count-1;n++)
 		{
@@ -140,12 +139,12 @@ void metadb_handle_list_helper::remove_duplicates(list_base_t<metadb_handle_ptr>
 
 void metadb_handle_list_helper::sort_by_pointer_remove_duplicates(list_base_t<metadb_handle_ptr> & p_list)
 {
-	unsigned count = p_list.get_count();
+	t_size count = p_list.get_count();
 	if (count>0)
 	{
 		sort_by_pointer(p_list);
 		bool b_found = false;
-		unsigned n;
+		t_size n;
 		for(n=0;n<count-1;n++)
 		{
 			if (p_list.get_item(n)==p_list.get_item(n+1))
@@ -158,7 +157,7 @@ void metadb_handle_list_helper::sort_by_pointer_remove_duplicates(list_base_t<me
 		if (b_found)
 		{
 			bit_array_bittable mask(count);
-			unsigned n;
+			t_size n;
 			for(n=0;n<count-1;n++)
 			{
 				if (p_list.get_item(n)==p_list.get_item(n+1))
@@ -182,19 +181,19 @@ void metadb_handle_list_helper::sort_by_pointer(list_base_t<metadb_handle_ptr> &
 	p_list.sort();
 }
 
-unsigned metadb_handle_list_helper::bsearch_by_pointer(const list_base_const_t<metadb_handle_ptr> & p_list,const metadb_handle_ptr & val)
+t_size metadb_handle_list_helper::bsearch_by_pointer(const list_base_const_t<metadb_handle_ptr> & p_list,const metadb_handle_ptr & val)
 {
-	unsigned blah;
+	t_size blah;
 	if (p_list.bsearch_t(pfc::compare_t<metadb_handle_ptr>,val,blah)) return blah;
-	else return infinite;
+	else return ~0;
 }
 
 
 void metadb_handle_list_helper::sorted_by_pointer_extract_difference(metadb_handle_list const & p_list_1,metadb_handle_list const & p_list_2,metadb_handle_list & p_list_1_specific,metadb_handle_list & p_list_2_specific)
 {
-	unsigned found_1, found_2;
-	const unsigned count_1 = p_list_1.get_count(), count_2 = p_list_2.get_count();
-	unsigned ptr_1, ptr_2;
+	t_size found_1, found_2;
+	const t_size count_1 = p_list_1.get_count(), count_2 = p_list_2.get_count();
+	t_size ptr_1, ptr_2;
 
 	found_1 = found_2 = 0;
 	ptr_1 = ptr_2 = 0;
@@ -203,14 +202,14 @@ void metadb_handle_list_helper::sorted_by_pointer_extract_difference(metadb_hand
 		while(ptr_1 < count_1 && (ptr_2 == count_2 || p_list_1[ptr_1] < p_list_2[ptr_2]))
 		{
 			found_1++;
-			unsigned ptr_1_new = ptr_1 + 1;
+			t_size ptr_1_new = ptr_1 + 1;
 			while(ptr_1_new < count_1 && p_list_1[ptr_1_new] == p_list_1[ptr_1]) ptr_1_new++;
 			ptr_1 = ptr_1_new;
 		}
 		while(ptr_2 < count_2 && (ptr_1 == count_1 || p_list_2[ptr_2] < p_list_1[ptr_1]))
 		{
 			found_2++;
-			unsigned ptr_2_new = ptr_2 + 1;
+			t_size ptr_2_new = ptr_2 + 1;
 			while(ptr_2_new < count_2 && p_list_2[ptr_2_new] == p_list_2[ptr_2]) ptr_2_new++;
 			ptr_2 = ptr_2_new;
 		}
@@ -231,14 +230,14 @@ void metadb_handle_list_helper::sorted_by_pointer_extract_difference(metadb_hand
 			while(ptr_1 < count_1 && (ptr_2 == count_2 || p_list_1[ptr_1] < p_list_2[ptr_2]))
 			{
 				p_list_1_specific[found_1++] = p_list_1[ptr_1];
-				unsigned ptr_1_new = ptr_1 + 1;
+				t_size ptr_1_new = ptr_1 + 1;
 				while(ptr_1_new < count_1 && p_list_1[ptr_1_new] == p_list_1[ptr_1]) ptr_1_new++;
 				ptr_1 = ptr_1_new;
 			}
 			while(ptr_2 < count_2 && (ptr_1 == count_1 || p_list_2[ptr_2] < p_list_1[ptr_1]))
 			{
 				p_list_2_specific[found_2++] = p_list_2[ptr_2];
-				unsigned ptr_2_new = ptr_2 + 1;
+				t_size ptr_2_new = ptr_2 + 1;
 				while(ptr_2_new < count_2 && p_list_2[ptr_2_new] == p_list_2[ptr_2]) ptr_2_new++;
 				ptr_2 = ptr_2_new;
 			}
@@ -251,7 +250,7 @@ void metadb_handle_list_helper::sorted_by_pointer_extract_difference(metadb_hand
 double metadb_handle_list_helper::calc_total_duration(const list_base_const_t<metadb_handle_ptr> & p_list)
 {
 	double ret = 0;
-	unsigned n, m = p_list.get_count();
+	t_size n, m = p_list.get_count();
 	for(n=0;n<m;n++)
 	{
 		double temp = p_list.get_item(n)->get_length();

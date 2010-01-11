@@ -1,53 +1,62 @@
 #ifndef _PFC_OTHER_H_
 #define _PFC_OTHER_H_
 
-template<class T>
-class vartoggle_t
-{
-	T oldval;
-	T & var;
-public:
-	vartoggle_t(T & p_var,T val) : var(p_var)
-	{
-		oldval = var;
-		var = val;
-	}
-	~vartoggle_t() {var = oldval;}
-};
+namespace pfc {
+	template<class T>
+	class vartoggle_t {
+		T oldval; T & var;
+	public:
+		vartoggle_t(T & p_var,T val) : var(p_var) {
+			oldval = var;
+			var = val;
+		}
+		~vartoggle_t() {var = oldval;}
+	};
 
-typedef vartoggle_t<bool> booltoggle;
+	typedef vartoggle_t<bool> booltoggle;
+};
 
 class order_helper
 {
-	mem_block_t<unsigned> data;
+	pfc::array_t<t_size> m_data;
 public:
-	order_helper(unsigned size) : data(size)
-	{
-		unsigned n;
-		for(n=0;n<size;n++) data[n]=n;
+	order_helper(t_size p_size) {
+		m_data.set_size(p_size);
+		for(t_size n=0;n<p_size;n++) m_data[n]=n;
 	}
 
 	order_helper(const order_helper & p_order) {*this = p_order;}
 
-	static void g_fill(unsigned * p_order,unsigned p_count);
 
-	unsigned get_item(unsigned ptr) const {return data[ptr];}
+	template<typename t_int>
+	static void g_fill(t_int * p_order,const t_size p_count) {
+		t_size n; for(n=0;n<p_count;n++) p_order[n] = (t_int)n;
+	}
 
-	unsigned & operator[](unsigned ptr) {return data[ptr];}
-	unsigned operator[](unsigned ptr) const {return data[ptr];}
+	template<typename t_array>
+	static void g_fill(t_array & p_array) {
+		t_size n; const t_size max = pfc::array_size_t(p_array);
+		for(n=0;n<max;n++) p_array[n] = n;
+	}
 
-	static void g_swap(unsigned * data,unsigned ptr1,unsigned ptr2);
-	inline void swap(unsigned ptr1,unsigned ptr2) {g_swap(data,ptr1,ptr2);}
 
-	const unsigned * get_ptr() const {return data;}
+	t_size get_item(t_size ptr) const {return m_data[ptr];}
 
-	static unsigned g_find_reverse(const unsigned * order,unsigned val);
-	inline unsigned find_reverse(unsigned val) {return g_find_reverse(data,val);}
+	t_size & operator[](t_size ptr) {return m_data[ptr];}
+	t_size operator[](t_size ptr) const {return m_data[ptr];}
 
-	static void g_reverse(unsigned * order,unsigned base,unsigned count);
-	inline void reverse(unsigned base,unsigned count) {g_reverse(data,base,count);}
+	static void g_swap(t_size * p_data,t_size ptr1,t_size ptr2);
+	inline void swap(t_size ptr1,t_size ptr2) {pfc::swap_t(m_data[ptr1],m_data[ptr2]);}
 
-	unsigned get_count() const {return data.get_size();}
+	const t_size * get_ptr() const {return m_data.get_ptr();}
+
+	static t_size g_find_reverse(const t_size * order,t_size val);
+	inline t_size find_reverse(t_size val) {return g_find_reverse(m_data.get_ptr(),val);}
+
+	static void g_reverse(t_size * order,t_size base,t_size count);
+	inline void reverse(t_size base,t_size count) {g_reverse(m_data.get_ptr(),base,count);}
+
+	t_size get_count() const {return m_data.get_size();}
 };
 
 class fpu_control
@@ -84,6 +93,23 @@ public:
 	fpu_control_default() : fpu_control(_MCW_DN|_MCW_RC,_DN_FLUSH|_RC_NEAR) {}
 };
 
+#ifdef _M_IX86
+class sse_control {
+public:
+	sse_control(unsigned p_mask,unsigned p_val) : m_mask(p_mask) {
+		__control87_2(p_val,p_mask,NULL,&m_oldval);
+	}
+	~sse_control() {
+		__control87_2(m_oldval,m_mask,NULL,&m_oldval);
+	}
+private:
+	unsigned m_mask,m_oldval;
+};
+class sse_control_flushdenormal : private sse_control {
+public:
+	sse_control_flushdenormal() : sse_control(_MCW_DN,_DN_FLUSH) {}
+};
+#endif
 
 namespace pfc {
 	class refcounter {
@@ -93,43 +119,6 @@ namespace pfc {
 		long operator--() {return InterlockedDecrement(&m_val);}
 	private:
 		long m_val;
-	};
-
-	template<typename T, void t_freefunc (T*) = pfc::delete_t<T>, T* t_clonefunc (T*) = pfc::clone_t<T> >
-	class autoptr_t
-	{
-		T* m_ptr;
-	public:
-		inline autoptr_t(const autoptr_t<T> & p_param) : m_ptr(0) {copy(p_param);}
-		inline autoptr_t(T* p_ptr) {m_ptr = p_ptr ? t_clonefunc(p_ptr) : 0;}
-		inline autoptr_t() : m_ptr(0) {}
-		inline ~autoptr_t() {release();}
-
-		inline T* operator->() const {return m_ptr;}
-		inline T* get_ptr() const {return m_ptr;}
-
-		inline bool is_empty() const {return m_ptr == 0;}
-		inline bool is_valid() const {return m_ptr != 0;}
-	
-
-		inline const autoptr_t<T,t_freefunc,t_clonefunc> & operator=(const autoptr_t & p_param) {copy(p_param);return *this;}
-		inline const autoptr_t<T,t_freefunc,t_clonefunc> & operator=(T* p_ptr) {copy(p_ptr); return *this;}
-
-		inline bool operator==(const autoptr_t & param) const {return m_ptr == param.m_ptr;}
-		
-		inline void copy(const autoptr_t & p_param)
-		{
-			release();
-			if (p_param.m_ptr) m_ptr = t_clonefunc(p_param.m_ptr);
-		}
-
-		inline void set(T* p_ptr) {release(); m_ptr = p_ptr;}
-
-		inline void release()
-		{
-			if (m_ptr) t_freefunc(m_ptr);
-			m_ptr = 0;
-		}
 	};
 
 	template<typename T,void t_freefunc(T*) = pfc::delete_t<T> >
@@ -146,11 +135,35 @@ namespace pfc {
 		inline void release() {if (m_ptr) t_freefunc(m_ptr); m_ptr = 0;}
 		inline void set(T * p_ptr) {if (m_ptr) t_freefunc(m_ptr); m_ptr = p_ptr;}
 		inline const ptrholder_t<T,t_freefunc> & operator=(T * p_ptr) {set(p_ptr);return *this;}
-		inline void detach() {m_ptr = 0;}
+		inline T* detach() {T * temp = m_ptr; m_ptr = 0; return temp;}
+		inline T& operator*() {return *m_ptr;}
+		inline const T& operator*() const {return *m_ptr;}
 	private:
 		ptrholder_t(const ptrholder_t<T,t_freefunc> &) {assert(0);}
 		const ptrholder_t<T,t_freefunc> & operator=(const ptrholder_t<T,t_freefunc> & ) {assert(0); return *this;}
 
+		T* m_ptr;
+	};
+
+	//HACK: strip down methods where regular implementation breaks when used with void pointer
+	template<void t_freefunc(void*)>
+	class ptrholder_t<void,t_freefunc> {
+	private:
+		typedef void T;
+	public:
+		inline ptrholder_t(T* p_ptr) : m_ptr(p_ptr) {}
+		inline ptrholder_t() : m_ptr(0) {}
+		inline ~ptrholder_t() {if (m_ptr != 0) t_freefunc(m_ptr);}
+		inline bool is_valid() const {return m_ptr != 0;}
+		inline bool is_empty() const {return m_ptr == 0;}
+		inline T* get_ptr() const {return m_ptr;}
+		inline void release() {if (m_ptr) t_freefunc(m_ptr); m_ptr = 0;}
+		inline void set(T * p_ptr) {if (m_ptr) t_freefunc(m_ptr); m_ptr = p_ptr;}
+		inline const ptrholder_t<T,t_freefunc> & operator=(T * p_ptr) {set(p_ptr);return *this;}
+		inline T* detach() {T * temp = m_ptr; m_ptr = 0; return temp;}
+	private:
+		ptrholder_t(const ptrholder_t<T,t_freefunc> &) {assert(0);}
+		const ptrholder_t<T,t_freefunc> & operator=(const ptrholder_t<T,t_freefunc> & ) {assert(0); return *this;}
 		T* m_ptr;
 	};
 
@@ -168,14 +181,11 @@ namespace pfc {
 		~autodestructor_t() {t_destructor(*this);}
 	};
 
+
+
+
+
 	void crash();
-
-	class exception_bug_check : public std::exception {
-	public:
-		exception_bug_check() : exception("bug check",0) {}
-		exception_bug_check(const exception_bug_check & p_exception) {*this = p_exception;}
-	};
-
 }
 
 #endif

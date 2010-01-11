@@ -1,12 +1,12 @@
 #include "foobar2000.h"
 
-static unsigned merge_tags_calc_rating(const char * field,const file_info * info)
+static t_size merge_tags_calc_rating(const char * field,const file_info * info)
 {
-	unsigned field_index = info->meta_find(field);
-	unsigned ret = 0;
-	if (field_index != infinite)
+	t_size field_index = info->meta_find(field);
+	t_size ret = 0;
+	if (field_index != ~0)
 	{
-		unsigned n,m = info->meta_enum_value_count(field_index);
+		t_size n,m = info->meta_enum_value_count(field_index);
 		for(n=0;n<m;n++)
 			ret += strlen(info->meta_enum_value(field_index,n));//yes, strlen on utf8 data
 	}
@@ -21,7 +21,7 @@ static void merge_tags_copy_info(const char * field,const file_info * from,file_
 
 void file_info::merge(const list_base_const_t<const file_info*> & p_in)
 {
-	unsigned in_count = p_in.get_count();
+	t_size in_count = p_in.get_count();
 	if (in_count == 0)
 	{
 		meta_remove_all();
@@ -45,11 +45,11 @@ void file_info::merge(const list_base_const_t<const file_info*> & p_in)
 	ptr_list_t<const char> fieldnames;
 
 	{
-		unsigned in_ptr;
+		t_size in_ptr;
 		for(in_ptr = 0; in_ptr < in_count; in_ptr++ )
 		{
 			const file_info * info = p_in[in_ptr];
-			unsigned field_ptr, field_max = info->meta_get_count();
+			t_size field_ptr, field_max = info->meta_get_count();
 			for(field_ptr = 0; field_ptr < field_max; field_ptr++ )
 				fieldnames.add_item(info->meta_enum_name(field_ptr));
 		}
@@ -60,14 +60,14 @@ void file_info::merge(const list_base_const_t<const file_info*> & p_in)
 	meta_remove_all();
 
 	{
-		unsigned fieldnames_ptr, fieldnames_max = fieldnames.get_count();
+		t_size fieldnames_ptr, fieldnames_max = fieldnames.get_count();
 		for(fieldnames_ptr = 0; fieldnames_ptr < fieldnames_max; )
 		{
 			const char * fieldname = fieldnames[fieldnames_ptr];
-			unsigned in_ptr, in_best = infinite, in_best_rating = 0;
+			t_size in_ptr, in_best = infinite; t_size in_best_rating = 0;
 			for(in_ptr = 0; in_ptr < in_count; in_ptr++)//SLOW
 			{
-				unsigned rating = merge_tags_calc_rating(fieldname,p_in[in_ptr]);
+				t_size rating = merge_tags_calc_rating(fieldname,p_in[in_ptr]);
 				if (rating > in_best_rating) {in_best = in_ptr; in_best_rating = rating;}
 			}
 
@@ -85,12 +85,12 @@ void file_info::merge(const list_base_const_t<const file_info*> & p_in)
 	{
 		string8_fastalloc tagtype;
 		replaygain_info rg = get_replaygain();
-		unsigned in_ptr;
+		t_size in_ptr;
 		for(in_ptr = 0; in_ptr < in_count; in_ptr++ )
 		{
 			const file_info * info = p_in[in_ptr];
 			rg = replaygain_info::g_merge(rg, info->get_replaygain());
-			unsigned field_ptr, field_max = info->info_get_count();
+			t_size field_ptr, field_max = info->info_get_count();
 			for(field_ptr = 0; field_ptr < field_max; field_ptr++ )
 			{
 				const char * field_name = info->info_enum_name(field_ptr), * field_value = info->info_enum_value(field_ptr);
@@ -110,8 +110,8 @@ void file_info::merge(const list_base_const_t<const file_info*> & p_in)
 }
 
 void file_info::overwrite_info(const file_info & p_source) {
-	unsigned count = p_source.info_get_count();
-	for(unsigned n=0;n<count;n++) {
+	t_size count = p_source.info_get_count();
+	for(t_size n=0;n<count;n++) {
 		info_set(p_source.info_enum_name(n),p_source.info_enum_value(n));
 	}
 }

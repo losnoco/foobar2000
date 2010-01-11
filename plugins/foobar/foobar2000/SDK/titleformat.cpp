@@ -1,6 +1,6 @@
 #include "foobar2000.h"
 
-void titleformat_compiler::remove_color_marks(const char * src,string_base & out)//helper
+void titleformat_compiler::remove_color_marks(const char * src,pfc::string_base & out)//helper
 {
 	out.reset();
 	while(*src)
@@ -15,30 +15,30 @@ void titleformat_compiler::remove_color_marks(const char * src,string_base & out
 	}
 }
 
-static bool test_for_bad_char(const char * source,unsigned source_char_len,const char * reserved)
+static bool test_for_bad_char(const char * source,t_size source_char_len,const char * reserved)
 {
-	return strstr_ex(reserved,(unsigned)(-1),source,source_char_len) != (unsigned)(-1);
+	return strstr_ex(reserved,(t_size)(-1),source,source_char_len) != (t_size)(-1);
 }
 
-void titleformat_compiler::remove_forbidden_chars(titleformat_text_out * p_out,const char * p_source,unsigned p_source_len,const char * p_reserved_chars)
+void titleformat_compiler::remove_forbidden_chars(titleformat_text_out * p_out,const GUID & p_inputtype,const char * p_source,t_size p_source_len,const char * p_reserved_chars)
 {
 	if (p_reserved_chars == 0 || *p_reserved_chars == 0)
 	{
-		p_out->write(p_source,p_source_len);
+		p_out->write(p_inputtype,p_source,p_source_len);
 	}
 	else
 	{
 		p_source_len = strlen_max(p_source,p_source_len);
-		unsigned index = 0;
-		unsigned good_byte_count = 0;
+		t_size index = 0;
+		t_size good_byte_count = 0;
 		while(index < p_source_len)
 		{
-			unsigned delta = utf8_char_len(p_source + index,p_source_len - index);
+			t_size delta = utf8_char_len(p_source + index,p_source_len - index);
 			if (delta == 0) break;
 			if (test_for_bad_char(p_source+index,delta,p_reserved_chars))
 			{
-				if (good_byte_count > 0) {p_out->write(p_source+index-good_byte_count,good_byte_count);good_byte_count=0;}
-				p_out->write("_",1);
+				if (good_byte_count > 0) {p_out->write(p_inputtype,p_source+index-good_byte_count,good_byte_count);good_byte_count=0;}
+				p_out->write(p_inputtype,"_",1);
 			}
 			else
 			{
@@ -46,16 +46,16 @@ void titleformat_compiler::remove_forbidden_chars(titleformat_text_out * p_out,c
 			}
 			index += delta;
 		}
-		if (good_byte_count > 0) {p_out->write(p_source+index-good_byte_count,good_byte_count);good_byte_count=0;}
+		if (good_byte_count > 0) {p_out->write(p_inputtype,p_source+index-good_byte_count,good_byte_count);good_byte_count=0;}
 	}
 }
 
-void titleformat_compiler::remove_forbidden_chars_string_append(string_base & p_out,const char * p_source,unsigned p_source_len,const char * p_reserved_chars)
+void titleformat_compiler::remove_forbidden_chars_string_append(pfc::string_receiver & p_out,const char * p_source,t_size p_source_len,const char * p_reserved_chars)
 {
-	remove_forbidden_chars(&titleformat_text_out_impl_string(p_out),p_source,p_source_len,p_reserved_chars);
+	remove_forbidden_chars(&titleformat_text_out_impl_string(p_out),pfc::guid_null,p_source,p_source_len,p_reserved_chars);
 }
 
-void titleformat_compiler::remove_forbidden_chars_string(string_base & p_out,const char * p_source,unsigned p_source_len,const char * p_reserved_chars)
+void titleformat_compiler::remove_forbidden_chars_string(pfc::string_base & p_out,const char * p_source,t_size p_source_len,const char * p_reserved_chars)
 {
 	p_out.reset();
 	remove_forbidden_chars_string_append(p_out,p_source,p_source_len,p_reserved_chars);
@@ -67,18 +67,18 @@ void titleformat_hook_impl_file_info::process_codec(titleformat_text_out * p_out
 	const char * val = m_info->info_get("codec");
 	if (val)
 	{
-		output_text(p_out,val,infinite);
+		p_out->write(titleformat_inputtypes::meta,val);
 	}
 	else
 	{
 		val = m_info->info_get("referenced_file");
 		if (val) uAddStringUpper(temp,string_extension(val));
 		else uAddStringUpper(temp,string_extension(m_location.get_path()));
-		output_text(p_out,temp,infinite);
+		p_out->write(titleformat_inputtypes::meta,temp);
 	}
 }
 
-bool titleformat_hook_impl_file_info::remap_meta(unsigned & p_meta_index, const char * p_name, unsigned p_name_length)
+bool titleformat_hook_impl_file_info::remap_meta(t_size & p_meta_index, const char * p_name, t_size p_name_length)
 {
 	p_meta_index = infinite;
 	if (!stricmp_utf8_ex(p_name, p_name_length, "album", infinite))
@@ -115,7 +115,7 @@ bool titleformat_hook_impl_file_info::remap_meta(unsigned & p_meta_index, const 
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"track artist",infinite))
 	{
-		unsigned index_artist, index_album_artist;
+		t_size index_artist, index_album_artist;
 		
 		index_artist = m_info->meta_find("artist");
 		if (index_artist == infinite) return false;
@@ -149,7 +149,7 @@ bool titleformat_hook_impl_file_info::remap_meta(unsigned & p_meta_index, const 
 	}
 }
 
-bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,bool & p_found_flag)
+bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out,const char * p_name,t_size p_name_length,bool & p_found_flag)
 {
 	p_found_flag = false;
 
@@ -158,7 +158,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 	{
 		string8 temp;
 		filesystem::g_get_display_path(m_location.get_path(),temp);
-		output_text(p_out,string_filename(temp),infinite);
+		p_out->write(titleformat_inputtypes::unknown,string_filename(temp),infinite);
 		p_found_flag = true;
 		return true;
 	}
@@ -166,9 +166,9 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 	{
 		string8 temp;
 		filesystem::g_get_display_path(m_location.get_path(),temp);
-		output_text(p_out,string_filename(temp),infinite);
-		output_text(p_out,"|",infinite);
-		output_text(p_out,format_uint(m_location.get_subsong(),10),infinite);
+		p_out->write(titleformat_inputtypes::unknown,string_filename(temp),infinite);
+		p_out->write(titleformat_inputtypes::unknown,"|",infinite);
+		p_out->write(titleformat_inputtypes::unknown,format_uint(m_location.get_subsong(),10),infinite);
 		p_found_flag = true;
 		return true;
 	}
@@ -176,7 +176,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 	{
 		string8 temp;
 		filesystem::g_get_display_path(m_location.get_path(),temp);
-		output_text(p_out,temp.is_empty() ? "n/a" : temp.get_ptr(),infinite);
+		p_out->write(titleformat_inputtypes::unknown,temp.is_empty() ? "n/a" : temp.get_ptr(),infinite);
 		p_found_flag = true;
 		return true;
 	}
@@ -184,9 +184,9 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 	{
 		string8_fastalloc temp;
 		filesystem::g_get_display_path(m_location.get_path(),temp);
-		output_text(p_out,temp,infinite);
-		output_text(p_out,"|",infinite);
-		output_text(p_out,format_uint(m_location.get_subsong(),10),infinite);
+		p_out->write(titleformat_inputtypes::unknown,temp,infinite);
+		p_out->write(titleformat_inputtypes::unknown,"|",infinite);
+		p_out->write(titleformat_inputtypes::unknown,format_uint(m_location.get_subsong(),10),infinite);
 		p_found_flag = true;
 		return true;
 	}
@@ -200,7 +200,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 			
 			for(;count;count--)
 			{
-				int ptr = temp.scan_filename();
+				t_size ptr = temp.scan_filename();
 				if (ptr==0) {temp.reset();break;}
 				ptr--;
 				temp.truncate(ptr);
@@ -212,7 +212,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 			}
 			else
 			{
-				p_out->write(temp + temp.scan_filename(),infinite);
+				p_out->write(titleformat_inputtypes::meta,temp + temp.scan_filename(),infinite);
 				p_found_flag = true;
 			}
 		}
@@ -220,7 +220,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"subsong",infinite))
 	{
-		output_int(p_out,m_location.get_subsong());
+		p_out->write_int(titleformat_inputtypes::unknown,m_location.get_subsong());
 		p_found_flag = true;
 		return true;
 	}
@@ -229,10 +229,10 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 		unsigned val = (unsigned)m_info->info_get_int("channels");
 		switch(val)
 		{
-		case 0: output_text(p_out,"N/A",infinite); break;
-		case 1: output_text(p_out,"mono",infinite); p_found_flag = true; break;
-		case 2: output_text(p_out,"stereo",infinite); p_found_flag = true; break;
-		default: output_int(p_out,val); output_text(p_out,"ch",infinite); p_found_flag = true; break;
+		case 0: p_out->write(titleformat_inputtypes::meta,"N/A",infinite); break;
+		case 1: p_out->write(titleformat_inputtypes::meta,"mono",infinite); p_found_flag = true; break;
+		case 2: p_out->write(titleformat_inputtypes::meta,"stereo",infinite); p_found_flag = true; break;
+		default: p_out->write_int(titleformat_inputtypes::meta,val); p_out->write(titleformat_inputtypes::meta,"ch",infinite); p_found_flag = true; break;
 		}
 		return true;
 	}
@@ -241,7 +241,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 		const char * value = m_info->info_get("bitrate_dynamic");
 		if (value == 0 || *value == 0) value = m_info->info_get("bitrate");
 		if (value == 0 || *value == 0) return false;
-		output_text(p_out,value,infinite);
+		p_out->write(titleformat_inputtypes::meta,value);
 		p_found_flag = true;
 		return true;
 	}
@@ -249,7 +249,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 	{
 		const char * value = m_info->info_get("samplerate");
 		if (value == 0 || *value == 0) return false;
-		output_text(p_out,value,infinite);
+		p_out->write(titleformat_inputtypes::meta,value);
 		p_found_flag = true;
 		return true;
 	}
@@ -265,8 +265,8 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 			string8 temp;
 			filesystem::g_get_display_path(m_location.get_path(),temp);
 			string_filename fn(temp);
-			if (fn.is_empty()) output_text(p_out,temp,infinite);
-			else output_text(p_out,fn,infinite);
+			if (fn.is_empty()) p_out->write(titleformat_inputtypes::meta,temp);
+			else p_out->write(titleformat_inputtypes::meta,fn);
 			p_found_flag = true;
 			return true;
 		}
@@ -279,43 +279,43 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"track",infinite) || !stricmp_utf8_ex(p_name,p_name_length,"tracknumber",infinite))
 	{
-		const unsigned pad = 2;
+		const t_size pad = 2;
 		const char * val = m_info->meta_get_ex("tracknumber",infinite,0);
 		if (val == 0) m_info->meta_get_ex("track",infinite,0);
 		if (val != 0)
 		{
 			p_found_flag = true;
-			unsigned val_len = strlen(val);
+			t_size val_len = strlen(val);
 			if (val_len < pad)
 			{
-				unsigned n = pad - val_len;
+				t_size n = pad - val_len;
 				do {
-					output_text(p_out,"0",1);
+					p_out->write(titleformat_inputtypes::meta,"0",1);
 					n--;
 				} while(n > 0);
 			}
-			output_text(p_out,val,infinite);
+			p_out->write(titleformat_inputtypes::meta,val);
 		}
 		return true;
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"disc",infinite) || !stricmp_utf8_ex(p_name,p_name_length,"discnumber",infinite))
 	{
-		const unsigned pad = 1;
+		const t_size pad = 1;
 		const char * val = m_info->meta_get_ex("discnumber",infinite,0);
 		if (val == 0) val = m_info->meta_get_ex("disc",infinite,0);
 		if (val != 0)
 		{
 			p_found_flag = true;
-			unsigned val_len = strlen(val);
+			t_size val_len = strlen(val);
 			if (val_len < pad)
 			{
-				unsigned n = pad - val_len;
+				t_size n = pad - val_len;
 				do {
-					output_text(p_out,"0",1);
+					p_out->write(titleformat_inputtypes::meta,"0");
 					n--;
 				} while(n > 0);
 			}
-			output_text(p_out,val,infinite);
+			p_out->write(titleformat_inputtypes::meta,val);
 		}
 		return true;
 	}
@@ -324,7 +324,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 		double len = m_info->get_length();
 		if (len>0)
 		{
-			output_text(p_out,format_time((t_int64)len),infinite);
+			p_out->write(titleformat_inputtypes::unknown,format_time((t_int64)len));
 			p_found_flag = true;
 			return true;
 		}
@@ -337,7 +337,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 			char rgtemp[replaygain_info::text_buffer_size];
 			m_info->get_replaygain().format_album_gain(rgtemp);
 			if (rgtemp[0] == 0) return false;
-			output_text(p_out,rgtemp,infinite);
+			p_out->write(titleformat_inputtypes::meta,rgtemp);
 			p_found_flag = true;
 			return true;
 		}
@@ -346,7 +346,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 			char rgtemp[replaygain_info::text_buffer_size];
 			m_info->get_replaygain().format_album_peak(rgtemp);
 			if (rgtemp[0] == 0) return false;
-			output_text(p_out,rgtemp,infinite);
+			p_out->write(titleformat_inputtypes::meta,rgtemp);
 			p_found_flag = true;
 			return true;
 		}
@@ -355,7 +355,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 			char rgtemp[replaygain_info::text_buffer_size];
 			m_info->get_replaygain().format_track_gain(rgtemp);
 			if (rgtemp[0] == 0) return false;
-			output_text(p_out,rgtemp,infinite);
+			p_out->write(titleformat_inputtypes::meta,rgtemp);
 			p_found_flag = true;
 			return true;
 		}
@@ -364,13 +364,13 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 			char rgtemp[replaygain_info::text_buffer_size];
 			m_info->get_replaygain().format_track_peak(rgtemp);
 			if (rgtemp[0] == 0) return false;
-			output_text(p_out,rgtemp,infinite);
+			p_out->write(titleformat_inputtypes::meta,rgtemp);
 			p_found_flag = true;
 			return true;
 		}
 		const char * value = m_info->info_get_ex(p_name+2,p_name_length-2);
 		if (value == 0 || *value == 0) return false;
-		output_text(p_out,value,infinite);
+		p_out->write(titleformat_inputtypes::meta,value);
 		p_found_flag = true;
 		return true;
 	}
@@ -382,7 +382,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 	}
 	else
 	{//meta
-		unsigned index;
+		t_size index;
 		if (remap_meta(index, p_name, p_name_length))
 		{
 			bool status = process_meta(p_out,index,", ",2,", ",2);
@@ -393,7 +393,7 @@ bool titleformat_hook_impl_file_info::process_field(titleformat_text_out * p_out
 	}
 }
 
-bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag)
+bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_out,const char * p_name,t_size p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag)
 {
 	p_found_flag = false;
 	if (!stricmp_utf8_ex(p_name,p_name_length,"meta",infinite))
@@ -403,7 +403,7 @@ bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_
 		case 1:
 			{
 				const char * name;
-				unsigned name_length;
+				t_size name_length;
 				p_params->get_param(0,name,name_length);
 				bool status = process_meta(p_out,name,name_length,", ",2,", ",2);
 				p_found_flag = status;
@@ -412,14 +412,14 @@ bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_
 		case 2:
 			{
 				const char * name;
-				unsigned name_length;
+				t_size name_length;
 				p_params->get_param(0,name,name_length);
-				unsigned index_val = p_params->get_param_uint(1);
+				t_size index_val = p_params->get_param_uint(1);
 				const char * value = m_info->meta_get_ex(name,name_length,index_val);
 				if (value != 0)
 				{
 					p_found_flag = true;
-					output_text(p_out,value,infinite);
+					p_out->write(titleformat_inputtypes::meta,value,infinite);
 				}
 				return true;
 			}
@@ -434,7 +434,7 @@ bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_
 		case 2:
 			{
 				const char * name, * sep1;
-				unsigned name_length, sep1_length;
+				t_size name_length, sep1_length;
 				p_params->get_param(0,name,name_length);
 				p_params->get_param(1,sep1,sep1_length);
 				bool status = process_meta(p_out,name,name_length,sep1,sep1_length,sep1,sep1_length);
@@ -444,7 +444,7 @@ bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_
 		case 3:
 			{
 				const char * name, * sep1, * sep2;
-				unsigned name_length, sep1_length, sep2_length;
+				t_size name_length, sep1_length, sep2_length;
 				p_params->get_param(0,name,name_length);
 				p_params->get_param(1,sep1,sep1_length);
 				p_params->get_param(2,sep2,sep2_length);
@@ -458,13 +458,13 @@ bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"meta_test",infinite))
 	{
-		unsigned n, count = p_params->get_param_count();
+		t_size n, count = p_params->get_param_count();
 		if (count == 0) return false;
 		bool found_all = true;
 		for(n=0;n<count;n++)
 		{
 			const char * name;
-			unsigned name_length;
+			t_size name_length;
 			p_params->get_param(n,name,name_length);
 			if (!m_info->meta_exists_ex(name,name_length))
 			{
@@ -475,7 +475,7 @@ bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_
 		if (found_all)
 		{
 			p_found_flag = true;
-			output_int(p_out,1);
+			p_out->write_int(titleformat_inputtypes::meta,1);
 		}
 		return true;
 	}
@@ -483,10 +483,10 @@ bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_
 	{
 		if (p_params->get_param_count() != 1) return false;
 		const char * name;
-		unsigned name_length;
+		t_size name_length;
 		p_params->get_param(0,name,name_length);
-		unsigned count = m_info->meta_get_count_by_name_ex(name,name_length);
-		output_int(p_out,count);
+		t_size count = m_info->meta_get_count_by_name_ex(name,name_length);
+		p_out->write_int(titleformat_inputtypes::meta,count);
 		if (count > 0) p_found_flag = true;
 		return true;
 	}
@@ -494,13 +494,13 @@ bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_
 	{
 		if (p_params->get_param_count() != 1) return false;
 		const char * name;
-		unsigned name_length;
+		t_size name_length;
 		p_params->get_param(0,name,name_length);
 		const char * value = m_info->info_get_ex(name,name_length);
 		if (value != 0)
 		{
 			p_found_flag = true;
-			output_text(p_out,value,infinite);
+			p_out->write(titleformat_inputtypes::meta,value);
 		}
 		return true;
 	}
@@ -508,7 +508,7 @@ bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_
 	{
 		if (p_params->get_param_count() != 1) return false;
 		const char * name;
-		unsigned name_length;
+		t_size name_length;
 		p_params->get_param(0,name,name_length);
 		if (process_extra(p_out,name,name_length)) p_found_flag = true;
 		return true;
@@ -526,71 +526,71 @@ bool titleformat_hook_impl_file_info::process_function(titleformat_text_out * p_
 		unsigned val = (unsigned)m_info->info_get_int("channels");
 		switch(val)
 		{
-		case 0: output_text(p_out,"N/A",infinite); break;
-		case 1: output_text(p_out,"mono",infinite); p_found_flag = true; break;
-		case 2: output_text(p_out,"stereo",infinite); p_found_flag = true; break;
-		default: output_int(p_out,val); output_text(p_out,"ch",infinite); p_found_flag = true; break;
+		case 0: p_out->write(titleformat_inputtypes::meta,"N/A",infinite); break;
+		case 1: p_out->write(titleformat_inputtypes::meta,"mono",infinite); p_found_flag = true; break;
+		case 2: p_out->write(titleformat_inputtypes::meta,"stereo",infinite); p_found_flag = true; break;
+		default: p_out->write_int(titleformat_inputtypes::meta,val); p_out->write(titleformat_inputtypes::meta,"ch",infinite); p_found_flag = true; break;
 		}
 		return true;
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"tracknumber",infinite))
 	{
-		unsigned pad = 2;
-		unsigned param_count = p_params->get_param_count();
+		t_size pad = 2;
+		t_size param_count = p_params->get_param_count();
 		if (param_count > 1) return false;
-		if (param_count == 1) pad = (unsigned)p_params->get_param_uint(0);
+		if (param_count == 1) pad = (t_size)p_params->get_param_uint(0);
 		const char * val = m_info->meta_get_ex("tracknumber",infinite,0);
 		if (val != 0)
 		{
 			p_found_flag = true;
-			unsigned val_len = strlen(val);
+			t_size val_len = strlen(val);
 			if (val_len < pad)
 			{
-				unsigned n = pad - val_len;
+				t_size n = pad - val_len;
 				do {
-					output_text(p_out,"0",1);
+					p_out->write(titleformat_inputtypes::meta,"0",1);
 					n--;
 				} while(n > 0);
 			}
-			output_text(p_out,val,infinite);
+			p_out->write(titleformat_inputtypes::meta,val,infinite);
 		}
 		return true;
 	}
 	else return false;
 }
 
-bool titleformat_hook_impl_file_info::process_meta(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,const char * p_sep1,unsigned p_sep1_length,const char * p_sep2,unsigned p_sep2_length)
+bool titleformat_hook_impl_file_info::process_meta(titleformat_text_out * p_out,const char * p_name,t_size p_name_length,const char * p_sep1,t_size p_sep1_length,const char * p_sep2,t_size p_sep2_length)
 {
-	unsigned index = m_info->meta_find_ex(p_name,p_name_length);
+	t_size index = m_info->meta_find_ex(p_name,p_name_length);
 	return process_meta(p_out, index, p_sep1, p_sep1_length, p_sep2, p_sep2_length);
 }
 
-bool titleformat_hook_impl_file_info::process_meta(titleformat_text_out * p_out,unsigned p_index,const char * p_sep1,unsigned p_sep1_length,const char * p_sep2,unsigned p_sep2_length)
+bool titleformat_hook_impl_file_info::process_meta(titleformat_text_out * p_out,t_size p_index,const char * p_sep1,t_size p_sep1_length,const char * p_sep2,t_size p_sep2_length)
 {
 	if (p_index == infinite) return false;
 
-	unsigned n, m = m_info->meta_enum_value_count(p_index);
+	t_size n, m = m_info->meta_enum_value_count(p_index);
 	for(n=0;n<m;n++)
 	{
 		if (n>0)
 		{
-			if (n+1 == m) output_text(p_out,p_sep2,p_sep2_length);
-			else output_text(p_out,p_sep1,p_sep1_length);
+			if (n+1 == m) p_out->write(titleformat_inputtypes::meta,p_sep2,p_sep2_length);
+			else p_out->write(titleformat_inputtypes::meta,p_sep1,p_sep1_length);
 		}			
-		output_text(p_out,m_info->meta_enum_value(p_index,n),infinite);
+		p_out->write(titleformat_inputtypes::meta,m_info->meta_enum_value(p_index,n),infinite);
 	}
 	return true;
 }
 
-bool titleformat_hook_impl_file_info::process_extra(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length)
+bool titleformat_hook_impl_file_info::process_extra(titleformat_text_out * p_out,const char * p_name,t_size p_name_length)
 {
 	if (!stricmp_utf8_ex(p_name,p_name_length,"FILENAME",infinite))
 	{
 		string8 temp;
 		filesystem::g_get_display_path(m_location.get_path(),temp);
 		string_filename fn(temp);
-		if (fn.is_empty()) output_text(p_out,temp,infinite);
-		else output_text(p_out,fn,infinite);
+		if (fn.is_empty()) p_out->write(titleformat_inputtypes::unknown,temp,infinite);
+		else p_out->write(titleformat_inputtypes::unknown,fn,infinite);
 		return true;
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"FILENAME_EXT",infinite))
@@ -598,15 +598,15 @@ bool titleformat_hook_impl_file_info::process_extra(titleformat_text_out * p_out
 		string8 temp;
 		filesystem::g_get_display_path(m_location.get_path(),temp);
 		string_filename_ext fn(temp);
-		if (fn.is_empty()) output_text(p_out,temp,infinite);
-		else output_text(p_out,fn,infinite);
+		if (fn.is_empty()) p_out->write(titleformat_inputtypes::unknown,temp,infinite);
+		else p_out->write(titleformat_inputtypes::unknown,fn,infinite);
 		return true;
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"DIRECTORYNAME",infinite))
 	{
 		string8 temp;
 		filesystem::g_get_display_path(m_location.get_path(),temp);
-		int offs = temp.scan_filename();
+		t_size offs = temp.scan_filename();
 		if (offs>0)
 		{
 			temp.truncate(offs-1);
@@ -614,9 +614,9 @@ bool titleformat_hook_impl_file_info::process_extra(titleformat_text_out * p_out
 		}
 		if (offs>0)
 		{
-			output_text(p_out,temp + offs,infinite);
+			p_out->write(titleformat_inputtypes::unknown,temp + offs,infinite);
 		}
-		else output_text(p_out,".",infinite);
+		else p_out->write(titleformat_inputtypes::unknown,".",infinite);
 
 		return true;
 	}
@@ -624,22 +624,22 @@ bool titleformat_hook_impl_file_info::process_extra(titleformat_text_out * p_out
 	{
 		string8 temp;
 		filesystem::g_get_display_path(m_location.get_path(),temp);
-		output_text(p_out,temp.is_empty() ? "n/a" : temp.get_ptr(),infinite);
+		p_out->write(titleformat_inputtypes::unknown,temp.is_empty() ? "n/a" : temp.get_ptr(),infinite);
 		return true;
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"PATH_RAW",infinite))
 	{
-		output_text(p_out,m_location.get_path(),infinite);
+		p_out->write(titleformat_inputtypes::unknown,m_location.get_path(),infinite);
 		return true;
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"SUBSONG",infinite))
 	{
-		output_int(p_out,m_location.get_subsong());
+		p_out->write_int(titleformat_inputtypes::unknown,m_location.get_subsong());
 		return true;
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"FOOBAR2000_VERSION",infinite))
 	{
-		output_text(p_out,core_version_info::g_get_version_string(),infinite);
+		p_out->write(titleformat_inputtypes::unknown,core_version_info::g_get_version_string(),infinite);
 		return true;
 	}
 	else if (!stricmp_utf8_ex(p_name,p_name_length,"LENGTH",infinite))
@@ -647,7 +647,7 @@ bool titleformat_hook_impl_file_info::process_extra(titleformat_text_out * p_out
 		double len = m_info->get_length();
 		if (len>0)
 		{
-			output_text(p_out,format_time((t_int64)len),infinite);
+			p_out->write(titleformat_inputtypes::meta,format_time((t_int64)len),infinite);
 			return true;
 		}
 		else return false;
@@ -657,7 +657,7 @@ bool titleformat_hook_impl_file_info::process_extra(titleformat_text_out * p_out
 		double len = m_info->get_length();
 		if (len>0)
 		{
-			output_text(p_out,format_time_ex(len),infinite);
+			p_out->write(titleformat_inputtypes::unknown,format_time_ex(len),infinite);
 			return true;
 		}
 		else return false;
@@ -667,7 +667,7 @@ bool titleformat_hook_impl_file_info::process_extra(titleformat_text_out * p_out
 		double len = m_info->get_length();
 		if (len>0)
 		{
-			output_int(p_out,(t_uint64)len);
+			p_out->write_int(titleformat_inputtypes::unknown,(t_uint64)len);
 			return true;
 		}
 		else return false;
@@ -677,9 +677,7 @@ bool titleformat_hook_impl_file_info::process_extra(titleformat_text_out * p_out
 		double len = m_info->get_length();
 		if (len>0)
 		{
-			string8 temp;
-			temp.add_float(len,7);
-			output_text(p_out,temp,infinite);
+			p_out->write(titleformat_inputtypes::unknown,string_fixed_t<64>()<<len);
 			return true;
 		}
 		else return false;
@@ -689,7 +687,7 @@ bool titleformat_hook_impl_file_info::process_extra(titleformat_text_out * p_out
 		t_int64 val = m_info->info_get_length_samples();
 		if (val>0)
 		{
-			output_int(p_out,val);
+			p_out->write_int(titleformat_inputtypes::unknown,val);
 			return true;
 		}
 		else return false;
@@ -697,31 +695,11 @@ bool titleformat_hook_impl_file_info::process_extra(titleformat_text_out * p_out
 	else return false;
 }
 
-void titleformat_hook_impl_file_info::output_text(titleformat_text_out * p_out,const char * p_text,unsigned p_text_length)
-{
-	p_out->write(p_text,p_text_length);
-}
-
-void titleformat_hook_impl_file_info::output_int(titleformat_text_out * p_out,t_uint64 p_val)
-{
-	char temp[32];
-	_i64toa(p_val,temp,10);
-	output_text(p_out,temp,infinite);
-}
-
-void titleformat_object::run_filtered(titleformat_hook * p_source,string_base & p_out,titleformat_text_filter * p_filter)
-{
-	if (p_filter)
-		run(&titleformat_hook_impl_text_filter(p_source,p_filter),p_out);
-	else
-		run(p_source,p_out);
-}
-
-void titleformat_object::run_hook_filtered(const playable_location & p_location,const file_info * p_source,titleformat_hook * p_hook,string_base & p_out,titleformat_text_filter * p_filter)
+void titleformat_object::run_hook(const playable_location & p_location,const file_info * p_source,titleformat_hook * p_hook,pfc::string_base & p_out,titleformat_text_filter * p_filter)
 {
 	if (p_hook)
 	{
-		run_filtered(
+		run(
 			&titleformat_hook_impl_splitter(
 			&titleformat_hook_impl_file_info(p_location,p_source),
 			p_hook),
@@ -729,32 +707,32 @@ void titleformat_object::run_hook_filtered(const playable_location & p_location,
 	}
 	else
 	{
-		run_filtered(
+		run(
 			&titleformat_hook_impl_file_info(p_location,p_source),
 			p_out,p_filter);
 	}
 }
 
-void titleformat_object::run_simple(const playable_location & p_location,const file_info * p_source,string_base & p_out)
+void titleformat_object::run_simple(const playable_location & p_location,const file_info * p_source,pfc::string_base & p_out)
 {
-	run(&titleformat_hook_impl_file_info(p_location,p_source),p_out);
+	run(&titleformat_hook_impl_file_info(p_location,p_source),p_out,NULL);
 }
 
-unsigned titleformat_hook_function_params::get_param_uint(unsigned index)
+t_size titleformat_hook_function_params::get_param_uint(t_size index)
 {
 	const char * str;
-	unsigned str_len;
+	t_size str_len;
 	get_param(index,str,str_len);
 	return atoui_ex(str,str_len);
 }
 
 
-void titleformat_text_out_impl_filter_chars::write(const char * p_data,unsigned p_data_length)
+void titleformat_text_out_impl_filter_chars::write(const GUID & p_inputtype,const char * p_data,t_size p_data_length)
 {
-	titleformat_compiler::remove_forbidden_chars(m_chain,p_data,p_data_length,m_restricted_chars);
+	titleformat_compiler::remove_forbidden_chars(m_chain,p_inputtype,p_data,p_data_length,m_restricted_chars);
 }
 
-bool titleformat_hook_impl_splitter::process_field(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,bool & p_found_flag)
+bool titleformat_hook_impl_splitter::process_field(titleformat_text_out * p_out,const char * p_name,t_size p_name_length,bool & p_found_flag)
 {
 	p_found_flag = false;
 	if (m_hook1 && m_hook1->process_field(p_out,p_name,p_name_length,p_found_flag)) return true;
@@ -764,7 +742,7 @@ bool titleformat_hook_impl_splitter::process_field(titleformat_text_out * p_out,
 	return false;
 }
 
-bool titleformat_hook_impl_splitter::process_function(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag)
+bool titleformat_hook_impl_splitter::process_function(titleformat_text_out * p_out,const char * p_name,t_size p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag)
 {
 	p_found_flag = false;
 	if (m_hook1 && m_hook1->process_function(p_out,p_name,p_name_length,p_params,p_found_flag)) return true;
@@ -774,64 +752,37 @@ bool titleformat_hook_impl_splitter::process_function(titleformat_text_out * p_o
 	return false;
 }
 
-void titleformat_text_out::write_int_padded(t_int64 val,t_int64 maxval)
+void titleformat_text_out::write_int_padded(const GUID & p_inputtype,t_int64 val,t_int64 maxval)
 {
-	const unsigned bufsize = 64;
+	const t_size bufsize = 64;
 	char temp[bufsize+1];
-	unsigned len = 0;
+	t_size len = 0;
 	while(maxval) {maxval/=10;len++;}
 	if (len == 0) len = 1;
-	unsigned n;
+	t_size n;
 	for(n=0;n<bufsize;n++) temp[n] = '0';
 	temp[n] = 0;
 	_i64toa(val,temp+bufsize/2,10);
-	write(temp + strlen(temp) - len,infinite);
+	write(p_inputtype,temp + strlen(temp) - len,infinite);
 }
 
-void titleformat_text_out::write_int(t_int64 val)
+void titleformat_text_out::write_int(const GUID & p_inputtype,t_int64 val)
 {
 	char temp[32];
 	_i64toa(val,temp,10);
-	write(temp,32);
+	write(p_inputtype,temp,32);
 }
-
-void titleformat_text_out_impl_filter::write(const char * p_data,unsigned p_data_length)
+void titleformat_text_filter_impl_reserved_chars::write(const GUID & p_inputtype,pfc::string_receiver & p_out,const char * p_data,t_size p_data_length)
 {
-	m_filter->write(m_out,p_data,p_data_length);
+	if (p_inputtype == titleformat_inputtypes::meta) titleformat_compiler::remove_forbidden_chars_string_append(p_out,p_data,p_data_length,m_reserved_chars);
+	else p_out.add_string(p_data,p_data_length);
 }
 
-void titleformat_text_filter_impl_reserved_chars::write(titleformat_text_out * p_out,const char * p_data,unsigned p_data_length)
-{
-	titleformat_compiler::remove_forbidden_chars(p_out,p_data,p_data_length,m_reserved_chars);
-}
-
-
-bool titleformat_hook_impl_text_filter::process_field(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,bool & p_found_flag)
-{
-	m_filter->on_new_field();
-	return m_chain->process_field(
-		&titleformat_text_out_impl_filter(m_filter,p_out),
-		p_name,p_name_length,p_found_flag);
-}
-
-bool titleformat_hook_impl_text_filter::process_function(titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag)
-{
-	m_filter->on_new_field();
-	return m_chain->process_function(
-		&titleformat_text_out_impl_filter(m_filter,p_out),
-		p_name,p_name_length,p_params,p_found_flag);
-}
-
-
-void titleformat_text_filter_impl_reserved_chars::on_new_field()
-{
-}
-
-void titleformat_compiler::run(titleformat_hook * p_source,string_base & p_out,const char * p_spec)
+void titleformat_compiler::run(titleformat_hook * p_source,pfc::string_base & p_out,const char * p_spec)
 {
 	service_ptr_t<titleformat_object> ptr;
 	if (!compile(ptr,p_spec)) p_out = "[COMPILATION ERROR]";
-	else ptr->run(p_source,p_out);
+	else ptr->run(p_source,p_out,NULL);
 }
 
 void titleformat_compiler::compile_safe(service_ptr_t<titleformat_object> & p_out,const char * p_spec)
@@ -841,3 +792,9 @@ void titleformat_compiler::compile_safe(service_ptr_t<titleformat_object> & p_ou
 			throw pfc::exception_bug_check();
 	}
 }
+
+
+namespace titleformat_inputtypes {
+	const GUID meta = { 0xcd839c8e, 0x5c66, 0x4ae1, { 0x8d, 0xad, 0x71, 0x1f, 0x86, 0x0, 0xa, 0xe3 } };
+	const GUID unknown = { 0x673aa1cd, 0xa7a8, 0x40c8, { 0xbf, 0x9b, 0x34, 0x37, 0x99, 0x29, 0x16, 0x3b } };
+};

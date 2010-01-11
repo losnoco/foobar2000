@@ -1,41 +1,35 @@
-
 enum {
 	input_flag_no_seeking = 1,
 	input_flag_no_looping = 2,
 	input_flag_playback = 4,
+	input_flag_testing_integrity = 8,
+
+	input_flag_simpledecode = input_flag_no_seeking|input_flag_no_looping,
 };
 
-//! Class providing interface for retrieval of information (metadata, duration, replaygain, other tech infos) from files. Also see: file_info.
+//! Class providing interface for retrieval of information (metadata, duration, replaygain, other tech infos) from files. Also see: file_info. \n
+//! Instantiating: see input_entry.\n
+//! Implementing: see input_impl.
 
 class input_info_reader : public service_base
 {
 public:
 	//! Retrieves count of subsongs in the file. 1 for non-multisubsong-enabled inputs.
 	//! Note: multi-subsong handling is disabled for remote files (see: filesystem::is_remote) for performance reasons. Remote files are always assumed to be single-subsong, with null index.
-	virtual t_io_result get_subsong_count(unsigned & p_out) = 0;
+	virtual t_uint32 get_subsong_count() = 0;
 	
 	//! Retrieves identifier of specified subsong; this identifier is meant to be used in playable_location as well as a parameter for input_info_reader::get_info().
 	//! @param p_index Index of subsong to query. Must be >=0 and < get_subsong_count().
-	virtual t_io_result get_subsong(unsigned p_index,t_uint32 & p_out) = 0;
+	virtual t_uint32 get_subsong(t_uint32 p_index) = 0;
 	
 	//! Retrieves information about specified subsong.
 	//! @param p_subsong Identifier of the subsong to query. See: input_info_reader::get_subsong(), playable_location.
 	//! @param p_info file_info object to fill.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
-	virtual t_io_result get_info(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort) = 0;
+	virtual void get_info(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort) = 0;
 
 	//! Retrieves file stats. Equivalent to calling get_stats() on file object.
-	//! @param p_stats Receives file stats.
-	virtual t_io_result get_file_stats(t_filestats & p_stats,abort_callback & p_abort) = 0;
-
-	//! Helper, throws exception_io on failure. See: get_subsong_count().
-	unsigned get_subsong_count_e();
-	//! Helper, throws exception_io on failure. See: get_subsong().
-	t_uint32 get_subsong_e(unsigned p_index);
-	//! Helper, throws exception_io on failure. See: get_info().
-	void get_info_e(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort);
-	//! Helper, throws exception_io on failure. See: get_file_stats().
-	void get_file_stats_e(t_filestats & p_stats,abort_callback & p_abort);
+	virtual t_filestats get_file_stats(abort_callback & p_abort) = 0;
 
 	static const GUID class_guid;
 
@@ -48,7 +42,9 @@ protected:
 	~input_info_reader() {}
 };
 
-//! Class providing interface for retrieval of PCM audio data from files.
+//! Class providing interface for retrieval of PCM audio data from files.\n
+//! Instantiating: see input_entry.\n
+//! Implementing: see input_impl.
 
 class input_decoder : public input_info_reader
 {
@@ -60,38 +56,40 @@ public:
 	//!	@param p_flags Specifies additional hints for decoding process. It can be null, or a combination of one or more following constants: \n
 	//!		input_flag_no_seeking - Indicates that seek() will never be called. Can be used to avoid building potentially expensive seektables when only sequential reading is needed.\n
 	//!		input_flag_no_looping - Certain input implementations can be configured to utilize looping info from file formats they process and keep playing single file forever, or keep repeating it specified number of times. This flag indicates that such features should be disabled, for e.g. ReplayGain scan or conversion.\n
-	//!		input_flag_playback	- Indicates that decoding process will be used for realtime playback rather than conversion. This can be used to reconfigure features that are relevant only for conversion and take a lot of resources, such as very slow secure CDDA reading.
+	//!		input_flag_playback	- Indicates that decoding process will be used for realtime playback rather than conversion. This can be used to reconfigure features that are relevant only for conversion and take a lot of resources, such as very slow secure CDDA reading. \n
+	//!		input_flag_testing_integrity - Indicates that we're testing integrity of the file. Any recoverable problems where decoding would normally continue should cause decoder to fail with exception_io_data.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
-	virtual t_io_result initialize(t_uint32 p_subsong,unsigned p_flags,abort_callback & p_abort) = 0;
+	virtual void initialize(t_uint32 p_subsong,unsigned p_flags,abort_callback & p_abort) = 0;
 
-	//! Reads/decodes one chunk of audio data. Use io_result_eof return value to signal end of file (no more data to return). Before calling run(), decoding must be initialized by initialize() call.
-	//! @param p_chunk audio_chunk object receiving decoded data. Contents are valid only when io_result_success is returned, not with io_result_eof or one of failure codes.
+	//! Reads/decodes one chunk of audio data. Use false return value to signal end of file (no more data to return). Before calling run(), decoding must be initialized by initialize() call.
+	//! @param p_chunk audio_chunk object receiving decoded data. Contents are valid only the method returns true.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
-	virtual t_io_result run(audio_chunk & p_chunk,abort_callback & p_abort) = 0;
+	//! @returns true on success (new data decoded), false on EOF.
+	virtual bool run(audio_chunk & p_chunk,abort_callback & p_abort) = 0;
 
 	//! Seeks to specified time offset. Before seeking or other decoding calls, decoding must be initialized with initialize() call.
-	//! @param p_seconds Time to seek to, in seconds. If p_seconds exceeds length of the object being decoded, return io_result_success, and then return io_result_eof from next run() call.
+	//! @param p_seconds Time to seek to, in seconds. If p_seconds exceeds length of the object being decoded, succeed, and then return false from next run() call.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
-	virtual t_io_result seek(double p_seconds,abort_callback & p_abort) = 0;
+	virtual void seek(double p_seconds,abort_callback & p_abort) = 0;
 	
 	//! Queries whether resource being read/decoded is seekable. If p_value is set to false, all seek() calls will fail. Before calling can_seek() or other decoding calls, decoding must be initialized with initialize() call.
-	virtual t_io_result can_seek(bool & p_value) = 0;
+	virtual bool can_seek() = 0;
 
 	//! This function is used to signal dynamic VBR bitrate, etc. Called after each run() (or not called at all if caller doesn't care about dynamic info).
 	//! @param p_out Initially contains currently displayed info (either last get_dynamic_info result or current cached info), use this object to return changed info.
 	//! @param p_timestamp_delta Indicates when returned info should be displayed (in seconds, relative to first sample of last decoded chunk), initially set to 0.
-	//! @param p_changed Set to false to keep old info, or true to indicate that you've made changes to p_info and those should be displayed.
-	virtual t_io_result get_dynamic_info(file_info & p_out, double & p_timestamp_delta,bool & p_changed) = 0;
+	//! @returns false to keep old info, or true to indicate that changes have been made to p_info and those should be displayed.
+	virtual bool get_dynamic_info(file_info & p_out, double & p_timestamp_delta) = 0;
 
 	//! This function is used to signal dynamic live stream song titles etc. Called after each run() (or not called at all if caller doesn't care about dynamic info). The difference between this and get_dynamic_info() is frequency and relevance of dynamic info changes - get_dynamic_info_track() returns new info only on track change in the stream, returning new titles etc.
 	//! @param p_out Initially contains currently displayed info (either last get_dynamic_info_track result or current cached info), use this object to return changed info.
 	//! @param p_timestamp_delta Indicates when returned info should be displayed (in seconds, relative to first sample of last decoded chunk), initially set to 0.
-	//! @param p_changed Set to false to keep old info, or true to indicate that you've made changes to p_info and those should be displayed.
-	virtual t_io_result get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta, bool & p_changed) = 0;
+	//! @returns false to keep old info, or true to indicate that changes have been made to p_info and those should be displayed.
+	virtual bool get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta) = 0;
 
 	//! Called from playback thread before sleeping.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
-	virtual t_io_result on_idle(abort_callback & p_abort) = 0;
+	virtual void on_idle(abort_callback & p_abort) = 0;
 
 
 	static const GUID class_guid;
@@ -105,7 +103,9 @@ protected:
 	~input_decoder() {}
 };
 
-//! Class providing interface for writing metadata and replaygain info to files. Also see: file_info.
+//! Class providing interface for writing metadata and replaygain info to files. Also see: file_info. \n
+//! Instantiating: see input_entry.\n
+//! Implementing: see input_impl.
 
 class input_info_writer : public input_info_reader
 {
@@ -114,11 +114,11 @@ public:
 	//! @param p_subsong Subsong to update. Should be always 0 for non-multisubsong-enabled inputs.
 	//! @param p_info New info to write. Sometimes not all contents of p_info can be written. Caller will typically read info back after successful write, so e.g. tech infos that change with retag are properly maintained.
 	//! @param p_abort abort_callback object signaling user aborting the operation. WARNING: abort_callback object is provided for consistency; if writing tags actually gets aborted, user will be likely left with corrupted file. Anything calling this should make sure that aborting is either impossible, or gives appropriate warning to the user first.
-	virtual t_io_result set_info(t_uint32 p_subsong,const file_info & p_info,abort_callback & p_abort) = 0;
+	virtual void set_info(t_uint32 p_subsong,const file_info & p_info,abort_callback & p_abort) = 0;
 	
 	//! Commits pending updates. In case of multisubsong inputs, set_info should queue the update and perform actual file access in commit(). Otherwise, actual writing can be done in set_info() and then Commit() can just do nothing and always succeed.
 	//! @param p_abort abort_callback object signaling user aborting the operation. WARNING: abort_callback object is provided for consistency; if writing tags actually gets aborted, user will be likely left with corrupted file. Anything calling this should make sure that aborting is either impossible, or gives appropriate warning to the user first.
-	virtual t_io_result commit(abort_callback & p_abort) = 0;
+	virtual void commit(abort_callback & p_abort) = 0;
 
 	static const GUID class_guid;
 
@@ -148,26 +148,24 @@ public:
 	//! @param p_filehint Optional; passes file object to use for the operation; if set to null, the service will handle opening file by itself. Note that not all inputs operate on physical files that can be reached through filesystem API, some of them require this parameter to be set to null (tone and silence generators for an example).
 	//! @param p_path URL of resource being opened.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
-	virtual t_io_result open_for_decoding(service_ptr_t<input_decoder> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort) = 0;
+	virtual void open_for_decoding(service_ptr_t<input_decoder> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort) = 0;
 
 	//! Opens specified file for reading info.
 	//! @param p_instance Receives new input_info_reader instance if successful.
 	//! @param p_filehint Optional; passes file object to use for the operation; if set to null, the service will handle opening file by itself. Note that not all inputs operate on physical files that can be reached through filesystem API, some of them require this parameter to be set to null (tone and silence generators for an example).
 	//! @param p_path URL of resource being opened.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
-	virtual t_io_result open_for_info_read(service_ptr_t<input_info_reader> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort) = 0;
+	virtual void open_for_info_read(service_ptr_t<input_info_reader> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort) = 0;
 
 	//! Opens specified file for writing info.
 	//! @param p_instance Receives new input_info_writer instance if successful.
 	//! @param p_filehint Optional; passes file object to use for the operation; if set to null, the service will handle opening file by itself. Note that not all inputs operate on physical files that can be reached through filesystem API, some of them require this parameter to be set to null (tone and silence generators for an example).
 	//! @param p_path URL of resource being opened.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
-	virtual t_io_result open_for_info_write(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort) = 0;
+	virtual void open_for_info_write(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort) = 0;
 
-	//! Reserved for future use. Do nothing and return io_result_success until specifications are finalized.
-	virtual t_io_result get_extended_data(service_ptr_t<file> p_filehint,const playable_location & p_location,const GUID & p_guid,mem_block_container & p_out,abort_callback & p_abort) = 0;
-
-	
+	//! Reserved for future use. Do nothing and return until specifications are finalized.
+	virtual void get_extended_data(service_ptr_t<file> p_filehint,const playable_location & p_location,const GUID & p_guid,mem_block_container & p_out,abort_callback & p_abort) = 0;
 
 	enum {
 		//! Indicates that this service implements some kind of redirector that opens another input for decoding, used to avoid circular call possibility.
@@ -183,9 +181,9 @@ public:
 
 	static bool g_find_service_by_path(service_ptr_t<input_entry> & p_out,const char * p_path);
 	static bool g_find_service_by_content_type(service_ptr_t<input_entry> & p_out,const char * p_content_type);
-	static t_io_result g_open_for_decoding(service_ptr_t<input_decoder> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
-	static t_io_result g_open_for_info_read(service_ptr_t<input_info_reader> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
-	static t_io_result g_open_for_info_write(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
+	static void g_open_for_decoding(service_ptr_t<input_decoder> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
+	static void g_open_for_info_read(service_ptr_t<input_info_reader> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
+	static void g_open_for_info_write(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
 	static bool g_is_supported_path(const char * p_path);
 
 	static const GUID class_guid;

@@ -9,7 +9,6 @@ class NOVTABLE initquit : public service_base
 public:
 	virtual void on_init() {}
 	virtual void on_quit() {}//WARNING: it is possible that on_quit gets called without on_init getting called first, e.g. after user interface init failure.
-	virtual void on_system_shutdown() {}//called instead of on_quit() when system is shutting down
 
 	static const GUID class_guid;
 

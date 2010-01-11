@@ -16,7 +16,7 @@ public:
 
 	virtual const char * get_name()=0;
 	virtual HWND init(HookProc_t hook)=0;//create your window here
-	virtual void shutdown(bool endsession)=0;//you need to destroy your window here
+	virtual void shutdown()=0;//you need to destroy your window here
 	virtual void activate()=0;
 	virtual void hide()=0;
 	virtual bool is_visible() = 0;//for activate/hide command

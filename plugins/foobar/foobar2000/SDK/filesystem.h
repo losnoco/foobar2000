@@ -10,6 +10,8 @@ namespace foobar2000_io
 {
 	//! Type used for file size related variables.
 	typedef t_uint64 t_filesize;
+	//! Type used for file size related variables when signed value is needed.
+	typedef t_int64 t_sfilesize;
 	//! Type used for file timestamp related variables. 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601; 0 for invalid/unknown time.
 	typedef t_uint64 t_filetimestamp;
 	//! Invalid/unknown file timestamp constant. Also see: t_filetimestamp.
@@ -17,62 +19,23 @@ namespace foobar2000_io
 	//! Invalid/unknown file size constant. Also see: t_filesize.
 	const t_filesize filesize_invalid = (t_filesize)(-1);
 
-
-	//! Type used for I/O return codes.
-	enum t_io_result
-	{
-		//! Success
-		io_result_success = 0,
-		//! End-Of-File; note that EOF is considered a succeess by common conventions
-		io_result_eof,
-		//! Generic unexpected error
-		io_result_error_generic,
-		//! Object not found
-		io_result_error_not_found,
-		//! Access denied
-		io_result_error_denied,
-		//! Unexpected data read from file; corrupted file or unsupported file format
-		io_result_error_data,
-		//! Sharing violation
-		io_result_error_sharing_violation,
-		//! Error, device being written to is full
-		io_result_error_device_full,
-		//! Out of memory (malloc failure etc)
-		io_result_error_out_of_memory,
-		//! User error
-		io_result_error_user,
-		//! Bug in the code
-		io_result_error_bug_check,
-		//! User abort (see: abort_callback)
-		io_result_aborted,
-	};
-
-
-	//! Helper function; determines whether specified t_io_result indicates a failure.
-	inline static bool io_result_failed(t_io_result param) {return param >= io_result_error_generic;}
-	//! Helper function; determines whether specified t_io_result indicates a success.
-	inline static bool io_result_succeeded(t_io_result param) {return param < io_result_error_generic;}
-	//! Helper function; determines whether specified t_io_result indicates a failure or EOF.
-	inline static bool io_result_failed_or_eof(t_io_result param) {return param >= io_result_eof;}
-
-	//! Helper function; retrieves human-readable message for specified t_io_result.
-	const char * io_result_get_message(t_io_result param);
-	//! Helper function; converts win32 error code to t_io_result.
-	t_io_result io_error_from_win32(DWORD p_code);
-
-	class exception_io : public std::exception {
-	public:
-		exception_io(t_io_result p_code) : exception(io_result_get_message(p_code),0), m_code(p_code) {}
-		exception_io(const exception_io & p_src) {*this = p_src;}
-		t_io_result get_code() const {return m_code;}
-		static void g_test(t_io_result code) {if (io_result_failed(code)) throw exception_io(code);}
-	private:
-		t_io_result m_code;
-	};
+	//! Generic I/O error. Root class for I/O failure exception. See relevant default message for description of each derived exception class.
+	PFC_DECLARE_EXCEPTION(exception_io,						pfc::exception,"I/O error");
+	PFC_DECLARE_EXCEPTION(exception_io_not_found,			exception_io,"Object not found");
+	PFC_DECLARE_EXCEPTION(exception_io_denied,				exception_io,"Access denied");
+	PFC_DECLARE_EXCEPTION(exception_io_data,				exception_io,"Unsupported format or corrupted file");
+	PFC_DECLARE_EXCEPTION(exception_io_data_truncation,		exception_io_data,"Unsupported format or corrupted file");
+	PFC_DECLARE_EXCEPTION(exception_io_object_is_remote,	exception_io,"This operation is not supported on remote objects");
+	PFC_DECLARE_EXCEPTION(exception_io_sharing_violation,	exception_io,"Sharing violation");
+	PFC_DECLARE_EXCEPTION(exception_io_device_full,			exception_io,"Device full");
+	PFC_DECLARE_EXCEPTION(exception_io_seek_out_of_range,	exception_io,"Seek offset out of range");
+	PFC_DECLARE_EXCEPTION(exception_io_object_not_seekable,	exception_io,"Object is not seekable");
+	PFC_DECLARE_EXCEPTION(exception_io_no_length,			exception_io,"Length of object is unknown");
+	PFC_DECLARE_EXCEPTION(exception_io_no_handler_for_path,	exception_io,"Invalid path");
+	PFC_DECLARE_EXCEPTION(exception_io_already_exists,		exception_io,"Object already exists");
 
 	//! Stores file stats (size and timestamp).
-	struct t_filestats
-	{
+	struct t_filestats {
 		//! Size of the file.
 		t_filesize m_size;
 		//! Time of last file modification.
@@ -85,263 +48,189 @@ namespace foobar2000_io
 	//! Invalid/unknown file stats constant. See: t_filestats.
 	static const t_filestats filestats_invalid = {filesize_invalid,filetimestamp_invalid};
 
-	//! Generic interface to read data from a nonseekable stream. Also see: stream_writer, file.
-	class NOVTABLE stream_reader
-	{
+#ifdef _WIN32
+	void exception_io_from_win32(DWORD p_code);
+#endif
+
+	//! Generic interface to read data from a nonseekable stream. Also see: stream_writer, file.	\n
+	//! Error handling: all methods may throw exception_io or one of derivatives on failure; exception_aborted when abort_callback is signaled.
+	class NOVTABLE stream_reader {
+	public:
+		//! Attempts to reads specified number of bytes from the stream.
+		//! @param p_buffer Receives data being read. Must have at least p_bytes bytes of space allocated.
+		//! @param p_bytes Number of bytes to read.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		//! @returns Number of bytes actually read. May be less than requested when EOF was reached.
+		virtual t_size read(void * p_buffer,t_size p_bytes,abort_callback & p_abort) = 0;
+		//! Reads specified number of bytes from the stream. If requested amount of bytes can't be read (e.g. EOF), throws exception_io_data_truncation.
+		//! @param p_buffer Receives data being read. Must have at least p_bytes bytes of space allocated.
+		//! @param p_bytes Number of bytes to read.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		virtual void read_object(void * p_buffer,t_size p_bytes,abort_callback & p_abort);
+		//! Attempts to skip specified number of bytes in the stream.
+		//! @param p_bytes Number of bytes to skip.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		//! @returns Number of bytes actually skipped, May be less than requested when EOF was reached.
+		virtual t_filesize skip(t_filesize p_bytes,abort_callback & p_abort);
+		//! Skips specified number of bytes in the stream. If requested amount of bytes can't be skipped (e.g. EOF), throws exception_io_data_truncation.
+		//! @param p_bytes Number of bytes to skip.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		virtual void skip_object(t_filesize p_bytes,abort_callback & p_abort);
+
+		//! Helper template built around read_object. Reads single raw object from the stream.
+		//! @param p_object Receives object read from the stream on success.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		template<typename T> inline void read_object_t(T& p_object,abort_callback & p_abort) {pfc::assert_raw_type<T>(); read_object(&p_object,sizeof(p_object),p_abort);}
+		//! Helper template built around read_object. Reads single raw object from the stream; corrects byte order assuming stream uses little endian order.
+		//! @param p_object Receives object read from the stream on success.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		template<typename T> inline void read_lendian_t(T& p_object,abort_callback & p_abort) {read_object_t(p_object,p_abort); byte_order::order_le_to_native_t(p_object);}
+		//! Helper template built around read_object. Reads single raw object from the stream; corrects byte order assuming stream uses big endian order.
+		//! @param p_object Receives object read from the stream on success.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		template<typename T> inline void read_bendian_t(T& p_object,abort_callback & p_abort) {read_object_t(p_object,p_abort); byte_order::order_be_to_native_t(p_object);}
+
+		//! Helper function; reads string (with 32-bit header indicating length in bytes followed by UTF-8 encoded data without null terminator).
+		void read_string(pfc::string_base & p_out,abort_callback & p_abort);
+		//! Helper function; alternate way of storing strings; assumes string takes space up to end of stream.
+		void read_string_raw(pfc::string_base & p_out,abort_callback & p_abort);
 	protected:
 		stream_reader() {}
 		~stream_reader() {}
-	public:
-
-		//! Reads data from a stream. Primary API function.
-		//! @param p_buffer Pointer to buffer receiving data.
-		//! @param p_bytes Number of bytes to read.
-		//! @param p_bytes_read Receives number of bytes actually read on success (may be less than or equal to p_bytes). Initial value is ignored. 
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		//! @returns io_result_success on success and amount of bytes retrieved equal to amount of bytes requested, io_result_eof on success but less bytes retrieved than asked for (even if no actual data has been retrieved and p_bytes_read set to 0), one of other t_io_result error codes on failure.
-		virtual t_io_result read(void * p_buffer,unsigned p_bytes,unsigned & p_bytes_read,abort_callback & p_abort) = 0;
-		
-		//! Helper function; reads specified number of bytes from the stream, and returns an error (io_result_error_data) if EOF was hit before requested amount of data could be retrieved. On successful return, no further checks for amount of data read are needed.
-		//! @param p_buffer Pointer to buffer receiving data.
-		//! @param p_bytes Number of bytes to read.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		t_io_result read_object(void * p_buffer,unsigned p_bytes,abort_callback & p_abort);
-
-		//! Helper function built around read(); reads specified amount of bytes from a stream; throws an exception_io exception on failure and returns number of bytes read.
-		//! @param p_buffer Pointer to buffer receiving data.
-		//! @param p_bytes Number of bytes to read.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		//! @returns Number of bytes read.
-		unsigned read_e(void * p_buffer,unsigned p_bytes,abort_callback & p_abort);
-
-		//! Helper function built around read_object(); reads specified amount of bytes from a stream; throws an exception_io exception on failure or if EOF was hit before requested amount of data could be retrieved (io_result_error_data).
-		//! @param p_buffer Pointer to buffer receiving data.
-		//! @param p_bytes Number of bytes to read.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		void read_object_e(void * p_buffer,unsigned p_bytes,abort_callback & p_abort);
-
-		//! Helper function; skips specified amount of bytes in the stream.
-		//! @param p_bytes Number of bytes to skip.
-		//! @param p_bytes_skipped Receives number of bytes actually skipped on success (may be less than or equal to p_bytes). Initial value is ignored.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		t_io_result skip(t_uint64 p_bytes,t_uint64 & p_bytes_skipped,abort_callback & p_abort);
-
-		//! Helper function built around skip(); skips specified amount of bytes in the stream; returns an error (io_result_error_data) if EOF was hit before requested amount of data could be skipped. On successful return, no further checks for amount of data skipped are needed.
-		//! @param p_bytes Number of bytes to skip.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		t_io_result skip_object(t_uint64 p_bytes,abort_callback & p_abort);
-
-		//! Helper function built around skip(); throws an exception_io exception on failure and returns number of bytes skipped.
-		//! @param p_bytes Number of bytes to skip.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		//! @returns Number of bytes skipped.
-		t_uint64 skip_e(t_uint64 p_bytes,abort_callback & p_abort);
-
-		//! Helper function built around skip_object(); skips specified amount of bytes in the stream; throws an exception_io exception on failure or if EOF was hit before requested amount of data could be skipped (io_result_error_data).
-		//! @param p_bytes Number of bytes to skip.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		void skip_object_e(t_uint64 p_bytes,abort_callback & p_abort);
-
-
-		//! Helper function template built around read_object; reads entire raw variable of any type (int, struct, etc) from the stream. Note: not byte order safe.
-		//! @param p_object Object of any type to read.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline t_io_result read_object_t(T& p_object,abort_callback & p_abort) {return read_object(&p_object,sizeof(p_object),p_abort);}
-
-		//! Helper function template built around read_object_t; reads entire variable of any type (int, struct, etc) from the stream, using byte_order namespace functions to convert it from little endian byte order to host byte order. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_le_to_native_t for relevant types.
-		//! @param p_object Object of any type to read.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline t_io_result read_lendian_t(T& p_object,abort_callback & p_abort) {t_io_result ret = read_object_t(p_object,p_abort); if (io_result_succeeded(ret)) byte_order::order_le_to_native_t(p_object);return ret;}
-		
-		//! Helper function template built around read_object_t; reads entire variable of any type (int, struct, etc) from the stream, using byte_order namespace functions to convert it from big endian byte order to host byte order. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_be_to_native_t for relevant types.
-		//! @param p_object Object of any type to read.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline t_io_result read_bendian_t(T& p_object,abort_callback & p_abort) {t_io_result ret = read_object_t(p_object,p_abort); if (io_result_succeeded(ret)) byte_order::order_be_to_native_t(p_object);return ret;}
-
-		//! Helper function template built around read_object_e; reads entire raw variable of any type (int, struct, etc) from the stream. Note: not byte order safe. This helper function throws an exception_io exception on failure.
-		//! @param p_object Object of any type to read.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline void read_object_e_t(T& p_object,abort_callback & p_abort) {read_object_e(&p_object,sizeof(p_object),p_abort);}
-
-		//! Helper function template built around read_object_e_t; reads entire variable of any type (int, struct, etc) from the stream, using byte_order namespace functions to convert it from little endian byte order to host byte order. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_le_to_native_t for relevant types. This helper function throws an exception_io exception on failure.
-		//! @param p_object Object of any type to read.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline void read_lendian_e_t(T& p_object,abort_callback & p_abort) {read_object_e_t(p_object,p_abort); byte_order::order_le_to_native_t(p_object); }
-
-		//! Helper function template built around read_object_e_t; reads entire variable of any type (int, struct, etc) from the stream, using byte_order namespace functions to convert it from big endian byte order to host byte order. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_be_to_native_t for relevant types. This helper function throws an exception_io exception on failure.
-		//! @param p_object Object of any type to read.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline void read_bendian_e_t(T& p_object,abort_callback & p_abort) {read_object_e_t(p_object,p_abort); byte_order::order_be_to_native_t(p_object); }
-
-		//! Helper function; reads string (with 32-bit header indicating length in bytes followed by UTF-8 encoded data without null terminator).
-		t_io_result read_string(string_base & p_out,abort_callback & p_abort);
-
-		//! Helper function built around read_string(); throws an exception on failure.
-		void read_string_e(string_base & p_out,abort_callback & p_abort);
-
-		//! Helper function; alternate way of storing strings; assumes string takes space up to end of stream.
-		t_io_result read_string_raw(string_base & p_out,abort_callback & p_abort);
-		
-		//! Helper function built around read_string_raw(); throws an exception on failure.
-		void read_string_raw_e(string_base & p_out,abort_callback & p_abort);
 	};
 
 
-	//! Generic interface to write data to a nonseekable stream. Also see: stream_reader, file.
-	class NOVTABLE stream_writer
-	{
+	//! Generic interface to write data to a nonseekable stream. Also see: stream_reader, file.	\n
+	//! Error handling: all methods may throw exception_io or one of derivatives on failure; exception_aborted when abort_callback is signaled.
+	class NOVTABLE stream_writer {
+	public:
+		//! Writes specified number of bytes from specified buffer to the stream.
+		//! @param p_buffer Buffer with data to write. Must contain at least p_bytes bytes.
+		//! @param p_bytes Number of bytes to write.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		virtual void write(const void * p_buffer,t_size p_bytes,abort_callback & p_abort) = 0;
+		
+		//! Helper. Same as write(), provided for consistency.
+		inline void write_object(const void * p_buffer,t_size p_bytes,abort_callback & p_abort) {write(p_buffer,p_bytes,p_abort);}
+
+		//! Helper template. Writes single raw object to the stream.
+		//! @param p_object Object to write.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		template<typename T> inline void write_object_t(const T & p_object, abort_callback & p_abort) {pfc::assert_raw_type<T>(); write_object(&p_object,sizeof(p_object),p_abort);}
+		//! Helper template. Writes single raw object to the stream; corrects byte order assuming stream uses little endian order.
+		//! @param p_object Object to write.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		template<typename T> inline void write_lendian_t(const T & p_object, abort_callback & p_abort) {T temp = p_object; byte_order::order_native_to_le_t(temp); write_object_t(temp,p_abort);}
+		//! Helper template. Writes single raw object to the stream; corrects byte order assuming stream uses big endian order.
+		//! @param p_object Object to write.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		template<typename T> inline void write_bendian_t(const T & p_object, abort_callback & p_abort) {T temp = p_object; byte_order::order_native_to_be_t(temp); write_object_t(temp,p_abort);}
+
+		//! Helper function; writes string (with 32-bit header indicating length in bytes followed by UTF-8 encoded data without null terminator).
+		void write_string(const char * p_string,abort_callback & p_abort);
+
+		//! Helper function; writes raw string to the stream, with no length info or null terminators.
+		void write_string_raw(const char * p_string,abort_callback & p_abort);
 	protected:
 		stream_writer() {}
 		~stream_writer() {}
-	public:
-		//! Writes data to the stream. Primary API function.
-		//! @param p_buffer Pointer to buffer containing data to write.
-		//! @param p_bytes Number of bytes to write.
-		//! @param p_bytes_written On success, receives amount of bytes written. Except for rare failure cases or uncommon stream_writer implementations, should be same to p_bytes.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		virtual t_io_result write(const void * p_buffer,unsigned p_bytes,unsigned & p_bytes_written,abort_callback & p_abort) = 0;
-
-		//! Helper built around write(). Writes data to the stream, returns error if less data could be written than requested.
-		//! @param p_buffer Pointer to buffer containing data to write.
-		//! @param p_bytes Number of bytes to write.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		t_io_result write_object(const void * p_buffer,unsigned p_bytes,abort_callback & p_abort);
-
-		//! Helper built around write(); writes data to the stream and throws an exception_io exception on failure.
-		//! @param p_buffer Pointer to buffer containing data to write.
-		//! @param p_bytes Number of bytes to write.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		//! @returns Number of bytes written.
-		unsigned write_e(const void * p_buffer,unsigned p_bytes,abort_callback & p_abort);
-
-		//! Helper built around write_object(); writes data to the stream and throws an exception_io exception on failure or when less data than requested could be written.
-		//! @param p_buffer Pointer to buffer containing data to write.
-		//! @param p_bytes Number of bytes to write.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		void write_object_e(const void * p_buffer,unsigned p_bytes,abort_callback & p_abort);
-
-		//! Helper template built around write_object(); writes entire raw object of any type (int, struct, etc) to the stream. Note: not byte order safe.
-		//! @param p_object Object to be written.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline t_io_result write_object_t(const T & p_object,abort_callback & p_abort) {return write_object(&p_object,sizeof(p_object),p_abort);}
-
-		//! Helper template built around write_object_t(); writes entire raw object of any type (int, struct, etc) to the stream, using byte_order namespace functions to convert it to little endian byte order from host byte order. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_native_to_le_t for relevant types.
-		//! @param p_object Object to be written.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline t_io_result write_lendian_t(const T & p_object,abort_callback & p_abort) {T temp = p_object; byte_order::order_native_to_le_t(temp);return write_object_t(temp,p_abort);}
-
-		//! Helper template built around write_object_t(); writes entire raw object of any type (int, struct, etc) to the stream, using byte_order namespace functions to convert it to big endian byte order from host byte order. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_native_to_be_t for relevant types.
-		//! @param p_object Object to be written.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline t_io_result write_bendian_t(const T & p_object,abort_callback & p_abort) {T temp = p_object; byte_order::order_native_to_be_t(temp);return write_object_t(temp,p_abort);}
-
-		//! Helper template built around write_object_e(); writes entire raw object of any type (int, struct, etc) to the stream and throws an exception_io exception on failure. Note: not byte order safe.
-		//! @param p_object Object to be written.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline void write_object_e_t(const T & p_object,abort_callback & p_abort) {write_object_e(&p_object,sizeof(p_object),p_abort);}
-
-		//! Helper template built around write_object_t(); writes entire raw object of any type (int, struct, etc) to the stream, using byte_order namespace functions to convert it to little endian byte order from host byte order; throws an exception_io exception on failure. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_native_to_le_t for relevant types.
-		//! @param p_object Object to be written.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline void write_lendian_e_t(const T & p_object,abort_callback & p_abort) {T temp = p_object; byte_order::order_native_to_le_t(temp);write_object_e_t(temp,p_abort);}
-
-		//! Helper template built around write_object_t(); writes entire raw object of any type (int, struct, etc) to the stream, using byte_order namespace functions to convert it to big endian byte order from host byte order; throws an exception_io exception on failure. If you want to deal with non-native types using this function, you can add your own specializations of byte_order::order_native_to_be_t for relevant types.
-		//! @param p_object Object to be written.
-		//! @param p_abort abort_callback object signaling user aborting the operation.
-		template<typename T> inline void write_bendian_e_t(const T & p_object,abort_callback & p_abort) {T temp = p_object; byte_order::order_native_to_be_t(temp);write_object_e_t(temp,p_abort);}
-
-		//! Helper function; writes string (with 32-bit header indicating length in bytes followed by UTF-8 encoded data without null terminator).
-		t_io_result write_string(const char * p_string,abort_callback & p_abort);
-
-		//! Helper function built around write_string(); throws an exception on failure.
-		void write_string_e(const char * p_string,abort_callback & p_abort);
-
-		//! Helper function; writes raw string to the stream, with no length info or null terminators.
-		t_io_result write_string_raw(const char * p_string,abort_callback & p_abort);
-
-		//! Helper function built around write_string_raw(); throws an exception on failure.
-		void write_string_raw_e(const char * p_string,abort_callback & p_abort);
-
 	};
 
-	class NOVTABLE file : public service_base, public stream_reader, public stream_writer
-	{
+	//! Primary class for file I/O. See also: stream_reader, stream_writer (which it inherits read/write methods from). \n
+	//! Error handling: all methods may throw exception_io or one of derivatives on failure; exception_aborted when abort_callback is signaled.
+	class NOVTABLE file : public service_base, public stream_reader, public stream_writer {
 	public:
+
+		//! Seeking mode constants. Note: these are purposedly defined to same values as standard C SEEK_* constants
+		enum t_seek_mode {
+			//! Seek relative to beginning of file (same as seeking to absolute offset).
+			seek_from_beginning = 0,
+			//! Seek relative to current position.
+			seek_from_current = 1,
+			//! Seek relative to end of file.
+			seek_from_eof = 2,
+		};
+
 		//! Retrieves size of the file.
-		//! @param p_size Receives file size on success; filesize_invalid if unknown (nonseekable stream etc).
 		//! @param p_abort abort_callback object signaling user aborting the operation.
-		virtual t_io_result get_size(t_filesize & p_size,abort_callback & p_abort)=0;
+		//! @returns File size on success; filesize_invalid if unknown (nonseekable stream etc).
+		virtual t_filesize get_size(abort_callback & p_abort) = 0;
 
 
-		//! Retrieves read/write cursor position in the file. In case of non-seekable stream, this should return number of bytes read so far.
-		//! @param p_position Receives read/write cursor position.
+		//! Retrieves read/write cursor position in the file. In case of non-seekable stream, this should return number of bytes read so far since open/reopen call.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
-		virtual t_io_result get_position(t_uint64 & p_position,abort_callback & p_abort)=0;
+		//! @returns Read/write cursor position
+		virtual t_filesize get_position(abort_callback & p_abort) = 0;
 
-		//! Truncates the file at current read/write cursor position.
+		//! Resizes file to specified size in bytes.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
-		virtual t_io_result set_eof(abort_callback & p_abort) = 0;
+		virtual void resize(t_filesize p_size,abort_callback & p_abort) = 0;
 
 		//! Sets read/write cursor position to specific offset.
+		//! @param p_position position to seek to.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
-		virtual t_io_result seek(t_filesize p_position,abort_callback & p_abort)=0;
-		virtual t_io_result seek2(t_int64 p_position,int mode,abort_callback & p_abort);
+		virtual void seek(t_filesize p_position,abort_callback & p_abort) = 0;
+
 		
-		//! Returns whether the file is seekable or not. If can_seek() returns false, all seek() calls will fail.
+		//! Sets read/write cursor position to specific offset; extended form allowing seeking relative to current position or to end of file.
+		//! @param p_position Position to seek to; interpretation of this value depends on p_mode parameter.
+		//! @param p_mode Seeking mode; see t_seek_mode enum values for further description.
+		//! @param p_abort abort_callback object signaling user aborting the operation.
+		virtual void seek_ex(t_sfilesize p_position,t_seek_mode p_mode,abort_callback & p_abort);
+
+		//! Returns whether the file is seekable or not. If can_seek() returns false, all seek() or seek_ex() calls will fail; reopen() is still usable on nonseekable streams.
 		virtual bool can_seek() = 0;
 
 		//! Retrieves mime type of the file.
 		//! @param p_out Receives content type string on success.
-		//! @returns true on success, false on failure or unknown type.
-		virtual bool get_content_type(string_base & p_out) {return false;}
-		
+		virtual bool get_content_type(pfc::string_base & p_out) = 0;
+
 		//! Hint, returns whether the file is already fully buffered into memory.
 		virtual bool is_in_memory() {return false;}
-		
+
 		//! Optional, called by owner thread before sleeping.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
-		virtual void on_idle(abort_callback & p_abort) {};
+		virtual void on_idle(abort_callback & p_abort) {}
 
-		//! Retrieves last modificaiton time of the file.
-		//! @param p_timestamp Receives last modification time of the file if successful.
+		//! Retrieves last modification time of the file.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
-		virtual t_io_result get_timestamp(t_filetimestamp & p_timestamp,abort_callback & p_abort)=0;
-		
+		//! @returns Last modification time o fthe file; filetimestamp_invalid if N/A.
+		virtual t_filetimestamp get_timestamp(abort_callback & p_abort) {return filetimestamp_invalid;}
+
 		//! Resets non-seekable stream, or seeks to zero on seekable file.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
-		virtual t_io_result reopen(abort_callback & p_abort) {return seek(0,p_abort);}
-
+		virtual void reopen(abort_callback & p_abort) = 0;
+		
 		//! Indicates whether the file is a remote resource and non-sequential access may be slowed down by lag. This is typically returns to true on non-seekable sources but may also return true on seekable sources indicating that seeking is supported but will be relatively slow.
 		virtual bool is_remote() = 0;
 		
-		t_io_result get_stats(t_filestats & p_stats,abort_callback & p_abort);
-		t_filestats get_stats_e(abort_callback & p_abort);
-		t_filesize get_size_e(abort_callback & p_abort);
-		t_filesize get_position_e(abort_callback & p_abort);
-		t_filetimestamp get_timestamp_e(abort_callback & p_abort);
+		//! Retrieves file stats structure. Usese get_size() and get_timestamp().
+		t_filestats get_stats(abort_callback & p_abort);
+
+		//! Returns whether read/write cursor position is at the end of file.
+		bool is_eof(abort_callback & p_abort);
+
+		//! Truncates file to specified size (while preserving read/write cursor position if possible); uses set_eof().
+		void truncate(t_filesize p_position,abort_callback & p_abort);
+
+		//! Truncates the file at current read/write cursor position.
+		void set_eof(abort_callback & p_abort) {resize(get_position(p_abort),p_abort);}
 
 
-		t_io_result is_eof(bool & p_out,abort_callback & p_abort);
+		//! Helper; retrieves size of the file. If size is not available (get_size() returns filesize_invalid), throws exception_io_no_length.
+		t_filesize get_size_ex(abort_callback & p_abort);
 
-		bool is_eof_e(abort_callback & p_abort);
+		//! Helper; throws exception_io_object_not_seekable if file is not seekable.
+		void ensure_seekable();
 
-		void seek_e(t_filesize position,abort_callback & p_abort);
-		void seek2_e(t_int64 position,int mode,abort_callback & p_abort);
-		void reopen_e(abort_callback & p_abort);
-		void set_eof_e(abort_callback & p_abort);
+		//! Helper; transfers specified number of bytes between streams.
+		//! @returns number of bytes actually transferred. May be less than requested if e.g. EOF is reached.
+		static t_filesize g_transfer(stream_reader * src,stream_writer * dst,t_filesize bytes,abort_callback & p_abort);
+		//! Helper; transfers specified number of bytes between streams. Throws exception if requested number of bytes could not be read (EOF).
+		static void g_transfer_object(stream_reader * src,stream_writer * dst,t_filesize bytes,abort_callback & p_abort);
+		//! Helper; transfers entire file content from one file to another, erasing previous content.
+		static void g_transfer_file(const service_ptr_t<file> & p_from,const service_ptr_t<file> & p_to,abort_callback & p_abort);
 
-		t_io_result truncate(t_uint64 p_position,abort_callback & p_abort);
-		void truncate_e(t_uint64 p_position,abort_callback & p_abort);
-
-		//helper
-		static t_io_result g_transfer(stream_reader * src,stream_writer * dst,t_filesize bytes,t_filesize & transferred,abort_callback & p_abort);
-		static t_io_result g_transfer_object(stream_reader * src,stream_writer * dst,t_filesize bytes,abort_callback & p_abort);
-		static void g_transfer_e(stream_reader * src,stream_writer * dst,t_filesize bytes,t_filesize & transferred,abort_callback & p_abort);
-		static void g_transfer_object_e(stream_reader * src,stream_writer * dst,t_filesize bytes,abort_callback & p_abort);
-
-		static t_io_result g_transfer_file(const service_ptr_t<file> & p_from,const service_ptr_t<file> & p_to,abort_callback & p_abort);
-
-		
 		static const GUID class_guid;
 
 		virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
@@ -353,15 +242,12 @@ namespace foobar2000_io
 		~file() {}
 	};
 
-	class file_dynamicinfo : public file//for shoutcast metadata nonsense
-	{
+	//! Special hack for shoutcast metadata nonsense handling. Documentme.
+	class file_dynamicinfo : public file {
 	public:
-
-		virtual t_io_result get_static_info(class file_info & p_out, bool & p_info_present) = 0;
-
-		virtual bool is_dynamic_info_enabled()=0;//checks if currently open stream gets dynamic metadata
-
-		virtual t_io_result get_dynamic_info(class file_info & p_out,bool & p_changed)=0;//see input::get_dynamic_info_track
+		virtual bool get_static_info(class file_info & p_out) = 0;
+		virtual bool is_dynamic_info_enabled()=0;
+		virtual bool get_dynamic_info(class file_info & p_out) = 0;
 
 		static const GUID class_guid;
 
@@ -374,86 +260,88 @@ namespace foobar2000_io
 		~file_dynamicinfo() {}
 	};
 
+	//! Implementation helper - contains dummy implementations of methods that modify the file
+	template<typename t_base> class file_readonly_t : public t_base {
+	public:
+		void resize(t_filesize p_size,abort_callback & p_abort) {throw exception_io_denied();}
+		void write(const void * p_buffer,t_size p_bytes,abort_callback & p_abort) {throw exception_io_denied();}
+	};
+	typedef file_readonly_t<file> file_readonly;
+
 	class filesystem;
 
-	class NOVTABLE directory_callback
-	{
+	class NOVTABLE directory_callback {
 	public:
-		virtual bool on_entry(filesystem * owner,abort_callback & p_abort,const char * url,bool is_subdirectory,const t_filestats & p_stats)=0;//return true to continue, false to abort
+		//! @returns true to continue enumeration, false to abort.
+		virtual bool on_entry(filesystem * p_owner,abort_callback & p_abort,const char * p_url,bool p_is_subdirectory,const t_filestats & p_stats)=0;
 	};
 
-	class NOVTABLE filesystem : public service_base
-	{
-	public:
 
-		enum t_open_mode
-		{
+	class NOVTABLE filesystem : public service_base {
+	public:
+		enum t_open_mode {
 			open_mode_read,
 			open_mode_write_existing,
 			open_mode_write_new,
 		};
 
-		virtual bool get_canonical_path(const char * path,string_base & out)=0;
-		virtual bool is_our_path(const char * path)=0;
+		virtual bool get_canonical_path(const char * p_path,pfc::string_base & p_out)=0;
+		virtual bool is_our_path(const char * p_path)=0;
+		virtual bool get_display_path(const char * p_path,pfc::string_base & p_out)=0;
 
-		virtual bool get_display_path(const char * path,string_base & out)=0;
+		virtual void open(service_ptr_t<file> & p_out,const char * p_path, t_open_mode p_mode,abort_callback & p_abort)=0;
+		virtual void remove(const char * p_path,abort_callback & p_abort)=0;
+		virtual void move(const char * p_src,const char * p_dst,abort_callback & p_abort)=0;
+		virtual bool is_remote(const char * p_src) = 0;
 
-		virtual t_io_result open(service_ptr_t<file> & p_out,const char * path, t_open_mode mode,abort_callback & p_abort)=0;
-		virtual t_io_result remove(const char * path,abort_callback & p_abort)=0;
-		virtual t_io_result move(const char * src,const char * dst,abort_callback & p_abort)=0;
-		virtual bool is_remote(const char * src) = 0;
-
-		virtual t_io_result get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort) = 0;
+		virtual void get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort) = 0;
 		
+		virtual bool relative_path_create(const char * file_path,const char * playlist_path,pfc::string_base & out) {return 0;}
+		virtual bool relative_path_parse(const char * relative_path,const char * playlist_path,pfc::string_base & out) {return 0;}
 
-		virtual bool relative_path_create(const char * file_path,const char * playlist_path,string_base & out) {return 0;}
-		virtual bool relative_path_parse(const char * relative_path,const char * playlist_path,string_base & out) {return 0;}
+		//! Creates a directory.
+		virtual void create_directory(const char * path,abort_callback &) = 0;
 
-		virtual t_io_result create_directory(const char * path,abort_callback &) = 0;
+		virtual void list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort)=0;
 
-		virtual t_io_result list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort)=0;
-
+		//! Hint; returns whether this filesystem supports mime types.
 		virtual bool supports_content_types() = 0;
 
-		static void g_get_canonical_path(const char * path,string_base & out);
-		static void g_get_display_path(const char * path,string_base & out);
+		static void g_get_canonical_path(const char * path,pfc::string_base & out);
+		static void g_get_display_path(const char * path,pfc::string_base & out);
 
 		static bool g_get_interface(service_ptr_t<filesystem> & p_out,const char * path);//path is AFTER get_canonical_path
-		static bool g_is_remote(const char * path);//path is AFTER get_canonical_path
-		//these below do get_canonical_path internally
-		static t_io_result g_open(service_ptr_t<file> & p_out,const char * path,t_open_mode mode,abort_callback & p_abort);
-		static void g_open_e(service_ptr_t<file> & p_out,const char * path,t_open_mode mode,abort_callback & p_abort);
-		static t_io_result g_open_ex(service_ptr_t<file> & p_out,const char * path,t_open_mode mode,abort_callback & p_abort);//get_canonical_path + open
-		static t_io_result g_open_write_new(service_ptr_t<file> & p_out,const char * path,abort_callback & p_abort);
-		static void g_open_write_new_e(service_ptr_t<file> & p_out,const char * path,abort_callback & p_abort);
-		static t_io_result g_open_read(service_ptr_t<file> & p_out,const char * path,abort_callback & p_abort) {return g_open(p_out,path,open_mode_read,p_abort);}
-		static t_io_result g_open_precache(service_ptr_t<file> & p_out,const char * path,abort_callback & p_abort);//open only for precaching data (eg. will fail on http etc)
+		static bool g_is_remote(const char * p_path);//path is AFTER get_canonical_path
+		static bool g_is_remote_safe(const char * p_path);//path is AFTER get_canonical_path
+		static bool g_is_recognized_path(const char * p_path);
+		
+		static void g_open(service_ptr_t<file> & p_out,const char * p_path,t_open_mode p_mode,abort_callback & p_abort);
+		static void g_open_ex(service_ptr_t<file> & p_out,const char * path,t_open_mode mode,abort_callback & p_abort);//get_canonical_path + open
+		static void g_open_write_new(service_ptr_t<file> & p_out,const char * p_path,abort_callback & p_abort);
+		static void g_open_read(service_ptr_t<file> & p_out,const char * path,abort_callback & p_abort) {return g_open(p_out,path,open_mode_read,p_abort);}
+		static void g_open_precache(service_ptr_t<file> & p_out,const char * path,abort_callback & p_abort);//open only for precaching data (eg. will fail on http etc)
 		static bool g_exists(const char * p_path,abort_callback & p_abort);
 		static bool g_exists_writeable(const char * p_path,abort_callback & p_abort);
-		static t_io_result g_remove(const char * path,abort_callback & p_abort);
-		static t_io_result g_move(const char * src,const char * dst,abort_callback & p_abort);//needs canonical path
-		static t_io_result g_move_ex(const char * src,const char * dst,abort_callback & p_abort);//converts to canonical path first
-		static t_io_result g_copy(const char * src,const char * dst,abort_callback & p_abort);//needs canonical path
-		static t_io_result g_copy_directory(const char * src,const char * dst,abort_callback & p_abort);//needs canonical path
-		static t_io_result g_copy_ex(const char * src,const char * dst,abort_callback & p_abort);//converts to canonical path first
-		static t_io_result g_get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort);
-		static t_io_result g_get_stats_ex(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort);
-		static bool g_relative_path_create(const char * file_path,const char * playlist_path,string_base & out);
-		static bool g_relative_path_parse(const char * relative_path,const char * playlist_path,string_base & out);
+		static void g_remove(const char * p_path,abort_callback & p_abort);
+		static void g_move(const char * p_src,const char * p_dst,abort_callback & p_abort);//needs canonical path
+		static void g_move_ex(const char * p_src,const char * p_dst,abort_callback & p_abort);//converts to canonical path first
+		static void g_copy(const char * p_src,const char * p_dst,abort_callback & p_abort);//needs canonical path
+		static void g_copy_directory(const char * p_src,const char * p_dst,abort_callback & p_abort);//needs canonical path
+		static void g_copy_ex(const char * p_src,const char * p_dst,abort_callback & p_abort);//converts to canonical path first
+		static void g_get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort);
+		static void g_get_stats_ex(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort);
+		static bool g_relative_path_create(const char * p_file_path,const char * p_playlist_path,pfc::string_base & out);
+		static bool g_relative_path_parse(const char * p_relative_path,const char * p_playlist_path,pfc::string_base & out);
 		
-		static t_io_result g_create_directory(const char * p_path,abort_callback & p_abort);
-		static void g_create_directory_e(const char * p_path,abort_callback & p_abort);
+		static void g_create_directory(const char * p_path,abort_callback & p_abort);
 
-		static FILE * streamio_open(const char * path,const char * flags); // if for some bloody reason you ever need stream io compatibility, use this, INSTEAD of calling fopen() on the path string you've got; will only work with file:// (and not with http://, unpack:// or whatever)
+		static FILE * streamio_open(const char * p_path,const char * p_flags); // if for some bloody reason you ever need stream io compatibility, use this, INSTEAD of calling fopen() on the path string you've got; will only work with file:// (and not with http://, unpack:// or whatever)
 
-		static t_io_result g_open_temp(service_ptr_t<file> & p_out,abort_callback & p_abort);
-		static t_io_result g_open_tempmem(service_ptr_t<file> & p_out,abort_callback & p_abort);
+		static void g_open_temp(service_ptr_t<file> & p_out,abort_callback & p_abort);
+		static void g_open_tempmem(service_ptr_t<file> & p_out,abort_callback & p_abort);
 
-		static void g_open_temp_e(service_ptr_t<file> & p_out,abort_callback & p_abort);
-		static void g_open_tempmem_e(service_ptr_t<file> & p_out,abort_callback & p_abort);
-
-		static t_io_result g_list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort);// path must be canonical
-		static t_io_result g_list_directory_ex(const char * p_path,directory_callback & p_out,abort_callback & p_abort);// gets canonical path first
+		static void g_list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort);// path must be canonical
+		static void g_list_directory_ex(const char * p_path,directory_callback & p_out,abort_callback & p_abort);// gets canonical path first
 
 		static bool g_is_valid_directory(const char * path,abort_callback & p_abort);
 		static bool g_is_empty_directory(const char * path,abort_callback & p_abort);
@@ -470,7 +358,7 @@ namespace foobar2000_io
 		~filesystem() {}
 	};
 
-	class directory_callback_i : public directory_callback
+	class directory_callback_impl : public directory_callback
 	{
 		struct t_entry
 		{
@@ -478,34 +366,34 @@ namespace foobar2000_io
 			t_filestats m_stats;
 			t_entry(const char * p_path, const t_filestats & p_stats) : m_path(p_path), m_stats(p_stats) {}
 		};
-		ptr_list_t<t_entry> data;
+
+
+		list_t<pfc::rcptr_t<t_entry> > m_data;
 		bool m_recur;
 
-		static int sortfunc(const t_entry * p1, const t_entry* p2) {return stricmp_utf8(p1->m_path,p2->m_path);}
+		static int sortfunc(const pfc::rcptr_const_t<t_entry> & p1, const pfc::rcptr_const_t<t_entry> & p2) {return stricmp_utf8(p1->m_path,p2->m_path);}
 	public:
 		bool on_entry(filesystem * owner,abort_callback & p_abort,const char * url,bool is_subdirectory,const t_filestats & p_stats);
 
-		directory_callback_i(bool p_recur) : m_recur(p_recur) {}
-		~directory_callback_i() {data.delete_all();}
-		unsigned get_count() {return data.get_count();}
-		const char * operator[](unsigned n) {return data[n]->m_path;}
-		const char * get_item(unsigned n) {return data[n]->m_path;}
-		const t_filestats & get_item_stats(unsigned n) {return data[n]->m_stats;}
-		void sort() {data.sort_t(sortfunc);}
+		directory_callback_impl(bool p_recur) : m_recur(p_recur) {}
+		t_size get_count() {return m_data.get_count();}
+		const char * operator[](t_size n) const {return m_data[n]->m_path;}
+		const char * get_item(t_size n) const {return m_data[n]->m_path;}
+		const t_filestats & get_item_stats(t_size n) const {return m_data[n]->m_stats;}
+		void sort() {m_data.sort_t(sortfunc);}
 	};
 
 	class archive;
 
-	class NOVTABLE archive_callback : public abort_callback
-	{
+	class NOVTABLE archive_callback : public abort_callback {
 	public:
 		virtual bool on_entry(archive * owner,const char * url,const t_filestats & p_stats,const service_ptr_t<file> & p_reader) = 0;
 	};
 
-	class NOVTABLE archive : public filesystem//dont derive from this, use archive_i class below
-	{
+	//! Interface for archive reader services. When implementing, derive from archive_impl rather than from deriving from archive directly.
+	class NOVTABLE archive : public filesystem {
 	public:
-		virtual t_io_result archive_list(const char * p_path,const service_ptr_t<file> & p_reader,archive_callback & p_callback,bool p_want_readers) = 0;
+		virtual void archive_list(const char * p_path,const service_ptr_t<file> & p_reader,archive_callback & p_callback,bool p_want_readers) = 0;
 		
 		static const GUID class_guid;
 
@@ -518,45 +406,42 @@ namespace foobar2000_io
 		~archive() {}
 	};
 
-	class NOVTABLE archive_impl : public archive // derive from this
-	{
+	//! Root class for archive implementations. Derive from this instead of from archive directly.
+	class NOVTABLE archive_impl : public archive {
 	private:
 		//do not override these
-		bool get_canonical_path(const char * path,string_base & out);
+		bool get_canonical_path(const char * path,pfc::string_base & out);
 		bool is_our_path(const char * path);
-		bool get_display_path(const char * path,string_base & out);
-		int exists(const char * path,abort_callback & p_abort);
-		t_io_result remove(const char * path,abort_callback & p_abort);
-		t_io_result move(const char * src,const char * dst,abort_callback & p_abort);
+		bool get_display_path(const char * path,pfc::string_base & out);
+		void remove(const char * path,abort_callback & p_abort);
+		void move(const char * src,const char * dst,abort_callback & p_abort);
 		bool is_remote(const char * src);
-		bool relative_path_create(const char * file_path,const char * playlist_path,string_base & out);
-		bool relative_path_parse(const char * relative_path,const char * playlist_path,string_base & out);
-		t_io_result open(service_ptr_t<file> & p_out,const char * path, t_open_mode mode,abort_callback & p_abort);
-		t_io_result create_directory(const char * path,abort_callback &);
-		t_io_result list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort);
-		t_io_result get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort);
+		bool relative_path_create(const char * file_path,const char * playlist_path,pfc::string_base & out);
+		bool relative_path_parse(const char * relative_path,const char * playlist_path,pfc::string_base & out);
+		void open(service_ptr_t<file> & p_out,const char * path, t_open_mode mode,abort_callback & p_abort);
+		void create_directory(const char * path,abort_callback &);
+		void list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort);
+		void get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort);
 	protected:
 		//override these
 		virtual const char * get_archive_type()=0;//eg. "zip", must be lowercase
-		virtual t_io_result get_stats_in_archive(const char * p_archive,const char * p_file,t_filestats & p_stats,abort_callback & p_abort) = 0;
-		virtual t_io_result open_archive(service_ptr_t<file> & p_out,const char * archive,const char * file, abort_callback & p_abort)=0;//opens for reading
+		virtual t_filestats get_stats_in_archive(const char * p_archive,const char * p_file,abort_callback & p_abort) = 0;
+		virtual void open_archive(service_ptr_t<file> & p_out,const char * archive,const char * file, abort_callback & p_abort)=0;//opens for reading
 	public:
 		//override these
 		
-		virtual t_io_result archive_list(const char * path,const service_ptr_t<file> & p_reader,archive_callback & p_out,bool p_want_readers)=0;
+		virtual void archive_list(const char * path,const service_ptr_t<file> & p_reader,archive_callback & p_out,bool p_want_readers)=0;
 		//playlist_loader_callback ONLY for on_progress calls
 
 
 		static bool g_parse_unpack_path(const char * path,string8 & archive,string8 & file);
-		static void g_make_unpack_path(string_base & path,const char * archive,const char * file,const char * name);
-		void make_unpack_path(string_base & path,const char * archive,const char * file);
+		static void g_make_unpack_path(pfc::string_base & path,const char * archive,const char * file,const char * name);
+		void make_unpack_path(pfc::string_base & path,const char * archive,const char * file);
 
 	};
 
-	template<class T>
-	class archive_factory_t : public service_factory_single_t<filesystem,T>
-	{
-	};
+	template<typename T>
+	class archive_factory_t : public service_factory_single_t<filesystem,T> {};
 
 
 	t_filetimestamp filetimestamp_from_system_timer();
@@ -572,16 +457,9 @@ namespace foobar2000_io
 	};
 }
 
-#define IO_GUARD_EXCEPTIONS(CODE) \
-	try {CODE;}	\
-	catch(std::bad_alloc const&) {return io_result_error_out_of_memory;}	\
-	catch(foobar2000_io::exception_io const& e) {return e.get_code();} \
-	catch(std::exception const & e) {console::info(e.what()); return io_result_error_data;}
-
 using namespace foobar2000_io;
 
-//inline string_base & operator<<(string_base & p_fmt,t_filetimestamp p_timestamp) {return p_fmt << format_timestamp(p_timestamp);}
-inline string_base & operator<<(string_base & p_fmt,t_io_result p_code) {return p_fmt << io_result_get_message(p_code);}
+//inline pfc::string_base & operator<<(pfc::string_base & p_fmt,t_filetimestamp p_timestamp) {return p_fmt << format_timestamp(p_timestamp);}
 
 #include "filesystem_helper.h"
 

@@ -19,7 +19,6 @@
 #include "stream_buffer_helper.h"
 #include "file_info_const_impl.h"
 #include "file_wrapper_simple.h"
-#include "decode_error_popup.h"
 #include "dynamic_bitrate_helper.h"
 #include "cfg_guidlist.h"
 #include "cfg_structlist.h"

@@ -1,11 +1,11 @@
 namespace pfc {
 
 template<typename t_callback>
-inline bool bsearch_inline_t(unsigned p_count, t_callback p_callback,unsigned & p_result)
+inline bool bsearch_inline_t(t_size p_count, const t_callback & p_callback,t_size & p_result)
 {
-	unsigned max = p_count;
-	unsigned min = 0;
-	unsigned ptr;
+	t_size max = p_count;
+	t_size min = 0;
+	t_size ptr;
 	while(min<max)
 	{
 		ptr = min + ( (max-min) >> 1);
@@ -23,11 +23,11 @@ inline bool bsearch_inline_t(unsigned p_count, t_callback p_callback,unsigned & 
 }
 
 template<typename t_buffer,typename t_value>
-inline bool bsearch_simple_inline_t(t_buffer p_buffer,unsigned p_count,t_value p_value,unsigned & p_result)
+inline bool bsearch_simple_inline_t(const t_buffer & p_buffer,t_size p_count,t_value const & p_value,t_size & p_result)
 {
-	unsigned max = p_count;
-	unsigned min = 0;
-	unsigned ptr;
+	t_size max = p_count;
+	t_size min = 0;
+	t_size ptr;
 	while(min<max)
 	{
 		ptr = min + ( (max-min) >> 1);

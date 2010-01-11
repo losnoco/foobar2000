@@ -1,130 +1,26 @@
 //only meant to be included from service.h
 
-class service_reference_counter
-{
-private:
-	long refcount;
-public:
-	inline service_reference_counter() : refcount(0) {}
-	inline long increment() {return interlocked_increment(&refcount);}
-	inline long decrement() {return interlocked_decrement(&refcount);}
-
-#ifdef _DEBUG
-	~service_reference_counter()
-	{
-		assert(refcount == 0);
-	}
-#endif
-};
-
-#define __implement_service_base \
-	private:	\
-		service_reference_counter m_reference_counter;	\
-	public:	\
-		virtual int FB2KAPI service_release() {long ret = m_reference_counter.decrement(); if (ret == 0) delete this; return ret;} \
-		virtual int FB2KAPI service_add_ref() {return m_reference_counter.increment();}
-
-#if 0 //defined(_DEBUG)
-
-#define __implement_service_base_single \
-	private:	\
-		service_reference_counter m_reference_counter;	\
-	public:	\
-		virtual int FB2KAPI service_release() {long ret = m_reference_counter.decrement(); assert(ret >= 0); return ret;} \
-		virtual int FB2KAPI service_add_ref() {return m_reference_counter.increment();}
-
-#else
-
-#define __implement_service_base_single \
-	public:	\
-		virtual int FB2KAPI service_release() {return 1;}	\
-		virtual int FB2KAPI service_add_ref() {return 1;}
-#endif
-
 template<class T>
 class service_impl_t : public T
 {
-	__implement_service_base;	
-};
+public:
+	int FB2KAPI service_release() {long ret = --m_counter; if (ret == 0) delete this; return ret;}
+	int FB2KAPI service_add_ref() {return ++m_counter;}
 
-template<class T,class P1>
-class service_impl_p1_t : public T
-{
-	__implement_service_base;
-public:	
-	service_impl_p1_t(P1 p1) : T(p1) {}
-};
-
-template<class T,class P1,class P2>
-class service_impl_p2_t : public T
-{
-	__implement_service_base;
-public:	
-	service_impl_p2_t(P1 p1,P2 p2) : T(p1,p2) {}
-};
-
-template<class T,class P1,class P2,class P3>
-class service_impl_p3_t : public T
-{
-	__implement_service_base;
-public:	
-	service_impl_p3_t(P1 p1,P2 p2,P3 p3) : T(p1,p2,p3) {}
-};
-
-template<class T,class P1,class P2,class P3,class P4>
-class service_impl_p4_t : public T
-{
-	__implement_service_base;
-public:	
-	service_impl_p4_t(P1 p1,P2 p2,P3 p3,P4 p4) : T(p1,p2,p3,p4) {}
-};
-
-template<class T,class P1,class P2,class P3,class P4,class P5>
-class service_impl_p5_t : public T
-{
-	__implement_service_base;
-public:	
-	service_impl_p5_t(P1 p1,P2 p2,P3 p3,P4 p4,P5 p5) : T(p1,p2,p3,p4,p5) {}
+	TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(service_impl_t,T)
+private:
+	pfc::refcounter m_counter;
 };
 
 template<class T>
 class service_impl_single_t : public T
 {
-	__implement_service_base_single;
-};
-
-template<class T,class P1>
-class service_impl_single_p1_t : public T
-{
-	__implement_service_base_single;
 public:
-	service_impl_single_p1_t(P1 p1) : T(p1) {}
-};
+	int FB2KAPI service_release() {return 1;}
+	int FB2KAPI service_add_ref() {return 1;}
 
-template<class T,class P1,class P2>
-class service_impl_single_p2_t : public T
-{
-	__implement_service_base_single;
-public:	
-	service_impl_single_p2_t(P1 p1,P2 p2) : T(p1,p2) {}
-};
-
-template<class T,class P1,class P2,class P3>
-class service_impl_single_p3_t : public T
-{
-	__implement_service_base_single;
-public:	
-	service_impl_single_p3_t(P1 p1,P2 p2,P3 p3) : T(p1,p2,p3) {}
-};
-
-template<class T,class P1,class P2,class P3,class P4>
-class service_impl_single_p4_t : public T
-{
-	__implement_service_base_single;
-public:
-	service_impl_single_p4_t(P1 p1,P2 p2,P3 p3,P4 p4) : T(p1,p2,p3,p4) {}
+	TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(service_impl_single_t,T)
 };
 
 
 #undef __implement_service_base
-#undef __implement_service_base_single

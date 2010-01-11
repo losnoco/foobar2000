@@ -1,42 +1,42 @@
 #include "foobar2000.h"
 #include <math.h>
 
-unsigned dsp_chunk_list_i::get_count() const {return data.get_count();}
+t_size dsp_chunk_list_i::get_count() const {return data.get_count();}
 
-audio_chunk * dsp_chunk_list_i::get_item(unsigned n) const {return n>=0 && n<(unsigned)data.get_count() ? data[n] : 0;}
+audio_chunk * dsp_chunk_list_i::get_item(t_size n) const {return n>=0 && n<data.get_count() ? data[n] : 0;}
 
-void dsp_chunk_list_i::remove_by_idx(unsigned idx)
+void dsp_chunk_list_i::remove_by_idx(t_size idx)
 {
-	if (idx>=0 && idx<(unsigned)data.get_count())
+	if (idx>=0 && idx<data.get_count())
 		recycled.add_item(data.remove_by_idx(idx));
 }
 
 void dsp_chunk_list_i::remove_mask(const bit_array & mask)
 {
-	unsigned n, m = data.get_count();
+	t_size n, m = data.get_count();
 	for(n=0;n<m;n++)
 		if (mask[m])
 			recycled.add_item(data[n]);
 	data.remove_mask(mask);
 }
 
-audio_chunk * dsp_chunk_list_i::insert_item(unsigned idx,unsigned hint_size)
+audio_chunk * dsp_chunk_list_i::insert_item(t_size idx,t_size hint_size)
 {
-	unsigned max = get_count();
+	t_size max = get_count();
 	if (idx<0) idx=0;
 	else if (idx>max) idx = max;
 	audio_chunk_i * ret = 0;
 	if (recycled.get_count()>0)
 	{
-		unsigned best;
+		t_size best;
 		if (hint_size>0)
 		{
 			best = 0;
-			unsigned best_found = recycled[0]->get_data_size(), n, total = recycled.get_count();
+			t_size best_found = recycled[0]->get_data_size(), n, total = recycled.get_count();
 			for(n=1;n<total;n++)
 			{
 				if (best_found==hint_size) break;
-				unsigned size = recycled[n]->get_data_size();
+				t_size size = recycled[n]->get_data_size();
 				int delta_old = abs((int)best_found - (int)hint_size), delta_new = abs((int)size - (int)hint_size);
 				if (delta_new < delta_old)
 				{
@@ -52,7 +52,7 @@ audio_chunk * dsp_chunk_list_i::insert_item(unsigned idx,unsigned hint_size)
 		ret->set_channels(0);
 		ret->set_srate(0);
 	}
-	else ret = new audio_chunk_i;
+	else ret = new audio_chunk_impl;
 	if (idx==max) data.add_item(ret);
 	else data.insert_item(ret,idx);
 	return ret;
@@ -63,7 +63,7 @@ dsp_chunk_list_i::~dsp_chunk_list_i() {data.delete_all();recycled.delete_all();}
 void dsp_chunk_list::remove_bad_chunks()
 {
 	bool blah = false;
-	unsigned idx;
+	t_size idx;
 	for(idx=0;idx<get_count();)
 	{
 		audio_chunk * chunk = get_item(idx);
@@ -95,7 +95,7 @@ bool dsp_entry::g_instantiate_default(service_ptr_t<dsp> & p_out,const GUID & p_
 	return ptr->instantiate(p_out,preset);
 }
 
-bool dsp_entry::g_name_from_guid(string_base & p_out,const GUID & p_guid)
+bool dsp_entry::g_name_from_guid(pfc::string_base & p_out,const GUID & p_guid)
 {
 	service_ptr_t<dsp_entry> ptr;
 	if (!g_get_interface(ptr,p_guid)) return false;
@@ -116,72 +116,52 @@ bool dsp_entry::g_get_default_preset(dsp_preset & p_out,const GUID & p_guid)
 	return ptr->get_default_preset(p_out);
 }
 
-t_io_result dsp_chain_config::contents_to_stream(stream_writer * p_stream,abort_callback & p_abort) const
-{
-	t_io_result status;
-	unsigned n, count = get_count();
-
-	status = p_stream->write_lendian_t(count,p_abort);
-	if (io_result_failed(status)) return status;
-
-	for(n=0;n<count;n++)
-	{
-		status = get_item(n).contents_to_stream(p_stream,p_abort);
-		if (io_result_failed(status)) return status;
+void dsp_chain_config::contents_to_stream(stream_writer * p_stream,abort_callback & p_abort) const {
+	t_size n, count = get_count();
+	p_stream->write_lendian_t(count,p_abort);
+	for(n=0;n<count;n++) {
+		get_item(n).contents_to_stream(p_stream,p_abort);
 	}
-	return io_result_success;
 }
 
-t_io_result dsp_chain_config::contents_from_stream(stream_reader * p_stream,abort_callback & p_abort)
-{
-	
-	t_io_result status;
-	unsigned long n,count;
+void dsp_chain_config::contents_from_stream(stream_reader * p_stream,abort_callback & p_abort) {
+	t_uint32 n,count;
 
 	remove_all();
 
-	status = p_stream->read_lendian_t(count,p_abort);
-	if (io_result_failed(status)) return status;
+	p_stream->read_lendian_t(count,p_abort);
 
 	dsp_preset_impl temp;
 
-	for(n=0;n<count;n++)
-	{
-		status = temp.contents_from_stream(p_stream,p_abort);
-		if (io_result_failed(status)) return status;
+	for(n=0;n<count;n++) {
+		temp.contents_from_stream(p_stream,p_abort);
 		add_item(temp);
 	}
-	return io_result_success;
 }
 
 
-bool cfg_dsp_chain_config::get_data(dsp_chain_config & p_data) const
-{
+bool cfg_dsp_chain_config::get_data(dsp_chain_config & p_data) const {
 	p_data.copy(m_data);
 	return true;
 }
 
-void cfg_dsp_chain_config::set_data(const dsp_chain_config & p_data)
-{
+void cfg_dsp_chain_config::set_data(const dsp_chain_config & p_data) {
 	m_data.copy(p_data);
 }
 
-void cfg_dsp_chain_config::reset()
-{
+void cfg_dsp_chain_config::reset() {
 	m_data.remove_all();
 }
 
-t_io_result cfg_dsp_chain_config::get_data_raw(stream_writer * p_stream,abort_callback & p_abort)
-{
-	return m_data.contents_to_stream(p_stream,p_abort);
+void cfg_dsp_chain_config::get_data_raw(stream_writer * p_stream,abort_callback & p_abort) {
+	m_data.contents_to_stream(p_stream,p_abort);
 }
 
-t_io_result cfg_dsp_chain_config::set_data_raw(stream_reader * p_stream,unsigned,abort_callback & p_abort)
-{
-	return m_data.contents_from_stream(p_stream,p_abort);
+void cfg_dsp_chain_config::set_data_raw(stream_reader * p_stream,t_size,abort_callback & p_abort) {
+	m_data.contents_from_stream(p_stream,p_abort);
 }
 
-void dsp_chain_config::remove_item(unsigned p_index)
+void dsp_chain_config::remove_item(t_size p_index)
 {
 	remove_mask(bit_array_one(p_index));
 }
@@ -199,7 +179,7 @@ void dsp_chain_config::remove_all()
 void dsp_chain_config::instantiate(service_list_t<dsp> & p_out)
 {
 	p_out.remove_all();
-	unsigned n, m = get_count();
+	t_size n, m = get_count();
 	for(n=0;n<m;n++)
 	{
 		service_ptr_t<dsp> temp;
@@ -208,22 +188,22 @@ void dsp_chain_config::instantiate(service_list_t<dsp> & p_out)
 	}
 }
 
-unsigned dsp_chain_config_impl::get_count() const
+t_size dsp_chain_config_impl::get_count() const
 {
 	return m_data.get_count();
 }
 
-const dsp_preset & dsp_chain_config_impl::get_item(unsigned p_index) const
+const dsp_preset & dsp_chain_config_impl::get_item(t_size p_index) const
 {
 	return *m_data[p_index];
 }
 
-void dsp_chain_config_impl::replace_item(const dsp_preset & p_data,unsigned p_index)
+void dsp_chain_config_impl::replace_item(const dsp_preset & p_data,t_size p_index)
 {
 	*m_data[p_index] = p_data;
 }
 
-void dsp_chain_config_impl::insert_item(const dsp_preset & p_data,unsigned p_index)
+void dsp_chain_config_impl::insert_item(const dsp_preset & p_data,t_size p_index)
 {
 	m_data.insert_item(new dsp_preset_impl(p_data),p_index);
 }
@@ -238,64 +218,42 @@ dsp_chain_config_impl::~dsp_chain_config_impl()
 	m_data.delete_all();
 }
 
-t_io_result dsp_preset::contents_to_stream(stream_writer * p_stream,abort_callback & p_abort) const
-{
-	t_io_result status;
-	unsigned long size = get_data_size();
-	status = p_stream->write_lendian_t(get_owner(),p_abort);
-	if (io_result_failed(status)) return status;
-	status = p_stream->write_lendian_t(size,p_abort);
-	if (io_result_failed(status)) return status;
-	if (size > 0)
-	{
-		status = p_stream->write_object(get_data(),size,p_abort);
-		if (io_result_failed(status)) return status;
+void dsp_preset::contents_to_stream(stream_writer * p_stream,abort_callback & p_abort) const {
+	t_size size = get_data_size();
+	p_stream->write_lendian_t(get_owner(),p_abort);
+	p_stream->write_lendian_t(size,p_abort);
+	if (size > 0) {
+		p_stream->write_object(get_data(),size,p_abort);
 	}
-	return io_result_success;
 }
 
-t_io_result dsp_preset::contents_from_stream(stream_reader * p_stream,abort_callback & p_abort)
-{
-	t_io_result status;
-	unsigned long size;
+void dsp_preset::contents_from_stream(stream_reader * p_stream,abort_callback & p_abort) {
+	t_uint32 size;
 	GUID guid;
-	status = p_stream->read_lendian_t(guid,p_abort);
-	if (io_result_failed(status)) return status;
+	p_stream->read_lendian_t(guid,p_abort);
 	set_owner(guid);
-	status = p_stream->read_lendian_t(size,p_abort);
-	if (io_result_failed(status)) return status;
-	if (size > 1024*1024*10) return io_result_error_data;
-	return set_data_from_stream(p_stream,size,p_abort);	
+	p_stream->read_lendian_t(size,p_abort);
+	if (size > 1024*1024*32) throw exception_io_data();
+	set_data_from_stream(p_stream,size,p_abort);
 }
 
-t_io_result dsp_preset::g_contents_from_stream_skip(stream_reader * p_stream,abort_callback & p_abort)
-{
-	t_io_result status;
-	unsigned long size;
+void dsp_preset::g_contents_from_stream_skip(stream_reader * p_stream,abort_callback & p_abort) {
+	t_uint32 size;
 	GUID guid;
-	status = p_stream->read_lendian_t(guid,p_abort);
-	if (io_result_failed(status)) return status;
-	status = p_stream->read_lendian_t(size,p_abort);
-	if (io_result_failed(status)) return status;
-	if (size > 1024*1024*10) return io_result_error_data;
-	return p_stream->skip_object(size,p_abort);
+	p_stream->read_lendian_t(guid,p_abort);
+	p_stream->read_lendian_t(size,p_abort);
+	if (size > 1024*1024*32) throw exception_io_data();
+	p_stream->skip_object(size,p_abort);
 }
 
-t_io_result dsp_preset_impl::set_data_from_stream(stream_reader * p_stream,unsigned p_bytes,abort_callback & p_abort)
-{
+void dsp_preset_impl::set_data_from_stream(stream_reader * p_stream,t_size p_bytes,abort_callback & p_abort) {
 	m_data.set_size(p_bytes);
-	if (p_bytes > 0 && m_data.get_ptr() == 0)
-		return io_result_error_generic;
-	else if (p_bytes == 0)
-		return io_result_success;
-	else
-		return p_stream->read_object(m_data.get_ptr(),p_bytes,p_abort);
+	if (p_bytes > 0) p_stream->read_object(m_data.get_ptr(),p_bytes,p_abort);
 }
 
-void dsp_chain_config::copy(const dsp_chain_config & p_source)
-{
+void dsp_chain_config::copy(const dsp_chain_config & p_source) {
 	remove_all();
-	unsigned n, m = p_source.get_count();
+	t_size n, m = p_source.get_count();
 	for(n=0;n<m;n++)
 		add_item(p_source.get_item(n));
 }
@@ -380,9 +338,9 @@ bool resampler_entry::g_create(service_ptr_t<dsp> & p_out,unsigned p_srate_from,
 }
 
 
-void dsp_chain_config::get_name_list(string_base & p_out) const
+void dsp_chain_config::get_name_list(pfc::string_base & p_out) const
 {
-	const unsigned count = get_count();
+	const t_size count = get_count();
 	bool added = false;
 	for(unsigned n=0;n<count;n++)
 	{

@@ -29,7 +29,7 @@ public:
 	bool on_keydown_auto_playlist(WPARAM wp);
 	bool on_keydown_auto_context(const list_base_const_t<metadb_handle_ptr> & data,WPARAM wp,const GUID & caller);
 
-	virtual bool get_key_description_for_action(const GUID & p_command,const GUID & p_subcommand, string_base & out, shortcut_type type, bool is_global)=0;
+	virtual bool get_key_description_for_action(const GUID & p_command,const GUID & p_subcommand, pfc::string_base & out, shortcut_type type, bool is_global)=0;
 
 	
 	
@@ -57,19 +57,21 @@ usage:
 
 
 
-class NOVTABLE menu_node
-{
+class NOVTABLE menu_node {
 public:
 	virtual menu_item_node::t_type get_type()=0;
 	virtual const char * get_name()=0;
-	virtual unsigned get_num_children()=0;//TYPE_POPUP only
-	virtual menu_node * get_child(unsigned n)=0;//TYPE_POPUP only
+	virtual t_size get_num_children()=0;//TYPE_POPUP only
+	virtual menu_node * get_child(t_size n)=0;//TYPE_POPUP only
 	virtual unsigned get_display_flags()=0;//TYPE_COMMAND/TYPE_POPUP only, see menu_item::FLAG_*
 	virtual unsigned get_id()=0;//TYPE_COMMAND only, returns zero-based index (helpful for win32 menu command ids)
 	virtual void execute()=0;//TYPE_COMMAND only
-	virtual bool get_description(string_base & out)=0;//TYPE_COMMAND only
-	virtual bool get_full_name(string_base & out)=0;//TYPE_COMMAND only
+	virtual bool get_description(pfc::string_base & out)=0;//TYPE_COMMAND only
+	virtual bool get_full_name(pfc::string_base & out)=0;//TYPE_COMMAND only
 	virtual void * get_glyph()=0;//RESERVED, do not use
+protected:
+	menu_node() {}
+	~menu_node() {}
 };
 
 

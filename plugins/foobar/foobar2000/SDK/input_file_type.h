@@ -2,11 +2,11 @@ class input_file_type : public service_base
 {
 public:
 	virtual unsigned get_count()=0;
-	virtual bool get_name(unsigned idx,string_base & out)=0;//e.g. "MPEG file"
-	virtual bool get_mask(unsigned idx,string_base & out)=0;//e.g. "*.MP3;*.MP2"; separate with semicolons
+	virtual bool get_name(unsigned idx,pfc::string_base & out)=0;//e.g. "MPEG file"
+	virtual bool get_mask(unsigned idx,pfc::string_base & out)=0;//e.g. "*.MP3;*.MP2"; separate with semicolons
 	virtual bool is_associatable(unsigned idx) = 0;
 
-	static void build_openfile_mask(string_base & out,bool b_include_playlists=true);
+	static void build_openfile_mask(pfc::string_base & out,bool b_include_playlists=true);
 
 	static const GUID class_guid;
 
@@ -26,8 +26,8 @@ class input_file_type_impl : public service_impl_single_t<input_file_type>
 public:
 	input_file_type_impl(const char * p_name, const char * p_mask,bool p_associatable) : name(p_name), mask(p_mask), m_associatable(p_associatable) {}
 	unsigned get_count() {return 1;}
-	bool get_name(unsigned idx,string_base & out) {if (idx==0) {out = name; return true;} else return false;}
-	bool get_mask(unsigned idx,string_base & out) {if (idx==0) {out = mask; return true;} else return false;}
+	bool get_name(unsigned idx,pfc::string_base & out) {if (idx==0) {out = name; return true;} else return false;}
+	bool get_mask(unsigned idx,pfc::string_base & out) {if (idx==0) {out = mask; return true;} else return false;}
 	bool is_associatable(unsigned idx) {return m_associatable;}
 };
 
@@ -39,11 +39,11 @@ public:
 
 //USAGE: DECLARE_FILE_TYPE("Blah file","*.blah;*.bleh");
 
-class input_file_type_factory : private service_factory_single_transparent_p3_t<input_file_type,input_file_type_impl,const char*,const char*,bool>
+class input_file_type_factory : private service_factory_single_transparent_t<input_file_type,input_file_type_impl>
 {
 public:
 	input_file_type_factory(const char * p_name,const char * p_mask,bool p_associatable)
-		: service_factory_single_transparent_p3_t<input_file_type,input_file_type_impl,const char*,const char*,bool>(p_name,p_mask,p_associatable) {}
+		: service_factory_single_transparent_t<input_file_type,input_file_type_impl>(p_name,p_mask,p_associatable) {}
 };
 
 

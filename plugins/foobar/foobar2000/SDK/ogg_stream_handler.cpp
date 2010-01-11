@@ -1,30 +1,26 @@
 #include "foobar2000.h"
 
-t_io_result ogg_stream_handler::g_open(service_ptr_t<ogg_stream_handler> & p_out,service_ptr_t<file> p_reader,t_input_open_reason p_reason,abort_callback & p_abort)
+void ogg_stream_handler::g_open(service_ptr_t<ogg_stream_handler> & p_out,service_ptr_t<file> p_reader,t_input_open_reason p_reason,abort_callback & p_abort)
 {
 	service_enum_t<ogg_stream_handler> e;
 	service_ptr_t<ogg_stream_handler> ptr;
 	bool need_reset = false;
-	while(e.next(ptr))
-	{
-		if (p_abort.is_aborting()) return io_result_aborted;
-		t_io_result status;
-		if (need_reset)
-		{
-			status = p_reader->reopen(p_abort);
-			if (io_result_failed(status)) return status;
+	while(e.next(ptr)) {
+		p_abort.check_e();
+		if (need_reset) {
+			p_reader->reopen(p_abort);
 			need_reset = false;
 		}
 
-		status = ptr->open(p_reader,p_reason,p_abort);
-		if (io_result_succeeded(status))
-		{
+		try {
+			ptr->open(p_reader,p_reason,p_abort);
 			p_out = ptr;
-			return io_result_success;
-		}
-		if (status != io_result_error_data) return status;
+			return;
+		} catch(exception_io_data const &) {
+			//do nothing
+		}//other exceptions are caller's problem
 
 		need_reset = true;
 	}
-	return io_result_error_data;
+	throw exception_io_data();//noone knows this format
 }

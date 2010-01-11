@@ -34,18 +34,14 @@ bool input_entry::g_find_service_by_content_type(service_ptr_t<input_entry> & p_
 
 
 
-static t_io_result prepare_for_open(service_ptr_t<input_entry> & p_service,service_ptr_t<file> & p_file,const char * p_path,filesystem::t_open_mode p_open_mode,abort_callback & p_abort,bool p_from_redirect)
+static void prepare_for_open(service_ptr_t<input_entry> & p_service,service_ptr_t<file> & p_file,const char * p_path,filesystem::t_open_mode p_open_mode,abort_callback & p_abort,bool p_from_redirect)
 {
 	if (p_file.is_empty())
 	{
 		service_ptr_t<filesystem> fs;
-		if (filesystem::g_get_interface(fs,p_path))
-		{
-			if (fs->supports_content_types())
-			{
-				t_io_result status;
-				status = fs->open(p_file,p_path,p_open_mode,p_abort);
-				if (io_result_failed(status)) return status;
+		if (filesystem::g_get_interface(fs,p_path)) {
+			if (fs->supports_content_types()) {
+				fs->open(p_file,p_path,p_open_mode,p_abort);
 			}
 		}
 	}
@@ -56,54 +52,45 @@ static t_io_result prepare_for_open(service_ptr_t<input_entry> & p_service,servi
 		if (p_file->get_content_type(content_type))
 		{
 			if (input_entry::g_find_service_by_content_type(p_service,content_type))
-				return io_result_success;
+				return;
 		}
 	}
 
 	if (input_entry::g_find_service_by_path(p_service,p_path))
 	{
-		if (p_from_redirect && p_service->is_redirect()) return io_result_error_data;
-		return io_result_success;
+		if (p_from_redirect && p_service->is_redirect()) throw exception_io_data();
+		return;
 	}
 
-	return io_result_error_data;//unsupported format
+	throw exception_io_data();
 }
 
 
-t_io_result input_entry::g_open_for_decoding(service_ptr_t<input_decoder> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect)
-{
-	t_io_result status;
+void input_entry::g_open_for_decoding(service_ptr_t<input_decoder> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect) {
 	service_ptr_t<file> filehint = p_filehint;
 	service_ptr_t<input_entry> entry;
 
-	status = prepare_for_open(entry,filehint,p_path,filesystem::open_mode_read,p_abort,p_from_redirect);
-	if (io_result_failed(status)) return status;
+	prepare_for_open(entry,filehint,p_path,filesystem::open_mode_read,p_abort,p_from_redirect);
 
-	return entry->open_for_decoding(p_instance,filehint,p_path,p_abort);
+	entry->open_for_decoding(p_instance,filehint,p_path,p_abort);
 }
 
-t_io_result input_entry::g_open_for_info_read(service_ptr_t<input_info_reader> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect)
-{
-	t_io_result status;
+void input_entry::g_open_for_info_read(service_ptr_t<input_info_reader> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect) {
 	service_ptr_t<file> filehint = p_filehint;
 	service_ptr_t<input_entry> entry;
 
-	status = prepare_for_open(entry,filehint,p_path,filesystem::open_mode_read,p_abort,p_from_redirect);
-	if (io_result_failed(status)) return status;
+	prepare_for_open(entry,filehint,p_path,filesystem::open_mode_read,p_abort,p_from_redirect);
 
-	return entry->open_for_info_read(p_instance,filehint,p_path,p_abort);
+	entry->open_for_info_read(p_instance,filehint,p_path,p_abort);
 }
 
-t_io_result input_entry::g_open_for_info_write(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect)
-{
-	t_io_result status;
+void input_entry::g_open_for_info_write(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect) {
 	service_ptr_t<file> filehint = p_filehint;
 	service_ptr_t<input_entry> entry;
 
-	status = prepare_for_open(entry,filehint,p_path,filesystem::open_mode_write_existing,p_abort,p_from_redirect);
-	if (io_result_failed(status)) return status;
+	prepare_for_open(entry,filehint,p_path,filesystem::open_mode_write_existing,p_abort,p_from_redirect);
 
-	return entry->open_for_info_write(p_instance,filehint,p_path,p_abort);
+	entry->open_for_info_write(p_instance,filehint,p_path,p_abort);
 }
 
 bool input_entry::g_is_supported_path(const char * p_path)
@@ -120,52 +107,19 @@ bool input_entry::g_is_supported_path(const char * p_path)
 
 
 
-void input_open_file_helper_e(service_ptr_t<file> & p_file,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort)
+void input_open_file_helper(service_ptr_t<file> & p_file,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort)
 {
-	t_io_result status;
-	status = input_open_file_helper(p_file,p_path,p_reason,p_abort);
-	exception_io::g_test(status);
-}
-
-
-t_io_result input_open_file_helper(service_ptr_t<file> & p_file,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort)
-{
-	if (p_file.is_empty())
-	{
-		t_io_result status;
-		switch(p_reason)
-		{
+	if (p_file.is_empty()) {
+		switch(p_reason) {
 		default:
-			status = io_result_error_data;
-			break;
+			throw exception_io_data();
 		case input_open_info_read:
 		case input_open_decode:
-			status = filesystem::g_open(p_file,p_path,filesystem::open_mode_read,p_abort);
+			filesystem::g_open(p_file,p_path,filesystem::open_mode_read,p_abort);
 			break;
 		case input_open_info_write:
-			status = filesystem::g_open(p_file,p_path,filesystem::open_mode_write_existing,p_abort);
+			filesystem::g_open(p_file,p_path,filesystem::open_mode_write_existing,p_abort);
 			break;
 		}
-		if (io_result_failed(status)) return status;
 	}
-	return io_result_success;
-}
-
-unsigned input_info_reader::get_subsong_count_e() {
-	unsigned ret;
-	exception_io::g_test( get_subsong_count(ret) );
-	return ret;
-}
-
-t_uint32 input_info_reader::get_subsong_e(unsigned p_index) {
-	t_uint32 ret;
-	exception_io::g_test( get_subsong(p_index,ret) );
-	return ret;
-}
-
-void input_info_reader::get_info_e(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort) {
-	exception_io::g_test(get_info(p_subsong,p_info,p_abort));
-}
-void input_info_reader::get_file_stats_e(t_filestats & p_stats,abort_callback & p_abort) {
-	exception_io::g_test(get_file_stats(p_stats,p_abort));
 }

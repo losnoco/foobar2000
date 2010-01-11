@@ -5,9 +5,9 @@ namespace create_directory_helper
 {
 	void create_path(const char * p_path,abort_callback & p_abort)
 	{
-		mem_block_t<char> temp(strlen(p_path)+1);
-		strcpy(temp,p_path);
-		char * ptr = strstr(temp,":\\");
+		pfc::array_t<char> temp; temp.set_size(strlen(p_path)+1);
+		strcpy(temp.get_ptr(),p_path);
+		char * ptr = strstr(temp.get_ptr(),":\\");
 		if (ptr)
 		{
 			ptr+=2;
@@ -16,8 +16,7 @@ namespace create_directory_helper
 				if (*ptr == '\\')
 				{
 					*ptr = 0;
-
-					filesystem::g_create_directory(temp,p_abort);
+					try {filesystem::g_create_directory(temp.get_ptr(),p_abort);} catch(exception_io_already_exists) {}
 					*ptr = '\\';
 				}
 				ptr++;
@@ -51,13 +50,13 @@ namespace create_directory_helper
 				if (*filename==0) break;
 			}
 #endif
-			if (is_path_bad_char(*filename))
+			if (pfc::is_path_bad_char(*filename))
 			{
 				if (allow_new_dirs && (*filename=='\\' || *filename=='/'))
 				{
 					if (!last_char_is_dir_sep)
 					{
-						if (really_create_dirs) filesystem::g_create_directory(out,p_abort);
+						if (really_create_dirs) try{filesystem::g_create_directory(out,p_abort);}catch(exception_io_already_exists){}
 						out.add_char('\\');
 						last_char_is_dir_sep = true;
 					}
@@ -90,22 +89,25 @@ namespace {
 	{
 	public:
 		void on_new_field() {}
-		void write(titleformat_text_out * p_out,const char * p_data,unsigned p_data_length)
+		void write(const GUID & p_inputtype,pfc::string_receiver & p_out,const char * p_data,t_size p_data_length)
 		{//not "UTF-8 aware" but coded not to clash with UTF-8, since only filtered chars are lower ASCII
-			unsigned index = 0;
-			unsigned good_bytes = 0;
-			while(index < p_data_length && p_data[index] != 0)
-			{
-				unsigned char c = (unsigned char)p_data[index];
-				if (c < ' ' || c == '\\' || c=='/' || c=='|' || c==':')
-				{
-					if (good_bytes > 0) {p_out->write(p_data+index-good_bytes,good_bytes);good_bytes=0;}
-					p_out->write("_",1);
+			if (p_inputtype == titleformat_inputtypes::meta) {
+				t_size index = 0;
+				t_size good_bytes = 0;
+				while(index < p_data_length && p_data[index] != 0) {
+					unsigned char c = (unsigned char)p_data[index];
+					if (c < ' ' || c == '\\' || c=='/' || c=='|' || c==':')
+					{
+						if (good_bytes > 0) {p_out.add_string(p_data+index-good_bytes,good_bytes);good_bytes=0;}
+						p_out.add_string("_",1);
+					}
+					else good_bytes++;
+					index++;
 				}
-				else good_bytes++;
-				index++;
+				if (good_bytes > 0) {p_out.add_string(p_data+index-good_bytes,good_bytes);good_bytes=0;}
+			} else {
+				p_out.add_string(p_data,p_data_length);
 			}
-			if (good_bytes > 0) {p_out->write(p_data+index-good_bytes,good_bytes);good_bytes=0;}
 		}
 	};
 }

@@ -16,11 +16,11 @@ namespace menu_helpers {
 	bool find_command_by_name(const char * p_name,service_ptr_t<menu_item> & p_item,unsigned & p_index);
 	bool find_command_by_name(const char * p_name,GUID & p_command);
 	
-	bool get_description(menu_item::type type,const char * path,string_base & out);
-	bool get_description(menu_item::type type,const GUID& p_guid,string_base & out);
+	bool get_description(menu_item::type type,const char * path,pfc::string_base & out);
+	bool get_description(menu_item::type type,const GUID& p_guid,pfc::string_base & out);
 
 	bool guid_from_name(const char * p_name,unsigned p_name_len,GUID & p_out);
-	bool name_from_guid(const GUID & p_guid,string_base & p_out);
+	bool name_from_guid(const GUID & p_guid,pfc::string_base & p_out);
 
 	class guid_to_name_table
 	{
@@ -33,7 +33,7 @@ namespace menu_helpers {
 			char* m_name;
 			GUID m_guid;
 		};
-		array_t<entry> m_data;
+		pfc::array_t<entry> m_data;
 		bool m_inited;
 
 		static int entry_compare_search(const entry & entry1,const GUID & entry2);
@@ -51,7 +51,7 @@ namespace menu_helpers {
 			char* m_name;
 			GUID m_guid;
 		};
-		array_t<entry> m_data;
+		pfc::array_t<entry> m_data;
 		bool m_inited;
 		struct search_entry {
 			const char * m_name; unsigned m_name_len;

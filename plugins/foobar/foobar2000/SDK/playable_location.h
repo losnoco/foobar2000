@@ -88,6 +88,6 @@ public:
 	make_playable_location(const char * p_path,t_uint32 p_num) : path(p_path), num(p_num) {}
 };
 
-string_base & operator<<(string_base & p_fmt,const playable_location & p_location);
+pfc::string_base & operator<<(pfc::string_base & p_fmt,const playable_location & p_location);
 
 #endif //_FOOBAR2000_PLAYABLE_LOCATION_H_

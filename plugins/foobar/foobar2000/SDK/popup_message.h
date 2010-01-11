@@ -13,9 +13,6 @@ public:
 	static void g_show_ex(const char * p_msg,unsigned p_msg_length,const char * p_title,unsigned p_title_length,t_icon p_icon = icon_information);
 	static inline void g_show(const char * p_msg,const char * p_title,t_icon p_icon = icon_information) {g_show_ex(p_msg,infinite,p_title,infinite,p_icon);}
 
-	static void g_show_file_error(const char * p_message,t_io_result p_status,const char * p_path,const char * p_title);
-	static void g_show_file_error_multi(const char * p_message,const list_base_const_t<const char *> & p_list,const char * p_title);
-
 	static const GUID class_guid;
 
 	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {

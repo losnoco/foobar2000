@@ -2,7 +2,7 @@
 
 static void file_list_remove_duplicates(ptr_list_t<char> & out)
 {
-	unsigned n, m = out.get_count();
+	t_size n, m = out.get_count();
 	out.sort_t(metadb::path_compare);
 	bit_array_bittable mask(m);
 	unsigned duplicates = 0;
@@ -23,7 +23,7 @@ namespace file_list_helper
 	{
 		m_data.free_all();
 
-		unsigned n, m = p_list.get_count();
+		t_size n, m = p_list.get_count();
 		for(n=0;n<m;n++)
 		{
 			m_data.add_item(strdup(p_list.get_item(n)->get_path()));
@@ -38,7 +38,7 @@ namespace file_list_helper
 		
 		string8_fastalloc temp;
 
-		unsigned n, m = p_list.get_count();
+		t_size n, m = p_list.get_count();
 		for(n=0;n<m;n++)
 		{
 			filesystem::g_get_display_path(p_list.get_item(n)->get_path(),temp);
@@ -49,8 +49,8 @@ namespace file_list_helper
 
 	}
 
-	unsigned file_list_from_metadb_handle_list::get_count() const {return m_data.get_count();}
-	void file_list_from_metadb_handle_list::get_item_ex(const char * & p_out,unsigned n) const {p_out = m_data.get_item(n);}
+	t_size file_list_from_metadb_handle_list::get_count() const {return m_data.get_count();}
+	void file_list_from_metadb_handle_list::get_item_ex(const char * & p_out,t_size n) const {p_out = m_data.get_item(n);}
 
 	file_list_from_metadb_handle_list::~file_list_from_metadb_handle_list()
 	{

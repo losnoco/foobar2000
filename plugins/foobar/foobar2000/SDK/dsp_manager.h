@@ -19,7 +19,7 @@ private:
 	dsp_chain_config_impl m_config;
 	bool m_config_changed;
 	
-	void dsp_run(unsigned idx,dsp_chunk_list * list,const metadb_handle_ptr & cur_file,unsigned flags,double & latency);
+	void dsp_run(t_size idx,dsp_chunk_list * list,const metadb_handle_ptr & cur_file,unsigned flags,double & latency);
 };
 
 

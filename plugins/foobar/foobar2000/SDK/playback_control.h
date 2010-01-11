@@ -82,12 +82,12 @@ public:
 	};
 
 	//! Renders info about currently playing item.
-	virtual bool playback_format_title(titleformat_hook * p_hook,string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter,t_display_level p_level) = 0;
+	virtual bool playback_format_title(titleformat_hook * p_hook,pfc::string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter,t_display_level p_level) = 0;
 	
 
 
 	//! Helper; renders info about any item, including currently playing item info if the item is currently played.
-	bool playback_format_title_ex(metadb_handle_ptr p_item,titleformat_hook * p_hook,string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter,t_display_level p_level) {
+	bool playback_format_title_ex(metadb_handle_ptr p_item,titleformat_hook * p_hook,pfc::string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter,t_display_level p_level) {
 		if (p_item.is_empty()) return playback_format_title(p_hook,p_out,p_script,p_filter,p_level);
 		metadb_handle_ptr temp;
 		if (get_now_playing(temp)) {
@@ -120,6 +120,6 @@ protected:
 
 
 //for compatibility with old code
-#define play_control playback_control
+typedef playback_control play_control;
 
 #endif

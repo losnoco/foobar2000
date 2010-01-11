@@ -21,7 +21,7 @@ static bool test_recur(const char * fn,const char * rm,bool b_sep)
 	}
 }
 
-bool wildcard_helper::test_path(const char * path,const char * pattern,bool b_sep) {return test(path + string8::g_scan_filename(path),pattern,b_sep);}
+bool wildcard_helper::test_path(const char * path,const char * pattern,bool b_sep) {return test(path + pfc::scan_filename(path),pattern,b_sep);}
 
 bool wildcard_helper::test(const char * fn,const char * pattern,bool b_sep)
 {

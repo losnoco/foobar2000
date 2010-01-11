@@ -1,5 +1,6 @@
 #include "foobar2000.h"
 
+#ifdef _WIN32
 #include <ks.h>
 #include <ksmedia.h>
 
@@ -46,6 +47,7 @@ static struct {DWORD m_wfx; unsigned m_native; } const g_translation_table[] =
 	{SPEAKER_TOP_BACK_RIGHT,		audio_chunk::channel_top_back_right},
 };
 
+
 DWORD audio_chunk::g_channel_config_to_wfx(unsigned p_config)
 {
 	DWORD ret = 0;
@@ -68,6 +70,8 @@ unsigned audio_chunk::g_channel_config_from_wfx(DWORD p_wfx)
 	return ret;
 }
 
+#endif
+
 
 static unsigned g_audio_channel_config_table[] = 
 {
@@ -82,12 +86,23 @@ static unsigned g_audio_channel_config_table[] =
 	audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_back_left | audio_chunk::channel_back_right | audio_chunk::channel_front_center | audio_chunk::channel_lfe | audio_chunk::channel_front_center_right | audio_chunk::channel_front_center_left,
 };
 
+
 unsigned audio_chunk::g_guess_channel_config(unsigned count)
 {
 	if (count >= tabsize(g_audio_channel_config_table)) return 0;
 	return g_audio_channel_config_table[count];
 }
 
+
+unsigned audio_chunk::g_channel_index_from_flag(unsigned p_config,unsigned p_flag) {
+	unsigned index = 0;
+	for(unsigned walk = 0; walk < 32; walk++) {
+		unsigned query = 1 << walk;
+		if (p_flag & query) return index;
+		if (p_config & query) index++;
+	}
+	return infinite;
+}
 
 unsigned audio_chunk::g_extract_channel_flag(unsigned p_config,unsigned p_index)
 {
@@ -108,8 +123,7 @@ unsigned audio_chunk::g_extract_channel_flag(unsigned p_config,unsigned p_index)
 unsigned audio_chunk::g_count_channels(unsigned p_config)
 {
 	unsigned ret = 0;
-	while(p_config)
-	{
+	while(p_config) {
 		ret += (p_config & 1);
 		p_config >>= 1;
 	}

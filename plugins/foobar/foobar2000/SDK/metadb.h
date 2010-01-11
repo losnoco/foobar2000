@@ -7,11 +7,22 @@
 class NOVTABLE metadb_io : public service_base
 {
 public:
-	enum t_load_info_type
-	{
+	enum t_load_info_type {
 		load_info_default,
 		load_info_force,
 		load_info_check_if_changed
+	};
+
+	enum t_update_info_state {
+		update_info_success,
+		update_info_aborted,
+		update_info_errors,		
+	};
+	
+	enum t_load_info_state {
+		load_info_success,
+		load_info_aborted,
+		load_info_errors,		
 	};
 
 	//! Returns whether some tag I/O operation is currently running. Another one can't be started.
@@ -23,13 +34,13 @@ public:
 	//! If another tag I/O operation is running, this call will give focus to its progress window.
 	virtual void highlight_running_process() = 0;
 	//! Loads tags from multiple items.
-	virtual bool load_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,t_load_info_type p_type,HWND p_parent_window,bool p_show_errors,t_io_result * p_retcodes) = 0;
+	virtual t_load_info_state load_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,t_load_info_type p_type,HWND p_parent_window,bool p_show_errors) = 0;
 	//! Updates tags on multiple items.
-	virtual bool update_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,const list_base_const_t<file_info*> & p_new_info,HWND p_parent_window,bool p_show_errors,t_io_result * p_retcodes) = 0;
+	virtual t_update_info_state update_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,const list_base_const_t<file_info*> & p_new_info,HWND p_parent_window,bool p_show_errors) = 0;
 	//! Rewrites tags on multiple items.
-	virtual bool rewrite_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,HWND p_parent_window,bool p_show_errors,t_io_result * p_retcodes) = 0;
+	virtual t_update_info_state rewrite_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,HWND p_parent_window,bool p_show_errors) = 0;
 	//! Removes tags from multiple items.
-	virtual bool remove_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,HWND p_parent_window,bool p_show_errors,t_io_result * p_retcodes) = 0;
+	virtual t_update_info_state remove_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,HWND p_parent_window,bool p_show_errors) = 0;
 
 	virtual void hint_multi(const list_base_const_t<metadb_handle_ptr> & p_list,const list_base_const_t<const file_info*> & p_infos,const list_base_const_t<t_filestats> & p_stats,const bit_array & p_fresh_mask) = 0;
 
@@ -37,14 +48,14 @@ public:
 
 	virtual void hint_reader(service_ptr_t<class input_info_reader> p_reader,const char * p_path,abort_callback & p_abort) = 0;
 
-	virtual t_io_result path_to_handles_simple(const char * p_path,list_base_t<metadb_handle_ptr> & p_out) = 0;
+	virtual void path_to_handles_simple(const char * p_path,list_base_t<metadb_handle_ptr> & p_out) = 0;
 
 	virtual void dispatch_refresh(const list_base_const_t<metadb_handle_ptr> & p_list) = 0;
 
 	void hint_async(metadb_handle_ptr p_item,const file_info & p_info,const t_filestats & p_stats,bool p_fresh);
 
-	t_io_result load_info(metadb_handle_ptr p_item,t_load_info_type p_type,HWND p_parent_window,bool p_show_errors);
-	t_io_result update_info(metadb_handle_ptr p_item,file_info & p_info,HWND p_parent_window,bool p_show_errors);
+	t_load_info_state load_info(metadb_handle_ptr p_item,t_load_info_type p_type,HWND p_parent_window,bool p_show_errors);
+	t_update_info_state update_info(metadb_handle_ptr p_item,file_info & p_info,HWND p_parent_window,bool p_show_errors);
 	
 	static const GUID class_guid;
 
@@ -60,7 +71,7 @@ protected:
 class NOVTABLE metadb_io_callback : public service_base
 {
 public:
-	virtual void on_changed_sorted(const list_base_const_t<metadb_handle_ptr> & p_items_sorted)=0;//items are always sorted by pointer value
+	virtual void on_changed_sorted(const list_base_const_t<metadb_handle_ptr> & p_items_sorted, bool p_fromhook) = 0;//items are always sorted by pointer value
 
 	static const GUID class_guid;
 
@@ -86,14 +97,11 @@ public:
 	//! @param p_out Receives metadb_handle pointer.
 	//! @param p_location Location to create metadb_handle for.
 	//! @returns true on success, false on failure (rare).
-	virtual bool handle_create(metadb_handle_ptr & p_out,const playable_location & p_location)=0;
+	virtual void handle_create(metadb_handle_ptr & p_out,const playable_location & p_location)=0;
 
-	//! Helper; calls handle_create and throws std::bad_alloc on failure.
-	void handle_create_e(metadb_handle_ptr & p_out,const playable_location & p_location);
-
-	bool handle_create_replace_path_canonical(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path);//should never fail
-	bool handle_replace_path_canonical(metadb_handle_ptr & p_out,const char * p_new_path);
-	bool handle_create_replace_path(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path);//should never fail
+	void handle_create_replace_path_canonical(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path);//should never fail
+	void handle_replace_path_canonical(metadb_handle_ptr & p_out,const char * p_new_path);
+	void handle_create_replace_path(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path);//should never fail
 
 	static bool g_get_random_handle(metadb_handle_ptr & p_out);
 
@@ -118,19 +126,32 @@ protected:
 };
 
 
-class in_metadb_sync
-{
+class in_metadb_sync {
 public:
-	in_metadb_sync()
-	{
-		service_ptr_t<metadb> api;
-		if (metadb::g_get(api)) api->database_lock();
+	in_metadb_sync() {
+		m_api->database_lock();
 	}
-	~in_metadb_sync()
-	{
-		service_ptr_t<metadb> api;
-		if (metadb::g_get(api)) api->database_unlock();
+	~in_metadb_sync() {
+		m_api->database_unlock();
 	}
+private:
+	static_api_ptr_t<metadb> m_api;
+};
+
+class in_metadb_sync_fromptr {
+public:
+	in_metadb_sync_fromptr(const service_ptr_t<metadb> & p_api) : m_api(p_api) {m_api->database_lock();}
+	~in_metadb_sync_fromptr() {m_api->database_unlock();}
+private:
+	service_ptr_t<metadb> m_api;
+};
+
+class in_metadb_sync_fromhandle {
+public:
+	in_metadb_sync_fromhandle(const service_ptr_t<metadb_handle> & p_api) : m_api(p_api) {m_api->metadb_lock();}
+	~in_metadb_sync_fromhandle() {m_api->metadb_unlock();}
+private:
+	service_ptr_t<metadb_handle> m_api;
 };
 
 class file_info_update_helper
@@ -150,18 +171,18 @@ public:
 	};
 	t_write_result write_infos(HWND p_parent,bool p_show_errors);
 
-	unsigned get_item_count() const;
-	bool is_item_valid(unsigned p_index) const;//returns false where info reading failed
+	t_size get_item_count() const;
+	bool is_item_valid(t_size p_index) const;//returns false where info reading failed
 	
-	file_info & get_item(unsigned p_index);
-	metadb_handle_ptr get_item_handle(unsigned p_index) const;
+	file_info & get_item(t_size p_index);
+	metadb_handle_ptr get_item_handle(t_size p_index) const;
 
-	void invalidate_item(unsigned p_index);
+	void invalidate_item(t_size p_index);
 
 private:
 	metadb_handle_list m_data;
-	array_t<file_info_impl> m_infos;
-	array_t<bool> m_mask;
+	pfc::array_t<file_info_impl> m_infos;
+	pfc::array_t<bool> m_mask;
 };
 
 class titleformat_text_out;
@@ -179,8 +200,8 @@ class titleformat_hook_function_params;
 
 class metadb_display_hook : public service_base {
 public:
-	virtual bool process_field(metadb_handle * p_handle,titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,bool & p_found_flag) = 0;
-	virtual bool process_function(metadb_handle * p_handle,titleformat_text_out * p_out,const char * p_name,unsigned p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag) = 0;
+	virtual bool process_field(metadb_handle * p_handle,titleformat_text_out * p_out,const char * p_name,t_size p_name_length,bool & p_found_flag) = 0;
+	virtual bool process_function(metadb_handle * p_handle,titleformat_text_out * p_out,const char * p_name,t_size p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag) = 0;
 
 	static const GUID class_guid;
 

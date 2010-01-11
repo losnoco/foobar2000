@@ -19,7 +19,7 @@ static const char * const standard_infonames[] =
 
 static const char * optimize_fieldname(const char * p_string)
 {
-	for(unsigned n=0;n<tabsize(standard_fieldnames);n++)
+	for(t_size n=0;n<tabsize(standard_fieldnames);n++)
 	{
 		const char * stdstring = standard_fieldnames[n];
 		if (/*p_string[0] == stdstring[0] && */strcmp(p_string,stdstring) == 0) {
@@ -31,7 +31,7 @@ static const char * optimize_fieldname(const char * p_string)
 
 static const char * optimize_infoname(const char * p_string)
 {
-	for(unsigned n=0;n<tabsize(standard_infonames);n++)
+	for(t_size n=0;n<tabsize(standard_infonames);n++)
 	{
 		const char * stdstring = standard_infonames[n];
 		if (/*p_string[0] == stdstring[0] && */strcmp(p_string,stdstring) == 0) {
@@ -70,13 +70,13 @@ namespace {
 		{
 		}
 		
-		int compare(unsigned p_index1, unsigned p_index2) const
+		int compare(t_size p_index1, t_size p_index2) const
 		{
 //			profiler(sort_callback_hintmap_impl_compare);
 			return stricmp_utf8(m_meta[m_hintmap[p_index1]].m_name,m_meta[m_hintmap[p_index2]].m_name);
 		}
 		
-		void swap(unsigned p_index1, unsigned p_index2)
+		void swap(t_size p_index1, t_size p_index2)
 		{
 			pfc::swap_t<file_info_const_impl::t_hintentry>(m_hintmap[p_index1],m_hintmap[p_index2]);
 		}
@@ -92,12 +92,12 @@ namespace {
 			const file_info_const_impl::meta_entry * p_meta,
 			const file_info_const_impl::t_hintentry * p_hintmap,
 			const char * p_name,
-			unsigned p_name_length)
+			t_size p_name_length)
 			: m_meta(p_meta), m_hintmap(p_hintmap), m_name(p_name), m_name_length(p_name_length)
 		{
 		}
 
-		int test(unsigned p_index) const
+		int test(t_size p_index) const
 		{
 			return stricmp_utf8_ex(m_meta[m_hintmap[p_index]].m_name,infinite,m_name,m_name_length);
 		}
@@ -106,7 +106,7 @@ namespace {
 		const file_info_const_impl::meta_entry * m_meta;
 		const file_info_const_impl::t_hintentry * m_hintmap;
 		const char * m_name;
-		unsigned m_name_length;
+		t_size m_name_length;
 	};
 }
 
@@ -115,20 +115,20 @@ namespace {
 void file_info_const_impl::copy(const file_info & p_source)
 {
 //	profiler(file_info_const_impl__copy);
-	unsigned meta_size = 0;
-	unsigned info_size = 0;
-	unsigned valuemap_size = 0;
-	unsigned stringbuffer_size = 0;
+	t_size meta_size = 0;
+	t_size info_size = 0;
+	t_size valuemap_size = 0;
+	t_size stringbuffer_size = 0;
 #ifdef __file_info_const_impl_have_hintmap__
-	unsigned hintmap_size = 0;
+	t_size hintmap_size = 0;
 #endif
 
 	enum {metacount_upperlimit = 0xFFFF};
 
 	{
 //		profiler(file_info_const_impl__copy__pass1);
-		unsigned index;
-		m_meta_count = (t_uint16) pfc::min_t<unsigned>(p_source.meta_get_count(),metacount_upperlimit);
+		t_size index;
+		m_meta_count = (t_uint16) pfc::min_t<t_size>(p_source.meta_get_count(),metacount_upperlimit);
 		meta_size = m_meta_count * sizeof(meta_entry);
 #ifdef __file_info_const_impl_have_hintmap__
 		hintmap_size = m_meta_count * sizeof(t_hintentry);
@@ -141,7 +141,7 @@ void file_info_const_impl::copy(const file_info & p_source)
 					stringbuffer_size += strlen(name) + 1;
 			}
 
-			unsigned val; const unsigned val_max = pfc::min_t<unsigned>(p_source.meta_enum_value_count(index),metacount_upperlimit);
+			t_size val; const t_size val_max = pfc::min_t<t_size>(p_source.meta_enum_value_count(index),metacount_upperlimit);
 			
 			if (val_max == 1)
 			{
@@ -158,7 +158,7 @@ void file_info_const_impl::copy(const file_info & p_source)
 			}
 		}
 
-		m_info_count = (t_uint16) pfc::min_t<unsigned>(p_source.info_get_count(),metacount_upperlimit);
+		m_info_count = (t_uint16) pfc::min_t<t_size>(p_source.info_get_count(),metacount_upperlimit);
 		info_size = m_info_count * sizeof(info_entry);
 		for(index = 0; index < m_info_count; index++ )
 		{
@@ -200,10 +200,10 @@ void file_info_const_impl::copy(const file_info & p_source)
 
 	{
 //		profiler(file_info_const_impl__copy__pass2);
-		unsigned index;
+		t_size index;
 		for( index = 0; index < m_meta_count; index ++ )
 		{
-			unsigned val; const unsigned val_max = pfc::min_t<unsigned>(p_source.meta_enum_value_count(index),metacount_upperlimit);
+			t_size val; const t_size val_max = pfc::min_t<t_size>(p_source.meta_enum_value_count(index),metacount_upperlimit);
 
 			{
 				const char * name = p_source.meta_enum_name(index);
@@ -245,7 +245,7 @@ void file_info_const_impl::copy(const file_info & p_source)
 #ifdef __file_info_const_impl_have_hintmap__
 	{
 //		profiler(file_info_const_impl__copy__hintmap);
-		for(unsigned n=0;n<m_meta_count;n++) hintmap[n]=n;
+		for(t_size n=0;n<m_meta_count;n++) hintmap[n]=n;
 		pfc::sort(sort_callback_hintmap_impl(meta,hintmap),m_meta_count);
 	}
 #endif//__file_info_const_impl_have_hintmap__
@@ -257,10 +257,10 @@ void file_info_const_impl::reset()
 	m_meta_count = m_info_count = 0; m_length = 0; m_replaygain.reset();
 }
 
-unsigned file_info_const_impl::meta_find_ex(const char * p_name,unsigned p_name_length) const
+t_size file_info_const_impl::meta_find_ex(const char * p_name,t_size p_name_length) const
 {
 #ifdef __file_info_const_impl_have_hintmap__
-	unsigned result = infinite;
+	t_size result = infinite;
 	if (!pfc::bsearch(m_meta_count,bsearch_callback_hintmap_impl(m_meta,m_hintmap,p_name,p_name_length),result)) return infinite;
 	else return m_hintmap[result];
 #else
@@ -269,12 +269,12 @@ unsigned file_info_const_impl::meta_find_ex(const char * p_name,unsigned p_name_
 }
 
 
-unsigned	file_info_const_impl::meta_enum_value_count(unsigned p_index) const
+t_size	file_info_const_impl::meta_enum_value_count(t_size p_index) const
 {
 	return m_meta[p_index].m_valuecount;
 }
 
-const char*	file_info_const_impl::meta_enum_value(unsigned p_index,unsigned p_value_number) const
+const char*	file_info_const_impl::meta_enum_value(t_size p_index,t_size p_value_number) const
 {
 	const meta_entry & entry = m_meta[p_index];
 	if (entry.m_valuecount == 1)

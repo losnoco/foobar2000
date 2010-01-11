@@ -1,6 +1,6 @@
 #include "foobar2000.h"
 
-bool preferences_page::get_help_url(string_base & p_out)
+bool preferences_page::get_help_url(pfc::string_base & p_out)
 {
 	p_out = "http://help.foobar2000.org/";
 	p_out += core_version_info::g_get_version_string();

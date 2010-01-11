@@ -6,15 +6,18 @@ struct t_cuesheet_index_list
 	void reset() {for(unsigned n=0;n<count;n++) m_positions[n]=0;}
 
 	void to_infos(file_info & p_out) const;
-	void from_infos(file_info const & p_in,double p_base);
+	
+	//returns false when there was nothing relevant in infos
+	bool from_infos(file_info const & p_in,double p_base);
 
 	double m_positions[count];
 
 	inline double start() const {return m_positions[1];}
+	bool is_empty() const;
 };
 
-unsigned cuesheet_parse_index_time_ticks_e(const char * p_string,unsigned p_length);
-double cuesheet_parse_index_time_e(const char * p_string,unsigned p_length);
+unsigned cuesheet_parse_index_time_ticks_e(const char * p_string,t_size p_length);
+double cuesheet_parse_index_time_e(const char * p_string,t_size p_length);
 
 class cuesheet_format_index_time
 {

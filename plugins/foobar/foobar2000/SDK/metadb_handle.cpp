@@ -4,11 +4,10 @@
 double metadb_handle::get_length()
 {
 	double rv = 0;
-	metadb_lock();
+	in_metadb_sync_fromhandle l_sync(this);
 	const file_info * info;
 	if (get_info_locked(info))
 		rv = info->get_length();
-	metadb_unlock();
 	return rv;
 }
 
@@ -29,7 +28,7 @@ t_filesize metadb_handle::get_filesize()
 	return get_filestats().m_size;
 }
 
-int metadb_handle::format_title(titleformat_hook * p_hook,string_base & p_out,const char * p_spec,titleformat_text_filter * p_filter)
+int metadb_handle::format_title(titleformat_hook * p_hook,pfc::string_base & p_out,const char * p_spec,titleformat_text_filter * p_filter)
 {
 	service_ptr_t<titleformat_object> script;
 	if (static_api_ptr_t<titleformat_compiler>()->compile(script,p_spec))

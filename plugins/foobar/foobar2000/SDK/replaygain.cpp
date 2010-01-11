@@ -92,13 +92,16 @@ private:
 	string_fixed_t<128> m_buffer;
 };
 
-format_dbdelta::format_dbdelta(double p_val)
-{
-	int val = (int)(p_val * 10);
-	uPrintf(m_buffer,"%s%u.%udB",val<0 ? "-" : val>0 ? "+" : "\xc2\xb1",abs(val)/10,abs(val)%10);
+static const char * querysign(int val) {
+	return val<0 ? "-" : val>0 ? "+" : "\xc2\xb1";
 }
 
-void t_replaygain_config::format_name(string_base & p_out) const
+format_dbdelta::format_dbdelta(double p_val) {
+	int val = (int)(p_val * 10);
+	m_buffer << querysign(val) << (abs(val)/10) << "." << (abs(val)%10) << "dB";
+}
+
+void t_replaygain_config::format_name(pfc::string_base & p_out) const
 {
 	switch(m_processing_mode)
 	{

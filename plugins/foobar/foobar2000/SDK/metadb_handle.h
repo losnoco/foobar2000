@@ -20,7 +20,7 @@ public:
 	virtual rcplayable_location FB2KAPI get_location() const = 0;//never fails, returned pointer valid till the object is released
 
 
-	virtual bool FB2KAPI format_title(titleformat_hook * p_hook,string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter) = 0;
+	virtual bool FB2KAPI format_title(titleformat_hook * p_hook,pfc::string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter) = 0;
 
 	//! Locks metadb to prevent other threads from modifying it while you're working with some of its contents. Some functions (metadb_handle::get_info_locked(), metadb_handle::get_info_async_locked()) can be called only from inside metadb lock section.
 	//! Same as metadb::database_lock().
@@ -39,16 +39,13 @@ public:
 	virtual bool FB2KAPI get_info_async(file_info & p_info) const = 0;	
 	virtual bool FB2KAPI get_info_async_locked(const file_info * & p_info) const = 0;
 
-	virtual void FB2KAPI format_title_from_external_info(const file_info & p_info,titleformat_hook * p_hook,string_base & out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter)=0;
+	virtual void FB2KAPI format_title_from_external_info(const file_info & p_info,titleformat_hook * p_hook,pfc::string_base & out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter)=0;
 	
 	static bool g_should_reload(const t_filestats & p_old_stats,const t_filestats & p_new_stats,bool p_fresh);
 	bool should_reload(const t_filestats & p_new_stats,bool p_fresh) const;
 	
 
-	int format_title(titleformat_hook * p_hook,string_base & out,const char * spec,titleformat_text_filter * p_filter);
-#if 0
-	int format_title_legacy(string_base & out,const char * spec,const char * extra_items);
-#endif
+	int format_title(titleformat_hook * p_hook,pfc::string_base & out,const char * spec,titleformat_text_filter * p_filter);
 
 	inline const char * get_path() const {return get_location().get_path();}
 	inline t_uint32 get_subsong_index() const {return get_location().get_subsong_index();}
@@ -73,79 +70,64 @@ protected:
 typedef service_ptr_t<metadb_handle> metadb_handle_ptr;
 
 namespace metadb_handle_list_helper {
-	void sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,const char * spec,titleformat_hook * p_hook);
-	void sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,unsigned* order,const char * spec,titleformat_hook * p_hook);
-	void sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook);
-	void sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,unsigned* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook);
+	void sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const char * spec,titleformat_hook * p_hook);
+	void sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const char * spec,titleformat_hook * p_hook);
+	void sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook);
+	void sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook);
 
-	void sort_by_relative_path_partial(list_base_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count);
-	void sort_by_relative_path_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,unsigned base,unsigned count,unsigned* order);
+	void sort_by_relative_path_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count);
+	void sort_by_relative_path_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order);
 	
 	void remove_duplicates(list_base_t<metadb_handle_ptr> & p_list);
 	void sort_by_pointer_remove_duplicates(list_base_t<metadb_handle_ptr> & p_list);
 	void sort_by_path_quick(list_base_t<metadb_handle_ptr> & p_list);
 
 	void sort_by_pointer(list_base_t<metadb_handle_ptr> & p_list);
-	unsigned bsearch_by_pointer(const list_base_const_t<metadb_handle_ptr> & p_list,const metadb_handle_ptr & val);
+	t_size bsearch_by_pointer(const list_base_const_t<metadb_handle_ptr> & p_list,const metadb_handle_ptr & val);
 
 	double calc_total_duration(const list_base_const_t<metadb_handle_ptr> & p_list);
 
 	void sort_by_path(list_base_t<metadb_handle_ptr> & p_list);
 };
 
-template<class S = array_fast_t<metadb_handle_ptr > >
-class metadb_handle_list_t : public service_list_t<metadb_handle,S>
-{
+template<template<typename> class t_alloc = pfc::alloc_fast >
+class metadb_handle_list_t : public service_list_t<metadb_handle,t_alloc> {
+private:
+	typedef metadb_handle_list_t<t_alloc> t_self;
 public:
 	inline void sort_by_format(const char * spec,titleformat_hook * p_hook) {return sort_by_format_partial(0,get_count(),spec,p_hook);}
-	inline void sort_by_format_partial(unsigned base,unsigned count,const char * spec,titleformat_hook * p_hook) {metadb_handle_list_helper::sort_by_format_partial(*this,base,count,spec,p_hook);}
-	inline void sort_by_format_get_order(unsigned* order,const char * spec,titleformat_hook * p_hook) const {sort_by_format_get_order_partial(0,get_count(),order,spec,p_hook);}
-	inline void sort_by_format_get_order_partial(unsigned base,unsigned count,unsigned* order,const char * spec,titleformat_hook * p_hook) const {metadb_handle_list_helper::sort_by_format_get_order_partial(*this,base,count,order,spec,p_hook);}
+	inline void sort_by_format_partial(t_size base,t_size count,const char * spec,titleformat_hook * p_hook) {metadb_handle_list_helper::sort_by_format_partial(*this,base,count,spec,p_hook);}
+	inline void sort_by_format_get_order(t_size* order,const char * spec,titleformat_hook * p_hook) const {sort_by_format_get_order_partial(0,get_count(),order,spec,p_hook);}
+	inline void sort_by_format_get_order_partial(t_size base,t_size count,t_size* order,const char * spec,titleformat_hook * p_hook) const {metadb_handle_list_helper::sort_by_format_get_order_partial(*this,base,count,order,spec,p_hook);}
 
 	inline void sort_by_format(const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) {return sort_by_format_partial(0,get_count(),p_script,p_hook);}
-	inline void sort_by_format_partial(unsigned base,unsigned count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) {metadb_handle_list_helper::sort_by_format_partial(*this,base,count,p_script,p_hook);}
-	inline void sort_by_format_get_order(unsigned* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) const {sort_by_format_get_order_partial(0,get_count(),order,p_script,p_hook);}
-	inline void sort_by_format_get_order_partial(unsigned base,unsigned count,unsigned* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) const {metadb_handle_list_helper::sort_by_format_get_order_partial(*this,base,count,order,p_script,p_hook);}
+	inline void sort_by_format_partial(t_size base,t_size count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) {metadb_handle_list_helper::sort_by_format_partial(*this,base,count,p_script,p_hook);}
+	inline void sort_by_format_get_order(t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) const {sort_by_format_get_order_partial(0,get_count(),order,p_script,p_hook);}
+	inline void sort_by_format_get_order_partial(t_size base,t_size count,t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) const {metadb_handle_list_helper::sort_by_format_get_order_partial(*this,base,count,order,p_script,p_hook);}
 	
 	inline void sort_by_relative_path() {sort_by_relative_path_partial(0,get_count());}
-	inline void sort_by_relative_path_partial(unsigned base,unsigned count) {metadb_handle_list_helper::sort_by_relative_path_partial(*this,base,count);}
-	inline void sort_by_relative_path_get_order(unsigned* order) const {sort_by_relative_path_get_order_partial(0,get_count(),order);}
-	inline void sort_by_relative_path_get_order_partial(unsigned base,unsigned count,unsigned* order) const {metadb_handle_list_helper::sort_by_relative_path_get_order_partial(*this,base,count,order);}
+	inline void sort_by_relative_path_partial(t_size base,t_size count) {metadb_handle_list_helper::sort_by_relative_path_partial(*this,base,count);}
+	inline void sort_by_relative_path_get_order(t_size* order) const {sort_by_relative_path_get_order_partial(0,get_count(),order);}
+	inline void sort_by_relative_path_get_order_partial(t_size base,t_size count,t_size* order) const {metadb_handle_list_helper::sort_by_relative_path_get_order_partial(*this,base,count,order);}
 	
 	inline void remove_duplicates() {metadb_handle_list_helper::remove_duplicates(*this);}
 	inline void sort_by_pointer_remove_duplicates() {metadb_handle_list_helper::sort_by_pointer_remove_duplicates(*this);}
 	inline void sort_by_path_quick() {metadb_handle_list_helper::sort_by_path_quick(*this);}
 
 	inline void sort_by_pointer() {metadb_handle_list_helper::sort_by_pointer(*this);}
-	inline unsigned bsearch_by_pointer(const metadb_handle_ptr & val) const {return metadb_handle_list_helper::bsearch_by_pointer(*this,val);}
+	inline t_size bsearch_by_pointer(const metadb_handle_ptr & val) const {return metadb_handle_list_helper::bsearch_by_pointer(*this,val);}
 
 	inline double calc_total_duration() const {return metadb_handle_list_helper::calc_total_duration(*this);}
 
 	inline void sort_by_path() {metadb_handle_list_helper::sort_by_path(*this);}
 
-	inline static void g_swap(metadb_handle_list_t<S> & item1, metadb_handle_list_t<S> & item2)
-	{
-		pfc::swap_t(*(service_list_t<metadb_handle,S>*)&item1,*(service_list_t<metadb_handle,S>*)&item2);
-	}
 };
 
 typedef metadb_handle_list_t<> metadb_handle_list;
-typedef metadb_handle_list_t<array_fast_aggressive_t<metadb_handle_ptr> > metadb_handle_list_fast;
 
 namespace metadb_handle_list_helper {
 	void sorted_by_pointer_extract_difference(metadb_handle_list const & p_list_1,metadb_handle_list const & p_list_2,metadb_handle_list & p_list_1_specific,metadb_handle_list & p_list_2_specific);
 };
-
-namespace pfc {
-
-	template<typename S>
-	inline void swap_t(metadb_handle_list_t<S> & item1, metadb_handle_list_t<S> & item2)
-	{
-		metadb_handle_list_t<S>::g_swap(item1,item2);
-	}
-
-};
-
 
 class metadb_handle_lock
 {
@@ -159,7 +141,7 @@ public:
 	inline ~metadb_handle_lock() {m_ptr->metadb_unlock();}
 };
 
-inline string_base & operator<<(string_base & p_fmt,const metadb_handle_ptr & p_location) {
+inline pfc::string_base & operator<<(pfc::string_base & p_fmt,const metadb_handle_ptr & p_location) {
 	if (p_location.is_valid()) 
 		return p_fmt << p_location->get_location();
 	else

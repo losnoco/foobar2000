@@ -1,7 +1,7 @@
 #include "foobar2000.h"
 
 
-bool menu_helpers::get_description(menu_item::type type,const GUID& p_guid,string_base & out)
+bool menu_helpers::get_description(menu_item::type type,const GUID& p_guid,pfc::string_base & out)
 {
 	service_enum_t<menu_item> e;
 	service_ptr_t<menu_item> ptr;
@@ -23,7 +23,7 @@ bool menu_helpers::get_description(menu_item::type type,const GUID& p_guid,strin
 	return false;
 }
 
-bool menu_helpers::get_description(menu_item::type type,const char * name,string_base & out)
+bool menu_helpers::get_description(menu_item::type type,const char * name,pfc::string_base & out)
 {
 	service_enum_t<menu_item> e;
 	service_ptr_t<menu_item> ptr;
@@ -215,7 +215,7 @@ bool menu_helpers::guid_from_name(const char * p_name,unsigned p_name_len,GUID &
 	return false;
 }
 
-bool menu_helpers::name_from_guid(const GUID & p_guid,string_base & p_out)
+bool menu_helpers::name_from_guid(const GUID & p_guid,pfc::string_base & p_out)
 {
 	service_enum_t<menu_item> e;
 	service_ptr_t<menu_item> ptr;
@@ -275,7 +275,7 @@ const char * menu_helpers::guid_to_name_table::search(const GUID & p_guid)
 		pfc::sort_t(m_data,entry_compare,m_data.get_size());
 		m_inited = true;
 	}
-	unsigned index;
+	t_size index;
 	if (pfc::bsearch_t(m_data.get_size(),m_data,entry_compare_search,p_guid,index))
 		return m_data[index].m_name;
 	else
@@ -299,7 +299,7 @@ menu_helpers::guid_to_name_table::guid_to_name_table()
 
 menu_helpers::guid_to_name_table::~guid_to_name_table()
 {
-	unsigned n, m = m_data.get_size();
+	t_size n, m = m_data.get_size();
 	for(n=0;n<m;n++) free(m_data[n].m_name);
 
 }
@@ -343,7 +343,7 @@ bool menu_helpers::name_to_guid_table::search(const char * p_name,unsigned p_nam
 		pfc::sort_t(m_data,entry_compare,m_data.get_size());
 		m_inited = true;
 	}
-	unsigned index;
+	t_size index;
 	search_entry temp = {p_name,p_name_len};
 	if (pfc::bsearch_t(m_data.get_size(),m_data,entry_compare_search,temp,index))
 	{
@@ -361,7 +361,7 @@ menu_helpers::name_to_guid_table::name_to_guid_table()
 
 menu_helpers::name_to_guid_table::~name_to_guid_table()
 {
-	unsigned n, m = m_data.get_size();
+	t_size n, m = m_data.get_size();
 	for(n=0;n<m;n++) free(m_data[n].m_name);
 
 }

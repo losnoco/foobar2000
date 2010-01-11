@@ -1,6 +1,6 @@
 #include "foobar2000.h"
 
-void input_file_type::build_openfile_mask(string_base & out, bool b_include_playlists)
+void input_file_type::build_openfile_mask(pfc::string_base & out, bool b_include_playlists)
 {
 	string8_fastalloc name,mask,mask_alltypes,out_temp;
 	

@@ -60,7 +60,7 @@ GUID_from_text::GUID_from_text(const char * text)
 		else max = text + strlen(text);
 	}
 
-	(GUID)*this = mem_ops<GUID>::make_null_item();
+	(GUID)*this = pfc::guid_null;
 
 	
 	do {

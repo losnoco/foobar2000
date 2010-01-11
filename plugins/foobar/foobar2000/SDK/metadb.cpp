@@ -1,81 +1,65 @@
 #include "foobar2000.h"
 
 
-bool metadb::g_get(service_ptr_t<metadb> & p_out)
-{
+bool metadb::g_get(service_ptr_t<metadb> & p_out) {
 	return service_enum_create_t(p_out,0);
 }
 
 
 
-bool metadb::handle_create_replace_path_canonical(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path)
-{
-	return handle_create(p_out,make_playable_location(p_new_path,p_source->get_subsong_index()));
+void metadb::handle_create_replace_path_canonical(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path) {
+	handle_create(p_out,make_playable_location(p_new_path,p_source->get_subsong_index()));
 }
 
-bool metadb::handle_create_replace_path(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path)
-{
+void metadb::handle_create_replace_path(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path) {
 	string8 path;
 	filesystem::g_get_canonical_path(p_new_path,path);
-	return handle_create_replace_path_canonical(p_out,p_source,path);
+	handle_create_replace_path_canonical(p_out,p_source,path);
 }
 
-bool metadb::handle_replace_path_canonical(metadb_handle_ptr & p_out,const char * p_new_path)
-{
+void metadb::handle_replace_path_canonical(metadb_handle_ptr & p_out,const char * p_new_path) {
 	metadb_handle_ptr temp;
-	bool status = handle_create_replace_path_canonical(temp,p_out,p_new_path);
-	if (status) p_out = temp;
-	return status;
+	handle_create_replace_path_canonical(temp,p_out,p_new_path);
+	p_out = temp;
 }
 
 
-t_io_result metadb_io::load_info(metadb_handle_ptr p_item,t_load_info_type p_type,HWND p_parent_window,bool p_show_errors)
-{
-	t_io_result retcode;
-	if (!load_info_multi(list_single_ref_t<metadb_handle_ptr>(p_item),p_type,p_parent_window,p_show_errors,&retcode))
-		return io_result_aborted;
-	else
-		return retcode;
+metadb_io::t_load_info_state metadb_io::load_info(metadb_handle_ptr p_item,t_load_info_type p_type,HWND p_parent_window,bool p_show_errors) {
+	return load_info_multi(list_single_ref_t<metadb_handle_ptr>(p_item),p_type,p_parent_window,p_show_errors);
 }
 
-t_io_result metadb_io::update_info(metadb_handle_ptr p_item,file_info & p_info,HWND p_parent_window,bool p_show_errors)
+metadb_io::t_update_info_state metadb_io::update_info(metadb_handle_ptr p_item,file_info & p_info,HWND p_parent_window,bool p_show_errors)
 {
-	t_io_result retcode;
 	file_info * blah = &p_info;
-	if (!update_info_multi(list_single_ref_t<metadb_handle_ptr>(p_item),list_single_ref_t<file_info*>(blah),p_parent_window,p_show_errors,&retcode))
-		return io_result_aborted;
-	else
-		return retcode;
+	return update_info_multi(list_single_ref_t<metadb_handle_ptr>(p_item),list_single_ref_t<file_info*>(blah),p_parent_window,p_show_errors);
 }
 
 file_info_update_helper::file_info_update_helper(metadb_handle_ptr p_item)
 {
-	const unsigned count = 1;
+	const t_size count = 1;
 	m_data.add_item(p_item);
 
 	m_infos.set_size(count);
 	m_mask.set_size(count);
-	unsigned n;
-	for(n=0;n<count;n++) m_mask[n] = false;
+	for(t_size n=0;n<count;n++) m_mask[n] = false;
 }
 
 file_info_update_helper::file_info_update_helper(const list_base_const_t<metadb_handle_ptr> & p_data)
 {
-	const unsigned count = p_data.get_count();
+	const t_size count = p_data.get_count();
 	m_data.add_items(p_data);
 
 	m_infos.set_size(count);
 	m_mask.set_size(count);
-	unsigned n;
-	for(n=0;n<count;n++) m_mask[n] = false;
+	for(t_size n=0;n<count;n++) m_mask[n] = false;
 }
 
 bool file_info_update_helper::read_infos(HWND p_parent,bool p_show_errors)
 {
 	static_api_ptr_t<metadb_io> api;
-	if (!api->load_info_multi(m_data,metadb_io::load_info_default,p_parent,p_show_errors,0)) return false;
-	unsigned n; const unsigned m = m_data.get_count();
-	unsigned loaded_count = 0;
+	if (api->load_info_multi(m_data,metadb_io::load_info_default,p_parent,p_show_errors) != metadb_io::load_info_success) return false;
+	t_size n; const t_size m = m_data.get_count();
+	t_size loaded_count = 0;
 	for(n=0;n<m;n++)
 	{
 		bool val = m_data[n]->get_info(m_infos[n]);
@@ -87,9 +71,11 @@ bool file_info_update_helper::read_infos(HWND p_parent,bool p_show_errors)
 
 file_info_update_helper::t_write_result file_info_update_helper::write_infos(HWND p_parent,bool p_show_errors)
 {
-	unsigned n, outptr = 0; const unsigned count = m_data.get_count();
-	array_t<metadb_handle_ptr> items_to_update(count);
-	array_t<file_info *> infos_to_write(count);
+	t_size n, outptr = 0; const t_size count = m_data.get_count();
+	pfc::array_t<metadb_handle_ptr> items_to_update;
+	pfc::array_t<file_info *> infos_to_write;
+	items_to_update.set_size(count);
+	infos_to_write.set_size(count);
 	
 	for(n=0;n<count;n++)
 	{
@@ -104,50 +90,46 @@ file_info_update_helper::t_write_result file_info_update_helper::write_infos(HWN
 	if (outptr == 0) return write_ok;
 	else
 	{
-		array_t<t_io_result> retcodes(outptr);
-
 		static_api_ptr_t<metadb_io> api;
-		if (!api->update_info_multi(
-			list_const_array_t<metadb_handle_ptr,const array_t<metadb_handle_ptr>&>(items_to_update,outptr),
-			list_const_array_t<file_info*,const array_t<file_info*>&>(infos_to_write,outptr),
+		switch(api->update_info_multi(
+			list_const_array_t<metadb_handle_ptr,const pfc::array_t<metadb_handle_ptr>&>(items_to_update,outptr),
+			list_const_array_t<file_info*,const pfc::array_t<file_info*>&>(infos_to_write,outptr),
 			p_parent,
-			true,
-			retcodes.get_ptr())) return write_aborted;
-
-		bool got_errors = false;
-		for(n=0;n<outptr;n++)
+			true
+			))
 		{
-			t_io_result code = retcodes[n];
-			if (io_result_failed(code)) 
-				got_errors = true;
+		case metadb_io::update_info_success:
+			return write_ok;
+		case metadb_io::update_info_aborted:
+			return write_aborted;
+		default:
+		case metadb_io::update_info_errors:
+			return write_error;
 		}
-
-		if (got_errors) return write_error;
-		else return write_ok;
 	}
 }
 
-unsigned file_info_update_helper::get_item_count() const
+t_size file_info_update_helper::get_item_count() const
 {
 	return m_data.get_count();
 }
 
-bool file_info_update_helper::is_item_valid(unsigned p_index) const
+bool file_info_update_helper::is_item_valid(t_size p_index) const
 {
 	return m_mask[p_index];
 }
 	
-file_info & file_info_update_helper::get_item(unsigned p_index)
+file_info & file_info_update_helper::get_item(t_size p_index)
 {
 	return m_infos[p_index];
 }
 
-metadb_handle_ptr file_info_update_helper::get_item_handle(unsigned p_index) const
+metadb_handle_ptr file_info_update_helper::get_item_handle(t_size p_index) const
 {
 	return m_data[p_index];
 }
 
-void file_info_update_helper::invalidate_item(unsigned p_index)
+void file_info_update_helper::invalidate_item(t_size p_index)
 {
 	m_mask[p_index] = false;
 }
@@ -166,25 +148,25 @@ bool metadb::g_get_random_handle(metadb_handle_ptr & p_out) {
 	{
 		static_api_ptr_t<playlist_manager> api;	
 
-		unsigned playlist_count = api->get_playlist_count();
-		unsigned active_playlist = api->get_active_playlist();
+		t_size playlist_count = api->get_playlist_count();
+		t_size active_playlist = api->get_active_playlist();
 		if (active_playlist != infinite) {
 			if (api->playlist_get_focus_item_handle(p_out,active_playlist)) return true;
 		}
 
-		for(unsigned n = 0; n < playlist_count; n++) {
+		for(t_size n = 0; n < playlist_count; n++) {
 			if (api->playlist_get_focus_item_handle(p_out,n)) return true;
 		}
 
 		if (active_playlist != infinite) {
-			unsigned item_count = api->playlist_get_item_count(active_playlist);
+			t_size item_count = api->playlist_get_item_count(active_playlist);
 			if (item_count > 0) {
 				if (api->playlist_get_item_handle(p_out,active_playlist,0)) return true;
 			}
 		}
 		
-		for(unsigned n = 0; n < playlist_count; n++) {
-			unsigned item_count = api->playlist_get_item_count(n);
+		for(t_size n = 0; n < playlist_count; n++) {
+			t_size item_count = api->playlist_get_item_count(n);
 			if (item_count > 0) {
 				if (api->playlist_get_item_handle(p_out,n,0)) return true;
 			}
@@ -194,6 +176,3 @@ bool metadb::g_get_random_handle(metadb_handle_ptr & p_out) {
 	return false;
 }
 
-void metadb::handle_create_e(metadb_handle_ptr & p_out,const playable_location & p_location) {
-	if (!handle_create(p_out,p_location)) throw std::bad_alloc();
-}

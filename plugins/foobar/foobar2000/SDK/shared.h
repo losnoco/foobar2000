@@ -5,7 +5,7 @@
 
 #include "../shared/shared.h"
 
-HWND uCreateDialog(UINT id,HWND parent,DLGPROC proc,long param=0);
-int uDialogBox(UINT id,HWND parent,DLGPROC proc,long param=0);
+HWND uCreateDialog(UINT id,HWND parent,DLGPROC proc,LPARAM param=0);
+int uDialogBox(UINT id,HWND parent,DLGPROC proc,LPARAM param=0);
 
 #endif

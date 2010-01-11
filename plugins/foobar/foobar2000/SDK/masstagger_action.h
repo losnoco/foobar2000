@@ -8,7 +8,7 @@ public:
 	 * Get name to display on list of available actions.
 	 * \param p_out store name in here
 	 */
-	virtual void get_name(string_base & p_out)=0;
+	virtual void get_name(pfc::string_base & p_out)=0;
 
 	/**
 	 * Initialize and show configuration with default values, if appropriate.
@@ -36,13 +36,13 @@ public:
 	 * You should include value of settings, if possible.
 	 * \param p_name store name in here
 	 */
-	virtual void get_display_string(string_base & p_name) = 0;
+	virtual void get_display_string(pfc::string_base & p_name) = 0;
 
 	/**
 	 * Get current settings as zero-terminated string.
 	 * \param p_data store settings in here
 	 */
-	virtual void get_config(string_base & p_data) = 0;
+	virtual void get_config(pfc::string_base & p_data) = 0;
 
 	/**
 	 * Apply action on file info.
@@ -51,7 +51,7 @@ public:
 	 * \param p_index zero-based index of current item in list of processed items
 	 * \param p_count number of processed items
 	 */
-	virtual void run(const playable_location & p_location, file_info * p_info, unsigned p_index, unsigned p_count) = 0;
+	virtual void run(const playable_location & p_location, file_info * p_info, t_size p_index, t_size p_count) = 0;
 
 	/**
 	 * Get GUID.

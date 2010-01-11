@@ -12,8 +12,8 @@ namespace file_list_helper
 		void init_from_list(const list_base_const_t<metadb_handle_ptr> & p_list);
 		void init_from_list_display(const list_base_const_t<metadb_handle_ptr> & p_list);
 
-		unsigned get_count() const;
-		void get_item_ex(const char * & p_out,unsigned n) const;
+		t_size get_count() const;
+		void get_item_ex(const char * & p_out,t_size n) const;
 
 		~file_list_from_metadb_handle_list();
 

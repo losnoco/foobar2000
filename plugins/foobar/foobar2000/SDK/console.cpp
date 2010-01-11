@@ -20,9 +20,11 @@ void console::print_location(const playable_location & src)
 
 void console::print(const char* p_message)
 {
-	service_ptr_t<console_receiver> ptr;
-	service_enum_t<console_receiver> e;
-	while(e.next(ptr)) ptr->print(p_message,infinite);
+	if (core_api::are_services_available()) {
+		service_ptr_t<console_receiver> ptr;
+		service_enum_t<console_receiver> e;
+		while(e.next(ptr)) ptr->print(p_message,infinite);
+	}
 }
 
 void console::printf(const char* p_format,...)

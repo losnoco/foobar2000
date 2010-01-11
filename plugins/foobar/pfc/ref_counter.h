@@ -71,21 +71,14 @@ namespace pfc {
 		inline bool operator!=(const refcounted_ptr_t<T> & p_item) const {return m_ptr != p_item.m_ptr;}
 		inline bool operator>(const refcounted_ptr_t<T> & p_item) const {return m_ptr > p_item.m_ptr;}
 		inline bool operator<(const refcounted_ptr_t<T> & p_item) const {return m_ptr < p_item.m_ptr;}
-
-		inline static void g_swap(refcounted_ptr_t<T> & item1, refcounted_ptr_t<T> & item2)
-		{
-			pfc::swap_t(item1.m_ptr,item2.m_ptr);
-		}
-
 	private:
 		T* m_ptr;
 	};
 
 	template<typename T>
-	inline void swap_t(refcounted_ptr_t<T> & item1, refcounted_ptr_t<T> & item2)
-	{
-		refcounted_ptr_t<T>::g_swap(item1,item2);
-	}
-
+	class traits_t<refcounted_ptr_t<T> > : public traits_default {
+	public:
+		enum { realloc_safe = true, constructor_may_fail = false};
+	};
 
 };

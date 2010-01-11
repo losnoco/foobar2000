@@ -19,7 +19,7 @@ public:
 	//! @param p_path Path of link file to resolve.
 	//! @param p_out Receives path the link is pointing to.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
-	virtual t_io_result resolve(service_ptr_t<file> p_filehint,const char * p_path,string_base & p_out,abort_callback & p_abort) = 0;
+	virtual void resolve(service_ptr_t<file> p_filehint,const char * p_path,pfc::string_base & p_out,abort_callback & p_abort) = 0;
 
 	//! Helper function; finds link_resolver interface that supports specified link file.
 	//! @param p_out Receives link_resolver interface on success.

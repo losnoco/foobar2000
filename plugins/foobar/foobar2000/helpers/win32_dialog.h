@@ -23,21 +23,12 @@ namespace dialog_helper
 		HWND run_modeless(unsigned id,HWND parent);
 	private:
 		HWND wnd;
-		static BOOL CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
+		static INT_PTR CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
 
 		bool m_is_modal;
 
 		modal_dialog_scope m_modal_scope;
 	};
-
-	struct set_item_text_multi_param
-	{
-		unsigned id;
-		const char * text;
-	};
-
-	void set_item_text_multi(HWND wnd,const set_item_text_multi_param * param,unsigned count);
-
 
 
 	//! This class is meant to be instantiated on-stack, as a local variable. Using new/delete operators instead or even making this a member of another object works, but does not make much sense because of the way this works (single run() call).
@@ -52,7 +43,7 @@ namespace dialog_helper
 		void end_dialog(int p_code);
 		inline HWND get_wnd() const {return m_wnd;}
 	private:
-		static BOOL CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
+		static INT_PTR CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
 
 		HWND m_wnd;
 		modal_dialog_scope m_modal_scope;
@@ -87,7 +78,7 @@ namespace dialog_helper
 		inline HWND get_wnd() const {return m_wnd;}
 		virtual ~dialog_modeless();
 	private:
-		static BOOL CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
+		static INT_PTR CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
 		void on_window_destruction();
 		
 		BOOL on_message_wrap(UINT msg,WPARAM wp,LPARAM lp);
@@ -96,7 +87,7 @@ namespace dialog_helper
 		enum {destructor_none,destructor_normal,destructor_fromwindow} m_destructor_status;
 		bool m_is_in_create;
 	};
-
+#pragma deprecated(dialog_modeless)
 
 
 
@@ -108,14 +99,19 @@ namespace dialog_helper
 		HWND get_wnd() const {return m_wnd;}
 		virtual BOOL on_message(UINT msg,WPARAM wp,LPARAM lp) {return FALSE;}
 	private:
-		static BOOL CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
+		static INT_PTR CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
 		void detach_window();
 		BOOL on_message_internal(UINT msg,WPARAM wp,LPARAM lp);
 		enum {status_construction, status_lifetime, status_destruction_requested, status_destruction} m_status;
 		HWND m_wnd;
+
+		const dialog_modeless_v2 & operator=(const dialog_modeless_v2 &) {throw pfc::exception_bug_check();}
+		dialog_modeless_v2(const dialog_modeless_v2 &) {throw pfc::exception_bug_check();}
 	};
 
 
 };
+
+
 
 #endif

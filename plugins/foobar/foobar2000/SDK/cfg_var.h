@@ -19,13 +19,13 @@ protected:
 	~cfg_var() {}
 public:
 	
-	virtual t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort) = 0;
-	virtual t_io_result set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort) = 0;
+	virtual void get_data_raw(stream_writer * p_stream,abort_callback & p_abort) = 0;
+	virtual void set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort) = 0;
 
 	inline const GUID & get_guid() const {return m_guid;}
 
-	static t_io_result config_read_file(stream_reader * p_stream,abort_callback & p_abort);
-	static t_io_result config_write_file(stream_writer * p_stream,abort_callback & p_abort);
+	static void config_read_file(stream_reader * p_stream,abort_callback & p_abort);
+	static void config_write_file(stream_writer * p_stream,abort_callback & p_abort);
 
 };
 
@@ -35,14 +35,11 @@ class cfg_int_t : public cfg_var
 private:
 	t_inttype m_val;
 protected:
-	t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort) {return p_stream->write_lendian_t(m_val,p_abort);}
-	t_io_result set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort)
-	{
+	void get_data_raw(stream_writer * p_stream,abort_callback & p_abort) {p_stream->write_lendian_t(m_val,p_abort);}
+	void set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort) {
 		t_inttype temp;
-		t_io_result status;
-		status = p_stream->read_lendian_t(temp,p_abort);
-		if (io_result_succeeded(status)) m_val = temp;
-		return status;
+		p_stream->read_lendian_t(temp,p_abort);
+		m_val = temp;
 	}
 
 public:
@@ -64,8 +61,8 @@ typedef cfg_int_t<bool> cfg_bool;
 class cfg_string : public cfg_var, public string8
 {
 protected:
-	t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort);
-	t_io_result set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort);
+	void get_data_raw(stream_writer * p_stream,abort_callback & p_abort);
+	void set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort);
 
 public:
 	explicit inline cfg_string(const GUID & p_guid,const char * p_val) : cfg_var(p_guid), string8(p_val) {}
@@ -85,23 +82,21 @@ private:
 
 protected:
 
-	t_io_result get_data_raw(stream_writer * p_stream,abort_callback & p_abort) {return p_stream->write_object(&m_val,sizeof(m_val),p_abort);}
-	t_io_result set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort)
-	{
+	void get_data_raw(stream_writer * p_stream,abort_callback & p_abort) {p_stream->write_object(&m_val,sizeof(m_val),p_abort);}
+	void set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort) {
 		t_struct temp;
-		t_io_result status;
-		status = p_stream->read_object(&temp,sizeof(temp),p_abort);
-		if (io_result_succeeded(status)) m_val = temp;
-		return status;
+		p_stream->read_object(&temp,sizeof(temp),p_abort);
+		m_val = temp;
 	}
 public:
-	explicit inline cfg_struct_t(const GUID & p_guid,const t_struct & p_val) : cfg_var(p_guid), m_val(p_val) {}
-	explicit inline cfg_struct_t(const GUID & p_guid,int filler) : cfg_var(p_guid) {memset(&m_val,filler,sizeof(t_struct));}
+	inline cfg_struct_t(const GUID & p_guid,const t_struct & p_val) : cfg_var(p_guid), m_val(p_val) {}
+	inline cfg_struct_t(const GUID & p_guid,int filler) : cfg_var(p_guid) {memset(&m_val,filler,sizeof(t_struct));}
 	
 	inline const cfg_struct_t<t_struct> & operator=(const cfg_struct_t<t_struct> & p_val) {m_val = p_val.get_value();return *this;}
 	inline const cfg_struct_t<t_struct> & operator=(const t_struct & p_val) {m_val = p_val;return *this;}
 
 	inline const t_struct& get_value() const {return m_val;}
+	inline t_struct& get_value() {return m_val;}
 	inline operator t_struct() const {return m_val;}
 };
 

@@ -39,18 +39,21 @@ public:
 
 	static unsigned g_guess_channel_config(unsigned count);
 
+#ifdef _WIN32
 	static DWORD g_channel_config_to_wfx(unsigned p_config);
 	static unsigned g_channel_config_from_wfx(DWORD p_wfx);
+#endif
 
 	static unsigned g_extract_channel_flag(unsigned p_config,unsigned p_index);
 	static unsigned g_count_channels(unsigned p_config);
+	static unsigned g_channel_index_from_flag(unsigned p_config,unsigned p_flag);
 
 	
 
 	virtual audio_sample * get_data()=0;
 	virtual const audio_sample * get_data() const = 0;
-	virtual unsigned get_data_size() const = 0;//buffer size in audio_samples; must be at least samples * nch;
-	virtual bool set_data_size(unsigned new_size)=0;
+	virtual t_size get_data_size() const = 0;//buffer size in audio_samples; must be at least samples * nch;
+	virtual void set_data_size(t_size new_size)=0;
 	
 	virtual unsigned get_srate() const = 0;
 	inline unsigned get_sample_rate() const {return get_srate();}
@@ -62,12 +65,12 @@ public:
 
 	void set_channels(unsigned val);
 
-	virtual unsigned get_sample_count() const = 0;
-	virtual void set_sample_count(unsigned val)=0;
+	virtual t_size get_sample_count() const = 0;
+	virtual void set_sample_count(t_size val)=0;
 
-	inline bool check_data_size(unsigned new_size) {if (new_size > get_data_size()) return set_data_size(new_size); else return true;}
+	inline void check_data_size(t_size new_size) {if (new_size > get_data_size()) set_data_size(new_size);}
 	
-	inline bool copy_from(const audio_chunk * src)
+	inline void copy_from(const audio_chunk * src)
 	{
 		return set_data(src->get_data(),src->get_sample_count(),src->get_channels(),src->get_srate(),src->get_channel_config());
 	}
@@ -75,7 +78,7 @@ public:
 	inline double get_duration() const
 	{
 		double rv = 0;
-		unsigned srate = get_srate (), samples = get_sample_count();
+		t_size srate = get_srate (), samples = get_sample_count();
 		if (srate>0 && samples>0) rv = (double)samples/(double)srate;
 		return rv;
 	}
@@ -84,7 +87,7 @@ public:
 	
 	bool is_valid();
 
-	inline unsigned get_data_length() const {return get_sample_count() * get_channels();}//actual amount of audio_samples in buffer
+	inline t_size get_data_length() const {return get_sample_count() * get_channels();}//actual amount of audio_samples in buffer
 
 	inline void reset()
 	{
@@ -98,24 +101,21 @@ public:
 		set_data_size(0);
 	}
 	
-	bool set_data(const audio_sample * src,unsigned samples,unsigned nch,unsigned srate,unsigned channel_config);//returns false on failure (eg. memory error)
+	void set_data(const audio_sample * src,t_size samples,unsigned nch,unsigned srate,unsigned channel_config);
 	
-	inline bool set_data(const audio_sample * src,unsigned samples,unsigned nch,unsigned srate) {return set_data(src,samples,nch,srate,g_guess_channel_config(nch));}
+	inline void set_data(const audio_sample * src,t_size samples,unsigned nch,unsigned srate) {set_data(src,samples,nch,srate,g_guess_channel_config(nch));}
 	
 
 	//helper routines for converting different input data formats
-	inline bool set_data_fixedpoint(const void * ptr,unsigned bytes,unsigned srate,unsigned nch,unsigned bps,unsigned channel_config)
-	{
-		return set_data_fixedpoint_ex(ptr,bytes,srate,nch,bps,(bps==8 ? FLAG_UNSIGNED : FLAG_SIGNED) | flags_autoendian(), channel_config);
+	inline void set_data_fixedpoint(const void * ptr,t_size bytes,unsigned srate,unsigned nch,unsigned bps,unsigned channel_config) {
+		set_data_fixedpoint_ex(ptr,bytes,srate,nch,bps,(bps==8 ? FLAG_UNSIGNED : FLAG_SIGNED) | flags_autoendian(), channel_config);
 	}
 
-	inline bool set_data_fixedpoint_unsigned(const void * ptr,unsigned bytes,unsigned srate,unsigned nch,unsigned bps,unsigned channel_config)
-	{
+	inline void set_data_fixedpoint_unsigned(const void * ptr,t_size bytes,unsigned srate,unsigned nch,unsigned bps,unsigned channel_config) {
 		return set_data_fixedpoint_ex(ptr,bytes,srate,nch,bps,FLAG_UNSIGNED | flags_autoendian(), channel_config);
 	}
 
-	inline bool set_data_fixedpoint_signed(const void * ptr,unsigned bytes,unsigned srate,unsigned nch,unsigned bps,unsigned channel_config)
-	{
+	inline void set_data_fixedpoint_signed(const void * ptr,t_size bytes,unsigned srate,unsigned nch,unsigned bps,unsigned channel_config) {
 		return set_data_fixedpoint_ex(ptr,bytes,srate,nch,bps,FLAG_SIGNED | flags_autoendian(), channel_config);
 	}
 
@@ -132,22 +132,16 @@ public:
 		return byte_order::machine_is_big_endian() ? FLAG_BIG_ENDIAN : FLAG_LITTLE_ENDIAN;
 	}
 
-	bool set_data_fixedpoint_ex(const void * ptr,unsigned bytes,unsigned p_sample_rate,unsigned p_channels,unsigned p_bits_per_sample,unsigned p_flags,unsigned p_channel_config);//p_flags - see FLAG_* above
+	void set_data_fixedpoint_ex(const void * ptr,t_size bytes,unsigned p_sample_rate,unsigned p_channels,unsigned p_bits_per_sample,unsigned p_flags,unsigned p_channel_config);//p_flags - see FLAG_* above
 
-	bool set_data_floatingpoint_ex(const void * ptr,unsigned bytes,unsigned p_sample_rate,unsigned p_channels,unsigned p_bits_per_sample,unsigned p_flags,unsigned p_channel_config);//signed/unsigned flags dont apply
+	void set_data_floatingpoint_ex(const void * ptr,t_size bytes,unsigned p_sample_rate,unsigned p_channels,unsigned p_bits_per_sample,unsigned p_flags,unsigned p_channel_config);//signed/unsigned flags dont apply
 
-#if audio_sample_size == 64
-	bool set_data_32(const float * src,unsigned samples,unsigned nch,unsigned srate);
-	inline bool set_data_64(const double * src,unsigned samples,unsigned nch,unsigned srate) {return set_data(src,samples,nch,srate);}
-#else
-	inline bool set_data_32(const float * src,unsigned samples,unsigned nch,unsigned srate) {return set_data(src,samples,nch,srate);}
-	bool set_data_64(const double * src,unsigned samples,unsigned nch,unsigned srate);
-#endif
+	inline void set_data_32(const float * src,t_size samples,unsigned nch,unsigned srate) {return set_data(src,samples,nch,srate);}
 
-	bool pad_with_silence_ex(unsigned samples,unsigned hint_nch,unsigned hint_srate);
-	bool pad_with_silence(unsigned samples);
-	bool insert_silence_fromstart(unsigned samples);
-	unsigned skip_first_samples(unsigned samples);
+	void pad_with_silence_ex(t_size samples,unsigned hint_nch,unsigned hint_srate);
+	void pad_with_silence(t_size samples);
+	void insert_silence_fromstart(t_size samples);
+	t_size skip_first_samples(t_size samples);
 
 	audio_sample get_peak(audio_sample p_peak = 0) const;
 
@@ -157,19 +151,21 @@ public:
 	const audio_chunk & operator=(const audio_chunk & p_source) {copy_from(&p_source);return *this;}
 };
 
-class audio_chunk_impl : public audio_chunk
-{
-	mem_block_aligned_t<audio_sample> m_data;
-	unsigned m_srate,m_nch,m_samples,m_setup;
+template<template<typename> class t_alloc = pfc::alloc_standard>
+class audio_chunk_impl_t : public audio_chunk {
+	typedef audio_chunk_impl_t<t_alloc> t_self;
+	pfc::array_t<audio_sample,t_alloc> m_data;
+	unsigned m_srate,m_nch,m_setup;
+	t_size m_samples;
 public:
-	audio_chunk_impl() : m_srate(0), m_nch(0), m_samples(0), m_setup(0) {}
-	audio_chunk_impl(const audio_sample * src,unsigned samples,unsigned nch,unsigned srate) : m_srate(0), m_nch(0), m_samples(0)
+	audio_chunk_impl_t() : m_srate(0), m_nch(0), m_samples(0), m_setup(0) {}
+	audio_chunk_impl_t(const audio_sample * src,unsigned samples,unsigned nch,unsigned srate) : m_srate(0), m_nch(0), m_samples(0)
 	{set_data(src,samples,nch,srate);}
 	
-	virtual audio_sample * get_data() {return m_data;}
-	virtual const audio_sample * get_data() const {return m_data;}
-	virtual unsigned get_data_size() const {return m_data.get_size();}
-	virtual bool set_data_size(unsigned new_size) {return m_data.set_size(new_size);}
+	virtual audio_sample * get_data() {return m_data.get_ptr();}
+	virtual const audio_sample * get_data() const {return m_data.get_ptr();}
+	virtual t_size get_data_size() const {return m_data.get_size();}
+	virtual void set_data_size(t_size new_size) {m_data.set_size(new_size);}
 	
 	virtual unsigned get_srate() const {return m_srate;}
 	virtual void set_srate(unsigned val) {m_srate=val;}
@@ -178,16 +174,14 @@ public:
 	virtual void set_channels(unsigned val,unsigned setup) {m_nch = val;m_setup = setup;}
 	void set_channels(unsigned val);
 
-	virtual unsigned get_sample_count() const {return m_samples;}
-	virtual void set_sample_count(unsigned val) {m_samples = val;}
+	virtual t_size get_sample_count() const {return m_samples;}
+	virtual void set_sample_count(t_size val) {m_samples = val;}
 
-	inline void set_mem_logic(mem_block::t_mem_logic v) {m_data.set_mem_logic(v);}
-	inline mem_block::t_mem_logic get_mem_logic() const {return m_data.get_mem_logic();}
-
-	const audio_chunk_impl & operator=(const audio_chunk & p_source) {copy_from(&p_source);return *this;}
-	const audio_chunk_impl & operator=(const audio_chunk_impl & p_source) {copy_from(&p_source);return *this;}
+	const t_self & operator=(const audio_chunk & p_source) {copy_from(&p_source);return *this;}
+	const t_self & operator=(const t_self & p_source) {copy_from(&p_source);return *this;}
 };
 
+typedef audio_chunk_impl_t<> audio_chunk_impl;
 typedef audio_chunk_impl audio_chunk_i;//for compatibility
 
 #endif //_AUDIO_CHUNK_H_

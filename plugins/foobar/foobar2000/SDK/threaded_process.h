@@ -6,17 +6,17 @@ class NOVTABLE threaded_process_status
 public:
 	enum {progress_min = 0, progress_max = 5000};
 	
-	virtual void set_progress(unsigned p_state) = 0;
-	virtual void set_progress_secondary(unsigned p_state) = 0;
-	virtual void set_item(const char * p_item,unsigned p_item_len = infinite) = 0;
-	virtual void set_item_path(const char * p_item,unsigned p_item_len = infinite) = 0;
-	virtual void set_title(const char * p_title,unsigned p_title_len = infinite) = 0;
+	virtual void set_progress(t_size p_state) = 0;
+	virtual void set_progress_secondary(t_size p_state) = 0;
+	virtual void set_item(const char * p_item,t_size p_item_len = ~0) = 0;
+	virtual void set_item_path(const char * p_item,t_size p_item_len = ~0) = 0;
+	virtual void set_title(const char * p_title,t_size p_title_len = ~0) = 0;
 	virtual void force_update() = 0;
 	virtual bool is_paused() = 0;
 	virtual bool process_pause() = 0;//checks if process is paused and sleeps if needed; returns false when process should be aborted, true on success
 
-	void set_progress(unsigned p_state,unsigned p_max);
-	void set_progress_secondary(unsigned p_state,unsigned p_max);
+	void set_progress(t_size p_state,t_size p_max);
+	void set_progress_secondary(t_size p_state,t_size p_max);
 	void set_progress_float(double p_state);
 	void set_progress_secondary_float(double p_state);
 protected:
@@ -49,11 +49,11 @@ public:
 		flag_show_delayed		= 1 << 7,//modeless-only
 	};
 
-	virtual bool run_modal(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,unsigned p_title_len) = 0;
-	virtual bool run_modeless(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,unsigned p_title_len) = 0;
+	virtual bool run_modal(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len) = 0;
+	virtual bool run_modeless(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len) = 0;
 
-	static bool g_run_modal(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,unsigned p_title_len = infinite);
-	static bool g_run_modeless(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,unsigned p_title_len = infinite);
+	static bool g_run_modal(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len = infinite);
+	static bool g_run_modeless(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len = infinite);
 
 	static const GUID class_guid;
 

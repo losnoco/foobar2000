@@ -1,38 +1,38 @@
 #include "foobar2000.h"
 
 
-unsigned file_info_impl::meta_get_count() const
+t_size file_info_impl::meta_get_count() const
 {
 	return m_meta.get_count();
 }
 
-const char* file_info_impl::meta_enum_name(unsigned p_index) const
+const char* file_info_impl::meta_enum_name(t_size p_index) const
 {
 	return m_meta.get_name(p_index);
 }
 
-unsigned file_info_impl::meta_enum_value_count(unsigned p_index) const
+t_size file_info_impl::meta_enum_value_count(t_size p_index) const
 {
 	return m_meta.get_value_count(p_index);
 }
 
-const char* file_info_impl::meta_enum_value(unsigned p_index,unsigned p_value_number) const
+const char* file_info_impl::meta_enum_value(t_size p_index,t_size p_value_number) const
 {
 	return m_meta.get_value(p_index,p_value_number);
 }
 
-unsigned file_info_impl::meta_set_ex(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length)
+t_size file_info_impl::meta_set_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
 {
 	meta_remove_field_ex(p_name,p_name_length);
 	return meta_set_nocheck_ex(p_name,p_name_length,p_value,p_value_length);
 }
 
-unsigned file_info_impl::meta_set_nocheck_ex(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length)
+t_size file_info_impl::meta_set_nocheck_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
 {
 	return m_meta.add_entry(p_name,p_name_length,p_value,p_value_length);
 }
 
-void file_info_impl::meta_insert_value_ex(unsigned p_index,unsigned p_value_index,const char * p_value,unsigned p_value_length)
+void file_info_impl::meta_insert_value_ex(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length)
 {
 	m_meta.insert_value(p_index,p_value_index,p_value,p_value_length);
 }
@@ -42,40 +42,40 @@ void file_info_impl::meta_remove_mask(const bit_array & p_mask)
 	m_meta.remove_mask(p_mask);
 }
 
-void file_info_impl::meta_reorder(const unsigned * p_order)
+void file_info_impl::meta_reorder(const t_size * p_order)
 {
 	m_meta.reorder(p_order);
 }
 
-void file_info_impl::meta_remove_values(unsigned p_index,const bit_array & p_mask)
+void file_info_impl::meta_remove_values(t_size p_index,const bit_array & p_mask)
 {
 	m_meta.remove_values(p_index,p_mask);
 	if (m_meta.get_value_count(p_index) == 0)
 		m_meta.remove_mask(bit_array_one(p_index));
 }
 
-unsigned file_info_impl::info_get_count() const
+t_size file_info_impl::info_get_count() const
 {
 	return m_info.get_count();
 }
 
-const char* file_info_impl::info_enum_name(unsigned p_index) const
+const char* file_info_impl::info_enum_name(t_size p_index) const
 {
 	return m_info.get_name(p_index);
 }
 
-const char* file_info_impl::info_enum_value(unsigned p_index) const
+const char* file_info_impl::info_enum_value(t_size p_index) const
 {
 	return m_info.get_value(p_index);
 }
 
-unsigned file_info_impl::info_set_ex(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length)
+t_size file_info_impl::info_set_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
 {
 	info_remove_ex(p_name,p_name_length);
 	return info_set_nocheck_ex(p_name,p_name_length,p_value,p_value_length);
 }
 
-unsigned file_info_impl::info_set_nocheck_ex(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length)
+t_size file_info_impl::info_set_nocheck_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
 {
 	return m_info.add_item(p_name,p_name_length,p_value,p_value_length);
 }
@@ -117,7 +117,7 @@ void file_info_impl::set_length(double p_length)
 	m_length = p_length;
 }
 
-void file_info_impl::meta_modify_value_ex(unsigned p_index,unsigned p_value_index,const char * p_value,unsigned p_value_length)
+void file_info_impl::meta_modify_value_ex(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length)
 {
 	m_meta.modify_value(p_index,p_value_index,p_value,p_value_length);
 }
@@ -135,7 +135,7 @@ void file_info_impl::set_replaygain(const replaygain_info & p_info)
 
 
 
-void info_storage::info_entry::init(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length)
+void info_storage::info_entry::init(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
 {
 	p_name_length = strlen_max(p_name,p_name_length);
 	p_value_length = strlen_max(p_value,p_value_length);
@@ -157,7 +157,7 @@ file_info_impl::~file_info_impl()
 {
 }
 
-unsigned info_storage::add_item(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length)
+t_size info_storage::add_item(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
 {
 	info_entry temp;
 	temp.init(p_name,p_name_length,p_value,p_value_length);
@@ -166,7 +166,7 @@ unsigned info_storage::add_item(const char * p_name,unsigned p_name_length,const
 
 void info_storage::remove_mask(const bit_array & p_mask)
 {
-	unsigned n,max=m_info.get_count();
+	t_size n,max=m_info.get_count();
 	for(n=p_mask.find(true,0,max);n<max;n=p_mask.find(true,n+1,max-n-1))
 		m_info[n].deinit();
 	m_info.remove_mask(p_mask);
@@ -190,23 +190,23 @@ meta_storage::~meta_storage()
 }
 
 
-unsigned meta_storage::add_entry(const char * p_name,unsigned p_name_length,const char * p_value,unsigned p_value_length)
+t_size meta_storage::add_entry(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
 {
 	meta_entry temp(p_name,p_name_length,p_value,p_value_length);
 	return pfc::append_swap_t(m_data,temp);
 }
 
-void meta_storage::insert_value(unsigned p_index,unsigned p_value_index,const char * p_value,unsigned p_value_length)
+void meta_storage::insert_value(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length)
 {
 	m_data[p_index].insert_value(p_value_index,p_value,p_value_length);
 }
 
-void meta_storage::modify_value(unsigned p_index,unsigned p_value_index,const char * p_value,unsigned p_value_length)
+void meta_storage::modify_value(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length)
 {
 	m_data[p_index].modify_value(p_value_index,p_value,p_value_length);
 }
 
-void meta_storage::remove_values(unsigned p_index,const bit_array & p_mask)
+void meta_storage::remove_values(t_size p_index,const bit_array & p_mask)
 {
 	m_data[p_index].remove_values(p_mask);
 }
@@ -217,7 +217,7 @@ void meta_storage::remove_mask(const bit_array & p_mask)
 }
 	
 
-meta_storage::meta_entry::meta_entry(const char * p_name,unsigned p_name_len,const char * p_value,unsigned p_value_len)
+meta_storage::meta_entry::meta_entry(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len)
 {
 	m_name.set_string(p_name,p_name_len);
 	m_values.set_size(1);
@@ -230,19 +230,19 @@ void meta_storage::meta_entry::remove_values(const bit_array & p_mask)
 	pfc::remove_mask_t(m_values,p_mask);
 }
 
-void meta_storage::meta_entry::insert_value(unsigned p_value_index,const char * p_value,unsigned p_value_length)
+void meta_storage::meta_entry::insert_value(t_size p_value_index,const char * p_value,t_size p_value_length)
 {
 	string_simple temp;
 	temp.set_string(p_value,p_value_length);
 	pfc::insert_swap_t(m_values,temp,p_value_index);
 }
 
-void meta_storage::meta_entry::modify_value(unsigned p_value_index,const char * p_value,unsigned p_value_length)
+void meta_storage::meta_entry::modify_value(t_size p_value_index,const char * p_value,t_size p_value_length)
 {
 	m_values[p_value_index].set_string(p_value,p_value_length);
 }
 
-void meta_storage::reorder(const unsigned * p_order)
+void meta_storage::reorder(const t_size * p_order)
 {
 	pfc::reorder_t(m_data,p_order,m_data.get_size());
 }
@@ -259,12 +259,12 @@ void file_info_impl::copy_info(const file_info & p_source)
 
 void meta_storage::copy_from(const file_info & p_info)
 {
-	unsigned meta_index,meta_count = p_info.meta_get_count();
+	t_size meta_index,meta_count = p_info.meta_get_count();
 	m_data.set_size(meta_count);
 	for(meta_index=0;meta_index<meta_count;meta_index++)
 	{
 		meta_entry & entry = m_data[meta_index];
-		unsigned value_index,value_count = p_info.meta_enum_value_count(meta_index);
+		t_size value_index,value_count = p_info.meta_enum_value_count(meta_index);
 		entry.m_name = p_info.meta_enum_name(meta_index);
 		entry.m_values.set_size(value_count);
 		for(value_index=0;value_index<value_count;value_index++)
@@ -274,7 +274,7 @@ void meta_storage::copy_from(const file_info & p_info)
 
 void info_storage::copy_from(const file_info & p_info)
 {
-	unsigned n, count;
+	t_size n, count;
 	count = m_info.get_count();
 	for(n=0;n<count;n++) m_info[n].deinit();
 	

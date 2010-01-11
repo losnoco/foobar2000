@@ -1,15 +1,6 @@
 #include "pfc.h"
 
 
-__declspec(naked) __int64 profiler_local::get_timestamp()
-{
-	__asm
-	{
-		rdtsc
-		ret
-	}
-}
-
 profiler_static::profiler_static(const char * p_name)
 {
 	name = p_name;
@@ -28,22 +19,22 @@ profiler_static::~profiler_static()
 	_i64toa(total_time,total_time_text,10);
 	{
 		const unsigned max = tabsize(name_truncated) - 1;
-		unsigned namelen = strlen(name);
+		t_size namelen = strlen(name);
 		if (namelen > max) namelen = max;
 		memcpy(name_truncated,name,max);
 		memset(name_truncated + namelen, ' ',max-namelen);
 		name_truncated[max] = 0;
 	}
 	{
-		unsigned timelen = strlen(total_time_text);
-		const unsigned max = tabsize(total_time_truncated) - 1;
+		t_size timelen = strlen(total_time_text);
+		const t_size max = tabsize(total_time_truncated) - 1;
 		if (timelen > max)
 		{
 			strcpy(total_time_truncated,"<overflow>");
 		}
 		else
 		{
-			unsigned pad = max - timelen;
+			t_size pad = max - timelen;
 			memset(total_time_truncated,' ',pad);
 			memcpy(total_time_truncated + pad, total_time_text, timelen);
 			total_time_truncated[max] = 0;

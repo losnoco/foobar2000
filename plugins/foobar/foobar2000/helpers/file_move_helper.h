@@ -36,9 +36,9 @@ public:
 	
 	static bool g_on_deleted(const list_base_const_t<const char *> & p_files);
 
-	static unsigned g_filter_dead_files_sorted_make_mask(list_base_t<metadb_handle_ptr> & p_data,const list_base_const_t<const char*> & p_dead,bit_array_var & p_mask);
-	static unsigned g_filter_dead_files_sorted(list_base_t<metadb_handle_ptr> & p_data,const list_base_const_t<const char*> & p_dead);
-	static unsigned g_filter_dead_files(list_base_t<metadb_handle_ptr> & p_data,const list_base_const_t<const char*> & p_dead);
+	static t_size g_filter_dead_files_sorted_make_mask(list_base_t<metadb_handle_ptr> & p_data,const list_base_const_t<const char*> & p_dead,bit_array_var & p_mask);
+	static t_size g_filter_dead_files_sorted(list_base_t<metadb_handle_ptr> & p_data,const list_base_const_t<const char*> & p_dead);
+	static t_size g_filter_dead_files(list_base_t<metadb_handle_ptr> & p_data,const list_base_const_t<const char*> & p_dead);
 
 private:
 
@@ -52,9 +52,9 @@ private:
 	
 	metadb_handle_list m_source_handles;
 
-	array_t<t_entry> m_data;
+	pfc::array_t<t_entry> m_data;
 
 	const char * get_source_path() const;
 
-	bool make_new_item_list(list_base_t<metadb_handle_ptr> & p_out,const char * p_path,file_move_callback_manager & p_cb);
+	void make_new_item_list(list_base_t<metadb_handle_ptr> & p_out,const char * p_path,file_move_callback_manager & p_cb);
 };
