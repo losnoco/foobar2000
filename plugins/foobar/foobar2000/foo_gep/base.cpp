@@ -157,7 +157,7 @@ void input_gep::decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_c
 	played = 0;
 	no_infinite = !cfg_indefinite || ( p_flags & input_flag_no_looping );
 
-	if ( p_flags & input_flag_playback ) monitor_start();
+	/*if ( p_flags & input_flag_playback )*/ monitor_start();
 
 	subsong = p_subsong;
 	emu->start_track( subsong );
