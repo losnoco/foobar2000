@@ -54,7 +54,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="1"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../SDK,C:\programming\File_Extractor-0.3.0"
+				AdditionalIncludeDirectories="../SDK,C:\programming\File_Extractor-0.3.0;C:\programming\7-zip"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_UNICODE;_USRDLL;FOO_UNPACK_7Z_EXPORTS;UNICODE"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -148,7 +148,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../SDK,C:\programming\File_Extractor-0.3.0"
+				AdditionalIncludeDirectories="../SDK,C:\programming\File_Extractor-0.3.0;C:\programming\7-zip"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_UNICODE;UNICODE;FOO_UNPACK_7Z_EXPORTS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -212,7 +212,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="unpack_7z.cpp"
+			RelativePath=".\unpack_7z_FE.cpp"
 			>
 			<FileConfiguration
 				Name="Release|Win32"
