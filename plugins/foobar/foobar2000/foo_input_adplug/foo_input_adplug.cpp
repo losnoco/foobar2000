@@ -1,9 +1,13 @@
-#define MYVERSION "1.31"
+#define MYVERSION "1.32"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2009-11-08 23:08 UTC - kode54
+- Added extra debug logging so I can attempt to track down stupid crashes
+- Version is now 1.32
 
 2009-09-03 06:20 UTC - kode54
 - Added file not found exception catch around database loader in input class
@@ -147,6 +151,8 @@ public:
 	{
 		if ( p_reason == input_open_info_write )
 			throw exception_io_data();
+
+		console::formatter() << "Opening file: " << ( p_path ? p_path : "(unknown)" );
 
 		if ( m_file.is_empty() )
 		{

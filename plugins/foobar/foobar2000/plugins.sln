@@ -529,9 +529,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTypes_Lib", "..\..\ptypes\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Game_Music_Emu", "..\..\Game_Music_Emu\msvc\Game_Music_Emu.vcproj", "{C3E262D2-2D15-4A46-98F1-2CE8A74F3590}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_dsdiff", "foo_input_dsdiff\foo_input_dsdiff.vcproj", "{EFFE49AE-1F01-498B-B490-09B294C29693}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA} = {4A5CC722-A067-487F-9DD3-8EDAC8633FDA}
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F} = {C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}
+		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4} = {6958D7C2-5871-4B1D-A04D-CAF4235FEED4}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 110
+		SccNumberOfProjects = 111
 		SccProjectName0 = \u0022$/foobar2000/plugins.root/plugins\u0022,\u0020CEAAAAAA
 		SccLocalPath0 = ..\\..
 		SccProvider0 = MSSCCI:Microsoft\u0020Visual\u0020SourceSafe
@@ -863,6 +870,9 @@ Global
 		SccProjectUniqueName109 = ..\\..\\ptypes\\win32\\PTypes_Lib.vcproj
 		SccLocalPath109 = ..\\..
 		SccProjectFilePathRelativizedFromConnection109 = ptypes\\win32\\
+		SccProjectUniqueName110 = foo_input_dsdiff\\foo_input_dsdiff.vcproj
+		SccLocalPath110 = ..\\..
+		SccProjectFilePathRelativizedFromConnection110 = foobar\\foobar2000\\foo_input_dsdiff\\
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -1873,6 +1883,15 @@ Global
 		{C3E262D2-2D15-4A46-98F1-2CE8A74F3590}.Release|Win32.ActiveCfg = Release|Win32
 		{C3E262D2-2D15-4A46-98F1-2CE8A74F3590}.Release|Win32.Build.0 = Release|Win32
 		{C3E262D2-2D15-4A46-98F1-2CE8A74F3590}.Release|x64.ActiveCfg = Release|Win32
+		{EFFE49AE-1F01-498B-B490-09B294C29693}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EFFE49AE-1F01-498B-B490-09B294C29693}.Debug|Win32.Build.0 = Debug|Win32
+		{EFFE49AE-1F01-498B-B490-09B294C29693}.Debug|x64.ActiveCfg = Debug|Win32
+		{EFFE49AE-1F01-498B-B490-09B294C29693}.Release staticlink|Win32.ActiveCfg = Release staticlink|Win32
+		{EFFE49AE-1F01-498B-B490-09B294C29693}.Release staticlink|Win32.Build.0 = Release staticlink|Win32
+		{EFFE49AE-1F01-498B-B490-09B294C29693}.Release staticlink|x64.ActiveCfg = Release staticlink|Win32
+		{EFFE49AE-1F01-498B-B490-09B294C29693}.Release|Win32.ActiveCfg = Release|Win32
+		{EFFE49AE-1F01-498B-B490-09B294C29693}.Release|Win32.Build.0 = Release|Win32
+		{EFFE49AE-1F01-498B-B490-09B294C29693}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
