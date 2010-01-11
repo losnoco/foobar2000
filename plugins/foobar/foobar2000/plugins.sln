@@ -512,9 +512,20 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_ht", "foo_input_h
 		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4} = {6958D7C2-5871-4B1D-A04D-CAF4235FEED4}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_qsf", "foo_input_qsf\foo_input_qsf.vcproj", "{E7414341-AD30-4C65-9836-EF004B6A134F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA} = {4A5CC722-A067-487F-9DD3-8EDAC8633FDA}
+		{FBF00162-1B31-4CD0-9F78-3ADA304E325F} = {FBF00162-1B31-4CD0-9F78-3ADA304E325F}
+		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F} = {C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}
+		{AC325F7F-7898-4810-88F2-8E0C04125A77} = {AC325F7F-7898-4810-88F2-8E0C04125A77}
+		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4} = {6958D7C2-5871-4B1D-A04D-CAF4235FEED4}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QCore", "..\..\ESP\QSound\Core\QCore.vcproj", "{AC325F7F-7898-4810-88F2-8E0C04125A77}"
+EndProject
 Global
 	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 106
+		SccNumberOfProjects = 108
 		SccProjectName0 = \u0022$/foobar2000/plugins.root/plugins\u0022,\u0020CEAAAAAA
 		SccLocalPath0 = ..\\..
 		SccProvider0 = MSSCCI:Microsoft\u0020Visual\u0020SourceSafe
@@ -834,6 +845,12 @@ Global
 		SccProjectUniqueName105 = foo_input_ht\\foo_input_ht.vcproj
 		SccLocalPath105 = ..\\..
 		SccProjectFilePathRelativizedFromConnection105 = foobar\\foobar2000\\foo_input_ht\\
+		SccProjectUniqueName106 = foo_input_qsf\\foo_input_qsf.vcproj
+		SccLocalPath106 = ..\\..
+		SccProjectFilePathRelativizedFromConnection106 = foobar\\foobar2000\\foo_input_qsf\\
+		SccProjectUniqueName107 = ..\\..\\ESP\\QSound\\Core\\QCore.vcproj
+		SccLocalPath107 = ..\\..
+		SccProjectFilePathRelativizedFromConnection107 = ESP\\QSound\\Core\\
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -1463,6 +1480,18 @@ Global
 		{0856EC86-87ED-428B-8EB4-68EAB67B6E36}.Release staticlink|Win32.Build.0 = Release staticlink|Win32
 		{0856EC86-87ED-428B-8EB4-68EAB67B6E36}.Release|Win32.ActiveCfg = Release|Win32
 		{0856EC86-87ED-428B-8EB4-68EAB67B6E36}.Release|Win32.Build.0 = Release|Win32
+		{E7414341-AD30-4C65-9836-EF004B6A134F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E7414341-AD30-4C65-9836-EF004B6A134F}.Debug|Win32.Build.0 = Debug|Win32
+		{E7414341-AD30-4C65-9836-EF004B6A134F}.Release staticlink|Win32.ActiveCfg = Release staticlink|Win32
+		{E7414341-AD30-4C65-9836-EF004B6A134F}.Release staticlink|Win32.Build.0 = Release staticlink|Win32
+		{E7414341-AD30-4C65-9836-EF004B6A134F}.Release|Win32.ActiveCfg = Release|Win32
+		{E7414341-AD30-4C65-9836-EF004B6A134F}.Release|Win32.Build.0 = Release|Win32
+		{AC325F7F-7898-4810-88F2-8E0C04125A77}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AC325F7F-7898-4810-88F2-8E0C04125A77}.Debug|Win32.Build.0 = Debug|Win32
+		{AC325F7F-7898-4810-88F2-8E0C04125A77}.Release staticlink|Win32.ActiveCfg = Release|Win32
+		{AC325F7F-7898-4810-88F2-8E0C04125A77}.Release staticlink|Win32.Build.0 = Release|Win32
+		{AC325F7F-7898-4810-88F2-8E0C04125A77}.Release|Win32.ActiveCfg = Release|Win32
+		{AC325F7F-7898-4810-88F2-8E0C04125A77}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
