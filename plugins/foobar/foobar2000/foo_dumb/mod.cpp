@@ -3,10 +3,14 @@
 /*
 	changelog
 
+2005-11-07 05:00 UTC - kode54
+- Added generic RIFF module handler and AM/AMFF format readers
+- Added J2B unpacker
+- Version is now 0.9.7
+
 2005-10-13 09:02 UTC - kode54
 - Implemented XM format v1.02 and v1.03 support
 - Arpeggio fix for FastTracker 2 bug, I think
-- Version is now 0.9.7
 
 2005-06-04 00:59 UTC - kode54
 - Implemented ADPCM4 in S3M reader
@@ -494,6 +498,9 @@ extern "C" {
 
 #include "umr.h"
 
+#include <zlib.h>
+//#include <zutil.h>
+
 // #define DBG(a) OutputDebugString(a)
 #define DBG(a)
 
@@ -509,6 +516,7 @@ static const char * exts[]=
 	"669",
 	"PSM",
 	"UMX",
+	"AM","J2B",
 };
 
 // {0E54B9FA-05DB-46b2-A3A4-C6C3201D57C0}
@@ -1354,6 +1362,12 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 	{
 		duh = dumb_read_mtm(f);
 	}
+	else if ( size >= 4 &&
+		ptr[0] == 'R' && ptr[1] == 'I' &&
+		ptr[2] == 'F' && ptr[3] == 'F')
+	{
+		duh = dumb_read_riff(f);
+	}
 
 	dumbfile_close(f);
 
@@ -1734,6 +1748,108 @@ public:
 
 static dumb_info_cache g_cache;
 
+class reader_membuffer : public reader_membuffer_base
+{
+	t_filetimestamp m_timestamp;
+	void * m_buffer;
+	unsigned m_size;
+
+	const void * get_buffer() {return m_buffer;}
+	unsigned get_buffer_size() {return m_size;}
+
+	void init_e( void * p_buffer, unsigned p_size, t_filetimestamp p_timestamp )
+	{
+		m_buffer = p_buffer;
+		m_size = p_size;
+		m_timestamp = p_timestamp;
+	}
+
+public:
+	reader_membuffer() : m_buffer( 0 ) {}
+	~reader_membuffer()
+	{
+		if ( m_buffer ) free( m_buffer );
+	}
+
+	t_io_result get_timestamp(t_filetimestamp & p_timestamp,abort_callback & p_abort) {p_timestamp = m_timestamp; return io_result_success;}
+	bool is_remote() {return false;}
+
+	static bool g_create_e( service_ptr_t<file> & p_out, void * p_buffer, unsigned p_size, t_filetimestamp p_timestamp )
+	{
+		service_ptr_t<reader_membuffer> ptr = new service_impl_t<reader_membuffer>();
+		if ( ptr.is_empty() ) return false;
+		ptr->init_e( p_buffer, p_size, p_timestamp );
+		p_out = ptr.get_ptr();
+		return true;
+	}
+};
+
+t_io_result unpack_j2b( service_ptr_t<file> & p_out, const service_ptr_t<file> & p_source, abort_callback & p_abort )
+{
+	unsigned char * uncompressed = 0;
+
+	try
+	{
+		p_source->seek_e( 0, p_abort );
+
+		unsigned char header[ 8 ];
+		p_source->read_object_e( header, 8, p_abort );
+		if ( header[ 0 ] != 'M' || header[ 1 ] != 'U' ||
+			header[ 2 ] != 'S' || header[ 3 ] != 'E' ||
+			header[ 4 ] != 0xDE || header[ 5 ] != 0xAD ||
+			( ( header[ 6 ] != 0xBE || header[ 7 ] != 0xAF ) &&
+			( header[ 6 ] != 0xBA || header[ 7 ] != 0xBE ) ) )
+			throw io_result_error_data;
+
+		t_uint32 file_length;
+		p_source->read_lendian_e_t( file_length, p_abort );
+
+		if ( file_length < 12 ) throw io_result_error_data;
+
+		t_uint32 checksum;
+		t_uint32 len_compressed;
+		t_uint32 len_uncompressed;
+
+		p_source->read_lendian_e_t( checksum, p_abort );
+		p_source->read_lendian_e_t( len_compressed, p_abort );
+		p_source->read_lendian_e_t( len_uncompressed, p_abort );
+
+		if ( len_compressed + 8 > file_length ) throw io_result_error_data;
+
+		mem_block_t< unsigned char > compressed;
+		if ( ! compressed.set_size( len_compressed ) ) throw io_result_error_out_of_memory;
+
+		p_source->read_object_e( compressed.get_ptr(), len_compressed, p_abort );
+
+		if ( crc32( 0, compressed.get_ptr(), len_compressed ) != checksum )
+			throw io_result_error_data;
+
+		uncompressed = ( unsigned char * ) malloc( len_uncompressed );
+		if ( ! uncompressed ) throw io_result_error_out_of_memory;
+
+		uLong data_uncompressed = len_uncompressed;
+
+		int z_err = uncompress( uncompressed, & data_uncompressed, compressed.get_ptr(), len_compressed );
+		if ( z_err != Z_OK )
+		{
+			if ( z_err == Z_MEM_ERROR ) throw io_result_error_out_of_memory;
+			else return io_result_error_data;
+		}
+
+		if ( ! reader_membuffer::g_create_e( p_out, uncompressed, data_uncompressed, p_source->get_timestamp_e( p_abort ) ) )
+		{
+			throw io_result_error_out_of_memory;
+		}
+	}
+	catch ( t_io_result code )
+	{
+		if ( uncompressed ) free( uncompressed );
+		return code;
+	}
+
+	return io_result_success;
+}
+
 class input_mod
 {
 	int srate, interp, volramp;
@@ -1804,6 +1920,13 @@ public:
 			m_info = new file_info_impl;
 
 			if ( io_result_succeeded( unpacker::g_open( m_unpack, m_file, p_abort ) ) )
+			{
+				m_file = m_unpack;
+				read_tag = false;
+
+				if ( p_reason == input_open_info_write ) return io_result_error_data;
+			}
+			else if ( io_result_succeeded( unpack_j2b( m_unpack, m_file, p_abort ) ) )
 			{
 				m_file = m_unpack;
 				read_tag = false;
