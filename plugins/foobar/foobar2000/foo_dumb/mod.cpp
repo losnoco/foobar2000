@@ -856,7 +856,6 @@ static cfg_int cfg_multi_value_tags(guid_cfg_multi_value_tags, 0);
 static cfg_int cfg_dynamic_info(guid_cfg_dynamic_info, 0);
 
 extern "C" void init_cubic(void);
-extern "C" void init_sinc(void);
 
 class init_stuff
 {
@@ -865,7 +864,6 @@ public:
 	{
 		dumb_it_max_to_mix = DUMB_IT_TOTAL_CHANNELS;
 		init_cubic();
-		init_sinc();
 #ifndef NDEBUG
 		_CrtSetDbgFlag( _CRTDBG_CHECK_ALWAYS_DF | _CRTDBG_LEAK_CHECK_DF | _CrtSetDbgFlag( _CRTDBG_REPORT_FLAG ) );
 #endif
@@ -3497,7 +3495,6 @@ class preferences_page_mod : public preferences_page
 				uSendMessageText(w, CB_ADDSTRING, 0, "none");
 				uSendMessageText(w, CB_ADDSTRING, 0, "linear");
 				uSendMessageText(w, CB_ADDSTRING, 0, "cubic");
-				uSendMessageText(w, CB_ADDSTRING, 0, "sinc");
 				uSendMessage(w, CB_SETCURSEL, cfg_interp, 0);
 
 				w = GetDlgItem(wnd, IDC_LOOPS);
