@@ -1334,8 +1334,11 @@ public:
 		if ( ! buffer.set_size( 16 ) )
 			return io_result_error_out_of_memory;
 
+		t_io_result status = m_file->seek( 0, p_abort );
+		if ( io_result_failed( status ) ) return status;
+
 		BYTE *ptr = buffer.get_ptr();
-		t_io_result status = m_file->read_object(ptr, 16, p_abort);
+		status = m_file->read_object(ptr, 16, p_abort);
 		if (io_result_failed(status)) return status;
 		if (ptr[0] != 'P' || ptr[1] != 'S' || ptr[2] != 'F' ||
 			(ptr[3] != 1 && ptr[3] != 2)) return io_result_error_data;
