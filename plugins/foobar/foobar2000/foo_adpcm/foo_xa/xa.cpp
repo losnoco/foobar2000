@@ -1,7 +1,11 @@
-#define MY_VERSION "1.4"
+#define MY_VERSION "1.5"
 
 /*
 	changelog
+
+2009-10-17 13:45 UTC - kode54
+- Fixed song scanner for files with RIFF headers
+- Version is now 1.5
 
 2009-06-13 04:16 UTC - kode54
 - Fixed loop detection.
@@ -1186,10 +1190,10 @@ public:
 		for ( unsigned i = 0, j = info.get_size(); i < j; ++i ) delete info[ i ];
 	}
 
-	void run( service_ptr_t<file> & m_file, int sector_size, abort_callback & p_abort )
+	void run( service_ptr_t<file> & m_file, int header, int sector_size, abort_callback & p_abort )
 	{
 		{
-			t_filesize length = m_file->get_size( p_abort );
+			t_filesize length = m_file->get_size( p_abort ) - header;
 			
 			t_uint64 sector_count = length / sector_size;
 
@@ -1202,7 +1206,7 @@ public:
 			xa_buffer.set_size( sector_size );
 			unsigned char * ptr = xa_buffer.get_ptr();
 
-			m_file->seek( 0, p_abort );
+			m_file->seek( header, p_abort );
 
 			t_uint64 sector = 0;
 
@@ -1412,7 +1416,7 @@ public:
 		m_cache.delete_all();
 	}
 
-	void run( service_ptr_t<file> & p_file, const char * p_path, t_filetimestamp p_timestamp, int sector_size, pfc::ptr_list_t< xa_subsong_scanner_info > & p_out, abort_callback & p_abort )
+	void run( service_ptr_t<file> & p_file, const char * p_path, t_filetimestamp p_timestamp, int header, int sector_size, pfc::ptr_list_t< xa_subsong_scanner_info > & p_out, abort_callback & p_abort )
 	{
 		insync( sync );
 
@@ -1439,7 +1443,7 @@ public:
 
 		try
 		{
-			scanner.run( p_file, sector_size, p_abort );
+			scanner.run( p_file, header, sector_size, p_abort );
 		}
 		catch (...)
 		{
@@ -1578,7 +1582,7 @@ public:
 			header = 0;
 		}
 
-		g_cache.run( m_file, p_path, m_file->get_timestamp( p_abort ), sector_size, m_info, p_abort );
+		g_cache.run( m_file, p_path, m_file->get_timestamp( p_abort ), header, sector_size, m_info, p_abort );
 	}
 
 	unsigned get_subsong_count()
