@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.9"
+#define MYVERSION "0.9.9.10"
 
 /*
 	changelog
+
+2009-12-29 07:07 UTC - kode54
+- Fixed VBlank MOD detection for when one of the length probes returns 0 (an error, or length exceeds two hours)
+- Version is now 0.9.9.10
 
 2009-11-28 17:13 UTC - kode54
 - Implemented a workaround for detecting and supporting MOD files with VBlank timing
@@ -1868,7 +1872,7 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 			long length_original = dumb_it_build_checkpoints( itsd, 0 );
 			dumb_it_convert_tempos( itsd, true );
 			long length_vsync = dumb_it_build_checkpoints( itsd, 0 );
-			if ( length_original < length_vsync ) dumb_it_convert_tempos( itsd, false );
+			if ( !length_vsync || (length_original && length_original < length_vsync ) ) dumb_it_convert_tempos( itsd, false );
 			IT_CHECKPOINT *checkpoint = itsd->checkpoint;
 			while ( checkpoint )
 			{
