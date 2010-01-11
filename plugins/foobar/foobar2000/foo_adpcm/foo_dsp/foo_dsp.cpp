@@ -1,7 +1,11 @@
-#define MY_VERSION "1.2"
+#define MY_VERSION "1.3"
 
 /*
 	change log
+
+2006-12-07 09:12 UTC - kode54
+- Fixed seeking, passes input validator.
+- Version is now 1.3
 
 2005-12-04 13:37 UTC - kode54
 - Updated to in_cube mess
@@ -44,8 +48,10 @@ class input_dsp
 
 	bool looped;
 
-	void remove_samples( unsigned n )
+	unsigned remove_samples( unsigned n )
 	{
+		unsigned remainder = n % 28;
+		n -= remainder;
 		dsp.ch[0].filled -= n;
 		dsp.ch[0].readloc = ( dsp.ch[0].readloc + n ) % ( 0x8000/8*14 );
 		if ( dsp.NCH == 2 )
@@ -53,6 +59,7 @@ class input_dsp
 			dsp.ch[1].filled -= n;
 			dsp.ch[1].readloc = ( dsp.ch[1].readloc + n ) % ( 0x8000/8*14 );
 		}
+		return remainder;
 	}
 
 public:
@@ -193,18 +200,20 @@ public:
 	{
 		bool status = true;
 		int todo, done = 0;
+		unsigned swallow_remainder = 0;
 
-		if ( dsp.ch[0].header.loop_flag ) todo = 1024;
+		if ( dsp.ch[0].header.loop_flag ) todo = 1008;
 		else
 		{
-			todo = dsp.nrsamples - pos;
-			if ( todo > 1024 ) todo = 1024;
+			if ( pos >= dsp.nrsamples ) return false;
+			todo = dsp.nrsamples - ( pos - swallow );
+			if ( todo > 1008 ) todo = 1008;
 			if ( ! todo ) return false;
 		}
 
 		sample_buffer.grow_size( todo * dsp.NCH );
 
-		while ( done < todo && status )
+		while ( ( status && done < todo ) || !done )
 		{
 			if ( dsp.ch[0].filled < todo )
 			{
@@ -215,8 +224,6 @@ public:
 			if ( done > todo ) done = todo;
 
 			if ( ! done && ! status ) return false;
-
-			pos += done;
 
 			if ( swallow )
 			{
@@ -229,11 +236,13 @@ public:
 				else
 				{
 					done -= swallow;
-					remove_samples( swallow );
+					swallow_remainder = remove_samples( swallow );
 					swallow = 0;
 				}
 			}
 		}
+
+		pos += done - swallow_remainder;
 
 		dsp.ch[0].filled -= done;
 		if ( dsp.NCH == 2 ) dsp.ch[1].filled -= done;
@@ -261,7 +270,11 @@ public:
 
 		if (done)
 		{
-			p_chunk.set_data_fixedpoint( sample_buffer.get_ptr(), ( ( unsigned char * ) out ) - ( ( unsigned char * ) sample_buffer.get_ptr() ), dsp.ch[0].header.sample_rate, dsp.NCH, 16, audio_chunk::g_guess_channel_config( dsp.NCH ) );
+			out -= swallow_remainder * dsp.NCH;
+			if ( out <= sample_buffer.get_ptr() ) return false;
+			p_chunk.set_data_fixedpoint( sample_buffer.get_ptr() + swallow_remainder * dsp.NCH,
+				( ( unsigned char * ) out ) - ( ( unsigned char * ) sample_buffer.get_ptr() ),
+				dsp.ch[0].header.sample_rate, dsp.NCH, 16, audio_chunk::g_guess_channel_config( dsp.NCH ) );
 			return true;
 		}
 
@@ -274,12 +287,15 @@ public:
 		if ( swallow >= pos )
 		{
 			swallow -= pos;
+			pos += swallow;
 			return;
 		}
 
-		unsigned swallow = this->swallow;
-		decode_initialize( dsp.ch[0].header.loop_flag ? 0 : input_flag_no_looping, p_abort );
-		this->swallow = swallow;
+		{
+			unsigned swallow = this->swallow;
+			decode_initialize( dsp.ch[0].header.loop_flag ? 0 : input_flag_no_looping, p_abort );
+			this->swallow = pos = swallow;
+		}
 	}
 
 	bool decode_can_seek()
