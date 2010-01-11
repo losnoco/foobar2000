@@ -112,8 +112,6 @@ static void convert_mess_to_utf8( const char * p_src, size_t p_src_len, pfc::str
 
 class archive_lha_impl : private CLhaArchive
 {
-	pfc::array_t< t_uint8 > archive;
-
 	abort_callback * m_abort;
 
 	service_ptr_t< file > m_in, m_out;
