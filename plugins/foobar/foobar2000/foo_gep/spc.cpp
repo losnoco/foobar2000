@@ -10,9 +10,9 @@
 
 #include "resource.h"
 
-#undef HEADER_STRING
+//#undef HEADER_STRING
 //#define HEADER_STRING(i,n,f) if ((f)[0]) (i).meta_set((n), pfc::stringcvt::string_utf8_from_ansi((f), sizeof((f))))
-#define HEADER_STRING(i,n,f) meta_add((i), (n), (f), sizeof(f))
+//#define HEADER_STRING(i,n,f) meta_add((i), (n), (f), sizeof(f))
 
 static const char field_length[]="spc_length";
 static const char field_fade[]="spc_fade";
@@ -78,7 +78,7 @@ typedef struct _ID666TAG
 
 static void SetDate(LPSTR lpszDate,int year,int month,int day)
 {
-	if(year<100)
+	if(year<1900)
 	{
 		year+=1900;
 //		if(year<1997)year+=100;
@@ -250,14 +250,14 @@ static void parse_id666( service_ptr_t< file > & p_file, LPID666TAG lpTag, bool 
 	}
 }
 
+static const t_uint8 xid6_signature[] = {'x', 'i', 'd', '6'};
+
 static void load_id666(service_ptr_t<file> & p_file, LPID666TAG lpTag, abort_callback & p_abort)//must be seeked to correct spot before calling
 {
 	t_uint8 szBuf[4];
 	p_file->read_object( &szBuf, 4, p_abort );
 
-	static t_uint8 signature[] = {'x', 'i', 'd', '6'};
-
-	if( ! memcmp( szBuf, signature, 4 ) )
+	if( ! memcmp( szBuf, xid6_signature, 4 ) )
 	{
 		t_uint32 tag_size;
 		p_file->read_lendian_t( tag_size, p_abort );
@@ -284,6 +284,250 @@ static void load_id666(service_ptr_t<file> & p_file, LPID666TAG lpTag, abort_cal
 	}
 	else throw exception_tag_not_found();
 }
+
+static void write_id666( service_ptr_t<file> & p_file, const file_info & p_info, abort_callback & p_abort )
+{
+	char buffer[32];
+	const char * value;
+	pfc::stringcvt::string_ansi_from_utf8 converter;
+
+	p_file->seek( offsetof( Spc_Emu::header_t, song ), p_abort );
+
+	memset( buffer, 0, sizeof( buffer ) );
+	value = p_info.meta_get( "title", 0 );
+	if ( value )
+	{
+		converter.convert( value );
+		strncpy( buffer, converter, 32 );
+	}
+	p_file->write_object( buffer, 32, p_abort );
+
+	memset( buffer, 0, sizeof( buffer ) );
+	value = p_info.meta_get( "album", 0 );
+	if ( value )
+	{
+		converter.convert( value );
+		strncpy( buffer, converter, 32 );
+	}
+	p_file->write_object( buffer, 32, p_abort );
+
+	memset( buffer, 0, 16 );
+	value = p_info.meta_get( "dumper", 0 );
+	if ( value )
+	{
+		converter.convert( value );
+		strncpy( buffer, converter, 16 );
+	}
+	p_file->write_object( buffer, 16, p_abort );
+
+	memset( buffer, 0, sizeof( buffer ) );
+	value = p_info.meta_get( "comment", 0 );
+	if ( value )
+	{
+		converter.convert( value );
+		strncpy( buffer, converter, 32 );
+	}
+	p_file->write_object( buffer, 32, p_abort );
+
+	memset( buffer, 0, 11 );
+	value = p_info.meta_get( "date", 0 );
+	if ( value )
+	{
+		converter.convert( value );
+		strncpy( buffer, converter, 11 );
+	}
+	p_file->write_object( buffer, 11, p_abort );
+
+	memset( buffer, 0, 3 );
+	value = p_info.info_get( field_length );
+	if ( value )
+	{
+		size_t length = strlen( value );
+		if ( length > 3 )
+		{
+			length -= 3;
+			strncpy( buffer, value, min( 3, length ) );
+		}
+	}
+	p_file->write_object( buffer, 3, p_abort );
+
+	memset( buffer, 0, 5 );
+	value = p_info.info_get( field_fade );
+	if ( value ) strncpy( buffer, value, 5 );
+	p_file->write_object( buffer, 5, p_abort );
+
+	memset( buffer, 0, sizeof( buffer ) );
+	value = p_info.meta_get( "artist", 0 );
+	if ( value )
+	{
+		converter.convert( value );
+		strncpy( buffer, converter, 32 );
+	}
+	p_file->write_object( buffer, 32, p_abort );
+}
+
+class write_xid6
+{
+	service_ptr_t<file> & m_file;
+	abort_callback      & m_abort;
+
+	void write_header( t_uint8 id, t_uint8 type, t_uint16 data )
+	{
+		m_file->write_object_t( id, m_abort );
+		m_file->write_object_t( type, m_abort );
+		m_file->write_lendian_t( data, m_abort );
+	}
+
+	void write_data( t_uint8 id, t_uint16 data )
+	{
+		write_header( id, XTYPE_DATA, data );
+	}
+
+	void write_int( t_uint8 id, t_uint32 value )
+	{
+		write_header( id, XTYPE_INT, 4 );
+		m_file->write_lendian_t( value, m_abort );
+	}
+
+	void write_string( t_uint8 id, const char * value )
+	{
+		unsigned char temp[4] = {0};
+
+		size_t length = strlen( value );
+		if ( length > 255 ) length = 255;
+
+		write_header( id, XTYPE_STR, length + 1 );
+		m_file->write_object( value, length, m_abort );
+		m_file->write_object( temp, 4 - ( length & 3 ), m_abort );
+	}
+
+public:
+	write_xid6( service_ptr_t<file> & p_file, const file_info & p_info, abort_callback & p_abort )
+		: m_file( p_file ), m_abort( p_abort )
+	{
+		pfc::stringcvt::string_ansi_from_utf8 converter;
+		t_filesize offset_tag_start;
+		const char * value;
+		t_uint32 int32 = 0;
+
+		p_file->seek_ex( 0, file::seek_from_eof, p_abort );
+
+		p_file->write_object( xid6_signature, 4, p_abort );
+		p_file->write_object_t( int32, p_abort );
+
+		offset_tag_start = p_file->get_position( p_abort );
+
+		value = p_info.meta_get( "title", 0 );
+		if ( value )
+		{
+			converter.convert( value );
+			if ( strlen( converter ) > 32 ) write_string( XID_SONG, converter );
+		}
+
+		value = p_info.meta_get( "album", 0 );
+		if ( value )
+		{
+			converter.convert( value );
+			if ( strlen( converter ) > 32 ) write_string( XID_GAME, converter );
+		}
+
+		value = p_info.meta_get( "artist", 0 );
+		if ( value )
+		{
+			converter.convert( value );
+			if ( strlen( converter ) > 32 ) write_string( XID_ARTIST, converter );
+		}
+
+		value = p_info.meta_get( "dumper", 0 );
+		if ( value )
+		{
+			converter.convert( value );
+			if ( strlen( converter ) > 16 ) write_string( XID_DUMPER, converter );
+		}
+
+		value = p_info.meta_get( "comment", 0 );
+		if ( value )
+		{
+			converter.convert( value );
+			if ( strlen( converter ) > 32 ) write_string( XID_CMNTS, converter );
+		}
+
+		value = p_info.meta_get( "OST", 0 );
+		if ( value )
+		{
+			converter.convert( value );
+			write_string( XID_OST, converter );
+		}
+
+		value = p_info.meta_get( "discnumber", 0 );
+		if ( value )
+		{
+			char * end;
+			unsigned disc = strtoul( value, &end, 10 );
+			if ( !*end && disc > 0 && disc <= 9 )
+				write_data( XID_DISC, disc );
+		}
+
+		value = p_info.meta_get( "tracknumber", 0 );
+		if ( value )
+		{
+			char * end;
+			unsigned track = strtoul( value, &end, 10 );
+			if ( track > 0 && track < 100 )
+				write_data( XID_TRACK, track * 0x100 + *end );
+		}
+
+		value = p_info.meta_get( "copyright", 0 );
+		if ( value )
+		{
+			char * end;
+			unsigned copyright_year = strtoul( value, &end, 10 );
+			if ( copyright_year > 0 && copyright_year < 65536 )
+				write_data( XID_COPY, copyright_year );
+
+			while ( *end && *end == ' ' ) end++;
+			if ( *end )
+			{
+				converter.convert( end );
+				write_string( XID_PUB, converter );
+			}
+		}
+
+		value = p_info.info_get( field_length );
+		if ( value )
+		{
+			char * end;
+			unsigned length = strtoul( value, &end, 10 );
+			if ( !*end && length > 0 && ( length % 1000 || length > 999000 ) )
+				write_int( XID_INTRO, length * 64 );
+		}
+
+		value = p_info.info_get( field_fade );
+		if ( value )
+		{
+			char * end;
+			unsigned fade = strtoul( value, &end, 10 );
+			if ( !*end && fade > 99999 )
+				write_int( XID_FADE, fade * 64 );
+		}
+
+		t_filesize offset = p_file->get_position( p_abort );
+		offset -= offset_tag_start;
+		if ( offset > ( 1 << 30 ) ) throw exception_io_data();
+
+		if ( offset )
+		{
+			int32 = t_uint32( offset );
+			p_file->seek( offset_tag_start - 4, p_abort );
+			p_file->write_lendian_t( int32, p_abort );
+		}
+		else
+		{
+			p_file->seek( offset_tag_start - 8, p_abort );
+			p_file->set_eof( p_abort );
+		}
+	}
+};
 
 class Spc_Emu_Filtered : public Spc_Emu
 {
@@ -401,6 +645,7 @@ public:
 				HEADER_STRING( m_info, "copyright", i.copyright );
 				HEADER_STRING( m_info, "comment", i.comment );
 				HEADER_STRING( m_info, "dumper", i.dumper );
+				HEADER_STRING( m_info, "OST", i.ost );
 				HEADER_STRING( m_info, "discnumber", i.disc );
 				HEADER_STRING( m_info, "tracknumber", i.track );
 
@@ -533,6 +778,9 @@ public:
 		m_file->set_eof( p_abort );
 
 		m_info.copy( p_info );
+
+		write_id666( m_file, p_info, p_abort );
+		write_xid6( m_file, p_info, p_abort );
 
 		file_info_impl l_info;
 		l_info.copy( p_info );

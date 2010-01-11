@@ -266,7 +266,7 @@ class monitor_dialog
 		pfc::string8 text;
 		int tempo = cfg_control_tempo;
 		text << pfc::format_int( tempo / 100 ) << "." << pfc::format_int( tempo % 100, 2 ) << "%";
-		uSetWindowText( GetDlgItem( wnd, IDC_TEMPO ), text );
+		uSetDlgItemText( wnd, IDC_TEMPO, text );
 	}
 
 public:
@@ -305,7 +305,7 @@ class monitor_menu : public mainmenu_commands
 
 	virtual bool get_description(t_uint32 p_index,pfc::string_base & p_out)
 	{
-		p_out = "Launches the Game Emu Player advanced controls.";
+		p_out = "Activates the Game Emu Player advanced controls window.";
 		return true;
 	}
 

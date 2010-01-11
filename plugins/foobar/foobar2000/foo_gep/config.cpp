@@ -1,7 +1,15 @@
-#define MYVERSION "1.62"
+#define MYVERSION "1.64"
 
 /*
 	change log
+
+2009-04-21 21:35 UTC - kode54
+- Fixed a bug in Gb_Emu that would lead to crashes reading from 0xFF40
+- Version is now 1.64
+
+2009-04-19 04:29 UTC - kode54
+- Implemented SPC ID666 and xid6 tag writing.
+- Version is now 1.63
 
 2009-04-17 20:44 UTC - kode54
 - Rolled back changes from 1.61 as GYM crashed and VGM didn't have any noticeable effect
