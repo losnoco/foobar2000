@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.5"
+#define MYVERSION "0.9.9.6"
 
 /*
 	changelog
+
+2009-10-12 20:46 UTC - kode54
+- Fixed a stupid bug in the AMF reader
+- Version is now 0.9.9.6
 
 2009-10-12 18:01 UTC - kode54
 - Implemented DSMI AMF reader
