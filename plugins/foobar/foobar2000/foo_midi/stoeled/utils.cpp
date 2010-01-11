@@ -99,6 +99,28 @@ void* grow_buf::write_ptr(const void *ptr, unsigned bytes,unsigned start)
 	return (char*)get_ptr()+start;
 }
 
+static unsigned tick_to_ms( const CTempoMap * tmap, unsigned d, unsigned dtx )
+{
+	unsigned pos_ms = 0;
+	DWORD pos = 0;
+	DWORD t_pos=0;
+	DWORD cur_temp=0;
+	UINT ntm=tmap->pos;
+
+	while(t_pos<ntm && pos+d>=(UINT)tmap->data[t_pos].pos)
+	{
+		DWORD d1=tmap->data[t_pos].pos-pos;
+		pos_ms+=MulDiv(cur_temp,d1<<8,dtx);
+		cur_temp=tmap->data[t_pos].tm;
+		t_pos++;
+		pos+=d1;
+		d-=d1;
+	}
+
+	pos_ms+=MulDiv(cur_temp,d<<8,dtx);
+
+	return pos_ms;
+}
 
 //tempo map object
 
@@ -293,6 +315,7 @@ CSysexMap* CSysexMap::Translate(MIDI_file * mf)
 	while(n<pos)
 	{
 		pos_tx=events[n].pos;
+		/*
 		int d=pos_tx-p_t;
 		p_t=pos_tx;
 		while(t_pos<ntm && pos_tx+d>=tmap->data[t_pos].pos)
@@ -306,8 +329,10 @@ CSysexMap* CSysexMap::Translate(MIDI_file * mf)
 		}
 		pos_ms+=MulDiv(cur_temp,d<<8,dtx);
 		pos_tx+=d;
+		*/
+		pos_ms = tick_to_ms( tmap, pos_tx, dtx );
 
-		nm->events[n].pos=pos_ms>>8;
+		nm->events[n].pos=(pos_ms+128)>>8;
 		nm->events[n].ofs=events[n].ofs;
 		nm->events[n].len=events[n].len;
 		n++;
@@ -433,13 +458,11 @@ MIDI_EVENT* do_table(MIDI_file * mf,UINT prec,UINT * size,/*UINT* _lstart,UINT* 
 
 	UINT ts;
 	BYTE* track;
-	UINT ntm;
 	track=data_ptr+8+6+8;
 	ts=rev32(*(DWORD*)(track-4));
 	CTempoMap* tmap=mf->tmap;
 	UINT n=0;
 	UINT pt=0;
-	ntm=tmap->pos;
 	CSysexMap* smap;
 
 	if (mf->smap && mf->smap->pos)
@@ -451,8 +474,6 @@ MIDI_EVENT* do_table(MIDI_file * mf,UINT prec,UINT * size,/*UINT* _lstart,UINT* 
 	n=0;
 	DWORD pos=0;
 	DWORD pos_ms=0;
-	DWORD t_pos=0;
-	DWORD cur_temp=0;
 	UINT dtx=(UINT)rev16(*(WORD*)(data_ptr+8+4))*1000/prec;
 	grow_buf boo;
 
@@ -513,20 +534,8 @@ MIDI_EVENT* do_table(MIDI_file * mf,UINT prec,UINT * size,/*UINT* _lstart,UINT* 
 			}
 		}
 		if (!ev) break;
-		while(t_pos<ntm && pos+d>=(UINT)tmap->data[t_pos].pos)
-		{
-			DWORD d1=tmap->data[t_pos].pos-pos;
-			/*if (loop_start==-1 && (UINT)mf->loopstart_t<=pos+d1) loop_start=pos_ms+MulDiv(cur_temp,pos+d1-mf->loopstart_t,dtx);
-			if (loop_end==-1 && (UINT)mf->loopend_t<=pos+d1) loop_start=pos_ms+MulDiv(cur_temp,pos+d1-mf->loopstart_t,dtx);*/
-			pos_ms+=MulDiv(cur_temp,d1<<8,dtx);
-			cur_temp=tmap->data[t_pos].tm;
-			t_pos++;
-			pos+=d1;
-			d-=d1;
-		}
-		/*if (loop_start==-1 && (UINT)mf->loopstart_t<=pos+d) loop_start=pos_ms+MulDiv(cur_temp,d,dtx);*/
-		pos_ms+=MulDiv(cur_temp,d<<8,dtx);
 		pos+=d;
+		pos_ms = tick_to_ms( tmap, pos, dtx );
 		{
 			MIDI_EVENT me={(pos_ms+128)>>8,ev};
 			boo.write(&me,sizeof(me));
@@ -939,17 +948,8 @@ CMarkerMap* CMarkerMap::Translate(MIDI_file * mf)
 	{
 		int d=events[n].pos-p_t;
 		p_t=events[n].pos;
-		while(t_pos<ntm && pos_tx+d>=tmap->data[t_pos].pos)
-		{
-			DWORD d1=tmap->data[t_pos].pos-pos_tx;
-			pos_ms+=MulDiv(cur_temp,d1<<8,dtx);
-			cur_temp=tmap->data[t_pos].tm;
-			t_pos++;
-			pos_tx+=d1;
-			d-=d1;
-		}
-		pos_ms+=MulDiv(cur_temp,d<<8,dtx);
 		pos_tx+=d;
+		pos_ms = tick_to_ms( tmap, pos_tx, dtx );
 
 		nm->events[n].pos=(pos_ms+128)>>8;
 		nm->events[n].ofs=events[n].ofs;
