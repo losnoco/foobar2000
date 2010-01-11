@@ -3,6 +3,9 @@
 /*
 	changelog
 
+2009-08-08 23:50 UTC - kode54
+- Implemented more ScrubFormat features into PSX EXE loader
+
 2009-08-06 00:34 UTC - kode54
 - Fixed start silence skipping when resetting state in seek function
 
@@ -651,18 +654,25 @@ static int load_exe_unpack(void *state, const BYTE *data, uLong srclen, int inhe
 	DBG("loading");
 	int err;
 	pfc::array_t<t_uint8> buf;
-	buf.set_size( 2048 );
+	buf.set_size( 0x1F0800 );
 	BYTE *ptr = buf.get_ptr();
 
-	uLong destlen = 2048;
+	uLong destlen = 0x1F0800;
 	uncompress(ptr, &destlen, data, srclen);
 	// ScrubFormat checks this, but I already did this :)
-	if (destlen < 2048) return 0;
+	if ( destlen < 0x800 )
+	{
+		memset( ptr + destlen, 0, 0x800 - destlen );
+		destlen = 0x800;
+	}
 	DBG("header in");
 
+	buf.set_size( destlen );
+	ptr = buf.get_ptr();
+
 	psxexe_hdr_t *psx = (psxexe_hdr_t *) ptr;
-	uLong t_addr = psx->exec.t_addr;
-	uLong t_size = psx->exec.t_size;
+	uLong t_addr = pfc::byteswap_if_be_t( psx->exec.t_addr );
+	uLong t_size = destlen - 0x800; // pfc::byteswap_if_be_t( psx->exec.t_size );
 
 	// ScrubFormat checks total EXE size > 0x1f0800, but I try to carry it a step further
 	t_addr &= 0x1FFFFF;
@@ -677,7 +687,7 @@ static int load_exe_unpack(void *state, const BYTE *data, uLong srclen, int inhe
 		else if (!strnicmp((const char *) ptr + 113, "North America", 13)) refresh = 60;
 	}
 
-	destlen += t_size;
+	/*destlen += t_size;
 
 	buf.set_size( destlen );
 	ptr = buf.get_ptr();
@@ -689,7 +699,7 @@ static int load_exe_unpack(void *state, const BYTE *data, uLong srclen, int inhe
 		if (err != 0) return 0;
 		// Part of the ScrubFormat stupidity checking and correction system.
 		memset(ptr + destlen, 0, 2048 + t_size - destlen);
-	}
+	}*/
 	DBG("executable loaded");
 
 	void * pIOP = psx_get_iop_state(state);
@@ -699,8 +709,8 @@ static int load_exe_unpack(void *state, const BYTE *data, uLong srclen, int inhe
 	{
 		void * pR3000 = iop_get_r3000_state(pIOP);
 		psx = (psxexe_hdr_t*) ptr;
-		r3000_setreg(pR3000, R3000_REG_PC, psx->exec.pc0);
-		r3000_setreg(pR3000, R3000_REG_GEN+29, psx->exec.s_ptr);
+		r3000_setreg(pR3000, R3000_REG_PC, pfc::byteswap_if_be_t( psx->exec.pc0 ) );
+		r3000_setreg(pR3000, R3000_REG_GEN+29, pfc::byteswap_if_be_t( psx->exec.s_ptr ) );
 		DBG("registers loaded");
 	}
 
