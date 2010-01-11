@@ -97,7 +97,7 @@ int		CDDialog::DoModal(HINSTANCE instance,HWND parentwnd,UINT dlgtemplate)
 	bIsModal = 1;
 	hInstance = instance;
 	
-	return (int)DialogBox(instance,MAKEINTRESOURCE(dlgtemplate),parentwnd,
+	return (int)DialogBoxParam(instance,MAKEINTRESOURCE(dlgtemplate),parentwnd,
 		GenericWindowProc,(LPARAM)this);
 }
 
@@ -108,7 +108,7 @@ HWND	CDDialog::DoModeless(HINSTANCE instance,HWND parentwnd,UINT dlgtemplate)
 	bIsModal = 0;
 	hInstance = instance;
 
-	return CreateDialog(instance,MAKEINTRESOURCE(dlgtemplate),parentwnd,
+	return CreateDialogParam(instance,MAKEINTRESOURCE(dlgtemplate),parentwnd,
 		GenericWindowProc,(LPARAM)this);
 }
 
