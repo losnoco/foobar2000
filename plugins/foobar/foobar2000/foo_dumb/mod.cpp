@@ -3,6 +3,10 @@
 /*
 	changelog
 
+2006-05-27 22:40 UTC - kode54
+- S3M reader defaults to maximum (128) global volume when the header value is
+  either zero or greater than 64. (darkness2.s3m)
+
 2006-05-23 00:06 UTC - kode54
 - Changed module format load order priority to check all signatures before
   attempting MOD now, and then only 15 sample module for MOD/MDZ. This should
