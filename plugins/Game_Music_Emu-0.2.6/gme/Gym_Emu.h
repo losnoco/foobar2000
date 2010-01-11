@@ -50,7 +50,7 @@ public:
 	
 	// Length of track in seconds (0 if looped). If loop_start is not NULL,
 	// sets *loop_start to the beginning of the loop (-1 if not looped).
-	int track_length( int* loop_start = NULL ) const;
+	double track_length( double* loop_start = NULL ) const;
 	
 public:
 	Gym_Emu();

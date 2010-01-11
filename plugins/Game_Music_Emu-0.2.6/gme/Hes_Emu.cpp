@@ -91,15 +91,13 @@ void Hes_Emu::set_voice( int i, Blip_Buffer* center, Blip_Buffer* left, Blip_Buf
 	}
 }
 
-blargg_err_t Hes_Emu::start_track( int track )
+void Hes_Emu::start_track( int track )
 {
 	require( hes ); // file must be loaded
 	
-	starting_track();
+	Classic_Emu::start_track( track );
 	
 	FESTAHES_SongControl( ( FESTALON_HES * ) hes, track );
-	
-	return blargg_success;
 }
 
 blip_time_t Hes_Emu::run( int msec, bool* stereo_used )

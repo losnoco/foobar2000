@@ -289,19 +289,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\gme\Nes_Fme07_Apu.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\gme\Nes_Fme7_Apu.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\gme\Nes_Mmc5.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\gme\Nes_Namco.cpp"
+				RelativePath="..\gme\Nes_Mmc5_Apu.cpp"
 				>
 			</File>
 			<File
@@ -313,23 +305,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\gme\Nes_Vrc6.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\gme\Nes_Vrc6_Apu.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\gme\Nes_Vrc7.cpp"
+				RelativePath="..\gme\Nes_Vrc7_Apu.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\gme\Nsf_Emu.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\gme\Panning_Buffer.cpp"
 				>
 			</File>
 			<File
@@ -455,19 +439,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\gme\Nes_Fme07_Apu.h"
-				>
-			</File>
-			<File
 				RelativePath="..\gme\Nes_Fme7_Apu.h"
 				>
 			</File>
 			<File
-				RelativePath="..\gme\Nes_Mmc5.h"
-				>
-			</File>
-			<File
-				RelativePath="..\gme\Nes_Namco.h"
+				RelativePath="..\gme\Nes_Mmc5_Apu.h"
 				>
 			</File>
 			<File
@@ -479,23 +455,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\gme\Nes_Vrc6.h"
-				>
-			</File>
-			<File
 				RelativePath="..\gme\Nes_Vrc6_Apu.h"
 				>
 			</File>
 			<File
-				RelativePath="..\gme\Nes_Vrc7.h"
+				RelativePath="..\gme\Nes_Vrc7_Apu.h"
 				>
 			</File>
 			<File
 				RelativePath="..\gme\Nsf_Emu.h"
-				>
-			</File>
-			<File
-				RelativePath="..\gme\Panning_Buffer.h"
 				>
 			</File>
 			<File
@@ -523,19 +491,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\gme\Tagged_Data.h"
-				>
-			</File>
-			<File
 				RelativePath="..\gme\Vgm_Emu.h"
 				>
 			</File>
 			<File
 				RelativePath="..\gme\Vgm_Emu_Impl.h"
-				>
-			</File>
-			<File
-				RelativePath="..\gme\Wave_Writer.hpp"
 				>
 			</File>
 			<File

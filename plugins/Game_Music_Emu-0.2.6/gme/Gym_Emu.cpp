@@ -174,7 +174,7 @@ blargg_err_t Gym_Emu::load( const header_t& h, Emu_Reader& in )
 	return load_( mem, data_offset, file_size );
 }
 
-int Gym_Emu::track_length( int* loop_start_out ) const
+double Gym_Emu::track_length( double* loop_start_out ) const
 {
 	if ( !loop_start_out && (loop_offset || loop_begin) )
 		return 0;
@@ -191,7 +191,7 @@ int Gym_Emu::track_length( int* loop_start_out ) const
 		{
 			case 0:
 				if ( !--loop_remain && loop_start_out )
-					*loop_start_out = (time + 30) / 60;
+					*loop_start_out = double( time ) / 60.;
 				time++;
 				break;
 			
@@ -208,7 +208,7 @@ int Gym_Emu::track_length( int* loop_start_out ) const
 		}
 	}
 	
-	return (time + 30 + 59) / 60;;
+	return double( time ) / 60.;
 }
 
 void Gym_Emu::start_track( int track )

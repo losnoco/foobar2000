@@ -94,6 +94,23 @@ public:
 	// Checks for GD3 header and that version is less than 2.0.
 	byte const* gd3_data( int* size_out = NULL ) const;
 	
+	// Determine length of track, in seconds (0 if track is endless).
+	// Optionally returns pointer and size of data past end of sequence data
+	// (i.e. any tagging information).
+	
+	// Detailed data about track
+	struct track_data_t
+	{
+		// times in seconds
+		double loop_start;
+		double loop_end; // 0 if no loop
+		double length;
+	};
+	track_data_t track_data() const;
+	
+	// Length of track in seconds (0 if looped)
+	double track_length() const;
+
 public:
 	// Music_Emu
 	void start_track( int );
@@ -133,6 +150,7 @@ private:
 	byte const* pcm_data;
 	byte const* pcm_pos;
 	int dac_amp;
+	int dac_enabled;
 	
 	Ym_Emu null_ym;
 	Sms_Apu psg;

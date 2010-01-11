@@ -88,10 +88,18 @@ blargg_err_t Vgm_Emu::setup_fm()
 		ym2612.emu = &ym2612_;
 		voice_count_ = 8;
 	}
-	
-	void* p = realloc( sample_buf, sample_buf_size * sizeof *sample_buf );
-	BLARGG_CHECK_ALLOC( p || !sample_buf_size );
-	sample_buf = (sample_pair_t*) p;
+
+	if ( sample_buf_size )
+	{
+		void* p = realloc( sample_buf, sample_buf_size * sizeof *sample_buf );
+		BLARGG_CHECK_ALLOC( p );
+		sample_buf = (sample_pair_t*) p;
+	}
+	else if ( sample_buf )
+	{
+		free( sample_buf );
+		sample_buf = 0;
+	}
 	
 	return blargg_success;
 }
@@ -129,10 +137,17 @@ void Ym_2612::run( int count )
 
 void Vgm_Emu::write_pcm( blip_time_t time, int delta )
 {
-	if ( dac_amp < 0 )
-		delta = 1;
-	dac_amp += delta;
-	dac_synth.offset_inline( time, delta );
+	if ( dac_amp >= 0 )
+	{
+		dac_amp += delta;
+		dac_synth.offset_inline( time, delta );
+	}
+	else
+	{
+		dac_amp += delta;
+		if ( !dac_enabled )
+			dac_amp = -1;
+	}
 }
 
 void Vgm_Emu::refill_buf( sample_t* out )

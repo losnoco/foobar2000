@@ -61,6 +61,7 @@ Vgm_Emu_Impl::Vgm_Emu_Impl()
 
 Vgm_Emu_Impl::~Vgm_Emu_Impl()
 {
+	delete blip_buf;
 	unload();
 }
 
@@ -231,6 +232,7 @@ void Vgm_Emu_Impl::start_track( int track )
 	Classic_Emu::start_track( track );
 	psg.reset();
 	
+	dac_enabled = 0;
 	pcm_data = data;
 	pcm_pos = data;
 	dac_amp = -1;
@@ -290,6 +292,12 @@ void Vgm_Emu_Impl::run_commands( vgm_time_t end_time )
 			else
 			{
 				ym2612.run_until( vgm_time );
+				if ( pos [0] == 0x2B )
+				{
+					dac_enabled = pos [1] & 0x80;
+					if ( !dac_enabled )
+						dac_amp = -1;
+				}
 				ym2612.emu->write( pos [0], pos [1] );
 			}
 			pos += 2;
@@ -372,3 +380,85 @@ long Vgm_Emu_Impl::run( int msec, bool* added_stereo )
 	return psg_end;
 }
 
+Vgm_Emu_Impl::track_data_t Vgm_Emu_Impl::track_data() const
+{
+	require( data ); // file must have been loaded
+	
+	track_data_t result;
+	result.loop_start = 0;
+	result.loop_end = 0;
+
+	if ( header_.track_duration )
+	{
+		result.length = double( get_le32( header_.track_duration ) ) / double( vgm_rate );
+		result.loop_end = result.length;
+		result.loop_start = result.length - ( double( get_le32( header_.loop_duration ) ) / double( vgm_rate ) );
+		return result;
+	}
+	
+	long time = 0;
+	
+	const byte* p = data;
+	if ( get_le32( header_.version ) >= 0x150 )
+	{
+		long data_offset = get_le32( header_.data_offset );
+		check( data_offset );
+		if ( data_offset )
+			p += data_offset + offsetof (header_t,data_offset) - 0x40;
+	}
+	while ( p < data_end )
+	{
+		if ( !result.loop_end && p >= loop_begin )
+		{
+			unsigned loop_duration = get_le32( header_.loop_duration );
+			result.loop_start = double(time) / double(vgm_rate); //(time + (vgm_sample_rate >> 1)) / vgm_sample_rate;
+			result.loop_end = double(time + loop_duration) / double(vgm_rate); //(time + loop_duration + vgm_sample_rate - 1) / vgm_sample_rate;
+		}
+		
+		int cmd = *p++;
+		switch ( cmd )
+		{
+			case cmd_gg_stereo:
+			case cmd_psg:
+				p += 1;
+				break;
+
+			case cmd_delay:
+				if ( p + 1 < data_end ) {
+					time += p [1] * 0x100L + p [0];
+					p += 2;
+				}
+				break;
+			
+			case cmd_delay_735:
+				time += 735; // ntsc frame
+				break;
+			
+			case cmd_delay_882:
+				time += 882; // pal frame
+				break;
+			
+			default:
+				if ( (p [-1] & 0xf0) == 0x50 ) {
+					p += 2;
+					break;
+				}
+				dprintf( "Bad command in VGM stream: %02X\n", (int) cmd );
+				break;
+			
+			case cmd_end:
+				p = data_end;
+				break;
+		}
+	}
+	
+	result.length = double(time) / double(vgm_rate); //(time + vgm_sample_rate - 1) / vgm_sample_rate;
+	
+	return result;
+}
+
+double Vgm_Emu_Impl::track_length() const
+{
+	track_data_t d = track_data();
+	return d.loop_end ? 0 : d.length;
+}

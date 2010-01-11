@@ -1,8 +1,8 @@
-#include "Nes_Mmc5.h"
+#include "Nes_Mmc5_Apu.h"
 
 #include BLARGG_SOURCE_BEGIN
 
-void Nes_Mmc5::write_register( nes_time_t time, nes_addr_t addr, int data )
+void Nes_Mmc5_Apu::write_register( nes_time_t time, nes_addr_t addr, int data )
 {
 	if ( unsigned( addr - 0x5010 ) < 4 )
 	{

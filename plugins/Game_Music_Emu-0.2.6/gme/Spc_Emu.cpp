@@ -70,7 +70,7 @@ blargg_err_t Spc_Emu::load( Emu_Reader& in )
 
 blargg_err_t Spc_Emu::load( const header_t& h, Emu_Reader& in )
 {
-	if ( in.remain() < Snes_Spc::spc_file_size )
+	if ( in.remain() < Snes_Spc::spc_file_size - sizeof h )
 		return "Not an SPC file";
 	
 	if ( strncmp( h.tag, "SNES-SPC700 Sound File Data", 27 ) != 0 )
