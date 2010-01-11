@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include "dbopl.h"
 
-#define clip(s) if ( (s) != (short)(s) ) (s) = (0x7FFF - ((s) >> 31))
+#define clip(s) if ( (s) != (short)(s) ) (s) = (((s) >> 31) ^ 0x7FFF)
 
 class DBemuopl: public Copl
 {
