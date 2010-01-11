@@ -24,6 +24,7 @@
 #define IDC_CHIP_TEXT_3                 1018
 #define IDC_CHIP_TEXT_4                 1019
 #define IDC_CHIP_TEXT_5                 1020
+#define IDC_MULTI_VALUE_TAGS            1021
 
 // Next default values for new objects
 // 

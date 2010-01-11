@@ -1,7 +1,15 @@
-#define MYVERSION "0.9.9.6"
+#define MYVERSION "0.9.9.8"
 
 /*
 	changelog
+
+2009-10-24 05:13 UTC - kode54
+- Restored old sample info tag reading method and made the new style optional
+- Version is now 0.9.9.8
+
+2009-10-18 04:52 UTC - kode54
+- Changed sigdata flags for AMF reader
+- Version is now 0.9.9.7
 
 2009-10-12 20:46 UTC - kode54
 - Fixed a stupid bug in the AMF reader
@@ -815,6 +823,9 @@ static const GUID guid_cfg_fade =
 // {43242592-6ED4-4983-968B-39B09DCC464D}
 static const GUID guid_cfg_fade_time = 
 { 0x43242592, 0x6ed4, 0x4983, { 0x96, 0x8b, 0x39, 0xb0, 0x9d, 0xcc, 0x46, 0x4d } };
+// {D72A249D-63DF-42f8-818A-04FB39482B7D}
+static const GUID guid_cfg_multi_value_tags = 
+{ 0xd72a249d, 0x63df, 0x42f8, { 0x81, 0x8a, 0x4, 0xfb, 0x39, 0x48, 0x2b, 0x7d } };
 
 
 static cfg_int cfg_samplerate(guid_cfg_samplerate,44100);
@@ -833,6 +844,8 @@ static cfg_int cfg_loop(guid_cfg_loop,0);
 static cfg_int cfg_tag(guid_cfg_tag, 0);
 
 static cfg_int cfg_trim(guid_cfg_trim, 0);
+
+static cfg_int cfg_multi_value_tags(guid_cfg_multi_value_tags, 0);
 
 /*static cfg_int cfg_scan_subsongs(guid_cfg_scan_subsongs, 0);*/
 
@@ -867,14 +880,14 @@ static const char field_samples[] = "mod_samples";
 static const char field_instruments[] = "mod_instruments";
 static const char field_trackerver[] = "mod_ver_tracker";
 static const char field_formatver[] = "mod_ver_format";
-/*static const char field_sample[] = "smpl";
+static const char field_sample[] = "smpl";
 static const char field_instrument[] = "inst";
 static const char field_pattern[] = "patt";
-static const char field_channel[] = "chan";*/
-static const char field_sample[] = "sample";
-static const char field_instrument[] = "instrument";
-static const char field_pattern[] = "pattern";
-static const char field_channel[] = "channel";
+static const char field_channel[] = "chan";
+static const char field_sample_m[] = "sample";
+static const char field_instrument_m[] = "instrument";
+static const char field_pattern_m[] = "pattern";
+static const char field_channel_m[] = "channel";
 static const char field_comment[] = "comment";
 static const char field_title[] = "title";
 
@@ -1050,7 +1063,7 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 	if (tag && *tag) info.info_set(field_formatver, tag);
 
 	int i, n;
-	pfc::string8_fastalloc name;
+	pfc::string8_fastalloc name, value;
 
 	if (itsd->n_samples)
 	{
@@ -1058,18 +1071,32 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 
 		if (meta && itsd->sample)
 		{
-			for (i = 0, n = itsd->n_samples; i < n; i++)
+			if ( cfg_multi_value_tags )
 			{
-				if (itsd->sample[i].name[0])
+				for (i = 0, n = itsd->n_samples; i < n; i++)
 				{
-					/*name = field_sample;
-					if (i < 10) name.add_byte('0');
-					name << i;*/
-					name = pfc::format_int( i, 3 );
-					name += ". ";
-					if (dos) name += string_utf8_from_oem((char*)&itsd->sample[i].name, sizeof(itsd->sample[i].name));
-					else name += pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->sample[i].name, sizeof(itsd->sample[i].name));
-					info.meta_add(field_sample, name);
+					if (itsd->sample[i].name[0])
+					{
+						name = pfc::format_int( i, 3 );
+						name += ". ";
+						if (dos) name += string_utf8_from_oem((char*)&itsd->sample[i].name, sizeof(itsd->sample[i].name));
+						else name += pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->sample[i].name, sizeof(itsd->sample[i].name));
+						info.meta_add(field_sample_m, name);
+					}
+				}
+			}
+			else
+			{
+				for (i = 0, n = itsd->n_samples; i < n; i++)
+				{
+					if (itsd->sample[i].name[0])
+					{
+						name = field_sample;
+						name << pfc::format_int( i, 3 );;
+						if (dos) value = string_utf8_from_oem((char*)&itsd->sample[i].name, sizeof(itsd->sample[i].name));
+						else value = pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->sample[i].name, sizeof(itsd->sample[i].name));
+						info.meta_add(name, value);
+					}
 				}
 			}
 		}
@@ -1081,18 +1108,32 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 
 		if (meta && itsd->instrument)
 		{
-			for (i = 0, n = itsd->n_instruments; i < n; i++)
+			if ( cfg_multi_value_tags )
 			{
-				if (itsd->instrument[i].name[0])
+				for (i = 0, n = itsd->n_instruments; i < n; i++)
 				{
-					/*name = field_instrument;
-					if (i < 10) name.add_byte('0');
-					name << i;*/
-					name = pfc::format_int( i, 3 );
-					name += ". ";
-					if (dos) name += string_utf8_from_oem((char*)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name));
-					else name += pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name));
-					info.meta_add(field_instrument, name);
+					if (itsd->instrument[i].name[0])
+					{
+						name = pfc::format_int( i, 3 );
+						name += ". ";
+						if (dos) name += string_utf8_from_oem((char*)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name));
+						else name += pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name));
+						info.meta_add(field_instrument_m, name);
+					}
+				}
+			}
+			else
+			{
+				for (i = 0, n = itsd->n_instruments; i < n; i++)
+				{
+					if (itsd->instrument[i].name[0])
+					{
+						name = field_instrument;
+						name << pfc::format_int( i, 3 );
+						if (dos) value = string_utf8_from_oem((char*)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name));
+						else value = pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name));
+						info.meta_add(name, value);
+					}
 				}
 			}
 		}
@@ -1175,52 +1216,94 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 	unsigned msgend = msgoffset + pfc::byteswap_if_be_t(pifh->msglength);
 
 	t_uint32 * offset;
-	pfc::string8_fastalloc name;
+	pfc::string8_fastalloc name, value;
 	
 	if (meta)
 	{
 		offset = (t_uint32 *)(ptr + 0xC0 + pfc::byteswap_if_be_t(pifh->ordnum) + pfc::byteswap_if_be_t(pifh->insnum) * 4);
 
-		for (n = 0, l = pfc::byteswap_if_be_t(pifh->smpnum); n < l; n++, offset++)
+		if ( cfg_multi_value_tags )
 		{
-			t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
-			if ( offset_n >= msgoffset && offset_n < msgend ) msgend = offset_n;
-			if ((!offset_n) || (offset_n + 0x14 + 26 + 2 >= size)) continue;
-			// XXX
-			if (ptr[offset_n] == 0 && ptr[offset_n + 1] == 0 &&
-				ptr[offset_n + 2] == 'I' && ptr[offset_n + 3] == 'M' &&
-				ptr[offset_n + 4] == 'P' && ptr[offset_n + 5] == 'S')
+			for (n = 0, l = pfc::byteswap_if_be_t(pifh->smpnum); n < l; n++, offset++)
 			{
-				offset_n += 2;
+				t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
+				if ( offset_n >= msgoffset && offset_n < msgend ) msgend = offset_n;
+				if ((!offset_n) || (offset_n + 0x14 + 26 + 2 >= size)) continue;
+				// XXX
+				if (ptr[offset_n] == 0 && ptr[offset_n + 1] == 0 &&
+					ptr[offset_n + 2] == 'I' && ptr[offset_n + 3] == 'M' &&
+					ptr[offset_n + 4] == 'P' && ptr[offset_n + 5] == 'S')
+				{
+					offset_n += 2;
+				}
+				if (*(ptr + offset_n + 0x14))
+				{
+					/*name = field_sample;
+					if (n < 10) name.add_byte('0');
+					name << n;*/
+					name = pfc::format_int( n, 3 );
+					name += ". ";
+					name += string_utf8_from_it((const char *) ptr + offset_n + 0x14, 26);
+					info.meta_add(field_sample_m, name);
+				}
 			}
-			if (*(ptr + offset_n + 0x14))
+		}
+		else
+		{
+			for (n = 0, l = pfc::byteswap_if_be_t(pifh->smpnum); n < l; n++, offset++)
 			{
-				/*name = field_sample;
-				if (n < 10) name.add_byte('0');
-				name << n;*/
-				name = pfc::format_int( n, 3 );
-				name += ". ";
-				name += string_utf8_from_it((const char *) ptr + offset_n + 0x14, 26);
-				info.meta_add(field_sample, name);
+				t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
+				if ( offset_n >= msgoffset && offset_n < msgend ) msgend = offset_n;
+				if ((!offset_n) || (offset_n + 0x14 + 26 + 2 >= size)) continue;
+				// XXX
+				if (ptr[offset_n] == 0 && ptr[offset_n + 1] == 0 &&
+					ptr[offset_n + 2] == 'I' && ptr[offset_n + 3] == 'M' &&
+					ptr[offset_n + 4] == 'P' && ptr[offset_n + 5] == 'S')
+				{
+					offset_n += 2;
+				}
+				if (*(ptr + offset_n + 0x14))
+				{
+					name = field_sample;
+					name << pfc::format_int( n, 3 );
+					value = string_utf8_from_it((const char *) ptr + offset_n + 0x14, 26);
+					info.meta_add(name, value);
+				}
 			}
 		}
 
 		offset = (t_uint32 *)(ptr + 0xC0 + pfc::byteswap_if_be_t(pifh->ordnum));
 
-		for (n = 0, l = pfc::byteswap_if_be_t(pifh->insnum); n < l; n++, offset++)
+		if ( cfg_multi_value_tags )
 		{
-			t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
-			if ( offset_n >= msgoffset && offset_n < msgend ) msgend = offset_n;
-			if ((!offset_n) || (offset_n + 0x20 + 26 >= size)) continue;
-			if (*(ptr + offset_n + 0x20))
+			for (n = 0, l = pfc::byteswap_if_be_t(pifh->insnum); n < l; n++, offset++)
 			{
-				/*name = field_instrument;
-				if (n < 10) name.add_byte('0');
-				name << n;*/
-				name = pfc::format_int( n, 3 );
-				name += ". ";
-				name += string_utf8_from_it((const char *) ptr + offset_n + 0x20, 26);
-				info.meta_add(field_instrument, name);
+				t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
+				if ( offset_n >= msgoffset && offset_n < msgend ) msgend = offset_n;
+				if ((!offset_n) || (offset_n + 0x20 + 26 >= size)) continue;
+				if (*(ptr + offset_n + 0x20))
+				{
+					name = pfc::format_int( n, 3 );
+					name += ". ";
+					name += string_utf8_from_it((const char *) ptr + offset_n + 0x20, 26);
+					info.meta_add(field_instrument_m, name);
+				}
+			}
+		}
+		else
+		{
+			for (n = 0, l = pfc::byteswap_if_be_t(pifh->insnum); n < l; n++, offset++)
+			{
+				t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
+				if ( offset_n >= msgoffset && offset_n < msgend ) msgend = offset_n;
+				if ((!offset_n) || (offset_n + 0x20 + 26 >= size)) continue;
+				if (*(ptr + offset_n + 0x20))
+				{
+					name = field_instrument;
+					name << pfc::format_int( n, 3 );
+					value = string_utf8_from_it((const char *) ptr + offset_n + 0x20, 26);
+					info.meta_add(name, value);
+				}
 			}
 		}
 	}
@@ -1251,17 +1334,30 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			if (meta)
 			{
 				l = len / 32;
-				for (n = 0; n < l; n++)
+				if ( cfg_multi_value_tags )
 				{
-					if (*(ptr + pos + n * 32))
+					for (n = 0; n < l; n++)
 					{
-						/*name = field_pattern;
-						if (n < 10) name.add_byte('0');
-						name << n;*/
-						name = pfc::format_int( n, 3 );
-						name += ". ";
-						name += string_utf8_from_it((const char *) ptr + pos + n * 32, 32);
-						info.meta_add(field_pattern, name);
+						if (*(ptr + pos + n * 32))
+						{
+							name = pfc::format_int( n, 3 );
+							name += ". ";
+							name += string_utf8_from_it((const char *) ptr + pos + n * 32, 32);
+							info.meta_add(field_pattern_m, name);
+						}
+					}
+				}
+				else
+				{
+					for (n = 0; n < l; n++)
+					{
+						if (*(ptr + pos + n * 32))
+						{
+							name = field_pattern;
+							name << pfc::format_int( n, 3 );
+							value = string_utf8_from_it((const char *) ptr + pos + n * 32, 32);
+							info.meta_add(name, value);
+						}
 					}
 				}
 			}
@@ -1279,17 +1375,30 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			m_nChannels = l;
 			if (meta)
 			{
-				for (n = 0; n < l; n++)
+				if ( cfg_multi_value_tags )
 				{
-					if (*(ptr + pos + n * 20))
+					for (n = 0; n < l; n++)
 					{
-						/*name = field_channel;
-						if (n < 10) name.add_byte('0');
-						name << n;*/
-						name = pfc::format_int( n, 3 );
-						name += ". ";
-						name += string_utf8_from_it((const char *) ptr + pos + n * 20, 20);
-						info.meta_add(field_channel, name);
+						if (*(ptr + pos + n * 20))
+						{
+							name = pfc::format_int( n, 3 );
+							name += ". ";
+							name += string_utf8_from_it((const char *) ptr + pos + n * 20, 20);
+							info.meta_add(field_channel_m, name);
+						}
+					}
+				}
+				else
+				{
+					for (n = 0; n < l; n++)
+					{
+						if (*(ptr + pos + n * 20))
+						{
+							name = field_channel;
+							name << pfc::format_int( n, 3 );
+							value = string_utf8_from_it((const char *) ptr + pos + n * 20, 20);
+							info.meta_add(name, value);
+						}
 					}
 				}
 			}
@@ -3377,6 +3486,7 @@ class preferences_page_mod : public preferences_page
 				uSendDlgItemMessage(wnd, IDC_TRIM, BM_SETCHECK, cfg_trim, 0);
 				/*uSendDlgItemMessage(wnd, IDC_SCAN, BM_SETCHECK, cfg_scan_subsongs, 0);*/
 				uSendDlgItemMessage(wnd, IDC_DYNAMIC_INFO, BM_SETCHECK, cfg_dynamic_info, 0);
+				uSendDlgItemMessage(wnd, IDC_MULTI_VALUE_TAGS, BM_SETCHECK, cfg_multi_value_tags, 0);
 
 				enable_chip(wnd, cfg_interp > 0);
 				uSendDlgItemMessage(wnd, IDC_CHIP, BM_SETCHECK, cfg_autochip, 0);
@@ -3438,6 +3548,10 @@ class preferences_page_mod : public preferences_page
 
 			case IDC_FADE:
 				cfg_fade = uSendMessage( ( HWND ) lp, BM_GETCHECK, 0, 0 );
+				break;
+
+			case IDC_MULTI_VALUE_TAGS:
+				cfg_multi_value_tags = uSendMessage( ( HWND ) lp, BM_GETCHECK, 0, 0 );
 				break;
 
 			case ( EN_CHANGE << 16 ) | IDC_FADE_TIME:
@@ -3552,6 +3666,8 @@ public:
 		/*cfg_scan_subsongs = 0;*/
 
 		cfg_dynamic_info = 0;
+
+		cfg_multi_value_tags = 0;
 	}
 };
 

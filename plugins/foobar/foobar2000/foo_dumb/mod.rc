@@ -52,7 +52,7 @@ END
 // Dialog
 //
 
-IDD_MOD_CONFIG DIALOGEX 0, 0, 286, 171
+IDD_MOD_CONFIG DIALOGEX 0, 0, 286, 221
 STYLE DS_SETFONT | WS_CHILD
 FONT 8, "Tahoma", 0, 0, 0x0
 BEGIN
@@ -71,18 +71,20 @@ BEGIN
     CONTROL         "and fade for",IDC_FADE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,153,59,52,10
     EDITTEXT        IDC_FADE_TIME,206,57,42,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "m:s.ms",IDC_FADE_TEXT,250,59,25,9
-    GROUPBOX        "",IDC_CHIP_BOX,7,79,272,59
-    CONTROL         "Chip-o-matic",IDC_CHIP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,79,53,8
-    RTEXT           "Instruments smaller than",IDC_CHIP_TEXT_0,11,91,82,8
-    EDITTEXT        IDC_CHIP_FORCE,95,89,42,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "samples will always be aliased.",IDC_CHIP_TEXT_1,140,91,114,8
-    RTEXT           "Instruments smaller than",IDC_CHIP_TEXT_2,11,107,82,8
-    EDITTEXT        IDC_CHIP_SCAN,95,105,42,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "samples will be aliased if they contain",IDC_CHIP_TEXT_3,140,107,126,8
-    RTEXT           "delta values greater than",IDC_CHIP_TEXT_4,10,120,83,9
-    EDITTEXT        IDC_CHIP_SCAN_THRESHOLD,95,118,42,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "% of the integer range.",IDC_CHIP_TEXT_5,140,120,79,8
-    LTEXT           "Dynamic info fields: order, pattern, row, speed, tempo, channels, channels_max.\nIn scripts: %__mod_dyn_order%, %__mod_dyn_pattern%, etc.",IDC_STATIC,7,143,272,21
+    CONTROL         "Expose file info as multi-value tag",IDC_MULTI_VALUE_TAGS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,153,74,123,10
+    GROUPBOX        "",IDC_CHIP_BOX,7,94,272,59
+    CONTROL         "Chip-o-matic",IDC_CHIP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,94,53,8
+    RTEXT           "Instruments smaller than",IDC_CHIP_TEXT_0,11,106,82,8
+    EDITTEXT        IDC_CHIP_FORCE,95,104,42,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "samples will always be aliased.",IDC_CHIP_TEXT_1,140,106,114,8
+    RTEXT           "Instruments smaller than",IDC_CHIP_TEXT_2,11,122,82,8
+    EDITTEXT        IDC_CHIP_SCAN,95,120,42,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "samples will be aliased if they contain",IDC_CHIP_TEXT_3,140,122,126,8
+    RTEXT           "delta values greater than",IDC_CHIP_TEXT_4,10,135,83,9
+    EDITTEXT        IDC_CHIP_SCAN_THRESHOLD,95,133,42,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "% of the integer range.",IDC_CHIP_TEXT_5,140,135,79,8
+    LTEXT           "Dynamic info fields: order, pattern, row, speed, tempo, channels, channels_max.\nIn scripts: %__mod_dyn_order%, %__mod_dyn_pattern%, etc.",IDC_STATIC,7,158,272,21
 END
 
 
@@ -99,7 +101,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 279
         TOPMARGIN, 7
-        BOTTOMMARGIN, 164
+        BOTTOMMARGIN, 214
     END
 END
 #endif    // APSTUDIO_INVOKED
