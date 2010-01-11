@@ -5,19 +5,33 @@ namespace foobar2000_io {
 
 PFC_DECLARE_EXCEPTION(exception_aborted,pfc::exception,"User abort");
 
+#ifdef _WIN32
+typedef HANDLE abort_callback_event;
+#else
+#error PORTME
+#endif
+
 //! This class is used to signal underlying worker code whether user has decided to abort a potentially time-consuming operation. It is commonly required by all file related operations. Code that receives an abort_callback object should periodically check it and abort any operations being performed if it is signaled, typically giving io_result_aborted return code (see: t_io_result). \n
 //! See abort_callback_impl for implementation.
 class NOVTABLE abort_callback
 {
 public:
 	//! Returns whether user has requested the operation to be aborted.
-	virtual bool FB2KAPI is_aborting() = 0;
+	virtual bool is_aborting() const = 0;
+
+	virtual abort_callback_event get_abort_event() const = 0;
 	
 	//! Checks if user has requested the operation to be aborted, and throws exception_aborted if so.
-	void check();
+	void check() const;
 
 	//! For compatibility with old code.
-	inline void check_e() {check();}
+	inline void check_e() const {check();}
+
+	
+	//! Sleeps p_timeout_seconds or less when aborted, throws exception_aborted on abort.
+	void sleep(double p_timeout_seconds) const;
+	//! Sleeps p_timeout_seconds or less when aborted, returns true when execution should continue, false when not.
+	bool sleep_ex(double p_timeout_seconds) const;
 protected:
 	abort_callback() {}
 	~abort_callback() {}
@@ -26,14 +40,28 @@ protected:
 
 
 //! Implementation of abort_callback interface.
-class abort_callback_impl : public abort_callback
-{
-	bool m_aborting;
+class abort_callback_impl : public abort_callback {
 public:
-	abort_callback_impl() : m_aborting(false) {}
-	inline void abort() {m_aborting = true;}
-	inline void reset() {m_aborting = false;}
-	bool FB2KAPI is_aborting() {return m_aborting;}
+	abort_callback_impl() : m_aborting(false) {
+		m_event.create(true,false);
+	}
+	inline void abort() {set_state(true);}
+	inline void reset() {set_state(false);}
+
+	void set_state(bool p_state) {m_aborting = p_state; m_event.set_state(p_state);}
+
+	bool is_aborting() const {return m_aborting;}
+
+	abort_callback_event get_abort_event() const {return m_event.get();}
+
+private:
+	abort_callback_impl(const abort_callback_impl &) {throw pfc::exception_not_implemented();}
+	const abort_callback_impl & operator=(const abort_callback_impl&) {throw pfc::exception_not_implemented();}
+	
+	volatile bool m_aborting;
+#ifdef WIN32
+	win32_event m_event;
+#endif
 };
 
 }

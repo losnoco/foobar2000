@@ -234,6 +234,11 @@ namespace foobar2000_io
 		//! Helper; transfers entire file content from one file to another, erasing previous content.
 		static void g_transfer_file(const service_ptr_t<file> & p_from,const service_ptr_t<file> & p_to,abort_callback & p_abort);
 
+		//! Helper; improved performance over g_transfer on streams (avoids disk fragmentation when transferring large blocks).
+		static t_filesize g_transfer(service_ptr_t<file> p_src,service_ptr_t<file> p_dst,t_filesize p_bytes,abort_callback & p_abort);
+		//! Helper; improved performance over g_transfer_file on streams (avoids disk fragmentation when transferring large blocks).
+		static void g_transfer_object(service_ptr_t<file> p_src,service_ptr_t<file> p_dst,t_filesize p_bytes,abort_callback & p_abort);
+
 		static const GUID class_guid;
 
 		virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
@@ -366,13 +371,13 @@ namespace foobar2000_io
 	{
 		struct t_entry
 		{
-			string_simple m_path;
+			pfc::string_simple m_path;
 			t_filestats m_stats;
 			t_entry(const char * p_path, const t_filestats & p_stats) : m_path(p_path), m_stats(p_stats) {}
 		};
 
 
-		list_t<pfc::rcptr_t<t_entry> > m_data;
+		pfc::list_t<pfc::rcptr_t<t_entry> > m_data;
 		bool m_recur;
 
 		static int sortfunc(const pfc::rcptr_const_t<t_entry> & p1, const pfc::rcptr_const_t<t_entry> & p2) {return stricmp_utf8(p1->m_path,p2->m_path);}
@@ -438,7 +443,7 @@ namespace foobar2000_io
 		//playlist_loader_callback ONLY for on_progress calls
 
 
-		static bool g_parse_unpack_path(const char * path,string8 & archive,string8 & file);
+		static bool g_parse_unpack_path(const char * path,pfc::string8 & archive,pfc::string8 & file);
 		static void g_make_unpack_path(pfc::string_base & path,const char * archive,const char * file,const char * name);
 		void make_unpack_path(pfc::string_base & path,const char * archive,const char * file);
 
@@ -457,8 +462,10 @@ namespace foobar2000_io
 		operator const char*() const {return m_buffer;}
 		const char * get_ptr() const {return m_buffer;}
 	private:
-		string_fixed_t<32> m_buffer;
+		pfc::string_fixed_t<32> m_buffer;
 	};
+
+	void generate_temp_location_for_file(pfc::string_base & p_out, const char * p_origpath,const char * p_extension,const char * p_magic);
 }
 
 using namespace foobar2000_io;

@@ -43,9 +43,9 @@ namespace {
 
 	class enum_items_callback_retrieve_all_items : public playlist_manager::enum_items_callback
 	{
-		list_base_t<metadb_handle_ptr> & m_out;
+		pfc::list_base_t<metadb_handle_ptr> & m_out;
 	public:
-		enum_items_callback_retrieve_all_items(list_base_t<metadb_handle_ptr> & p_out) : m_out(p_out) {m_out.remove_all();}
+		enum_items_callback_retrieve_all_items(pfc::list_base_t<metadb_handle_ptr> & p_out) : m_out(p_out) {m_out.remove_all();}
 		bool on_item(t_size p_index,const metadb_handle_ptr & p_location,bool b_selected)
 		{
 			m_out.add_item(p_location);
@@ -55,9 +55,9 @@ namespace {
 
 	class enum_items_callback_retrieve_selected_items : public playlist_manager::enum_items_callback
 	{
-		list_base_t<metadb_handle_ptr> & m_out;
+		pfc::list_base_t<metadb_handle_ptr> & m_out;
 	public:
-		enum_items_callback_retrieve_selected_items(list_base_t<metadb_handle_ptr> & p_out) : m_out(p_out) {}
+		enum_items_callback_retrieve_selected_items(pfc::list_base_t<metadb_handle_ptr> & p_out) : m_out(p_out) {}
 		bool on_item(t_size p_index,const metadb_handle_ptr & p_location,bool b_selected)
 		{
 			if (b_selected) m_out.add_item(p_location);
@@ -84,12 +84,12 @@ namespace {
 
 }
 
-void playlist_manager::playlist_get_all_items(t_size p_playlist,list_base_t<metadb_handle_ptr> & out)
+void playlist_manager::playlist_get_all_items(t_size p_playlist,pfc::list_base_t<metadb_handle_ptr> & out)
 {
 	playlist_get_items(p_playlist,out,bit_array_true());
 }
 
-void playlist_manager::playlist_get_selected_items(t_size p_playlist,list_base_t<metadb_handle_ptr> & out)
+void playlist_manager::playlist_get_selected_items(t_size p_playlist,pfc::list_base_t<metadb_handle_ptr> & out)
 {
 	playlist_enum_items(p_playlist,&enum_items_callback_retrieve_selected_items(out),bit_array_true());
 }
@@ -226,7 +226,7 @@ void playlist_manager::activeplaylist_set_focus_item(t_size p_item)
 	if (playlist != infinite) playlist_set_focus_item(playlist,p_item);
 }
 
-t_size playlist_manager::activeplaylist_insert_items(t_size p_base,const list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection)
+t_size playlist_manager::activeplaylist_insert_items(t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection)
 {
 	t_size playlist = get_active_playlist();
 	if (playlist != infinite) return playlist_insert_items(playlist,p_base,data,p_selection);
@@ -272,13 +272,13 @@ void playlist_manager::activeplaylist_get_selection_mask(bit_array_var & out)
 	if (playlist != infinite) playlist_get_selection_mask(playlist,out);
 }
 
-void playlist_manager::activeplaylist_get_all_items(list_base_t<metadb_handle_ptr> & out)
+void playlist_manager::activeplaylist_get_all_items(pfc::list_base_t<metadb_handle_ptr> & out)
 {
 	t_size playlist = get_active_playlist();
 	if (playlist != infinite) playlist_get_all_items(playlist,out);
 }
 
-void playlist_manager::activeplaylist_get_selected_items(list_base_t<metadb_handle_ptr> & out)
+void playlist_manager::activeplaylist_get_selected_items(pfc::list_base_t<metadb_handle_ptr> & out)
 {
 	t_size playlist = get_active_playlist();
 	if (playlist != infinite) playlist_get_selected_items(playlist,out);
@@ -295,9 +295,9 @@ bool playlist_manager::remove_playlist(t_size idx)
 	return remove_playlists(bit_array_one(idx));
 }
 
-bool playlist_incoming_item_filter::process_location(const char * url,list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_mask,const char * p_exclude,HWND p_parentwnd)
+bool playlist_incoming_item_filter::process_location(const char * url,pfc::list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_mask,const char * p_exclude,HWND p_parentwnd)
 {
-	return process_locations(list_single_ref_t<const char*>(url),out,filter,p_mask,p_exclude,p_parentwnd);
+	return process_locations(pfc::list_single_ref_t<const char*>(url),out,filter,p_mask,p_exclude,p_parentwnd);
 }
 
 void playlist_manager::playlist_clear(t_size p_playlist)
@@ -311,19 +311,19 @@ void playlist_manager::activeplaylist_clear()
 	if (playlist != infinite) playlist_clear(playlist);
 }
 
-bool playlist_manager::playlist_add_items(t_size playlist,const list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection)
+bool playlist_manager::playlist_add_items(t_size playlist,const pfc::list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection)
 {
 	return playlist_insert_items(playlist,infinite,data,p_selection) != infinite;
 }
 
-bool playlist_manager::activeplaylist_add_items(const list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection)
+bool playlist_manager::activeplaylist_add_items(const pfc::list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection)
 {
 	t_size playlist = get_active_playlist();
 	if (playlist != infinite) return playlist_add_items(playlist,data,p_selection);
 	else return false;
 }
 
-bool playlist_manager::playlist_insert_items_filter(t_size p_playlist,t_size p_base,const list_base_const_t<metadb_handle_ptr> & p_data,bool p_select)
+bool playlist_manager::playlist_insert_items_filter(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select)
 {
 	metadb_handle_list temp;
 	service_ptr_t<playlist_incoming_item_filter> api;
@@ -333,14 +333,14 @@ bool playlist_manager::playlist_insert_items_filter(t_size p_playlist,t_size p_b
 	return playlist_insert_items(p_playlist,p_base,temp,bit_array_val(p_select)) != infinite;
 }
 
-bool playlist_manager::activeplaylist_insert_items_filter(t_size p_base,const list_base_const_t<metadb_handle_ptr> & p_data,bool p_select)
+bool playlist_manager::activeplaylist_insert_items_filter(t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select)
 {
 	t_size playlist = get_active_playlist();
 	if (playlist != infinite) return playlist_insert_items_filter(playlist,p_base,p_data,p_select);
 	else return false;
 }
 
-bool playlist_manager::playlist_insert_locations(t_size p_playlist,t_size p_base,const list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd)
+bool playlist_manager::playlist_insert_locations(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd)
 {
 	metadb_handle_list temp;
 	service_ptr_t<playlist_incoming_item_filter> api;
@@ -349,28 +349,28 @@ bool playlist_manager::playlist_insert_locations(t_size p_playlist,t_size p_base
 	return playlist_insert_items(p_playlist,p_base,temp,bit_array_val(p_select)) != infinite;
 }
 
-bool playlist_manager::activeplaylist_insert_locations(t_size p_base,const list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd)
+bool playlist_manager::activeplaylist_insert_locations(t_size p_base,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd)
 {
 	t_size playlist = get_active_playlist();
 	if (playlist != infinite) return playlist_insert_locations(playlist,p_base,p_urls,p_select,p_parentwnd);
 	else return false;
 }
 
-bool playlist_manager::playlist_add_items_filter(t_size p_playlist,const list_base_const_t<metadb_handle_ptr> & p_data,bool p_select)
+bool playlist_manager::playlist_add_items_filter(t_size p_playlist,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select)
 {
 	return playlist_insert_items_filter(p_playlist,infinite,p_data,p_select);
 }
 
-bool playlist_manager::activeplaylist_add_items_filter(const list_base_const_t<metadb_handle_ptr> & p_data,bool p_select)
+bool playlist_manager::activeplaylist_add_items_filter(const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select)
 {
 	return activeplaylist_insert_items_filter(infinite,p_data,p_select);
 }
 
-bool playlist_manager::playlist_add_locations(t_size p_playlist,const list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd)
+bool playlist_manager::playlist_add_locations(t_size p_playlist,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd)
 {
 	return playlist_insert_locations(p_playlist,infinite,p_urls,p_select,p_parentwnd);
 }
-bool playlist_manager::activeplaylist_add_locations(const list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd)
+bool playlist_manager::activeplaylist_add_locations(const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd)
 {
 	return activeplaylist_insert_locations(infinite,p_urls,p_select,p_parentwnd);
 }
@@ -474,7 +474,7 @@ bool playlist_manager::activeplaylist_get_focus_item_handle(metadb_handle_ptr & 
 t_size playlist_manager::find_playlist(const char * p_name,t_size p_name_length)
 {
 	t_size n, m = get_playlist_count();
-	string8_fastalloc temp;
+	pfc::string8_fastalloc temp;
 	for(n=0;n<m;n++)
 	{
 		if (!playlist_get_name(n,temp)) break;
@@ -508,12 +508,12 @@ bool playlist_manager::highlight_playing_item()
 	return true;
 }
 
-void playlist_manager::playlist_get_items(t_size p_playlist,list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask)
+void playlist_manager::playlist_get_items(t_size p_playlist,pfc::list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask)
 {
 	playlist_enum_items(p_playlist,&enum_items_callback_retrieve_all_items(out),p_mask);
 }
 
-void playlist_manager::activeplaylist_get_items(list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask)
+void playlist_manager::activeplaylist_get_items(pfc::list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask)
 {
 	t_size playlist = get_active_playlist();
 	if (playlist != infinite) playlist_get_items(playlist,out,p_mask);
@@ -553,7 +553,7 @@ namespace {
 	};
 }
 
-void playlist_manager::remove_items_from_all_playlists(const list_base_const_t<metadb_handle_ptr> & p_data)
+void playlist_manager::remove_items_from_all_playlists(const pfc::list_base_const_t<metadb_handle_ptr> & p_data)
 {
 	t_size playlist_num, playlist_max = get_playlist_count();
 	if (playlist_max != infinite)
@@ -574,7 +574,7 @@ void playlist_manager::remove_items_from_all_playlists(const list_base_const_t<m
 	}
 }
 
-bool playlist_manager::get_all_items(list_base_t<metadb_handle_ptr> & out)
+bool playlist_manager::get_all_items(pfc::list_base_t<metadb_handle_ptr> & out)
 {
 	t_size n, m = get_playlist_count();
 	if (m == infinite) return false;

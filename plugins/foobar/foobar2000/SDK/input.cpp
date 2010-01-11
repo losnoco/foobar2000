@@ -5,7 +5,7 @@ bool input_entry::g_find_service_by_path(service_ptr_t<input_entry> & p_out,cons
 {
 	service_ptr_t<input_entry> ptr;
 	service_enum_t<input_entry> e;
-	string_extension ext(p_path);
+	pfc::string_extension ext(p_path);
 	while(e.next(ptr))
 	{
 		if (ptr->is_our_path(p_path,ext))
@@ -48,7 +48,7 @@ static void prepare_for_open(service_ptr_t<input_entry> & p_service,service_ptr_
 
 	if (p_file.is_valid())
 	{
-		string8 content_type;
+		pfc::string8 content_type;
 		if (p_file->get_content_type(content_type))
 		{
 			if (input_entry::g_find_service_by_content_type(p_service,content_type))
@@ -97,7 +97,7 @@ bool input_entry::g_is_supported_path(const char * p_path)
 {
 	service_ptr_t<input_entry> ptr;
 	service_enum_t<input_entry> e;
-	string_extension ext(p_path);
+	pfc::string_extension ext(p_path);
 	while(e.next(ptr))
 	{
 		if (ptr->is_our_path(p_path,ext)) return true;

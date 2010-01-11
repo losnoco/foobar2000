@@ -445,6 +445,10 @@
 				RelativePath=".\shared_internal.h"
 				>
 			</File>
+			<File
+				RelativePath=".\win32_misc.h"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

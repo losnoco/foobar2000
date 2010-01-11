@@ -108,7 +108,7 @@ void filesystem::g_open(service_ptr_t<file> & p_out,const char * path,t_open_mod
 
 void filesystem::g_open_ex(service_ptr_t<file> & p_out,const char * path,t_open_mode mode,abort_callback & p_abort)
 {
-	string8 path_c;
+	pfc::string8 path_c;
 	g_get_canonical_path(path,path_c);
 	g_open(p_out,path_c,mode,p_abort);
 }
@@ -134,7 +134,7 @@ bool filesystem::g_exists_writeable(const char * p_path,abort_callback & p_abort
 }
 
 void filesystem::g_remove(const char * path,abort_callback & p_abort) {
-	string8 path_c;
+	pfc::string8 path_c;
 	g_get_canonical_path(path,path_c);
 	service_ptr_t<filesystem> fs;
 	if (!g_get_interface(fs,path_c)) throw exception_io_no_handler_for_path();
@@ -143,7 +143,7 @@ void filesystem::g_remove(const char * path,abort_callback & p_abort) {
 
 void filesystem::g_create_directory(const char * path,abort_callback & p_abort)
 {
-	string8 path_c;
+	pfc::string8 path_c;
 	g_get_canonical_path(path,path_c);
 	service_ptr_t<filesystem> fs;
 	if (!g_get_interface(fs,path_c)) throw exception_io_no_handler_for_path();
@@ -164,7 +164,7 @@ void filesystem::g_move(const char * src,const char * dst,abort_callback & p_abo
 
 void filesystem::g_move_ex(const char * _src,const char * _dst,abort_callback & p_abort)
 {
-	string8 src,dst;
+	pfc::string8 src,dst;
 	g_get_canonical_path(_src,src);
 	g_get_canonical_path(_dst,dst);
 	return g_move(src,dst,p_abort);
@@ -172,7 +172,7 @@ void filesystem::g_move_ex(const char * _src,const char * _dst,abort_callback & 
 
 void filesystem::g_list_directory_ex(const char * p_path,directory_callback & p_out,abort_callback & p_abort)
 {
-	string8 path_c;
+	pfc::string8 path_c;
 	g_get_canonical_path(p_path,path_c);
 	g_list_directory(path_c,p_out,p_abort);
 }
@@ -194,7 +194,7 @@ static void path_pack_string(pfc::string_base & out,const char * src)
 	out.add_char('|');
 }
 
-static int path_unpack_string(string8 & out,const char * src)
+static int path_unpack_string(pfc::string8 & out,const char * src)
 {
 	int ptr=0;
 	if (src[ptr++]!='|') return -1;
@@ -217,7 +217,7 @@ static int path_unpack_string(string8 & out,const char * src)
 
 
 void filesystem::g_open_precache(service_ptr_t<file> & p_out,const char * path,abort_callback & p_abort) {
-	string8 path_c;
+	pfc::string8 path_c;
 	g_get_canonical_path(path,path_c);
 	service_ptr_t<filesystem> fs;
 	if (!g_get_interface(fs,path_c)) throw exception_io_no_handler_for_path();
@@ -271,7 +271,7 @@ bool archive_impl::get_canonical_path(const char * path,pfc::string_base & out)
 {
 	if (is_our_path(path))
 	{
-		string8 archive,file,archive_canonical;
+		pfc::string8 archive,file,archive_canonical;
 		if (g_parse_unpack_path(path,archive,file))
 		{
 			g_get_canonical_path(archive,archive_canonical);
@@ -301,7 +301,7 @@ bool archive_impl::is_our_path(const char * path)
 
 bool archive_impl::get_display_path(const char * path,pfc::string_base & out)
 {
-	string8 archive,file;
+	pfc::string8 archive,file;
 	if (g_parse_unpack_path(path,archive,file))
 	{
 		g_get_display_path(archive,out);
@@ -315,7 +315,7 @@ bool archive_impl::get_display_path(const char * path,pfc::string_base & out)
 void archive_impl::open(service_ptr_t<file> & p_out,const char * path,t_open_mode mode, abort_callback & p_abort)
 {
 	if (mode != open_mode_read) throw exception_io_denied();
-	string8 archive,file;
+	pfc::string8 archive,file;
 	if (!g_parse_unpack_path(path,archive,file)) throw exception_io_not_found();
 	open_archive(p_out,archive,file,p_abort);
 }
@@ -330,19 +330,19 @@ void archive_impl::move(const char * src,const char * dst,abort_callback & p_abo
 }
 
 bool archive_impl::is_remote(const char * src) {
-	string8 archive,file;
+	pfc::string8 archive,file;
 	if (g_parse_unpack_path(src,archive,file)) return g_is_remote(archive);
 	else throw exception_io_not_found();
 }
 
 bool archive_impl::relative_path_create(const char * file_path,const char * playlist_path,pfc::string_base & out) {
-	string8 archive,file;
+	pfc::string8 archive,file;
 	if (g_parse_unpack_path(file_path,archive,file))
 	{
-		string8 archive_rel;
+		pfc::string8 archive_rel;
 		if (g_relative_path_create(archive,playlist_path,archive_rel))
 		{
-			string8 out_path;
+			pfc::string8 out_path;
 			make_unpack_path(out_path,archive_rel,file);
 			out.set_string(out_path);
 			return true;
@@ -354,13 +354,13 @@ bool archive_impl::relative_path_create(const char * file_path,const char * play
 bool archive_impl::relative_path_parse(const char * relative_path,const char * playlist_path,pfc::string_base & out)
 {
 	if (!is_our_path(relative_path)) return false;
-	string8 archive_rel,file;
+	pfc::string8 archive_rel,file;
 	if (g_parse_unpack_path(relative_path,archive_rel,file))
 	{
-		string8 archive;
+		pfc::string8 archive;
 		if (g_relative_path_parse(archive_rel,playlist_path,archive))
 		{
-			string8 out_path;
+			pfc::string8 out_path;
 			make_unpack_path(out_path,archive,file);
 			out.set_string(out_path);
 			return true;
@@ -371,7 +371,7 @@ bool archive_impl::relative_path_parse(const char * relative_path,const char * p
 
 // "unpack://zip|17|file://c:\unf.rar|meh.mp3"
 
-bool archive_impl::g_parse_unpack_path(const char * path,string8 & archive,string8 & file)
+bool archive_impl::g_parse_unpack_path(const char * path,pfc::string8 & archive,pfc::string8 & file)
 {
 	path  = strchr(path,'|');
 	if (!path) return false;
@@ -396,7 +396,7 @@ void archive_impl::make_unpack_path(pfc::string_base & path,const char * archive
 FILE * filesystem::streamio_open(const char * path,const char * flags)
 {
 	FILE * ret = 0;
-	string8 temp;
+	pfc::string8 temp;
 	g_get_canonical_path(path,temp);
 	if (!strncmp(temp,"file://",7))
 	{
@@ -486,7 +486,7 @@ namespace {
 			return true;
 		}
 	private:
-		string8_fastalloc m_target;
+		pfc::string8_fastalloc m_target;
 //		t_io_result m_status;
 	};
 }
@@ -507,7 +507,7 @@ void filesystem::g_copy(const char * src,const char * dst,abort_callback & p_abo
 	
 	if (size > 0) {
 		try {
-			file::g_transfer_object(r_src.get_ptr(),r_dst.get_ptr(),size,p_abort);
+			file::g_transfer_object(r_src,r_dst,size,p_abort);
 		} catch(std::exception) {
 			r_dst.release();
 			try {g_remove(dst,abort_callback_impl());} catch(std::exception) {}
@@ -517,7 +517,7 @@ void filesystem::g_copy(const char * src,const char * dst,abort_callback & p_abo
 }
 
 void filesystem::g_copy_ex(const char * _src,const char * _dst,abort_callback & p_abort) {
-	string8 src,dst;
+	pfc::string8 src,dst;
 	g_get_canonical_path(_src,src);
 	g_get_canonical_path(_dst,dst);
 	g_copy(src,dst,p_abort);
@@ -566,7 +566,7 @@ void file::g_transfer_file(const service_ptr_t<file> & p_from,const service_ptr_
 	p_to->seek(0,p_abort);
 	p_to->set_eof(p_abort);
 	if (length > 0) {
-		g_transfer_object(p_from.get_ptr(),p_to.get_ptr(),length,p_abort);
+		g_transfer_object(p_from,p_to,length,p_abort);
 	}
 }
 
@@ -594,13 +594,13 @@ void filesystem::g_get_stats(const char * p_path,t_filestats & p_stats,bool & p_
 }
 
 void filesystem::g_get_stats_ex(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort) {
-	string8 path_c;
+	pfc::string8 path_c;
 	g_get_canonical_path(p_path,path_c);
 	g_get_stats(path_c,p_stats,p_is_writeable,p_abort);
 }
 
 void archive_impl::get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort) {
-	string8 archive,file;
+	pfc::string8 archive,file;
 	if (g_parse_unpack_path(p_path,archive,file)) {
 		if (g_is_remote(archive)) throw exception_io_object_is_remote();
 		p_is_writeable = false;
@@ -673,8 +673,8 @@ format_filetimestamp::format_filetimestamp(t_filetimestamp p_timestamp) {
 	if (FileTimeToLocalFileTime((FILETIME*)&p_timestamp,&ft)) {
 		if (FileTimeToSystemTime(&ft,&st)) {
 			m_buffer 
-				<< format_uint(st.wYear,4) << "-" << format_uint(st.wMonth,2) << "-" << format_uint(st.wDay,2) << " " 
-				<< format_uint(st.wHour,2) << ":" << format_uint(st.wMinute,2) << ":" << format_uint(st.wSecond,2);
+				<< pfc::format_uint(st.wYear,4) << "-" << pfc::format_uint(st.wMonth,2) << "-" << pfc::format_uint(st.wDay,2) << " " 
+				<< pfc::format_uint(st.wHour,2) << ":" << pfc::format_uint(st.wMinute,2) << ":" << pfc::format_uint(st.wSecond,2);
 		} else m_buffer << "<invalid timestamp>";
 	} else m_buffer << "<invalid timestamp>";
 #else
@@ -695,7 +695,7 @@ void foobar2000_io::exception_io_from_win32(DWORD p_code) {
 	case ERROR_SHARING_VIOLATION:
 		throw exception_io_sharing_violation();
 	default:
-		throw exception_io(string_formatter() << "I/O error (win32 #" << (t_uint32)p_code << ")");
+		throw exception_io(pfc::string_formatter() << "I/O error (win32 #" << (t_uint32)p_code << ")");
 	case ERROR_FILE_NOT_FOUND:
 	case ERROR_PATH_NOT_FOUND:
 		throw exception_io_not_found();
@@ -722,4 +722,42 @@ t_filesize file::get_remaining(abort_callback & p_abort) {
 	t_filesize position = get_position(p_abort);
 	pfc::dynamic_assert(position <= length);
 	return length - position;
+}
+
+
+t_filesize file::g_transfer(service_ptr_t<file> p_src,service_ptr_t<file> p_dst,t_filesize p_bytes,abort_callback & p_abort) {
+	return g_transfer(pfc::safe_cast<stream_reader*>(p_src.get_ptr()),pfc::safe_cast<stream_writer*>(p_dst.get_ptr()),p_bytes,p_abort);
+}
+
+void file::g_transfer_object(service_ptr_t<file> p_src,service_ptr_t<file> p_dst,t_filesize p_bytes,abort_callback & p_abort) {
+	if (p_bytes > 1024) /* don't bother on small objects */ 
+	{
+		t_filesize oldsize = p_dst->get_size(p_abort);
+		if (oldsize != filesize_invalid) {
+			t_filesize newpos = p_dst->get_position(p_abort) + p_bytes;
+			if (newpos > oldsize) p_dst->resize(newpos ,p_abort);
+		}
+	}
+	g_transfer(pfc::safe_cast<stream_reader*>(p_src.get_ptr()),pfc::safe_cast<stream_writer*>(p_dst.get_ptr()),p_bytes,p_abort);
+}
+
+
+void foobar2000_io::generate_temp_location_for_file(pfc::string_base & p_out, const char * p_origpath,const char * p_extension,const char * p_magic) {
+	hasher_md5_result hash;
+	{
+		static_api_ptr_t<hasher_md5> hasher;
+		hasher_md5_state state;
+		hasher->initialize(state);
+		hasher->process(state,p_origpath,strlen(p_origpath));
+		hasher->process(state,p_extension,strlen(p_extension));
+		hasher->process(state,p_magic,strlen(p_magic));
+		hash = hasher->get_result(state);
+	}
+
+	p_out = p_origpath;
+	p_out.truncate(p_out.scan_filename());
+	p_out += "temp-";
+	p_out += pfc::format_hexdump(hash.m_data,sizeof(hash.m_data),"");
+	p_out += ".";
+	p_out += p_extension;
 }

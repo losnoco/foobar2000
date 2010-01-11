@@ -97,6 +97,50 @@ namespace pfc {
 	template<typename t_item,t_size p_width,template<typename> class t_alloc = alloc_standard >
 	class array_hybrid_t : public array_t<t_item, pfc::alloc_hybrid<p_width,t_alloc>::alloc >
 	{};
+
+
+	//! Special simplififed version of array class that avoids stepping on landmines with classes without public copy operators/constructors.
+	template<typename t_item>
+	class array_staticsize_t {
+	private: typedef array_staticsize_t<t_item> t_self;
+	public:
+		array_staticsize_t() : m_size(0), m_array(NULL) {}
+		array_staticsize_t(t_size p_size) : m_size(0), m_array(NULL) {set_size_discard(p_size);}
+		~array_staticsize_t() {__release();}
+		
+		array_staticsize_t(const t_self & p_source) : m_size(0), m_array(NULL) {
+			*this = p_source;
+		}
+
+		const t_self & operator=(const t_self & p_source) {
+			__release();
+			m_size = p_source.get_size();
+			m_array = pfc::malloc_copy_t(p_source.get_size(),p_source.get_ptr());
+		}
+
+		void set_size_discard(t_size p_size) {
+			__release();
+			if (p_size > 0) {
+				m_array = new t_item[p_size];
+				m_size = p_size;
+			}
+		}
+		
+		t_size get_size() const {return m_size;}
+		const t_item * get_ptr() const {return m_array;}
+		t_item * get_ptr() {return m_array;}
+
+		const t_item & operator[](t_size p_index) const {PFC_ASSERT(p_index < get_size());return m_array[p_index];}
+		t_item & operator[](t_size p_index) {PFC_ASSERT(p_index < get_size());return m_array[p_index];}
+	private:
+		void __release() {
+			m_size = 0;
+			t_item * temp = pfc::replace_t(m_array,(t_item*)NULL);
+			if (temp != NULL) delete[] temp;
+		}
+		t_item * m_array;
+		t_size m_size;
+	};
 }
 
 

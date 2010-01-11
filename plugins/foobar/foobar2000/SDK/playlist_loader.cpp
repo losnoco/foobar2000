@@ -12,7 +12,8 @@ namespace {
 			process_path_internal(p_path,p_reader,m_callback,playlist_loader_callback::entry_directory_enumerated,p_stats);
 			return !m_callback.is_aborting();
 		}
-		bool FB2KAPI is_aborting() {return m_callback.is_aborting();}
+		bool is_aborting() const {return m_callback.is_aborting();}
+		abort_callback_event get_abort_event() const {return m_callback.get_abort_event();}
 	private:
 		playlist_loader_callback & m_callback;
 	};
@@ -21,14 +22,14 @@ namespace {
 void playlist_loader::g_load_playlist(const char * p_path,playlist_loader_callback & callback)
 {
 	TRACK_CALL_TEXT("playlist_loader::g_load_playlist");
-	string8 filename;
+	pfc::string8 filename;
 	
 	filename = file_path_canonical(p_path);
 
 	service_enum_t<playlist_loader> e;
 	service_ptr_t<playlist_loader> l;
 
-	string_extension extension(filename);
+	pfc::string_extension extension(filename);
 
 	service_ptr_t<file> r;
 
@@ -176,7 +177,7 @@ static void process_path_internal(const char * p_path,const service_ptr_t<file> 
 		{
 			if (p_reader.is_valid()) p_reader->reopen(p_callback);
 
-			string8 temp;
+			pfc::string8 temp;
 			try {
 				TRACK_CODE("link_resolver::resolve",ptr->resolve(p_reader,p_path,temp,p_callback));
 
@@ -203,16 +204,16 @@ void playlist_loader::g_process_path(const char * p_filename,playlist_loader_cal
 	process_path_internal(filename,0,callback,type,filestats_invalid);
 }
 
-void playlist_loader::g_save_playlist(const char * p_filename,const list_base_const_t<metadb_handle_ptr> & data,abort_callback & p_abort)
+void playlist_loader::g_save_playlist(const char * p_filename,const pfc::list_base_const_t<metadb_handle_ptr> & data,abort_callback & p_abort)
 {
 	TRACK_CALL_TEXT("playlist_loader::g_save_playlist");
-	string8 filename;
+	pfc::string8 filename;
 	filesystem::g_get_canonical_path(p_filename,filename);
 	try {
 		service_ptr_t<file> r;
 		filesystem::g_open(r,filename,filesystem::open_mode_write_new,p_abort);
 
-		string_extension ext(filename);
+		pfc::string_extension ext(filename);
 		
 		service_enum_t<playlist_loader> e;
 		service_ptr_t<playlist_loader> l;

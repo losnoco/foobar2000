@@ -3,14 +3,14 @@ namespace menu_helpers {
 	void win32_auto_mnemonics(HMENU menu);
 #endif
 
-	bool run_command_context(const GUID & p_command,const GUID & p_subcommand,const list_base_const_t<metadb_handle_ptr> & data);
-	bool run_command_context_ex(const GUID & p_command,const GUID & p_subcommand,const list_base_const_t<metadb_handle_ptr> & data,const GUID & caller);
+	bool run_command_context(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data);
+	bool run_command_context_ex(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data,const GUID & caller);
 	bool run_command_context_playlist(const GUID & p_command,const GUID & p_subcommand);
 	bool run_command_context_now_playing(const GUID & p_command,const GUID & p_subcommand);
 
 	bool test_command_context(const GUID & p_guid);
 
-	bool is_command_checked_context(const GUID & p_command,const GUID & p_subcommand,const list_base_const_t<metadb_handle_ptr> & data);
+	bool is_command_checked_context(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data);
 	bool is_command_checked_context_playlist(const GUID & p_command,const GUID & p_subcommand);
 
 	bool find_command_by_name(const char * p_name,service_ptr_t<contextmenu_item> & p_item,unsigned & p_index);
@@ -104,28 +104,28 @@ public:
 		;
 
 	static bool run_main(const GUID & guid);
-	static inline bool run_context(const GUID & guid,const list_base_const_t<metadb_handle_ptr> &data) {return menu_helpers::run_command_context(guid,pfc::guid_null,data);}
-	static inline bool run_context(const GUID & guid,const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller) {return menu_helpers::run_command_context_ex(guid,pfc::guid_null,data,caller);}
+	static inline bool run_context(const GUID & guid,const pfc::list_base_const_t<metadb_handle_ptr> &data) {return menu_helpers::run_command_context(guid,pfc::guid_null,data);}
+	static inline bool run_context(const GUID & guid,const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller) {return menu_helpers::run_command_context_ex(guid,pfc::guid_null,data,caller);}
 
-	static inline bool context_file_properties(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_file_properties,data,caller);}
-	static inline bool context_file_open_directory(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_file_open_directory,data,caller);}
-	static inline bool context_copy_names(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_copy_names,data,caller);}
-	static inline bool context_send_to_playlist(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_send_to_playlist,data,caller);}
-	static inline bool context_reload_info(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_reload_info,data,caller);}
-	static inline bool context_reload_info_if_changed(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_reload_info_if_changed,data,caller);}
-	static inline bool context_rewrite_info(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_rewrite_info,data,caller);}
-	static inline bool context_remove_tags(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_remove_tags,data,caller);}
-	static inline bool context_remove_from_database(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_remove_from_database,data,caller);}
-	static inline bool context_convert_run(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_convert_run,data,caller);}
-	static inline bool context_convert_run_singlefile(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_convert_run_singlefile,data,caller);}
-	static inline bool context_write_cd(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_write_cd,data,caller);}
-	static inline bool context_rg_scan_track(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_rg_scan_track,data,caller);}
-	static inline bool context_rg_scan_album(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_rg_scan_album,data,caller);}
-	static inline bool context_rg_scan_album_multi(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_rg_scan_album_multi,data,caller);}
-	static inline bool context_rg_remove(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_rg_remove,data,caller);}
-	static inline bool context_save_playlist(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_save_playlist,data,caller);}
-	static inline bool context_masstag_edit(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_masstag_edit,data,caller);}
-	static inline bool context_masstag_rename(const list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_masstag_rename,data,caller);}
+	static inline bool context_file_properties(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_file_properties,data,caller);}
+	static inline bool context_file_open_directory(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_file_open_directory,data,caller);}
+	static inline bool context_copy_names(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_copy_names,data,caller);}
+	static inline bool context_send_to_playlist(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_send_to_playlist,data,caller);}
+	static inline bool context_reload_info(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_reload_info,data,caller);}
+	static inline bool context_reload_info_if_changed(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_reload_info_if_changed,data,caller);}
+	static inline bool context_rewrite_info(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_rewrite_info,data,caller);}
+	static inline bool context_remove_tags(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_remove_tags,data,caller);}
+	static inline bool context_remove_from_database(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_remove_from_database,data,caller);}
+	static inline bool context_convert_run(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_convert_run,data,caller);}
+	static inline bool context_convert_run_singlefile(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_convert_run_singlefile,data,caller);}
+	static inline bool context_write_cd(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_write_cd,data,caller);}
+	static inline bool context_rg_scan_track(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_rg_scan_track,data,caller);}
+	static inline bool context_rg_scan_album(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_rg_scan_album,data,caller);}
+	static inline bool context_rg_scan_album_multi(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_rg_scan_album_multi,data,caller);}
+	static inline bool context_rg_remove(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_rg_remove,data,caller);}
+	static inline bool context_save_playlist(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_save_playlist,data,caller);}
+	static inline bool context_masstag_edit(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_masstag_edit,data,caller);}
+	static inline bool context_masstag_rename(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_masstag_rename,data,caller);}
 	static inline bool main_always_on_top() {return run_main(guid_main_always_on_top);}
 	static inline bool main_preferences() {return run_main(guid_main_preferences);}
 	static inline bool main_about() {return run_main(guid_main_about);}

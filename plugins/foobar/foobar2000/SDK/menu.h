@@ -58,6 +58,7 @@ public:
 	virtual void execute(t_uint32 p_index,service_ptr_t<service_base> p_callback) = 0;
 
 	static bool g_execute(const GUID & p_guid,service_ptr_t<service_base> p_callback = service_ptr_t<service_base>());
+	static bool g_find_by_name(const char * p_name,GUID & p_guid);
 
 	static const GUID class_guid;
 
@@ -137,7 +138,7 @@ public:
 	t_uint32 get_sort_priority() {return m_priority;}
 	void get_display_string(pfc::string_base & p_out) {p_out = m_name;}
 private:
-	GUID m_guid,m_parent; t_uint32 m_priority; string8 m_name;
+	GUID m_guid,m_parent; t_uint32 m_priority; pfc::string8 m_name;
 };
 
 typedef service_factory_single_t<mainmenu_group,mainmenu_group_impl> __mainmenu_group_factory;

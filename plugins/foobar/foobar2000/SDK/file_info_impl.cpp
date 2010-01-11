@@ -137,8 +137,8 @@ void file_info_impl::set_replaygain(const replaygain_info & p_info)
 
 void info_storage::info_entry::init(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
 {
-	p_name_length = strlen_max(p_name,p_name_length);
-	p_value_length = strlen_max(p_value,p_value_length);
+	p_name_length = pfc::strlen_max(p_name,p_name_length);
+	p_value_length = pfc::strlen_max(p_value,p_value_length);
 	m_name = (char*)malloc(p_name_length + p_value_length + 2);
 	m_value = m_name + p_name_length + 1;
 
@@ -232,7 +232,7 @@ void meta_storage::meta_entry::remove_values(const bit_array & p_mask)
 
 void meta_storage::meta_entry::insert_value(t_size p_value_index,const char * p_value,t_size p_value_length)
 {
-	string_simple temp;
+	pfc::string_simple temp;
 	temp.set_string(p_value,p_value_length);
 	pfc::insert_swap_t(m_values,temp,p_value_index);
 }

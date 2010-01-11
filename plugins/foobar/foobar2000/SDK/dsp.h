@@ -37,16 +37,15 @@ protected:
 	~dsp_chunk_list() {}
 };
 
-class dsp_chunk_list_i : public dsp_chunk_list//implementation
+class dsp_chunk_list_impl : public dsp_chunk_list//implementation
 {
-	ptr_list_t<audio_chunk_i> data,recycled;
+	pfc::list_t<pfc::rcptr_t<audio_chunk> > m_data, m_recycled;
 public:
-	virtual t_size get_count() const;
-	virtual audio_chunk * get_item(t_size n) const;
-	virtual void remove_by_idx(t_size idx);
-	virtual void remove_mask(const bit_array & mask);
-	virtual audio_chunk * insert_item(t_size idx,t_size hint_size=0);
-	~dsp_chunk_list_i();
+	t_size get_count() const;
+	audio_chunk * get_item(t_size n) const;
+	void remove_by_idx(t_size idx);
+	void remove_mask(const bit_array & mask);
+	audio_chunk * insert_item(t_size idx,t_size hint_size=0);
 };
 
 class NOVTABLE dsp : public service_base
@@ -309,7 +308,7 @@ public:
 
 	~dsp_chain_config_impl();
 private:
-	ptr_list_t<dsp_preset_impl> m_data;
+	pfc::ptr_list_t<dsp_preset_impl> m_data;
 };
 
 class cfg_dsp_chain_config : public cfg_var

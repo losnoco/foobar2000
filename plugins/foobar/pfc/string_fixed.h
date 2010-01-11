@@ -1,6 +1,8 @@
 #ifndef _PFC_STRING_FIXED_H_
 #define _PFC_STRING_FIXED_H_
 
+namespace pfc {
+
 template<t_size t_length>
 class string_fixed_t : public pfc::string_base
 {
@@ -53,4 +55,5 @@ private:
 	char m_data[t_length];
 };
 
+}
 #endif

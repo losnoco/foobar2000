@@ -20,7 +20,7 @@ bool menu_helpers::context_get_description(const GUID& p_guid,pfc::string_base &
 	return false;
 }
 
-static bool run_context_command_internal(const GUID & p_command,const GUID & p_subcommand,const list_base_const_t<metadb_handle_ptr> & data,const GUID & caller)
+static bool run_context_command_internal(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data,const GUID & caller)
 {
 	service_enum_t<contextmenu_item> e;
 	service_ptr_t<contextmenu_item> ptr;
@@ -42,12 +42,12 @@ static bool run_context_command_internal(const GUID & p_command,const GUID & p_s
 	return done;
 }
 
-bool menu_helpers::run_command_context(const GUID & p_command,const GUID & p_subcommand,const list_base_const_t<metadb_handle_ptr> & data)
+bool menu_helpers::run_command_context(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data)
 {
 	return run_context_command_internal(p_command,p_subcommand,data,contextmenu_item::caller_undefined);
 }
 
-bool menu_helpers::run_command_context_ex(const GUID & p_command,const GUID & p_subcommand,const list_base_const_t<metadb_handle_ptr> & data,const GUID & caller)
+bool menu_helpers::run_command_context_ex(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data,const GUID & caller)
 {
 	return run_context_command_internal(p_command,p_subcommand,data,caller);
 }
@@ -72,12 +72,12 @@ bool menu_helpers::test_command_context(const GUID & p_guid)
 	return done;
 }
 
-static bool g_is_checked(const GUID & p_command,const GUID & p_subcommand,const list_base_const_t<metadb_handle_ptr> & data,const GUID & caller)
+static bool g_is_checked(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data,const GUID & caller)
 {
 	service_enum_t<contextmenu_item> e;
 	service_ptr_t<contextmenu_item> ptr;
 	bool done = false, rv = false;
-	string8_fastalloc dummystring;
+	pfc::string8_fastalloc dummystring;
 	if (e.first(ptr)) do {
 		unsigned action,num_actions = ptr->get_num_items();
 		for(action=0;action<num_actions;action++)
@@ -98,7 +98,7 @@ static bool g_is_checked(const GUID & p_command,const GUID & p_subcommand,const 
 	return rv;
 }
 
-bool menu_helpers::is_command_checked_context(const GUID & p_command,const GUID & p_subcommand,const list_base_const_t<metadb_handle_ptr> & data)
+bool menu_helpers::is_command_checked_context(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data)
 {
 	return g_is_checked(p_command,p_subcommand,data,contextmenu_item::caller_undefined);
 }
@@ -133,7 +133,7 @@ bool menu_helpers::run_command_context_now_playing(const GUID & p_command,const 
 	service_ptr_t<play_control> api;
 	if (!play_control::g_get(api)) return false;
 	if (!api->get_now_playing(item)) return false;//not playing
-	return run_command_context_ex(p_command,p_subcommand,list_single_ref_t<metadb_handle_ptr>(item),contextmenu_item::caller_now_playing);
+	return run_command_context_ex(p_command,p_subcommand,pfc::list_single_ref_t<metadb_handle_ptr>(item),contextmenu_item::caller_now_playing);
 }
 
 
@@ -141,7 +141,7 @@ bool menu_helpers::guid_from_name(const char * p_name,unsigned p_name_len,GUID &
 {
 	service_enum_t<contextmenu_item> e;
 	service_ptr_t<contextmenu_item> ptr;
-	string8_fastalloc nametemp;
+	pfc::string8_fastalloc nametemp;
 	while(e.next(ptr))
 	{
 		unsigned n, m = ptr->get_num_items();
@@ -162,7 +162,7 @@ bool menu_helpers::name_from_guid(const GUID & p_guid,pfc::string_base & p_out)
 {
 	service_enum_t<contextmenu_item> e;
 	service_ptr_t<contextmenu_item> ptr;
-	string8_fastalloc nametemp;
+	pfc::string8_fastalloc nametemp;
 	while(e.next(ptr))
 	{
 		unsigned n, m = ptr->get_num_items();
@@ -195,8 +195,8 @@ const char * menu_helpers::guid_to_name_table::search(const GUID & p_guid)
 	if (!m_inited)
 	{
 		m_data.set_size(calc_total_action_count());
-		unsigned dataptr = 0;
-		string8_fastalloc nametemp;
+		t_size dataptr = 0;
+		pfc::string8_fastalloc nametemp;
 
 		service_enum_t<contextmenu_item> e;
 		service_ptr_t<contextmenu_item> ptr;
@@ -263,8 +263,8 @@ bool menu_helpers::name_to_guid_table::search(const char * p_name,unsigned p_nam
 	if (!m_inited)
 	{
 		m_data.set_size(calc_total_action_count());
-		unsigned dataptr = 0;
-		string8_fastalloc nametemp;
+		t_size dataptr = 0;
+		pfc::string8_fastalloc nametemp;
 
 		service_enum_t<contextmenu_item> e;
 		service_ptr_t<contextmenu_item> ptr;
@@ -311,7 +311,7 @@ menu_helpers::name_to_guid_table::~name_to_guid_table()
 
 bool menu_helpers::find_command_by_name(const char * p_name,service_ptr_t<contextmenu_item> & p_item,unsigned & p_index)
 {
-	string8_fastalloc path,name;
+	pfc::string8_fastalloc path,name;
 	service_enum_t<contextmenu_item> e;
 	service_ptr_t<contextmenu_item> ptr;
 	if (e.first(ptr)) do {

@@ -1,9 +1,9 @@
 #include "stdafx.h"
 
-static bool grab_items_by_path(list_base_t<metadb_handle_ptr> & p_out,const char * p_path,abort_callback & p_abort)
+static bool grab_items_by_path(pfc::list_base_t<metadb_handle_ptr> & p_out,const char * p_path,abort_callback & p_abort)
 {
 	try {
-		string8 path;
+		pfc::string8 path;
 		filesystem::g_get_canonical_path(p_path,path);
 		p_out.remove_all();
 		service_ptr_t<input_info_reader> reader;
@@ -78,7 +78,7 @@ bool file_move_helper::on_moved(const char * p_path,abort_callback & p_abort,fil
 	p_cb.on_library_add_items(items);
 	p_cb.on_library_remove_items(m_source_handles);
 
-	p_cb.on_moved(list_single_ref_t<const char*>(get_source_path()),list_single_ref_t<const char*>(path));
+	p_cb.on_moved(pfc::list_single_ref_t<const char*>(get_source_path()),pfc::list_single_ref_t<const char*>(path));
 
 	return true;
 }
@@ -91,19 +91,19 @@ bool file_move_helper::on_copied(const char * p_path,abort_callback & p_abort,fi
 	metadb_handle_list items;
 	make_new_item_list(items,path,p_cb);
 	/*if (p_update_db)*/ p_cb.on_library_add_items(items);
-	p_cb.on_copied(list_single_ref_t<const char*>(get_source_path()),list_single_ref_t<const char*>(path));
+	p_cb.on_copied(pfc::list_single_ref_t<const char*>(get_source_path()),pfc::list_single_ref_t<const char*>(path));
 	return true;
 }
 
-bool file_move_helper::g_on_deleted(const list_base_const_t<const char *> & p_files)
+bool file_move_helper::g_on_deleted(const pfc::list_base_const_t<const char *> & p_files)
 {
 	file_operation_callback::g_on_files_deleted(p_files);
 	return true;
 }
 
-void file_move_helper::make_new_item_list(list_base_t<metadb_handle_ptr> & p_out,const char * p_new_path,file_move_callback_manager & p_cb)
+void file_move_helper::make_new_item_list(pfc::list_base_t<metadb_handle_ptr> & p_out,const char * p_new_path,file_move_callback_manager & p_cb)
 {
-	string8 new_path;
+	pfc::string8 new_path;
 	filesystem::g_get_canonical_path(p_new_path,new_path);
 
 	t_size n; const t_size m = m_data.get_size();
@@ -131,9 +131,9 @@ void file_move_helper::make_new_item_list(list_base_t<metadb_handle_ptr> & p_out
 	if (hintptr > 0)
 	{
 		p_cb.on_hint(
-			list_const_array_t<metadb_handle_ptr,const pfc::array_t<metadb_handle_ptr> &>(hint_handles,hintptr),
-			list_const_array_t<const file_info *,const pfc::array_t<const file_info *> &>(hint_infos,hintptr),
-			list_const_array_t<t_filestats,const pfc::array_t<t_filestats> &>(hint_stats,hintptr)
+			pfc::list_const_array_t<metadb_handle_ptr,const pfc::array_t<metadb_handle_ptr> &>(hint_handles,hintptr),
+			pfc::list_const_array_t<const file_info *,const pfc::array_t<const file_info *> &>(hint_infos,hintptr),
+			pfc::list_const_array_t<t_filestats,const pfc::array_t<t_filestats> &>(hint_stats,hintptr)
 			);
 /*
 		static_api_ptr_t<metadb_io>()->hint_multi(
@@ -150,7 +150,7 @@ const char * file_move_helper::get_source_path() const
 	return m_data.get_size() > 0 ? m_data[0].m_location.get_path() : 0;
 }
 
-t_size file_move_helper::g_filter_dead_files_sorted_make_mask(list_base_t<metadb_handle_ptr> & p_data,const list_base_const_t<const char*> & p_dead,bit_array_var & p_mask)
+t_size file_move_helper::g_filter_dead_files_sorted_make_mask(pfc::list_base_t<metadb_handle_ptr> & p_data,const pfc::list_base_const_t<const char*> & p_dead,bit_array_var & p_mask)
 {
 	t_size n, m = p_data.get_count();
 	t_size found = 0;
@@ -164,7 +164,7 @@ t_size file_move_helper::g_filter_dead_files_sorted_make_mask(list_base_t<metadb
 	return found;
 }
 
-t_size file_move_helper::g_filter_dead_files_sorted(list_base_t<metadb_handle_ptr> & p_data,const list_base_const_t<const char*> & p_dead)
+t_size file_move_helper::g_filter_dead_files_sorted(pfc::list_base_t<metadb_handle_ptr> & p_data,const pfc::list_base_const_t<const char*> & p_dead)
 {
 	bit_array_bittable mask(p_data.get_count());
 	t_size found = g_filter_dead_files_sorted_make_mask(p_data,p_dead,mask);
@@ -172,40 +172,40 @@ t_size file_move_helper::g_filter_dead_files_sorted(list_base_t<metadb_handle_pt
 	return found;
 }
 
-t_size file_move_helper::g_filter_dead_files(list_base_t<metadb_handle_ptr> & p_data,const list_base_const_t<const char*> & p_dead)
+t_size file_move_helper::g_filter_dead_files(pfc::list_base_t<metadb_handle_ptr> & p_data,const pfc::list_base_const_t<const char*> & p_dead)
 {
-	ptr_list_t<const char> temp;
+	pfc::ptr_list_t<const char> temp;
 	temp.add_items(p_dead);
 	temp.sort_t(metadb::path_compare);
 	return g_filter_dead_files_sorted(p_data,temp);
 }
 
 
-void file_move_callback_manager::on_library_add_items(const list_base_const_t<metadb_handle_ptr> & p_data)
+void file_move_callback_manager::on_library_add_items(const pfc::list_base_const_t<metadb_handle_ptr> & p_data)
 {
 	m_added.add_items(p_data);
 }
 
-void file_move_callback_manager::on_library_remove_items(const list_base_const_t<metadb_handle_ptr> & p_data)
+void file_move_callback_manager::on_library_remove_items(const pfc::list_base_const_t<metadb_handle_ptr> & p_data)
 {
 	m_removed.add_items(p_data);
 }
 
-void file_move_callback_manager::on_moved(const string_list_const & p_from,const string_list_const & p_to)
+void file_move_callback_manager::on_moved(const pfc::string_list_const & p_from,const pfc::string_list_const & p_to)
 {
 	assert(p_from.get_count() == p_to.get_count());
 	m_move_from += p_from;
 	m_move_to += p_to;
 }
 
-void file_move_callback_manager::on_copied(const string_list_const & p_from,const string_list_const & p_to)
+void file_move_callback_manager::on_copied(const pfc::string_list_const & p_from,const pfc::string_list_const & p_to)
 {
 	assert(p_from.get_count() == p_to.get_count());
 	m_copy_from += p_from;
 	m_copy_to += p_to;
 }
 
-void file_move_callback_manager::on_hint(const list_base_const_t<metadb_handle_ptr> & p_list,const list_base_const_t<const file_info*> & p_infos,const list_base_const_t<t_filestats> & p_stats)
+void file_move_callback_manager::on_hint(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,const pfc::list_base_const_t<const file_info*> & p_infos,const pfc::list_base_const_t<t_filestats> & p_stats)
 {
 	m_hint_handles.add_items(p_list);
 	m_hint_stats.add_items(p_stats);
@@ -230,7 +230,7 @@ void file_move_callback_manager::run_callback()
 	{
 		static_api_ptr_t<metadb_io>()->hint_multi(
 			m_hint_handles,
-			ptr_list_const_array_t<const file_info,const list_t<file_info_const_impl> &>(m_hint_infos,m_hint_infos.get_count()),
+			pfc::ptr_list_const_array_t<const file_info,const pfc::list_t<file_info_const_impl> &>(m_hint_infos,m_hint_infos.get_count()),
 			m_hint_stats,
 			bit_array_false());
 

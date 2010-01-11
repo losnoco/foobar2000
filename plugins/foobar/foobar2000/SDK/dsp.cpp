@@ -1,42 +1,42 @@
 #include "foobar2000.h"
 #include <math.h>
 
-t_size dsp_chunk_list_i::get_count() const {return data.get_count();}
+t_size dsp_chunk_list_impl::get_count() const {return m_data.get_count();}
 
-audio_chunk * dsp_chunk_list_i::get_item(t_size n) const {return n>=0 && n<data.get_count() ? data[n] : 0;}
+audio_chunk * dsp_chunk_list_impl::get_item(t_size n) const {return n>=0 && n<m_data.get_count() ? &*m_data[n] : 0;}
 
-void dsp_chunk_list_i::remove_by_idx(t_size idx)
+void dsp_chunk_list_impl::remove_by_idx(t_size idx)
 {
-	if (idx>=0 && idx<data.get_count())
-		recycled.add_item(data.remove_by_idx(idx));
+	if (idx>=0 && idx<m_data.get_count())
+		m_recycled.add_item(m_data.remove_by_idx(idx));
 }
 
-void dsp_chunk_list_i::remove_mask(const bit_array & mask)
+void dsp_chunk_list_impl::remove_mask(const bit_array & mask)
 {
-	t_size n, m = data.get_count();
+	t_size n, m = m_data.get_count();
 	for(n=0;n<m;n++)
 		if (mask[m])
-			recycled.add_item(data[n]);
-	data.remove_mask(mask);
+			m_recycled.add_item(m_data[n]);
+	m_data.remove_mask(mask);
 }
 
-audio_chunk * dsp_chunk_list_i::insert_item(t_size idx,t_size hint_size)
+audio_chunk * dsp_chunk_list_impl::insert_item(t_size idx,t_size hint_size)
 {
 	t_size max = get_count();
 	if (idx<0) idx=0;
 	else if (idx>max) idx = max;
-	audio_chunk_i * ret = 0;
-	if (recycled.get_count()>0)
+	pfc::rcptr_t<audio_chunk> ret;
+	if (m_recycled.get_count()>0)
 	{
 		t_size best;
 		if (hint_size>0)
 		{
 			best = 0;
-			t_size best_found = recycled[0]->get_data_size(), n, total = recycled.get_count();
+			t_size best_found = m_recycled[0]->get_data_size(), n, total = m_recycled.get_count();
 			for(n=1;n<total;n++)
 			{
 				if (best_found==hint_size) break;
-				t_size size = recycled[n]->get_data_size();
+				t_size size = m_recycled[n]->get_data_size();
 				int delta_old = abs((int)best_found - (int)hint_size), delta_new = abs((int)size - (int)hint_size);
 				if (delta_new < delta_old)
 				{
@@ -45,20 +45,18 @@ audio_chunk * dsp_chunk_list_i::insert_item(t_size idx,t_size hint_size)
 				}
 			}
 		}
-		else best = recycled.get_count()-1;
+		else best = m_recycled.get_count()-1;
 
-		ret = recycled.remove_by_idx(best);
+		ret = m_recycled.remove_by_idx(best);
 		ret->set_sample_count(0);
 		ret->set_channels(0);
 		ret->set_srate(0);
 	}
-	else ret = new audio_chunk_impl;
-	if (idx==max) data.add_item(ret);
-	else data.insert_item(ret,idx);
-	return ret;
+	else ret = pfc::rcnew_t<audio_chunk_impl>();
+	if (idx==max) m_data.add_item(ret);
+	else m_data.insert_item(ret,idx);
+	return &*ret;
 }
-
-dsp_chunk_list_i::~dsp_chunk_list_i() {data.delete_all();recycled.delete_all();}
 
 void dsp_chunk_list::remove_bad_chunks()
 {
@@ -350,7 +348,7 @@ void dsp_chain_config::get_name_list(pfc::string_base & p_out) const
 			if (added) p_out += ", ";
 			added = true;
 
-			string8 temp;
+			pfc::string8 temp;
 			ptr->get_name(temp);
 			p_out += temp;
 		}

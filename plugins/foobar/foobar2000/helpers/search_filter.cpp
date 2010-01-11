@@ -10,8 +10,8 @@ static bool is_format_spec(const char * ptr) {return strchr(ptr,'%') || strchr(p
 namespace search_tools {
 
 	class substring_filter {
-		ptr_list_t<char> data;
-		mutable string8_fastalloc temp;
+		pfc::ptr_list_t<char> data;
+		mutable pfc::string8_fastalloc temp;
 	public:
 		substring_filter(const char * src) {
 			while(*src) {
@@ -60,7 +60,7 @@ namespace search_tools {
 	};
 
 	class filter_node_missing : public filter_node {
-		string8 m_field;
+		pfc::string8 m_field;
 	public:
 		filter_node_missing(const char * p_string,t_size p_len) {
 			while(p_len > 0 && p_string[0] == ' ') {p_string++;p_len--;}
@@ -74,9 +74,9 @@ namespace search_tools {
 	};
 
 	class filter_node_is_format : public filter_node {
-		string_simple param;
+		pfc::string_simple param;
 		service_ptr_t<titleformat_object> m_script;
-		mutable string8_fastalloc temp;
+		mutable pfc::string8_fastalloc temp;
 		bool is_wildcard;
 		bool test_internal(const char * src) const {
 			if (is_wildcard) return wildcard_helper::test(src,param,false);
@@ -97,8 +97,8 @@ namespace search_tools {
 	};
 
 	class filter_node_is : public filter_node {
-		string_simple field,param;
-		mutable string8_fastalloc temp;
+		pfc::string_simple field,param;
+		mutable pfc::string8_fastalloc temp;
 		bool is_wildcard;
 		bool test_internal(const char * src) const {
 			if (is_wildcard) return wildcard_helper::test(src,param,false);
@@ -123,8 +123,8 @@ namespace search_tools {
 	};
 
 	class filter_node_has : public filter_node {
-		string_simple field;
-		mutable string8_fastalloc temp;
+		pfc::string_simple field;
+		mutable pfc::string8_fastalloc temp;
 		substring_filter m_filter;
 	public:
 		filter_node_has(const char * p_field,const char * p_param)
@@ -149,9 +149,9 @@ namespace search_tools {
 	};
 
 	class filter_node_has_ex : public filter_node {
-		string_simple field;
+		pfc::string_simple field;
 		substring_filter m_filter;			
-		mutable string8_fastalloc temp;
+		mutable pfc::string8_fastalloc temp;
 	public:
 		filter_node_has_ex(const char * p_field,const char * p_param)
 			: field(p_field), m_filter(p_param)
@@ -166,7 +166,7 @@ namespace search_tools {
 
 	class filter_node_simple : public filter_node {
 		substring_filter m_filter;
-		mutable string8_fastalloc temp;
+		mutable pfc::string8_fastalloc temp;
 	public:
 		filter_node_simple(const char * src) : m_filter(src) {}
 		bool test(const file_info * info,const metadb_handle_ptr & handle) const {
@@ -310,7 +310,7 @@ namespace search_tools {
 	}
 
 	static filter_node_cptr operator_handler_has(const parser & token_left,const parser & token_right) {
-		string8 name,value;
+		pfc::string8 name,value;
 		parse_string(token_left,name); parse_string(token_right,value);
 		if (!strcmp(name,"*")) return pfc::rcnew_t<filter_node_simple>(value);
 		else if (is_format_spec(name)) return pfc::rcnew_t<filter_node_has_ex>(name,value);
@@ -319,7 +319,7 @@ namespace search_tools {
 
 	static filter_node_cptr operator_handler_is(const parser & token_left,const parser & token_right)
 	{
-		string8 name,value;
+		pfc::string8 name,value;
 		parse_string(token_left,name); parse_string(token_right,value);
 		if (is_format_spec(name)) return pfc::rcnew_t<filter_node_is_format>(name,value);
 		else return pfc::rcnew_t<filter_node_is>(name,value);
@@ -327,12 +327,12 @@ namespace search_tools {
 
 	class filter_node_mathop : public filter_node
 	{
-		string_simple left;
+		pfc::string_simple left;
 		service_ptr_t<titleformat_object> left_script;
 		t_int64 rval;
 		bool left_ex;
 		int type;
-		mutable string8_fastalloc ltemp;
+		mutable pfc::string8_fastalloc ltemp;
 
 		static t_int64 parse_int_or_time(const char * ptr)
 		{
@@ -410,7 +410,7 @@ namespace search_tools {
 	};
 
 	static filter_node_cptr operator_handler_mathop(const parser & token_left,const parser & token_right,int type) {
-		string8 left,right;
+		pfc::string8 left,right;
 		parse_string(token_left,left); parse_string(token_right,right);
 		return pfc::rcnew_t<filter_node_mathop>(left,right,type);
 	}
@@ -505,15 +505,15 @@ namespace search_tools {
 
 		if (b_allow_simple)
 		{
-			if (!has_operators(string8(p.get_ptr(),p.get_remaining())))
+			if (!has_operators(pfc::string8(p.get_ptr(),p.get_remaining())))
 			{
-				string8 temp;
+				pfc::string8 temp;
 				parse_string(p,temp);
 				return pfc::rcnew_t<filter_node_simple>(temp);
 			}
 		}
 
-		list_hybrid_t<token_info,8> operators;
+		pfc::list_hybrid_t<token_info,8> operators;
 		
 		p.skip_spacing();
 		while(p.get_remaining()>0)
@@ -573,7 +573,7 @@ namespace search_tools {
 			}
 			else if (b_allow_simple)
 			{
-				string8 temp;
+				pfc::string8 temp;
 				parse_string(p,temp);
 				return pfc::rcnew_t<filter_node_simple>(temp);
 			}

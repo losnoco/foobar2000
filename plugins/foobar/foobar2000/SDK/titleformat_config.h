@@ -67,7 +67,7 @@ private:
 	void get_data_raw(stream_writer * p_stream,abort_callback & p_abort);
 	void set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort);
 
-	string8 m_name,m_value,m_value_default;
+	pfc::string8 m_name,m_value,m_value_default;
 	service_ptr_t<titleformat_object> m_instance;
 	bool m_compilation_failed;
 	GUID m_guid;

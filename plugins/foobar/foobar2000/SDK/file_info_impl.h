@@ -25,7 +25,7 @@ private:
 		char * m_name;
 		char * m_value;
 	};
-	list_t<info_entry> m_info;
+	pfc::list_t<info_entry> m_info;
 };
 
 class meta_storage
@@ -63,8 +63,8 @@ public:
 		inline t_size get_value_count() const {return m_values.get_size();}
 		
 
-		string_simple m_name;
-		pfc::array_hybrid_t<string_simple,1,pfc::alloc_fast > m_values;
+		pfc::string_simple m_name;
+		pfc::array_hybrid_t<pfc::string_simple,1,pfc::alloc_fast > m_values;
 
 	};
 private:

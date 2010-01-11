@@ -7,8 +7,8 @@ class cfg_dropdown_history
 	enum {separator = '\n'};
 	cfg_string data;
 	unsigned max;
-	void build_list(ptr_list_t<char> & out);
-	void parse_list(const ptr_list_t<char> & src);
+	void build_list(pfc::ptr_list_t<char> & out);
+	void parse_list(const pfc::ptr_list_t<char> & src);
 public:
 	cfg_dropdown_history(const GUID & p_guid,unsigned p_max = 10,const char * init_vals = "") : data(p_guid,init_vals) {max = p_max;}
 	void setup_dropdown(HWND wnd);

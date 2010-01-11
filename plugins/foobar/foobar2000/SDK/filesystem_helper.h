@@ -9,7 +9,7 @@ public:
 	const char * get_ptr() const {return m_data.get_ptr();}
 	t_size get_length() const {return m_data.get_length();}
 private:
-	string8 m_data;
+	pfc::string8 m_data;
 };
 
 class file_path_display {
@@ -19,7 +19,7 @@ public:
 	const char * get_ptr() const {return m_data.get_ptr();}
 	t_size get_length() const {return m_data.get_length();}
 private:
-	string8 m_data;
+	pfc::string8 m_data;
 };
 
 

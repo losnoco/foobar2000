@@ -10,20 +10,20 @@ namespace {
 		{
 			p_source.meta_format(p_name,m_buffer);
 			m_buffer.replace_byte('\"','\'');
-			uReplaceString(m_buffer,string8(m_buffer),infinite,"\x0d\x0a",2,"\\",1,false);
+			uReplaceString(m_buffer,pfc::string8(m_buffer),infinite,"\x0d\x0a",2,"\\",1,false);
 //			m_buffer.replace_byte(10,'\\');
 //			m_buffer.replace_byte(13,'\\');
 			m_buffer.replace_nontext_chars();
 		}
 		inline operator const char*() const {return m_buffer;}
 	private:
-		string8_fastalloc m_buffer;
+		pfc::string8_fastalloc m_buffer;
 	};
 }
 
 static bool is_meta_same_everywhere(const cue_creator::t_entry_list & p_list,const char * p_meta)
 {
-	string8_fastalloc reference,temp;
+	pfc::string8_fastalloc reference,temp;
 
 	cue_creator::t_entry_list::const_iterator iter;
 	iter = p_list.first();
@@ -42,7 +42,7 @@ static const char g_eol[] = "\r\n";
 
 namespace cue_creator
 {
-	void create(string_formatter & p_out,const t_entry_list & p_data)
+	void create(pfc::string_formatter & p_out,const t_entry_list & p_data)
 	{
 		if (p_data.get_count() == 0) return;
 		bool album_artist_global =	is_meta_same_everywhere(p_data,"album artist"),
@@ -101,7 +101,7 @@ namespace cue_creator
 				p_out << "REM REPLAYGAIN_ALBUM_PEAK " << rgbuffer << g_eol;			
 		}
 
-		string8 last_file;
+		pfc::string8 last_file;
 
 		for(t_entry_list::const_iterator iter = p_data.first();iter.is_valid();++iter)
 		{
@@ -111,7 +111,7 @@ namespace cue_creator
 				last_file = iter->m_file;
 			}
 
-			p_out << "  TRACK " << format_int(iter->m_track_number,2) << " AUDIO" << g_eol;
+			p_out << "  TRACK " << pfc::format_int(iter->m_track_number,2) << " AUDIO" << g_eol;
 
 			if (iter->m_infos.meta_find("title") != infinite)
 				p_out << "    TITLE \"" << format_meta(iter->m_infos,"title") << "\"" << g_eol;
@@ -145,7 +145,7 @@ namespace cue_creator
 
 			for(unsigned n=2;n<t_cuesheet_index_list::count && iter->m_index_list.m_positions[n] > 0;n++)
 			{
-				p_out << "    INDEX " << format_uint(n,2) << " " << cuesheet_format_index_time(iter->m_index_list.m_positions[n]) << g_eol;
+				p_out << "    INDEX " << pfc::format_uint(n,2) << " " << cuesheet_format_index_time(iter->m_index_list.m_positions[n]) << g_eol;
 			}
 
 			// p_out << "    INDEX 01 " << cuesheet_format_index_time(iter->m_offset) << g_eol;

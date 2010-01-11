@@ -157,12 +157,13 @@ public:
 	inline void info_set_bitrate_vbr(t_int64 val) {info_set_int("bitrate_dynamic",val);}
 	inline t_int64 info_get_bitrate() const {return info_get_int("bitrate");}
 	inline void info_set_bitrate(t_int64 val) {info_set_int("bitrate",val);}
+	bool is_encoding_lossy() const;
 
 	void info_calculate_bitrate(t_filesize p_filesize,double p_length);
 
 	unsigned info_get_decoded_bps() const;//what bps the stream originally was (before converting to audio_sample), 0 if unknown
 
-	void merge(const list_base_const_t<const file_info*> & p_sources);
+	void merge(const pfc::list_base_const_t<const file_info*> & p_sources);
 
 	bool are_meta_fields_identical(t_size p_index1,t_size p_index2) const;
 

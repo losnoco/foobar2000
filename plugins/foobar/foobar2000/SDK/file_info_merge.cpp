@@ -19,7 +19,7 @@ static void merge_tags_copy_info(const char * field,const file_info * from,file_
 	if (val) to->info_set(field,val);
 }
 
-void file_info::merge(const list_base_const_t<const file_info*> & p_in)
+void file_info::merge(const pfc::list_base_const_t<const file_info*> & p_in)
 {
 	t_size in_count = p_in.get_count();
 	if (in_count == 0)
@@ -42,7 +42,7 @@ void file_info::merge(const list_base_const_t<const file_info*> & p_in)
 		return;
 	}
 
-	ptr_list_t<const char> fieldnames;
+	pfc::ptr_list_t<const char> fieldnames;
 
 	{
 		t_size in_ptr;
@@ -83,7 +83,7 @@ void file_info::merge(const list_base_const_t<const file_info*> & p_in)
 	}
 
 	{
-		string8_fastalloc tagtype;
+		pfc::string8_fastalloc tagtype;
 		replaygain_info rg = get_replaygain();
 		t_size in_ptr;
 		for(in_ptr = 0; in_ptr < in_count; in_ptr++ )

@@ -16,7 +16,7 @@ namespace console
     void printf(const char*,...);
 	void printfv(const char*,va_list p_arglist);
 
-	class formatter : public string8_fastalloc {
+	class formatter : public pfc::string8_fastalloc {
 	public:
 		~formatter() {if (!is_empty()) console::print(get_ptr());}
 	};

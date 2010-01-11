@@ -14,7 +14,7 @@ public:
 		filter_default_action = 1 << 6,
 	};
 
-	virtual bool query_items_add(t_size start, const list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;
+	virtual bool query_items_add(t_size start, const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;
 	virtual bool query_items_reorder(const t_size * order,t_size count)=0;
 	virtual bool query_items_remove(const bit_array & mask,bool p_force)=0;//if p_force is set, files have been physically removed and your return value is ignored
 	virtual bool query_item_replace(t_size idx,const metadb_handle_ptr & p_old,const metadb_handle_ptr & p_new)=0;
@@ -80,7 +80,7 @@ public:
 	virtual bool playlist_remove_items(t_size p_playlist,const bit_array & mask)=0;
 	virtual bool playlist_replace_item(t_size p_playlist,t_size p_item,const metadb_handle_ptr & p_new_item) = 0;
 	virtual void playlist_set_focus_item(t_size p_playlist,t_size p_item) = 0;
-	virtual t_size playlist_insert_items(t_size p_playlist,t_size p_base,const list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection) = 0;
+	virtual t_size playlist_insert_items(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection) = 0;
 	virtual void playlist_ensure_visible(t_size p_playlist,t_size p_item) = 0;
 	virtual bool playlist_rename(t_size p_index,const char * p_name,t_size p_name_len) = 0;
 
@@ -100,9 +100,9 @@ public:
 	virtual bool playlist_sort_by_format(t_size p_playlist,const char * spec,bool p_sel_only) = 0;
 
 	//! p_items must be sorted by metadb::path_compare; use file_operation_callback static methods instead of calling this directly
-	virtual void on_files_deleted_sorted(const list_base_const_t<const char *> & p_items) = 0;
+	virtual void on_files_deleted_sorted(const pfc::list_base_const_t<const char *> & p_items) = 0;
 	//! p_from must be sorted by metadb::path_compare; use file_operation_callback static methods instead of calling this directly
-	virtual void on_files_moved_sorted(const list_base_const_t<const char *> & p_from,const list_base_const_t<const char *> & p_to) = 0;
+	virtual void on_files_moved_sorted(const pfc::list_base_const_t<const char *> & p_from,const pfc::list_base_const_t<const char *> & p_to) = 0;
 
 	virtual bool playlist_lock_install(t_size p_playlist,const service_ptr_t<playlist_lock> & p_lock) = 0;//returns false when invalid playlist or already locked
 	virtual bool playlist_lock_uninstall(t_size p_playlist,const service_ptr_t<playlist_lock> & p_lock) = 0;
@@ -122,7 +122,7 @@ public:
 	virtual void queue_add_item_playlist(t_size p_playlist,t_size p_item) = 0;
 	virtual void queue_add_item(metadb_handle_ptr p_item) = 0;
 	virtual t_size queue_get_count() = 0;
-	virtual void queue_get_contents(list_base_t<t_playback_queue_item> & p_out) = 0;
+	virtual void queue_get_contents(pfc::list_base_t<t_playback_queue_item> & p_out) = 0;
 	//! Returns index (0-based) on success, infinite on failure.
 	virtual t_size queue_find_index(t_playback_queue_item const & p_item) = 0;
 
@@ -149,12 +149,12 @@ public:
 
 	bool playlist_move_selection(t_size p_playlist,int p_delta);
 	void playlist_get_selection_mask(t_size p_playlist,bit_array_var & out);
-	void playlist_get_items(t_size p_playlist,list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask);
-	void playlist_get_all_items(t_size p_playlist,list_base_t<metadb_handle_ptr> & out);
-	void playlist_get_selected_items(t_size p_playlist,list_base_t<metadb_handle_ptr> & out);
+	void playlist_get_items(t_size p_playlist,pfc::list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask);
+	void playlist_get_all_items(t_size p_playlist,pfc::list_base_t<metadb_handle_ptr> & out);
+	void playlist_get_selected_items(t_size p_playlist,pfc::list_base_t<metadb_handle_ptr> & out);
 	
 	void playlist_clear(t_size p_playlist);
-	bool playlist_add_items(t_size playlist,const list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection);
+	bool playlist_add_items(t_size playlist,const pfc::list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection);
 	void playlist_clear_selection(t_size p_playlist);
 	void playlist_remove_selection(t_size p_playlist,bool p_crop = false);
 	
@@ -171,7 +171,7 @@ public:
 	bool activeplaylist_remove_items(const bit_array & mask);
 	bool activeplaylist_replace_item(t_size p_item,const metadb_handle_ptr & p_new_item);
 	void activeplaylist_set_focus_item(t_size p_item);
-	t_size activeplaylist_insert_items(t_size p_base,const list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection);
+	t_size activeplaylist_insert_items(t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection);
 	void activeplaylist_ensure_visible(t_size p_item);
 	bool activeplaylist_rename(const char * p_name,t_size p_name_len);
 
@@ -183,24 +183,24 @@ public:
 	bool activeplaylist_get_item_handle(metadb_handle_ptr & item,t_size p_item);
 	void activeplaylist_move_selection(int p_delta);
 	void activeplaylist_get_selection_mask(bit_array_var & out);
-	void activeplaylist_get_items(list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask);
-	void activeplaylist_get_all_items(list_base_t<metadb_handle_ptr> & out);
-	void activeplaylist_get_selected_items(list_base_t<metadb_handle_ptr> & out);
+	void activeplaylist_get_items(pfc::list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask);
+	void activeplaylist_get_all_items(pfc::list_base_t<metadb_handle_ptr> & out);
+	void activeplaylist_get_selected_items(pfc::list_base_t<metadb_handle_ptr> & out);
 	void activeplaylist_clear();
 
-	bool activeplaylist_add_items(const list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection);
+	bool activeplaylist_add_items(const pfc::list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection);
 
-	bool playlist_insert_items_filter(t_size p_playlist,t_size p_base,const list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
-	bool activeplaylist_insert_items_filter(t_size p_base,const list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
+	bool playlist_insert_items_filter(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
+	bool activeplaylist_insert_items_filter(t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
 
-	bool playlist_insert_locations(t_size p_playlist,t_size p_base,const list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
-	bool activeplaylist_insert_locations(t_size p_base,const list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
+	bool playlist_insert_locations(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
+	bool activeplaylist_insert_locations(t_size p_base,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
 
-	bool playlist_add_items_filter(t_size p_playlist,const list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
-	bool activeplaylist_add_items_filter(const list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
+	bool playlist_add_items_filter(t_size p_playlist,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
+	bool activeplaylist_add_items_filter(const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
 
-	bool playlist_add_locations(t_size p_playlist,const list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
-	bool activeplaylist_add_locations(const list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
+	bool playlist_add_locations(t_size p_playlist,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
+	bool activeplaylist_add_locations(const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
 
 	void reset_playing_playlist();
 
@@ -229,11 +229,11 @@ public:
 
 	bool activeplaylist_execute_default_action(t_size p_item);
 
-	void remove_items_from_all_playlists(const list_base_const_t<metadb_handle_ptr> & p_data);
+	void remove_items_from_all_playlists(const pfc::list_base_const_t<metadb_handle_ptr> & p_data);
 
 	void active_playlist_fix();
 
-	bool get_all_items(list_base_t<metadb_handle_ptr> & out);
+	bool get_all_items(pfc::list_base_t<metadb_handle_ptr> & out);
 
 	static bool g_get(service_ptr_t<playlist_manager> & p_out);
 
@@ -252,7 +252,7 @@ protected:
 class NOVTABLE playlist_callback
 {
 public:
-	virtual void FB2KAPI on_items_added(t_size p_playlist,t_size p_start, const list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call playlist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
+	virtual void FB2KAPI on_items_added(t_size p_playlist,t_size p_start, const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call playlist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
 	virtual void FB2KAPI on_items_reordered(t_size p_playlist,const t_size * p_order,t_size p_count)=0;//changes selection too; doesnt actually change set of items that are selected or item having focus, just changes their order
 	virtual void FB2KAPI on_items_removing(t_size p_playlist,const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;//called before actually removing them
 	virtual void FB2KAPI on_items_removed(t_size p_playlist,const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;
@@ -268,7 +268,7 @@ public:
 		metadb_handle_ptr m_old,m_new;
 	};
 
-	virtual void FB2KAPI on_items_replaced(t_size p_playlist,const bit_array & p_mask,const list_base_const_t<t_on_items_replaced_entry> & p_data)=0;
+	virtual void FB2KAPI on_items_replaced(t_size p_playlist,const bit_array & p_mask,const pfc::list_base_const_t<t_on_items_replaced_entry> & p_data)=0;
 
 	virtual void FB2KAPI on_item_ensure_visible(t_size p_playlist,t_size p_idx)=0;
 
@@ -330,7 +330,7 @@ protected:
 class NOVTABLE playlist_callback_single
 {
 public:
-	virtual void FB2KAPI on_items_added(t_size start, const list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call playlist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
+	virtual void FB2KAPI on_items_added(t_size start, const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call playlist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
 	virtual void FB2KAPI on_items_reordered(const t_size * order,t_size count)=0;//changes selection too; doesnt actually change set of items that are selected or item having focus, just changes their order
 	virtual void FB2KAPI on_items_removing(const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;//called before actually removing them
 	virtual void FB2KAPI on_items_removed(const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;
@@ -338,7 +338,7 @@ public:
 	virtual void FB2KAPI on_item_focus_change(t_size p_from,t_size p_to)=0;//focus may be -1 when no item has focus; reminder: focus may also change on other callbacks
 	virtual void FB2KAPI on_items_modified(const bit_array & p_mask)=0;
 	virtual void FB2KAPI on_items_modified_fromplayback(const bit_array & p_mask,play_control::t_display_level p_level)=0;
-	virtual void FB2KAPI on_items_replaced(const bit_array & p_mask,const list_base_const_t<playlist_callback::t_on_items_replaced_entry> & p_data)=0;
+	virtual void FB2KAPI on_items_replaced(const bit_array & p_mask,const pfc::list_base_const_t<playlist_callback::t_on_items_replaced_entry> & p_data)=0;
 	virtual void FB2KAPI on_item_ensure_visible(t_size p_idx)=0;
 
 	virtual void FB2KAPI on_playlist_switch() = 0;
@@ -387,18 +387,30 @@ protected:
 	~playlist_callback_single_static() {}
 };
 
+class NOVTABLE dropped_files_data {
+public:
+	virtual void set_paths(pfc::string_list_const const & p_paths) = 0;
+	virtual void set_handles(const pfc::list_base_const_t<metadb_handle_ptr> & p_handles) = 0;
+protected:
+	dropped_files_data() {}
+	~dropped_files_data() {}
+};
+
+
 class NOVTABLE playlist_incoming_item_filter : public service_base
 {
 public:
-	virtual bool filter_items(const list_base_const_t<metadb_handle_ptr> & in,list_base_t<metadb_handle_ptr> & out) = 0;//sort / remove duplicates
-	virtual bool process_locations(const list_base_const_t<const char*> & urls,list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_restrict_mask_overide, const char * p_exclude_mask_override,HWND p_parentwnd) = 0;
-	virtual bool process_dropped_files(interface IDataObject * pDataObject,list_base_t<metadb_handle_ptr> & out,bool filter,HWND p_parentwnd) = 0;
+	virtual bool filter_items(const pfc::list_base_const_t<metadb_handle_ptr> & in,pfc::list_base_t<metadb_handle_ptr> & out) = 0;//sort / remove duplicates
+	virtual bool process_locations(const pfc::list_base_const_t<const char*> & urls,pfc::list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_restrict_mask_overide, const char * p_exclude_mask_override,HWND p_parentwnd) = 0;
+	virtual bool process_dropped_files(interface IDataObject * pDataObject,pfc::list_base_t<metadb_handle_ptr> & out,bool filter,HWND p_parentwnd) = 0;
 	virtual bool process_dropped_files_check(interface IDataObject * pDataObject) = 0;
 	virtual bool process_dropped_files_check_if_native(interface IDataObject * pDataObject) = 0;
-	virtual interface IDataObject * create_dataobject(const list_base_const_t<metadb_handle_ptr> & data) = 0;
+	virtual interface IDataObject * create_dataobject(const pfc::list_base_const_t<metadb_handle_ptr> & data) = 0;
+	virtual bool process_dropped_files_check_ex(interface IDataObject * pDataObject, DWORD * p_effect) = 0;
+	virtual bool process_dropped_files_delayed(dropped_files_data & p_out,interface IDataObject * pDataObject) = 0;
 
 	//helper
-	bool process_location(const char * url,list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_mask,const char * p_exclude,HWND p_parentwnd);
+	bool process_location(const char * url,pfc::list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_mask,const char * p_exclude,HWND p_parentwnd);
 
 	static bool g_get(service_ptr_t<playlist_incoming_item_filter> & p_out) {return service_enum_t<playlist_incoming_item_filter>().first(p_out);}
 
@@ -413,20 +425,32 @@ protected:
 	~playlist_incoming_item_filter() {}
 };
 
-class NOVTABLE playlist_incoming_item_filter_ex : public playlist_incoming_item_filter {
+class dropped_files_data_impl : public dropped_files_data {
 public:
-	virtual bool process_dropped_files_check_ex(interface IDataObject * pDataObject, DWORD * p_effect) = 0;
-
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
+	dropped_files_data_impl() : m_is_paths(false) {}
+	void set_paths(pfc::string_list_const const & p_paths) {
+		m_is_paths = true;
+		m_paths = p_paths;
 	}
-protected:
-	playlist_incoming_item_filter_ex() {}
-	~playlist_incoming_item_filter_ex() {}
+	void set_handles(const pfc::list_base_const_t<metadb_handle_ptr> & p_handles) {
+		m_is_paths = false;
+		m_handles = p_handles;
+	}
+	bool to_handles(pfc::list_base_t<metadb_handle_ptr> & p_out,bool p_filter,HWND p_parentwnd) {
+		if (m_is_paths) {
+			return static_api_ptr_t<playlist_incoming_item_filter>()->process_locations(m_paths,p_out,p_filter,0,0,p_parentwnd);
+		} else {
+			if (static_api_ptr_t<metadb_io>()->load_info_multi(m_handles,metadb_io::load_info_default,p_parentwnd,true) == metadb_io::load_info_aborted) return false;
+			p_out = m_handles;
+			return true;
+		}
+	}
+private:
+	pfc::string_list_impl m_paths;
+	metadb_handle_list m_handles;
+	bool m_is_paths;
 };
+
 
 class NOVTABLE playback_queue_callback : public service_base
 {

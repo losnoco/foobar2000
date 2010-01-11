@@ -1,5 +1,5 @@
 template<typename T>
-class cfg_structlist_t : public cfg_var, public list_t<T>
+class cfg_structlist_t : public cfg_var, public pfc::list_t<T>
 {
 public:
 	void get_data_raw(stream_writer * p_stream,abort_callback & p_abort) {

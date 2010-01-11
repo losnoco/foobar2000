@@ -82,16 +82,15 @@ audio_sample replaygain_manager::core_settings_query_scale(const metadb_handle_p
 
 //enum t_source_mode {source_mode_none,source_mode_track,source_mode_album};
 //enum t_processing_mode {processing_mode_none,processing_mode_gain,processing_mode_gain_and_peak,processing_mode_peak};
-
+namespace {
 class format_dbdelta
 {
 public:
 	format_dbdelta(double p_val);
 	operator const char*() const {return m_buffer;}
 private:
-	string_fixed_t<128> m_buffer;
+	pfc::string_fixed_t<128> m_buffer;
 };
-
 static const char * querysign(int val) {
 	return val<0 ? "-" : val>0 ? "+" : "\xc2\xb1";
 }
@@ -100,7 +99,7 @@ format_dbdelta::format_dbdelta(double p_val) {
 	int val = (int)(p_val * 10);
 	m_buffer << querysign(val) << (abs(val)/10) << "." << (abs(val)%10) << "dB";
 }
-
+}
 void t_replaygain_config::format_name(pfc::string_base & p_out) const
 {
 	switch(m_processing_mode)
@@ -113,11 +112,11 @@ void t_replaygain_config::format_name(pfc::string_base & p_out) const
 		{
 		case source_mode_none:
 			if (m_preamp_without_rg == 0) p_out = "None."; 
-			else p_out = string_formatter() << "Preamp : " << format_dbdelta(m_preamp_without_rg); 
+			else p_out = pfc::string_formatter() << "Preamp : " << format_dbdelta(m_preamp_without_rg); 
 			break;
 		case source_mode_track:
 			{
-				string_formatter fmt;
+				pfc::string_formatter fmt;
 				fmt << "Apply track gain";
 				if (m_preamp_without_rg != 0 || m_preamp_with_rg != 0) fmt << ", with preamp";
 				fmt << ".";
@@ -126,7 +125,7 @@ void t_replaygain_config::format_name(pfc::string_base & p_out) const
 			break;
 		case source_mode_album:
 			{
-				string_formatter fmt;
+				pfc::string_formatter fmt;
 				fmt << "Apply album gain";
 				if (m_preamp_without_rg != 0 || m_preamp_with_rg != 0) fmt << ", with preamp";
 				fmt << ".";
@@ -140,11 +139,11 @@ void t_replaygain_config::format_name(pfc::string_base & p_out) const
 		{
 		case source_mode_none:
 			if (m_preamp_without_rg >= 0) p_out = "None.";
-			else p_out = string_formatter() << "Preamp : " << format_dbdelta(m_preamp_without_rg);
+			else p_out = pfc::string_formatter() << "Preamp : " << format_dbdelta(m_preamp_without_rg);
 			break;
 		case source_mode_track:
 			{
-				string_formatter fmt;
+				pfc::string_formatter fmt;
 				fmt << "Apply track gain";
 				if (m_preamp_without_rg != 0 || m_preamp_with_rg != 0) fmt << ", with preamp";
 				fmt << ", prevent clipping according to track peak.";
@@ -153,7 +152,7 @@ void t_replaygain_config::format_name(pfc::string_base & p_out) const
 			break;
 		case source_mode_album:
 			{
-				string_formatter fmt;
+				pfc::string_formatter fmt;
 				fmt << "Apply album gain";
 				if (m_preamp_without_rg != 0 || m_preamp_with_rg != 0) fmt << ", with preamp";
 				fmt << ", prevent clipping according to album peak.";

@@ -383,3 +383,14 @@ void file_info::info_calculate_bitrate(t_filesize p_filesize,double p_length)
 {
 	info_set_bitrate((unsigned)floor((double)p_filesize * 8 / (p_length * 1000) + 0.5));
 }
+
+bool file_info::is_encoding_lossy() const {
+	const char * encoding = info_get("encoding");
+	if (encoding != NULL) {
+		if (stricmp_utf8(encoding,"lossy") == 0 || stricmp_utf8(encoding,"hybrid") == 0) return true;
+	} else {
+		//the old way
+		if (info_get("bitspersample") == NULL) return true;
+	}
+	return false;
+}

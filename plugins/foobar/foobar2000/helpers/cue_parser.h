@@ -1,7 +1,7 @@
 namespace cue_parser
 {
 	struct cue_entry {
-		string8 m_file;
+		pfc::string8 m_file;
 		unsigned m_track_number;
 		t_cuesheet_index_list m_indexes;
 	};
@@ -204,7 +204,7 @@ namespace cue_parser
 		file_info_impl m_info;
 		t_uint32 m_decode_subsong;
 		input_helper_cue m_input_cue;
-		string8 m_path;
+		pfc::string8 m_path;
 		
 		pfc::chain_list_t<cue_entry> m_cue_data;
 		

@@ -37,7 +37,7 @@ void console::printf(const char* p_format,...)
 
 void console::printfv(const char* p_format,va_list p_arglist)
 {
-	string8_fastalloc temp;
+	pfc::string8_fastalloc temp;
 	uPrintfV(temp,p_format,p_arglist);
 	print(temp);
 }

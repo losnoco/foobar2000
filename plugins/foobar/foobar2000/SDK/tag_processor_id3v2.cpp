@@ -5,9 +5,13 @@ bool tag_processor_id3v2::g_get(service_ptr_t<tag_processor_id3v2> & p_out)
 	return service_enum_t<tag_processor_id3v2>().first(p_out);
 }
 
-void tag_processor_id3v2::g_remove(const service_ptr_t<file> & p_file,t_uint64 & p_size_removed,abort_callback & p_abort)
+void tag_processor_id3v2::g_remove(const service_ptr_t<file> & p_file,t_uint64 & p_size_removed,abort_callback & p_abort) {
+	g_remove_ex(tag_write_callback_dummy(),p_file,p_size_removed,p_abort);
+}
+
+void tag_processor_id3v2::g_remove_ex(tag_write_callback & p_callback,const service_ptr_t<file> & p_file,t_uint64 & p_size_removed,abort_callback & p_abort)
 {
-	if (!p_file->can_seek()) throw exception_io_object_not_seekable();
+	p_file->ensure_seekable();
 
 	t_filesize len;
 	
@@ -24,13 +28,17 @@ void tag_processor_id3v2::g_remove(const service_ptr_t<file> & p_file,t_uint64 &
 	{
 		len-=offset;
 		service_ptr_t<file> temp;
-		if (len > 16*1024*1024) filesystem::g_open_temp(temp,p_abort);
-		else filesystem::g_open_tempmem(temp,p_abort);
-		file::g_transfer_object(p_file.get_ptr(),temp.get_ptr(),len,p_abort);
-		p_file->seek(0,p_abort);
-		p_file->set_eof(p_abort);
-		temp->seek(0,p_abort);
-		file::g_transfer_object(temp.get_ptr(),p_file.get_ptr(),len,p_abort);
+		if (p_callback.open_temp_file(temp,p_abort)) {
+			file::g_transfer_object(p_file,temp,len,p_abort);
+		} else {
+			if (len > 16*1024*1024) filesystem::g_open_temp(temp,p_abort);
+			else filesystem::g_open_tempmem(temp,p_abort);
+			file::g_transfer_object(p_file,temp,len,p_abort);
+			p_file->seek(0,p_abort);
+			p_file->set_eof(p_abort);
+			temp->seek(0,p_abort);
+			file::g_transfer_object(temp,p_file,len,p_abort);
+		}
 	}
 	p_size_removed = offset;
 }

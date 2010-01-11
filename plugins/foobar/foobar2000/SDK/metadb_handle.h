@@ -70,30 +70,31 @@ protected:
 typedef service_ptr_t<metadb_handle> metadb_handle_ptr;
 
 namespace metadb_handle_list_helper {
-	void sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const char * spec,titleformat_hook * p_hook);
-	void sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const char * spec,titleformat_hook * p_hook);
-	void sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook);
-	void sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook);
+	void sort_by_format_partial(pfc::list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const char * spec,titleformat_hook * p_hook);
+	void sort_by_format_get_order_partial(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const char * spec,titleformat_hook * p_hook);
+	void sort_by_format_partial(pfc::list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook);
+	void sort_by_format_get_order_partial(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook);
 
-	void sort_by_relative_path_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count);
-	void sort_by_relative_path_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order);
+	void sort_by_relative_path_partial(pfc::list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count);
+	void sort_by_relative_path_get_order_partial(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order);
 	
-	void remove_duplicates(list_base_t<metadb_handle_ptr> & p_list);
-	void sort_by_pointer_remove_duplicates(list_base_t<metadb_handle_ptr> & p_list);
-	void sort_by_path_quick(list_base_t<metadb_handle_ptr> & p_list);
+	void remove_duplicates(pfc::list_base_t<metadb_handle_ptr> & p_list);
+	void sort_by_pointer_remove_duplicates(pfc::list_base_t<metadb_handle_ptr> & p_list);
+	void sort_by_path_quick(pfc::list_base_t<metadb_handle_ptr> & p_list);
 
-	void sort_by_pointer(list_base_t<metadb_handle_ptr> & p_list);
-	t_size bsearch_by_pointer(const list_base_const_t<metadb_handle_ptr> & p_list,const metadb_handle_ptr & val);
+	void sort_by_pointer(pfc::list_base_t<metadb_handle_ptr> & p_list);
+	t_size bsearch_by_pointer(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,const metadb_handle_ptr & val);
 
-	double calc_total_duration(const list_base_const_t<metadb_handle_ptr> & p_list);
+	double calc_total_duration(const pfc::list_base_const_t<metadb_handle_ptr> & p_list);
 
-	void sort_by_path(list_base_t<metadb_handle_ptr> & p_list);
+	void sort_by_path(pfc::list_base_t<metadb_handle_ptr> & p_list);
 };
 
 template<template<typename> class t_alloc = pfc::alloc_fast >
 class metadb_handle_list_t : public service_list_t<metadb_handle,t_alloc> {
 private:
 	typedef metadb_handle_list_t<t_alloc> t_self;
+	typedef list_base_const_t<metadb_handle_ptr> t_interface;
 public:
 	inline void sort_by_format(const char * spec,titleformat_hook * p_hook) {return sort_by_format_partial(0,get_count(),spec,p_hook);}
 	inline void sort_by_format_partial(t_size base,t_size count,const char * spec,titleformat_hook * p_hook) {metadb_handle_list_helper::sort_by_format_partial(*this,base,count,spec,p_hook);}
@@ -120,6 +121,12 @@ public:
 	inline double calc_total_duration() const {return metadb_handle_list_helper::calc_total_duration(*this);}
 
 	inline void sort_by_path() {metadb_handle_list_helper::sort_by_path(*this);}
+
+	const t_self & operator=(const t_self & p_source) {remove_all(); add_items(p_source);return *this;}
+	const t_self & operator=(const t_interface & p_source) {remove_all(); add_items(p_source);return *this;}
+	metadb_handle_list_t(const t_self & p_source) {add_items(p_source);}
+	metadb_handle_list_t(const t_interface & p_source) {add_items(p_source);}
+	metadb_handle_list_t() {}
 
 };
 

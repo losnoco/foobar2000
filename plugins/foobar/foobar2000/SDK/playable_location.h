@@ -63,7 +63,7 @@ public:
 	playable_location_impl(const playable_location_impl & src) {copy(src);}
 
 private:
-	string_simple m_path;
+	pfc::string_simple m_path;
 	t_uint32 m_subsong;
 };
 

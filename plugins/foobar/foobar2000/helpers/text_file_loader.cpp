@@ -32,7 +32,7 @@ namespace text_file_loader
 		size64 = p_file->get_size(p_abort);
 		if (size64 == filesize_invalid)//typically HTTP
 		{
-			string8 ansitemp;
+			pfc::string8 ansitemp;
 			is_utf8 = false;
 			enum {delta = 1024*64, max = 1024*512};
 			char temp[3];

@@ -2,7 +2,7 @@
 #include "dropdown_helper.h"
 
 
-void cfg_dropdown_history::build_list(ptr_list_t<char> & out)
+void cfg_dropdown_history::build_list(pfc::ptr_list_t<char> & out)
 {
 	const char * src = data;
 	while(*src)
@@ -11,17 +11,17 @@ void cfg_dropdown_history::build_list(ptr_list_t<char> & out)
 		while(src[ptr] && src[ptr]!=separator) ptr++;
 		if (ptr>0)
 		{
-			out.add_item(strdup_n(src,ptr));
+			out.add_item(pfc::strdup_n(src,ptr));
 			src += ptr;
 		}
 		while(*src==separator) src++;
 	}
 }
 
-void cfg_dropdown_history::parse_list(const ptr_list_t<char> & src)
+void cfg_dropdown_history::parse_list(const pfc::ptr_list_t<char> & src)
 {
 	t_size n;
-	string8_fastalloc temp;
+	pfc::string8_fastalloc temp;
 	for(n=0;n<src.get_count();n++)
 	{
 		temp.add_string(src[n]);
@@ -30,7 +30,7 @@ void cfg_dropdown_history::parse_list(const ptr_list_t<char> & src)
 	data = temp;
 }
 
-static void g_setup_dropdown_fromlist(HWND wnd,const ptr_list_t<char> & list)
+static void g_setup_dropdown_fromlist(HWND wnd,const pfc::ptr_list_t<char> & list)
 {
 	t_size n, m = list.get_count();
 	uSendMessage(wnd,CB_RESETCONTENT,0,0);
@@ -40,7 +40,7 @@ static void g_setup_dropdown_fromlist(HWND wnd,const ptr_list_t<char> & list)
 
 void cfg_dropdown_history::setup_dropdown(HWND wnd)
 {
-	ptr_list_t<char> list;
+	pfc::ptr_list_t<char> list;
 	build_list(list);
 	g_setup_dropdown_fromlist(wnd,list);
 	list.free_all();
@@ -49,13 +49,13 @@ void cfg_dropdown_history::setup_dropdown(HWND wnd)
 void cfg_dropdown_history::add_item(const char * item)
 {
 	if (!item || !*item) return;
-	string8 meh;
+	pfc::string8 meh;
 	if (strchr(item,separator))
 	{
 		uReplaceChar(meh,item,-1,separator,'|',false);
 		item = meh;
 	}
-	ptr_list_t<char> list;
+	pfc::ptr_list_t<char> list;
 	build_list(list);
 	unsigned n;
 	bool found = false;
@@ -103,7 +103,7 @@ void cfg_dropdown_history::on_context(HWND wnd,LPARAM coords)
 	HMENU menu = CreatePopupMenu();
 	uAppendMenu(menu,MF_STRING,ID_ERASE_ALL,"Wipe history");
 	{
-		string8 tempvalue;
+		pfc::string8 tempvalue;
 		uGetWindowText(wnd,tempvalue);
 		if (!tempvalue.is_empty())
 			uAppendMenu(menu,MF_STRING,ID_ERASE_ONE,"Remove this history item");
@@ -115,7 +115,7 @@ void cfg_dropdown_history::on_context(HWND wnd,LPARAM coords)
 	case ID_ERASE_ALL:
 		{
 			data = "";
-			string8 value;//preserve old value while wiping dropdown list
+			pfc::string8 value;//preserve old value while wiping dropdown list
 			uGetWindowText(wnd,value);
 			uSendMessage(wnd,CB_RESETCONTENT,0,0);
 			uSetWindowText(wnd,value);
@@ -123,10 +123,10 @@ void cfg_dropdown_history::on_context(HWND wnd,LPARAM coords)
 		break;
 	case ID_ERASE_ONE:
 		{
-			string8 value;
+			pfc::string8 value;
 			uGetWindowText(wnd,value);
 
-			ptr_list_t<char> list;
+			pfc::ptr_list_t<char> list;
 			t_size n,m;
 			bool found;
 			build_list(list);

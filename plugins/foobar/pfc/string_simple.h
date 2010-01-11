@@ -1,3 +1,5 @@
+namespace pfc {
+
 template<typename T>
 class string_simple_t//simplified string class, less efficient but smaller; could make it derive from string_base but it wouldn't be so light anymore (vtable)
 {
@@ -114,3 +116,5 @@ public:
 typedef string_simple_t<char> string_simple;
 typedef string_simple_t<WCHAR> w_string_simple;
 typedef string_simple_t<TCHAR> t_string_simple;
+
+}

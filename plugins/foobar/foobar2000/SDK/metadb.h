@@ -34,23 +34,23 @@ public:
 	//! If another tag I/O operation is running, this call will give focus to its progress window.
 	virtual void highlight_running_process() = 0;
 	//! Loads tags from multiple items.
-	virtual t_load_info_state load_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,t_load_info_type p_type,HWND p_parent_window,bool p_show_errors) = 0;
+	virtual t_load_info_state load_info_multi(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,t_load_info_type p_type,HWND p_parent_window,bool p_show_errors) = 0;
 	//! Updates tags on multiple items.
-	virtual t_update_info_state update_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,const list_base_const_t<file_info*> & p_new_info,HWND p_parent_window,bool p_show_errors) = 0;
+	virtual t_update_info_state update_info_multi(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,const pfc::list_base_const_t<file_info*> & p_new_info,HWND p_parent_window,bool p_show_errors) = 0;
 	//! Rewrites tags on multiple items.
-	virtual t_update_info_state rewrite_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,HWND p_parent_window,bool p_show_errors) = 0;
+	virtual t_update_info_state rewrite_info_multi(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,HWND p_parent_window,bool p_show_errors) = 0;
 	//! Removes tags from multiple items.
-	virtual t_update_info_state remove_info_multi(const list_base_const_t<metadb_handle_ptr> & p_list,HWND p_parent_window,bool p_show_errors) = 0;
+	virtual t_update_info_state remove_info_multi(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,HWND p_parent_window,bool p_show_errors) = 0;
 
-	virtual void hint_multi(const list_base_const_t<metadb_handle_ptr> & p_list,const list_base_const_t<const file_info*> & p_infos,const list_base_const_t<t_filestats> & p_stats,const bit_array & p_fresh_mask) = 0;
+	virtual void hint_multi(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,const pfc::list_base_const_t<const file_info*> & p_infos,const pfc::list_base_const_t<t_filestats> & p_stats,const bit_array & p_fresh_mask) = 0;
 
-	virtual void hint_multi_async(const list_base_const_t<metadb_handle_ptr> & p_list,const list_base_const_t<const file_info*> & p_infos,const list_base_const_t<t_filestats> & p_stats,const bit_array & p_fresh_mask) = 0;
+	virtual void hint_multi_async(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,const pfc::list_base_const_t<const file_info*> & p_infos,const pfc::list_base_const_t<t_filestats> & p_stats,const bit_array & p_fresh_mask) = 0;
 
 	virtual void hint_reader(service_ptr_t<class input_info_reader> p_reader,const char * p_path,abort_callback & p_abort) = 0;
 
-	virtual void path_to_handles_simple(const char * p_path,list_base_t<metadb_handle_ptr> & p_out) = 0;
+	virtual void path_to_handles_simple(const char * p_path,pfc::list_base_t<metadb_handle_ptr> & p_out) = 0;
 
-	virtual void dispatch_refresh(const list_base_const_t<metadb_handle_ptr> & p_list) = 0;
+	virtual void dispatch_refresh(const pfc::list_base_const_t<metadb_handle_ptr> & p_list) = 0;
 
 	void hint_async(metadb_handle_ptr p_item,const file_info & p_info,const t_filestats & p_stats,bool p_fresh);
 
@@ -71,7 +71,7 @@ protected:
 class NOVTABLE metadb_io_callback : public service_base
 {
 public:
-	virtual void on_changed_sorted(const list_base_const_t<metadb_handle_ptr> & p_items_sorted, bool p_fromhook) = 0;//items are always sorted by pointer value
+	virtual void on_changed_sorted(const pfc::list_base_const_t<metadb_handle_ptr> & p_items_sorted, bool p_fromhook) = 0;//items are always sorted by pointer value
 
 	static const GUID class_guid;
 
@@ -108,7 +108,7 @@ public:
 
 	enum {case_sensitive = true};
 
-	inline static int path_compare_ex(const char * p1,unsigned len1,const char * p2,unsigned len2) {return case_sensitive ? strcmp_ex(p1,len1,p2,len2) : stricmp_utf8_ex(p1,len1,p2,len2);}
+	inline static int path_compare_ex(const char * p1,unsigned len1,const char * p2,unsigned len2) {return case_sensitive ? pfc::strcmp_ex(p1,len1,p2,len2) : stricmp_utf8_ex(p1,len1,p2,len2);}
 	inline static int path_compare(const char * p1,const char * p2) {return case_sensitive ? strcmp(p1,p2) : stricmp_utf8(p1,p2);}
 	inline static int path_compare_metadb_handle(const metadb_handle_ptr & p1,const metadb_handle_ptr & p2) {return path_compare(p1->get_path(),p2->get_path());}
 
@@ -157,7 +157,7 @@ private:
 class file_info_update_helper
 {
 public:
-	file_info_update_helper(const list_base_const_t<metadb_handle_ptr> & p_data);
+	file_info_update_helper(const pfc::list_base_const_t<metadb_handle_ptr> & p_data);
 	file_info_update_helper(metadb_handle_ptr p_item);
 
 	bool read_infos(HWND p_parent,bool p_show_errors);

@@ -110,7 +110,7 @@ void SHARED_EXPORT uSortStringFree(HANDLE string);
 
 int SHARED_EXPORT uCompareString(DWORD flags,const char * str1,unsigned len1,const char * str2,unsigned len2);
 
-class NOVTABLE uGetOpenFileNameMultiResult : public list_base_const_t<const char*>
+class NOVTABLE uGetOpenFileNameMultiResult : public pfc::list_base_const_t<const char*>
 {
 public:
 	inline t_size GetCount() {return get_count();}
@@ -265,7 +265,7 @@ public:
 	inline bool is_empty() const {return length() == 0;}
 	inline const char * get_ptr() const {return m_data.get_ptr();}
 private:
-	 string8 m_data;
+	pfc::string8 m_data;
 };
 
 #define uMAKEINTRESOURCE(x) ((const char*)LOWORD(x))
@@ -400,7 +400,7 @@ public:
 	inline bool is_empty() const {return length() == 0;}
 	inline const char * get_ptr() const {return m_data.get_ptr();}
 private:
-	string8_fastalloc m_data;
+	pfc::string8_fastalloc m_data;
 };
 #pragma deprecated(uStringPrintf, uPrintf, uPrintfV)
 
@@ -467,7 +467,7 @@ public:
 	inline bool is_empty() const {return length() == 0;}
 	inline const char * get_ptr() const {return m_data.get_ptr();}
 private:
-	string8 m_data;
+	pfc::string8 m_data;
 };
 
 class string_upper
@@ -479,7 +479,7 @@ public:
 	inline bool is_empty() const {return length() == 0;}
 	inline const char * get_ptr() const {return m_data.get_ptr();}
 private:
-	string8 m_data;
+	pfc::string8 m_data;
 };
 
 inline UINT char_lower(UINT c) {return uCharLower(c);}
@@ -579,7 +579,7 @@ public:
 	const char * get_ptr() const {return m_buffer.get_ptr();}
 	operator const char*() const {return m_buffer.get_ptr();}
 private:
-	string8 m_buffer;
+	pfc::string8 m_buffer;
 };
 
 struct exception_win32 : public std::exception {
@@ -590,6 +590,30 @@ private:
 };
 
 
+class uDebugLog : public pfc::string_formatter {
+public:
+	~uDebugLog() {*this << "\n"; uOutputDebugString(get_ptr());}
+};
+
+static void uAddWindowStyle(HWND p_wnd,LONG p_style) {
+	SetWindowLong(p_wnd,GWL_STYLE, GetWindowLong(p_wnd,GWL_STYLE) | p_style);
+}
+
+static void uRemoveWindowStyle(HWND p_wnd,LONG p_style) {
+	SetWindowLong(p_wnd,GWL_STYLE, GetWindowLong(p_wnd,GWL_STYLE) & ~p_style);
+}
+
+static void uAddWindowExStyle(HWND p_wnd,LONG p_style) {
+	SetWindowLong(p_wnd,GWL_EXSTYLE, GetWindowLong(p_wnd,GWL_EXSTYLE) | p_style);
+}
+
+static void uRemoveWindowExStyle(HWND p_wnd,LONG p_style) {
+	SetWindowLong(p_wnd,GWL_EXSTYLE, GetWindowLong(p_wnd,GWL_EXSTYLE) & ~p_style);
+}
+
+
+
 #include "audio_math.h"
+#include "win32_misc.h"
 
 #endif //_SHARED_DLL__SHARED_H_

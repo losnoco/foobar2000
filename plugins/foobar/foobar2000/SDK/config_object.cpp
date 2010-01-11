@@ -160,7 +160,7 @@ void config_object::set_data_raw(const void * p_data,t_size p_bytes, bool p_noti
 }
 
 void config_object::set_data_string(const char * p_data,t_size p_length) {
-	set_data_raw(p_data,strlen_max(p_data,p_length));
+	set_data_raw(p_data,pfc::strlen_max(p_data,p_length));
 }
 
 void config_object::get_data_string(pfc::string_base & p_out) {

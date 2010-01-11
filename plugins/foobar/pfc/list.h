@@ -1,10 +1,11 @@
 #ifndef _PFC_LIST_H_
 #define _PFC_LIST_H_
 
+namespace pfc {
 
 template<typename T>
-class NOVTABLE list_base_const_t
-{
+class NOVTABLE list_base_const_t {
+private: typedef list_base_const_t<T> t_self;
 public:
 	virtual t_size get_count() const = 0;
 	virtual void get_item_ex(T& p_out, t_size n) const = 0;
@@ -52,6 +53,11 @@ public:
 		pfc::sort_stable_get_permutation_t<list_base_const_t<T>,t_compare,t_permutation>(*this,p_compare,get_count(),p_permutation);
 	}
 	
+protected:
+	list_base_const_t() {}
+	~list_base_const_t() {}
+private:
+	const t_self & operator=(const t_self &) {throw pfc::exception_not_implemented();}
 };
 
 
@@ -137,8 +143,9 @@ private:
 };
 
 template<typename T>
-class NOVTABLE list_base_t : public list_base_const_t<T>
-{
+class NOVTABLE list_base_t : public list_base_const_t<T> {
+private:
+	typedef list_base_t<T> t_self;
 public:
 	class NOVTABLE sort_callback
 	{
@@ -245,6 +252,11 @@ public:
 		this->template for_each<t_releasefunc>(p_func);
 		remove_all();
 	}
+
+	const t_self & operator=(const t_self & p_source) {remove_all(); add_items(p_source);return *this;}
+protected:
+	list_base_t() {}
+	~list_base_t() {}
 };
 
 
@@ -545,6 +557,5 @@ private:
 	t_size m_count;
 };
 
-#define mem_block_list mem_block_list_t //for compatibility
-
+}
 #endif //_PFC_LIST_H_

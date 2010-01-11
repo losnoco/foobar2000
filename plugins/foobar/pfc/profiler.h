@@ -2,7 +2,7 @@
 #define _PFC_PROFILER_H_
 
 #include <intrin.h>
-
+namespace pfc {
 class profiler_static {
 public:
 	profiler_static(const char * p_name);
@@ -29,8 +29,8 @@ private:
 };
 
 #define profiler(name) \
-	static profiler_static profiler_static_##name(#name); \
-	profiler_local profiler_local_##name(&profiler_static_##name);
+	static pfc::profiler_static profiler_static_##name(#name); \
+	pfc::profiler_local profiler_local_##name(&profiler_static_##name);
 	
 
 class hires_timer {
@@ -63,5 +63,5 @@ public:
 private:
 	t_uint64 m_last_seen, m_start;
 };
-
+}
 #endif

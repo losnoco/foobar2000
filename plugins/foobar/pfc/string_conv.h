@@ -1,4 +1,3 @@
-#if 1
 namespace pfc {
 
 	namespace stringcvt {
@@ -353,4 +352,3 @@ namespace pfc {
 #endif
 	}
 };
-#endif

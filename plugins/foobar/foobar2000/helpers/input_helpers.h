@@ -27,11 +27,11 @@ public:
 	static void g_set_info(const playable_location & p_location,file_info & p_info,abort_callback & p_abort,bool p_from_redirect = false);
 
 
-	static bool g_mark_dead(const list_base_const_t<metadb_handle_ptr> & p_list,bit_array_var & p_mask,abort_callback & p_abort);
+	static bool g_mark_dead(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,bit_array_var & p_mask,abort_callback & p_abort);
 
 private:
 	service_ptr_t<input_decoder> m_input;
-	string8 m_path;
+	pfc::string8 m_path;
 	t_filesize m_fullbuffer;
 };
 
@@ -39,7 +39,7 @@ class NOVTABLE dead_item_filter : public abort_callback {
 public:
 	virtual void on_progress(t_size p_position,t_size p_total) = 0;
 
-	bool run(const list_base_const_t<metadb_handle_ptr> & p_list,bit_array_var & p_mask);
+	bool run(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,bit_array_var & p_mask);
 };
 
 class input_info_read_helper {
@@ -50,7 +50,7 @@ public:
 private:
 	void open(const char * p_path,abort_callback & p_abort);
 
-	string8 m_path;
+	pfc::string8 m_path;
 	service_ptr_t<input_info_reader> m_input;
 };
 

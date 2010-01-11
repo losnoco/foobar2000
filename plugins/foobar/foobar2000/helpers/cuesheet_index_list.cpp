@@ -62,7 +62,7 @@ cuesheet_format_index_time::cuesheet_format_index_time(double p_time)
 	t_uint64 ticks = audio_math::time_to_samples(p_time,75);
 	t_uint64 seconds = ticks / 75; ticks %= 75;
 	t_uint64 minutes = seconds / 60; seconds %= 60;
-	m_buffer << format_uint(minutes,2) << ":" << format_uint(seconds,2) << ":" << format_uint(ticks,2);
+	m_buffer << pfc::format_uint(minutes,2) << ":" << pfc::format_uint(seconds,2) << ":" << pfc::format_uint(ticks,2);
 }
 
 double cuesheet_parse_index_time_e(const char * p_string,t_size p_length)
@@ -111,9 +111,9 @@ unsigned cuesheet_parse_index_time_ticks_e(const char * p_string,t_size p_length
 
 	unsigned ret = 0;
 
-	if (frames_length > 0) ret += atoui_ex(p_string + frames_base,frames_length);
-	if (seconds_length > 0) ret += 75 * atoui_ex(p_string + seconds_base,seconds_length);
-	if (minutes_length > 0) ret += 60 * 75 * atoui_ex(p_string + minutes_base,minutes_length);
+	if (frames_length > 0) ret += pfc::atoui_ex(p_string + frames_base,frames_length);
+	if (seconds_length > 0) ret += 75 * pfc::atoui_ex(p_string + seconds_base,seconds_length);
+	if (minutes_length > 0) ret += 60 * 75 * pfc::atoui_ex(p_string + minutes_base,minutes_length);
 
 	return ret;	
 }

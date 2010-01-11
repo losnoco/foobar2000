@@ -34,7 +34,7 @@ void contextmenu_manager::win32_build_menu(HMENU menu,contextmenu_node * parent,
 {
 	if (parent!=0 && parent->get_type()==contextmenu_item_node::TYPE_POPUP)
 	{
-		string8_fastalloc temp;
+		pfc::string8_fastalloc temp;
 		t_size child_idx,child_num = parent->get_num_children();
 		for(child_idx=0;child_idx<child_num;child_idx++)
 		{
@@ -111,7 +111,7 @@ void contextmenu_manager::win32_run_menu_popup(HWND parent,const POINT * pt)
 	}
 }
 
-void contextmenu_manager::win32_run_menu_context(HWND parent,const list_base_const_t<metadb_handle_ptr> & data,const POINT * pt,unsigned flags)
+void contextmenu_manager::win32_run_menu_context(HWND parent,const pfc::list_base_const_t<metadb_handle_ptr> & data,const POINT * pt,unsigned flags)
 {
 	service_ptr_t<contextmenu_manager> manager;
 	contextmenu_manager::g_create(manager);
@@ -131,11 +131,11 @@ void contextmenu_manager::win32_run_menu_context_playlist(HWND parent,const POIN
 namespace {
 	class mnemonic_manager
 	{
-		string8_fastalloc used;
+		pfc::string8_fastalloc used;
 		bool is_used(unsigned c)
 		{
 			char temp[8];
-			temp[utf8_encode_char(char_lower(c),temp)]=0;
+			temp[pfc::utf8_encode_char(char_lower(c),temp)]=0;
 			return !!strstr(used,temp);
 		}
 
@@ -165,7 +165,7 @@ namespace {
 				else
 				{
 					unsigned c = 0;
-					if (utf8_decode_char(ptr+1,&c)>0)
+					if (pfc::utf8_decode_char(ptr+1,&c)>0)
 					{
 						if (!is_used(c)) used.add_char(char_lower(c));
 					}
@@ -216,7 +216,7 @@ void menu_helpers::win32_auto_mnemonics(HMENU menu)
 {
 	mnemonic_manager mgr;
 	unsigned n, m = GetMenuItemCount(menu);
-	string8_fastalloc temp,temp2;
+	pfc::string8_fastalloc temp,temp2;
 	for(n=0;n<m;n++)//first pass, check existing mnemonics
 	{
 		unsigned type = uGetMenuItemType(menu,n);
@@ -277,7 +277,7 @@ bool keyboard_shortcut_manager::on_keydown(shortcut_type type,WPARAM wp)
 	return process_keydown(type,dummy,get_key_code(wp));
 }
 
-bool keyboard_shortcut_manager::on_keydown_context(const list_base_const_t<metadb_handle_ptr> & data,WPARAM wp,const GUID & caller)
+bool keyboard_shortcut_manager::on_keydown_context(const pfc::list_base_const_t<metadb_handle_ptr> & data,WPARAM wp,const GUID & caller)
 {
 	if (data.get_count()==0) return false;
 	return process_keydown_ex(TYPE_CONTEXT,data,get_key_code(wp),caller);
@@ -300,7 +300,7 @@ bool keyboard_shortcut_manager::on_keydown_auto_playlist(WPARAM wp)
 	return on_keydown_auto_context(data,wp,contextmenu_item::caller_playlist);
 }
 
-bool keyboard_shortcut_manager::on_keydown_auto_context(const list_base_const_t<metadb_handle_ptr> & data,WPARAM wp,const GUID & caller)
+bool keyboard_shortcut_manager::on_keydown_auto_context(const pfc::list_base_const_t<metadb_handle_ptr> & data,WPARAM wp,const GUID & caller)
 {
 	if (on_keydown_context(data,wp,caller)) return true;
 	else return on_keydown_auto(wp);

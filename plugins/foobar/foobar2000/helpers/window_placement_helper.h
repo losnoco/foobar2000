@@ -11,7 +11,7 @@ public:
 	void set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort);
 	cfg_window_placement(const GUID & p_guid);
 private:
-	list_hybrid_t<HWND,2> m_windows;
+	pfc::list_hybrid_t<HWND,2> m_windows;
 	WINDOWPLACEMENT m_data;
 };
 
@@ -25,7 +25,7 @@ public:
 	void set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort);
 	cfg_window_size(const GUID & p_guid);
 private:
-	list_hybrid_t<HWND,2> m_windows;
+	pfc::list_hybrid_t<HWND,2> m_windows;
 	t_uint32 m_width,m_height;
 };
 

@@ -25,5 +25,5 @@ public:
 	cuesheet_format_index_time(double p_time);
 	inline operator const char*() const {return m_buffer;}
 private:
-	string_formatter m_buffer;
+	pfc::string_formatter m_buffer;
 };

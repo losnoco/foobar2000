@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-static void file_list_remove_duplicates(ptr_list_t<char> & out)
+static void file_list_remove_duplicates(pfc::ptr_list_t<char> & out)
 {
 	t_size n, m = out.get_count();
 	out.sort_t(metadb::path_compare);
@@ -36,7 +36,7 @@ namespace file_list_helper
 	{
 		m_data.free_all();
 		
-		string8_fastalloc temp;
+		pfc::string8_fastalloc temp;
 
 		t_size n, m = p_list.get_count();
 		for(n=0;n<m;n++)

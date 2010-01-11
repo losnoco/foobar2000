@@ -1,3 +1,5 @@
+namespace pfc {
+
 template<template<typename> class t_alloc>
 void string8_t<t_alloc>::add_string(const char * ptr,t_size len)
 {
@@ -157,4 +159,6 @@ t_size string8_t<t_alloc>::replace_char(unsigned c1,unsigned c2,t_size start)
 		ptr += delta;
 	}
 	return rv;
+}
+
 }

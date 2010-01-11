@@ -29,7 +29,7 @@ public:
 
 	
 	//! Helper
-	void process_string(hasher_md5_state & p_state,const char * p_string,t_size p_length = infinite) {return process(p_state,p_string,strlen_max(p_string,p_length));}
+	void process_string(hasher_md5_state & p_state,const char * p_string,t_size p_length = infinite) {return process(p_state,p_string,pfc::strlen_max(p_string,p_length));}
 
 	static const GUID class_guid;
 

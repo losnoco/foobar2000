@@ -19,36 +19,36 @@ static int __cdecl custom_sort_compare(const custom_sort_data & elem1, const cus
 	return ret;
 }
 
-void metadb_handle_list_helper::sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const char * spec,titleformat_hook * p_hook)
+void metadb_handle_list_helper::sort_by_format_partial(pfc::list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const char * spec,titleformat_hook * p_hook)
 {
 	service_ptr_t<titleformat_object> script;
 	if (static_api_ptr_t<titleformat_compiler>()->compile(script,spec))
 		sort_by_format_partial(p_list,base,count,script,p_hook);
 }
 
-void metadb_handle_list_helper::sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const char * spec,titleformat_hook * p_hook)
+void metadb_handle_list_helper::sort_by_format_get_order_partial(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const char * spec,titleformat_hook * p_hook)
 {
 	service_ptr_t<titleformat_object> script;
 	if (static_api_ptr_t<titleformat_compiler>()->compile(script,spec))
 		sort_by_format_get_order_partial(p_list,base,count,order,script,p_hook);
 }
 
-void metadb_handle_list_helper::sort_by_format_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook)
+void metadb_handle_list_helper::sort_by_format_partial(pfc::list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook)
 {
 	pfc::array_t<t_size> order; order.set_size(count);
 	sort_by_format_get_order_partial(p_list,base,count,order.get_ptr(),p_script,p_hook);
 	p_list.reorder_partial(base,order.get_ptr(),count);
 }
 
-void metadb_handle_list_helper::sort_by_format_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook)
+void metadb_handle_list_helper::sort_by_format_get_order_partial(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook)
 {
 	assert(base+count<=p_list.get_count());
 	t_size n;
 	pfc::array_t<custom_sort_data> data;
 	data.set_size(count);
 	
-	string8_fastalloc temp;
-	string8_fastalloc temp2;
+	pfc::string8_fastalloc temp;
+	pfc::string8_fastalloc temp2;
 	temp.prealloc(512);
 	for(n=0;n<count;n++)
 	{
@@ -72,7 +72,7 @@ void metadb_handle_list_helper::sort_by_format_get_order_partial(const list_base
 	}
 }
 
-void metadb_handle_list_helper::sort_by_relative_path_partial(list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count)
+void metadb_handle_list_helper::sort_by_relative_path_partial(pfc::list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count)
 {
 	assert(base+count<=p_list.get_count());
 	pfc::array_t<t_size> order; order.set_size(count);
@@ -80,7 +80,7 @@ void metadb_handle_list_helper::sort_by_relative_path_partial(list_base_t<metadb
 	p_list.reorder_partial(base,order.get_ptr(),count);
 }
 
-void metadb_handle_list_helper::sort_by_relative_path_get_order_partial(const list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order)
+void metadb_handle_list_helper::sort_by_relative_path_get_order_partial(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order)
 {
 	assert(base+count<=p_list.get_count());
 	t_size n;
@@ -89,7 +89,7 @@ void metadb_handle_list_helper::sort_by_relative_path_get_order_partial(const li
 	service_ptr_t<library_manager> api;
 	library_manager::g_get(api);
 	
-	string8_fastalloc temp;
+	pfc::string8_fastalloc temp;
 	temp.prealloc(512);
 	for(n=0;n<count;n++)
 	{
@@ -111,7 +111,7 @@ void metadb_handle_list_helper::sort_by_relative_path_get_order_partial(const li
 	}
 }
 
-void metadb_handle_list_helper::remove_duplicates(list_base_t<metadb_handle_ptr> & p_list)
+void metadb_handle_list_helper::remove_duplicates(pfc::list_base_t<metadb_handle_ptr> & p_list)
 {
 	t_size count = p_list.get_count();
 	if (count>0)
@@ -137,7 +137,7 @@ void metadb_handle_list_helper::remove_duplicates(list_base_t<metadb_handle_ptr>
 	}
 }
 
-void metadb_handle_list_helper::sort_by_pointer_remove_duplicates(list_base_t<metadb_handle_ptr> & p_list)
+void metadb_handle_list_helper::sort_by_pointer_remove_duplicates(pfc::list_base_t<metadb_handle_ptr> & p_list)
 {
 	t_size count = p_list.get_count();
 	if (count>0)
@@ -168,20 +168,20 @@ void metadb_handle_list_helper::sort_by_pointer_remove_duplicates(list_base_t<me
 	}
 }
 
-void metadb_handle_list_helper::sort_by_path_quick(list_base_t<metadb_handle_ptr> & p_list)
+void metadb_handle_list_helper::sort_by_path_quick(pfc::list_base_t<metadb_handle_ptr> & p_list)
 {
 	p_list.sort_t(metadb::path_compare_metadb_handle);
 }
 
 
-void metadb_handle_list_helper::sort_by_pointer(list_base_t<metadb_handle_ptr> & p_list)
+void metadb_handle_list_helper::sort_by_pointer(pfc::list_base_t<metadb_handle_ptr> & p_list)
 {
 	//it seems MSVC71 /GL does something highly retarded here
 	//p_list.sort_t(pfc::compare_t<metadb_handle_ptr>);
 	p_list.sort();
 }
 
-t_size metadb_handle_list_helper::bsearch_by_pointer(const list_base_const_t<metadb_handle_ptr> & p_list,const metadb_handle_ptr & val)
+t_size metadb_handle_list_helper::bsearch_by_pointer(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,const metadb_handle_ptr & val)
 {
 	t_size blah;
 	if (p_list.bsearch_t(pfc::compare_t<metadb_handle_ptr>,val,blah)) return blah;
@@ -247,7 +247,7 @@ void metadb_handle_list_helper::sorted_by_pointer_extract_difference(metadb_hand
 	}
 }
 
-double metadb_handle_list_helper::calc_total_duration(const list_base_const_t<metadb_handle_ptr> & p_list)
+double metadb_handle_list_helper::calc_total_duration(const pfc::list_base_const_t<metadb_handle_ptr> & p_list)
 {
 	double ret = 0;
 	t_size n, m = p_list.get_count();
@@ -259,7 +259,7 @@ double metadb_handle_list_helper::calc_total_duration(const list_base_const_t<me
 	return ret;
 }
 
-void metadb_handle_list_helper::sort_by_path(list_base_t<metadb_handle_ptr> & p_list)
+void metadb_handle_list_helper::sort_by_path(pfc::list_base_t<metadb_handle_ptr> & p_list)
 {
 	sort_by_format_partial(p_list,0,p_list.get_count(),"%path_sort%",0);
 }

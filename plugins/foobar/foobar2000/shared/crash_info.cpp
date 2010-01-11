@@ -4,6 +4,7 @@
 static __declspec(thread) char g_thread_call_stack[1024];
 static __declspec(thread) t_size g_thread_call_stack_length;
 
+using namespace pfc;
 
 #ifdef _M_IX86
 

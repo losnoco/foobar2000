@@ -11,13 +11,13 @@ static bool test_recur(const char * fn,const char * rm,bool b_sep)
 			do
 			{
 				if (test_recur(fn,rm,b_sep)) return true;
-			} while(utf8_advance(fn));
+			} while(pfc::utf8_advance(fn));
 			return false;
 		}
 		else if (*fn==0) return false;
-		else if (*rm!='?' && char_lower(utf8_get_char(fn))!=char_lower(utf8_get_char(rm))) return false;
+		else if (*rm!='?' && char_lower(pfc::utf8_get_char(fn))!=char_lower(pfc::utf8_get_char(rm))) return false;
 		
-		fn = utf8_char_next(fn); rm = utf8_char_next(rm);
+		fn = pfc::utf8_char_next(fn); rm = pfc::utf8_char_next(rm);
 	}
 }
 

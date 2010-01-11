@@ -13,13 +13,13 @@ PFC_DECLARE_EXCEPTION(exception_service_not_found,pfc::exception,"Service not fo
 
 inline long interlocked_increment(long * var)
 {
-	assert(!((t_size)var&3));
+	PFC_ASSERT(!((t_size)var&3));
 	return InterlockedIncrement(var);
 }
 
 inline long interlocked_decrement(long * var)
 {
-	assert(!((t_size)var&3));
+	PFC_ASSERT(!((t_size)var&3));
 	return InterlockedDecrement(var);
 }
 
@@ -30,7 +30,7 @@ inline long interlocked_decrement(long * var)
 #endif
 
 #ifdef _MSC_VER
-#define FOOGUIDDECL __declspec(selectany)	//hack against msvc linker stupidity
+#define FOOGUIDDECL __declspec(selectany)	//hack against msvc linker stupidity - seems to be needed to make unreferenced GUIDs removed from binary
 #else
 #define FOOGUIDDECL
 #endif
@@ -39,7 +39,7 @@ inline long interlocked_decrement(long * var)
 #define DECLARE_GUID(NAME,A,S,D,F,G,H,J,K,L,Z,X) FOOGUIDDECL const GUID NAME = {A,S,D,{F,G,H,J,K,L,Z,X}};
 #define DECLARE_CLASS_GUID(NAME,A,S,D,F,G,H,J,K,L,Z,X) FOOGUIDDECL const GUID NAME::class_guid = {A,S,D,{F,G,H,J,K,L,Z,X}};
 
-#define service_ptr_t pfc::refcounted_ptr_t
+#define service_ptr_t pfc::refcounted_object_ptr_t
 
 template<class T>
 class static_api_ptr_t {
@@ -67,7 +67,7 @@ private:
 };
 
 template<typename T, template<typename> class t_alloc = pfc::alloc_fast>
-class service_list_t : public list_t<service_ptr_t<T>, t_alloc >
+class service_list_t : public pfc::list_t<service_ptr_t<T>, t_alloc >
 {
 };
 
@@ -97,7 +97,7 @@ public:
 	{
 		service_ptr_t<service_base> temp;
 		if (!service_query(temp,T::class_guid)) return false;
-		p_out.set(static_cast<T*>(temp.detach()));
+		p_out.__unsafe_set(static_cast<T*>(temp.__unsafe_detach()));
 		return true;
 	}
 
@@ -181,7 +181,7 @@ public:
 	bool create(service_ptr_t<T> & p_out,t_size p_index) const {
 		service_ptr_t<service_base> temp;
 		if (!service_factory_base::enum_create(temp,m_class,p_index)) return false;
-		p_out.set(static_cast<T*>(temp.detach()));
+		p_out.__unsafe_set(static_cast<T*>(temp.__unsafe_detach()));
 		return true;
 	}
 

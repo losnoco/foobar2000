@@ -58,14 +58,14 @@ typedef cfg_int_t<t_uint32> cfg_uint;
 typedef cfg_int_t<GUID> cfg_guid;
 typedef cfg_int_t<bool> cfg_bool;
 
-class cfg_string : public cfg_var, public string8
+class cfg_string : public cfg_var, public pfc::string8
 {
 protected:
 	void get_data_raw(stream_writer * p_stream,abort_callback & p_abort);
 	void set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort);
 
 public:
-	explicit inline cfg_string(const GUID & p_guid,const char * p_val) : cfg_var(p_guid), string8(p_val) {}
+	explicit inline cfg_string(const GUID & p_guid,const char * p_val) : cfg_var(p_guid), pfc::string8(p_val) {}
 
 	inline const cfg_string& operator=(const cfg_string & p_val) {set_string(p_val);return *this;}
 	inline const cfg_string& operator=(const char* p_val) {set_string(p_val);return *this;}

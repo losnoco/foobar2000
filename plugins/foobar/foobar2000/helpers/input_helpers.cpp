@@ -141,7 +141,7 @@ void input_helper::g_set_info(const playable_location & p_location,file_info & p
 }
 
 
-bool dead_item_filter::run(const list_base_const_t<metadb_handle_ptr> & p_list,bit_array_var & p_mask) {
+bool dead_item_filter::run(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,bit_array_var & p_mask) {
 	file_list_helper::file_list_from_metadb_handle_list path_list;
 	path_list.init_from_list(p_list);
 	metadb_handle_list valid_handles;
@@ -181,7 +181,8 @@ class dead_item_filter_impl_simple : public dead_item_filter
 {
 public:
 	inline dead_item_filter_impl_simple(abort_callback & p_abort) : m_abort(p_abort) {}
-	bool FB2KAPI is_aborting() {return m_abort.is_aborting();}
+	bool is_aborting() const {return m_abort.is_aborting();}
+	abort_callback_event get_abort_event() const {return m_abort.get_abort_event();}
 	void on_progress(t_size p_position,t_size p_total) {}
 private:
 	abort_callback & m_abort;
@@ -189,7 +190,7 @@ private:
 
 }
 
-bool input_helper::g_mark_dead(const list_base_const_t<metadb_handle_ptr> & p_list,bit_array_var & p_mask,abort_callback & p_abort)
+bool input_helper::g_mark_dead(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,bit_array_var & p_mask,abort_callback & p_abort)
 {
 	dead_item_filter_impl_simple filter(p_abort);
 	return filter.run(p_list,p_mask);

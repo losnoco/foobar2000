@@ -19,7 +19,7 @@ static bool is_linebreak(char c)
 
 static void validate_file_type(const char * p_type,t_size p_type_length) {
 	if (stricmp_utf8_ex(p_type,p_type_length,"WAVE",infinite) && stricmp_utf8_ex(p_type,p_type_length,"MP3",infinite) && stricmp_utf8_ex(p_type,p_type_length,"AIFF",infinite))
-		throw exception_cue(string_formatter() << "expected WAVE, MP3 or AIFF, got : \"" << string8(p_type,p_type_length) << "\"");
+		throw exception_cue(pfc::string_formatter() << "expected WAVE, MP3 or AIFF, got : \"" << pfc::string8(p_type,p_type_length) << "\"");
 }
 
 namespace {
@@ -184,7 +184,7 @@ namespace {
 		t_cuesheet_index_list m_index_list;
 		double m_pregap;
 		unsigned m_track;
-		string8 m_file,m_trackfile;
+		pfc::string8 m_file,m_trackfile;
 		pfc::chain_list_t<cue_parser::cue_entry> & m_out;
 	};
 
@@ -310,13 +310,13 @@ namespace {
 				if (!rg.set_from_meta(iter->m_name,iter->m_value))
 					m_out.meta_set(iter->m_name,iter->m_value);
 			}
-			m_out.meta_set("tracknumber",string_formatter() << m_wanted_track);
+			m_out.meta_set("tracknumber",pfc::string_formatter() << m_wanted_track);
 			m_out.set_replaygain(rg);
 
 		}
 	private:
 		struct t_meta_entry {
-			string8 m_name,m_value;
+			pfc::string8 m_name,m_value;
 		};
 		typedef pfc::chain_list_t<t_meta_entry> t_meta_list;
 
@@ -352,7 +352,7 @@ namespace {
 		t_meta_list m_globals,m_locals;
 		file_info & m_out;
 		unsigned m_wanted_track, m_track;
-		string8 m_album_artist;
+		pfc::string8 m_album_artist;
 		bool m_is_va;
 		t_cuesheet_index_list m_indexes;
 		bool m_index0_set,m_index1_set;
@@ -417,7 +417,7 @@ static void g_parse_cue_line(const char * p_line,t_size p_line_length,cue_parser
 
 		while(ptr < p_line_length && is_spacing(p_line[ptr])) ptr++;
 		if (ptr != p_line_length || type_length == 0) throw exception_cue("invalid TRACK syntax",0);
-		unsigned track = atoui_ex(p_line+track_base,track_length);
+		unsigned track = pfc::atoui_ex(p_line+track_base,track_length);
 		if (track < 1 || track > 99) throw exception_cue("invalid track number",0);
 
 		p_callback.on_track(track,p_line + type_base, type_length);
@@ -450,7 +450,7 @@ static void g_parse_cue_line(const char * p_line,t_size p_line_length,cue_parser
 		if (ptr != p_line_length || index_length == 0 || time_length == 0)
 			throw exception_cue("invalid INDEX syntax",0);
 
-		unsigned index = atoui_ex(p_line+index_base,index_length);
+		unsigned index = pfc::atoui_ex(p_line+index_base,index_length);
 		if (index > 99) throw exception_cue("invalid INDEX syntax",0);
 		unsigned time = cuesheet_parse_index_time_ticks_e(p_line + time_base,time_length);
 		
@@ -589,7 +589,7 @@ static void g_parse_cue(const char * p_cuesheet,cue_parser_callback & p_callback
 				try {
 					g_parse_cue_line(parseptr,length,p_callback);
 				} catch(exception_cue const & e) {//rethrow with line info
-					throw exception_cue(string_formatter() << e.what() << " (line " << lineidx << ")");
+					throw exception_cue(pfc::string_formatter() << e.what() << " (line " << lineidx << ")");
 				}
 			}
 			parseptr += length;
@@ -607,7 +607,7 @@ void cue_parser::parse(const char *p_cuesheet,pfc::chain_list_t<cue_entry> & p_o
 		g_parse_cue(p_cuesheet,callback);
 		callback.finalize();
 	} catch(exception_cue const & e) {
-		throw exception_bad_cuesheet(string_formatter() << "Error parsing cuesheet: " << e.what());
+		throw exception_bad_cuesheet(pfc::string_formatter() << "Error parsing cuesheet: " << e.what());
 	}
 }
 void cue_parser::parse_info(const char * p_cuesheet,file_info & p_info,unsigned p_index) {
@@ -616,7 +616,7 @@ void cue_parser::parse_info(const char * p_cuesheet,file_info & p_info,unsigned 
 		g_parse_cue(p_cuesheet,callback);
 		callback.finalize();
 	} catch(exception_cue const & e) {
-		throw exception_bad_cuesheet(string_formatter() << "Error parsing cuesheet: " << e.what());
+		throw exception_bad_cuesheet(pfc::string_formatter() << "Error parsing cuesheet: " << e.what());
 	}
 }
 
@@ -712,7 +712,7 @@ namespace {
 		double m_pregap;
 		unsigned m_track;
 		cue_creator::t_entry_list & m_out;
-		string8 m_file,m_trackfile;
+		pfc::string8 m_file,m_trackfile;
 		t_cuesheet_index_list m_indexes;
 	};
 }
@@ -735,7 +735,7 @@ void cue_parser::parse_full(const char * p_cuesheet,cue_creator::t_entry_list & 
 			}
 		}
 	} catch(exception_cue const & e) {
-		throw exception_bad_cuesheet(string_formatter() << "Error parsing cuesheet: " << e.what());
+		throw exception_bad_cuesheet(pfc::string_formatter() << "Error parsing cuesheet: " << e.what());
 	}
 }
 
@@ -746,7 +746,7 @@ namespace cue_parser
 	static const char * extract_meta_test_field(const char * p_field,int p_index)
 	{
 		if (stricmp_utf8_partial(p_field,"CUE_TRACK") != 0) return 0;
-		p_field += skip_utf8_chars(p_field,9);
+		p_field += pfc::skip_utf8_chars(p_field,9);
 		if ((int)p_field[0] - '0' != p_index / 10) return 0;
 		if ((int)p_field[1] - '0' != p_index % 10) return 0;
 		if (p_field[2] != '_') return 0;
@@ -828,7 +828,7 @@ namespace cue_parser
 			if (!found) throw exception_io_data();
 		}
 
-		p_info.meta_set("tracknumber", string_formatter() << cue_track);
+		p_info.meta_set("tracknumber", pfc::string_formatter() << cue_track);
 
 		extract_meta(p_baseinfo,p_info,cue_track);
 
@@ -849,7 +849,7 @@ namespace cue_parser
 	{
 		TRACK_CALL_TEXT("input_wrapper_cue_base::write_meta");
 
-		string8_fastalloc temp;
+		pfc::string8_fastalloc temp;
 
 		{
 			t_size n, m = p_baseinfo.meta_get_count();

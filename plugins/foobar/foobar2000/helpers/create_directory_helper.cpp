@@ -29,7 +29,7 @@ namespace create_directory_helper
 		return c==' ' || c=='.';
 	}
 
-	void make_path(const char * parent,const char * filename,const char * extension,bool allow_new_dirs,string8 & out,bool really_create_dirs,abort_callback & p_abort)
+	void make_path(const char * parent,const char * filename,const char * extension,bool allow_new_dirs,pfc::string8 & out,bool really_create_dirs,abort_callback & p_abort)
 	{
 		out.reset();
 		if (parent && *parent)
@@ -112,9 +112,9 @@ namespace {
 	};
 }
 
-void create_directory_helper::format_filename(const metadb_handle_ptr & handle,titleformat_hook * p_hook,const char * spec,string8 & out)
+void create_directory_helper::format_filename(const metadb_handle_ptr & handle,titleformat_hook * p_hook,const char * spec,pfc::string8 & out)
 {
-	string8 temp;
+	pfc::string8 temp;
 	handle->format_title(p_hook,temp,spec,&titleformat_text_filter_impl_createdir());
 	temp.replace_char('/','\\');
 	temp.fix_filename_chars('_','\\');

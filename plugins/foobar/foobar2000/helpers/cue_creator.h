@@ -3,7 +3,7 @@ namespace cue_creator
 	struct t_entry
 	{
 		file_info_impl m_infos;
-		string8 m_file;
+		pfc::string8 m_file;
 		unsigned m_track_number;
 
 		t_cuesheet_index_list m_index_list;
@@ -13,5 +13,5 @@ namespace cue_creator
 	
 	typedef pfc::chain_list_t<t_entry> t_entry_list;
 
-	void create(string_formatter & p_out,const pfc::chain_list_t<t_entry> & p_list);
+	void create(pfc::string_formatter & p_out,const pfc::chain_list_t<t_entry> & p_list);
 };

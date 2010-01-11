@@ -11,39 +11,39 @@ private:
 		t_filestats m_stats;
 		bool m_fresh;
 	};
-	class metadb_io_hintlist_wrapper_part1 : public list_base_const_t<metadb_handle_ptr> {
+	class metadb_io_hintlist_wrapper_part1 : public pfc::list_base_const_t<metadb_handle_ptr> {
 	public:
-		metadb_io_hintlist_wrapper_part1(const list_base_const_t<metadb_io_hintlist::t_entry> & p_list) : m_list(p_list) {}
+		metadb_io_hintlist_wrapper_part1(const pfc::list_base_const_t<metadb_io_hintlist::t_entry> & p_list) : m_list(p_list) {}
 		t_size get_count() const {return m_list.get_count();}
 		void get_item_ex(metadb_handle_ptr & p_out, t_size n) const {p_out = m_list[n].m_handle;}
 
 	private:
-		const list_base_const_t<metadb_io_hintlist::t_entry> & m_list;
+		const pfc::list_base_const_t<metadb_io_hintlist::t_entry> & m_list;
 	};
-	class metadb_io_hintlist_wrapper_part2 : public list_base_const_t<const file_info*> {
+	class metadb_io_hintlist_wrapper_part2 : public pfc::list_base_const_t<const file_info*> {
 	public:
-		metadb_io_hintlist_wrapper_part2(const list_base_const_t<metadb_io_hintlist::t_entry> & p_list) : m_list(p_list) {}
+		metadb_io_hintlist_wrapper_part2(const pfc::list_base_const_t<metadb_io_hintlist::t_entry> & p_list) : m_list(p_list) {}
 		t_size get_count() const {return m_list.get_count();}
 		void get_item_ex(const file_info* & p_out, t_size n) const {p_out = &*m_list[n].m_info;}
 	private:
-		const list_base_const_t<metadb_io_hintlist::t_entry> & m_list;
+		const pfc::list_base_const_t<metadb_io_hintlist::t_entry> & m_list;
 	};
-	class metadb_io_hintlist_wrapper_part3 : public list_base_const_t<t_filestats> {
+	class metadb_io_hintlist_wrapper_part3 : public pfc::list_base_const_t<t_filestats> {
 	public:
-		metadb_io_hintlist_wrapper_part3(const list_base_const_t<metadb_io_hintlist::t_entry> & p_list) : m_list(p_list) {}
+		metadb_io_hintlist_wrapper_part3(const pfc::list_base_const_t<metadb_io_hintlist::t_entry> & p_list) : m_list(p_list) {}
 		t_size get_count() const {return m_list.get_count();}
 		void get_item_ex(t_filestats & p_out, t_size n) const {p_out = m_list[n].m_stats;}
 	private:
-		const list_base_const_t<metadb_io_hintlist::t_entry> & m_list;
+		const pfc::list_base_const_t<metadb_io_hintlist::t_entry> & m_list;
 	};
 	class metadb_io_hintlist_wrapper_part4 : public bit_array {
 	public:
-		metadb_io_hintlist_wrapper_part4(const list_base_const_t<metadb_io_hintlist::t_entry> & p_list) : m_list(p_list) {}
+		metadb_io_hintlist_wrapper_part4(const pfc::list_base_const_t<metadb_io_hintlist::t_entry> & p_list) : m_list(p_list) {}
 		bool get(t_size n) const {return m_list[n].m_fresh;}
 	private:
-		const list_base_const_t<metadb_io_hintlist::t_entry> & m_list;
+		const pfc::list_base_const_t<metadb_io_hintlist::t_entry> & m_list;
 	};
 
-	list_t<t_entry,pfc::alloc_fast> m_entries;
+	pfc::list_t<t_entry,pfc::alloc_fast> m_entries;
 };
 

@@ -2,7 +2,7 @@
 
 void input_file_type::build_openfile_mask(pfc::string_base & out, bool b_include_playlists)
 {
-	string8_fastalloc name,mask,mask_alltypes,out_temp;
+	pfc::string8_fastalloc name,mask,mask_alltypes,out_temp;
 	
 	if (b_include_playlists)
 	{

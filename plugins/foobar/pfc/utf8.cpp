@@ -1,18 +1,11 @@
 #include "pfc.h"
 
+namespace pfc {
 //utf8 stuff
 
-#ifndef BYTE
-typedef unsigned char BYTE;
-#endif
+static const t_uint8 mask_tab[6]={0x80,0xE0,0xF0,0xF8,0xFC,0xFE};
 
-#ifndef UINT
-typedef unsigned int UINT;
-#endif
-
-static const BYTE mask_tab[6]={0x80,0xE0,0xF0,0xF8,0xFC,0xFE};
-
-static const BYTE val_tab[6]={0,0xC0,0xE0,0xF0,0xF8,0xFC};
+static const t_uint8 val_tab[6]={0,0xC0,0xE0,0xF0,0xF8,0xFC};
 
 t_size utf8_char_len_from_header(char p_c)
 {
@@ -209,7 +202,7 @@ t_size skip_utf8_chars(const char * ptr,t_size count)
 	return num;
 }
 
-bool pfc::is_valid_utf8(const char * param)
+bool is_valid_utf8(const char * param)
 {
 	__try {
 		while(*param)
@@ -295,4 +288,6 @@ t_size utf8_chars_to_bytes(const char * string,t_size count)
 		count--;
 	}
 	return bytes;
+}
+
 }

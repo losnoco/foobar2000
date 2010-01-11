@@ -3,7 +3,7 @@
 
 static HINSTANCE g_hIns;
 
-static string_simple g_name,g_full_path;
+static pfc::string_simple g_name,g_full_path;
 
 static bool g_services_available = false, g_initialized = false;
 

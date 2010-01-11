@@ -67,7 +67,7 @@ void titleformat_config_impl::get_data_raw(stream_writer * p_stream,abort_callba
 
 void titleformat_config_impl::set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort)
 {
-	string8_fastalloc temp;
+	pfc::string8_fastalloc temp;
 	p_stream->read_string_raw(temp,p_abort);
 	m_instance.release();
 	m_compilation_failed = false;

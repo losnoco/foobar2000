@@ -1,13 +1,15 @@
 #include "pfc.h"
 
-void pfc::string_receiver::add_char(t_uint32 p_char)
+namespace pfc {
+
+void string_receiver::add_char(t_uint32 p_char)
 {
 	char temp[8];
 	t_size len = utf8_encode_char(p_char,temp);
 	if (len>0) add_string(temp,len);
 }
 
-void pfc::string_base::skip_trailing_char(unsigned skip)
+void string_base::skip_trailing_char(unsigned skip)
 {
 	const char * str = get_ptr();
 	t_size ptr,trunc;
@@ -58,25 +60,25 @@ format_time::format_time(t_int64 length)
 	else out += sprintf(out,"%u:%02u",minutes,seconds);
 }
 
-int pfc::strcmp_partial(const char * p_string,const char * p_substring) {return strcmp_partial_ex(p_string,infinite,p_substring,infinite);}
+int strcmp_partial(const char * p_string,const char * p_substring) {return strcmp_partial_ex(p_string,infinite,p_substring,infinite);}
 
-int pfc::strcmp_partial_ex(const char * p_string,t_size p_string_length,const char * p_substring,t_size p_substring_length) {
+int strcmp_partial_ex(const char * p_string,t_size p_string_length,const char * p_substring,t_size p_substring_length) {
 	p_string_length = strlen_max(p_string,p_string_length); p_substring_length = strlen_max(p_substring,p_substring_length);
 	for(t_size walk=0;walk<p_substring_length;walk++) {
 		char stringchar = (walk>=p_string_length ? 0 : p_string[walk]);
 		char substringchar = p_substring[walk];
-		int result = pfc::compare_t(stringchar,substringchar);
+		int result = compare_t(stringchar,substringchar);
 		if (result != 0) return result;
 	}
 	return 0;
 }
 
-bool pfc::is_path_separator(unsigned c)
+bool is_path_separator(unsigned c)
 {
 	return c=='\\' || c=='/' || c=='|' || c==':';
 }
 
-bool pfc::is_path_bad_char(unsigned c)
+bool is_path_bad_char(unsigned c)
 {
 #ifdef _WINDOWS
 	return c=='\\' || c=='/' || c=='|' || c==':' || c=='*' || c=='?' || c=='\"' || c=='>' || c=='<';
@@ -221,7 +223,7 @@ char * strdup_n(const char * src,t_size len)
 
 string_filename::string_filename(const char * fn)
 {
-	fn += pfc::scan_filename(fn);
+	fn += scan_filename(fn);
 	const char * ptr=fn,*dot=0;
 	while(*ptr && *ptr!='?')
 	{
@@ -235,7 +237,7 @@ string_filename::string_filename(const char * fn)
 
 string_filename_ext::string_filename_ext(const char * fn)
 {
-	fn += pfc::scan_filename(fn);
+	fn += scan_filename(fn);
 	const char * ptr = fn;
 	while(*ptr && *ptr!='?') ptr++;
 	set_string(fn,ptr-fn);
@@ -244,7 +246,7 @@ string_filename_ext::string_filename_ext(const char * fn)
 string_extension::string_extension(const char * src)
 {
 	buffer[0]=0;
-	const char * start = src + pfc::scan_filename(src);
+	const char * start = src + scan_filename(src);
 	const char * end = start + strlen(start);
 	const char * ptr = end-1;
 	while(ptr>start && *ptr!='.')
@@ -266,17 +268,17 @@ string_extension::string_extension(const char * src)
 }
 
 
-bool pfc::has_path_bad_chars(const char * param)
+bool has_path_bad_chars(const char * param)
 {
 	while(*param)
 	{
-		if (pfc::is_path_bad_char(*param)) return true;
+		if (is_path_bad_char(*param)) return true;
 		param++;
 	}
 	return false;
 }
 
-void pfc::float_to_string(char * out,t_size out_max,double val,unsigned precision,bool b_sign)
+void float_to_string(char * out,t_size out_max,double val,unsigned precision,bool b_sign)
 {
 	char temp[64];
 	t_size outptr;
@@ -377,7 +379,7 @@ static double pfc_string_to_float_internal(const char * src)
 	return (double) val * pow(10.0,(double)div);
 }
 
-double pfc::string_to_float(const char * src,t_size max)
+double string_to_float(const char * src,t_size max)
 {
 	char blargh[128];
 	strncpy(blargh,src,max>127?127:max);
@@ -387,7 +389,7 @@ double pfc::string_to_float(const char * src,t_size max)
 
 
 
-void pfc::string_base::convert_to_lower_ascii(const char * src,char replace)
+void string_base::convert_to_lower_ascii(const char * src,char replace)
 {
 	reset();
 	PFC_ASSERT(replace>0);
@@ -496,7 +498,7 @@ int stricmp_ascii(const char * s1,const char * s2)
 {
 	for(;;)
 	{
-		char c1 = pfc::ascii_tolower(*s1), c2 = pfc::ascii_tolower(*s2);
+		char c1 = ascii_tolower(*s1), c2 = ascii_tolower(*s2);
 		if (c1<c2) return -1;
 		else if (c1>c2) return 1;
 		else if (c1 == 0) return 0;
@@ -508,7 +510,7 @@ int stricmp_ascii(const char * s1,const char * s2)
 format_float::format_float(double p_val,unsigned p_width,unsigned p_prec)
 {
 	char temp[64];
-	pfc::float_to_string(temp,64,p_val,p_prec,false);
+	float_to_string(temp,64,p_val,p_prec,false);
 	temp[63] = 0;
 	t_size len = strlen(temp);
 	if (len < p_width)
@@ -689,11 +691,11 @@ string_replace_extension::string_replace_extension(const char * p_path,const cha
 
 string_directory::string_directory(const char * p_path)
 {
-	t_size ptr = pfc::scan_filename(p_path);
+	t_size ptr = scan_filename(p_path);
 	if (ptr > 0) m_data.set_string(p_path,ptr-1);
 }
 
-t_size pfc::scan_filename(const char * ptr)
+t_size scan_filename(const char * ptr)
 {
 	t_size n;
 	t_size _used = strlen(ptr);
@@ -706,26 +708,26 @@ t_size pfc::scan_filename(const char * ptr)
 
 
 
-t_size pfc::string_find_first(const char * p_string,char p_tofind,t_size p_start) {
+t_size string_find_first(const char * p_string,char p_tofind,t_size p_start) {
 	return string_find_first_ex(p_string,infinite,&p_tofind,1,p_start);
 }
-t_size pfc::string_find_last(const char * p_string,char p_tofind,t_size p_start) {
+t_size string_find_last(const char * p_string,char p_tofind,t_size p_start) {
 	return string_find_last_ex(p_string,infinite,&p_tofind,1,p_start);
 }
-t_size pfc::string_find_first(const char * p_string,const char * p_tofind,t_size p_start) {
+t_size string_find_first(const char * p_string,const char * p_tofind,t_size p_start) {
 	return string_find_first_ex(p_string,infinite,p_tofind,infinite,p_start);
 }
-t_size pfc::string_find_last(const char * p_string,const char * p_tofind,t_size p_start) {
+t_size string_find_last(const char * p_string,const char * p_tofind,t_size p_start) {
 	return string_find_last_ex(p_string,infinite,p_tofind,infinite,p_start);
 }
 
-t_size pfc::string_find_first_ex(const char * p_string,t_size p_string_length,char p_tofind,t_size p_start) {
+t_size string_find_first_ex(const char * p_string,t_size p_string_length,char p_tofind,t_size p_start) {
 	return string_find_first_ex(p_string,p_string_length,&p_tofind,1,p_start);
 }
-t_size pfc::string_find_last_ex(const char * p_string,t_size p_string_length,char p_tofind,t_size p_start) {
+t_size string_find_last_ex(const char * p_string,t_size p_string_length,char p_tofind,t_size p_start) {
 	return string_find_last_ex(p_string,p_string_length,&p_tofind,1,p_start);
 }
-t_size pfc::string_find_first_ex(const char * p_string,t_size p_string_length,const char * p_tofind,t_size p_tofind_length,t_size p_start) {
+t_size string_find_first_ex(const char * p_string,t_size p_string_length,const char * p_tofind,t_size p_tofind_length,t_size p_start) {
 	p_string_length = strlen_max(p_string,p_string_length); p_tofind_length = strlen_max(p_tofind,p_tofind_length);
 	if (p_string_length >= p_tofind_length) {
 		t_size max = p_string_length - p_tofind_length;
@@ -735,10 +737,10 @@ t_size pfc::string_find_first_ex(const char * p_string,t_size p_string_length,co
 	}
 	return infinite;
 }
-t_size pfc::string_find_last_ex(const char * p_string,t_size p_string_length,const char * p_tofind,t_size p_tofind_length,t_size p_start) {
+t_size string_find_last_ex(const char * p_string,t_size p_string_length,const char * p_tofind,t_size p_tofind_length,t_size p_start) {
 	p_string_length = strlen_max(p_string,p_string_length); p_tofind_length = strlen_max(p_tofind,p_tofind_length);
 	if (p_string_length >= p_tofind_length) {
-		t_size max = pfc::min_t<t_size>(p_string_length - p_tofind_length,p_start);
+		t_size max = min_t<t_size>(p_string_length - p_tofind_length,p_start);
 		for(t_size walk = max; walk != (t_size)(-1); walk--) {
 			if (strcmp_partial_ex(p_string+walk,p_string_length-walk,p_tofind,p_tofind_length) == 0) return walk;
 		}
@@ -747,7 +749,7 @@ t_size pfc::string_find_last_ex(const char * p_string,t_size p_string_length,con
 }
 
 
-bool pfc::string_is_numeric(const char * p_string,t_size p_length) {
+bool string_is_numeric(const char * p_string,t_size p_length) {
 	bool retval = false;
 	for(t_size walk = 0; walk < p_length && p_string[walk] != 0; walk++) {
 		if (!char_is_numeric(p_string[walk])) {retval = false; break;}
@@ -757,7 +759,9 @@ bool pfc::string_is_numeric(const char * p_string,t_size p_length) {
 }
 
 
-void pfc::string_base::fix_dir_separator(char p_char) {
+void string_base::fix_dir_separator(char p_char) {
 	t_size length = get_length();
 	if (length == 0 || get_ptr()[length-1] != p_char) add_byte(p_char);
+}
+
 }

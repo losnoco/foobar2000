@@ -15,20 +15,20 @@ public:
 	virtual bool is_path_addable(const char * p_path) = 0;
 	virtual bool get_relative_path(const metadb_handle_ptr & p_item,pfc::string_base & out) = 0;
 	virtual void enum_items(enum_callback * p_callback) = 0;
-	virtual void add_items(const list_base_const_t<metadb_handle_ptr> & p_data) = 0;
-	virtual void remove_items(const list_base_const_t<metadb_handle_ptr> & p_data) = 0;
-	virtual void add_items_async(const list_base_const_t<metadb_handle_ptr> & p_data) = 0;
+	virtual void add_items(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) = 0;
+	virtual void remove_items(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) = 0;
+	virtual void add_items_async(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) = 0;
 	//! p_data must be sorted by metadb::path_compare; use file_operation_callback static methods instead of calling this directly
-	virtual void on_files_deleted_sorted(const list_base_const_t<const char *> & p_data) = 0;
+	virtual void on_files_deleted_sorted(const pfc::list_base_const_t<const char *> & p_data) = 0;
 
-	virtual void get_all_items(list_base_t<metadb_handle_ptr> & p_out) = 0;
+	virtual void get_all_items(pfc::list_base_t<metadb_handle_ptr> & p_out) = 0;
 
 	virtual bool is_library_enabled() = 0;
 	virtual void show_preferences() = 0;
 
 	virtual void rescan() = 0;
 	
-	virtual void check_dead_entries(const list_base_t<metadb_handle_ptr> & p_list) = 0;
+	virtual void check_dead_entries(const pfc::list_base_t<metadb_handle_ptr> & p_list) = 0;
 
 	static bool g_get(service_ptr_t<library_manager> & p_out) {return service_enum_t<library_manager>().first(p_out);}
 
@@ -46,9 +46,9 @@ protected:
 class NOVTABLE library_callback : public service_base
 {
 public:
-	virtual void on_items_added(const list_base_const_t<metadb_handle_ptr> & p_data) = 0;
-	virtual void on_items_removed(const list_base_const_t<metadb_handle_ptr> & p_data) = 0;
-	virtual void on_items_modified(const list_base_const_t<metadb_handle_ptr> & p_data) = 0;
+	virtual void on_items_added(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) = 0;
+	virtual void on_items_removed(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) = 0;
+	virtual void on_items_modified(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) = 0;
 
 	static const GUID class_guid;
 

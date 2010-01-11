@@ -19,17 +19,18 @@ public:
 	virtual void handle_create(metadb_handle_ptr & p_out,const playable_location & p_location) = 0;
 };
 
-class playlist_loader_callback_i : public playlist_loader_callback
+class playlist_loader_callback_impl : public playlist_loader_callback
 {
 	metadb_handle_list m_data;
 	abort_callback & m_abort;
 	static_api_ptr_t<metadb> m_api;
 public:
 
-	~playlist_loader_callback_i() {}
-	explicit playlist_loader_callback_i(abort_callback & p_abort) : m_abort(p_abort) {}
+	~playlist_loader_callback_impl() {}
+	explicit playlist_loader_callback_impl(abort_callback & p_abort) : m_abort(p_abort) {}
 
-	bool FB2KAPI is_aborting() {return m_abort.is_aborting();}
+	bool is_aborting() const {return m_abort.is_aborting();}
+	abort_callback_event get_abort_event() const {return m_abort.get_abort_event();}
 
 	const metadb_handle_ptr & get_item(t_size idx) const {return m_data[idx];}
 	const metadb_handle_ptr & operator[](t_size idx) const {return m_data[idx];}
@@ -51,7 +52,7 @@ class NOVTABLE playlist_loader : public service_base
 {
 public:
 	virtual void open(const char * filename, const service_ptr_t<file> & r,playlist_loader_callback & callback)=0;	//send new entries to callback
-	virtual void write(const char * filename, const service_ptr_t<file> & r,const list_base_const_t<metadb_handle_ptr> & data,abort_callback & p_abort)=0;
+	virtual void write(const char * filename, const service_ptr_t<file> & r,const pfc::list_base_const_t<metadb_handle_ptr> & data,abort_callback & p_abort)=0;
 	virtual const char * get_extension()=0;
 	virtual bool can_write()=0;
 	virtual bool is_our_content_type(const char*) = 0;
@@ -59,7 +60,7 @@ public:
 
 	static void g_load_playlist(const char * filename,playlist_loader_callback & callback);
 
-	static void g_save_playlist(const char * filename,const list_base_const_t<metadb_handle_ptr> & data,abort_callback & p_abort);
+	static void g_save_playlist(const char * filename,const pfc::list_base_const_t<metadb_handle_ptr> & data,abort_callback & p_abort);
 
 	static void g_process_path(const char * filename,playlist_loader_callback & callback,playlist_loader_callback::t_entry_type type = playlist_loader_callback::entry_user_requested);
 	//adds contents of filename (can be directory) to playlist, doesnt load playlists

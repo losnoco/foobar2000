@@ -64,7 +64,7 @@ public:
 	GUID get_parent_guid() {return m_parent;}
 private:
 	GUID m_guid,m_parent;
-	string8 m_name;
+	pfc::string8 m_name;
 };
 
 typedef service_factory_single_t<preferences_branch,preferences_branch_impl> __preferences_branch_factory;

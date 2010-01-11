@@ -21,13 +21,13 @@ namespace {
 
 		void write_as_utf8(unsigned p_char) {
 			char temp[6];
-			t_size n = utf8_encode_char(p_char,temp);
+			t_size n = pfc::utf8_encode_char(p_char,temp);
 			write_multi(temp,n);
 		}
 
 		void write_as_wide(unsigned p_char) {
 			wchar_t temp[2];
-			t_size n = utf16_encode_char(p_char,temp);
+			t_size n = pfc::utf16_encode_char(p_char,temp);
 			write_multi(temp,n);
 		}
 

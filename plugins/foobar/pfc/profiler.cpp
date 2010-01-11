@@ -1,5 +1,6 @@
 #include "pfc.h"
 
+namespace pfc {
 
 profiler_static::profiler_static(const char * p_name)
 {
@@ -47,4 +48,6 @@ profiler_static::~profiler_static()
 	else strcpy(average_text,"N/A");
 	sprintf(blah,"profiler: %s - %s cycles (executed %s times, %s average)\n",name_truncated,total_time_truncated,num_text,average_text);
 	OutputDebugStringA(blah);
+}
+
 }

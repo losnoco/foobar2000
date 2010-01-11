@@ -12,7 +12,7 @@ void metadb::handle_create_replace_path_canonical(metadb_handle_ptr & p_out,cons
 }
 
 void metadb::handle_create_replace_path(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path) {
-	string8 path;
+	pfc::string8 path;
 	filesystem::g_get_canonical_path(p_new_path,path);
 	handle_create_replace_path_canonical(p_out,p_source,path);
 }
@@ -25,13 +25,13 @@ void metadb::handle_replace_path_canonical(metadb_handle_ptr & p_out,const char 
 
 
 metadb_io::t_load_info_state metadb_io::load_info(metadb_handle_ptr p_item,t_load_info_type p_type,HWND p_parent_window,bool p_show_errors) {
-	return load_info_multi(list_single_ref_t<metadb_handle_ptr>(p_item),p_type,p_parent_window,p_show_errors);
+	return load_info_multi(pfc::list_single_ref_t<metadb_handle_ptr>(p_item),p_type,p_parent_window,p_show_errors);
 }
 
 metadb_io::t_update_info_state metadb_io::update_info(metadb_handle_ptr p_item,file_info & p_info,HWND p_parent_window,bool p_show_errors)
 {
 	file_info * blah = &p_info;
-	return update_info_multi(list_single_ref_t<metadb_handle_ptr>(p_item),list_single_ref_t<file_info*>(blah),p_parent_window,p_show_errors);
+	return update_info_multi(pfc::list_single_ref_t<metadb_handle_ptr>(p_item),pfc::list_single_ref_t<file_info*>(blah),p_parent_window,p_show_errors);
 }
 
 file_info_update_helper::file_info_update_helper(metadb_handle_ptr p_item)
@@ -44,7 +44,7 @@ file_info_update_helper::file_info_update_helper(metadb_handle_ptr p_item)
 	for(t_size n=0;n<count;n++) m_mask[n] = false;
 }
 
-file_info_update_helper::file_info_update_helper(const list_base_const_t<metadb_handle_ptr> & p_data)
+file_info_update_helper::file_info_update_helper(const pfc::list_base_const_t<metadb_handle_ptr> & p_data)
 {
 	const t_size count = p_data.get_count();
 	m_data.add_items(p_data);
@@ -92,8 +92,8 @@ file_info_update_helper::t_write_result file_info_update_helper::write_infos(HWN
 	{
 		static_api_ptr_t<metadb_io> api;
 		switch(api->update_info_multi(
-			list_const_array_t<metadb_handle_ptr,const pfc::array_t<metadb_handle_ptr>&>(items_to_update,outptr),
-			list_const_array_t<file_info*,const pfc::array_t<file_info*>&>(infos_to_write,outptr),
+			pfc::list_const_array_t<metadb_handle_ptr,const pfc::array_t<metadb_handle_ptr>&>(items_to_update,outptr),
+			pfc::list_const_array_t<file_info*,const pfc::array_t<file_info*>&>(infos_to_write,outptr),
 			p_parent,
 			true
 			))
@@ -138,7 +138,7 @@ void file_info_update_helper::invalidate_item(t_size p_index)
 void metadb_io::hint_async(metadb_handle_ptr p_item,const file_info & p_info,const t_filestats & p_stats,bool p_fresh)
 {
 	const file_info * blargh = &p_info;
-	hint_multi_async(list_single_ref_t<metadb_handle_ptr>(p_item),list_single_ref_t<const file_info *>(blargh),list_single_ref_t<t_filestats>(p_stats),bit_array_val(p_fresh));
+	hint_multi_async(pfc::list_single_ref_t<metadb_handle_ptr>(p_item),pfc::list_single_ref_t<const file_info *>(blargh),pfc::list_single_ref_t<t_filestats>(p_stats),bit_array_val(p_fresh));
 }
 
 

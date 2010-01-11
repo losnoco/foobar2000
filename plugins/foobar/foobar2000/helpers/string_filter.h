@@ -19,6 +19,6 @@ public:
 		return true;
 	}
 private:
-	mutable string8_fastalloc m_lowercasebuffer;
-	string8 m_pattern;
+	mutable pfc::string8_fastalloc m_lowercasebuffer;
+	pfc::string8 m_pattern;
 };
