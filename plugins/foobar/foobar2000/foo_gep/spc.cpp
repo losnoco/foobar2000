@@ -291,6 +291,10 @@ static void write_id666( service_ptr_t<file> & p_file, const file_info & p_info,
 	const char * value;
 	pfc::stringcvt::string_ansi_from_utf8 converter;
 
+	p_file->seek( 0x23, p_abort );
+	buffer [0] = 26;
+	p_file->write_object( buffer, 1, p_abort );
+
 	p_file->seek( offsetof( Spc_Emu::header_t, song ), p_abort );
 
 	memset( buffer, 0, sizeof( buffer ) );
