@@ -2,6 +2,7 @@
 #include "reader.h"
 #include "config.h"
 
+#include <gme/blargg_endian.h>
 #include <gme/Spc_Emu.h>
 
 #include "../helpers/window_placement_helper.h"
@@ -9,7 +10,8 @@
 #include "resource.h"
 
 #undef HEADER_STRING
-#define HEADER_STRING(i,n,f) if ((f)[0]) (i).meta_set((n), pfc::stringcvt::string_utf8_from_ansi((f), sizeof((f))))
+//#define HEADER_STRING(i,n,f) if ((f)[0]) (i).meta_set((n), pfc::stringcvt::string_utf8_from_ansi((f), sizeof((f))))
+#define HEADER_STRING(i,n,f) meta_add((i), (n), (f), sizeof(f))
 
 static const char field_length[]="spc_length";
 static const char field_fade[]="spc_fade";
@@ -284,7 +286,6 @@ static void load_id666(service_ptr_t<file> & p_file, LPID666TAG lpTag, abort_cal
 
 class input_spc : public input_gep
 {
-	Spc_Emu::header_t m_header;
 	file_info_impl    m_info;
 	bool              retagging;
 
@@ -305,12 +306,11 @@ public:
 
 		input_gep::open( p_filehint, p_path, p_reason, p_abort );
 
-		foobar_File_Reader rdr(m_file, p_abort);
-
 		{
-			ERRCHK( rdr.read( &m_header, sizeof(m_header) ) );
+			char signature[ 35 ];
+			m_file->read_object_t( signature, p_abort );
 
-			if ( strncmp( m_header.tag, "SNES-SPC700 Sound File Data", 27 ) != 0 )
+			if ( strncmp( signature, "SNES-SPC700 Sound File Data", 27 ) != 0 )
 			{
 				console::info("Not an SPC file");
 				throw exception_io_data();
@@ -353,6 +353,38 @@ public:
 
 			if ( ! valid_tag )
 			{
+				m_file->seek( 0, p_abort );
+				foobar_File_Reader rdr( m_file, p_abort );
+
+				delete emu;
+				if ( p_reason == input_open_info_read )
+					emu = gme_spc_type->new_info();
+				else if ( p_reason == input_open_decode )
+				{
+					emu = new Spc_Emu;
+					static_cast<Spc_Emu *> (this->emu)->disable_surround( !! ( cfg_spc_anti_surround ) );
+				}
+				if ( !emu ) throw std::bad_alloc();
+
+				ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
+				ERRCHK( emu->load( rdr ) );
+				handle_warning();
+
+				track_info_t i;
+				ERRCHK( emu->track_info( &i, 0 ) );
+
+				HEADER_STRING( m_info, "album", i.game );
+				HEADER_STRING( m_info, "title", i.song );
+				HEADER_STRING( m_info, "artist", i.author );
+				HEADER_STRING( m_info, "copyright", i.copyright );
+				HEADER_STRING( m_info, "comment", i.comment );
+				HEADER_STRING( m_info, "dumper", i.dumper );
+				HEADER_STRING( m_info, "discnumber", i.disc );
+				HEADER_STRING( m_info, "tracknumber", i.track );
+
+				if ( i.length > 0 ) tag_song_ms = i.length;
+				if ( i.fade_length > 0 ) tag_fade_ms = i.fade_length;
+#if 0
 				HEADER_STRING(m_info, "title", m_header.song);
 				HEADER_STRING(m_info, "album", m_header.game);
 				HEADER_STRING(m_info, "dumper", m_header.dumper);
@@ -361,7 +393,7 @@ public:
 				if ((m_header.date)[0]) m_info.meta_set("date", pfc::stringcvt::string_utf8_from_ansi(((const char *)&m_header.date), sizeof((m_header.date))));
 				HEADER_STRING(m_info, "artist", m_header.author);
 
-				tag_song_ms = atoi(pfc::string_simple(m_header.len_secs, sizeof(m_header.len_secs))) * 1000;
+				tag_song_ms = atoi(pfc::string_simple((const char *)&m_header.len_secs, sizeof(m_header.len_secs))) * 1000;
 				tag_fade_ms = atoi(pfc::string_simple((const char *)&m_header.fade_msec, sizeof(m_header.fade_msec)));
 				voice_mask = m_header.mute_mask;
 
@@ -405,6 +437,7 @@ public:
 				}
 				catch ( const exception_tag_not_found & ) {}
 				catch ( const exception_io_data & ) {}
+#endif
 
 				if (tag_song_ms > 0) m_info.info_set_int(field_length, tag_song_ms);
 				if (tag_fade_ms > 0) m_info.info_set_int(field_fade, tag_fade_ms);
@@ -444,10 +477,10 @@ public:
 			{
 				m_file->seek( 0, p_abort );
 				foobar_File_Reader rdr( m_file, p_abort );
-				rdr.skip( sizeof( m_header ) );
 
 				ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
-				ERRCHK( emu->load( m_header, rdr ) );
+				ERRCHK( emu->load( rdr ) );
+				handle_warning();
 			}
 			catch(...)
 			{
@@ -461,10 +494,10 @@ public:
 
 			if ( ! retagging ) m_file.release();
 
-			emu->mute_voices( voice_mask );
+			//emu->mute_voices( voice_mask );
 
 			emu->disable_surround( !! ( cfg_spc_anti_surround ) );
-			emu->set_cubic_interpolation( !! ( cfg_spc_interpolation ) );
+			//emu->set_cubic_interpolation( !! ( cfg_spc_interpolation ) );
 		}
 
 		input_gep::decode_initialize( 0, p_flags, p_abort );

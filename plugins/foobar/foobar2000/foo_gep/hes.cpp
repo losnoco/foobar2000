@@ -23,13 +23,13 @@ public:
 		{
 			ERRCHK( rdr.read( & m_header, sizeof( m_header ) ) );
 
-			if ( 0 != memcmp( m_header.signature, "HESM", 4 ) )
+			if ( 0 != memcmp( m_header.tag, "HESM", 4 ) )
 			{
 				console::print("Not a HES file");
 				throw exception_io_data();
 			}
 
-			if ( m_header.version != 0 )
+			if ( m_header.vers != 0 )
 			{
 				console::print("Unsupported HES format");
 				throw exception_io_data();
@@ -39,7 +39,7 @@ public:
 
 	unsigned get_subsong_count()
 	{
-		return m_header.track_count - m_header.first_track;
+		return 256 - m_header.first_track;
 	}
 
 	t_uint32 get_subsong( unsigned p_subsong )
@@ -69,10 +69,11 @@ public:
 			{
 				m_file->seek( 0, p_abort );
 				foobar_File_Reader rdr( m_file, p_abort );
-				rdr.skip( sizeof( m_header ) );
+				//rdr.skip( sizeof( m_header ) );
 
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
-				ERRCHK( emu->load( m_header, rdr ) );
+				ERRCHK( emu->load( rdr ) );
+				handle_warning();
 			}
 			catch(...)
 			{

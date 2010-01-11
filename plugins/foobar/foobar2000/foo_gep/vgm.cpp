@@ -190,7 +190,8 @@ public:
 		Vgm_Emu * emu = ( Vgm_Emu * ) this->emu;
 		if ( ! emu )
 		{
-			this->emu = emu = new Vgm_Emu( false );
+			this->emu = emu = new Vgm_Emu();
+			emu->disable_oversampling();
 
 			try
 			{
@@ -200,7 +201,9 @@ public:
 
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( m_header, rdr ) );
+				handle_warning();
 				emu->start_track( 0 );
+				handle_warning();
 			}
 			catch(...)
 			{
@@ -237,7 +240,8 @@ public:
 		Vgm_Emu * emu = ( Vgm_Emu * ) this->emu;
 		if ( ! emu )
 		{
-			this->emu = emu = new Vgm_Emu( false );
+			this->emu = emu = new Vgm_Emu();
+			emu->disable_oversampling();
 
 			try
 			{
@@ -247,6 +251,7 @@ public:
 
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( m_header, rdr ) );
+				handle_warning();
 			}
 			catch(...)
 			{
@@ -262,16 +267,19 @@ public:
 		}
 
 		emu->start_track( 0 );
+		handle_warning();
 
 		played = 0;
 		no_infinite = !cfg_indefinite || ( p_flags & input_flag_no_looping );
 
 		if ( no_infinite )
 		{
-			song_len = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.track_duration ) );
-			if ( song_len && sample_rate != 44100 ) song_len = MulDiv( song_len, sample_rate, 44100 );
-			if ( ! song_len ) song_len = ~0; // FUCKO
-			fade_len = 0;
+			int song_len = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.track_duration ) );
+			if ( song_len )
+			{
+				int fade_min = ( 512 * 8 * 1000 / 2 + sample_rate / 2 ) / sample_rate;
+				emu->set_fade( song_len * 10 / 441, fade_min );
+			}
 		}
 
 		subsong = 0;

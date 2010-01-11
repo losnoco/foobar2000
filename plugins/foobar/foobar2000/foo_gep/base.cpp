@@ -1,10 +1,80 @@
 #include "base.h"
 #include "config.h"
 
+static t_size sjis_decode_char( const char * p_sjis, t_size max )
+{
+	const t_uint8 * sjis = (const t_uint8 *) p_sjis;
+
+	if ( max == 0 )
+		return 0;
+	else if ( max > 2 )
+		max = 2;
+
+	if ( sjis [0] < 0x80 )
+	{
+		return sjis [0] > 0 ? 1 : 0;
+	}
+
+	if ( max >= 1 )
+	{
+		// TODO: definitely weak
+		if ( unsigned( sjis [0] - 0xA1 ) < 0x3F )
+			return 1;
+	}
+
+	if ( max >= 2 )
+	{
+		// TODO: probably very weak
+		if ( ( unsigned( sjis [0] - 0x81 ) < 0x1F || unsigned( sjis [0] - 0xE0 ) < 0x10 ) &&
+			unsigned( sjis [1] - 0x40 ) < 0xBD )
+			return 2;
+	}
+
+	return 0;
+}
+
+static bool is_valid_sjis( const char * param, t_size max = ~0 )
+{
+	t_size walk = 0;
+	while ( walk < max && param [walk] != 0 )
+	{
+		t_size d;
+		d = sjis_decode_char( param + walk, max - walk );
+		if ( d == 0 ) return false;
+		walk += d;
+		if ( walk > max )
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+void input_gep::meta_add( file_info & p_info, const char * name, const char * value, t_size max )
+{
+	if ( value[ 0 ] )
+	{
+		pfc::string8 t;
+		if ( value[ max - 1 ] )
+		{
+			// TODO: moo
+			t.set_string( value, max );
+			value = t;
+		}
+		else max = strlen( value );
+		if ( pfc::is_lower_ascii( value ) || pfc::is_valid_utf8( value, max ) )
+			p_info.meta_add( name, value );
+		else if ( is_valid_sjis( value, max ) )
+			p_info.meta_add( name, pfc::stringcvt::string_utf8_from_codepage( 932, value ) ); // Shift-JIS
+		else
+			p_info.meta_add( name, pfc::stringcvt::string_utf8_from_ansi( value ) );
+	}
+}
+
 input_gep::input_gep()
 {
 	emu = 0;
-	voice_mask = 0;
+	//voice_mask = 0;
 
 	sample_rate = cfg_sample_rate;
 }
@@ -13,9 +83,19 @@ input_gep::~input_gep()
 {
 	if (emu)
 	{
-		if ( emu->error_count() )
-			console::formatter() << "Emulation errors: " << emu->error_count();
+		handle_warning();
 		delete emu;
+	}
+}
+
+void input_gep::handle_warning()
+{
+	const char * s = emu->warning();
+	if ( s )
+	{
+		pfc::string8 path;
+		filesystem::g_get_display_path( m_path, path );
+		console::formatter() << "Emulation warning: " << s << " (" << path << ")";
 	}
 }
 
@@ -55,11 +135,17 @@ void input_gep::decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_c
 	played = 0;
 	no_infinite = !cfg_indefinite || ( p_flags & input_flag_no_looping );
 
-	song_len=MulDiv(tag_song_ms, sample_rate, 1000);
-	fade_len=MulDiv(tag_fade_ms, sample_rate, 1000);
-
 	subsong = p_subsong;
 	emu->start_track( subsong );
+	handle_warning();
+
+	if ( no_infinite )
+	{
+		/*song_len=MulDiv(tag_song_ms, sample_rate, 1000);
+		fade_len=MulDiv(tag_fade_ms, sample_rate, 1000);*/
+		int fade_min = ( 512 * 8 * 1000 / 2 + sample_rate / 2 ) / sample_rate;
+		emu->set_fade( tag_song_ms, max( tag_fade_ms, fade_min ) );
+	}
 
 	stop_on_errors = !! ( p_flags & input_flag_testing_integrity );
 
@@ -70,18 +156,22 @@ bool input_gep::decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
 {
 	if ( ! emu->track_ended() )
 	{
-		if ( no_infinite && played >= song_len + fade_len ) return false;
+		//if ( no_infinite && played >= song_len + fade_len ) return false;
 
 		sample_buffer.grow_size( 1024 );
 		blip_sample_t * buf = sample_buffer.get_ptr();
-		emu->play( 1024, buf );
+		ERRCHK( emu->play( 1024, buf ) );
 
-		if ( stop_on_errors && emu->error_count() ) throw exception_io_data();
+		if ( stop_on_errors )
+		{
+			const char * s = emu->warning();
+			if ( s ) throw exception_io_data( s );
+		}
 
-		int d_start,d_end;
-		d_start = played;
+		/*int d_start,d_end;
+		d_start = played;*/
 		played += 512;
-		d_end   = played;
+		/*d_end   = played;
 
 		if ( no_infinite && song_len && d_end > song_len )
 		{
@@ -103,7 +193,7 @@ bool input_gep::decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
 					}
 				}
 			}
-		}
+		}*/
 
 		p_chunk.set_data_fixedpoint( buf, 1024 * sizeof( blip_sample_t ), sample_rate, 2, sizeof( blip_sample_t ) * 8, audio_chunk::channel_config_stereo );
 
@@ -120,43 +210,23 @@ void input_gep::decode_seek( double p_seconds, abort_callback & p_abort )
 	else if ( now < played )
 	{
 		emu->start_track( subsong );
+		handle_warning();
 		played = 0;
 	}
 
-	sample_buffer.grow_size( 1024 );
-	blip_sample_t * buf = sample_buffer.get_ptr();
+	/*sample_buffer.grow_size( 1024 );
+	blip_sample_t * buf = sample_buffer.get_ptr();*/
 	int played_ = played;
 
-	if ( now - played_ > int( sample_rate ) * 4 )
-	{
-		now -= sample_rate * 4;
-
-		emu->mute_voices( ~0 );
-
-		while ( played_ < now )
-		{
-			p_abort.check();
-
-			long todo = now - played_;
-			if ( todo > 512 ) todo = 512;
-			emu->play( todo * 2, buf );
-			played_ += todo;
-		}
-
-		now += sample_rate * 4;
-	}
-
-	emu->mute_voices( voice_mask );
-
-	while ( played_ < now )
+	int ten_seconds = int( sample_rate ) * 10;
+	while ( now - played_ > ten_seconds )
 	{
 		p_abort.check();
-
-		long todo = now - played_;
-		if ( todo > 512 ) todo = 512;
-		emu->play( todo * 2, buf );
-		played_ += todo;
+		ERRCHK( emu->skip( ten_seconds * 2 ) );
+		played_ += ten_seconds;
 	}
+
+	ERRCHK( emu->skip( ( now - played_ ) * 2 ) );
 
 	played = played_;
 }

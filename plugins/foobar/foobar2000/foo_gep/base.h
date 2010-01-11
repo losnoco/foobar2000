@@ -24,14 +24,14 @@ protected:
 	unsigned                    sample_rate;
 
 	int                         subsong;
-	int                         voice_mask;
+	//int                         voice_mask;
 
 	int                         played;
 
 	int                         tag_song_ms;
 	int                         tag_fade_ms;
-	int                         song_len;
-	int                         fade_len;
+	/*int                         song_len;
+	int                         fade_len;*/
 	bool                        no_infinite;
 
 	bool                        stop_on_errors;
@@ -44,6 +44,10 @@ protected:
 	pfc::string_simple          m_path;
 	t_filestats                 m_stats;
 
+	void handle_warning();
+
+	void meta_add( file_info & p_info, const char * name, const char * value, t_size max );
+
 public:
 	input_gep();
 	~input_gep();
@@ -53,7 +57,7 @@ public:
 	unsigned get_subsong_count();
 	t_uint32 get_subsong( unsigned p_index );
 
-	//t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort );
+	//void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort );
 
 	t_filestats get_file_stats( abort_callback & p_abort );
 
