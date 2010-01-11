@@ -114,6 +114,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_midi", "foo_midi\foo_mi
 	ProjectSection(ProjectDependencies) = postProject
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA} = {4A5CC722-A067-487F-9DD3-8EDAC8633FDA}
 		{69719831-D965-4AED-91C1-70C4FF01945D} = {69719831-D965-4AED-91C1-70C4FF01945D}
+		{A52C4164-8C82-4E38-A70B-6D0E836D6644} = {A52C4164-8C82-4E38-A70B-6D0E836D6644}
 		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F} = {C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}
 		{6958D7C2-5871-4B1D-A04D-CAF4235FEED4} = {6958D7C2-5871-4B1D-A04D-CAF4235FEED4}
 	EndProjectSection
@@ -530,9 +531,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_unpack_unix", "foo_unpa
 		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE} = {E7DD9FB8-A045-42A3-A25A-37A96B1421AE}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fluidsynth_dll", "..\..\fluidsynth\winbuild\fluidsynth_dll\fluidsynth_dll.vcproj", "{A52C4164-8C82-4E38-A70B-6D0E836D6644}"
+EndProject
 Global
 	GlobalSection(SourceCodeControl) = preSolution
-		SccNumberOfProjects = 109
+		SccNumberOfProjects = 110
 		SccProjectName0 = \u0022$/foobar2000/plugins.root/plugins\u0022,\u0020CEAAAAAA
 		SccLocalPath0 = ..\\..
 		SccProvider0 = MSSCCI:Microsoft\u0020Visual\u0020SourceSafe
@@ -861,6 +864,9 @@ Global
 		SccProjectUniqueName108 = foo_unpack_unix\\foo_unpack_unix.vcproj
 		SccLocalPath108 = ..\\..
 		SccProjectFilePathRelativizedFromConnection108 = foobar\\foobar2000\\foo_unpack_unix\\
+		SccProjectUniqueName109 = ..\\..\\fluidsynth\\winbuild\\fluidsynth_dll\\fluidsynth_dll.vcproj
+		SccLocalPath109 = ..\\..
+		SccProjectFilePathRelativizedFromConnection109 = fluidsynth\\winbuild\\fluidsynth_dll\\
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -1508,6 +1514,12 @@ Global
 		{B2439394-4262-4FEC-B826-7F077C6786F2}.Release staticlink|Win32.Build.0 = Release|Win32
 		{B2439394-4262-4FEC-B826-7F077C6786F2}.Release|Win32.ActiveCfg = Release|Win32
 		{B2439394-4262-4FEC-B826-7F077C6786F2}.Release|Win32.Build.0 = Release|Win32
+		{A52C4164-8C82-4E38-A70B-6D0E836D6644}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A52C4164-8C82-4E38-A70B-6D0E836D6644}.Debug|Win32.Build.0 = Debug|Win32
+		{A52C4164-8C82-4E38-A70B-6D0E836D6644}.Release staticlink|Win32.ActiveCfg = Release|Win32
+		{A52C4164-8C82-4E38-A70B-6D0E836D6644}.Release staticlink|Win32.Build.0 = Release|Win32
+		{A52C4164-8C82-4E38-A70B-6D0E836D6644}.Release|Win32.ActiveCfg = Release|Win32
+		{A52C4164-8C82-4E38-A70B-6D0E836D6644}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
