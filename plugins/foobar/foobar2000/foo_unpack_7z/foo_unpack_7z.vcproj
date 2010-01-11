@@ -54,7 +54,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="1"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../SDK,C:\programming\File_Extractor"
+				AdditionalIncludeDirectories="../SDK,C:\programming\File_Extractor,C:\programming\zlib"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_UNICODE;_USRDLL;FOO_UNPACK_7Z_EXPORTS;UNICODE"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -148,7 +148,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../SDK,C:\programming\File_Extractor"
+				AdditionalIncludeDirectories="../SDK,C:\programming\File_Extractor,C:\programming\zlib"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_UNICODE;UNICODE;FOO_UNPACK_7Z_EXPORTS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -212,6 +212,14 @@
 	</References>
 	<Files>
 		<File
+			RelativePath=".\file_interface.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\file_interface.h"
+			>
+		</File>
+		<File
 			RelativePath=".\timefn.cpp"
 			>
 		</File>
@@ -243,6 +251,18 @@
 					BasicRuntimeChecks="3"
 				/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\unpack_gz.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\unpack_rar.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\unpack_zip.cpp"
+			>
 		</File>
 	</Files>
 	<Globals>

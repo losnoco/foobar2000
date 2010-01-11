@@ -116,7 +116,9 @@ void Zip_Extractor::open_filter_( const char*, Std_File_Reader* file )
 
 blargg_err_t Zip_Extractor::open_()
 {
-	file_size = file().size();
+	uint64_t file_size_ = file().size();
+	if ( file_size_ > UINT_MAX ) file_size_ = UINT_MAX;
+	file_size = file_size_;
 	if ( file_size < end_entry_size )
 		return fex_wrong_file_type;
 

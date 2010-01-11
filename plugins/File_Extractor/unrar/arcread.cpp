@@ -107,8 +107,33 @@ const char* Archive::ReadHeader()
 			else
 				if (hd->HeadType==FILE_HEAD)
 				{
-					hd->Flags &= ~LHD_UNICODE;
-					// TODO: Support Unicode?
+					if (hd->Flags & LHD_UNICODE)
+					{
+						EncodeFileName NameCoder;
+						int Length=strlen(FileName);
+						if (Length==hd->NameSize)
+						{
+							/*UtfToWide(FileName,hd->FileNameW,sizeof(hd->FileNameW)/sizeof(hd->FileNameW[0])-1);
+							WideToChar(hd->FileNameW,hd->FileName,sizeof(hd->FileName)/sizeof(hd->FileName[0])-1);
+							ExtToInt(hd->FileName,hd->FileName);*/
+						}
+						else
+						{
+							wchar_t FileNameW[NM*4];
+							Length++;
+							NameCoder.Decode(FileName,(byte *)FileName+Length,
+								hd->NameSize-Length,FileNameW,
+								sizeof(FileNameW)/sizeof(FileNameW[0]));
+							WideToUtf( FileNameW, hd->FileName, sizeof(hd->FileName)/sizeof(hd->FileName[0]) );
+						}
+					}
+					else
+					{
+						// Local codepage to UTF-8 conversion
+						wchar_t FileNameW[NM*4];
+						CharToWide( FileName, FileNameW, sizeof(FileNameW)/sizeof(FileNameW[0]) );
+						WideToUtf( FileNameW, hd->FileName, sizeof(hd->FileName)/sizeof(hd->FileName[0]) );
+					}
 
 					ConvertUnknownHeader();
 				}

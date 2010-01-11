@@ -1,16 +1,17 @@
 #include <foobar2000.h>
 
-#include <fex/Zip7_Extractor.h>
+#include <fex/Rar_Extractor.h>
 
 #include "file_interface.h"
 #include "timefn.h"
 
 static void handle_error( const char * str )
 {
-	if ( str ) throw exception_io_data( str );
+	if ( str )
+		throw exception_io_data( str );
 }
 
-class archive_7z : public archive_impl
+class archive_rar : public archive_impl
 {
 public:
 	virtual bool supports_content_types()
@@ -20,7 +21,7 @@ public:
 
 	virtual const char * get_archive_type()
 	{
-		return "7z";
+		return "rar";
 	}
 
 	virtual t_filestats get_stats_in_archive( const char * p_archive, const char * p_file, abort_callback & p_abort )
@@ -28,8 +29,9 @@ public:
 		service_ptr_t< file > m_file;
 		filesystem::g_open( m_file, p_archive, filesystem::open_mode_read, p_abort );
 		foobar_File_Reader in( m_file, p_abort );
-		Zip7_Extractor ex;
+		Rar_Extractor ex;
 		handle_error( ex.open( &in ) );
+		ex.scan_only();
 		while ( ! ex.done() )
 		{
 			if ( ! strcmp( ex.name(), p_file ) ) break;
@@ -47,7 +49,7 @@ public:
 		service_ptr_t< file > m_file;
 		filesystem::g_open( m_file, p_archive, filesystem::open_mode_read, p_abort );
 		foobar_File_Reader in( m_file, p_abort );
-		Zip7_Extractor ex;
+		Rar_Extractor ex;
 		handle_error( ex.open( &in ) );
 		while ( ! ex.done() )
 		{
@@ -63,7 +65,7 @@ public:
 
 	virtual void archive_list( const char * path, const service_ptr_t< file > & p_reader, archive_callback & p_out, bool p_want_readers )
 	{
-		if ( stricmp_utf8( pfc::string_extension( path ), "7z" ) )
+		if ( stricmp_utf8( pfc::string_extension( path ), "rar" ) )
 			throw exception_io_data();
 
 		service_ptr_t< file > m_file = p_reader;
@@ -71,9 +73,9 @@ public:
 			filesystem::g_open( m_file, path, filesystem::open_mode_read, p_out );
 
 		foobar_File_Reader in( m_file, p_out );
-		Zip7_Extractor ex;
+		Rar_Extractor ex;
 		handle_error( ex.open( &in ) );
-		// if ( ! p_want_readers ) ex.scan_only(); // this is only needed for Rar_Extractor
+		if ( ! p_want_readers ) ex.scan_only();
 		pfc::string8_fastalloc m_path;
 		service_ptr_t<file> m_out_file;
 		t_filestats m_stats;
@@ -95,7 +97,7 @@ public:
 	}
 };
 
-class unpacker_7z : public unpacker
+class unpacker_rar : public unpacker
 {
 	inline bool skip_ext( const char * p )
 	{
@@ -114,7 +116,7 @@ public:
 		if ( p_source.is_empty() ) throw exception_io_data();
 
 		foobar_File_Reader in( p_source, p_abort );
-		Zip7_Extractor ex;
+		Rar_Extractor ex;
 		handle_error( ex.open( &in ) );
 		while ( ! ex.done() )
 		{
@@ -132,7 +134,7 @@ public:
 	}
 };
 
-static archive_factory_t < archive_7z >  g_archive_7z_factory;
-static unpacker_factory_t< unpacker_7z > g_unpacker_7z_factory;
+static archive_factory_t < archive_rar >  g_archive_rar_factory;
+static unpacker_factory_t< unpacker_rar > g_unpacker_rar_factory;
 
-DECLARE_COMPONENT_VERSION( "7-Zip unpacker", "1.0", (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "Rar unpacker", "1.0", (const char*)NULL );

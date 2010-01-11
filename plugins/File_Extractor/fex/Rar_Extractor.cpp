@@ -178,7 +178,7 @@ blargg_err_t Rar_Extractor::extract( Data_Writer& out )
 
 // Rar_Extractor_Impl
 
-const char* ComprDataIO::Seek( long n, int )
+const char* ComprDataIO::Seek( Int64 n, int )
 {
 	if ( n != Tell_ )
 	{

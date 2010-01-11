@@ -426,6 +426,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\unrar\encname.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\unrar\getbits.hpp"
 					>
 				</File>
@@ -454,6 +458,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\unrar\unicode.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\unrar\unpack.hpp"
 					>
 				</File>
@@ -475,6 +483,10 @@
 				</File>
 				<File
 					RelativePath="..\..\unrar\crc.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\unrar\encname.cpp"
 					>
 				</File>
 				<File
@@ -503,6 +515,10 @@
 				</File>
 				<File
 					RelativePath="..\..\unrar\suballoc.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\unrar\unicode.cpp"
 					>
 				</File>
 				<File

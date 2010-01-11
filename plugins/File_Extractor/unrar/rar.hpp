@@ -96,10 +96,84 @@ typedef unsigned int     uint;   //32 bits or more
 #define charnext(s) ((s)+1)
 
 //// int64.hpp
-// 64-bit int support disabled, since this library isn't meant for huge 2GB+ archives
-typedef long Int64;
+#if defined(__BORLANDC__) || defined(_MSC_VER)
+#define NATIVE_INT64
+typedef __int64 Int64;
+#endif
+
+#if defined(__GNUC__) || defined(__HP_aCC) || defined(__SUNPRO_CC)
+#define NATIVE_INT64
+typedef long long Int64;
+#endif
+
+#ifdef NATIVE_INT64
+
 #define int64to32(x) ((uint)(x))
+#define int32to64(high,low) ((((Int64)(high))<<32)+(low))
 #define is64plus(x) (x>=0)
+
+#else
+
+class Int64
+{
+  public:
+    Int64();
+    Int64(uint n);
+    Int64(uint HighPart,uint LowPart);
+
+//    Int64 operator = (Int64 n);
+    Int64 operator << (int n);
+    Int64 operator >> (int n);
+
+    friend Int64 operator / (Int64 n1,Int64 n2);
+    friend Int64 operator * (Int64 n1,Int64 n2);
+    friend Int64 operator % (Int64 n1,Int64 n2);
+    friend Int64 operator + (Int64 n1,Int64 n2);
+    friend Int64 operator - (Int64 n1,Int64 n2);
+    friend Int64 operator += (Int64 &n1,Int64 n2);
+    friend Int64 operator -= (Int64 &n1,Int64 n2);
+    friend Int64 operator *= (Int64 &n1,Int64 n2);
+    friend Int64 operator /= (Int64 &n1,Int64 n2);
+    friend Int64 operator | (Int64 n1,Int64 n2);
+    friend Int64 operator & (Int64 n1,Int64 n2);
+    inline friend void operator -= (Int64 &n1,unsigned int n2)
+    {
+      if (n1.LowPart<n2)
+        n1.HighPart--;
+      n1.LowPart-=n2;
+    }
+    inline friend void operator ++ (Int64 &n)
+    {
+      if (++n.LowPart == 0)
+        ++n.HighPart;
+    }
+    inline friend void operator -- (Int64 &n)
+    {
+      if (n.LowPart-- == 0)
+        n.HighPart--;
+    }
+    friend bool operator == (Int64 n1,Int64 n2);
+    friend bool operator > (Int64 n1,Int64 n2);
+    friend bool operator < (Int64 n1,Int64 n2);
+    friend bool operator != (Int64 n1,Int64 n2);
+    friend bool operator >= (Int64 n1,Int64 n2);
+    friend bool operator <= (Int64 n1,Int64 n2);
+
+    void Set(uint HighPart,uint LowPart);
+    uint GetLowPart() {return(LowPart);}
+
+    uint LowPart;
+    uint HighPart;
+};
+
+inline uint int64to32(Int64 n) {return(n.GetLowPart());}
+#define int32to64(high,low) (Int64((high),(low)))
+#define is64plus(x) ((int)(x).HighPart>=0)
+
+#endif
+
+#define INT64ERR int32to64(0x80000000,0)
+#define INT64MAX int32to64(0x7fffffff,0)
 
 //// crc.hpp
 void InitCRC();
@@ -121,7 +195,7 @@ public:
 	class File_Reader* reader;
 	class Data_Writer* writer;
 	const char* write_error; // once write error occurs, no more writes are made
- 	long Tell_;
+ 	Int64 Tell_;
 	bool OldFormat;
 
 private:
@@ -136,17 +210,19 @@ public:
 
 	uint UnpFileCRC;
 
-	const char* Seek( long, int ignored = 0 );
-	long Tell() { return Tell_; }
+	const char* Seek( Int64, int ignored = 0 );
+	Int64 Tell() { return Tell_; }
 	long Read( void*, long );
 };
 
 //// rar.hpp
 class Unpack;
+#include "unicode.hpp"
 #include "array.hpp"
 #include "headers.hpp"
 #include "getbits.hpp"
 #include "archive.hpp"
+#include "encname.hpp"
 #include "rawread.hpp"
 #include "compress.hpp"
 #include "rarvm.hpp"
