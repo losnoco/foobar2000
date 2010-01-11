@@ -1,7 +1,11 @@
-#define MYVERSION "1.6"
+#define MYVERSION "1.61"
 
 /*
 	change log
+
+2009-03-31 00:38 UTC - kode54
+- Implemented effects for the blip parts of GYM and VGM
+- Version is now 1.61
 
 2009-02-01 07:20 UTC - kode54
 - Implemented effects control for applicable formats.

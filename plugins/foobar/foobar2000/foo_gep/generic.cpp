@@ -72,7 +72,7 @@ public:
 		{
 			if ( gtype == gme_gym_type )
 				static_cast<Gym_Emu *>( emu )->disable_oversampling();
-			else
+			/*else*/
 				setup_effects();
 		}
 
@@ -80,7 +80,7 @@ public:
 		ERRCHK( emu->load( rdr ) );
 		handle_warning();
 
-		if ( p_reason == input_open_decode && gtype != gme_gym_type )
+		if ( p_reason == input_open_decode /*&& gtype != gme_gym_type*/ )
 			setup_effects_2();
 
 		m_file.release();
