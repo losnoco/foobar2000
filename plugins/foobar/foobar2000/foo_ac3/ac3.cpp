@@ -1,7 +1,13 @@
-#define MY_VERSION "0.7"
+#define MY_VERSION "0.8"
 
 /*
 	changelog
+
+2006-10-08 11:26 UTC - kode54
+- Moved common sample handling code to functions.
+- Configured liba52 to use DJBFFT with ppro optimizations.
+- Added packet decoder.
+- Version is now 0.8
 
 2005-12-04 20:07 UTC - kode54
 - Fixed synchronization from get_info
@@ -48,6 +54,7 @@
 
 #include <inttypes.h>
 #include <a52.h>
+#include <mm_accel.h>
 
 #include "resource.h"
 
@@ -76,6 +83,195 @@ namespace pfc
 	template<> class traits_t<::APETagFooterStruct> : public traits_rawobject {};
 }
 
+unsigned get_channels( int flags )
+{
+	static const uint8_t ch[] = { 2, 1, 2, 3, 3, 4, 4, 5, 0, 0, 2, 0, 0, 0, 0, 0 };
+	return ch[ flags & 15 ] + ( ( flags & 16 ) >> 4 );
+}
+
+unsigned get_speaker_config( int flags )
+{
+	static const unsigned config[] =
+	{
+		audio_chunk::channel_config_stereo,
+		audio_chunk::channel_config_mono,
+		audio_chunk::channel_config_stereo,
+		audio_chunk::channel_config_stereo | audio_chunk::channel_front_center,
+		audio_chunk::channel_config_stereo | audio_chunk::channel_back_center,
+		audio_chunk::channel_config_stereo | audio_chunk::channel_front_center | audio_chunk::channel_back_center,
+		audio_chunk::channel_config_stereo | audio_chunk::channel_back_left | audio_chunk::channel_back_right,
+		audio_chunk::channel_config_stereo | audio_chunk::channel_front_center | audio_chunk::channel_back_left | audio_chunk::channel_back_right,
+		0, 0,
+		audio_chunk::channel_config_stereo,
+		0, 0, 0, 0, 0
+	};
+	pfc::static_assert_t< audio_chunk::channel_lfe == 8 >();
+	return config[ flags & 15 ] + ( ( flags & 16 ) >> 1 );
+}
+
+void prepare_chunk( const sample_t * p_src, audio_sample * p_dst, unsigned sample_count, int flags )
+{
+	int i;
+	const sample_t * src = p_src;
+	audio_sample * dst = p_dst;
+	if ( flags & A52_LFE )
+	{
+		switch ( flags & A52_CHANNEL_MASK )
+		{
+		case A52_MONO:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = src[256];
+				*dst++ = *src++;
+			}
+			break;
+
+		case A52_STEREO:
+		case A52_CHANNEL:
+		case A52_DOLBY:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = src[256];
+				*dst++ = src[512];
+				*dst++ = *src++;
+			}
+			break;
+
+		case A52_3F:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = src[256];
+				*dst++ = src[768];
+				*dst++ = src[512];
+				*dst++ = *src++;
+			}
+			break;
+
+		case A52_2F1R:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = src[256];
+				*dst++ = src[512];
+				*dst++ = *src;
+				*dst++ = src[768];
+				src++;
+			}
+			break;
+
+		case A52_3F1R:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = src[256];
+				*dst++ = src[768];
+				*dst++ = src[512];
+				*dst++ = *src;
+				*dst++ = src[1024];
+				src++;
+			}
+			break;
+
+		case A52_2F2R:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = src[256];
+				*dst++ = src[512];
+				*dst++ = *src;
+				*dst++ = src[768];
+				*dst++ = src[1024];
+				src++;
+			}
+			break;
+
+		case A52_3F2R:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = src[256];
+				*dst++ = src[768];
+				*dst++ = src[512];
+				*dst++ = *src;
+				*dst++ = src[1024];
+				*dst++ = src[1280];
+				src++;
+			}
+			break;
+		}
+	}
+	else
+	{
+		switch (flags & A52_CHANNEL_MASK)
+		{
+		case A52_MONO:
+			memcpy(dst, src, sample_count * sizeof(audio_sample));
+			break;
+
+		case A52_STEREO:
+		case A52_CHANNEL:
+		case A52_DOLBY:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = *src;
+				*dst++ = src[256];
+				src++;
+			}
+			break;
+
+		case A52_2F2R:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = *src;
+				*dst++ = src[256];
+				*dst++ = src[512];
+				*dst++ = src[768];
+				src++;
+			}
+			break;
+
+		case A52_3F:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = *src;
+				*dst++ = src[512];
+				*dst++ = src[256];
+				src++;
+			}
+			break;
+
+		case A52_2F1R:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = *src;
+				*dst++ = src[256];
+				*dst++ = src[512];
+				src++;
+			}
+			break;
+
+		case A52_3F1R:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = *src;
+				*dst++ = src[512];
+				*dst++ = src[256];
+				*dst++ = src[768];
+				src++;
+			}
+			break;
+
+		case A52_3F2R:
+			for (i = 0; i < sample_count; ++i)
+			{
+				*dst++ = *src;
+				*dst++ = src[512];
+				*dst++ = src[256];
+				*dst++ = src[768];
+				*dst++ = src[1024];
+				src++;
+			}
+			break;
+		}
+	}
+}
+
 class input_ac3
 {
 private:
@@ -98,7 +294,7 @@ private:
 
 	bool sync_e( const service_ptr_t<file> & r, t_uint8 * buffer, abort_callback & p_abort )
 	{
-		t_uint32 meh = 0;
+		t_uint32 i = 0;
 		t_uint8 * ptr = buffer;
 		int left = int( r->read( ptr + 7, 3840 - 7, p_abort ) + 7 );
 retry:
@@ -114,7 +310,7 @@ retry:
 			r->read_object(ptr = buffer, 7, p_abort);
 			if (ptr[5] >= 0x60 || (ptr[4] & 63) >= 38)
 			{
-				meh = 8192 - left;
+				i = 8192 - left;
 				ptr += 7;
 				left -= 7;
 				r->seek_ex(left, file::seek_from_current, p_abort);
@@ -125,13 +321,13 @@ retry:
 		}
 		else
 		{
-			if (meh)
+			if (i)
 			{
-				uint32_t toread = meh;
+				uint32_t toread = i;
 				if (toread > 3840) toread = 3840;
 				ptr -= 3840;
 				left = r->read(ptr, toread, p_abort);
-				meh -= toread;
+				i -= toread;
 				goto retry;
 			}
 			//console::info("Resync failed.");
@@ -225,7 +421,7 @@ public:
 
 		if (state) a52_free(state);
 
-		state = a52_init(0);
+		state = a52_init( MM_ACCEL_DJBFFT );
 		if ( ! state ) throw std::bad_alloc();
 
 		buffer.set_size( 3840 );
@@ -337,221 +533,20 @@ public:
 			{
 				p_abort.check();
 				--remain;
-				a52_block( state );
+				if ( a52_block( state ) ) throw exception_io_data();
 				skip_samples -= 256;
 			}
 		}
 
 		--remain;
 		if ( a52_block( state ) ) throw exception_io_data();
-		int meh;
-		{
-			meh = 0;
-			switch (flags & A52_CHANNEL_MASK)
-			{
-			case A52_MONO:
-				meh = 1;
-				break;
-			case A52_STEREO:
-			case A52_CHANNEL:
-			case A52_DOLBY:
-				meh = 2;
-				break;
-			case A52_3F:
-			case A52_2F1R:
-				meh = 3;
-				break;
-			case A52_3F1R:
-			case A52_2F2R:
-				meh = 4;
-				break;
-			case A52_3F2R:
-				meh = 5;
-				break;
-			}
 
-			if (meh && flags & A52_LFE) meh++;
-			if (!meh)
-			{
-				console::print( "Unsupported channel configuration" );
-				throw exception_io_data();
-			}
-		}
-		p_chunk.set_data_size( ( 256 - skip_samples ) * meh );
-		audio_sample * foo = p_chunk.get_data();
-		sample_t * bar = a52_samples( state ) + skip_samples;
-		if ( flags & A52_LFE )
-		{
-			switch ( flags & A52_CHANNEL_MASK )
-			{
-			case A52_MONO:
-				p_chunk.set_channels(2, audio_chunk::channel_config_mono | audio_chunk::channel_lfe);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = bar[256];
-					*foo++ = *bar++;
-				}
-				break;
+		p_chunk.set_data_size( ( 256 - skip_samples ) * get_channels( flags ) );
+		p_chunk.set_channels( get_channels( flags ), get_speaker_config( flags ) );
+		p_chunk.set_srate( srate );
+		p_chunk.set_sample_count( 256 - skip_samples );
+		prepare_chunk( a52_samples( state ) + skip_samples, p_chunk.get_data(), 256 - skip_samples, flags );
 
-			case A52_STEREO:
-			case A52_CHANNEL:
-			case A52_DOLBY:
-				p_chunk.set_channels(3, audio_chunk::channel_config_stereo | audio_chunk::channel_lfe);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = bar[256];
-					*foo++ = bar[512];
-					*foo++ = *bar++;
-				}
-				break;
-
-			case A52_3F:
-				p_chunk.set_channels(4, audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_front_center | audio_chunk::channel_lfe);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = bar[256];
-					*foo++ = bar[768];
-					*foo++ = bar[512];
-					*foo++ = *bar++;
-				}
-				break;
-
-			case A52_2F1R:
-				p_chunk.set_channels(4, audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_lfe | audio_chunk::channel_back_center);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = bar[256];
-					*foo++ = bar[512];
-					*foo++ = *bar;
-					*foo++ = bar[768];
-					bar++;
-				}
-				break;
-
-			case A52_3F1R:
-				p_chunk.set_channels(5, audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_front_center | audio_chunk::channel_lfe | audio_chunk::channel_back_center);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = bar[256];
-					*foo++ = bar[768];
-					*foo++ = bar[512];
-					*foo++ = *bar;
-					*foo++ = bar[1024];
-					bar++;
-				}
-				break;
-
-			case A52_2F2R:
-				p_chunk.set_channels(5, audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_lfe | audio_chunk::channel_back_left | audio_chunk::channel_back_right);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = bar[256];
-					*foo++ = bar[512];
-					*foo++ = *bar;
-					*foo++ = bar[768];
-					*foo++ = bar[1024];
-					bar++;
-				}
-				break;
-
-			case A52_3F2R:
-				p_chunk.set_channels(6, audio_chunk::channel_config_5point1);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = bar[256];
-					*foo++ = bar[768];
-					*foo++ = bar[512];
-					*foo++ = *bar;
-					*foo++ = bar[1024];
-					*foo++ = bar[1280];
-					bar++;
-				}
-				break;
-			}
-		}
-		else
-		{
-			switch (flags & A52_CHANNEL_MASK)
-			{
-			case A52_MONO:
-				p_chunk.set_channels(1, audio_chunk::channel_config_mono);
-				memcpy(bar, foo, (256 - skip_samples) * sizeof(audio_sample));
-				break;
-
-			case A52_STEREO:
-			case A52_CHANNEL:
-			case A52_DOLBY:
-				p_chunk.set_channels(2, audio_chunk::channel_config_stereo);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = *bar;
-					*foo++ = bar[256];
-					bar++;
-				}
-				break;
-
-			case A52_2F2R:
-				p_chunk.set_channels(4, audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_back_left | audio_chunk::channel_back_right);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = *bar;
-					*foo++ = bar[256];
-					*foo++ = bar[512];
-					*foo++ = bar[768];
-					bar++;
-				}
-				break;
-
-			case A52_3F:
-				p_chunk.set_channels(3, audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_front_center);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = *bar;
-					*foo++ = bar[512];
-					*foo++ = bar[256];
-					bar++;
-				}
-				break;
-
-			case A52_2F1R:
-				p_chunk.set_channels(3, audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_back_center);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = *bar;
-					*foo++ = bar[256];
-					*foo++ = bar[512];
-					bar++;
-				}
-				break;
-
-			case A52_3F1R:
-				p_chunk.set_channels(4, audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_front_center | audio_chunk::channel_back_center);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = *bar;
-					*foo++ = bar[512];
-					*foo++ = bar[256];
-					*foo++ = bar[768];
-					bar++;
-				}
-				break;
-
-			case A52_3F2R:
-				p_chunk.set_channels(5, audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_front_center | audio_chunk::channel_back_left | audio_chunk::channel_back_right);
-				for (meh = skip_samples; meh < 256; meh++)
-				{
-					*foo++ = *bar;
-					*foo++ = bar[512];
-					*foo++ = bar[256];
-					*foo++ = bar[768];
-					*foo++ = bar[1024];
-					bar++;
-				}
-				break;
-			}
-		}
-		p_chunk.set_srate(srate);
-		p_chunk.set_sample_count(256 - skip_samples);
 		skip_samples = 0;
 		return true;
 		}
@@ -626,6 +621,133 @@ public:
 	}
 };
 
+class packet_decoder_ac3 : public packet_decoder_streamparse
+{
+	a52_state_t * m_state;
+	bool m_dynrng, m_decode;
+
+public:
+    packet_decoder_ac3()
+    {
+		m_state = NULL;
+		m_dynrng = !!cfg_dynrng;
+    }
+
+    ~packet_decoder_ac3()
+    {
+		cleanup();
+    }
+
+	void cleanup()
+	{
+		if ( m_state )
+		{
+			a52_free( m_state );
+			m_state = NULL;
+		}
+	}
+
+	static bool g_is_our_setup( const GUID & p_owner, t_size p_param1, const void * p_param2, t_size p_param2size )
+	{
+		if ( p_owner == owner_matroska )
+		{
+			if ( p_param2size == sizeof( matroska_setup ) )
+			{
+				const matroska_setup * setup = ( const matroska_setup * ) p_param2;
+				if ( !strncmp( setup->codec_id, "A_AC3", 5 ) )
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	void open( const GUID & p_owner, bool p_decode, t_size p_param1, const void * p_param2, t_size p_param2size, abort_callback & p_abort )
+	{
+		assert( g_is_our_setup( p_owner, p_param1, p_param2, p_param2size ) );
+
+		cleanup();
+
+		m_state = a52_init( MM_ACCEL_DJBFFT );
+		if ( ! m_state ) throw std::bad_alloc();
+
+		m_decode = p_decode;
+	}
+
+	virtual t_size set_stream_property( const GUID & p_type, t_size p_param1, const void * p_param2, t_size p_param2size )
+	{
+		return 0;
+	}
+
+	virtual void get_info( file_info & p_info )
+	{
+		p_info.info_set( "codec", "ATSC A/52" );
+	}
+
+	virtual unsigned get_max_frame_dependency() { return 0; }
+	virtual double get_max_frame_dependency_time() { return 0; }
+
+	virtual void reset_after_seek() {}
+
+	virtual void decode( const void * p_buffer, t_size p_bytes, audio_chunk & p_chunk, abort_callback & p_abort )
+	{
+		t_size temp;
+		decode_ex( p_buffer, p_bytes, temp, p_chunk, p_abort );
+	}
+
+	virtual bool analyze_first_frame_supported() { return false; }
+	virtual void analyze_first_frame( const void * p_buffer, t_size p_bytes, abort_callback & p_abort ) {}
+
+	virtual void decode_ex( const void * p_buffer, t_size p_bytes, t_size & p_bytes_processed, audio_chunk & p_chunk, abort_callback & p_abort )
+	{
+		int frame_size = 0;
+		int i = -1;
+		int flags, sample_rate, bit_rate;
+		while ( frame_size == 0 && i + 7 < p_bytes )
+		{
+			++i;
+			frame_size = a52_syncinfo( ( uint8_t * ) p_buffer + i, &flags, &sample_rate, &bit_rate );
+		}
+		if ( !frame_size || frame_size + i < p_bytes ) throw exception_io_data();
+
+		p_bytes_processed = frame_size + i;
+
+		sample_t level = 1.0, bias = 0;
+
+		if ( a52_frame( m_state, ( uint8_t * ) p_buffer + i, &flags, &level, bias ) ) throw exception_io_data();
+
+		if ( ! m_decode )
+		{
+			for ( i = 0; i < 6; ++i )
+			{
+				if ( a52_block( m_state ) ) throw exception_io_data();
+			}
+		}
+		else
+		{
+			int channels = get_channels( flags );
+			p_chunk.set_data_size( 256 * 6 * channels );
+			p_chunk.set_channels( channels, get_speaker_config( flags ) );
+			p_chunk.set_srate( sample_rate );
+			p_chunk.set_sample_count( 256 * 6 );
+
+			const sample_t * in = a52_samples( m_state );
+			audio_sample * out = p_chunk.get_data();
+
+			for ( i = 0; i < 6; ++i )
+			{
+				if ( a52_block( m_state ) ) throw exception_io_data();
+				prepare_chunk( in, out, 256, flags );
+				out += 256 * channels;
+			}
+		}
+	}
+
+	virtual void analyze_first_frame_ex( const void * p_buffer, t_size p_bytes, t_size & p_bytes_processed, abort_callback & p_abort ) {}
+};
+
 static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
 	switch(msg)
@@ -673,7 +795,8 @@ public:
 
 DECLARE_FILE_TYPE("AC3 files", "*.AC3");
 
-static input_singletrack_factory_t<input_ac3>            g_input_factory_ac3;
-static preferences_page_factory_t <preferences_page_ac3> g_preferences_page_factory_ac3;
+static input_singletrack_factory_t< input_ac3 >           g_input_factory_ac3;
+static packet_decoder_factory_t< packet_decoder_ac3 >     g_packet_decoder_factory_ac3;
+static preferences_page_factory_t< preferences_page_ac3 > g_preferences_page_factory_ac3;
 
 DECLARE_COMPONENT_VERSION("AC3 decoder", MY_VERSION, "Based on liba52 v0.7.4");
