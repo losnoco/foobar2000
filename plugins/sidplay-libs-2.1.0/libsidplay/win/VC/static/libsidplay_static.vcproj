@@ -579,10 +579,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\sidplay\sidplay.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\include\sidplay\sidplay2.h"
 				>
 			</File>

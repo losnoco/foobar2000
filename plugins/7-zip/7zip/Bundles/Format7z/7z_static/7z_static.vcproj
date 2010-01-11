@@ -1312,10 +1312,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\Crypto\7zAES\MySHA256.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\Crypto\7zAES\SHA256.cpp"
 					>
 					<FileConfiguration

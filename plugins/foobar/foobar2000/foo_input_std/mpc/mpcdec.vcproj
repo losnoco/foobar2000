@@ -434,10 +434,6 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="idtag.h"
-				>
-			</File>
-			<File
 				RelativePath="in_mpc.h"
 				>
 			</File>

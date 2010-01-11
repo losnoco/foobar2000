@@ -704,19 +704,7 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\include\vorbis\backends.h"
-				>
-			</File>
-			<File
-				RelativePath="..\lib\bitbuffer.h"
-				>
-			</File>
-			<File
 				RelativePath="..\lib\bitrate.h"
-				>
-			</File>
-			<File
-				RelativePath="..\include\vorbis\codebook.h"
 				>
 			</File>
 			<File

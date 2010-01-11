@@ -1264,10 +1264,6 @@
 			RelativePath="..\History.txt"
 			>
 		</File>
-		<File
-			RelativePath="..\To Do.txt"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
