@@ -3,6 +3,10 @@
 /*
 	changelog
 
+2009-10-31 12:39 UTC - kode54
+- Updated to File_Extractor v1.0.0
+- Version is now 1.2
+
 2009-04-21 21:40 UTC - kode54
 - Attempts to query missing files now correctly throws exception_io_not_found
 - Version is now 1.1

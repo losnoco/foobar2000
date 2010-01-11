@@ -1,7 +1,11 @@
-#define MY_VERSION "1.0"
+#define MY_VERSION "1.1"
 
 /*
 	changelog
+
+2009-10-31 12:39 UTC - kode54
+- Updated to File_Extractor v1.0.0
+- Version is now 1.1
 
 2009-08-13 21:27 UTC - kode54
 - Implemented simple gzip stream length checking
