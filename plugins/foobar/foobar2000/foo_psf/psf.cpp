@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.5"
+#define MYVERSION "2.0.6"
 
 /*
 	changelog
+
+2007-07-24 23:33 UTC - kode54
+- Implemented UTF-8 tag support
+- Version is now 2.0.6
 
 2005-04-01 05:05 UTC - kode54
 - Corrected ReplayGain tagging support for 0.9
@@ -340,12 +344,30 @@ static void info_meta_add(file_info & info, const char * tag, const char * value
 		// append as another line
 		pfc::string8 final = info.meta_get(tag, 0);
 		final += "\r\n";
-		final += pfc::stringcvt::string_utf8_from_ansi(value);
+		final += value;
 		info.meta_set(tag, final);
 	}
 	else
 	{
-		info.meta_add(tag, pfc::stringcvt::string_utf8_from_ansi(value));
+		info.meta_add(tag, value);
+	}
+}
+
+static void info_meta_ansi( file_info & info )
+{
+	for ( unsigned i = 0, j = info.meta_get_count(); i < j; i++ )
+	{
+		for ( unsigned k = 0, l = info.meta_enum_value_count( i ); k < l; k++ )
+		{
+			const char * value = info.meta_enum_value( i, k );
+			info.meta_modify_value( i, k, pfc::stringcvt::string_utf8_from_ansi( value ) );
+		}
+	}
+	for ( unsigned i = 0, j = info.info_get_count(); i < j; i++ )
+	{
+		const char * name = info.info_enum_name( i );
+		if ( name[ 0 ] == '_' )
+			info.info_set( name, pfc::stringcvt::string_utf8_from_ansi( info.info_enum_value( i ) ) );
 	}
 }
 
@@ -358,7 +380,7 @@ static int find_crlf(pfc::string8 & blah)
 
 static void info_meta_write(pfc::string_base & tag, const file_info & info, const char * name, int idx, int & first)
 {
-	pfc::string8 v = pfc::stringcvt::string_ansi_from_utf8(info.meta_enum_value(idx, 0));
+	pfc::string8 v = info.meta_enum_value(idx, 0);
 	int pos = find_crlf(v);
 
 	if (pos == -1)
@@ -466,7 +488,7 @@ static bool info_read_line( const BYTE * ptr, int len, pfc::string_base & tag, p
 
 static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & tag_song_ms, int & tag_fade_ms)
 {
-	int pos, precede = 0;
+	int pos, precede = 0, utf8 = 0;
 	ptr[len] = 0;
 	tag_song_ms = 0;
 	tag_fade_ms = 0;
@@ -523,6 +545,10 @@ static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & t
 						info.info_set_int(field_fade, tag_fade_ms);
 					}
 				}
+				else if (!stricmp(tag, "utf8"))
+				{
+					utf8 = 1;
+				}
 				else if (!strnicmp(tag, "_lib", 4))
 				{
 					DBG("found _lib");
@@ -571,6 +597,7 @@ static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & t
 			}
 		}
 	}
+	if (!utf8) info_meta_ansi( info );
 	return precede;
 }
 
@@ -1282,7 +1309,7 @@ public:
 		m_file->seek(16 + reserved_size + exe_size, p_abort);
 		m_file->set_eof(p_abort);
 
-		pfc::string8 tag = "[TAG]";
+		pfc::string8 tag = "[TAG]utf8=1\r\n";
 
 		int first = 1;
 		// _lib and _refresh tags first
