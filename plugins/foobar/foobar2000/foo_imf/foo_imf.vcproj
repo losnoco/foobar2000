@@ -233,7 +233,6 @@
 					Optimization="1"
 					AdditionalIncludeDirectories=""
 					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_UNICODE;UNICODE;_USRDLL;FOO_IMF_EXPORTS;$(NoInherit)"
-					BrowseInformation="1"
 				/>
 			</FileConfiguration>
 		</File>
@@ -259,7 +258,6 @@
 					Optimization="1"
 					AdditionalIncludeDirectories=""
 					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_UNICODE;UNICODE;_USRDLL;FOO_IMF_EXPORTS;$(NoInherit)"
-					BrowseInformation="1"
 				/>
 			</FileConfiguration>
 		</File>

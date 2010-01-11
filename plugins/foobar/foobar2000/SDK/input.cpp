@@ -150,3 +150,22 @@ t_io_result input_open_file_helper(service_ptr_t<file> & p_file,const char * p_p
 	}
 	return io_result_success;
 }
+
+unsigned input_info_reader::get_subsong_count_e() {
+	unsigned ret;
+	exception_io::g_test( get_subsong_count(ret) );
+	return ret;
+}
+
+t_uint32 input_info_reader::get_subsong_e(unsigned p_index) {
+	t_uint32 ret;
+	exception_io::g_test( get_subsong(p_index,ret) );
+	return ret;
+}
+
+void input_info_reader::get_info_e(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort) {
+	exception_io::g_test(get_info(p_subsong,p_info,p_abort));
+}
+void input_info_reader::get_file_stats_e(t_filestats & p_stats,abort_callback & p_abort) {
+	exception_io::g_test(get_file_stats(p_stats,p_abort));
+}

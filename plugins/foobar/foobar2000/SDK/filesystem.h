@@ -357,11 +357,11 @@ namespace foobar2000_io
 	{
 	public:
 
-		virtual bool get_static_info(class file_info & p_out) = 0;
+		virtual t_io_result get_static_info(class file_info & p_out, bool & p_info_present) = 0;
 
 		virtual bool is_dynamic_info_enabled()=0;//checks if currently open stream gets dynamic metadata
 
-		virtual bool get_dynamic_info(class file_info & p_out)=0;//see input::get_dynamic_info_track
+		virtual t_io_result get_dynamic_info(class file_info & p_out,bool & p_changed)=0;//see input::get_dynamic_info_track
 
 		static const GUID class_guid;
 
@@ -572,6 +572,11 @@ namespace foobar2000_io
 	};
 }
 
+#define IO_GUARD_EXCEPTIONS(CODE) \
+	try {CODE;}	\
+	catch(std::bad_alloc const&) {return io_result_error_out_of_memory;}	\
+	catch(foobar2000_io::exception_io const& e) {return e.get_code();} \
+	catch(std::exception const & e) {console::info(e.what()); return io_result_error_data;}
 
 using namespace foobar2000_io;
 
@@ -581,3 +586,5 @@ inline string_base & operator<<(string_base & p_fmt,t_io_result p_code) {return 
 #include "filesystem_helper.h"
 
 #endif//_FOOBAR2000_SDK_FILESYSTEM_H_
+
+

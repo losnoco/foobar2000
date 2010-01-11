@@ -223,7 +223,7 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 	
 	if ( type == type_spt )
 	{
-		if ( read < 0x4E ) throw io_result_error_data;
+		if ( read < 0x4E ) throw exception_io(io_result_error_data);
 
 		dsp->ch[0].infile = dsp->ch[1].infile;
 		dsp->ch[0].infile->seek_e( 0, p_abort );
@@ -239,7 +239,7 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 		
 		// only play single archives.
 		if (get32bit(readbuf)!=1) {
-			throw io_result_error_data;
+			throw exception_io(io_result_error_data);
 		}
 
 		dsp->ch[0].header.num_adpcm_nibbles = dsp->ch[1].header.num_adpcm_nibbles = size * 2;
@@ -534,7 +534,7 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 
 	// I got a threshold for the abuse I'll take.
 	if (dsp->ch[0].header.sample_rate<=0 || dsp->ch[0].header.sample_rate>96000) {
-		throw io_result_error_data;
+		throw exception_io(io_result_error_data);
 	}
 
 	dsp->file_length=size; //GetFileSize(dsp->ch[0].infile,NULL);
@@ -571,7 +571,7 @@ void fillbufferDSP(CUBESTREAM * stream, abort_callback & p_abort) {
 	do {
 		if (i==0) {
 			l = stream->infile->read_e( ADPCMbuf, 8, p_abort );
-			if ( ! l ) throw io_result_eof;
+			if ( ! l ) throw exception_io(io_result_eof);
 			if ( l < 8 ) memset( ADPCMbuf + l, 0, 8 - l );
 			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf,stream->header.coef,&stream->hist1,&stream->hist2);
 			i=14;
@@ -604,7 +604,7 @@ void fillbufferHALP(CUBEFILE * dsp, abort_callback & p_abort) {
 			// handle HALPST headers
 			if (dsp->halpsize==0) {
 				if ((long)dsp->nexthalp < 0) {
-					throw io_result_eof;
+					throw exception_io(io_result_eof);
 				}
 				dsp->ch[0].offs=dsp->nexthalp+0x20;
 				dsp->ch[0].infile->seek_e( dsp->nexthalp, p_abort );

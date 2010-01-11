@@ -158,29 +158,26 @@ public:
 
 		foobar_File_Reader rdr(m_file, p_abort);
 
-		try
+		//try
 		{
 			ERRCHK( rdr.read( &m_header, sizeof(m_header) ) );
 
 			if ( 0 != memcmp( m_header.signature, "Vgm ", 4 ) )
 			{
 				console::info("Not a VGM file");
-				throw io_result_error_data;
+				return io_result_error_data;
 			}
 			if ( byte_order::dword_le_to_native( * ( ( t_uint32 * ) &m_header.version ) ) > 0x0150 )
 			{
 				console::info("Unsupported VGM format");
-				throw io_result_error_data;
+				return io_result_error_data;
 			}
 			if ( ! m_header.track_duration )
 			{
 				console::info("Header contains empty track duration");
 			}
 		}
-		catch ( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_success;
 	}
@@ -200,7 +197,7 @@ public:
 			if ( ! emu )
 			{
 				console::info("Out of memory");
-				throw io_result_error_out_of_memory;
+				return io_result_error_out_of_memory;
 			}
 			this->emu = emu;
 
@@ -214,9 +211,14 @@ public:
 				ERRCHK( emu->load( m_header, rdr ) );
 				emu->start_track( 0 );
 			}
-			catch ( t_io_result code )
+			catch(...)
 			{
-				return code;
+				if ( emu )
+				{
+					delete emu;
+					this->emu = emu = NULL;
+				}
+				throw;
 			}
 
 			m_file.release();
@@ -250,7 +252,7 @@ public:
 			if ( ! emu )
 			{
 				console::info("Out of memory");
-				throw io_result_error_out_of_memory;
+				return io_result_error_out_of_memory;
 			}
 			this->emu = emu;
 
@@ -263,9 +265,14 @@ public:
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( m_header, rdr ) );
 			}
-			catch ( t_io_result code )
+			catch(...)
 			{
-				return code;
+				if ( emu )
+				{
+					delete emu;
+					this->emu = emu = NULL;
+				}
+				throw;
 			}
 
 			m_file.release();

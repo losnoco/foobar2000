@@ -4,12 +4,12 @@ void g_callback_register();
 void g_callback_modify();
 void g_callback_unregister();
 
-// {C36278A8-854D-4763-9D65-2F2077417FE3}
 static const GUID guid_cfg_g_osd = 
-{ 0xc36278a8, 0x854d, 0x4763, { 0x9d, 0x65, 0x2f, 0x20, 0x77, 0x41, 0x7f, 0xe3 } };
+{ 0xb575899f, 0xdb1c, 0x42c3, { 0x9b, 0xba, 0x7, 0x71, 0x59, 0x72, 0xac, 0x4a } };
 
 cfg_osd_list g_osd(guid_cfg_g_osd);
 
+#if 0
 class next_extras : public titleformat_hook
 {
 	service_ptr_t<titleformat_object> & m_format;
@@ -109,6 +109,10 @@ public:
 		return true;
 	}
 };
+#define next_extra_i &next_extras(s->formatnext)
+#else
+#define next_extra_i 0
+#endif
 
 t_io_result cfg_osd_list::get_data_raw(stream_writer * p_stream,abort_callback & p_abort)
 {
@@ -133,7 +137,7 @@ t_io_result cfg_osd_list::get_data_raw(stream_writer * p_stream,abort_callback &
 			p_stream->write_lendian_e_t( c->vsteps, p_abort );
 			p_stream->write_lendian_e_t( c->vmin, p_abort );
 			p_stream->write_string_e( c->format, p_abort );
-			p_stream->write_string_e( c->formatnext, p_abort );
+			//p_stream->write_string_e( c->formatnext, p_abort );
 			p_stream->write_lendian_e_t( c->color, p_abort );
 			p_stream->write_lendian_e_t( c->bgcolor, p_abort );
 			p_stream->write_lendian_e_t( c->alphalev, p_abort );
@@ -162,7 +166,7 @@ t_io_result cfg_osd_list::set_data_raw(stream_reader * p_stream,unsigned p_sizeh
 	{
 		p_stream->read_lendian_e_t( count, p_abort );
 
-		string8_fastalloc name, format, formatnext;
+		string8_fastalloc name, format; //, formatnext;
 		for (i = 0; i < count; i++)
 		{
 			c = 0;
@@ -180,7 +184,7 @@ t_io_result cfg_osd_list::set_data_raw(stream_reader * p_stream,unsigned p_sizeh
 			p_stream->read_lendian_e_t( c->vsteps, p_abort );
 			p_stream->read_lendian_e_t( c->vmin, p_abort );
 			p_stream->read_string_e( format, p_abort );
-			p_stream->read_string_e( formatnext, p_abort );
+			//p_stream->read_string_e( formatnext, p_abort );
 			p_stream->read_lendian_e_t( c->color, p_abort );
 			p_stream->read_lendian_e_t( c->bgcolor, p_abort );
 			p_stream->read_lendian_e_t( c->alphalev, p_abort );
@@ -190,7 +194,7 @@ t_io_result cfg_osd_list::set_data_raw(stream_reader * p_stream,unsigned p_sizeh
 
 			c->name = name;
 			c->format = format;
-			c->formatnext = formatnext;
+			//c->formatnext = formatnext;
 			val.add_item( c );
 		}
 	}
@@ -513,7 +517,7 @@ void cfg_osd_list::test(unsigned n)
 	COsdWnd    * o = osd[n];
 
 	string8 text;
-	static_api_ptr_t<play_control>()->playback_format_title(&next_extras(s->formatnext), text, s->format, NULL, play_control::display_level_all);
+	static_api_ptr_t<play_control>()->playback_format_title(next_extra_i, text, s->format, NULL, play_control::display_level_all);
 
 	if (text.length()) o->Post(text, !!(c->flags & osd_interval));
 	else
@@ -541,7 +545,7 @@ void cfg_osd_list::on_playback_time()
 		COsdWnd    * o = osd[i];
 		if ((c->flags & osd_interval) && o->DoInterval() && o->GetState() != COsdWnd::HIDDEN)
 		{
-			pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
+			pc->playback_format_title(next_extra_i, cmd, s->format, NULL, play_control::display_level_all);
 			if (cmd.length()) o->Repost(cmd);
 		}
 	}
@@ -581,7 +585,7 @@ void cfg_osd_list::on_playback_dynamic_info(bool b_track_change)
 		{
 			if ((c->flags & (osd_pop | osd_dynamic)) == (osd_pop | osd_dynamic))
 			{
-				pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
+				pc->playback_format_title(next_extra_i, cmd, s->format, NULL, play_control::display_level_all);
 				if (cmd.length()) o->Post(cmd, !!(c->flags & osd_interval));
 			}
 		}
@@ -589,7 +593,7 @@ void cfg_osd_list::on_playback_dynamic_info(bool b_track_change)
 		{
 			if ((c->flags & osd_dynamic_all) && o->DoInterval() && o->GetState() != COsdWnd::HIDDEN)
 			{
-				pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
+				pc->playback_format_title(next_extra_i, cmd, s->format, NULL, play_control::display_level_all);
 				if (cmd.length()) o->Repost(cmd);
 			}
 		}
@@ -613,7 +617,7 @@ void cfg_osd_list::on_playback_seek()
 
 		if ((c->flags & (osd_pop | osd_seek)) == (osd_pop | osd_seek))
 		{
-			pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
+			pc->playback_format_title(next_extra_i, cmd, s->format, NULL, play_control::display_level_all);
 			if (cmd.length()) o->Post(cmd, !!(c->flags & osd_interval));
 		}
 	}
@@ -636,7 +640,7 @@ void cfg_osd_list::on_playback_pause(int _state)
 
 		if ((c->flags & (osd_pop | osd_pause)) == (osd_pop | osd_pause))
 		{
-			pc->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
+			pc->playback_format_title(next_extra_i, cmd, s->format, NULL, play_control::display_level_all);
 			if (cmd.length()) o->Post(cmd, !_state && !!(c->flags & osd_interval));
 		}
 	}
@@ -676,7 +680,7 @@ void cfg_osd_list::on_playback_new_track(const metadb_handle_ptr & track)
 
 		if ((c->flags & (osd_pop | osd_play)) == (osd_pop | osd_play))
 		{
-			track->format_title(&next_extras(s->formatnext), cmd, s->format, NULL);
+			track->format_title(next_extra_i, cmd, s->format, NULL);
 			if (cmd.length()) o->Post(cmd, !!(c->flags & osd_interval));
 		}
 	}
@@ -723,7 +727,7 @@ void cfg_osd_list::show_track(unsigned n)
 		COsdWnd    * o = osd[n];
 		string8_fastalloc cmd;
 
-		static_api_ptr_t<play_control>()->playback_format_title(&next_extras(s->formatnext), cmd, s->format, NULL, play_control::display_level_all);
+		static_api_ptr_t<play_control>()->playback_format_title(next_extra_i, cmd, s->format, NULL, play_control::display_level_all);
 		if (cmd.length()) o->Post(cmd, !!(c->flags & osd_interval));
 	}
 }

@@ -88,6 +88,8 @@ public:
 	//! @returns true on success, false on failure (rare).
 	virtual bool handle_create(metadb_handle_ptr & p_out,const playable_location & p_location)=0;
 
+	//! Helper; calls handle_create and throws std::bad_alloc on failure.
+	void handle_create_e(metadb_handle_ptr & p_out,const playable_location & p_location);
 
 	bool handle_create_replace_path_canonical(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path);//should never fail
 	bool handle_replace_path_canonical(metadb_handle_ptr & p_out,const char * p_new_path);

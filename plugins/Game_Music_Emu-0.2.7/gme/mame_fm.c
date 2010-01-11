@@ -896,6 +896,7 @@ INLINE void FM_KEYON(FM_CH *CH , int s )
 	{
 		SLOT->key = 1;
 		SLOT->phase = 0;		/* restart Phase Generator */
+		SLOT->ssgn = (SLOT->ssg&0x04)>>1;
 		SLOT->state = EG_ATT;	/* phase -> Attack */
 	}
 }
@@ -907,7 +908,10 @@ INLINE void FM_KEYOFF(FM_CH *CH , int s )
 	{
 		SLOT->key = 0;
 		if (SLOT->state>EG_REL)
+		{
+			SLOT->ssgn = 0;
 			SLOT->state = EG_REL;/* phase -> Release */
+		}
 	}
 }
 
@@ -1259,10 +1263,12 @@ INLINE void advance_eg_channel(FM_OPN *OPN, FM_SLOT *SLOT)
 
 		}
 
-		out = SLOT->tl + ((UINT32)SLOT->volume);
+		out = ((UINT32)SLOT->volume);
 
 		if ((SLOT->ssg&0x08) && (SLOT->ssgn&2))	/* negate output (changes come from alternate bit, init comes from attack bit) */
 			out ^= ((1<<ENV_BITS)-1); /* 1023 */
+
+		out += SLOT->tl;
 
 		/* we need to store the result here because we are going to change ssgn
 			in next instruction */
@@ -1822,7 +1828,7 @@ static void OPNWriteReg(FM_HELPER *CRAP, FM_OPN *OPN, int r, int v)
 
 	case 0x90:	/* SSG-EG */
 
-		if( OPN->type & TYPE_SSG )
+		//if( OPN->type & TYPE_SSG )
 		{
 			SLOT->ssg  =  v&0x0f;
 			SLOT->ssgn = (v&0x04)>>1; /* bit 1 in ssgn = attack */

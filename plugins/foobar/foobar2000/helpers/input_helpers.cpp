@@ -107,37 +107,39 @@ t_io_result input_helper::seek(double seconds,abort_callback & p_abort)
 	}
 }
 
-bool input_helper::can_seek()
+t_io_result input_helper::can_seek(bool & p_value)
 {
-	return m_input.is_valid() ? m_input->can_seek() : false;
+	return m_input.is_valid() ? m_input->can_seek(p_value) : io_result_error_data;
 }
 
 void input_helper::set_full_buffer(t_filesize val)
 {
 	m_fullbuffer = val;
 }
-void input_helper::on_idle(abort_callback & p_abort)
+t_io_result input_helper::on_idle(abort_callback & p_abort)
 {
 	if (m_input.is_valid()) {
-		TRACK_CODE("input_decoder::on_idle",m_input->on_idle(p_abort));
+		TRACK_CODE("input_decoder::on_idle",return m_input->on_idle(p_abort));
+	} else {
+		return io_result_error_data;
 	}
 }
 
-bool input_helper::get_dynamic_info(file_info & p_out,double & p_timestamp_delta)
+t_io_result input_helper::get_dynamic_info(file_info & p_out,double & p_timestamp_delta,bool & p_changed)
 {
 	if (m_input.is_valid()) {
-		TRACK_CODE("input_decoder::get_dynamic_info",return m_input->get_dynamic_info(p_out,p_timestamp_delta));
+		TRACK_CODE("input_decoder::get_dynamic_info",return m_input->get_dynamic_info(p_out,p_timestamp_delta,p_changed));
 	} else {
-		return false;
+		return io_result_error_data;
 	}
 }
 
-bool input_helper::get_dynamic_info_track(file_info & p_out,double & p_timestamp_delta)
+t_io_result input_helper::get_dynamic_info_track(file_info & p_out,double & p_timestamp_delta,bool & p_changed)
 {
 	if (m_input.is_valid()) {
-		TRACK_CODE("input_decoder::get_dynamic_info_track",return m_input->get_dynamic_info_track(p_out,p_timestamp_delta));
+		TRACK_CODE("input_decoder::get_dynamic_info_track",return m_input->get_dynamic_info_track(p_out,p_timestamp_delta,p_changed));
 	} else {
-		return false;
+		return io_result_error_data;
 	}
 }
 
@@ -197,20 +199,21 @@ bool dead_item_filter::run(const list_base_const_t<metadb_handle_ptr> & p_list,b
 		if (is_aborting()) return false;
 		on_progress(pathidx,path_list.get_count());
 		
-		
-		{
+		try {
 			service_ptr_t<input_info_reader> reader;
 			const char * path = path_list[pathidx];
-			if (io_result_succeeded(input_entry::g_open_for_info_read(reader,0,path,*this))) {
-				const unsigned count = reader->get_subsong_count();
-				for(unsigned n=0;n<count && !is_aborting();n++) {
-					metadb_handle_ptr ptr;
-					if (l_metadb->handle_create(ptr,make_playable_location(path,reader->get_subsong(n)))) {
-						valid_handles.add_item(ptr);
-					}
-				}
+			exception_io::g_test(input_entry::g_open_for_info_read(reader,0,path,*this));
+			unsigned count;
+			exception_io::g_test( reader->get_subsong_count(count) );
+			for(unsigned n=0;n<count && !is_aborting();n++) {
+				metadb_handle_ptr ptr;
+				t_uint32 index;
+				exception_io::g_test( reader->get_subsong(n,index) );
+				if (!l_metadb->handle_create(ptr,make_playable_location(path,index))) 
+					throw std::bad_alloc();
+				valid_handles.add_item_e(ptr);
 			}
-		}
+		} catch(std::exception const &) {}
 	}
 
 	if (is_aborting()) return false;;
@@ -311,7 +314,13 @@ t_io_result input_helper_cue::open(const playable_location & p_location,unsigned
 	
 	status = m_input.open(p_location,p_flags,p_abort,true,true);
 	if (io_result_failed(status)) return status;
-	if (!m_input.can_seek()) return io_result_error_data;
+	
+	{
+		bool seekable = false;
+		status = m_input.can_seek(seekable);
+		if (io_result_failed(status)) return status;
+		if (!seekable) return io_result_error_data;
+	}
 	if (m_start > 0)
 	{
 		status = m_input.seek(m_start,p_abort);
@@ -414,7 +423,9 @@ bool input_helper_cue::get_dynamic_info(file_info & p_out,double & p_timestamp_d
 	if (m_dynamic_info_trigger)
 	{
 		m_dynamic_info_trigger = false;
-		return m_input.get_dynamic_info(p_out,p_timestamp_delta);
+		bool changed = false;
+		exception_io::g_test(m_input.get_dynamic_info(p_out,p_timestamp_delta,changed));
+		return changed;
 	}
 	else return false;
 }

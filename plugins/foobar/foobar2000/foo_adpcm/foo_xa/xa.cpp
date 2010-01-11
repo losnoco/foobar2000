@@ -1141,7 +1141,7 @@ public:
 		service_ptr_t<file> & m_file,
 		abort_callback & p_abort )
 	{
-		try
+		//try
 		{
 			t_filesize length = m_file->get_size_e( p_abort );
 			
@@ -1288,11 +1288,7 @@ public:
 
 			m_loop_data.set_size( 0 );
 		}
-		catch ( t_io_result code )
-		{
-			/*(void) code;*/
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return p_abort.is_aborting() ? io_result_aborted : io_result_success;
 	}
@@ -1479,9 +1475,9 @@ public:
 		{
 			header = check_cdxa(m_file, p_abort);
 		}
-		catch (t_io_result code)
+		catch(exception_io const & e)
 		{
-			(void) code;
+			(void) e;
 			header = ~0;
 		}
 
@@ -1580,14 +1576,11 @@ public:
 		loopstart = info->loop_start;
 		if ( loopstart == ~0 ) loopstart = start;
 
-		try
+		//try
 		{
 			setSector( start, p_abort );
 		}
-		catch( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		file_number = info->file_number;
 		channel = info->channel;
@@ -1624,7 +1617,7 @@ public:
 		int bits_per_sample;
 		long samples;
 		
-		try
+		//try
 		{
 retry1:
 			status = m_file->read_object(xa, 2352, p_abort);
@@ -1731,10 +1724,7 @@ retry2:
 				memmove(out, out + ( iswallowed << stereo ), sizeof(audio_sample) * iswallowed << stereo);
 			}
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		if (samples)
 		{
@@ -1758,14 +1748,11 @@ retry2:
 		}
 		pos = 0.;
 
-		try
+		//try
 		{
 			setSector( start, p_abort );
 		}
-		catch( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_success;
 	}
@@ -1931,8 +1918,9 @@ public:
 				{
 					header = check_cdxa(r, m_abort);
 				}
-				catch (t_io_result code)
+				catch(exception_io const & e)
 				{
+					( void ) e;
 					header = -1;
 				}
 
@@ -2060,9 +2048,9 @@ public:
 					}
 				}
 			}
-			catch (t_io_result code)
+			catch(exception_io const & e)
 			{
-				if (!n && code != io_result_aborted) continue;
+				if (!n && e.get_code() != io_result_aborted) continue;
 			}
 		}
 		if (n == 0)
@@ -2087,6 +2075,7 @@ public:
 };
 #endif
 
+#if 0
 class mainmenu_xa : public menu_item_legacy
 {
 	virtual type get_type()
@@ -2169,8 +2158,7 @@ class mainmenu_xa : public menu_item_legacy
 				else break;
 			}
 
-			service_ptr_t<playlist_manager> pm;
-			playlist_manager::g_get(pm);
+			static_api_ptr_t<playlist_manager> pm;
 			pm->activeplaylist_add_locations(urls, !n, core_api::get_main_window());
 			if (!n)
 			{
@@ -2180,6 +2168,7 @@ class mainmenu_xa : public menu_item_legacy
 		}
 	}
 };
+#endif
 
 #ifndef FOO_ADPCM_EXPORTS
 
@@ -2225,7 +2214,7 @@ DECLARE_FILE_TYPE("XA files", "*.XA");
 
 static input_factory_t< input_xa > g_input_xa_factory;
 //static menu_item_factory_t<contextmenu_xa> g_menu_item_context_xa_factory;
-static menu_item_factory_t<mainmenu_xa> g_menu_item_main_xa_factory;
+//static menu_item_factory_t<mainmenu_xa> g_menu_item_main_xa_factory;
 
 #ifndef FOO_ADPCM_EXPORTS
 static config_factory<config_xa> g_config_xa_factory;

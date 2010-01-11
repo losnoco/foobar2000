@@ -93,7 +93,7 @@ public:
 			{
 				dsp.ch[1].infile = p_filehint;
 				bool swap = false;
-				if ( mp1 ) swap = *ptr == 'R' || *ptr == 'r';
+				if ( mp1 ) swap = ( *ptr | 0x20 ) == 'r';
 				else if ( ww ) swap = *ptr == '1';
 				else swap = ( ptr[4] | 0x20 ) == 'd';
 				if ( swap ) pfc::swap_t( dsp.ch[0].infile, dsp.ch[1].infile );
@@ -113,7 +113,7 @@ public:
 	{
 		if ( ! dsp.file_length )
 		{
-			try
+			//try
 			{
 				if ( type == type_adp )
 				{
@@ -121,10 +121,7 @@ public:
 				}
 				if ( type != type_adp ) InitDSPFILE( & dsp, p_abort, type );
 			}
-			catch ( t_io_result code )
-			{
-				return code;
-			}
+			//catch(exception_io const & e) {return e.get_code();}
 
 			if ( dsp.ch[0].header.loop_flag ) looped = true;
 		}
@@ -174,7 +171,7 @@ public:
 	{
 		if ( ! dsp.file_length || pos )
 		{
-			try
+			//try
 			{
 				if ( type == type_adp )
 				{
@@ -182,10 +179,7 @@ public:
 				}
 				if ( type != type_adp ) InitDSPFILE( & dsp, p_abort, type );
 			}
-			catch ( t_io_result code )
-			{
-				return code;
-			}
+			//catch(exception_io const & e) {return e.get_code();}
 
 			if ( dsp.ch[0].header.loop_flag ) looped = true;
 		}
@@ -231,9 +225,9 @@ public:
 				{
 					fillbuffers( & dsp, p_abort );
 				}
-				catch ( t_io_result code )
+				catch(exception_io const & e)
 				{
-					if ( code != io_result_eof ) return code;
+					if ( e.get_code() != io_result_eof ) return e.get_code();
 					eof = true;
 				}
 			}

@@ -134,27 +134,32 @@ void file_info::copy_info_single_nocheck(const file_info & p_source,unsigned p_i
 
 void file_info::copy_meta(const file_info & p_source)
 {
-	meta_remove_all();
-	unsigned n, m = p_source.meta_get_count();
-	for(n=0;n<m;n++)
-		copy_meta_single_nocheck(p_source,n);
+	if (&p_source != this) {
+		meta_remove_all();
+		unsigned n, m = p_source.meta_get_count();
+		for(n=0;n<m;n++)
+			copy_meta_single_nocheck(p_source,n);
+	}
 }
 
 void file_info::copy_info(const file_info & p_source)
 {
-	info_remove_all();
-	unsigned n, m = p_source.info_get_count();
-	for(n=0;n<m;n++)
-		copy_info_single_nocheck(p_source,n);
-
+	if (&p_source != this) {
+		info_remove_all();
+		unsigned n, m = p_source.info_get_count();
+		for(n=0;n<m;n++)
+			copy_info_single_nocheck(p_source,n);
+	}
 }
 
 void file_info::copy(const file_info & p_source)
 {
-	copy_meta(p_source);
-	copy_info(p_source);
-	set_length(p_source.get_length());
-	set_replaygain(p_source.get_replaygain());
+	if (&p_source != this) {
+		copy_meta(p_source);
+		copy_info(p_source);
+		set_length(p_source.get_length());
+		set_replaygain(p_source.get_replaygain());
+	}
 }
 
 

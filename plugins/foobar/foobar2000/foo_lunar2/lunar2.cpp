@@ -511,6 +511,7 @@ class input_lunar2
 	int size, loop_start, loop_end, channels, pos, postmp, no_loop;
 	service_ptr_t<file> m_file;
 	mem_block_t<unsigned char> buffer;
+	hasher_md5_result digest;
 
 public:
 	input_lunar2()
@@ -546,9 +547,7 @@ private:
 		t_io_result status;
 		unsigned char * p;
 
-		t_filesize sz;
-		status = m_file->get_size( sz, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		t_filesize sz = m_file->get_size_e( p_abort );
 		if ( sz < 0 || sz > ( 1 << 30 ) ) return io_result_error_data;
 		size = int( sz );
 
@@ -557,13 +556,14 @@ private:
 		
 		p = buffer.get_ptr();
 
-		status = m_file->read_object( p, 8192, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		m_file->read_object_e( p, 8192, p_abort );
 
 		if ( p[ 1 ] == 1 ) channels = 2;
 		else if ( p[ 1 ] == 2 ) channels = 1;
 		loop_start = ( ( p[ 2 ] << 24 ) | ( p[ 3 ] << 16 ) | ( p[ 4 ] << 8 ) | p[ 5 ] ) << 11;
 		loop_end = ( ( p[ 6 ] << 24 ) | ( p[ 7 ] << 16 ) | (p[ 8 ] << 8 ) | p[ 9 ] ) + 1;
+
+		digest = static_api_ptr_t<hasher_md5>()->process_single( buffer.get_ptr(), 8192 );
 
 		return io_result_success;
 	}
@@ -577,10 +577,7 @@ public:
 			if ( io_result_failed( status ) ) return status;
 		}
 
-		hasher_md5_result digest;
 		int n;
-
-		digest = static_api_ptr_t<hasher_md5>()->process_single( buffer.get_ptr(), 8192 );
 
 		for ( n = 0; n < 219; ++n )
 		{
@@ -624,8 +621,7 @@ public:
 			if ( io_result_failed( status ) ) return status;
 		}
 
-		status = m_file->seek( 2048, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		m_file->seek_e( 2048, p_abort );
 
 		if ( ! buffer.set_size(2048 * channels) )
 			return io_result_error_out_of_memory;
@@ -643,12 +639,10 @@ public:
 		unsigned char * p = buffer.get_ptr();
 
 		int n, t, a;
-		t_io_result status;
 
 		if (channels == 1)
 		{
-			status = m_file->read_object(p, 2048, p_abort);
-			if (io_result_failed(status)) return status;
+			m_file->read_object_e(p, 2048, p_abort);
 			for (n=0; n<1024; n++)
 			{
 				t = p[n*2+1];
@@ -658,8 +652,7 @@ public:
 		}
 		else
 		{
-			status = m_file->read_object(p, 4096, p_abort);
-			if (io_result_failed(status)) return status;
+			m_file->read_object_e(p, 4096, p_abort);
 			for (n=0; n<1024; n++)
 			{
 				t = p[n*2+1];
@@ -677,8 +670,7 @@ public:
 			if (!no_loop)
 			{
 				pos = loop_start >> channels;
-				status = m_file->seek(loop_start + 2048, p_abort);
-				if (io_result_failed(status)) return status;
+				m_file->seek_e(loop_start + 2048, p_abort);
 			}
 			n = (loop_end % 1024) * channels;
 		}

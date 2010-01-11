@@ -53,7 +53,7 @@ void fillbufferADP(CUBEFILE * adp, abort_callback & p_abort) {
 
 	do {
 		unsigned read = adp->ch[0].infile->read_e( ADPCMbuf, 32, p_abort );
-		if ( read < 32 ) throw io_result_eof;
+		if ( read < 32 ) throw exception_io(io_result_eof);
 		ADPdecodebuffer(ADPCMbuf,adp->ch[0].chanbuf+adp->ch[0].writeloc,
 								 adp->ch[1].chanbuf+adp->ch[1].writeloc,
 					&adp->ch[0].lhist1, &adp->ch[0].lhist2, &adp->ch[1].lhist1, &adp->ch[1].lhist2);

@@ -355,8 +355,7 @@ public:
 private:
 	t_io_result open_internal( abort_callback & p_abort )
 	{
-		t_io_result status = m_file->get_size( file_length, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		file_length = m_file->get_size_e( p_abort );
 
 		if (file_length == 0 || file_length > (1UL << 30)) return io_result_error_data;
 
@@ -444,7 +443,7 @@ eof:
 			return io_result_eof;
 		}
 
-		try
+		//try
 		{
 			while ( ! p_abort.is_aborting() && ( filled < 2048 || swallow ) )
 			{
@@ -497,10 +496,7 @@ eof:
 				}
 			}
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		if ( ! filled ) return io_result_eof;
 
@@ -532,14 +528,11 @@ eof:
 		total = 0;
 		expand_s->reset_state();
 
-		try
+		//try
 		{
 			inf->seek( 0, p_abort );
 		}
-		catch( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_success;
 	}

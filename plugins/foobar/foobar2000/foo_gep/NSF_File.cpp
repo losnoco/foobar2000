@@ -40,7 +40,7 @@ const float NSF_NTSC_NMIRATE =		60.098813897440495178612402970624f;
 #include "NSF_File.h"
 
 #define SAFE_DELETE(p) { if(p){ delete[] p; p = NULL; } }
-#define SAFE_NEW(p,t,s) p = new t[s]; if(!p) throw io_result_error_generic; ZeroMemory(p,sizeof(t) * s)
+#define SAFE_NEW(p,t,s) p = new t[s]; if(!p) return io_result_error_out_of_memory; ZeroMemory(p,sizeof(t) * s)
 
 
 t_io_result CNSFFile::LoadFile(const service_ptr_t<file> & p_file, bool needdata, abort_callback & p_abort)
@@ -91,16 +91,16 @@ t_io_result CNSFFile::LoadFile_NESM(const service_ptr_t<file> & p_file, bool nee
 
 		p_file->seek_e(0, p_abort);
 
-		if(len < 1) throw io_result_error_data;
+		if(len < 1) return io_result_error_data;
 
 		//read the info
 		NESM_HEADER					hdr;
 		p_file->read_object_e(&hdr, 0x80, p_abort);
 
 		//confirm the header
-		if(hdr.nHeader != HEADERTYPE_NESM)		throw io_result_error_data;
-		if(hdr.nHeaderExtra != 0x1A)			throw io_result_error_data;
-		if(hdr.nVersion > 2)					throw io_result_error_data;
+		if(hdr.nHeader != HEADERTYPE_NESM)		return io_result_error_data;
+		if(hdr.nHeaderExtra != 0x1A)			return io_result_error_data;
+		if(hdr.nVersion > 2)					return io_result_error_data;
 
 		//NESM is generally easier to work with (but limited!)
 		//  just move the data over from NESM_HEADER over to our member data
@@ -136,10 +136,7 @@ t_io_result CNSFFile::LoadFile_NESM(const service_ptr_t<file> & p_file, bool nee
 			nDataBufferSize = len;
 		}
 	}
-	catch(t_io_result code)
-	{
-		return code;
-	}
+	catch(exception_io const & e) {return e.get_code();}
 
 	//if we got this far... it was a successful read
 	return io_result_success;
@@ -167,20 +164,20 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 
 		//confirm the header!
 		p_file->read_object_e(&nChunkType, 4, p_abort);
-		if(nChunkType != HEADERTYPE_NSFE)			throw io_result_error_data;
+		if(nChunkType != HEADERTYPE_NSFE)			return io_result_error_data;
 
 		//begin reading chunks
 		while(!bEndFound && !p_abort.is_aborting())
 		{
-			if(p_file->get_position_e(p_abort) >= p_file->get_size_e(p_abort)) throw io_result_error_data;
+			if(p_file->get_position_e(p_abort) >= p_file->get_size_e(p_abort)) return io_result_error_data;
 			p_file->read_object_e(&nChunkSize, 4, p_abort);
 			p_file->read_object_e(&nChunkType, 4, p_abort);
 
 			switch(nChunkType)
 			{
 			case CHUNKTYPE_INFO:
-				if(bInfoFound)						throw io_result_error_data;	//only one info chunk permitted
-				if(nChunkSize < 8)					throw io_result_error_data;	//minimum size
+				if(bInfoFound)						return io_result_error_data;	//only one info chunk permitted
+				if(nChunkSize < 8)					return io_result_error_data;	//minimum size
 
 				bInfoFound = 1;
 				nChunkUsed = min((int)sizeof(NSFE_INFOCHUNK),nChunkSize);
@@ -202,9 +199,9 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 				break;
 
 			case CHUNKTYPE_DATA:
-				if(!bInfoFound)						throw io_result_error_data;
-				if(nDataPos)						throw io_result_error_data;
-				if(nChunkSize < 1)					throw io_result_error_data;
+				if(!bInfoFound)						return io_result_error_data;
+				if(nDataPos)						return io_result_error_data;
+				if(nChunkSize < 1)					return io_result_error_data;
 
 				nDataBufferSize = nChunkSize;
 				nDataPos = (UINT) p_file->get_position_e(p_abort);
@@ -217,8 +214,8 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 				break;
 
 			case CHUNKTYPE_TIME:
-				if(!bInfoFound)						throw io_result_error_data;
-				if(pTrackTime)						throw io_result_error_data;
+				if(!bInfoFound)						return io_result_error_data;
+				if(pTrackTime)						return io_result_error_data;
 
 				SAFE_NEW(pTrackTime,int,nTrackCount);
 				nChunkUsed = min(nChunkSize / 4,nTrackCount);
@@ -232,8 +229,8 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 				break;
 
 			case CHUNKTYPE_FADE:
-				if(!bInfoFound)						throw io_result_error_data;
-				if(pTrackFade)						throw io_result_error_data;
+				if(!bInfoFound)						return io_result_error_data;
+				if(pTrackFade)						return io_result_error_data;
 
 				SAFE_NEW(pTrackFade,int,nTrackCount);
 				nChunkUsed = min(nChunkSize / 4,nTrackCount);
@@ -247,7 +244,7 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 				break;
 
 			case CHUNKTYPE_BANK:
-				if(bBankFound)						throw io_result_error_data;
+				if(bBankFound)						return io_result_error_data;
 
 				bBankFound = 1;
 				nChunkUsed = min(8,nChunkSize);
@@ -257,7 +254,7 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 				break;
 
 			case CHUNKTYPE_PLST:
-				if(pPlaylist)						throw io_result_error_data;
+				if(pPlaylist)						return io_result_error_data;
 
 				nPlaylistSize = nChunkSize;
 				if(nPlaylistSize < 1)				break;  //no playlist?
@@ -267,7 +264,7 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 				break;
 
 			case CHUNKTYPE_AUTH:		{
-				if(szGameTitle)						throw io_result_error_data;
+				if(szGameTitle)						return io_result_error_data;
 
 				char*		buffer;
 				char*		ptr;
@@ -282,7 +279,7 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 				{
 					nChunkUsed = strlen(ptr) + 1;
 					*ar[i] = new char[nChunkUsed];
-					if(!*ar[i]) { SAFE_DELETE(buffer); throw io_result_error_generic; }
+					if(!*ar[i]) { SAFE_DELETE(buffer); return io_result_error_out_of_memory; }
 					memcpy(*ar[i],ptr,nChunkUsed);
 					ptr += nChunkUsed;
 				}
@@ -290,8 +287,8 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 										}break;
 
 			case CHUNKTYPE_TLBL:		{
-				if(!bInfoFound)						throw io_result_error_data;
-				if(szTrackLabels)					throw io_result_error_data;
+				if(!bInfoFound)						return io_result_error_data;
+				if(szTrackLabels)					return io_result_error_data;
 
 				SAFE_NEW(szTrackLabels,char*,nTrackCount);
 
@@ -307,7 +304,7 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 				{
 					nChunkUsed = strlen(ptr) + 1;
 					szTrackLabels[i] = new char[nChunkUsed];
-					if(!szTrackLabels[i]) { SAFE_DELETE(buffer); throw io_result_error_generic; }
+					if(!szTrackLabels[i]) { SAFE_DELETE(buffer); return io_result_error_out_of_memory; }
 					memcpy(szTrackLabels[i],ptr,nChunkUsed);
 					ptr += nChunkUsed;
 				}
@@ -317,7 +314,7 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 			default:		//unknown chunk
 				nChunkType &= 0x000000FF;  //check the first byte
 				if((nChunkType >= 'A') && (nChunkType <= 'Z'))	//chunk is vital... don't continue
-					throw io_result_error_data;
+					return io_result_error_data;
 				//otherwise, just skip it
 				p_file->seek2_e(nChunkSize, SEEK_CUR, p_abort);
 
@@ -330,8 +327,8 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 		//  now.. make sure we found both an info chunk, AND a data chunk... since these are
 		//  minimum requirements for a valid NSFE file
 
-		if(!bInfoFound)			throw io_result_error_data;
-		if(!nDataPos)			throw io_result_error_data;
+		if(!bInfoFound)			return io_result_error_data;
+		if(!nDataPos)			return io_result_error_data;
 
 		//if both those chunks existed, this file is valid.  Load the data if it's needed
 
@@ -344,10 +341,7 @@ t_io_result CNSFFile::LoadFile_NSFE(const service_ptr_t<file> & p_file, bool nee
 		else
 			nDataBufferSize = 0;
 	}
-	catch(t_io_result code)
-	{
-		return code;
-	}
+	catch(exception_io const & e) {return e.get_code();}
 
 	//return success!
 	return io_result_success;
@@ -401,10 +395,7 @@ t_io_result CNSFFile::SaveFile_NESM(service_ptr_t<file> & p_file, abort_callback
 		//slap in the NSF info
 		p_file->write_object_e(pDataBuffer, nDataBufferSize, p_abort);
 	}
-	catch(t_io_result code)
-	{
-		return code;
-	}
+	catch(exception_io const & e) {return e.get_code();}
 
 	//we're done.. all the other info that isn't recorded is dropped for regular NSFs
 	return io_result_success;
@@ -542,10 +533,7 @@ t_io_result CNSFFile::SaveFile_NSFE(service_ptr_t<file> & p_file, abort_callback
 		p_file->write_object_e(&nChunkSize, 4, p_abort);
 		p_file->write_object_e(&nChunkType, 4, p_abort);
 	}
-	catch(t_io_result code)
-	{
-		return code;
-	}
+	catch(exception_io const & e) {return e.get_code();}
 
 	//w00t
 	return io_result_success;

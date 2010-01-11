@@ -86,6 +86,15 @@ public:
 
 
 namespace pfc {
+	class refcounter {
+	public:
+		refcounter(long p_val = 0) : m_val(p_val) {}
+		long operator++() {return InterlockedIncrement(&m_val);}
+		long operator--() {return InterlockedDecrement(&m_val);}
+	private:
+		long m_val;
+	};
+
 	template<typename T, void t_freefunc (T*) = pfc::delete_t<T>, T* t_clonefunc (T*) = pfc::clone_t<T> >
 	class autoptr_t
 	{

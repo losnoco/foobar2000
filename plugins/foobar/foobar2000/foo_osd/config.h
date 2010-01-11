@@ -35,7 +35,7 @@ struct osd_config
 	unsigned            x, y, pos, align;
 	unsigned            vwidth, vheight, vsteps;
 	int                 vmin;
-	string_simple       format, formatnext;
+	string_simple       format;//, formatnext;
 	unsigned            color, bgcolor;
 	unsigned            alphalev, alphaback;
 	unsigned            fadetime;
@@ -58,7 +58,7 @@ class osd_state
 	osd_config                      & conf;
 
 protected:
-	service_ptr_t<titleformat_object> format, formatnext;
+	service_ptr_t<titleformat_object> format;//, formatnext;
 
 public:
 	osd_state(osd_config & _conf);

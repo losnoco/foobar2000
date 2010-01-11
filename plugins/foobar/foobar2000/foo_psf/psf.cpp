@@ -710,9 +710,9 @@ public:
 		{
 			if (!load(p_reader, p_info, inherit)) status = io_result_error_data;
 		}
-		catch (t_io_result code)
+		catch(exception_io const & e)
 		{
-			status = code;
+			status = e.get_code();
 		}
 	}
 
@@ -739,7 +739,7 @@ private:
 		DBG("size okay");
 		uLong exe_crc = ((unsigned long*)ptr)[3];
 		r->seek_e(reserved_size + 16, m_abort);
-		if ( ! buf.set_size( exe_size ) ) throw io_result_error_out_of_memory;
+		if ( ! buf.set_size( exe_size ) ) throw exception_io(io_result_error_out_of_memory);
 		ptr = buf.get_ptr();
 		r->read_object_e(ptr, exe_size, m_abort);
 		if (exe_crc != crc32(crc32(0L, Z_NULL, 0), ptr, exe_size)) return 0;
@@ -857,7 +857,7 @@ private:
 			fn += n;
 			DBG(fn);
 			t_io_result status = filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
-			if ( io_result_failed( status ) ) throw status;
+			if ( io_result_failed( status ) ) throw exception_io(status);
 			DBG("g_open success");
 			if (inherit < 0)
 			{
@@ -899,7 +899,7 @@ private:
 				string8 fn(base_path);
 				fn += v;
 				t_io_result status = filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
-				if ( io_result_failed( status ) ) throw status;
+				if ( io_result_failed( status ) ) throw exception_io(status);
 				if ( !load( rdr, internal, 0 ) ) return 0;
 				rdr.release();
 			}
@@ -932,7 +932,7 @@ private:
 					string8 fn(base_path);
 					fn.add_string(n);
 					t_io_result status = filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
-					if ( io_result_failed( status ) ) throw status;
+					if ( io_result_failed( status ) ) throw exception_io(status);
 					if ( !load( rdr, info, 0 ) ) return 0;
 					rdr.release();
 					found = true;
@@ -1001,7 +1001,7 @@ public:
 			if ( io_result_failed( status ) ) return status;
 		}
 
-		try
+		//try
 		{
 			psf_version = load_psf( p_file, p_path, m_info, false, p_abort );
 
@@ -1020,10 +1020,7 @@ public:
 				base_path = f;
 			}
 		}
-		catch (t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_success;
 	}
@@ -1071,16 +1068,13 @@ public:
 
 		m_info.reset();
 
-		try
+		//try
 		{
 			string8 path = base_path;
 			path += filename;
 			err = load_psf( m_file, path, m_info, true, p_abort );
 		}
-		catch ( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		psfemu_pos = 0.;
 
@@ -1270,14 +1264,11 @@ public:
 				psf2fs_delete( psf2fs );
 			}
 
-			try
+			//try
 			{
 				load_psf( m_file, path, temp, true, p_abort );
 			}
-			catch ( t_io_result code )
-			{
-				return code;
-			}
+			//catch(exception_io const & e) {return e.get_code();}
 			psfemu_pos = 0.;
 			if ( startsilence )
 			{
@@ -1495,15 +1486,15 @@ int input_psf::load_psf(const service_ptr_t<file> & r, const char * p_path, file
 	int read, fl;
 	__int64 fl64;
 	fl64 = r->get_size_e(p_abort);
-	if (fl64 > 1<<30) throw io_result_error_data;
+	if (fl64 > 1<<30) throw exception_io(io_result_error_data);
 	fl = (int)fl64;
-	if (fl < 16) throw io_result_error_data;
+	if (fl < 16) throw exception_io(io_result_error_data);
 	r->seek_e(0, p_abort);
 	read = r->read_e(header, 16, p_abort);
 	if ((read < 16) ||
 		(memcmp(header, "PSF", 3)))
 	{
-		throw io_result_error_data;
+		throw exception_io(io_result_error_data);
 	}
 
 	t_io_result status;
@@ -1515,12 +1506,12 @@ int input_psf::load_psf(const service_ptr_t<file> & r, const char * p_path, file
 		if (!full_open)
 		{
 			status = load_exe_recursive(0, r, p_path, info, 0, string8(), -2, refresh, tag_refresh, p_abort);
-			if (io_result_failed(status)) throw status;
+			if (io_result_failed(status)) throw exception_io(status);
 			return 1;
 		}
 		
 		status = load_exe_recursive(psx_state.get_ptr(), r, p_path, info, base_path, errors, -1, refresh, tag_refresh, p_abort);
-		if (io_result_failed(status)) throw status;
+		if (io_result_failed(status)) throw exception_io(status);
 
 		if (refresh || tag_refresh)
 		{
@@ -1551,12 +1542,12 @@ int input_psf::load_psf(const service_ptr_t<file> & r, const char * p_path, file
 		if ((reserved_size < 0) ||
 			(program_size < 0) ||
 			(reserved_size > fl) ||
-			(program_size > fl)) throw io_result_error_data;
+			(program_size > fl)) throw exception_io(io_result_error_data);
 
 		tag_ofs = 16 + reserved_size + program_size;
 
 		if ((tag_ofs < 16) ||
-			(tag_ofs > fl)) throw io_result_error_data;
+			(tag_ofs > fl)) throw exception_io(io_result_error_data);
 
 		info.info_set_int("samplerate", 48000);
 		info.info_set_int("bitspersample", 16);
@@ -1568,7 +1559,7 @@ int input_psf::load_psf(const service_ptr_t<file> & r, const char * p_path, file
 		if (tag_bytes > 0)
 		{
 			mem_block_t<unsigned char> tag;
-			if ( ! tag.set_size( tag_bytes + 6 ) ) throw io_result_error_out_of_memory;
+			if ( ! tag.set_size( tag_bytes + 6 ) ) throw exception_io(io_result_error_out_of_memory);
 			unsigned char * ptr = tag.get_ptr();
 			r->seek_e(tag_ofs, p_abort);
 			if (r->read_e(ptr, 5, p_abort) == 5)
@@ -1580,7 +1571,7 @@ int input_psf::load_psf(const service_ptr_t<file> & r, const char * p_path, file
 						ptr[tag_bytes + 5] = 0;
 						if (info_read(ptr, tag_bytes + 5, info, -1, tag_song_ms, tag_fade_ms) < 0)
 						{
-							throw io_result_error_data;
+							throw exception_io(io_result_error_data);
 						}
 					}
 				}

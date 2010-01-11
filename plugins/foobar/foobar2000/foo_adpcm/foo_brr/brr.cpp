@@ -451,11 +451,11 @@ public:
 private:
 	t_io_result open_internal( abort_callback & p_abort )
 	{
-		try
+		//try
 		{
 			unsigned char hdr[4];
 			m_file->read_object_e( hdr, 4, p_abort );
-			if ( memcmp( hdr, g_signature, 4 ) ) throw io_result_error_data;
+			if ( memcmp( hdr, g_signature, 4 ) ) return io_result_error_data;
 			unsigned flags = readval( m_file, p_abort );
 			stereo = flags & 1;
 			psx = flags & 16;
@@ -475,7 +475,7 @@ private:
 
 			if (size < 0)
 			{
-				if ( ! m_file->can_seek() ) throw io_result_error_data;
+				if ( ! m_file->can_seek() ) return io_result_error_data;
 				t_filesize len64 = m_file->get_size_e( p_abort );
 				if ( len64 < 0 || len64 > (1 << 30) ) return io_result_error_data;
 				size = int( len64 - m_file->get_position_e( p_abort ) );
@@ -485,10 +485,7 @@ private:
 
 			if ( m_file->get_size_e( p_abort ) > 0 && size > m_file->get_size_e( p_abort ) ) return io_result_error_data;
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_success;
 	}
@@ -508,8 +505,7 @@ public:
 		}
 		else if ( sample_buffer.get_size() )
 		{
-			status = m_file->get_position( offset, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			offset = m_file->get_position_e( p_abort );
 			saved_offset = true;
 		}
 
@@ -520,8 +516,7 @@ public:
 
 		if ( saved_offset )
 		{
-			status = m_file->seek( offset, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			m_file->seek_e( offset, p_abort );
 		}
 
 		p_info.set_length( double ( psx ? ( size * 28 / ( stereo ? 32 : 16 ) ) : ( size * 16 / ( stereo ? 18 : 9 ) ) ) / double( rate ) );
@@ -595,8 +590,7 @@ public:
 more:
 		if (p_abort.is_aborting()) return io_result_aborted;
 
-		t_io_result status = m_file->read(ptr, unit, todo, p_abort);
-		if (io_result_failed(status)) return status;
+		todo = m_file->read_e(ptr, unit, p_abort);
 		
 		if (todo) todo = todo * perblock / blocksize;
 		else (end = 1);
@@ -628,10 +622,9 @@ more:
 					}
 					swallow = 0;
 				}
-				status = m_file->read(ptr, unit, todo, p_abort);
-				if (io_result_failed(status)) return status;
+				todo = m_file->read_e(ptr, unit, p_abort);
 				if (todo) todo = todo * perblock / blocksize;
-				else end = 1;
+				else end = 0x80000000;
 			}
 			else
 			{
@@ -648,16 +641,14 @@ more:
 				if (loopstart != ~0)
 				{
 					int offset = start + (loopstart ? (loopstart * blocksize << stereo) : 0);
-					status = m_file->seek(offset, p_abort);
-					if (io_result_failed(status)) return status;
+					m_file->seek_e(offset, p_abort);
 				}
 				else
 				{
 					prev.prev0 = prev.prev1 = 0;
 					if (stereo)
 						prev.prev2 = prev.prev3 = 0;
-					status = m_file->seek(start, p_abort);
-					if (io_result_failed(status)) return status;
+					m_file->seek_e(start, p_abort);
 				}
 			}
 			else
@@ -717,16 +708,13 @@ more:
 
 		if ( sample_buffer.get_size() )
 		{
-			status = m_file->get_position( offset, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			offset = m_file->get_position_e( p_abort );
 			saved_offset = true;
 		}
 
 		unsigned char hdr[4];
-		status = m_file->seek( 0, p_abort );
-		if ( io_result_failed( status ) ) return status;
-		status = m_file->read_object( hdr, 4, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		m_file->seek_e( 0, p_abort );
+		m_file->read_object_e( hdr, 4, p_abort );
 		if ( memcmp( hdr, g_signature, 4 ) ) return io_result_error_data;
 		status = tag_processor::write_apev2( m_file, p_info, p_abort );
 		if ( io_result_failed( status ) ) return status;
@@ -1379,7 +1367,7 @@ public:
 		status = filesystem::g_open( final, fn.get_ptr(), filesystem::open_mode_write_new, p_abort );
 		if ( io_result_failed( status ) ) return status;
 
-		try
+		//try
 		{
 			final->write_object_e( g_signature, 4, p_abort );
 			writeval(final, (psx ? 16 : 0) | 4 | 2 | (stereo ? 1 : 0), p_abort);
@@ -1402,10 +1390,7 @@ public:
 				final->write_object_e(out, 9<<stereo, p_abort);
 			}
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		m_file.release();
 
@@ -1654,7 +1639,7 @@ public:
 		status = filesystem::g_open(final, fn.get_ptr(), filesystem::open_mode_write_new, p_abort);
 		if (io_result_failed(status)) return status;
 
-		try
+		//try
 		{
 			m_file->seek_e(0, p_abort);
 
@@ -1702,10 +1687,7 @@ public:
 			}
 			while (sz == 2304);
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		m_file.release();
 		have_info = false;

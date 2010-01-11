@@ -193,3 +193,7 @@ bool metadb::g_get_random_handle(metadb_handle_ptr & p_out) {
 
 	return false;
 }
+
+void metadb::handle_create_e(metadb_handle_ptr & p_out,const playable_location & p_location) {
+	if (!handle_create(p_out,p_location)) throw std::bad_alloc();
+}

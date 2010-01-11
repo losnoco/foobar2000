@@ -226,7 +226,7 @@ public:
 		{
 			unsigned wanted;
 
-			try
+			//try
 			{
 				LogCount = 0;
 				p_file->read_object_e(&LogCount, 2, p_abort);
@@ -246,8 +246,8 @@ public:
 					{
 						unsigned char blah[9];
 						p_file->read_object_e(&blah, 9, p_abort);
-						if (blah[0] != 'F' || blah[1] != 26) throw io_result_error_data;
-						if (!(blah[2] | blah[3] | blah[4] | blah[5] | blah[6] | blah[7] | blah[8])) throw io_result_error_data;
+						if (blah[0] != 'F' || blah[1] != 26) return io_result_error_data;
+						if (!(blah[2] | blah[3] | blah[4] | blah[5] | blah[6] | blah[7] | blah[8])) return io_result_error_data;
 						extended = 1;
 						LogCount = blah[2] | (blah[3] << 8) | (blah[4] << 16) | (blah[5] << 24);
 						TicksPerSecond = (float)(blah[6] | (blah[7] << 8));
@@ -261,7 +261,7 @@ public:
 				}
 
 				if ( ! imf_data.set_size( LogCount ) )
-					throw io_result_error_out_of_memory;
+					return io_result_error_out_of_memory;
 
 				pLog = imf_data.get_ptr();
 
@@ -270,10 +270,7 @@ public:
 
 				p_file->read_object_e(pLog, wanted, p_abort);
 			}
-			catch (t_io_result code)
-			{
-				return code;
-			}
+			//catch(exception_io const & e) {return e.get_code();}
 
 			if (!extended)
 			{

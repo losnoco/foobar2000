@@ -12,11 +12,11 @@ public:
 	bool is_open();
 	t_io_result run(audio_chunk & p_chunk,abort_callback & p_abort);
 	t_io_result seek(double seconds,abort_callback & p_abort);
-	bool can_seek();
+	t_io_result can_seek(bool & p_value);
 	void set_full_buffer(t_filesize val);
-	void on_idle(abort_callback & p_abort);
-	bool get_dynamic_info(file_info & p_out,double & p_timestamp_delta);
-	bool get_dynamic_info_track(file_info & p_out,double & p_timestamp_delta);
+	t_io_result on_idle(abort_callback & p_abort);
+	t_io_result get_dynamic_info(file_info & p_out,double & p_timestamp_delta,bool & p_changed);
+	t_io_result get_dynamic_info_track(file_info & p_out,double & p_timestamp_delta,bool & p_changed);
 
 	//! Retrieves path of currently open file.
 	const char * get_path() const;

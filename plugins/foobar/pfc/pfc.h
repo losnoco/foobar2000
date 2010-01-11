@@ -144,6 +144,7 @@ inline t_ret __safe_cast(t_param p_param) {
 #include "other.h"
 #include "chainlist.h"
 #include "ref_counter.h"
+#include "rcptr.h"
 #include "com_ptr_t.h"
 #include "string_conv.h"
 #endif //___PFC_H___

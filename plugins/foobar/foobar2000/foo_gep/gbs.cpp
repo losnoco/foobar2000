@@ -22,26 +22,23 @@ public:
 
 		foobar_File_Reader rdr( m_file, p_abort );
 
-		try
+		//try
 		{
 			ERRCHK( rdr.read( & m_header, sizeof( m_header ) ) );
 
 			if ( 0 != memcmp( m_header.tag, "GBS", 3 ) )
 			{
 				console::print("Not a GBS file");
-				throw io_result_error_data;
+				return io_result_error_data;
 			}
 
 			if ( m_header.vers != 1 )
 			{
 				console::print("Unsupported GBS format");
-				throw io_result_error_data;
+				return io_result_error_data;
 			}
 		}
-		catch ( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_success;
 	}
@@ -90,14 +87,14 @@ public:
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( m_header, rdr ) );
 			}
-			catch ( t_io_result code )
+			catch(...)
 			{
 				if ( emu )
 				{
 					delete emu;
 					this->emu = emu = NULL;
 				}
-				return code;
+				throw;
 			}
 
 			m_file.release();

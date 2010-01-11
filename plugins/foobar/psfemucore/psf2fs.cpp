@@ -111,27 +111,15 @@ static void errormessageadd(struct PSF2FS *fs, const char *message) {
   e[l-1] = 0;
 }
 
-static void errormessageaddioresult(struct PSF2FS *fs, t_io_result status) {
-  const char *e;
-  switch (status) {
-    case io_result_success:                 e = "success";           break;
-    case io_result_eof:                     e = "end of file";       break;
-    case io_result_error_generic:           e = "generic error";     break;
-    case io_result_error_not_found:         e = "target not found";  break;
-    case io_result_error_denied:            e = "access denied";     break;
-    case io_result_error_data:              e = "data error";        break;
-    case io_result_error_sharing_violation: e = "sharing violation"; break;
-    case io_result_aborted:                 e = "operation aborted"; break;
-    default: return;
-  }
-  errormessageadd(fs, e);
-}
-
-static void errormessagethrown(struct PSF2FS *fs, const char *fn, t_io_result status) {
+static void errormessagethrown(struct PSF2FS *fs, const char *fn, const char *message) {
   errormessageadd(fs, "exception thrown in");
   errormessageadd(fs, fn);
   errormessageadd(fs, " - ");
-  errormessageaddioresult(fs, status);
+  errormessageadd(fs, message );
+}
+
+static void errormessagethrown(struct PSF2FS *fs, const char *fn, t_io_result status) {
+  errormessagethrown( fs, fn, io_result_get_message( status ) );
 }
 
 static void errormessage(struct PSF2FS *fs, const char *message) {
@@ -269,8 +257,16 @@ static struct DIR_ENTRY *makearchivedir(
     }
   }
   }
-  catch (t_io_result code) {
-    errormessagethrown(fs, "makearchivedir", code);
+  catch(exception_io const & e) {
+    errormessagethrown(fs, "makearchivedir", e.get_code());
+    goto error;
+  }
+  catch(std::exception const & e) {
+    errormessagethrown(fs, "makearchivedir", e.what());
+    goto error;
+  }
+  catch(...) {
+    errormessagethrown(fs, "makearchivedir", "unknown");
     goto error;
   }
 success:
@@ -402,7 +398,7 @@ dofile:
     errormessageadd(fs, "Unable to open ");
 	errormessageadd(fs, path);
 	errormessageadd(fs, " - ");
-	errormessageaddioresult(fs, status);
+	errormessageadd(fs, io_result_get_message( status ) );
     goto error;
   }
   status = f->get_size(fl64, *fs->p_abort);
@@ -411,7 +407,7 @@ dofile:
 	  errormessageadd(fs, "Unable to query size for ");
 	  errormessageadd(fs, path);
 	  errormessageadd(fs, " - ");
-	  errormessageaddioresult(fs, status);
+	  errormessageadd(fs, io_result_get_message( status ) );
 	  goto error;
   }
   if (fl64 > 1<<30)
@@ -427,7 +423,7 @@ dofile:
     errormessageadd(fs, "Unable to read ");
 	errormessageadd(fs, path);
 	errormessageadd(fs, " - ");
-	errormessageaddioresult(fs, status);
+	errormessageadd(fs, io_result_get_message( status ) );
     goto error;
   }
   if(
@@ -474,7 +470,7 @@ dofile:
   if(io_result_failed(status)) {
     errormessageadd(fs, "Error reading tag");
 	errormessageadd(fs, " - ");
-	errormessageaddioresult(fs, status);
+	errormessageadd(fs, io_result_get_message( status ) );
     goto error;
   }
   f.release();
@@ -574,22 +570,21 @@ static int virtual_read(struct PSF2FS *fs, struct DIR_ENTRY *entry, int offset, 
       if(!zdata) goto outofmemory;
 	  status = filesystem::g_open(f, entry->source->name, filesystem::open_mode_read, *fs->p_abort);
       if(io_result_failed(status)) {
-	    errormessage(fs, "");
-        errormessageaddioresult(fs, status);
+	    errormessage(fs, io_result_get_message( status ) );
         goto error;
       }
 	  status = f->seek(16 + block_zofs, *fs->p_abort);
 	  if (io_result_failed(status)) {
 	    errormessage(fs, "Error seeking");
 		errormessageadd(fs, " - ");
-		errormessageaddioresult(fs, status);
+		errormessageadd(fs, io_result_get_message( status ) );
 		goto error;
 	  }
 	  status = f->read_object(zdata, block_zsize, *fs->p_abort);
       if(io_result_failed(status)) {
         errormessage(fs, "Error reading virtual block");
 		errormessageadd(fs, " - ");
-		errormessageaddioresult(fs, status);
+		errormessageadd(fs, io_result_get_message( status ) );
         goto error;
       }
 	  f.release();

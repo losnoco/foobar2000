@@ -2,24 +2,25 @@
 
 static bool grab_items_by_path(list_base_t<metadb_handle_ptr> & p_out,const char * p_path,abort_callback & p_abort)
 {
-	string8 path;
-	filesystem::g_get_canonical_path(p_path,path);
-	p_out.remove_all();
-	service_ptr_t<input_info_reader> reader;
-	if (io_result_failed(input_entry::g_open_for_info_read(reader,0,path,p_abort))) return false;
+	try {
+		string8 path;
+		filesystem::g_get_canonical_path(p_path,path);
+		p_out.remove_all();
+		service_ptr_t<input_info_reader> reader;
+		exception_io::g_test( input_entry::g_open_for_info_read(reader,0,path,p_abort) );
 
-	static_api_ptr_t<metadb> l_metadb;
-	
-	const unsigned count = reader->get_subsong_count();
-	for(unsigned n=0;n<count;n++) {
-		if (p_abort.is_aborting()) return false;
-		metadb_handle_ptr ptr;
-		if (l_metadb->handle_create(ptr,make_playable_location(path,reader->get_subsong(n)))) {
-			p_out.add_item(ptr);
+		static_api_ptr_t<metadb> l_metadb;
+		
+		const unsigned count = reader->get_subsong_count_e();
+		for(unsigned n=0;n<count;n++) {
+			p_abort.check_e();;
+			metadb_handle_ptr ptr;
+			l_metadb->handle_create_e(ptr,make_playable_location(path,reader->get_subsong_e(n)));
+			p_out.add_item_e(ptr);
 		}
-	}
 
-	return p_out.get_count() > 0;
+		return p_out.get_count() > 0;
+	} catch(std::exception const &) {return false;}
 }
 
 file_move_helper::file_move_helper() {}

@@ -1,7 +1,7 @@
 #include "config.h"
 
 const char default_format[] = "$rgb(0,255,0,0,0,0)[%artist% - ]$if(%title%,['['%album%[ #[%disc%/]$num(%tracknumber%,2)]'] ']%title%,%_filename%)[ '['%_time_elapsed%']']$if(%_ispaused%,' [paused]')\r\n[$char(10)$rgb(35,169,207,16,43,75)Next: %_next%]";
-const char default_format_next[] = "[%artist% - ]$if2(%title%,%_filename%)";
+//const char default_format_next[] = "[%artist% - ]$if2(%title%,%_filename%)";
 
 inline static t_font_description get_def_font()
 {
@@ -30,7 +30,7 @@ osd_config::osd_config()
 		vsteps = 54;
 		vmin = -4000;
 		format = default_format;
-		formatnext = default_format_next;
+		//formatnext = default_format_next;
 		color = RGB(0, 255, 0);
 		bgcolor = 0;
 		alphalev = 192;
@@ -55,7 +55,7 @@ const osd_config & osd_config::operator =(const osd_config & in)
 	vsteps = in.vsteps;
 	vmin = in.vmin;
 	format = in.format;
-	formatnext = in.formatnext;
+	//formatnext = in.formatnext;
 	color = in.color;
 	bgcolor = in.bgcolor;
 	alphalev = in.alphalev;
@@ -76,5 +76,5 @@ void osd_state::on_change()
 	static_api_ptr_t<titleformat_compiler> tf;
 
 	tf->compile_safe(format, conf.format);
-	tf->compile_safe(formatnext, conf.formatnext);
+	//tf->compile_safe(formatnext, conf.formatnext);
 }

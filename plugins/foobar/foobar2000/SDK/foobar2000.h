@@ -41,6 +41,7 @@ typedef const char * pcchar;
 #include "dsp_manager.h"
 #include "initquit.h"
 #include "input.h"
+#include "input_impl.h"
 #include "menu_item.h"
 #include "menu_manager.h"
 #include "menu_helpers.h"

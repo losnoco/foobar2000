@@ -177,8 +177,7 @@ public:
 
 		if ( state )
 		{
-			t_io_result status = m_file->get_position( offset, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			offset = m_file->get_position_e( p_abort );
 			saved_offset = true;
 		}
 
@@ -188,7 +187,7 @@ public:
 
 		uint8_t * ptr = buffer.get_ptr();
 
-		try
+		//try
 		{
 			m_file->read_object_e(ptr, 7, p_abort);
 
@@ -229,10 +228,7 @@ public:
 			p_info.info_set_int( "channels", nch[ flags & A52_CHANNEL_MASK ] + !!( flags & A52_LFE ) );
 			p_info.info_set_int( "samplerate", srate );
 		}
-		catch ( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_success;
 	}
@@ -258,7 +254,7 @@ public:
 
 		t_filesize end;
 
-		try
+		//try
 		{
 			m_file->seek_e( 0, p_abort );
 			m_file->read_object_e(ptr, 7, p_abort);
@@ -292,10 +288,7 @@ public:
 				}
 			}
 		}
-		catch ( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		do_dynrng = !! cfg_dynrng;
 
@@ -324,7 +317,7 @@ public:
 
 			uint8_t * ptr = buffer.get_ptr();
 
-			try
+			//try
 			{
 				m_file->read_object_e( ptr, 7, p_abort );
 				DWORD bs = a52_syncinfo( ptr, &flags, &srate, &bitrate );
@@ -354,10 +347,7 @@ public:
 
 				m_file->read_object_e( ptr + 7, bs - 7, p_abort );
 			}
-			catch ( t_io_result code )
-			{
-				return code;
-			}
+			//catch(exception_io const & e) {return e.get_code();}
 
 			if ( a52_frame( state, ptr, & flags, & level, bias) ) return io_result_error_data;
 			if ( ! do_dynrng ) a52_dynrng(state, NULL, NULL);
@@ -596,8 +586,7 @@ public:
 		t_uint64 dest_skip = dest_sample % 1536;
 		t_uint64 dest_offset = ( dest_sample - dest_skip ) * ( bitrate >> 3 ) / srate;
 		
-		t_io_result status = m_file->seek( dest_offset, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		m_file->seek_e( dest_offset, p_abort );
 
 		skip_samples = t_uint32( dest_skip );
 
@@ -635,8 +624,7 @@ public:
 
 		if ( state )
 		{
-			status = m_file->get_position( offset, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			offset = m_file->get_position_e( p_abort );
 			saved_offset = true;
 		}
 
@@ -645,7 +633,7 @@ public:
 
 		if ( saved_offset )
 		{
-			return m_file->seek( offset, p_abort );
+			m_file->seek_e( offset, p_abort );
 		}
 		return io_result_success;
 	}

@@ -14,7 +14,7 @@
 
 // Borrowed from NSF_File.cpp
 #define SAFE_DELETE(p) { if(p){ delete[] p; p = NULL; } }
-#define SAFE_NEW(p,t,s) p = new t[s]; if(!p) throw io_result_error_out_of_memory; ZeroMemory(p,sizeof(t) * s)
+#define SAFE_NEW(p,t,s) p = new t[s]; if(!p) throw exception_io(io_result_error_out_of_memory); ZeroMemory(p,sizeof(t) * s)
 
 // Info recycled by the tag writer and manipulated by the editor
 static const char field_length[]="nsf_length";
@@ -89,7 +89,7 @@ static void rename_file(const char * src, const char * ext, string_base & out, a
 			int rv = uMessageBox(core_api::get_main_window(),msg,0,MB_ICONERROR|MB_ABORTRETRYIGNORE);
 			if (rv==IDABORT)
 			{
-				throw status;
+				throw exception_io(status);
 			}
 			else if (rv==IDRETRY)
 			{
@@ -228,7 +228,7 @@ public:
 				if ( !emu )
 				{
 					console::info("Out of memory");
-					throw io_result_error_out_of_memory;
+					return io_result_error_out_of_memory;
 				}
 
 				this->emu = emu;
@@ -236,14 +236,14 @@ public:
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( header, rdr ) );
 			}
-			catch(t_io_result code)
+			catch(...)
 			{
 				if ( emu )
 				{
 					delete emu;
 					this->emu = emu = NULL;
 				}
-				return code;
+				throw;
 			}
 		}
 
@@ -261,7 +261,7 @@ public:
 	{
 		const char * ptr;
 
-		try
+		//try
 		{
 			field_set(artist, nsf.szArtist);
 			field_set(game, nsf.szGameTitle);
@@ -322,7 +322,7 @@ public:
 			if (!nsf.pTrackTime && tag_song_ms >= 0)
 			{
 				nsf.pTrackTime = new int[nsf.nTrackCount];
-				if (!nsf.pTrackTime) throw io_result_error_generic;
+				if (!nsf.pTrackTime) return io_result_error_out_of_memory;
 				memset(nsf.pTrackTime, -1, nsf.nTrackCount * 4);
 			}
 			if (nsf.pTrackTime)
@@ -340,7 +340,7 @@ public:
 			if (!nsf.pTrackFade && tag_fade_ms >= 0)
 			{
 				nsf.pTrackFade = new int[nsf.nTrackCount];
-				if (!nsf.pTrackFade) throw io_result_error_generic;
+				if (!nsf.pTrackFade) return io_result_error_out_of_memory;
 				memset(nsf.pTrackFade, -1, nsf.nTrackCount * 4);
 			}
 			if (nsf.pTrackFade)
@@ -374,10 +374,7 @@ public:
 				nsf.nPlaylistSize = count;
 			}
 		}
-		catch ( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_success;
 	}
@@ -421,13 +418,13 @@ public:
 			if ( ! nsf.bIsExtended && nsf.pPlaylist && nsf.nPlaylistSize ) nsf.bIsExtended = true;
 		}
 
-		try
+		//try
 		{
 			m_file->seek_e( 0, p_abort );
 			m_file->set_eof_e( p_abort );
 
 			t_io_result status = nsf.SaveFile( m_file, p_abort );
-			if ( io_result_failed( status ) ) throw status;
+			if ( io_result_failed( status ) ) return status;
 
 			m_stats = m_file->get_stats_e( p_abort );
 
@@ -459,10 +456,7 @@ public:
 				}
 			}
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_success;
 	}

@@ -172,10 +172,7 @@ public:
 private:
 	t_io_result open_internal( abort_callback & p_abort )
 	{
-		t_filesize len;
-		
-		t_io_result status = m_file->get_size( len, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		t_filesize len = m_file->get_size_e( p_abort );
 
 		if ( len < 4 ) return io_result_error_data;
 
@@ -184,26 +181,23 @@ private:
 
 		unsigned char * ptr = data_buffer.get_ptr();
 
-		try
+		//try
 		{
 			static const unsigned char signature[] = { '(', 'c', ')', 'C', 'R', 'I' };
 			m_file->read_object_e(ptr, 0x4, p_abort);
-			if ( ptr[0] != 0x80 ) throw io_result_error_data;
+			if ( ptr[0] != 0x80 ) return io_result_error_data;
 			offset = ( read_long( ptr ) & ~0x80000000 ) + 4;
-			if ( t_filesize( offset ) >= len ) throw io_result_error_data;
-			if ( offset < 12 + 4 + 6 ) throw io_result_error_data; // need at least srate/size/signature
+			if ( t_filesize( offset ) >= len ) return io_result_error_data;
+			if ( offset < 12 + 4 + 6 ) return io_result_error_data; // need at least srate/size/signature
 			if ( ! data_buffer.check_size( offset ) )
-				throw io_result_error_out_of_memory;
+				return io_result_error_out_of_memory;
 			ptr = data_buffer.get_ptr();
 			m_file->read_object_e( ptr + 4, offset - 4, p_abort );
-			if ( memcmp( ptr + offset - 6, signature, 6 ) ) throw io_result_error_data;
+			if ( memcmp( ptr + offset - 6, signature, 6 ) ) return io_result_error_data;
 			nch = ptr[7];
-			if ( nch < 1 || nch > 2 ) throw io_result_error_data;
+			if ( nch < 1 || nch > 2 ) return io_result_error_data;
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		srate = read_long( ptr + 8 );
 		size = read_long( ptr + 12 );
@@ -309,13 +303,14 @@ public:
 
 		done = 0;
 
-		try {
+		//try
+		{
 more:
 			while (!p_abort.is_aborting() && done < 32 * 32)
 			{
 				//dprintf(_T("reading\n"));
 				read = m_file->read_e(in, 18 * 32 * nch, p_abort);
-				if (read < 18 * nch) throw io_result_error_data;
+				if (read < 18 * nch) return io_result_error_data;
 
 				//dprintf(_T("decoding %u bytes\n"),read);
 				for (n = 0; !p_abort.is_aborting() && (pos < size) && (done < 32 * 32) && ((read - n) >= (18 * nch)); n += 18 * nch, pos += 32)
@@ -359,7 +354,7 @@ more:
 				if (pos >= size) break;
 			}
 
-			if (p_abort.is_aborting()) throw io_result_aborted;
+			if (p_abort.is_aborting()) return io_result_aborted;
 
 			if (loop_start != ~0)
 			{
@@ -413,10 +408,7 @@ more:
 				return io_result_success;
 			}
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_error_generic;
 	}

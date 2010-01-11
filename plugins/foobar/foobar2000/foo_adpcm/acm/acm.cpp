@@ -67,15 +67,12 @@ private:
 		m_unpacker = new CACMUnpacker;
 		if (!m_unpacker) return io_result_error_out_of_memory;
 
-		try
+		//try
 		{
 			m_abort = &p_abort;
 			if (!m_unpacker->init( reader_callback, (int)this, nch, srate, size) ) return io_result_error_data;
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_success;
 	}
@@ -128,7 +125,7 @@ public:
 
 		int * out = data_buffer.get_ptr();
 
-		try
+		//try
 		{
 			m_abort = &p_abort;
 
@@ -152,10 +149,7 @@ public:
 				}
 			} while(!done);
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		if (done)
 		{
@@ -187,21 +181,17 @@ public:
 		pos = 0;
 		delete m_unpacker;
 
-		t_io_result status = m_file->seek( 0, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		m_file->seek_e( 0, p_abort );
 
 		m_unpacker = new CACMUnpacker;
 		if ( ! m_unpacker ) return io_result_error_out_of_memory;
 
-		try
+		//try
 		{
 			m_abort = &p_abort;
 			if ( ! m_unpacker->init( reader_callback, (int) this, nch, srate, size ) ) return io_result_error_data;
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		return io_result_success;
 	}

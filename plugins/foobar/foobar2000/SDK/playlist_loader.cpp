@@ -69,7 +69,7 @@ t_io_result playlist_loader::g_load_playlist(const char * p_filename,playlist_lo
 	return io_result_error_data;
 }
 
-static t_io_result track_indexer__g_get_tracks(const char * p_path,const service_ptr_t<file> & p_reader,const t_filestats & p_stats,playlist_loader_callback::t_entry_type p_type,playlist_loader_callback & p_callback,bool & p_got_input)
+static void track_indexer__g_get_tracks_e(const char * p_path,const service_ptr_t<file> & p_reader,const t_filestats & p_stats,playlist_loader_callback::t_entry_type p_type,playlist_loader_callback & p_callback,bool & p_got_input)
 {
 	if (p_reader.is_empty() && filesystem::g_is_remote(p_path))
 	{
@@ -78,47 +78,46 @@ static t_io_result track_indexer__g_get_tracks(const char * p_path,const service
 			p_got_input = true;
 			p_callback.on_entry(handle,p_type,p_stats,true);
 		}
-		return io_result_success;
+		return;
 	}
 
-	t_io_result status;
 	service_ptr_t<input_info_reader> instance;
-	status = input_entry::g_open_for_info_read(instance,p_reader,p_path,p_callback);
-	if (io_result_failed(status)) return status;
+	exception_io::g_test( input_entry::g_open_for_info_read(instance,p_reader,p_path,p_callback) );
 
 	t_filestats stats;
-	status = instance->get_file_stats(stats,p_callback);
-	if (io_result_failed(status)) return status;
+	exception_io::g_test( instance->get_file_stats(stats,p_callback) );
 
-	unsigned subsong,subsong_count = instance->get_subsong_count();
+	unsigned subsong,subsong_count;
+	exception_io::g_test( instance->get_subsong_count(subsong_count) );
 	for(subsong=0;subsong<subsong_count;subsong++)
 	{
-		if (p_callback.is_aborting()) return io_result_aborted;
+		p_callback.check_e();
 		metadb_handle_ptr handle;
-		if (p_callback.handle_create(handle,make_playable_location(p_path,instance->get_subsong(subsong))))
+		t_uint32 index;
+		exception_io::g_test( instance->get_subsong(subsong,index) );
+		if (!p_callback.handle_create(handle,make_playable_location(p_path,index)))
+			throw exception_io(io_result_error_out_of_memory);
+
+		p_got_input = true;
+		if (p_callback.want_info(handle,p_type,stats,true))
 		{
-			p_got_input = true;
-			if (p_callback.want_info(handle,p_type,stats,true))
-			{
-				file_info_impl info;
-				status = instance->get_info(handle->get_subsong_index(),info,p_callback);
-				if (io_result_failed(status)) return status;
-				p_callback.on_entry_info(handle,p_type,stats,info,true);
-			}
-			else
-			{
-				p_callback.on_entry(handle,p_type,stats,true);
-			}
+			file_info_impl info;
+			exception_io::g_test( instance->get_info(handle->get_subsong_index(),info,p_callback) );
+			p_callback.on_entry_info(handle,p_type,stats,info,true);
+		}
+		else
+		{
+			p_callback.on_entry(handle,p_type,stats,true);
 		}
 	}
-	return io_result_success;
 }
 
 
 static t_io_result track_indexer__g_get_tracks_wrap(const char * p_path,const service_ptr_t<file> & p_reader,const t_filestats & p_stats,playlist_loader_callback::t_entry_type p_type,playlist_loader_callback & p_callback)
 {
 	bool got_input = false;
-	t_io_result status = track_indexer__g_get_tracks(p_path,p_reader,p_stats,p_type,p_callback,got_input);
+	t_io_result status = io_result_success;
+	try { track_indexer__g_get_tracks_e(p_path,p_reader,p_stats,p_type,p_callback,got_input); } catch(exception_io const & e) {status = e.get_code();}
 	if (io_result_failed(status) && !got_input && !p_callback.is_aborting())
 	{
 		if (p_type == playlist_loader_callback::entry_user_requested)

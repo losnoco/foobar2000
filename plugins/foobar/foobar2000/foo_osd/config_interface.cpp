@@ -141,7 +141,7 @@ class preferences_page_osd : public preferences_page
 
 		w = GetDlgItem(hTab, IDC_CONFIG3);
 		uSetDlgItemText(w, IDC_FORMAT, c.format);
-		uSetDlgItemText(w, IDC_FORMATNEXT, c.formatnext);
+		//uSetDlgItemText(w, IDC_FORMATNEXT, c.formatnext);
 		SetDlgItemTextA(w, IDC_CCF, "$rgb(0,0,0)");
 		SetDlgItemTextA(w, IDC_CC, "$rgb()");
 
@@ -238,7 +238,7 @@ class preferences_page_osd : public preferences_page
 
 		w = GetDlgItem(hTab, IDC_CONFIG3);
 		c.format = string_utf8_from_window(w, IDC_FORMAT);
-		c.formatnext = string_utf8_from_window(w, IDC_FORMATNEXT);
+		//c.formatnext = string_utf8_from_window(w, IDC_FORMATNEXT);
 
 
 		w = GetDlgItem(hTab, IDC_CONFIG4);
@@ -620,7 +620,7 @@ class preferences_page_osd : public preferences_page
 					}
 					break;
 
-				case MAKEID(IDC_CONFIG3, IDC_RESET_NEXT):
+				/*case MAKEID(IDC_CONFIG3, IDC_RESET_NEXT):
 					{
 						HWND w = GetDlgItem(GetDlgItem(GetDlgItem(wnd, IDC_TAB), IDC_CONFIG3), IDC_FORMATNEXT);
 						string_utf8_from_window fmt(w);
@@ -631,7 +631,7 @@ class preferences_page_osd : public preferences_page
 							on_modified(ctx, wnd);
 						}
 					}
-					break;
+					break;*/
 
 				case MAKEID(IDC_CONFIG3, IDC_CCP):
 					{
@@ -689,7 +689,7 @@ class preferences_page_osd : public preferences_page
 				case MAKEID(IDC_CONFIG2, IDC_FADETIME):
 				case MAKEID(IDC_CONFIG2, IDC_DECAY):
 				case MAKEID(IDC_CONFIG3, IDC_FORMAT):
-				case MAKEID(IDC_CONFIG3, IDC_FORMATNEXT):
+				//case MAKEID(IDC_CONFIG3, IDC_FORMATNEXT):
 				case MAKEID(IDC_CONFIG4, IDC_VWIDTH):
 				case MAKEID(IDC_CONFIG4, IDC_VHEIGHT):
 				case MAKEID(IDC_CONFIG4, IDC_VSTEPS):

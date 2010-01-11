@@ -1752,12 +1752,12 @@ t_io_result unpack_j2b( service_ptr_t<file> & p_out, const service_ptr_t<file> &
 			header[ 4 ] != 0xDE || header[ 5 ] != 0xAD ||
 			( ( header[ 6 ] != 0xBE || header[ 7 ] != 0xAF ) &&
 			( header[ 6 ] != 0xBA || header[ 7 ] != 0xBE ) ) )
-			throw io_result_error_data;
+			throw exception_io(io_result_error_data);
 
 		t_uint32 file_length;
 		p_source->read_lendian_e_t( file_length, p_abort );
 
-		if ( file_length < 12 ) throw io_result_error_data;
+		if ( file_length < 12 ) throw exception_io(io_result_error_data);
 
 		t_uint32 checksum;
 		t_uint32 len_compressed;
@@ -1767,37 +1767,42 @@ t_io_result unpack_j2b( service_ptr_t<file> & p_out, const service_ptr_t<file> &
 		p_source->read_lendian_e_t( len_compressed, p_abort );
 		p_source->read_lendian_e_t( len_uncompressed, p_abort );
 
-		if ( len_compressed + 8 > file_length ) throw io_result_error_data;
+		if ( len_compressed + 8 > file_length ) throw exception_io(io_result_error_data);
 
 		mem_block_t< unsigned char > compressed;
-		if ( ! compressed.set_size( len_compressed ) ) throw io_result_error_out_of_memory;
+		if ( ! compressed.set_size( len_compressed ) ) throw exception_io(io_result_error_out_of_memory);
 
 		p_source->read_object_e( compressed.get_ptr(), len_compressed, p_abort );
 
 		if ( crc32( 0, compressed.get_ptr(), len_compressed ) != checksum )
-			throw io_result_error_data;
+			throw exception_io(io_result_error_data);
 
 		uncompressed = ( unsigned char * ) malloc( len_uncompressed );
-		if ( ! uncompressed ) throw io_result_error_out_of_memory;
+		if ( ! uncompressed ) throw exception_io(io_result_error_out_of_memory);
 
 		uLong data_uncompressed = len_uncompressed;
 
 		int z_err = uncompress( uncompressed, & data_uncompressed, compressed.get_ptr(), len_compressed );
 		if ( z_err != Z_OK )
 		{
-			if ( z_err == Z_MEM_ERROR ) throw io_result_error_out_of_memory;
-			else return io_result_error_data;
+			if ( z_err == Z_MEM_ERROR ) throw exception_io(io_result_error_out_of_memory);
+			else throw exception_io(io_result_error_data);
 		}
 
 		if ( ! reader_membuffer::g_create_e( p_out, uncompressed, data_uncompressed, p_source->get_timestamp_e( p_abort ) ) )
 		{
-			throw io_result_error_out_of_memory;
+			throw exception_io(io_result_error_out_of_memory);
 		}
 	}
-	catch ( t_io_result code )
+	catch(exception_io const & e)
 	{
 		if ( uncompressed ) free( uncompressed );
-		return code;
+		return e.get_code();
+	}
+	catch(...)
+	{
+		if ( uncompressed ) free( uncompressed );
+		throw;
 	}
 
 	return io_result_success;
@@ -1866,7 +1871,7 @@ public:
 
 		bool read_tag;
 
-		try
+		//try
 		{
 			service_ptr_t<file> m_unpack;
 
@@ -1895,24 +1900,21 @@ public:
 			m_stats = m_file->get_stats_e( p_abort );
 			if ( m_stats.m_size < 1 || m_stats.m_size > ( 1UL << 30 ) )
 			{
-				throw io_result_error_data;
+				return io_result_error_data;
 			}
 
 			size = unsigned( m_stats.m_size );
 
 			// OutputDebugString("allocating buffer");
 			if ( ! buffer.set_size( size ) )
-				throw io_result_error_out_of_memory;
+				return io_result_error_out_of_memory;
 
 			ptr = buffer.get_ptr();
 
 			// OutputDebugString("reading file");
 			m_file->read_object_e( ptr, size, p_abort );
 		}
-		catch( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		srate = cfg_samplerate;
 		delta = 65536.f / float( srate );
@@ -2030,17 +2032,14 @@ public:
 		no_loop = ( p_flags & input_flag_no_looping ) || ( loop_count < 0 );
 		start_order = p_subsong;
 
-		try
+		//try
 		{
 			const t_uint8 * ptr = buffer.get_ptr();
 			unsigned size = buffer.get_size();
 			duh = g_open_module( ptr, size, extension, start_order, is_it, is_dos );
 			if ( ! duh ) return io_result_error_data;
 		}
-		catch ( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		if ( ! open2() )
 			return io_result_error_data;

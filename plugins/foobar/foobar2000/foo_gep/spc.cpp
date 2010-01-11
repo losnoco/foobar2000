@@ -252,7 +252,7 @@ public:
 
 		foobar_File_Reader rdr(m_file, p_abort);
 
-		try
+		//try
 		{
 			ERRCHK( rdr.read( &m_header, sizeof(m_header) ) );
 
@@ -341,7 +341,7 @@ public:
 						voice_mask = tag.bMute;
 					}
 				}
-				catch(t_io_result /*code*/)
+				catch(exception_io const & /*code*/)
 				{
 					//return code;
 					// failed to read id666 tag? do nothing...
@@ -357,10 +357,7 @@ public:
 				tag_fade_ms = cfg_default_fade;
 			}
 		}
-		catch ( t_io_result code )
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		bool retagging = p_reason == input_open_info_write;
 
@@ -404,14 +401,14 @@ public:
 				ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
 				ERRCHK( emu->load( m_header, rdr ) );
 			}
-			catch ( t_io_result code )
+			catch(...)
 			{
 				if ( emu )
 				{
 					delete emu;
 					this->emu = emu = NULL;
 				}
-				return code;
+				throw;
 			}
 
 			if ( ! retagging ) m_file.release();
@@ -426,15 +423,12 @@ public:
 
 	virtual t_io_result set_info(const service_ptr_t<file> & p_reader,const playable_location & p_location,file_info & p_info,abort_callback & p_abort)
 	{
-		try
+		//try
 		{
 			m_file->seek_e( 66048, p_abort );
 			m_file->set_eof_e( p_abort );
 		}
-		catch(t_io_result code)
-		{
-			return code;
-		}
+		//catch(exception_io const & e) {return e.get_code();}
 
 		m_info.copy( p_info );
 
