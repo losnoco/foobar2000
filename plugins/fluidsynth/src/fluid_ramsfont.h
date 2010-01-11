@@ -42,7 +42,7 @@ extern "C" {
  */
 
 int fluid_ramsfont_sfont_delete(fluid_sfont_t* sfont);
-char* fluid_ramsfont_sfont_get_name(fluid_sfont_t* sfont);
+wchar_t* fluid_ramsfont_sfont_get_name(fluid_sfont_t* sfont);
 fluid_preset_t* fluid_ramsfont_sfont_get_preset(fluid_sfont_t* sfont, unsigned int bank, unsigned int prenum);
 void fluid_ramsfont_sfont_iteration_start(fluid_sfont_t* sfont);
 int fluid_ramsfont_sfont_iteration_next(fluid_sfont_t* sfont, fluid_preset_t* preset);
@@ -60,7 +60,7 @@ int fluid_rampreset_preset_noteon(fluid_preset_t* preset, fluid_synth_t* synth, 
  */
 struct _fluid_ramsfont_t
 {
-  char name[21];                        /* the name of the soundfont */
+  wchar_t name[21];                        /* the name of the soundfont */
   fluid_list_t* sample;    /* the samples in this soundfont */
   fluid_rampreset_t* preset;    /* the presets of this soundfont */
 
@@ -71,7 +71,7 @@ struct _fluid_ramsfont_t
 /* interface */
 fluid_ramsfont_t* new_fluid_ramsfont(void);
 int delete_fluid_ramsfont(fluid_ramsfont_t* sfont);
-char* fluid_ramsfont_get_name(fluid_ramsfont_t* sfont);
+wchar_t* fluid_ramsfont_get_name(fluid_ramsfont_t* sfont);
 fluid_rampreset_t* fluid_ramsfont_get_preset(fluid_ramsfont_t* sfont, unsigned int bank, unsigned int prenum);
 void fluid_ramsfont_iteration_start(fluid_ramsfont_t* sfont);
 int fluid_ramsfont_iteration_next(fluid_ramsfont_t* sfont, fluid_preset_t* preset);

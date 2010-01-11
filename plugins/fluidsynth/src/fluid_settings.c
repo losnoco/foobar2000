@@ -34,7 +34,7 @@
 
 static void fluid_settings_init(fluid_settings_t* settings);
 static void fluid_settings_hash_delete(void* value, int type);
-static int fluid_settings_tokenize(char* s, char *buf, char** ptr);
+static int fluid_settings_tokenize(const char* s, char *buf, char** ptr);
 
 
 typedef struct {
@@ -47,7 +47,7 @@ typedef struct {
 } fluid_str_setting_t;
 
 static fluid_str_setting_t*
-new_fluid_str_setting(char* value, char* def, int hints, fluid_str_update_t fun, void* data)
+new_fluid_str_setting(const char* value, const char* def, int hints, fluid_str_update_t fun, void* data)
 {
   fluid_str_setting_t* str;
   str = FLUID_NEW(fluid_str_setting_t);
@@ -208,7 +208,7 @@ void fluid_settings_init(fluid_settings_t* settings)
   fluid_midi_driver_settings(settings);
 }
 
-static int fluid_settings_tokenize(char* s, char *buf, char** ptr)
+static int fluid_settings_tokenize(const char* s, char *buf, char** ptr)
 {
   char *tokstr, *tok;
   int n = 0;
@@ -249,7 +249,7 @@ static int fluid_settings_tokenize(char* s, char *buf, char** ptr)
  * @return 1 if the value exists, 0 otherwise
  */
 static int fluid_settings_get(fluid_settings_t* settings,
-			     char** name, int len,
+			     const char* const* name, int len,
 			     void** value, int* type)
 {
   fluid_hashtable_t* table = settings;
@@ -292,7 +292,7 @@ static int fluid_settings_get(fluid_settings_t* settings,
  * @return 1 if the value has been set, zero otherwise
  */
 static int fluid_settings_set(fluid_settings_t* settings,
-			     char** name, int len,
+			     const char* const* name, int len,
 			     void* value, int type)
 {
   fluid_hashtable_t* table = settings;
@@ -328,7 +328,7 @@ static int fluid_settings_set(fluid_settings_t* settings,
 
 /** returns 1 if the value has been registered correctly, 0
     otherwise */
-int fluid_settings_register_str(fluid_settings_t* settings, char* name, char* def, int hints,
+int fluid_settings_register_str(fluid_settings_t* settings, const char* name, const char* def, int hints,
 			       fluid_str_update_t fun, void* data)
 {
   int type;
@@ -362,7 +362,7 @@ int fluid_settings_register_str(fluid_settings_t* settings, char* name, char* de
 
 /** returns 1 if the value has been register correctly, zero
     otherwise */
-int fluid_settings_register_num(fluid_settings_t* settings, char* name, double def,
+int fluid_settings_register_num(fluid_settings_t* settings, const char* name, double def,
 			       double min, double max, int hints,
 			       fluid_num_update_t fun, void* data)
 {
@@ -402,7 +402,7 @@ int fluid_settings_register_num(fluid_settings_t* settings, char* name, double d
 
 /** returns 1 if the value has been register correctly, zero
     otherwise */
-int fluid_settings_register_int(fluid_settings_t* settings, char* name, int def,
+int fluid_settings_register_int(fluid_settings_t* settings, const char* name, int def,
 			       int min, int max, int hints,
 			       fluid_int_update_t fun, void* data)
 {
@@ -448,7 +448,7 @@ int fluid_settings_register_int(fluid_settings_t* settings, char* name, int def,
  * @return the type for the named setting, or FLUID_NO_TYPE when it does not exists
  */
 int
-fluid_settings_get_type(fluid_settings_t* settings, char* name)
+fluid_settings_get_type(fluid_settings_t* settings, const char* name)
 {
   int type;
   void* value;
@@ -469,7 +469,7 @@ fluid_settings_get_type(fluid_settings_t* settings, char* name)
  * @return the hints associated to the named setting if it exists, zero otherwise
  */
 int
-fluid_settings_get_hints(fluid_settings_t* settings, char* name)
+fluid_settings_get_hints(fluid_settings_t* settings, const char* name)
 {
   int type;
   void* value;
@@ -502,7 +502,7 @@ fluid_settings_get_hints(fluid_settings_t* settings, char* name)
  * @return non zero if the setting is changeable in real-time
  */
 int
-fluid_settings_is_realtime(fluid_settings_t* settings, char* name)
+fluid_settings_is_realtime(fluid_settings_t* settings, const char* name)
 {
   int type;
   void* value;
@@ -536,7 +536,7 @@ fluid_settings_is_realtime(fluid_settings_t* settings, char* name)
  * @param str new string value
  * @return 1 if the value has been set, 0 otherwise
  */
-int fluid_settings_setstr(fluid_settings_t* settings, char* name, char* str)
+int fluid_settings_setstr(fluid_settings_t* settings, const char* name, const char* str)
 {
   char* tokens[MAX_SETTINGS_TOKENS];
   char buf[MAX_SETTINGS_LABEL+1];
@@ -587,7 +587,7 @@ int fluid_settings_setstr(fluid_settings_t* settings, char* name, char* str)
  * @return 1 if the value exists, 0 otherwise
  */
 int
-fluid_settings_getstr(fluid_settings_t* settings, char* name, char** str)
+fluid_settings_getstr(fluid_settings_t* settings, const char* name, char** str)
 {
   int type;
   void* value;
@@ -615,7 +615,7 @@ fluid_settings_getstr(fluid_settings_t* settings, char* name, char** str)
  * @param s a string to be tested
  * @return 1 if the value exists and is equal to 's', 0 otherwise
  */
-int fluid_settings_str_equal(fluid_settings_t* settings, char* name, char* s)
+int fluid_settings_str_equal(fluid_settings_t* settings, const char* name, const char* s)
 {
   int type;
   void* value;
@@ -641,7 +641,7 @@ int fluid_settings_str_equal(fluid_settings_t* settings, char* name, char* s)
  * @return the default string value of the setting if it exists, NULL otherwise
  */
 char*
-fluid_settings_getstr_default(fluid_settings_t* settings, char* name)
+fluid_settings_getstr_default(fluid_settings_t* settings, const char* name)
 {
   int type;
   void* value;
@@ -660,7 +660,7 @@ fluid_settings_getstr_default(fluid_settings_t* settings, char* name)
   }
 }
 
-int fluid_settings_add_option(fluid_settings_t* settings, char* name, char* s)
+int fluid_settings_add_option(fluid_settings_t* settings, const char* name, const char* s)
 {
   int type;
   void* value;
@@ -681,7 +681,7 @@ int fluid_settings_add_option(fluid_settings_t* settings, char* name, char* s)
   }
 }
 
-int fluid_settings_remove_option(fluid_settings_t* settings, char* name, char* s)
+int fluid_settings_remove_option(fluid_settings_t* settings, const char* name, const char* s)
 {
   int type;
   void* value;
@@ -721,7 +721,7 @@ int fluid_settings_remove_option(fluid_settings_t* settings, char* name, char* s
  * @param val new setting's value
  * @return 1 if the value has been set, 0 otherwise
  */
-int fluid_settings_setnum(fluid_settings_t* settings, char* name, double val)
+int fluid_settings_setnum(fluid_settings_t* settings, const char* name, double val)
 {
   int type;
   void* value;
@@ -771,7 +771,7 @@ int fluid_settings_setnum(fluid_settings_t* settings, char* name, double val)
  * @param val variable pointer to receive the setting's numeric value
  * @return 1 if the value exists, 0 otherwise
  */
-int fluid_settings_getnum(fluid_settings_t* settings, char* name, double* val)
+int fluid_settings_getnum(fluid_settings_t* settings, const char* name, double* val)
 {
   int type;
   void* value;
@@ -799,7 +799,7 @@ int fluid_settings_getnum(fluid_settings_t* settings, char* name, double* val)
  * @param max setting's range upper limit
  */
 void
-fluid_settings_getnum_range(fluid_settings_t* settings, char* name, double* min, double* max)
+fluid_settings_getnum_range(fluid_settings_t* settings, const char* name, double* min, double* max)
 {
   int type;
   void* value;
@@ -825,7 +825,7 @@ fluid_settings_getnum_range(fluid_settings_t* settings, char* name, double* min,
  * @return the default value if the named setting exists, 0.0f otherwise
  */
 double
-fluid_settings_getnum_default(fluid_settings_t* settings, char* name)
+fluid_settings_getnum_default(fluid_settings_t* settings, const char* name)
 {
   int type;
   void* value;
@@ -852,7 +852,7 @@ fluid_settings_getnum_default(fluid_settings_t* settings, char* name)
  * @param val new setting's integer value
  * @return 1 if the value has been set, 0 otherwise
  */
-int fluid_settings_setint(fluid_settings_t* settings, char* name, int val)
+int fluid_settings_setint(fluid_settings_t* settings, const char* name, int val)
 {
   int type;
   void* value;
@@ -902,7 +902,7 @@ int fluid_settings_setint(fluid_settings_t* settings, char* name, int val)
  * @param val pointer to a variable to receive the setting's integer value
  * @return 1 if the value exists, 0 otherwise
  */
-int fluid_settings_getint(fluid_settings_t* settings, char* name, int* val)
+int fluid_settings_getint(fluid_settings_t* settings, const char* name, int* val)
 {
   int type;
   void* value;
@@ -928,7 +928,7 @@ int fluid_settings_getint(fluid_settings_t* settings, char* name, int* val)
  * @param min setting's range lower limit
  * @param max setting's range upper limit
  */
-void fluid_settings_getint_range(fluid_settings_t* settings, char* name, int* min, int* max)
+void fluid_settings_getint_range(fluid_settings_t* settings, const char* name, int* min, int* max)
 {
   int type;
   void* value;
@@ -954,7 +954,7 @@ void fluid_settings_getint_range(fluid_settings_t* settings, char* name, int* mi
  * @return the setting's default integer value it it exists, zero otherwise
  */
 int
-fluid_settings_getint_default(fluid_settings_t* settings, char* name)
+fluid_settings_getint_default(fluid_settings_t* settings, const char* name)
 {
   int type;
   void* value;
@@ -983,7 +983,7 @@ fluid_settings_getint_default(fluid_settings_t* settings, char* name)
  * @param func callback function to be called on each iteration
  */
 void
-fluid_settings_foreach_option (fluid_settings_t* settings, char* name, void* data,
+fluid_settings_foreach_option (fluid_settings_t* settings, const char* name, void* data,
 				               fluid_settings_foreach_option_t func)
 {
   int type;
@@ -1016,14 +1016,14 @@ fluid_settings_foreach_option (fluid_settings_t* settings, char* name, void* dat
 static fluid_settings_foreach_t fluid_settings_foreach_func;
 static void* fluid_settings_foreach_data;
 
-int fluid_settings_foreach_iter(char* key, void* value, int type, void* data)
+int fluid_settings_foreach_iter(const char* key, void* value, int type, void* data)
 {
   char path[1024];
 
   if (data == 0) {
     snprintf(path, 1024, "%s", key);
   } else {
-    snprintf(path, 1024, "%s.%s", (char*) data, key);
+    snprintf(path, 1024, "%s.%s", (const char*) data, key);
   }
   path[1023] = 0;
 

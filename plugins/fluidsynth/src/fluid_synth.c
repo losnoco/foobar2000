@@ -40,13 +40,13 @@ static fluid_preset_t*
 fluid_synth_get_preset(fluid_synth_t* synth, unsigned int sfontnum,
 		      unsigned int banknum, unsigned int prognum);
 static fluid_preset_t*
-fluid_synth_get_preset2(fluid_synth_t* synth, wchar_t* sfont_name,
+fluid_synth_get_preset2(fluid_synth_t* synth, const wchar_t* sfont_name,
 			unsigned int banknum, unsigned int prognum);
 static void fluid_synth_update_presets(fluid_synth_t* synth);
 static int fluid_synth_update_gain(fluid_synth_t* synth,
-                                   char* name, double value);
+                                   const char* name, double value);
 static int fluid_synth_update_polyphony(fluid_synth_t* synth,
-                                        char* name, int value);
+                                        const char* name, int value);
 static void init_dither(void);
 static inline int roundi (float x);
 static int fluid_synth_one_block(fluid_synth_t* synth, int do_not_mix_fx_to_out);
@@ -60,7 +60,7 @@ static void fluid_synth_release_voice_on_same_note(fluid_synth_t* synth,
 static fluid_tuning_t* fluid_synth_get_tuning(fluid_synth_t* synth,
                                               int bank, int prog);
 static fluid_tuning_t* fluid_synth_create_tuning(fluid_synth_t* synth, int bank,
-                                                 int prog, char* name);
+                                                 int prog, const char* name);
 static fluid_bank_offset_t* fluid_synth_get_bank_offset0(fluid_synth_t* synth,
                                                          int sfont_id);
 static void fluid_synth_remove_bank_offset(fluid_synth_t* synth, int sfont_id);
@@ -78,11 +78,11 @@ fluid_sfloader_t* new_fluid_defsfloader(void);
 
 int fluid_synth_program_select2(fluid_synth_t* synth,
 				int chan,
-				wchar_t* sfont_name,
+				const wchar_t* sfont_name,
 				unsigned int bank_num,
 				unsigned int preset_num);
 
-fluid_sfont_t* fluid_synth_get_sfont_by_name(fluid_synth_t* synth, wchar_t *name);
+fluid_sfont_t* fluid_synth_get_sfont_by_name(fluid_synth_t* synth, const wchar_t *name);
 
 int fluid_synth_set_gen2(fluid_synth_t* synth, int chan,
 			 int param, float value,
@@ -175,7 +175,7 @@ void fluid_version(int *major, int *minor, int *micro)
 /*
  * fluid_version_str
  */
-char* fluid_version_str(void)
+const char* fluid_version_str(void)
 {
   return FLUIDSYNTH_VERSION;
 }
@@ -809,7 +809,7 @@ delete_fluid_synth(fluid_synth_t* synth)
  * The error messages are not thread-save, yet. They are still stored
  * in a global message buffer (see fluid_sys.c).
  * */
-char*
+const char*
 fluid_synth_error(fluid_synth_t* synth)
 {
   return fluid_error();
@@ -1244,7 +1244,7 @@ fluid_synth_get_preset(fluid_synth_t* synth, unsigned int sfontnum,
  * fluid_synth_get_preset2
  */
 static fluid_preset_t*
-fluid_synth_get_preset2(fluid_synth_t* synth, wchar_t* sfont_name,
+fluid_synth_get_preset2(fluid_synth_t* synth, const wchar_t* sfont_name,
 			unsigned int banknum, unsigned int prognum)
 {
   fluid_preset_t* preset = NULL;
@@ -1452,7 +1452,7 @@ int fluid_synth_program_select(fluid_synth_t* synth,
  */
 int fluid_synth_program_select2(fluid_synth_t* synth,
 				int chan,
-				wchar_t* sfont_name,
+				const wchar_t* sfont_name,
 				unsigned int bank_num,
 				unsigned int preset_num)
 {
@@ -1518,7 +1518,7 @@ fluid_synth_update_presets(fluid_synth_t* synth)
  * fluid_synth_update_gain
  */
 static int
-fluid_synth_update_gain(fluid_synth_t* synth, char* name, double value)
+fluid_synth_update_gain(fluid_synth_t* synth, const char* name, double value)
 {
   fluid_synth_set_gain(synth, (float) value);
   return 0;
@@ -1554,7 +1554,7 @@ float fluid_synth_get_gain(fluid_synth_t* synth)
  * fluid_synth_update_polyphony
  */
 static int
-fluid_synth_update_polyphony(fluid_synth_t* synth, char* name, int value)
+fluid_synth_update_polyphony(fluid_synth_t* synth, const char* name, int value)
 {
   fluid_synth_set_polyphony(synth, value);
   return 0;
@@ -2637,7 +2637,7 @@ fluid_sfont_t* fluid_synth_get_sfont_by_id(fluid_synth_t* synth, unsigned int id
 /* fluid_synth_get_sfont_by_name
  *
  */
-fluid_sfont_t* fluid_synth_get_sfont_by_name(fluid_synth_t* synth, wchar_t *name)
+fluid_sfont_t* fluid_synth_get_sfont_by_name(fluid_synth_t* synth, const wchar_t *name)
 {
   fluid_list_t* list = synth->sfont;
   fluid_sfont_t* sfont;
@@ -2863,7 +2863,7 @@ fluid_synth_get_tuning(fluid_synth_t* synth, int bank, int prog)
 }
 
 static fluid_tuning_t*
-fluid_synth_create_tuning(fluid_synth_t* synth, int bank, int prog, char* name)
+fluid_synth_create_tuning(fluid_synth_t* synth, int bank, int prog, const char* name)
 {
   if ((bank < 0) || (bank >= 128)) {
     FLUID_LOG(FLUID_WARN, "Bank number out of range");
@@ -2908,7 +2908,7 @@ fluid_synth_create_tuning(fluid_synth_t* synth, int bank, int prog, char* name)
 
 int fluid_synth_create_key_tuning(fluid_synth_t* synth,
 				 int bank, int prog,
-				 char* name, double* pitch)
+				 const char* name, double* pitch)
 {
   fluid_tuning_t* tuning = fluid_synth_create_tuning(synth, bank, prog, name);
   if (tuning == NULL) {
@@ -2923,7 +2923,7 @@ int fluid_synth_create_key_tuning(fluid_synth_t* synth,
 
 int fluid_synth_create_octave_tuning(fluid_synth_t* synth,
 				    int bank, int prog,
-				    char* name, double* pitch)
+				    const char* name, double* pitch)
 {
   fluid_tuning_t* tuning = fluid_synth_create_tuning(synth, bank, prog, name);
   if (tuning == NULL) {
@@ -3047,32 +3047,32 @@ fluid_settings_t* fluid_synth_get_settings(fluid_synth_t* synth)
   return synth->settings;
 }
 
-int fluid_synth_setstr(fluid_synth_t* synth, char* name, char* str)
+int fluid_synth_setstr(fluid_synth_t* synth, const char* name, const char* str)
 {
   return fluid_settings_setstr(synth->settings, name, str);
 }
 
-int fluid_synth_getstr(fluid_synth_t* synth, char* name, char** str)
+int fluid_synth_getstr(fluid_synth_t* synth, const char* name, char** str)
 {
   return fluid_settings_getstr(synth->settings, name, str);
 }
 
-int fluid_synth_setnum(fluid_synth_t* synth, char* name, double val)
+int fluid_synth_setnum(fluid_synth_t* synth, const char* name, double val)
 {
   return fluid_settings_setnum(synth->settings, name, val);
 }
 
-int fluid_synth_getnum(fluid_synth_t* synth, char* name, double* val)
+int fluid_synth_getnum(fluid_synth_t* synth, const char* name, double* val)
 {
   return fluid_settings_getnum(synth->settings, name, val);
 }
 
-int fluid_synth_setint(fluid_synth_t* synth, char* name, int val)
+int fluid_synth_setint(fluid_synth_t* synth, const char* name, int val)
 {
   return fluid_settings_setint(synth->settings, name, val);
 }
 
-int fluid_synth_getint(fluid_synth_t* synth, char* name, int* val)
+int fluid_synth_getint(fluid_synth_t* synth, const char* name, int* val)
 {
   return fluid_settings_getint(synth->settings, name, val);
 }

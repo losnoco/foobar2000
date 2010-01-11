@@ -41,11 +41,11 @@ struct _fluid_tuning_t {
   double pitch[128];  /* the pitch of every key, in cents */
 };
 
-fluid_tuning_t* new_fluid_tuning(char* name, int bank, int prog);
+fluid_tuning_t* new_fluid_tuning(const char* name, int bank, int prog);
 void delete_fluid_tuning(fluid_tuning_t* tuning);
 
-void fluid_tuning_set_name(fluid_tuning_t* tuning, char* name);
-char* fluid_tuning_get_name(fluid_tuning_t* tuning);
+void fluid_tuning_set_name(fluid_tuning_t* tuning, const char* name);
+const char* fluid_tuning_get_name(fluid_tuning_t* tuning);
 
 #define fluid_tuning_get_bank(_t) ((_t)->bank)
 #define fluid_tuning_get_prog(_t) ((_t)->prog)

@@ -38,27 +38,27 @@
 #define _FLUID_HASH_H
 
 
-typedef int (*fluid_hash_iter_t)(char* key, void* value, int type, void* data);
+typedef int (*fluid_hash_iter_t)(const char* key, void* value, int type, void* data);
 typedef void (*fluid_hash_delete_t)(void* value, int type);
 
 fluid_hashtable_t* new_fluid_hashtable(fluid_hash_delete_t delete);
 void delete_fluid_hashtable(fluid_hashtable_t *hash_table);
 
-void fluid_hashtable_insert(fluid_hashtable_t *hash_table, char* key, void* value, int type);
+void fluid_hashtable_insert(fluid_hashtable_t *hash_table, const char* key, void* value, int type);
 
-void fluid_hashtable_replace(fluid_hashtable_t *hash_table, char* key, void* value, int type);
+void fluid_hashtable_replace(fluid_hashtable_t *hash_table, const char* key, void* value, int type);
 
 /* Returns non-zero if found, 0 if not found */
-int fluid_hashtable_lookup(fluid_hashtable_t *hash_table, char* key, void** value, int* type);
+int fluid_hashtable_lookup(fluid_hashtable_t *hash_table, const char* key, void** value, int* type);
 
 /* Returns non-zero if removed, 0 if not removed */
-int fluid_hashtable_remove(fluid_hashtable_t *hash_table, char* key);
+int fluid_hashtable_remove(fluid_hashtable_t *hash_table, const char* key);
 
 void fluid_hashtable_foreach(fluid_hashtable_t *hashtable, fluid_hash_iter_t fun, void* data);
 
 unsigned int fluid_hashtable_size(fluid_hashtable_t *hash_table);
 
-unsigned int fluid_str_hash(char* v);
+unsigned int fluid_str_hash(const char* v);
 
 #endif /* _FLUID_HASH_H */
 

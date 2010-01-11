@@ -25,30 +25,30 @@
 
 
 /** returns 1 if the option was added, 0 otherwise */
-int fluid_settings_add_option(fluid_settings_t* settings, char* name, char* s);
+int fluid_settings_add_option(fluid_settings_t* settings, const char* name, const char* s);
 
 /** returns 1 if the option was added, 0 otherwise */
-int fluid_settings_remove_option(fluid_settings_t* settings, char* name, char* s);
+int fluid_settings_remove_option(fluid_settings_t* settings, const char* name, const char* s);
 
 
-typedef int (*fluid_num_update_t)(void* data, char* name, double value);
-typedef int (*fluid_str_update_t)(void* data, char* name, char* value);
-typedef int (*fluid_int_update_t)(void* data, char* name, int value);
+typedef int (*fluid_num_update_t)(void* data, const char* name, double value);
+typedef int (*fluid_str_update_t)(void* data, const char* name, const char* value);
+typedef int (*fluid_int_update_t)(void* data, const char* name, int value);
 
 /** returns 0 if the value has been registered correctly, non-zero
     otherwise */
-int fluid_settings_register_str(fluid_settings_t* settings, char* name, char* def, int hints,
+int fluid_settings_register_str(fluid_settings_t* settings, const char* name, const char* def, int hints,
 			       fluid_str_update_t fun, void* data);
 
 /** returns 0 if the value has been registered correctly, non-zero
     otherwise */
-int fluid_settings_register_num(fluid_settings_t* settings, char* name, double min, double max,
+int fluid_settings_register_num(fluid_settings_t* settings, const char* name, double min, double max,
 			       double def, int hints, fluid_num_update_t fun, void* data);
 
 
 /** returns 0 if the value has been registered correctly, non-zero
     otherwise */
-int fluid_settings_register_int(fluid_settings_t* settings, char* name, int min, int max,
+int fluid_settings_register_int(fluid_settings_t* settings, const char* name, int min, int max,
 			       int def, int hints, fluid_int_update_t fun, void* data);
 
 

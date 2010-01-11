@@ -23,7 +23,7 @@
 #include "fluidsynth_priv.h"
 
 
-fluid_tuning_t* new_fluid_tuning(char* name, int bank, int prog)
+fluid_tuning_t* new_fluid_tuning(const char* name, int bank, int prog)
 {
   fluid_tuning_t* tuning;
   int i;
@@ -61,7 +61,7 @@ void delete_fluid_tuning(fluid_tuning_t* tuning)
   FLUID_FREE(tuning);
 }
 
-void fluid_tuning_set_name(fluid_tuning_t* tuning, char* name)
+void fluid_tuning_set_name(fluid_tuning_t* tuning, const char* name)
 {
   if (tuning->name != NULL) {
     FLUID_FREE(tuning->name);
@@ -72,7 +72,7 @@ void fluid_tuning_set_name(fluid_tuning_t* tuning, char* name)
   }
 }
 
-char* fluid_tuning_get_name(fluid_tuning_t* tuning)
+const char* fluid_tuning_get_name(fluid_tuning_t* tuning)
 {
   return tuning->name;
 }

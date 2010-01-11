@@ -76,7 +76,7 @@ int fluid_ramsfont_sfont_delete(fluid_sfont_t* sfont)
 	return 0;
 }
 
-char* fluid_ramsfont_sfont_get_name(fluid_sfont_t* sfont)
+wchar_t* fluid_ramsfont_sfont_get_name(fluid_sfont_t* sfont)
 {
   return fluid_ramsfont_get_name((fluid_ramsfont_t*) sfont->data);
 }
@@ -224,7 +224,7 @@ int delete_fluid_ramsfont(fluid_ramsfont_t* sfont)
 /*
  * fluid_ramsfont_get_name
  */
-char* fluid_ramsfont_get_name(fluid_ramsfont_t* sfont)
+wchar_t* fluid_ramsfont_get_name(fluid_ramsfont_t* sfont)
 {
   return sfont->name;
 }
@@ -233,9 +233,9 @@ char* fluid_ramsfont_get_name(fluid_ramsfont_t* sfont)
  * fluid_ramsfont_set_name
  */
 int
-fluid_ramsfont_set_name(fluid_ramsfont_t* sfont, char * name)
+fluid_ramsfont_set_name(fluid_ramsfont_t* sfont, const wchar_t * name)
 {
-  FLUID_MEMCPY(sfont->name, name, 20);
+  FLUID_MEMCPY(sfont->name, name, 20 * 2);
   return FLUID_OK;
 }
 
@@ -1016,7 +1016,7 @@ fluid_rampreset_noteon(fluid_rampreset_t* preset, fluid_synth_t* synth, int chan
  * fluid_sample_set_name
  */
 int
-fluid_sample_set_name(fluid_sample_t* sample, char * name)
+fluid_sample_set_name(fluid_sample_t* sample, const char * name)
 {
   FLUID_MEMCPY(sample->name, name, 20);
   return FLUID_OK;

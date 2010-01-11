@@ -1637,7 +1637,7 @@ fluid_midi_event_t* fluid_midi_parser_parse(fluid_midi_parser_t* parser, unsigne
 /* Purpose:
  * Returns the length of the MIDI message. */
 int fluid_midi_event_length(unsigned char event){
-	switch (event && 0xF0) {
+	switch (event & 0xF0) {
 		case NOTE_OFF: 
 		case NOTE_ON:
 		case KEY_PRESSURE:

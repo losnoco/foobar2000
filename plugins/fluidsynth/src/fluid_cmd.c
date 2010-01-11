@@ -1257,7 +1257,7 @@ struct _fluid_handle_settings_data_t {
   fluid_ostream_t out;
 };
 
-static void fluid_handle_settings_iter1(void* data, char* name, int type)
+static void fluid_handle_settings_iter1(void* data, const char* name, int type)
 {
   struct _fluid_handle_settings_data_t* d = (struct _fluid_handle_settings_data_t*) data;
 
@@ -1267,7 +1267,7 @@ static void fluid_handle_settings_iter1(void* data, char* name, int type)
   }
 }
 
-static void fluid_handle_settings_iter2(void* data, char* name, int type)
+static void fluid_handle_settings_iter2(void* data, const char* name, int type)
 {
   struct _fluid_handle_settings_data_t* d = (struct _fluid_handle_settings_data_t*) data;
 
@@ -1322,7 +1322,7 @@ struct _fluid_handle_option_data_t {
   fluid_ostream_t out;
 };
 
-void fluid_handle_print_option(void* data, char* name, char* option)
+void fluid_handle_print_option(void* data, const char* name, const char* option)
 {
   struct _fluid_handle_option_data_t* d = (struct _fluid_handle_option_data_t*) data;
 
@@ -1505,11 +1505,13 @@ fluid_is_empty(char* a)
   return 1;
 }
 
-char*
-fluid_expand_path(char* path, char* new_path, int len)
+wchar_t*
+fluid_expand_path(wchar_t* path, wchar_t* new_path, int len)
 {
 #if defined(WIN32) || defined(MACOS9)
-  snprintf(new_path, len - 1, "%s", path);
+  //snprintf(new_path, len - 1, "%s", path);
+  //_snwprintf(new_path, len - 1, L"%s", path);
+  wcsncpy(new_path, path, len - 1);
 #else
   if ((path[0] == '~') && (path[1] == '/')) {
     char* home = getenv("HOME");
