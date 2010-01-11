@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="foo_read_partial"
 	ProjectGUID="{79F6B13A-B118-4F35-8BDA-ABE31722985B}"
 	SccProjectName="SAK"
 	SccAuxPath="SAK"
 	SccLocalPath="SAK"
 	SccProvider="SAK"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -82,6 +83,8 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile=".\../Release/foo_read_partial.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\../Release/foo_read_partial.lib"
 				TargetMachine="1"
 			/>
@@ -102,9 +105,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -174,6 +174,8 @@
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\../Debug/foo_read_partial.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\../Debug/foo_read_partial.lib"
 				TargetMachine="1"
 			/>
@@ -194,9 +196,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

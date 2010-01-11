@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="foo_wma"
 	ProjectGUID="{86ECA5BA-26BC-4453-9EE3-1814CE40105A}"
 	SccProjectName="SAK"
 	SccAuxPath="SAK"
 	SccLocalPath="SAK"
 	SccProvider="SAK"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -86,6 +87,8 @@
 				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\./Debug/foo_wma.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\./Debug/foo_wma.lib"
 				TargetMachine="1"
 			/>
@@ -106,9 +109,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -186,6 +186,8 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=""
 				ProgramDatabaseFile=".\./Release/foo_wma.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\./Release/foo_wma.lib"
 				TargetMachine="1"
 			/>
@@ -206,9 +208,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

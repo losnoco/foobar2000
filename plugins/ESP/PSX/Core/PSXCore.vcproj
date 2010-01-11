@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="PSXCore"
 	ProjectGUID="{D578378A-A579-461A-A4E8-BA2C548B12A7}"
 	SccProjectName="SAK"
 	SccAuxPath="SAK"
 	SccLocalPath="SAK"
 	SccProvider="SAK"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform

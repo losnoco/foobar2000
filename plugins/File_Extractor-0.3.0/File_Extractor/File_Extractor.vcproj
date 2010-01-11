@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="File_Extractor"
 	ProjectGUID="{66EB9638-A8EF-4023-95B0-AD89FC6DAA9A}"
 	RootNamespace="File_Extractor"
@@ -9,6 +9,7 @@
 	SccLocalPath="..\.."
 	SccProvider="MSSCCI:Microsoft Visual SourceSafe"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform

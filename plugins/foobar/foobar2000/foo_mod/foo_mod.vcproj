@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="foo_mod"
 	ProjectGUID="{06FE5D2E-8DFC-4079-8A14-C139EBFC9598}"
 	SccProjectName="&quot;$/foobar2000/plugins.root/plugins&quot;, CEAAAAAA"
 	SccLocalPath="..\..\.."
 	SccProvider="MSSCCI:Microsoft Visual SourceSafe"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -87,6 +88,8 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile=".\../Release/foo_mod.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\../Release/foo_mod.lib"
 				TargetMachine="1"
 			/>
@@ -107,9 +110,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -182,6 +182,8 @@
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\../Debug/foo_mod.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\../Debug/foo_mod.lib"
 				TargetMachine="1"
 			/>
@@ -202,9 +204,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

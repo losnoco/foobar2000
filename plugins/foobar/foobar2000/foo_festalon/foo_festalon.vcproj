@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="foo_festalon"
 	ProjectGUID="{E8F9F692-A557-4ECD-B09E-34B3CD4AEFF3}"
 	SccProjectName="SAK"
 	SccAuxPath="SAK"
 	SccLocalPath="SAK"
 	SccProvider="SAK"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -92,6 +93,8 @@
 				ProgramDatabaseFile=".\../Release/foo_festalon.pdb"
 				FunctionOrder=""
 				LinkTimeCodeGeneration="4"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary="$(OutDir)\$(ProjectName).lib"
 				TargetMachine="1"
 			/>
@@ -112,9 +115,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -187,6 +187,8 @@
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\../Debug/foo_festalon.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary="$(OutDir)\$(ProjectName).lib"
 				TargetMachine="1"
 			/>
@@ -207,9 +209,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -290,6 +289,8 @@
 				IgnoreDefaultLibraryNames=""
 				ProgramDatabaseFile=".\../Release/foo_festalon.pdb"
 				FunctionOrder=""
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary="$(OutDir)\$(ProjectName).lib"
 				TargetMachine="1"
 			/>
@@ -310,9 +311,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

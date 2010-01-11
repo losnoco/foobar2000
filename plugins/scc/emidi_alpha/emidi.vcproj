@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="shift_jis"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="emidi"
 	ProjectGUID="{69719831-D965-4AED-91C1-70C4FF01945D}"
 	SccProjectName="SAK"
@@ -9,6 +9,7 @@
 	SccLocalPath="SAK"
 	SccProvider="SAK"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform

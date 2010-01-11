@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="foobar2000_sdk_helpers"
 	ProjectGUID="{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}"
 	RootNamespace="foobar2000_sdk_helpers"
 	SccProjectName="&quot;$/foobar2000/plugins.root/plugins&quot;, CEAAAAAA"
 	SccLocalPath="..\..\.."
 	SccProvider="MSSCCI:Microsoft Visual SourceSafe"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform

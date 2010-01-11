@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="GoogleDesktopComponentCommon"
 	ProjectGUID="{5A0D55C3-7C2A-4B61-8F28-6B757052788F}"
 	RootNamespace="GoogleDesktopComponentCommon"
@@ -10,6 +10,7 @@
 	SccLocalPath="SAK"
 	SccProvider="SAK"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform

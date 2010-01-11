@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="foo_unpack_7z"
 	ProjectGUID="{A6009C75-5D08-4F8C-A764-5BD305328987}"
 	RootNamespace="foo_unpack_7z"
@@ -9,6 +9,7 @@
 	SccAuxPath="SAK"
 	SccLocalPath="SAK"
 	SccProvider="SAK"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -86,6 +87,8 @@
 				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames="oleaut32.lib"
 				ProgramDatabaseFile=".\../Release/foo_unpack_7z.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\../Release/foo_unpack_7z.lib"
 				TargetMachine="1"
 			/>
@@ -106,9 +109,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -180,6 +180,8 @@
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\../Debug/foo_unpack_7z.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\../Debug/foo_unpack_7z.lib"
 				TargetMachine="1"
 			/>
@@ -200,9 +202,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
