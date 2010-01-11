@@ -218,7 +218,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="1"
-			WholeProgramOptimization="0"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -311,6 +311,10 @@
 	</References>
 	<Files>
 		<File
+			RelativePath=".\filter.cpp"
+			>
+		</File>
+		<File
 			RelativePath="mod.cpp"
 			>
 			<FileConfiguration
@@ -347,6 +351,10 @@
 		</File>
 		<File
 			RelativePath="mod.rc"
+			>
+		</File>
+		<File
+			RelativePath=".\resampler.cpp"
 			>
 		</File>
 		<File

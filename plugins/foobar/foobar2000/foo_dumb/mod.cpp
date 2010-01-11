@@ -1,7 +1,23 @@
-#define MYVERSION "0.9.8.3"
+#define MYVERSION "0.9.8.4"
 
 /*
 	changelog
+
+2007-01-26 23:42 UTC - kode54
+- Added CPUID specialization for it_filter() so I can release it.
+
+2007-01-26 22:50 UTC - kode54
+- Moved IT S70-2 effects alongside the rest of S7x so they all trigger after
+  paired notes.
+- Integrated note on/cut ramping with volume transition ramping to reduce
+  setup/cleanup overhead of calling render_playing and the resampler functions
+  for single samples.
+- Note on/cut ramping scaled from 7 sample logarithmic and 256 sample linear to
+  .75ms and 5ms respectively, both linear.
+- Integrated the pattern looping changes from DUMB 0.9.3, since a few files
+  seemed to be broken. The XM-only features still needed to be flagged for XM
+  so they won't break MOD.
+- Implemented SSE replacement for it_filter() which is actually twice as fast.
 
 2007-01-24 09:37 UTC - kode54
 - Version is now 0.9.8.3
@@ -887,7 +903,7 @@ public:
 	}
 };
 
-#define string_utf8_from_oem(x) string_utf8_from_oem_t(false, x)
+#define string_utf8_from_oem(x,s) string_utf8_from_oem_t(false, x, s)
 #define string_utf8_from_oem_multiline(x) string_utf8_from_oem_t(true, x)
 
 class string_utf8_from_it_t : public pfc::string8_fastalloc
@@ -921,7 +937,7 @@ public:
 	}
 };
 
-#define string_utf8_from_it(x) string_utf8_from_it_t(false, x)
+#define string_utf8_from_it(x,s) string_utf8_from_it_t(false, x, s)
 #define string_utf8_from_it_multiline(x) string_utf8_from_it_t(true, x)
 
 /*
@@ -1110,34 +1126,9 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 
 	unsigned n, l, m_nChannels = 0;
 
-	if ( meta && ( pfc::byteswap_if_be_t(pifh->special) & 1 ) && ( pifh->msglength ) && ( pfc::byteswap_if_be_t(pifh->msgoffset) + pfc::byteswap_if_be_t(pifh->msglength) < size ) )
-	{
-		pfc::string8 msg;
-		const char * str = (const char *) ptr + pfc::byteswap_if_be_t(pifh->msgoffset);
-		for (n = 0, l = pfc::byteswap_if_be_t(pifh->msglength); n < l; n++, str++)
-		{
-			if (*str == 13)
-			{
-				if ((n + 1 >= l) || (str[1] != 10))
-				{
-					msg.add_byte(13);
-					msg.add_byte(10);
-					continue;
-				}
-			}
-			else if (*str == 10)
-			{
-				if ((!n) || (str[-1] != 13))
-				{
-					msg.add_byte(13);
-					msg.add_byte(10);
-					continue;
-				}
-			}
-			msg.add_byte(*str);
-		}
-		info.meta_add( field_comment, string_utf8_from_it_multiline( msg ) );
-	}
+	// bah, some file (jm-romance.it) with message length rounded up to a multiple of 256 (384 instead of 300)
+	unsigned msgoffset = pfc::byteswap_if_be_t(pifh->msgoffset);
+	unsigned msgend = msgoffset + pfc::byteswap_if_be_t(pifh->msglength);
 
 	t_uint32 * offset;
 	pfc::string8_fastalloc name;
@@ -1149,6 +1140,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 		for (n = 0, l = pfc::byteswap_if_be_t(pifh->smpnum); n < l; n++, offset++)
 		{
 			t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
+			if ( offset_n >= msgoffset && offset_n < msgend ) msgend = offset_n;
 			if ((!offset_n) || (offset_n + 0x14 + 26 + 2 >= size)) continue;
 			// XXX
 			if (ptr[offset_n] == 0 && ptr[offset_n + 1] == 0 &&
@@ -1171,6 +1163,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 		for (n = 0, l = pfc::byteswap_if_be_t(pifh->insnum); n < l; n++, offset++)
 		{
 			t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
+			if ( offset_n >= msgoffset && offset_n < msgend ) msgend = offset_n;
 			if ((!offset_n) || (offset_n + 0x20 + 26 >= size)) continue;
 			if (*(ptr + offset_n + 0x20))
 			{
@@ -1295,6 +1288,36 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			if (chnmask[ch] & 8) i += 2;
 			if (i >= len) break;
 		}
+	}
+
+	if ( meta && ( pfc::byteswap_if_be_t(pifh->special) & 1 ) && ( msgend - msgoffset ) && ( msgend < size ) )
+	{
+		pfc::string8 msg;
+		const char * str = (const char *) ptr + msgoffset;
+		for (n = 0, l = msgend - msgoffset; n < l; n++, str++)
+		{
+			if (*str == 0) break;
+			else if (*str == 13)
+			{
+				if ((n + 1 >= l) || (str[1] != 10))
+				{
+					msg.add_byte(13);
+					msg.add_byte(10);
+					continue;
+				}
+			}
+			else if (*str == 10)
+			{
+				if ((!n) || (str[-1] != 13))
+				{
+					msg.add_byte(13);
+					msg.add_byte(10);
+					continue;
+				}
+			}
+			msg.add_byte(*str);
+		}
+		info.meta_add( field_comment, string_utf8_from_it_multiline( msg ) );
 	}
 
 	if (m_nChannels) info.info_set_int(field_channels, m_nChannels);
