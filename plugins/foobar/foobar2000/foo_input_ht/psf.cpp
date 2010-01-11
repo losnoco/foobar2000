@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.7"
+#define MYVERSION "2.0.8"
 
 /*
 	changelog
+
+2009-08-02 23:58 UTC - kode54
+- Fixed bug with start silence detection hitting the maximum length
+- Version is now 2.0.8
 
 2009-08-02 00:46 UTC - kode54
 - Reimplemented tag reader to not use sscanf
@@ -1067,7 +1071,11 @@ public:
 					memmove( sample_buffer.get_ptr(), foo, remainder * sizeof( short ) * 2 );
 					break;
 				}
-				if ( silence >= skip_max ) eof = true;
+				if ( silence >= skip_max )
+				{
+					eof = true;
+					break;
+				}
 			}
 
 			startsilence += silence;
