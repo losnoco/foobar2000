@@ -397,8 +397,13 @@ public:
 				return io_result_error_data;
 			}
 		}
-		audio_sample * foo = p_chunk.check_data_size( ( 256 - skip_samples ) * meh );
-		audio_sample * bar = a52_samples( state ) + skip_samples;
+		if ( ! p_chunk.check_data_size( ( 256 - skip_samples ) * meh ) )
+			return io_result_error_out_of_memory;
+		audio_sample * foo = p_chunk.get_data();
+		sample_t * bar = a52_samples( state ) + skip_samples;
+#if LIBA52_DOUBLE
+#error fucko
+#endif
 		if ( flags & A52_LFE )
 		{
 			switch ( flags & A52_CHANNEL_MASK )
