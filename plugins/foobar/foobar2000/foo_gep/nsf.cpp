@@ -10,7 +10,7 @@
 
 #include "resource.h"
 
-#include <Nsf_Emu.h>
+#include <gme/Nsf_Emu.h>
 
 // Borrowed from NSF_File.cpp
 #define SAFE_DELETE(p) { if(p){ delete[] p; p = NULL; } }
@@ -233,7 +233,7 @@ public:
 
 				this->emu = emu;
 
-				ERRCHK( emu->init( sample_rate ) );
+				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( header, rdr ) );
 			}
 			catch(t_io_result code)

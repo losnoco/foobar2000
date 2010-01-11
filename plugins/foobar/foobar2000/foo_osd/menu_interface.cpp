@@ -242,8 +242,8 @@ public:
 		// whee!
 		GUID x_guid = guid_from_guid(p_guid);
 		m_c_playlist.set_data(p_index, x_guid);
-		x_guid = guid_from_guid(p_guid);
-		m_c_volume.set_data(p_index, x_guid);
+		p_guid = guid_from_guid(x_guid);
+		m_c_volume.set_data(p_index, p_guid);
 		x_guid = guid_from_guid(p_guid);
 		m_c_hide.set_data(p_index, x_guid);
 	}
@@ -417,8 +417,8 @@ public:
 				GUID x_guid = guid_from_guid(p_guid);
 				if (p_node == x_guid) { g_osd.show_playlist(n); break; }
 
-				x_guid = guid_from_guid(p_guid);
-				if (p_node == x_guid) { g_osd.show_volume(n); break; }
+				p_guid = guid_from_guid(x_guid);
+				if (p_node == p_guid) { g_osd.show_volume(n); break; }
 
 				x_guid = guid_from_guid(p_guid);
 				if (p_node == x_guid) { g_osd.hide(n); break; }

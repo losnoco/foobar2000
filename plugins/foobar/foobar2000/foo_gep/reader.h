@@ -1,5 +1,5 @@
 #include <foobar2000.h>
-#include <Music_Emu.h>
+#include <gme/Music_Emu.h>
 
 class foobar_File_Reader : public Data_Reader
 {

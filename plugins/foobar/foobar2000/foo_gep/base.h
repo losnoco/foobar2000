@@ -1,7 +1,7 @@
 #include <foobar2000.h>
 
-#include <Music_Emu.h>
-#include <Multi_Buffer.h>
+#include <gme/Music_Emu.h>
+#include <gme/Multi_Buffer.h>
 
 #define ERRCHK(f) \
 	{ \

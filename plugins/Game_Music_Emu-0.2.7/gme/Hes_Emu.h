@@ -25,8 +25,11 @@ public:
 	};
 	BOOST_STATIC_ASSERT( sizeof (header_t) == 0x06 );
 	
+	// Load HES, given reader
+	blargg_err_t load( Data_Reader& );
+
 	// Load HES, given its header and reader for remaining data
-	blargg_err_t load( const header_t&, Emu_Reader& );
+	blargg_err_t load( const header_t&, Data_Reader& );
 	
 	void start_track( int );
 

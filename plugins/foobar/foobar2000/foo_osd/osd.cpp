@@ -32,7 +32,7 @@
 
  */
 
-#define VERSION "1.51"
+#define VERSION "1.52"
 
 /*
 #define GDIPLUS
@@ -41,6 +41,11 @@
 
 /*
 	change log
+
+2005-11-28 12:40 UTC - kode54
+- Fixed stupid typo in menu_osd_control::item_execute_simple guid from guid mess
+- Same in menu_item_osd::set_data!
+- Version is now 1.52
 
 2005-05-12 06:34 UTC - kode54
 - Fixed volume/test color retrieval for $rgb()

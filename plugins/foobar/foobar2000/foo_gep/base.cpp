@@ -11,7 +11,12 @@ input_gep::input_gep()
 
 input_gep::~input_gep()
 {
-	if (emu) delete emu;
+	if (emu)
+	{
+		if ( emu->error_count() )
+			console::formatter() << "Emulation errors: " << emu->error_count();
+		delete emu;
+	}
 }
 
 t_io_result input_gep::open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
@@ -62,20 +67,20 @@ t_io_result input_gep::decode_initialize( t_uint32 p_subsong, unsigned p_flags, 
 	fade_len=MulDiv(tag_fade_ms, sample_rate, 1000);
 
 	subsong = p_subsong;
-	ERRCHK( emu->start_track( subsong ) );
+	emu->start_track( subsong );
 
 	return io_result_success;
 }
 
 t_io_result input_gep::decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
 {
-	if ( ! emu->track_ended() && ! p_abort.is_aborting() )
+	if ( ! emu->track_ended() )
 	{
 		if ( no_infinite && played >= song_len + fade_len ) return io_result_eof;
 
 		if ( ! sample_buffer.check_size( 1024 ) ) return io_result_error_out_of_memory;
 		register blip_sample_t * buf = sample_buffer.get_ptr();
-		ERRCHK( emu->play( 1024, buf ) );
+		emu->play( 1024, buf );
 
 		int d_start,d_end;
 		d_start = played;
@@ -119,7 +124,7 @@ t_io_result input_gep::decode_seek( double p_seconds, abort_callback & p_abort )
 	if ( now == played ) return io_result_success;
 	else if ( now < played )
 	{
-		ERRCHK( emu->start_track( subsong ) );
+		emu->start_track( subsong );
 		played = 0;
 	}
 
@@ -137,7 +142,7 @@ t_io_result input_gep::decode_seek( double p_seconds, abort_callback & p_abort )
 		{
 			register long todo = now - played_;
 			if ( todo > 512 ) todo = 512;
-			ERRCHK( emu->play( todo * 2, buf ) );
+			emu->play( todo * 2, buf );
 			played_ += todo;
 		}
 
@@ -150,7 +155,7 @@ t_io_result input_gep::decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		register long todo = now - played_;
 		if ( todo > 512 ) todo = 512;
-		ERRCHK( emu->play( todo * 2, buf ) );
+		emu->play( todo * 2, buf );
 		played_ += todo;
 	}
 

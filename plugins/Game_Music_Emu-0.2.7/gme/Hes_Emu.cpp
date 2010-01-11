@@ -30,21 +30,12 @@ void Hes_Emu::unload()
 	}
 }
 
-blargg_err_t Hes_Emu::init_sound()
-{
-	voice_count_ = 6;
-	
-	synth.volume( 0.6 / voice_count_ );
-	
-	return blargg_success;
-}
-
 void Hes_Emu::update_eq( blip_eq_t const& eq )
 {
 	synth.treble_eq( eq );
 }
 
-blargg_err_t Hes_Emu::load( const header_t& h, Emu_Reader& in )
+blargg_err_t Hes_Emu::load( const header_t& h, Data_Reader& in )
 {
 	unload();
 	
@@ -54,16 +45,17 @@ blargg_err_t Hes_Emu::load( const header_t& h, Emu_Reader& in )
 	if ( h.vers != 0 )
 		return "Unsupported HES version";
 	
-	blargg_err_t err = init_sound();
-	if ( err )
-		return err;
+	set_voice_count( 6 );
+	set_track_count( 1 );
+	
+	synth.volume( 0.6 / voice_count() );
 
 	unsigned rom_size = sizeof( h ) + in.remain();
 	BOOST::uint8_t * rom = new BOOST::uint8_t [ rom_size ];
 	if ( ! rom )
 		return "Out of memory";
 	memcpy( rom, & h, sizeof( h ) );
-	err = in.read( rom + sizeof( h ), in.remain() );
+	blargg_err_t err = in.read( rom + sizeof( h ), in.remain() );
 	if ( err )
 		return err;
 
@@ -73,6 +65,13 @@ blargg_err_t Hes_Emu::load( const header_t& h, Emu_Reader& in )
 	( ( FESTALON_HES * ) hes )->psg.blip_synth = & synth;
 	
 	return setup_buffer( 1789772.7272 * 4 + 0.5 );
+}
+
+blargg_err_t Hes_Emu::load( Data_Reader& in )
+{
+	header_t h;
+	BLARGG_RETURN_ERR( in.read( &h, sizeof h ) );
+	return load( h, in );
 }
 
 void Hes_Emu::set_voice( int i, Blip_Buffer* center, Blip_Buffer* left, Blip_Buffer* right )

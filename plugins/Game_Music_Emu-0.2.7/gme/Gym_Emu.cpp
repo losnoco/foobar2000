@@ -20,9 +20,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA */
 #include BLARGG_SOURCE_BEGIN
 
 double const gain = 3.0;
-double const oversample_factor = 5 / 3.0;
+//double const oversample_factor = 5 / 3.0;
 
-const long base_clock = 53700300;
+const long base_clock = 53693175; //53700300;
 const long clock_rate = base_clock / 15;
 
 Gym_Emu::Gym_Emu()
@@ -57,6 +57,7 @@ blargg_err_t Gym_Emu::set_sample_rate( long sample_rate )
 	BLARGG_RETURN_ERR( blip_buf.set_sample_rate( sample_rate, 1000 / 60 ) );
 	blip_buf.clock_rate( clock_rate );
 	
+	double oversample_factor = 7671471. / 144. / double( sample_rate );
 	double factor = Dual_Resampler::setup( oversample_factor, 0.990, gain );
 	double fm_sample_rate = sample_rate * factor;
 	BLARGG_RETURN_ERR( fm.set_rate( fm_sample_rate, base_clock / 7.0 ) );

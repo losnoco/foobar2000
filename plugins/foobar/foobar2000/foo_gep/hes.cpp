@@ -1,7 +1,7 @@
 #include "base.h"
 #include "reader.h"
 
-#include <Hes_Emu.h>
+#include <gme/Hes_Emu.h>
 
 class input_hes : public input_gep
 {
@@ -87,7 +87,7 @@ public:
 				foobar_File_Reader rdr( m_file, p_abort );
 				rdr.skip( sizeof( m_header ) );
 
-				ERRCHK( emu->init( sample_rate ) );
+				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( m_header, rdr ) );
 			}
 			catch ( t_io_result code )

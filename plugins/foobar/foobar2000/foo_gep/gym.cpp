@@ -1,7 +1,7 @@
 #include "base.h"
 #include "reader.h"
 
-#include <Gym_Emu.h>
+#include <gme/Gym_Emu.h>
 
 class input_gym : public input_gep
 {
@@ -36,7 +36,7 @@ public:
 
 	t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
-		if ( memcmp( m_header.tag, "GYMX", 4 ) == 0 )
+		if ( memcmp( m_header.signature, "GYMX", 4 ) == 0 )
 		{
 			HEADER_STRING(p_info, "title", m_header.song);
 			HEADER_STRING(p_info, "album", m_header.game);
@@ -69,9 +69,9 @@ public:
 				foobar_File_Reader rdr( m_file, p_abort );
 				rdr.skip( sizeof( m_header ) );
 
-				ERRCHK( emu->init( sample_rate ) );
+				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( m_header, rdr ) );
-				ERRCHK( emu->start_track( 0 ) );
+				emu->start_track( 0 );
 			}
 			catch ( t_io_result code )
 			{
@@ -81,11 +81,9 @@ public:
 			m_file.release();
 		}
 
-		double loop_start;
+		p_info.set_length( double( emu->track_length() ) / double( Gym_Emu::gym_rate ) );
 
-		p_info.set_length( emu->track_length( &loop_start ) );
-
-		if (loop_start >= 0) p_info.info_set_float("gym_loop_start", loop_start, 4);
+		if ( m_header.loop_start > 0 ) p_info.info_set_int("gym_loop_start", byte_order::dword_le_to_native( * ( ( t_uint32 * ) & m_header.loop_start ) ) );
 
 		return io_result_success;
 	}
@@ -109,7 +107,7 @@ public:
 				foobar_File_Reader rdr( m_file, p_abort );
 				rdr.skip( sizeof( m_header ) );
 
-				ERRCHK( emu->init( sample_rate ) );
+				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( m_header, rdr ) );
 			}
 			catch ( t_io_result code )
@@ -120,12 +118,9 @@ public:
 			m_file.release();
 		}
 
-		double loop_start;
-		double length = emu->track_length( &loop_start );
-
-		if (loop_start >= 0 && no_infinite)
+		if (m_header.loop_start > 0 && no_infinite)
 		{
-			tag_song_ms = int( length * 1000. + .5 );
+			tag_song_ms = MulDiv( emu->track_length(), 1000, 60 );
 			tag_fade_ms = 0;
 		}
 

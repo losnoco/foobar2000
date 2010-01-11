@@ -1,7 +1,11 @@
-#define MY_VERSION "1.0"
+#define MY_VERSION "1.1"
 
 /*
 	change log
+
+2005-11-22 11:20 UTC - kode54
+- Fixed seeking/swallow functionality (maybe it's about time I wrote that generic swallow/skip input framework for all these decoders)
+- Version is now 1.1
 
 2005-11-19 01:48 UTC - kode54
 - Initial release
@@ -25,9 +29,11 @@ class input_dsp
 
 	void remove_samples( unsigned n )
 	{
+		dsp.ch[0].filled -= n;
 		dsp.ch[0].readloc = ( dsp.ch[0].readloc + n ) % ( 0x8000/8*14 );
 		if ( dsp.NCH == 2 )
 		{
+			dsp.ch[1].filled -= n;
 			dsp.ch[1].readloc = ( dsp.ch[1].readloc + n ) % ( 0x8000/8*14 );
 		}
 	}
@@ -180,9 +186,6 @@ public:
 
 			if ( ! done && eof ) return io_result_eof;
 
-			dsp.ch[0].filled -= done;
-			if ( dsp.NCH == 2 ) dsp.ch[1].filled -= done;
-
 			pos += done;
 
 			if ( swallow )
@@ -201,6 +204,9 @@ public:
 				}
 			}
 		}
+
+		dsp.ch[0].filled -= done;
+		if ( dsp.NCH == 2 ) dsp.ch[1].filled -= done;
 
 		short * out = sample_buffer.get_ptr();
 
@@ -225,7 +231,7 @@ public:
 
 		if (done)
 		{
-			p_chunk.set_data_fixedpoint( sample_buffer.get_ptr(), done * 2 * dsp.NCH, dsp.ch[0].header.sample_rate, dsp.NCH, 16, audio_chunk::g_guess_channel_config( dsp.NCH ) );
+			p_chunk.set_data_fixedpoint( sample_buffer.get_ptr(), ( ( unsigned char * ) out ) - ( ( unsigned char * ) sample_buffer.get_ptr() ), dsp.ch[0].header.sample_rate, dsp.NCH, 16, audio_chunk::g_guess_channel_config( dsp.NCH ) );
 			return io_result_success;
 		}
 
@@ -235,7 +241,7 @@ public:
 	t_io_result decode_seek( double p_seconds,abort_callback & p_abort )
 	{
 		swallow = int( p_seconds * double( dsp.ch[0].header.sample_rate ) + .5 );
-		if ( swallow > pos )
+		if ( swallow >= pos )
 		{
 			swallow -= pos;
 			return io_result_success;

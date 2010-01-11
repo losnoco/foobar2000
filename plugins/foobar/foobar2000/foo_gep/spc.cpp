@@ -2,7 +2,7 @@
 #include "reader.h"
 #include "config.h"
 
-#include <Spc_Emu.h>
+#include <gme/Spc_Emu.h>
 
 #include "../helpers/window_placement_helper.h"
 
@@ -401,7 +401,7 @@ public:
 				foobar_File_Reader rdr( m_file, p_abort );
 				rdr.skip( sizeof( m_header ) );
 
-				ERRCHK( emu->init( Spc_Emu::native_sample_rate ) );
+				ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
 				ERRCHK( emu->load( m_header, rdr ) );
 			}
 			catch ( t_io_result code )
