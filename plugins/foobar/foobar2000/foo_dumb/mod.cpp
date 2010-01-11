@@ -1,7 +1,23 @@
-#define MYVERSION "0.9.7.4"
+#define MYVERSION "0.9.7.5"
 
 /*
 	changelog
+
+2006-06-03 02:13 UTC - kode54
+- Implemented ASYLUM Music Format support.
+
+2006-06-02 22:06 UTC - kode54
+- Fixed finite looping for speed 0 and global volume 0 triggers.
+- Reset loop count when seeking backwards.
+
+2006-06-02 21:20 UTC - kode54
+- IT renderer now supports pattern jump and break to row on the same row.
+  (coffee-blues 3.mod)
+- Version is now 0.9.7.5
+
+2006-06-02 20:25 UTC - kode54
+- Empty pattern scanner now returns the correct value for completely empty
+  pattern structures, and also checks for lists of empty rows.
 
 2006-06-01 00:47 UTC - kode54
 - STM reader reads effects properly now.
@@ -604,6 +620,7 @@ static const char * exts[]=
 	"UMX",
 	"AM","J2B",
 	"DSM",
+	"AMF",
 };
 
 // {0E54B9FA-05DB-46b2-A3A4-C6C3201D57C0}
@@ -1429,6 +1446,12 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 	{
 		duh = dumb_read_riff(f);
 	}
+	else if ( size >= 32 &&
+		!memcmp( ptr, "ASYLUM Music Format", 19 ) &&
+		!memcmp( ptr + 19, " V1.0", 5 ) )
+	{
+		duh = dumb_read_asy(f);
+	}
 
 	if ( ! duh )
 	{
@@ -1955,6 +1978,7 @@ class input_mod
 	bool no_loop, eof, dynamic_info;
 	int dyn_order, dyn_row, dyn_speed, dyn_tempo, dyn_channels, dyn_max_channels;
 	int written;
+	int loop_count;
 	callback_limit_info limit_info;
 	int fade_time, fade_time_left;
 	DUH *duh;
@@ -2146,7 +2170,7 @@ public:
 
 		interp = cfg_interp;
 		volramp = cfg_volramp;
-		limit_info.loop_count = cfg_loop - 1;
+		limit_info.loop_count = loop_count = cfg_loop - 1;
 		limit_info.fade = cfg_fade && limit_info.loop_count != 0;
 		limit_info.fading = false;
 		fade_time = MulDiv( cfg_fade_time, srate, 1000 );
@@ -2188,7 +2212,7 @@ private:
 		dumb_it_set_ramp_style( itsr, volramp );
 		if ( no_loop && ! limit_info.fade )
 			dumb_it_set_loop_callback( itsr, & dumb_it_callback_terminate, NULL );
-		else if ( limit_info.loop_count != 0 )
+		else if ( loop_count != 0 )
 			dumb_it_set_loop_callback( itsr, & dumb_it_callback_limit_int, & limit_info );
 		dumb_it_set_xm_speed_zero_callback( itsr, & dumb_it_callback_terminate, NULL );
 		dumb_it_set_global_volume_zero_callback( itsr, & dumb_it_callback_terminate, NULL );
@@ -2230,13 +2254,13 @@ retry:
 				eof = true;
 			else
 			{
-				if ( limit_info.loop_count <= 0 )
+				if ( limit_info.loop_count <= 0 && loop_count != 0 )
 				{
 					eof = true;
 				}
 				else
 				{
-					if ( --limit_info.loop_count == 0 )
+					if ( loop_count == 0 || --limit_info.loop_count == 0 )
 					{
 						duh_end_sigrenderer( sr );
 						sr = NULL;
@@ -2316,6 +2340,7 @@ retry:
 		{
 			duh_end_sigrenderer( sr );
 			sr = NULL;
+			limit_info.loop_count = loop_count;
 			if ( ! open2( to_pos ) ) throw exception_io_data();
 		}
 		else if ( to_pos > from_pos )
@@ -2696,7 +2721,7 @@ class preferences_page_mod : public preferences_page
 				if (uGetWindowLong(wnd,DWL_USER))
 				{
 					int t = atoi(string_utf8_from_window((HWND)lp));
-					int scan = atoi(string_utf8_from_window(wnd, IDC_CHIP_SCAN));
+					int scan = cfg_autochip_size_scan;
 					if (t < 1) t = 1;
 					if (t > scan) t = scan;
 					if (t > 10000) t = 10000;
@@ -2713,7 +2738,7 @@ class preferences_page_mod : public preferences_page
 				if (uGetWindowLong(wnd,DWL_USER))
 				{
 					int t = atoi(string_utf8_from_window((HWND)lp));
-					int force = atoi(string_utf8_from_window(wnd, IDC_CHIP_FORCE));
+					int force = cfg_autochip_size_force;
 					if (t < 1) t = 1;
 					if (t <= force) t = force + 1;
 					if (t > 20000) t = 20000;
