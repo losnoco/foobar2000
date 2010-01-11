@@ -80,6 +80,15 @@ public:
 	void mute_voices( int mask );
 	const char** voice_names() const;
 	void play( long count, sample_t* );
+public:
+	// deprecated
+	int track_length( const byte** end_out = NULL, int* remain_out = NULL ) const
+	{
+		return  (header().track_duration [3]*0x1000000L +
+				header().track_duration [2]*0x0010000L + 
+				header().track_duration [1]*0x0000100L + 
+				header().track_duration [0]) / header_t::time_rate;
+	}
 protected:
 	// Classic_Emu
 	void set_voice( int, Blip_Buffer*, Blip_Buffer*, Blip_Buffer* );

@@ -117,6 +117,7 @@ blargg_err_t Gym_Emu::load_( const void* file, long data_offset, long file_size 
 	
 	set_voice_count( 8 );
 	set_track_count( 1 );
+	remute_voices();
 	
 	return blargg_success;
 }

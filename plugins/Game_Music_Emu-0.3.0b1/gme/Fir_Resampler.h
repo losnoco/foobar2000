@@ -7,6 +7,7 @@
 #define FIR_RESAMPLER_H
 
 #include "blargg_common.h"
+#include <string.h>
 
 class Fir_Resampler_ {
 public:
@@ -164,7 +165,7 @@ int Fir_Resampler<width>::read( sample_t* out_begin, long count )
 	
 	int left = write_pos - in;
 	write_pos = &buf [left];
-	STD::memmove( buf.begin(), in, left * sizeof *in );
+	memmove( buf.begin(), in, left * sizeof *in );
 	
 	return out - out_begin;
 }

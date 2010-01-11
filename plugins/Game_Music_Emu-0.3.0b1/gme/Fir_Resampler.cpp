@@ -56,8 +56,8 @@ public:
 	}
 };
 
-template<class T,class Sinc>
-void gen_sinc( int width, double offset, double spacing, int count, double scale, T* p,
+template<class Sinc>
+void gen_sinc( int width, double offset, double spacing, int count, double scale, short* p,
 		const Sinc& sinc )
 {
 	double range = pi * (width / 2);
@@ -241,6 +241,8 @@ int Fir_Resampler_::skip_input( long count )
 {
 	int remain = write_pos - buf.begin();
 	int avail = remain - width_ * stereo;
+	if ( avail < 0 )
+		avail = 0;
 	if ( count > avail )
 		count = avail;
 	

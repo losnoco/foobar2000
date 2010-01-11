@@ -22,6 +22,9 @@ public:
 	void play( long, sample_t* );
 	void start_track( int track );  
 	void set_equalizer( equalizer_t const& );
+public:
+	// deprecated
+	blargg_err_t init( long rate ) { return set_sample_rate( rate ); }
 protected:
 	virtual blargg_err_t setup_buffer( long clock_rate );
 	virtual void set_voice( int index, Blip_Buffer* center,

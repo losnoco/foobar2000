@@ -56,6 +56,12 @@ public:
 	void play( long count, sample_t* );
 	const char** voice_names() const;
 	void skip( long count );
+public:
+	// deprecated
+	blargg_err_t init( long r, double gain = 1.5, double oversample = 5 / 3.0 )
+	{
+		return set_sample_rate( r );
+	}
 protected:
 	int play_frame( blip_time_t blip_time, int sample_count, sample_t* buf );
 private:

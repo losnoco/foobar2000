@@ -1,8 +1,7 @@
 
 // Sets up common environment for Shay Green's libraries.
 //
-// Don't modify this file directly; #define HAVE_CONFIG_H and put your
-// configuration #defines into "config.h".
+// To change configuration options, modify blargg_config.h, not this file.
 
 #ifndef BLARGG_COMMON_H
 #define BLARGG_COMMON_H
@@ -25,11 +24,10 @@
 // BLARGG_BIG_ENDIAN, BLARGG_LITTLE_ENDIAN: Determined automatically, otherwise only
 // one must be #defined to 1. Only needed if something actually depends on byte order.
 #if !defined (BLARGG_BIG_ENDIAN) && !defined (BLARGG_LITTLE_ENDIAN)
-	#ifdef LSB_FIRST
-		#define BLARGG_LITTLE_ENDIAN 1
-	#elif defined (MSB_FIRST) || defined (__powerc) || defined (macintosh)
+	#if defined (MSB_FIRST) || defined (__powerc) || defined (macintosh) || \
+			defined (WORDS_BIGENDIAN) || defined (__BIG_ENDIAN__)
 		#define BLARGG_BIG_ENDIAN 1
-	#elif defined (_MSC_VER) && defined (_M_IX86)
+	#else
 		#define BLARGG_LITTLE_ENDIAN 1
 	#endif
 #endif

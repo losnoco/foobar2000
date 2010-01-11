@@ -71,6 +71,9 @@ public:
 	void play( long, sample_t* );
 	void skip( long );
 	const char** voice_names() const;
+public:
+	// deprecated
+	blargg_err_t init( long r, double gain = 1.4 ) { return set_sample_rate( r ); }
 private:
 	blargg_vector<byte> spc_data;
 	Fir_Resampler<24> resampler;
