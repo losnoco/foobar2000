@@ -9,12 +9,12 @@
 
 static inline int get16bit( unsigned char * p )
 {
-	return byte_order::word_be_to_native( * ( ( t_uint16 * ) p ) );
+	return pfc::byteswap_if_le_t( * ( ( t_uint16 * ) p ) );
 }
 
 static inline int get32bit( unsigned char * p )
 {
-	return ( t_int32 ) byte_order::dword_be_to_native( * ( ( t_uint32 * ) p ) );
+	return ( t_int32 ) pfc::byteswap_if_le_t( * ( ( t_uint32 * ) p ) );
 }
 
 // standard devkit version

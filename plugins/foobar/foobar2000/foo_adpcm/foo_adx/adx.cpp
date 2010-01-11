@@ -120,7 +120,7 @@ void dprintf( const TCHAR * fmt, ... )
 
 static inline t_uint32 read_long( const t_uint8 * ptr )
 {
-	return byte_order::dword_be_to_native( * ( ( t_uint32 * ) ptr ) );
+	return pfc::byteswap_if_le_t( * ( ( t_uint32 * ) ptr ) );
 }
 
 class input_adx

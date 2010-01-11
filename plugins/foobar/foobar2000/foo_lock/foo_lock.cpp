@@ -316,7 +316,8 @@ static void disable()
 
 
 class initquit_foolock : public initquit {
-	virtual void on_init() {
+	virtual void on_init()
+	{
 		if (IsWinVer2000Plus())
 		{
 			win_ver = TRUE;
@@ -324,34 +325,24 @@ class initquit_foolock : public initquit {
 		}
 	}
 
-	virtual void on_quit() {
+	virtual void on_quit()
+	{
 		disable();
 	}
 };
-static initquit_factory <initquit_foolock> foo_initquit;
+static initquit_factory_t <initquit_foolock> foo_initquit;
 
 
 
 
 
-class menu_item_main_foolock : public menu_item_legacy_main {
-	virtual unsigned get_num_items() {
+class mainmenu_command_foolock : public mainmenu_commands {
+	virtual t_uint32 get_command_count()
+	{
 		return 1;
 	}
 
-	virtual void get_item_name(unsigned n, pfc::string_base & out) {
-		out = "Pause on lock";
-	}
-
-	virtual void get_item_default_path(unsigned n, pfc::string_base & out) {
-		out = "Components";
-	}
-
-	virtual bool get_item_description(unsigned n, pfc::string_base & out) {
-		return false;
-	}
-
-	virtual GUID get_item_guid(unsigned n)
+	virtual GUID get_command(t_uint32 p_index)
 	{
 		// {AF0E45EF-3C49-4d54-A3D2-DE8134813FFA}
 		static const GUID guid = 
@@ -359,35 +350,45 @@ class menu_item_main_foolock : public menu_item_legacy_main {
 		return guid;
 	}
 	
-	virtual void perform_command(unsigned n) {
-		if (n==0 && core_api::assert_main_thread()) {
-			if (cfg_enabled) {
-				cfg_enabled=FALSE;
+	virtual void get_name(t_uint32 p_index,pfc::string_base & p_out)
+	{
+		p_out = "Pause on lock";
+	}
+
+	virtual bool get_description(t_uint32 p_index,pfc::string_base & p_out)
+	{
+		p_out = "Pauses playback when workstation is locked or session is disconnected and resumes on unlock or reconnect.";
+		return true;
+	}
+
+	virtual GUID get_parent()
+	{
+		return mainmenu_groups::playback_etc;
+	}
+
+	virtual bool get_display(t_uint32 p_index,pfc::string_base & p_text,t_uint32 & p_flags)
+	{
+		p_flags = ( win_ver ) ? ( ( cfg_enabled ) ? flag_checked : 0 ) : flag_disabled;
+		get_name(p_index,p_text);
+		return true;
+	}
+
+	virtual void execute(t_uint32 p_index,service_ptr_t<service_base> p_callback)
+	{
+		if ( p_index == 0 && core_api::assert_main_thread() )
+		{
+			if (cfg_enabled)
+			{
+				cfg_enabled = 0;
 				disable();
 			}
-			else {
-				cfg_enabled=TRUE;
+			else
+			{
+				cfg_enabled = 1;
 				enable();
 			}
 		}
 	}
-
-	virtual bool is_checked(unsigned n) {
-		if (n == 0) return !!cfg_enabled;
-		return false;
-	}
-
-	virtual bool is_disabled(unsigned n) {
-		return !win_ver;
-	}
-
-	virtual bool get_description(unsigned n, pfc::string_base & out) {
-		if (n == 0) {
-			out = "Toggles PauseOnLock";
-			return true;
-		}
-		return false;
-	}
 };
 
-static menu_item_factory_t <menu_item_main_foolock> g_menu_item_main_factory;
+static mainmenu_commands_factory_t <mainmenu_command_foolock> g_mainmenu_commands_foolock_factory;

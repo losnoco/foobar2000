@@ -95,7 +95,7 @@ void CNSFFile::LoadFile_NESM( service_ptr_t<file> & p_file, bool needdata, abort
 		p_file->read_object( &hdr, 0x80, p_abort );
 
 		//confirm the header
-		if( byte_order::dword_le_to_native( hdr.nHeader ) != HEADERTYPE_NESM ) throw exception_io_data();
+		if( pfc::byteswap_if_be_t( hdr.nHeader ) != HEADERTYPE_NESM ) throw exception_io_data();
 		if( hdr.nHeaderExtra != 0x1A )                                         throw exception_io_data();
 		if( hdr.nVersion > 2 )                                                 throw exception_io_data();
 
@@ -104,11 +104,11 @@ void CNSFFile::LoadFile_NESM( service_ptr_t<file> & p_file, bool needdata, abort
 
 		bIsExtended =				false;
 		nIsPal =					((hdr.nNTSC_PAL & 0x03) == 0x01);
-		nPAL_PlaySpeed =			byte_order::word_le_to_native( hdr.nSpeedPAL );			//blarg
-		nNTSC_PlaySpeed =			byte_order::word_le_to_native( hdr.nSpeedNTSC );			//blarg
-		nLoadAddress =				byte_order::word_le_to_native( hdr.nLoadAddress );
-		nInitAddress =				byte_order::word_le_to_native( hdr.nInitAddress );
-		nPlayAddress =				byte_order::word_le_to_native( hdr.nPlayAddress );
+		nPAL_PlaySpeed =			pfc::byteswap_if_be_t( hdr.nSpeedPAL );			//blarg
+		nNTSC_PlaySpeed =			pfc::byteswap_if_be_t( hdr.nSpeedNTSC );			//blarg
+		nLoadAddress =				pfc::byteswap_if_be_t( hdr.nLoadAddress );
+		nInitAddress =				pfc::byteswap_if_be_t( hdr.nInitAddress );
+		nPlayAddress =				pfc::byteswap_if_be_t( hdr.nPlayAddress );
 		nChipExtensions =			hdr.nExtraChip;
 
 
@@ -184,9 +184,9 @@ void CNSFFile::LoadFile_NSFE( service_ptr_t<file> & p_file, bool needdata, abort
 
 				bIsExtended =			true;
 				nIsPal =				info.nIsPal;
-				nLoadAddress =			byte_order::word_le_to_native( info.nLoadAddress );
-				nInitAddress =			byte_order::word_le_to_native( info.nInitAddress );
-				nPlayAddress =			byte_order::word_le_to_native( info.nPlayAddress );
+				nLoadAddress =			pfc::byteswap_if_be_t( info.nLoadAddress );
+				nInitAddress =			pfc::byteswap_if_be_t( info.nInitAddress );
+				nPlayAddress =			pfc::byteswap_if_be_t( info.nPlayAddress );
 				nChipExtensions =		info.nExt;
 				nTrackCount =			info.nTrackCount;
 				nInitialTrack =			info.nStartingTrack;
@@ -383,17 +383,17 @@ void CNSFFile::SaveFile_NESM( service_ptr_t<file> & p_file, abort_callback & p_a
 	hdr.nVersion =				1;
 	hdr.nTrackCount =			nTrackCount;
 	hdr.nInitialTrack =			nInitialTrack + 1;
-	hdr.nLoadAddress =			byte_order::word_native_to_le( nLoadAddress );
-	hdr.nInitAddress =			byte_order::word_native_to_le( nInitAddress );
-	hdr.nPlayAddress =			byte_order::word_native_to_le( nPlayAddress );
+	hdr.nLoadAddress =			pfc::byteswap_if_be_t( nLoadAddress );
+	hdr.nInitAddress =			pfc::byteswap_if_be_t( nInitAddress );
+	hdr.nPlayAddress =			pfc::byteswap_if_be_t( nPlayAddress );
 
 	if(szGameTitle)				memcpy(hdr.szGameTitle,szGameTitle,min(strlen(szGameTitle),31));
 	if(szArtist)				memcpy(hdr.szArtist   ,szArtist   ,min(strlen(szArtist)   ,31));
 	if(szCopyright)				memcpy(hdr.szCopyright,szCopyright,min(strlen(szCopyright),31));
 
-	hdr.nSpeedNTSC =			byte_order::word_native_to_le( nNTSC_PlaySpeed );
+	hdr.nSpeedNTSC =			pfc::byteswap_if_be_t( nNTSC_PlaySpeed );
 	memcpy(hdr.nBankSwitch,nBankswitch,8);
-	hdr.nSpeedPAL =				byte_order::word_native_to_le( nPAL_PlaySpeed );
+	hdr.nSpeedPAL =				pfc::byteswap_if_be_t( nPAL_PlaySpeed );
 	hdr.nNTSC_PAL =				nIsPal;
 	hdr.nExtraChip =			nChipExtensions;
 
@@ -425,10 +425,10 @@ void CNSFFile::SaveFile_NSFE( service_ptr_t<file> & p_file, abort_callback & p_a
 		nChunkType =			CHUNKTYPE_INFO;
 		nChunkSize =			sizeof(NSFE_INFOCHUNK);
 		info.nExt =				nChipExtensions;
-		info.nInitAddress =		byte_order::word_native_to_le( nInitAddress );
+		info.nInitAddress =		pfc::byteswap_if_be_t( nInitAddress );
 		info.nIsPal =			nIsPal;
-		info.nLoadAddress =		byte_order::word_native_to_le( nLoadAddress );
-		info.nPlayAddress =		byte_order::word_native_to_le( nPlayAddress );
+		info.nLoadAddress =		pfc::byteswap_if_be_t( nLoadAddress );
+		info.nPlayAddress =		pfc::byteswap_if_be_t( nPlayAddress );
 		info.nStartingTrack =	nInitialTrack;
 		info.nTrackCount =		nTrackCount;
 

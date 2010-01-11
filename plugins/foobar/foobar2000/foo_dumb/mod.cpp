@@ -780,40 +780,40 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 {
 	PITFILEHEADER pifh = (PITFILEHEADER) ptr;
 	if ((!ptr) || (size < 0x100)) return false;
-	if ((byte_order::dword_le_to_native(pifh->id) != 0x4D504D49) ||
-		(byte_order::word_le_to_native(pifh->insnum) >= 256) ||
-		(!pifh->smpnum) || (byte_order::word_le_to_native(pifh->smpnum) >= 256) ||
+	if ((pfc::byteswap_if_be_t(pifh->id) != 0x4D504D49) ||
+		(pfc::byteswap_if_be_t(pifh->insnum) >= 256) ||
+		(!pifh->smpnum) || (pfc::byteswap_if_be_t(pifh->smpnum) >= 256) ||
 		(!pifh->ordnum)) return false;
-	if (sizeof(ITFILEHEADER) + byte_order::word_le_to_native(pifh->ordnum) +
-		byte_order::word_le_to_native(pifh->insnum)*4 +
-		byte_order::word_le_to_native(pifh->smpnum)*4 +
-		byte_order::word_le_to_native(pifh->patnum)*4 > size) return false;
+	if (sizeof(ITFILEHEADER) + pfc::byteswap_if_be_t(pifh->ordnum) +
+		pfc::byteswap_if_be_t(pifh->insnum)*4 +
+		pfc::byteswap_if_be_t(pifh->smpnum)*4 +
+		pfc::byteswap_if_be_t(pifh->patnum)*4 > size) return false;
 
 	string8_fastalloc ver;
 
 	ver = "IT v";
-	ver << format_int( byte_order::word_le_to_native(pifh->cmwt) >> 8 );
+	ver << format_int( pfc::byteswap_if_be_t(pifh->cmwt) >> 8 );
 	ver.add_byte('.');
-	ver << format_int( byte_order::word_le_to_native(pifh->cmwt) & 255, 2, 16 );
+	ver << format_int( pfc::byteswap_if_be_t(pifh->cmwt) & 255, 2, 16 );
 	info.info_set( "codec", ver );
 
-	ver = format_int( byte_order::word_le_to_native(pifh->cwtv) >> 8 );
+	ver = format_int( pfc::byteswap_if_be_t(pifh->cwtv) >> 8 );
 	ver.add_byte('.');
-	ver << format_int( byte_order::word_le_to_native(pifh->cwtv) & 255, 2, 16 );
+	ver << format_int( pfc::byteswap_if_be_t(pifh->cwtv) & 255, 2, 16 );
 	info.info_set( field_trackerver, ver );
 
-	if ( pifh->smpnum ) info.info_set_int( field_samples, byte_order::word_le_to_native(pifh->smpnum) );
-	if ( pifh->insnum ) info.info_set_int( field_instruments, byte_order::word_le_to_native(pifh->insnum) );
+	if ( pifh->smpnum ) info.info_set_int( field_samples, pfc::byteswap_if_be_t(pifh->smpnum) );
+	if ( pifh->insnum ) info.info_set_int( field_instruments, pfc::byteswap_if_be_t(pifh->insnum) );
 
 	if ( meta && pifh->songname[0] ) info.meta_add( field_title, pfc::stringcvt::string_utf8_from_codepage( CP_OEMCP,(char*)&pifh->songname, 26 ) );
 
 	unsigned n, l, m_nChannels = 0;
 
-	if ( meta && ( byte_order::word_le_to_native(pifh->special) & 1 ) && ( pifh->msglength ) && ( byte_order::dword_le_to_native(pifh->msgoffset) + byte_order::word_le_to_native(pifh->msglength) < size ) )
+	if ( meta && ( pfc::byteswap_if_be_t(pifh->special) & 1 ) && ( pifh->msglength ) && ( pfc::byteswap_if_be_t(pifh->msgoffset) + pfc::byteswap_if_be_t(pifh->msglength) < size ) )
 	{
 		string8 msg;
-		const char * str = (const char *) ptr + byte_order::dword_le_to_native(pifh->msgoffset);
-		for (n = 0, l = byte_order::word_le_to_native(pifh->msglength); n < l; n++, str++)
+		const char * str = (const char *) ptr + pfc::byteswap_if_be_t(pifh->msgoffset);
+		for (n = 0, l = pfc::byteswap_if_be_t(pifh->msglength); n < l; n++, str++)
 		{
 			if (*str == 13)
 			{
@@ -843,11 +843,11 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 	
 	if (meta)
 	{
-		offset = (t_uint32 *)(ptr + 0xC0 + byte_order::word_le_to_native(pifh->ordnum) + byte_order::word_le_to_native(pifh->insnum) * 4);
+		offset = (t_uint32 *)(ptr + 0xC0 + pfc::byteswap_if_be_t(pifh->ordnum) + pfc::byteswap_if_be_t(pifh->insnum) * 4);
 
-		for (n = 0, l = byte_order::word_le_to_native(pifh->smpnum); n < l; n++, offset++)
+		for (n = 0, l = pfc::byteswap_if_be_t(pifh->smpnum); n < l; n++, offset++)
 		{
-			t_uint32 offset_n = byte_order::dword_le_to_native( *offset );
+			t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
 			if ((!offset_n) || (offset_n >= size)) continue;
 			if (*(ptr + offset_n + 0x14))
 			{
@@ -858,11 +858,11 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			}
 		}
 
-		offset = (t_uint32 *)(ptr + 0xC0 + byte_order::word_le_to_native(pifh->ordnum));
+		offset = (t_uint32 *)(ptr + 0xC0 + pfc::byteswap_if_be_t(pifh->ordnum));
 
-		for (n = 0, l = byte_order::word_le_to_native(pifh->insnum); n < l; n++, offset++)
+		for (n = 0, l = pfc::byteswap_if_be_t(pifh->insnum); n < l; n++, offset++)
 		{
-			t_uint32 offset_n = byte_order::dword_le_to_native( *offset );
+			t_uint32 offset_n = pfc::byteswap_if_be_t( *offset );
 			if ((!offset_n) || (offset_n >= size)) continue;
 			if (*(ptr + offset_n + 0x20))
 			{
@@ -874,16 +874,16 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 		}
 	}
 
-	unsigned pos = 0xC0 + byte_order::word_le_to_native(pifh->ordnum) + byte_order::word_le_to_native(pifh->insnum) * 4 + byte_order::word_le_to_native(pifh->smpnum) * 4 + byte_order::word_le_to_native(pifh->patnum) * 4;
+	unsigned pos = 0xC0 + pfc::byteswap_if_be_t(pifh->ordnum) + pfc::byteswap_if_be_t(pifh->insnum) * 4 + pfc::byteswap_if_be_t(pifh->smpnum) * 4 + pfc::byteswap_if_be_t(pifh->patnum) * 4;
 
 	if (pos < size)
 	{
-		t_uint16 val16 = byte_order::word_le_to_native( *(t_uint16 *)(ptr + pos) );
+		t_uint16 val16 = pfc::byteswap_if_be_t( *(t_uint16 *)(ptr + pos) );
 		pos += 2;
 		if (pos + val16 * 8 < size) pos += val16 * 8;
 	}
 
-	if (byte_order::word_le_to_native(pifh->flags) & 0x80)
+	if (pfc::byteswap_if_be_t(pifh->flags) & 0x80)
 	{
 		if (pos + sizeof(MODMIDICFG) < size)
 		{
@@ -891,9 +891,9 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 		}
 	}
 
-	if ((pos + 8 < size) && (byte_order::dword_le_to_native(*(t_uint32 *)(ptr + pos)) == 0x4d414e50)) // "PNAM"
+	if ((pos + 8 < size) && (pfc::byteswap_if_be_t(*(t_uint32 *)(ptr + pos)) == 0x4d414e50)) // "PNAM"
 	{
-		unsigned len = byte_order::dword_le_to_native(*(t_uint32 *)(ptr + pos + 4));
+		unsigned len = pfc::byteswap_if_be_t(*(t_uint32 *)(ptr + pos + 4));
 		pos += 8;
 		if ((pos + len <= size) && (len <= 240 * 32) && (len >= 32))
 		{
@@ -915,9 +915,9 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 		}
 	}
 
-	if ((pos + 8 < size) && (byte_order::dword_le_to_native(*(t_uint32 *)(ptr + pos)) == 0x4d414e43)) // "CNAM"
+	if ((pos + 8 < size) && (pfc::byteswap_if_be_t(*(t_uint32 *)(ptr + pos)) == 0x4d414e43)) // "CNAM"
 	{
-		unsigned len = byte_order::dword_le_to_native(*(t_uint32 *)(ptr + pos + 4));
+		unsigned len = pfc::byteswap_if_be_t(*(t_uint32 *)(ptr + pos + 4));
 		pos += 8;
 		if ((pos + len <= size) && (len <= 64 * 20) && (len >= 20))
 		{
@@ -940,17 +940,17 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 		}
 	}
 
-	offset = (t_uint32 *)(ptr + 0xC0 + byte_order::word_le_to_native(pifh->ordnum) + byte_order::word_le_to_native(pifh->insnum) * 4 + byte_order::word_le_to_native(pifh->smpnum) * 4);
+	offset = (t_uint32 *)(ptr + 0xC0 + pfc::byteswap_if_be_t(pifh->ordnum) + pfc::byteswap_if_be_t(pifh->insnum) * 4 + pfc::byteswap_if_be_t(pifh->smpnum) * 4);
 
 	BYTE chnmask[64];
 
 	for (n = 0, l = pifh->patnum; n < l; n++)
 	{
 		memset(chnmask, 0, sizeof(chnmask));
-		t_uint32 offset_n = byte_order::dword_le_to_native( offset[n] );
+		t_uint32 offset_n = pfc::byteswap_if_be_t( offset[n] );
 		if ((!offset_n) || (offset_n + 4 >= size)) continue;
-		unsigned len = byte_order::word_le_to_native(*(t_uint16 *)(ptr + offset_n));
-		unsigned rows = byte_order::word_le_to_native(*(t_uint16 *)(ptr + offset_n + 2));
+		unsigned len = pfc::byteswap_if_be_t(*(t_uint16 *)(ptr + offset_n));
+		unsigned rows = pfc::byteswap_if_be_t(*(t_uint16 *)(ptr + offset_n + 2));
 		if ((rows < 4) || (rows > 256)) continue;
 		if (offset_n + 8 + len > size) continue;
 		unsigned i = 0;

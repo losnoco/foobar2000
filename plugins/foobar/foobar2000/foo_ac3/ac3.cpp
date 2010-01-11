@@ -198,7 +198,7 @@ public:
 				struct APETagFooterStruct   T;
 				m_file->seek( end - ( sizeof T ), p_abort );
 				m_file->read_object_t( T, p_abort );
-				end -= t_filesize( byte_order::dword_le_to_native( * ( ( t_uint32 * ) & T.Length ) ) );
+				end -= t_filesize( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) & T.Length ) ) );
 				if ( T.Flags[3] & 0x80 ) end -= sizeof(T);
 			}
 			catch ( const exception_io_data & ) {}
@@ -259,10 +259,10 @@ public:
 			static t_uint8 signature[] = { 'A', 'P', 'E', 'T', 'A', 'G', 'E', 'X' };
 			if ( !memcmp ( T.ID, signature, sizeof ( T.ID ) ) )
 			{
-				unsigned Ver = byte_order::dword_le_to_native( * ( ( t_uint32 * ) &T.Version ) );
+				unsigned Ver = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &T.Version ) );
 				if ( (Ver == 1000) || (Ver == 2000) )
 				{
-					end -= t_filesize( byte_order::dword_le_to_native( * ( ( t_uint32 * ) &T.Length ) ) );
+					end -= t_filesize( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &T.Length ) ) );
 					if ( T.Flags[ 3 ] & 0x80 ) end -= sizeof( T );
 				}
 			}

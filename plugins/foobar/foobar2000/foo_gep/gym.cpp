@@ -73,7 +73,7 @@ public:
 		p_info.set_length( double( emu->track_length() ) / double( Gym_Emu::gym_rate ) );
 
 		if ( * ( ( t_uint32 * ) & m_header.loop_start ) )
-			p_info.info_set_int("gym_loop_start", byte_order::dword_le_to_native( * ( ( t_uint32 * ) & m_header.loop_start ) ) );
+			p_info.info_set_int("gym_loop_start", pfc::byteswap_if_be_t( * ( ( t_uint32 * ) & m_header.loop_start ) ) );
 	}
 
 	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )

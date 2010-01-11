@@ -577,7 +577,7 @@ static bool context_time_dialog(unsigned *song_ms, unsigned *fade_ms)
 	return ret;
 }
 
-class context_spc : public menu_item_legacy_context
+class context_spc : public contextmenu_item_simple
 {
 public:
 	virtual unsigned get_num_items() { return 1; }
@@ -672,5 +672,5 @@ public:
 
 DECLARE_FILE_TYPE("SPC files", "*.SPC");
 
-static input_factory_t    <input_spc>   g_input_spc_factory;
-static menu_item_factory_t<context_spc> g_menu_item_context_spc_factory;
+static input_factory_t           <input_spc>   g_input_spc_factory;
+static contextmenu_item_factory_t<context_spc> g_contextmenu_item_spc_factory;

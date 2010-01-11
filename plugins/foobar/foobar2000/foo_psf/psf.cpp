@@ -722,11 +722,11 @@ private:
 		r->seek(0, m_abort);
 		DBG("read(16)");
 		r->read_object(ptr, 16, m_abort);
-		int reserved_size = byte_order::dword_le_to_native( ((unsigned long*)ptr)[1] );
-		int exe_size = byte_order::dword_le_to_native( ((unsigned long*)ptr)[2] );
+		int reserved_size = pfc::byteswap_if_be_t( ((unsigned long*)ptr)[1] );
+		int exe_size = pfc::byteswap_if_be_t( ((unsigned long*)ptr)[2] );
 		if (size < 16 + reserved_size + exe_size) return 0;
 		DBG("size okay");
-		uLong exe_crc = byte_order::dword_le_to_native( ((unsigned long*)ptr)[3] );
+		uLong exe_crc = pfc::byteswap_if_be_t( ((unsigned long*)ptr)[3] );
 		r->seek(reserved_size + 16, m_abort);
 		buf.set_size( exe_size );
 		ptr = buf.get_ptr();
@@ -1310,8 +1310,8 @@ public:
 		m_file->read_object( ptr, 16, p_abort );
 		if (ptr[0] != 'P' || ptr[1] != 'S' || ptr[2] != 'F' ||
 			(ptr[3] != 1 && ptr[3] != 2)) throw exception_io_data();
-		int reserved_size = byte_order::dword_le_to_native( ((unsigned long*)ptr)[1] );
-		int exe_size = byte_order::dword_le_to_native( ((unsigned long*)ptr)[2] );
+		int reserved_size = pfc::byteswap_if_be_t( ((unsigned long*)ptr)[1] );
+		int exe_size = pfc::byteswap_if_be_t( ((unsigned long*)ptr)[2] );
 		m_file->seek(16 + reserved_size + exe_size, p_abort);
 		m_file->set_eof(p_abort);
 
@@ -1888,7 +1888,7 @@ static bool context_time_dialog(unsigned * song_ms, unsigned * fade_ms)
 	return ret;
 }
 
-class context_psf : public menu_item_legacy_context
+class context_psf : public contextmenu_item_simple
 {
 public:
 	virtual unsigned get_num_items() { return 1; }
@@ -2020,19 +2020,19 @@ class psf_file_types : public input_file_type
 class version_psf : public componentversion
 {
 public:
-	virtual void get_file_name(pfc::string_base & out) { out.set_string(core_api::get_my_file_name()); }
-	virtual void get_component_name(pfc::string_base & out) { out.set_string("Highly Experimental"); }
-	virtual void get_component_version(pfc::string_base & out) { out.set_string(MYVERSION); }
+	virtual void get_file_name(pfc::string_base & out) { out = core_api::get_my_file_name(); }
+	virtual void get_component_name(pfc::string_base & out) { out = "Highly Experimental"; }
+	virtual void get_component_version(pfc::string_base & out) { out = MYVERSION; }
 	virtual void get_about_message(pfc::string_base & out)
 	{
-		out.set_string("Foobar2000 version by kode54\nOriginal library and concept by Neill Corlett\n\nCore: ");
-		out.add_string(psx_getversion());
-		out.add_string("\n\nhttp://www.neillcorlett.com/\nhttp://www.saunalahti.fi/cse/kode54/");
+		out = "Foobar2000 version by kode54\nOriginal library and concept by Neill Corlett\n\nCore: ";
+		out += psx_getversion();
+		out += "\n\nhttp://www.neillcorlett.com/\nhttp://www.saunalahti.fi/cse/kode54/";
 	}
 };
 
 static input_singletrack_factory_t<input_psf>                      g_input_psf_factory;
 static preferences_page_factory_t <preferences_page_psf>           g_config_psf_factory;
-static menu_item_factory_t        <context_psf>                    g_menu_item_context_psf_factory;
+static contextmenu_item_factory_t <context_psf>                    g_contextmenu_item_psf_factory;
 static service_factory_single_t   <input_file_type,psf_file_types> g_input_file_type_psf_factory;
 static service_factory_single_t   <componentversion,version_psf>   g_componentversion_psf_factory;

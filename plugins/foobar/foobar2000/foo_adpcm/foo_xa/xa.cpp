@@ -833,27 +833,27 @@ static t_filesize check_cdxa(service_ptr_t<file> & r, abort_callback & p_abort)
 	r->read_object( header, 4, p_abort );
 	t_filesize length = r->get_size( p_abort );
 
-	if ( byte_order::dword_le_to_native( * ( ( t_uint32 * ) header ) ) != 'FFIR' )
+	if ( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) header ) ) != 'FFIR' )
 	{
 		if (!(length & 2047)) return ~0;
 		return 0; // no header
 	}
 	r->read_object( header, 4, p_abort );
-	if ( byte_order::dword_le_to_native( * ( ( t_uint32 * ) header ) ) + 8 > length ) throw exception_io_data();
+	if ( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) header ) ) + 8 > length ) throw exception_io_data();
 	r->read_object( header, 8, p_abort );
-	if ( byte_order::dword_le_to_native( * ( ( t_uint32 * ) header ) ) != 'AXDC' ||
-		byte_order::dword_le_to_native( ( ( t_uint32 * ) header )[ 1 ] ) != ' tmf' ) throw exception_io_data();
+	if ( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) header ) ) != 'AXDC' ||
+		pfc::byteswap_if_be_t( ( ( t_uint32 * ) header )[ 1 ] ) != ' tmf' ) throw exception_io_data();
 	unsigned size;
 	r->read_object( header, 4, p_abort );
-	size = byte_order::dword_le_to_native( * ( ( t_uint32 * ) header ) );
+	size = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) header ) );
 	foo.grow_size( size );
 	header = foo.get_ptr();
 	r->read_object( header, size, p_abort );
 	if ( header[5] != 'U' || header[6] != 'X' || header[7] != 'A' ) throw exception_io_data();
 blah:
 	r->read_object( header, 8, p_abort );
-	size = byte_order::dword_le_to_native( ( ( t_uint32 * ) header )[ 1 ] );
-	if ( byte_order::dword_le_to_native( * ( ( t_uint32 * ) header ) ) != 'atad' )
+	size = pfc::byteswap_if_be_t( ( ( t_uint32 * ) header )[ 1 ] );
+	if ( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) header ) ) != 'atad' )
 	{
 		// yay! let's skip ahead
 		r->seek_ex( size, file::seek_from_current, p_abort );

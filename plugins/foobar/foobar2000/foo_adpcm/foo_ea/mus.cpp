@@ -63,9 +63,9 @@ class input_ea_mus
 
 	void decode_ima_mono( const t_uint8 * src, t_int16 * dst, unsigned count )
 	{
-		int index = byte_order::dword_le_to_native( * ( ( t_int32 * ) src ) );
+		int index = pfc::byteswap_if_be_t( * ( ( t_int32 * ) src ) );
 		src += 4;
-		int current_sample = byte_order::dword_le_to_native( * ( ( t_int32 * ) src ) );
+		int current_sample = pfc::byteswap_if_be_t( * ( ( t_int32 * ) src ) );
 		src += 4;
 		if ( index < 0 || index > ISSTMAX ) return;
 		for ( unsigned i = 0; i < count; ++i )
@@ -106,13 +106,13 @@ class input_ea_mus
 
 	void decode_ima_stereo( const t_uint8 * src, t_int16 * dst, unsigned count )
 	{
-		int index_l = byte_order::dword_le_to_native( * ( ( t_int32 * ) src ) );
+		int index_l = pfc::byteswap_if_be_t( * ( ( t_int32 * ) src ) );
 		src += 4;
-		int index_r = byte_order::dword_le_to_native( * ( ( t_int32 * ) src ) );
+		int index_r = pfc::byteswap_if_be_t( * ( ( t_int32 * ) src ) );
 		src += 4;
-		int current_sample_l = byte_order::dword_le_to_native( * ( ( t_int32 * ) src ) );
+		int current_sample_l = pfc::byteswap_if_be_t( * ( ( t_int32 * ) src ) );
 		src += 4;
-		int current_sample_r = byte_order::dword_le_to_native( * ( ( t_int32 * ) src ) );
+		int current_sample_r = pfc::byteswap_if_be_t( * ( ( t_int32 * ) src ) );
 		src += 4;
 		if ( index_l < 0 || index_l > ISSTMAX ||
 			index_r < 0 || index_r > ISSTMAX ) return;
@@ -181,9 +181,9 @@ class input_ea_mus
 
 	void decode_ea_mono( const t_uint8 * src, t_int16 * dst, unsigned count )
 	{
-		int current_sample = ( t_int16 ) byte_order::word_le_to_native( * ( ( t_uint16 * ) src ) );
+		int current_sample = ( t_int16 ) pfc::byteswap_if_be_t( * ( ( t_uint16 * ) src ) );
 		src += 2;
-		int previous_sample = ( t_int16 ) byte_order::word_le_to_native( * ( ( t_uint16 * ) src ) );
+		int previous_sample = ( t_int16 ) pfc::byteswap_if_be_t( * ( ( t_uint16 * ) src ) );
 		src += 2;
 
 		while ( count )
@@ -219,13 +219,13 @@ class input_ea_mus
 
 	void decode_ea_stereo( const t_uint8 * src, t_int16 * dst, unsigned count )
 	{
-		int current_sample_l = ( t_int16 ) byte_order::word_le_to_native( * ( ( t_uint16 * ) src ) );
+		int current_sample_l = ( t_int16 ) pfc::byteswap_if_be_t( * ( ( t_uint16 * ) src ) );
 		src += 2;
-		int previous_sample_l = ( t_int16 ) byte_order::word_le_to_native( * ( ( t_uint16 * ) src ) );
+		int previous_sample_l = ( t_int16 ) pfc::byteswap_if_be_t( * ( ( t_uint16 * ) src ) );
 		src += 2;
-		int current_sample_r = ( t_int16 ) byte_order::word_le_to_native( * ( ( t_uint16 * ) src ) );
+		int current_sample_r = ( t_int16 ) pfc::byteswap_if_be_t( * ( ( t_uint16 * ) src ) );
 		src += 2;
-		int previous_sample_r = ( t_int16 ) byte_order::word_le_to_native( * ( ( t_uint16 * ) src ) );
+		int previous_sample_r = ( t_int16 ) pfc::byteswap_if_be_t( * ( ( t_uint16 * ) src ) );
 		src += 2;
 
 		while ( count )
@@ -308,7 +308,7 @@ public:
 		if ( memcmp( data_buffer.get_ptr(), sig_header, 4 ) ) throw exception_io_data();
 
 		service_impl_single_t<reader_limited> m_file2;
-		m_file2.init( m_file, 8, byte_order::dword_le_to_native( * ( ( t_uint32 * ) ( data_buffer.get_ptr() + 4 ) ) ), p_abort );
+		m_file2.init( m_file, 8, pfc::byteswap_if_be_t( * ( ( t_uint32 * ) ( data_buffer.get_ptr() + 4 ) ) ), p_abort );
 
 		m_file2.read_object( data_buffer.get_ptr(), 4, p_abort );
 
@@ -474,7 +474,7 @@ public:
 		{
 			m_file->read_object( data_buffer.get_ptr(), 8, p_abort );
 			t_filesize offset = m_file->get_position( p_abort );
-			m_file2.init( m_file, offset, offset - 8 + byte_order::dword_le_to_native( * ( ( t_uint32 * ) ( data_buffer.get_ptr() + 4 ) ) ), p_abort );
+			m_file2.init( m_file, offset, offset - 8 + pfc::byteswap_if_be_t( * ( ( t_uint32 * ) ( data_buffer.get_ptr() + 4 ) ) ), p_abort );
 
 			if ( ! memcmp( data_buffer.get_ptr(), sig_chunk_count, 4 ) )
 			{
@@ -650,9 +650,9 @@ public:
 			{
 				sample_buffer.grow_size( info.samples * 2 * 2 );
 				const t_uint8 * src = data_buffer.get_ptr();
-				t_uint32 offset_left = byte_order::dword_le_to_native( * ( ( t_uint32 * ) src ) );
+				t_uint32 offset_left = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) src ) );
 				src += 4;
-				t_uint32 offset_right = byte_order::dword_le_to_native( * ( ( t_uint32 * ) src ) );
+				t_uint32 offset_right = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) src ) );
 				src += 4;
 				t_int16 * dst = ( t_int16 * ) sample_buffer.get_ptr();
 				decode_ima_mono( src + offset_left, dst, info.samples );
@@ -676,9 +676,9 @@ public:
 			{
 				sample_buffer.grow_size( info.samples * 2 * 2 );
 				const t_uint8 * src = data_buffer.get_ptr();
-				t_uint32 offset_left = byte_order::dword_le_to_native( * ( ( t_uint32 * ) src ) );
+				t_uint32 offset_left = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) src ) );
 				src += 4;
-				t_uint32 offset_right = byte_order::dword_le_to_native( * ( ( t_uint32 * ) src ) );
+				t_uint32 offset_right = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) src ) );
 				src += 4;
 				t_int16 * dst = ( t_int16 * ) sample_buffer.get_ptr();
 				decode_ea_mono( src + offset_left, dst, info.samples );
@@ -839,7 +839,7 @@ public:
 			if ( s[ 1 ] > 1 ) throw exception_io_data();
 
 			service_ptr_t< reader_limited > partfile = new service_impl_t< reader_limited >;
-			partfile->init( m_file, byte_order::dword_be_to_native( offsets[ i ] ), byte_order::dword_be_to_native( offsets[ i + 1 ] ), p_abort );
+			partfile->init( m_file, pfc::byteswap_if_le_t( offsets[ i ] ), pfc::byteswap_if_le_t( offsets[ i + 1 ] ), p_abort );
 			service_ptr_t< file > m_file2 = partfile.get_ptr();
 
 			section & sec = sections[ i ];

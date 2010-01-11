@@ -147,7 +147,7 @@ class input_imf
 		Xdata * out = (Xdata*) in;
 		for (int i = LogCount - 1; i >= 0; i--)
 		{
-			out[i].time = byte_order::word_le_to_native( in[i].time );
+			out[i].time = pfc::byteswap_if_be_t( in[i].time );
 			out[i].val = in[i].val;
 			out[i].reg = in[i].reg;
 		}
@@ -158,8 +158,8 @@ class input_imf
 		Xdata * ptr = imf_data.get_ptr();
 		for ( int i = 0; i < LogCount; ++i )
 		{
-			ptr[ i ].reg = byte_order::word_le_to_native( ptr[ i ].reg );
-			ptr[ i ].time = byte_order::word_le_to_native( ptr[ i ].time );
+			ptr[ i ].reg = pfc::byteswap_if_be_t( ptr[ i ].reg );
+			ptr[ i ].time = pfc::byteswap_if_be_t( ptr[ i ].time );
 		}
 	}
 

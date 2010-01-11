@@ -517,7 +517,7 @@ static bool context_playlist_dialog(CNSFFile * pFile, LPCSTR pszTitle)
 	return !!m_playlist.DoModal(core_api::get_my_instance(),core_api::get_main_window(),IDD_PLAYLISTINFO);
 }
 
-class context_nsf : public menu_item_legacy_context
+class context_nsf : public contextmenu_item_simple
 {
 public:
 	virtual unsigned get_num_items() { return 2; }
@@ -683,5 +683,5 @@ public:
 
 DECLARE_FILE_TYPE("NSF files", "*.NSF;*.NSFE");
 
-static input_factory_t        <input_nsf>   g_input_nsf_factory;
-static menu_item_factory_t    <context_nsf> g_menu_item_context_nsf_factory;
+static input_factory_t           <input_nsf>   g_input_nsf_factory;
+static contextmenu_item_factory_t<context_nsf> g_contextmenu_item_nsf_factory;

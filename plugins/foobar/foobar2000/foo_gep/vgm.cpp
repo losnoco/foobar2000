@@ -167,7 +167,7 @@ public:
 				console::info("Not a VGM file");
 				throw exception_io_data();
 			}
-			if ( byte_order::dword_le_to_native( * ( ( t_uint32 * ) &m_header.version ) ) > 0x0150 )
+			if ( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.version ) ) > 0x0150 )
 			{
 				console::info("Unsupported VGM format");
 				throw exception_io_data();
@@ -215,12 +215,12 @@ public:
 			m_file.release();
 		}
 
-		p_info.set_length( double( byte_order::dword_le_to_native( * ( ( t_uint32 * ) &m_header.track_duration ) ) ) / 44100 );
+		p_info.set_length( double( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.track_duration ) ) ) / 44100 );
 
 		if ( * ( ( t_uint32 * ) &m_header.loop_offset ) )
 		{
-			unsigned loop_end = byte_order::dword_le_to_native( * ( ( t_uint32 * ) &m_header.track_duration ) );
-			unsigned loop_dur = byte_order::dword_le_to_native( * ( ( t_uint32 * ) &m_header.loop_duration ) );
+			unsigned loop_end = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.track_duration ) );
+			unsigned loop_dur = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.loop_duration ) );
 			p_info.info_set_int("vgm_loop_start", loop_end - loop_dur);
 		}
 
@@ -268,7 +268,7 @@ public:
 
 		if ( no_infinite )
 		{
-			song_len = byte_order::dword_le_to_native( * ( ( t_uint32 * ) &m_header.track_duration ) );
+			song_len = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.track_duration ) );
 			if ( song_len && sample_rate != 44100 ) song_len = MulDiv( song_len, sample_rate, 44100 );
 			if ( ! song_len ) song_len = ~0; // FUCKO
 			fade_len = 0;
