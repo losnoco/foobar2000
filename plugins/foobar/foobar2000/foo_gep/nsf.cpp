@@ -187,7 +187,7 @@ public:
 			if (chips.length()) p_info.info_set(field_chips, chips);
 		}
 
-		p_info.info_set_int("samplerate", sample_rate);
+		//p_info.info_set_int("samplerate", sample_rate);
 		p_info.info_set_int("channels", 1);
 		p_info.info_set_int("bitspersample", 16);
 	}
@@ -514,7 +514,7 @@ static bool context_playlist_dialog(CNSFFile * pFile, LPCSTR pszTitle)
 	CPlaylistDlg m_playlist;
 	m_playlist.pFile = pFile;
 	m_playlist.pszTitle = pszTitle;
-	return !!m_playlist.DoModal(core_api::get_my_instance(),core_api::get_main_window(),IDD_PLAYLISTINFO);
+	return m_playlist.DoModal(core_api::get_my_instance(),core_api::get_main_window(),IDD_PLAYLISTINFO) == IDOK;
 }
 
 class context_nsf : public contextmenu_item_simple
@@ -663,7 +663,7 @@ public:
 					list.add_byte(',');
 					list << pfc::format_int( nsf.pPlaylist[k] );
 				}
-				item->metadb_lock();
+				//item->metadb_lock();
 				if (item->get_info(info))
 				{
 					info.info_set(field_playlist, list);
@@ -675,7 +675,7 @@ public:
 					}
 					else j = i;
 				}
-				item->metadb_unlock();
+				//item->metadb_unlock();
 			}
 		}
 	}
