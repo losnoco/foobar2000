@@ -1,7 +1,11 @@
-#define MY_VERSION "1.2"
+#define MY_VERSION "1.3"
 
 /*
 	change log
+
+2009-08-01 05:29 UTC - kode54
+- Minor fixes to the DSP decoder
+- Version is now 1.3
 
 2005-05-22 11:14 UTC - kode54
 - Fixed stupid bug in ACM init function

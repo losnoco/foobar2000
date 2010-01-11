@@ -307,7 +307,7 @@ long mp2roundup(long addr) {
 
 // return 1 on failure, 0 on success
 void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
-	unsigned char readbuf[0x200];
+	unsigned char readbuf[0x400];
 	dsp->ch[0].infile->seek( 0, p_abort );
 
 	unsigned read = dsp->ch[0].infile->read( &readbuf, 0x200, p_abort );
@@ -611,6 +611,9 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 		waveOffset=get32bit(readbuf+0x18);
 		waveLength=get32bit(readbuf+0x1c);
 
+		if ( waveLength > sizeof( readbuf ) )
+			throw exception_io_data( "RWSD Header too large" );
+
 		// DATA Section is useless for the moment ...
 		dsp->ch[0].infile->seek( waveOffset, p_abort );
 		dsp->ch[0].infile->read( &readbuf, waveLength, p_abort );
@@ -651,12 +654,15 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 		headLength=get32bit(readbuf+0x14);
 		fileLength=get32bit(readbuf+0x08);
 
+		if ( headLength > sizeof( readbuf ) )
+			throw exception_io_data( "RSTM Header too large" );
+
 		dsp->ch[0].infile->seek( headOffset, p_abort );
 		dsp->ch[0].infile->read( &readbuf, headLength, p_abort );
 
 		// 2 = adpcm
 		if (readbuf[0x20]!=2) {
-			throw exception_io_data();
+			throw exception_io_data( "RSTM Format not ADPCM" );
 		}
 
 		dsp->ch[0].chanstart=dsp->ch[1].chanstart=get32bit(readbuf+0x30);

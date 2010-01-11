@@ -1,7 +1,12 @@
-#define MY_VERSION "1.3"
+#define MY_VERSION "1.4"
 
 /*
 	change log
+
+2009-08-01 05:27 UTC - kode54
+- Increased DSP read buffer size
+- Added buffer size checking for RWSD and RSTM header reading
+- Version is now 1.4
 
 2006-12-07 09:12 UTC - kode54
 - Fixed seeking, passes input validator.
