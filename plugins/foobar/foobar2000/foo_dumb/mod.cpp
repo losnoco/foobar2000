@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.8.4"
+#define MYVERSION "0.9.8.5"
 
 /*
 	changelog
+
+2009-04-18 19:29 UTC - kode54
+- Fixed another bug in xm_note_off with potential unknown files.
+- Version is now 0.9.8.5
 
 2008-10-30 20:39 UTC - kode54
 - Sample/instrument/pattern/channel numbers added to multi-value field.
