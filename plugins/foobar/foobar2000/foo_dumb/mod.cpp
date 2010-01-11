@@ -1,7 +1,47 @@
-#define MYVERSION "0.9.7.5"
+#define MYVERSION "0.9.8.1"
 
 /*
 	changelog
+
+2006-10-07 05:24 UTC - kode54
+- Simplified volume ramping update code, reducing the size of the resampler code
+  considerably.
+- Bumped the volume ramping precision to 24 bits of fraction precision, which is
+  needed by Sweetsin.xm.
+- Moved sample rate reporting to dynamic info as requested by Peter, since it's
+  not a property of the files themselves, but user configurable.
+- Version is now 0.9.8.1
+
+2006-10-07 03:42 UTC - kode54
+- Changed DSMF sample loader to ignore unknown flags instead of blowing an error.
+
+2006-09-25 17:39 UTC - kode54
+- Added hack to MOD loader for when sample start is specified in bytes instead of
+  words.
+
+2006-09-19 15:05 UTC - kode54
+- Shuffled finetune calculation into the correct position, immediately applied
+  as delta is calculated from note.
+- Promoted IT_SAMPLE finetune property to signed short as char is insufficient
+  for full semitone range. (+/- 256)
+- Changed resampler to use full 64-bit comparison for todo variable range checking
+  which should hopefully eliminate any further problems with pitch slides which go
+  out of range.
+- Version is now 0.9.8
+
+2006-06-16 19:10 UTC - kode54
+- Fixed MOD loader FLT8 handler so it halves the order list after it's allocated
+  and loaded.
+- Unified renderer and loop restarting for playback and seeking, and made seeking
+  abortable.
+
+2006-06-16 09:12 UTC - kode54
+- Fixed PSM subsong info reporting.
+
+2006-06-15 21:23 UTC - kode54
+- Added finetune property to IT_SAMPLE, modified ASY, MOD, MTM, old PSM, and XM
+  to use it instead of adjusting the C5 speed, so that finetune effect overrides
+  rather than compounding sample finetune.
 
 2006-06-10 18:10 UTC - kode54
 - Fixed volume ramping.
@@ -741,6 +781,48 @@ static const char field_dyn_tempo[] = "mod_dyn_tempo";
 static const char field_dyn_channels[] = "mod_dyn_channels";
 static const char field_dyn_channels_max[] = "mod_dyn_channels_max";
 
+// 80 - C9 only, and mostly approximation
+static const unsigned short it_to_utf16[74] = {
+	0x250C, 0x2500, 0x2510, 0x2502, 0x2502, 0x2514, 0x2500, 0x2518,
+	0x02D9, 0x02D9, 0x002E, 0x002E, 0x25E3, 0x25E5, 0x250F, 0x2501,
+	0x2513, 0x2503, 0x2503, 0x2517, 0x2501, 0x251B, 0x257A, 0x257A,
+	0x002E, 0x002E, 0x22EF, 0x2588, 0x2589, 0x258A, 0x258B, 0x258C,
+	0x258D, 0x258E, 0x258E, 0x258E, 0x258D, 0x258C, 0x258B, 0x258A,
+	0x258A, 0x25B4, 0x005F, 0x25B2, 0x004D, 0x22C5, 0x2758, 0x2759,
+	0x275A, 0x2759, 0x275A, 0x2759, 0x275A, 0x2759, 0x275A, 0x2573,
+	0x22EF, 0x25E0, 0x25E1, 0x2293, 0x2293, 0x25E3, 0x25E5, 0xFE5D,
+	0xFE5E, 0x22C5, 0x22C5, 0x22C5, 0x22C5, 0x22C5, 0x25CF, 0x25CF,
+	0x25CF, 0x25CF 
+};
+
+class string_utf8_from_it : public pfc::string8_fastalloc
+{
+public:
+	string_utf8_from_it( const char * p_source, t_size p_source_size = ~0 )
+	{
+		for ( t_size i = 0; i < p_source_size && p_source[ i ]; ++i )
+		{
+			if ( p_source[ i ] > 0 ) add_byte( p_source[ i ] );
+			else if ( p_source[ i ] < -0x36 ) add_char( it_to_utf16[ p_source[ i ] + 0x80 ] );
+			else
+			{
+				t_size j;
+				for ( j = i + 1; j < p_source_size; ++j )
+				{
+					if ( p_source[ j ] >= 0 || p_source[ j ] < -0x36 ) break;
+				}
+				pfc::stringcvt::char_buffer_t<char> m_buffer;
+				pfc::stringcvt::string_wide_from_codepage temp;
+				temp.convert(CP_OEMCP,p_source + i,j - i);
+				t_size size = pfc::stringcvt::estimate_wide_to_utf8(temp,~0);
+				m_buffer.set_size(size);
+				pfc::stringcvt::convert_wide_to_utf8( m_buffer.get_ptr_var(),size,temp,~0);
+				add_string( m_buffer.get_ptr() );
+				i = j - 1;
+			}
+		}
+	}
+};
 /*
 // 80 - FF only
 static const unsigned short cp852_to_utf16[128] = {
@@ -923,7 +1005,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 	if ( pifh->smpnum ) info.info_set_int( field_samples, pfc::byteswap_if_be_t(pifh->smpnum) );
 	if ( pifh->insnum ) info.info_set_int( field_instruments, pfc::byteswap_if_be_t(pifh->insnum) );
 
-	if ( meta && pifh->songname[0] ) info.meta_add( field_title, pfc::stringcvt::string_utf8_from_codepage( CP_OEMCP,(char*)&pifh->songname, 26 ) );
+	if ( meta && pifh->songname[0] ) info.meta_add( field_title, string_utf8_from_it( (char*)&pifh->songname, 26 ) );
 
 	unsigned n, l, m_nChannels = 0;
 
@@ -953,7 +1035,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			}
 			msg.add_byte(*str);
 		}
-		info.meta_add( field_comment, pfc::stringcvt::string_utf8_from_codepage( CP_OEMCP, msg ) );
+		info.meta_add( field_comment, string_utf8_from_it( msg ) );
 	}
 
 	t_uint32 * offset;
@@ -979,7 +1061,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 				name = field_sample;
 				if (n < 10) name.add_byte('0');
 				name << n;
-				info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + offset_n + 0x14, 26));
+				info.meta_add(name, string_utf8_from_it((const char *) ptr + offset_n + 0x14, 26));
 			}
 		}
 
@@ -994,7 +1076,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 				name = field_instrument;
 				if (n < 10) name.add_byte('0');
 				name << n;
-				info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + offset_n + 0x20, 26));
+				info.meta_add(name, string_utf8_from_it((const char *) ptr + offset_n + 0x20, 26));
 			}
 		}
 	}
@@ -1032,7 +1114,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 						name = field_pattern;
 						if (n < 10) name.add_byte('0');
 						name << n;
-						info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + pos + n * 32, 32));
+						info.meta_add(name, string_utf8_from_it((const char *) ptr + pos + n * 32, 32));
 					}
 				}
 			}
@@ -1057,7 +1139,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 						name = field_channel;
 						if (n < 10) name.add_byte('0');
 						name << n;
-						info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + pos + n * 20, 20));
+						info.meta_add(name, string_utf8_from_it((const char *) ptr + pos + n * 20, 20));
 					}
 				}
 			}
@@ -1986,7 +2068,7 @@ class input_mod
 	int srate, interp, volramp;
 	int start_order;
 	float delta;
-	bool no_loop, eof, dynamic_info;
+	bool no_loop, eof, dynamic_info, read_tag;
 	int dyn_order, dyn_row, dyn_speed, dyn_tempo, dyn_channels, dyn_max_channels;
 	int written;
 	int loop_count;
@@ -2004,7 +2086,7 @@ class input_mod
 
 	t_filestats m_stats;
 
-	bool is_dos, is_it;
+	bool is_dos, is_it, first_block;
 	file_info_impl * m_info;
 
 	pfc::ptr_list_t< dumb_subsong_info > m_subsong_info;
@@ -2042,8 +2124,6 @@ public:
 		unsigned             size;
 
 		extension = pfc::string_extension( p_path );
-
-		bool read_tag;
 
 		{
 			service_ptr_t<file> m_unpack;
@@ -2095,7 +2175,7 @@ public:
 		srate = cfg_samplerate;
 		delta = 65536.f / float( srate );
 
-		m_info->info_set_int( "samplerate", srate );
+		//m_info->info_set_int( "samplerate", srate );
 		m_info->info_set_int( "channels", 2 );
 
 		// OutputDebugString("loading module");
@@ -2135,7 +2215,30 @@ public:
 
 	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
-		p_info.copy( * m_info );
+		const char * fmt = duh_get_tag(duh, "FORMAT");
+		bool is_psm = fmt && !strcmp( fmt, "PSM" );
+
+		int start_order = p_subsong;
+
+		if ( !is_psm || !p_subsong ) p_info.copy( * m_info );
+		else
+		{
+			DUH * duh = 0;
+			try
+			{
+				bool dummy;
+				const t_uint8 * ptr = buffer.get_ptr();
+				unsigned size = buffer.get_size();
+				duh = g_open_module( ptr, size, "PSM", start_order, dummy, dummy );
+				ReadDUH( duh, p_info, !read_tag, true );
+				unload_duh( duh );
+			}
+			catch (...)
+			{
+				if ( duh ) unload_duh( duh );
+				throw;
+			}
+		}
 
 		dumb_subsong_info * info = 0;
 
@@ -2151,7 +2254,7 @@ public:
 
 		if ( ! info )
 		{
-			int length = dumb_it_build_checkpoints( duh_get_it_sigdata( duh ), p_subsong );
+			int length = dumb_it_build_checkpoints( duh_get_it_sigdata( duh ), start_order );
 			if ( length >= 0 ) p_info.set_length( double( length ) / 65536. );
 		}
 		else
@@ -2167,6 +2270,8 @@ public:
 
 	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
 	{
+		first_block = true;
+
 		if ( sr )
 		{
 			duh_end_sigrenderer( sr );
@@ -2257,45 +2362,10 @@ retry:
 		p_abort.check();
 
 		dumb_silence( buf[0], 2048 * 2 );
-		written = duh_sigrenderer_generate_samples( sr, 1.f, delta, samples, buf );
+		written = render( 1.f, delta, samples, buf );
 
-		if (written < samples)
-		{
-			if (no_loop)
-				eof = true;
-			else
-			{
-				if ( limit_info.loop_count <= 0 && loop_count != 0 )
-				{
-					eof = true;
-				}
-				else
-				{
-					if ( loop_count == 0 || --limit_info.loop_count == 0 )
-					{
-						duh_end_sigrenderer( sr );
-						sr = NULL;
-						if ( open2() )
-						{
-							if ( limit_info.fade )
-							{
-								fade_time_left = fade_time + written;
-								dumb_it_set_loop_callback( itsr, 0, 0 );
-								limit_info.fading = true;
-							}
-							if ( ! written )
-								goto retry;
-						}
-						else
-						{
-							eof = true;
-						}
-					}
-				}
-			}
-		}
-
-		if      ( written == 0 )  return false;
+		if      ( eof )           return false;
+		else if ( written == 0 )  goto retry;
 		else if ( written == -1 ) throw exception_io_data();
 
 		if ( limit_info.fading )
@@ -2345,12 +2415,63 @@ retry:
 			limit_info.loop_count = loop_count;
 			if ( ! open2( to_pos ) ) throw exception_io_data();
 		}
-		else if ( to_pos > from_pos )
+		else while ( to_pos > from_pos && !eof )
 		{
-			duh_sigrenderer_generate_samples( sr, 0., 1.f, to_pos - from_pos, 0 );
+			p_abort.check();
+			long samples = to_pos - from_pos;
+			if ( samples > 16384 ) samples = 16384;
+			long written = render( 0., 1.f, samples, 0 );
+
+			if      ( written == 0 ) continue;
+			else if ( written < 0  ) throw exception_io_data();
+
+			from_pos += written;
 		}
 	}
 
+private:
+	long render( float volume, float delta, long samples, sample_t ** buffer )
+	{
+		long written = duh_sigrenderer_generate_samples( sr, volume, delta, samples, buffer );
+
+		if (written < samples)
+		{
+			if (no_loop)
+				eof = true;
+			else
+			{
+				if ( limit_info.loop_count <= 0 && loop_count != 0 )
+				{
+					eof = true;
+				}
+				else
+				{
+					if ( loop_count == 0 || --limit_info.loop_count == 0 )
+					{
+						duh_end_sigrenderer( sr );
+						sr = NULL;
+						if ( open2() )
+						{
+							if ( limit_info.fade )
+							{
+								fade_time_left = fade_time + written;
+								dumb_it_set_loop_callback( duh_get_it_sigrenderer( sr ), 0, 0 );
+								limit_info.fading = true;
+							}
+						}
+						else
+						{
+							eof = true;
+						}
+					}
+				}
+			}
+		}
+
+		return written;
+	}
+
+public:
 	bool decode_can_seek()
 	{
 		return true;
@@ -2359,59 +2480,69 @@ retry:
 	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta)
 	{
 		bool ret = false;
-		if (dynamic_info && duh && sr)
+		if ( ( !first_block || dynamic_info ) && duh && sr)
 		{
 			DUMB_IT_SIGDATA * itsd = duh_get_it_sigdata(duh);
 			DUMB_IT_SIGRENDERER * itsr = duh_get_it_sigrenderer(sr);
 			if (itsd && itsr)
 			{
-				if (dyn_order != itsr->order)
+				if (first_block)
 				{
-					dyn_order = itsr->order;
-					p_out.info_set_int(field_dyn_order, dyn_order);
-					if (itsd->order && dyn_order < itsd->n_orders)
-						p_out.info_set_int(field_dyn_pattern, itsd->order[dyn_order]);
+					p_out.info_set_int( "samplerate", srate );
+					first_block = false;
 					ret = true;
 				}
-				if (dyn_row != itsr->row)
+
+				if (dynamic_info)
 				{
-					dyn_row = itsr->row;
-					p_out.info_set_int(field_dyn_row, dyn_row);
-					ret = true;
-				}
-				if (dyn_speed != itsr->speed)
-				{
-					dyn_speed = itsr->speed;
-					p_out.info_set_int(field_dyn_speed, dyn_speed);
-					ret = true;
-				}
-				if (dyn_tempo != itsr->tempo)
-				{
-					dyn_tempo = itsr->tempo;
-					p_out.info_set_int(field_dyn_tempo, dyn_tempo);
-					ret = true;
-				}
-				int channels = 0;
-				for (int i = 0; i < DUMB_IT_N_CHANNELS; i++)
-				{
-					IT_PLAYING * playing = itsr->channel[i].playing;
-					if (playing && !(playing->flags & IT_PLAYING_DEAD)) channels++;
-				}
-				for (int i = 0; i < DUMB_IT_N_NNA_CHANNELS; i++)
-				{
-					if (itsr->playing[i]) channels++;
-				}
-				if (channels != dyn_channels)
-				{
-					dyn_channels = channels;
-					p_out.info_set_int(field_dyn_channels, dyn_channels);
-					ret = true;
-				}
-				if (channels > dyn_max_channels)
-				{
-					dyn_max_channels = channels;
-					p_out.info_set_int(field_dyn_channels_max, dyn_max_channels);
-					ret = true;
+					if (dyn_order != itsr->order)
+					{
+						dyn_order = itsr->order;
+						p_out.info_set_int(field_dyn_order, dyn_order);
+						if (itsd->order && dyn_order < itsd->n_orders)
+							p_out.info_set_int(field_dyn_pattern, itsd->order[dyn_order]);
+						ret = true;
+					}
+					if (dyn_row != itsr->row)
+					{
+						dyn_row = itsr->row;
+						p_out.info_set_int(field_dyn_row, dyn_row);
+						ret = true;
+					}
+					if (dyn_speed != itsr->speed)
+					{
+						dyn_speed = itsr->speed;
+						p_out.info_set_int(field_dyn_speed, dyn_speed);
+						ret = true;
+					}
+					if (dyn_tempo != itsr->tempo)
+					{
+						dyn_tempo = itsr->tempo;
+						p_out.info_set_int(field_dyn_tempo, dyn_tempo);
+						ret = true;
+					}
+					int channels = 0;
+					for (int i = 0; i < DUMB_IT_N_CHANNELS; i++)
+					{
+						IT_PLAYING * playing = itsr->channel[i].playing;
+						if (playing && !(playing->flags & IT_PLAYING_DEAD)) channels++;
+					}
+					for (int i = 0; i < DUMB_IT_N_NNA_CHANNELS; i++)
+					{
+						if (itsr->playing[i]) channels++;
+					}
+					if (channels != dyn_channels)
+					{
+						dyn_channels = channels;
+						p_out.info_set_int(field_dyn_channels, dyn_channels);
+						ret = true;
+					}
+					if (channels > dyn_max_channels)
+					{
+						dyn_max_channels = channels;
+						p_out.info_set_int(field_dyn_channels_max, dyn_max_channels);
+						ret = true;
+					}
 				}
 				if (ret) p_timestamp_delta = written / double( srate );
 			}
