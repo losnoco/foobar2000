@@ -1,7 +1,11 @@
-#define MY_VERSION "1.2"
+#define MY_VERSION "1.3"
 
 /*
 	changelog
+
+2009-01-16 01:50 UTC - kode54
+- Updated file add/open function.
+- Version is now 1.3
 
 2006-10-23 19:31 UTC - kode54
 - Re-added main menu items
@@ -2183,10 +2187,19 @@ class mainmenu_command_xa : public mainmenu_commands {
 			}
 
 			static_api_ptr_t<playlist_manager> pm;
-			pm->activeplaylist_add_locations(urls, !ADD, core_api::get_main_window());
+			t_size playlist = pm->get_active_playlist(); // Use a different playlist if desired.
+
+			pm->playlist_undo_backup(playlist); // Highly recommended unless you modify a locked, "smart" playlist (that you own)
+			if (!ADD) pm->playlist_clear(playlist); // If you want to replace the existing playlist content.
+			pm->playlist_add_locations(
+				playlist,
+				urls,
+				true,
+				core_api::get_main_window());
+
 			if (!ADD)
 			{
-				pm->activeplaylist_set_focus_item(0);
+				pm->playlist_set_focus_item(playlist, 0);
 				standard_commands::main_play();
 			}
 		}
