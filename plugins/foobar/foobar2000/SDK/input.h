@@ -1,8 +1,9 @@
 enum {
-	input_flag_no_seeking = 1,
-	input_flag_no_looping = 2,
-	input_flag_playback = 4,
-	input_flag_testing_integrity = 8,
+	input_flag_no_seeking					= 1 << 0,
+	input_flag_no_looping					= 1 << 1,
+	input_flag_playback						= 1 << 2,
+	input_flag_testing_integrity			= 1 << 3,
+	input_flag_allow_inaccurate_seeking		= 1 << 4,
 
 	input_flag_simpledecode = input_flag_no_seeking|input_flag_no_looping,
 };

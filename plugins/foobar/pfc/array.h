@@ -93,6 +93,7 @@ namespace pfc {
 		void set_count(t_size p_count) {m_alloc.set_size(p_count);}
 		t_size get_size() const {return m_alloc.get_size();}
 		t_size get_count() const {return m_alloc.get_size();}
+		void force_reset() {m_alloc.force_reset();}
 		
 		const t_item & operator[](t_size p_index) const {PFC_ASSERT(p_index < get_size());return m_alloc[p_index];}
 		t_item & operator[](t_size p_index) {PFC_ASSERT(p_index < get_size());return m_alloc[p_index];}

@@ -58,8 +58,7 @@ format_time::format_time(t_uint64 p_seconds) {
 
 int strcmp_partial(const char * p_string,const char * p_substring) {return strcmp_partial_ex(p_string,infinite,p_substring,infinite);}
 
-int strcmp_partial_ex(const char * p_string,t_size p_string_length,const char * p_substring,t_size p_substring_length) {
-	p_string_length = strlen_max(p_string,p_string_length); p_substring_length = strlen_max(p_substring,p_substring_length);
+static int __strcmp_partial_ex(const char * p_string,t_size p_string_length,const char * p_substring,t_size p_substring_length) throw() {
 	for(t_size walk=0;walk<p_substring_length;walk++) {
 		char stringchar = (walk>=p_string_length ? 0 : p_string[walk]);
 		char substringchar = p_substring[walk];
@@ -67,6 +66,11 @@ int strcmp_partial_ex(const char * p_string,t_size p_string_length,const char * 
 		if (result != 0) return result;
 	}
 	return 0;
+}
+
+int strcmp_partial_ex(const char * p_string,t_size p_string_length,const char * p_substring,t_size p_substring_length) /*throw()*/ {
+	p_string_length = strlen_max(p_string,p_string_length); p_substring_length = strlen_max(p_substring,p_substring_length);
+	return __strcmp_partial_ex(p_string,p_string_length,p_substring,p_substring_length);
 }
 
 bool is_path_separator(unsigned c)
@@ -645,7 +649,7 @@ t_size string_find_first_ex(const char * p_string,t_size p_string_length,const c
 	if (p_string_length >= p_tofind_length) {
 		t_size max = p_string_length - p_tofind_length;
 		for(t_size walk = p_start; walk <= max; walk++) {
-			if (strcmp_partial_ex(p_string+walk,p_string_length-walk,p_tofind,p_tofind_length) == 0) return walk;
+			if (__strcmp_partial_ex(p_string+walk,p_string_length-walk,p_tofind,p_tofind_length) == 0) return walk;
 		}
 	}
 	return infinite;
@@ -655,7 +659,7 @@ t_size string_find_last_ex(const char * p_string,t_size p_string_length,const ch
 	if (p_string_length >= p_tofind_length) {
 		t_size max = min_t<t_size>(p_string_length - p_tofind_length,p_start);
 		for(t_size walk = max; walk != (t_size)(-1); walk--) {
-			if (strcmp_partial_ex(p_string+walk,p_string_length-walk,p_tofind,p_tofind_length) == 0) return walk;
+			if (__strcmp_partial_ex(p_string+walk,p_string_length-walk,p_tofind,p_tofind_length) == 0) return walk;
 		}
 	}
 	return infinite;

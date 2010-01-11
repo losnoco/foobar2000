@@ -7,8 +7,8 @@ namespace pfc {
 	static void raw_free(void * p_block) throw() {free(p_block);}
 
 	static void* raw_realloc(void * p_ptr,t_size p_size) {
-		if (p_ptr == NULL) return raw_malloc(p_size);
-		else if (p_size == 0) {raw_free(p_ptr); return NULL;}
+		if (p_size == 0) {raw_free(p_ptr); return NULL;}
+		else if (p_ptr == NULL) return raw_malloc(p_size);
 		else return pfc::new_ptr_check_t(::realloc(p_ptr,p_size));
 	}
 
@@ -70,6 +70,7 @@ namespace pfc {
 		const t_item * get_ptr() const {throw pfc::exception_not_implemented();}
 		t_item * get_ptr() {throw pfc::exception_not_implemented();}
 		void prealloc(t_size) {throw pfc::exception_not_implemented();}
+		void force_reset() {throw pfc::exception_not_implemented();}
 	private:
 		const t_self & operator=(const t_self &) {throw pfc::exception_not_implemented();}
 		alloc_dummy(const t_self&) {throw pfc::exception_not_implemented();}
@@ -110,6 +111,7 @@ namespace pfc {
 		const t_item * get_ptr() const {return m_data;}
 
 		void prealloc(t_size) {}
+		void force_reset() {set_size(0);}
 
 		~alloc_simple() {delete[] m_data;}
 	private:
@@ -157,15 +159,19 @@ namespace pfc {
 
 
 		void resize_content(t_size p_size) {
-			if (p_size > m_size) {//expand
-				do {
-					__unsafe__in_place_constructor_t(m_buffer[m_size]);
-					m_size++;
-				} while(m_size < p_size);
-			} else if (p_size < m_size) {
-				__unsafe__in_place_destructor_array_t(m_buffer + p_size, m_size - p_size);
+			if (traits_t<t_item>::needs_constructor || traits_t<t_item>::needs_destructor) {
+				if (p_size > m_size) {//expand
+					do {
+						__unsafe__in_place_constructor_t(m_buffer[m_size]);
+						m_size++;
+					} while(m_size < p_size);
+				} else if (p_size < m_size) {
+					__unsafe__in_place_destructor_array_t(m_buffer + p_size, m_size - p_size);
+					m_size = p_size;
+				}
+			} else {
+				m_size = p_size;
 			}
-			m_size = p_size;
 		}
 
 		void resize_storage(t_size p_size) {
@@ -214,6 +220,7 @@ namespace pfc {
 
 		bool is_ptr_owned(const void * p_item) const {return m_content.is_ptr_owned(p_item);}
 		void prealloc(t_size p_size) {}
+		void force_reset() {set_size(0);}
 	private:
 		alloc_standard(const t_self &) {throw pfc::exception_not_implemented();}
 		const t_self & operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -245,6 +252,8 @@ namespace pfc {
 		const t_item * get_ptr() const {return m_data.get_ptr();}
 		t_item * get_ptr() {return m_data.get_ptr();}
 		bool is_ptr_owned(const void * p_item) const {return m_data.is_ptr_owned(p_item);}
+		void prealloc(t_size) {}
+		void force_reset() {m_data.set_size(0,0);}
 	private:
 		alloc_fast(const t_self &) {throw pfc::exception_not_implemented();}
 		const t_self & operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -283,6 +292,7 @@ namespace pfc {
 		const t_item * get_ptr() const {return m_data.get_ptr();}
 		t_item * get_ptr() {return m_data.get_ptr();}
 		bool is_ptr_owned(const void * p_item) const {return m_data.is_ptr_owned(p_item);}
+		void force_reset() {m_data.set_size(0,0);}
 	private:
 		alloc_fast_aggressive(const t_self &) {throw pfc::exception_not_implemented();}
 		const t_self & operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -321,6 +331,8 @@ namespace pfc {
 			const t_item & operator[](t_size n) const {return get_ptr()[n];}
 			t_item & operator[](t_size n) {return get_ptr()[n];}
 			bool is_ptr_owned(const void * p_item) const {return is_pointer_in_range(get_ptr(),p_width,p_item);}
+			void prealloc(t_size) {}
+			void force_reset() {set_size(0);}
 		private:
 			alloc(const t_self&) {throw pfc::exception_not_implemented();}
 			const t_self& operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -361,7 +373,12 @@ namespace pfc {
 
 			t_size get_size() const {return m_fixed.get_size() + m_variable.get_size();}
 			bool is_ptr_owned(const void * p_item) const {return m_fixed.is_ptr_owned(p_item) || m_variable.is_ptr_owned(p_item);}
-
+			void prealloc(t_size p_size) {
+				if (p_size > p_width) m_variable.prealloc(p_size - p_width);
+			}
+			void force_reset() {
+				m_fixed.force_reset(); m_variable.force_reset();
+			}
 		private:
 			alloc(const t_self&) {throw pfc::exception_not_implemented();}
 			const t_self& operator=(const t_self&) {throw pfc::exception_not_implemented();}

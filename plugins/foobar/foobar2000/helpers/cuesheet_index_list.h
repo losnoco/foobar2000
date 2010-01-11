@@ -14,6 +14,8 @@ struct t_cuesheet_index_list
 
 	inline double start() const {return m_positions[1];}
 	bool is_empty() const;
+
+	bool is_valid() const;
 };
 
 unsigned cuesheet_parse_index_time_ticks_e(const char * p_string,t_size p_length);

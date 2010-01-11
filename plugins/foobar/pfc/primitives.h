@@ -321,6 +321,15 @@ namespace pfc {
 		inline static int compare(const t_item1 & p_item1,const t_item2 & p_item2) {return pfc::compare_t(p_item1,p_item2);}
 	};
 
+	class comparator_memcmp {
+	public:
+		template<typename t_item1,typename t_item2>
+		inline static int compare(const t_item1 & p_item1,const t_item2 & p_item2) {
+			static_assert<sizeof(t_item1) == sizeof(t_item2)>();
+			return memcmp(&p_item1,&p_item2,sizeof(t_item1));
+		}
+	};
+
 	template<typename t_source1, typename t_source2>
 	t_size subtract_sorted_lists_calculate_count(const t_source1 & p_source1, const t_source2 & p_source2) {
 		t_size walk1 = 0, walk2 = 0, walk_out = 0;
@@ -692,10 +701,31 @@ namespace pfc {
 		p_list.enumerate(enumerator);
 		enumerator.finalize();
 	}
+
+	template<typename t_receiver>
+	class enumerator_add_item {
+	public:
+		enumerator_add_item(t_receiver & p_receiver) : m_receiver(p_receiver) {}
+		template<typename t_item> void operator() (const t_item & p_item) {m_receiver.add_item(p_item);}
+	private:
+		t_receiver & m_receiver;
+	};
+
+	template<typename t_receiver,typename t_giver>
+	void overwrite_list_enumerated(t_receiver & p_receiver,const t_giver & p_giver) {
+		enumerator_add_item<t_receiver> wrapper(p_receiver);
+		p_giver.enumerate(wrapper);
+	}
+
+	template<typename t_receiver,typename t_giver>
+	void copy_list_enumerated(t_receiver & p_receiver,const t_giver & p_giver) {
+		p_receiver.remove_all();
+		overwrite_list_enumerated(p_receiver,p_giver);
+	}
 };
 
 
-#define PFC_CLASS_NOT_COPYABLE(THISCLASS) \
+#define PFC_CLASS_NOT_COPYABLE(THISCLASSNAME,THISTYPE) \
 	private:	\
-	THISCLASS(const THISCLASS&) {throw pfc::exception_bug_check();}	\
-	const THISCLASS & operator=(const THISCLASS &) {throw pfc::exception_bug_check();}
+	THISCLASSNAME(const THISTYPE&) {throw pfc::exception_bug_check();}	\
+	const THISTYPE & operator=(const THISTYPE &) {throw pfc::exception_bug_check();}

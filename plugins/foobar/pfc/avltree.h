@@ -17,6 +17,9 @@ namespace pfc {
 			t_size m_depth;
 			t_storage m_data;
 
+			template<bool p_which> t_node * & child() {return p_which ? m_right : m_left;}
+			template<bool p_which> t_node * child() const {return p_which ? m_right : m_left;}
+
 			~t_node() {
 				if (m_left != NULL) delete m_left;
 				if (m_right != NULL) delete m_right;
@@ -98,12 +101,12 @@ namespace pfc {
 			delete deleteme;
 		}
 
-		template<typename t_callback>
-		static void enum_items_recur(const t_node * p_node,t_callback & p_callback) {
+		template<typename t_nodewalk,typename t_callback>
+		static void __enum_items_recur(t_nodewalk * p_node,t_callback & p_callback) {
 			if (p_node != NULL) {
-				enum_items_recur(p_node->m_left,p_callback);
+				__enum_items_recur<t_nodewalk>(p_node->m_left,p_callback);
 				p_callback (p_node->m_data);
-				enum_items_recur(p_node->m_right,p_callback);			
+				__enum_items_recur<t_nodewalk>(p_node->m_right,p_callback);			
 			}
 		}
 
@@ -222,12 +225,57 @@ namespace pfc {
 				return 0;
 			}
 		}
+
+		template<typename t_item>
+		t_storage * __find_item_ptr(t_item const & p_item) const {
+			t_node* ptr = m_root;
+			while(ptr != NULL) {
+				int result = compare(ptr->m_data,p_item);
+				if (result > 0) ptr=ptr->m_left;
+				else if (result < 0) ptr=ptr->m_right;
+				else return &ptr->m_data;
+			}
+			return NULL;
+		}
+
+		template<bool inclusive,bool above,typename t_search> t_storage * __find_nearest(const t_search & p_search) const {
+			t_node * ptr = m_root;
+			t_storage * found = NULL;
+			while(ptr != NULL) {
+				int result = compare(ptr->m_data,p_search);
+				if (above) result = -result;
+				if (inclusive && result == 0) {
+					//direct hit
+					found = &ptr->m_data;
+					break;
+				} else if (result < 0) {
+					//match
+					found = &ptr->m_data;
+					ptr = ptr->child<!above>();
+				} else {
+					//mismatch
+					ptr = ptr->child<above>();
+				}
+			}
+			return found;
+		}
 	public:
 		avltree_t() : m_root(NULL) {}
 		~avltree_t() {reset();}
 		const t_self & operator=(const t_self & p_other) {__copy(p_other);return *this;}
 		avltree_t(const t_self & p_other) : m_root(NULL) {__copy(p_other);}
 
+		template<typename t_other> const t_self & operator=(const t_other & p_other) {copy_list_enumerated(*this,p_other);return *this;}
+		template<typename t_other> avltree_t(const t_other & p_other) : m_root(NULL) {copy_list_enumerated(*this,p_other);}
+
+
+		template<bool inclusive,bool above,typename t_search> const t_storage * find_nearest_item(const t_search & p_search) const {
+			return __find_nearest<inclusive,above>(p_search);
+		}
+
+		template<bool inclusive,bool above,typename t_search> t_storage * find_nearest_item(const t_search & p_search) {
+			return __find_nearest<inclusive,above>(p_search);
+		}
 
 		template<typename t_item>
 		t_storage & add_item(t_item const & p_item) {
@@ -251,26 +299,13 @@ namespace pfc {
 
 		template<typename t_item>
 		const t_storage * find_item_ptr(t_item const & p_item) const {
-			const t_node* ptr = m_root;
-			while(ptr != NULL) {
-				int result = compare(ptr->m_data,p_item);
-				if (result > 0) ptr=ptr->m_left;
-				else if (result < 0) ptr=ptr->m_right;
-				else return &ptr->m_data;
-			}
-			return NULL;
+			return __find_item_ptr(p_item);
 		}
 
+		//! WARNING: caller must not alter the item in a way that changes the sort order.
 		template<typename t_item>
 		t_storage * find_item_ptr(t_item const & p_item) {
-			t_node* ptr = m_root;
-			while(ptr != NULL) {
-				int result = compare(ptr->m_data,p_item);
-				if (result > 0) ptr=ptr->m_left;
-				else if (result < 0) ptr=ptr->m_right;
-				else return &ptr->m_data;
-			}
-			return NULL;
+			return __find_item_ptr(p_item);
 		}
 
 		template<typename t_item>
@@ -294,7 +329,14 @@ namespace pfc {
 
 		template<typename t_callback>
 		void enumerate(t_callback & p_callback) const {
-			enum_items_recur(m_root,p_callback);
+			__enum_items_recur<const t_node>(m_root,p_callback);
+		}
+
+		//! Allows callback to modify the tree content.
+		//! WARNING: items must not be altered in a way that changes their sort order.
+		template<typename t_callback>
+		void __enumerate(t_callback & p_callback) {
+			__enum_items_recur<t_node>(m_root,p_callback);
 		}
 
 		//deprecated backwards compatibility method wrappers
@@ -325,5 +367,8 @@ namespace pfc {
 		}
 	};
 
+
+	template<typename t_storage,typename t_comparator>
+	class traits_t<avltree_t<t_storage,t_comparator> > : public traits_default_movable {};
 }
 #endif //_AVLTREE_T_H_INCLUDED_

@@ -9,18 +9,24 @@ namespace InPlaceEdit {
 
 		KEditMaskReason = 0xFF,
 		KEditFlagContentChanged = 0x100,
+
+		KFlagReadOnly	= 1 << 0,
+		KFlagMultiLine	= 1 << 1,
 	};
 
 	void Start(HWND p_parentwnd,const RECT & p_rect,bool p_multiline,pfc::rcptr_t<pfc::string_base> p_content,completion_notify_ptr p_notify);
 
+	void StartEx(HWND p_parentwnd,const RECT & p_rect,unsigned p_flags,pfc::rcptr_t<pfc::string_base> p_content,completion_notify_ptr p_notify);
+
 	void Start_FromListView(HWND p_listview,unsigned p_item,unsigned p_subitem,unsigned p_linecount,pfc::rcptr_t<pfc::string_base> p_content,completion_notify_ptr p_notify);
+	void Start_FromListViewEx(HWND p_listview,unsigned p_item,unsigned p_subitem,unsigned p_linecount,unsigned p_flags,pfc::rcptr_t<pfc::string_base> p_content,completion_notify_ptr p_notify);
 	
 	bool TableEditAdvance(unsigned & p_item,unsigned & p_column, unsigned p_item_count,unsigned p_column_count, unsigned p_whathappened);
 
 
 	class CTableEditHelper {
 	public:
-		void TableEdit_Start(HWND p_listview,unsigned p_item,unsigned p_column,unsigned p_itemcount,unsigned p_columncount,unsigned p_basecolumn) {
+		void TableEdit_Start(HWND p_listview,unsigned p_item,unsigned p_column,unsigned p_itemcount,unsigned p_columncount,unsigned p_basecolumn,unsigned p_flags = 0) {
 			if (m_notify.is_valid()) return;
 			m_listview = p_listview;
 			m_item = p_item;
@@ -28,6 +34,7 @@ namespace InPlaceEdit {
 			m_itemcount = p_itemcount;
 			m_columncount = p_columncount;
 			m_basecolumn = p_basecolumn;
+			m_flags = p_flags;
 			__Start();
 		}
 
@@ -84,6 +91,8 @@ namespace InPlaceEdit {
 				m_notify.release();
 			}
 		}
+	protected:
+		HWND TableEdit_GetListView() const {return m_listview;}
 	private:
 		void __Start() {
 			listview_helper::select_single_item(m_listview,m_item);
@@ -91,7 +100,7 @@ namespace InPlaceEdit {
 			unsigned linecount = 1;
 			if (!TableEdit_GetItemText(m_item,m_column,*m_content,linecount)) return;
 			m_notify = completion_notify_create(this,KTaskID);
-			InPlaceEdit::Start_FromListView(m_listview,m_item,m_column+m_basecolumn,linecount,m_content,m_notify);
+			InPlaceEdit::Start_FromListViewEx(m_listview,m_item,m_column+m_basecolumn,linecount,m_flags,m_content,m_notify);
 		}
 		enum {
 			KTaskID = 0xc0ffee
@@ -99,6 +108,7 @@ namespace InPlaceEdit {
 		HWND m_listview;
 		unsigned m_item,m_column;
 		unsigned m_itemcount,m_columncount,m_basecolumn;
+		unsigned m_flags;
 		pfc::rcptr_t<pfc::string8> m_content;
 		service_ptr_t<completion_notify_orphanable> m_notify;
 	};

@@ -18,7 +18,17 @@ static bool is_linebreak(char c)
 }
 
 static void validate_file_type(const char * p_type,t_size p_type_length) {
-	if (stricmp_utf8_ex(p_type,p_type_length,"WAVE",infinite) && stricmp_utf8_ex(p_type,p_type_length,"MP3",infinite) && stricmp_utf8_ex(p_type,p_type_length,"AIFF",infinite))
+	if (
+		//standard types
+		stricmp_utf8_ex(p_type,p_type_length,"WAVE",infinite) != 0 && 
+		stricmp_utf8_ex(p_type,p_type_length,"MP3",infinite) != 0 && 
+		stricmp_utf8_ex(p_type,p_type_length,"AIFF",infinite) != 0 && 
+		//common user-entered types
+		stricmp_utf8_ex(p_type,p_type_length,"APE",infinite) != 0 && 
+		stricmp_utf8_ex(p_type,p_type_length,"FLAC",infinite) != 0 &&
+		stricmp_utf8_ex(p_type,p_type_length,"WV",infinite) != 0 &&
+		stricmp_utf8_ex(p_type,p_type_length,"WAVPACK",infinite) != 0
+		)
 		throw exception_cue(pfc::string_formatter() << "expected WAVE, MP3 or AIFF, got : \"" << pfc::string8(p_type,p_type_length) << "\"");
 }
 
@@ -169,6 +179,7 @@ namespace {
 		{
 			if (!m_index1_set) throw exception_cue("INDEX 01 not set",0);
 			if (!m_index0_set) m_index_list.m_positions[0] = m_index_list.m_positions[1] - m_pregap;
+			if (!m_index_list.is_valid()) throw exception_cue("invalid index list");
 
 			pfc::chain_list_t<cue_parser::cue_entry>::iterator iter;
 			iter = m_out.insert_last();
@@ -707,6 +718,7 @@ namespace {
 			if (m_track < 1 || m_track > 99) throw exception_cue("track number out of range",0);
 			if (!m_index1_set) throw exception_cue("INDEX 01 not set",0);
 			if (!m_index0_set) m_indexes.m_positions[0] = m_indexes.m_positions[1] - m_pregap;
+			if (!m_indexes.is_valid()) throw exception_cue("invalid index list");
 
 			cue_creator::t_entry_list::iterator iter;
 			iter = m_out.insert_last();
@@ -750,138 +762,3 @@ void cue_parser::parse_full(const char * p_cuesheet,cue_creator::t_entry_list & 
 		throw exception_bad_cuesheet(pfc::string_formatter() << "Error parsing cuesheet: " << e.what());
 	}
 }
-
-namespace cue_parser
-{
-
-
-	static const char * extract_meta_test_field(const char * p_field,int p_index)
-	{
-		if (stricmp_utf8_partial(p_field,"CUE_TRACK") != 0) return 0;
-		p_field += pfc::skip_utf8_chars(p_field,9);
-
-		if (!pfc::char_is_numeric(p_field[0]) || !pfc::char_is_numeric(p_field[1])) return NULL;
-		if (p_index >= 0) {
-			if ((int)p_field[0] - '0' != p_index / 10) return 0;
-			if ((int)p_field[1] - '0' != p_index % 10) return 0;
-		}
-		if (p_field[2] != '_') return 0;
-		p_field += 3;
-		if (!stricmp_utf8(p_field,"disc")) return "discnumber";
-		else return p_field;
-	}
-
-	static bool extract_meta_is_reserved(const char * p_field)
-	{
-		return stricmp_utf8(p_field,"cuesheet") == 0;
-	}
-
-	static bool extract_meta_is_global(const char * p_field)
-	{
-		if (extract_meta_is_reserved(p_field)) return false;
-		else return stricmp_utf8_partial(p_field,"CUE_TRACK") != 0;
-	}
-
-	static void extract_meta(const file_info & p_baseinfo,file_info & p_info,int p_index)
-	{
-		t_size n, m = p_baseinfo.meta_get_count();
-
-		for(n=0;n<m;n++)
-		{
-			if (extract_meta_is_global(p_baseinfo.meta_enum_name(n)))
-				p_info.copy_meta_single(p_baseinfo,n);
-		}
-		if (p_index >= 1 && p_index <= 100)
-		{
-			for(n=0;n<m;n++)
-			{
-				const char * field = extract_meta_test_field(p_baseinfo.meta_enum_name(n),p_index);
-				if (field) p_info.copy_meta_single_rename(p_baseinfo,n,field);
-			}
-		}
-	}
-
-	void extract_info(const file_info & p_baseinfo,file_info & p_info, unsigned p_subsong_index)
-	{
-		TRACK_CALL_TEXT("cue_parser::extract_info");
-
-		p_info.copy_info(p_baseinfo);
-		p_info.set_replaygain(p_baseinfo.get_replaygain());
-
-		unsigned cue_track = p_subsong_index;
-		const char * cue = p_baseinfo.meta_get("cuesheet",0);
-		if (!cue || (cue && !*cue)) throw exception_io_data();
-
-		pfc::chain_list_t<cue_entry> cue_data;
-
-		cue_parser::parse(cue,cue_data);
-		cue_parser::parse_info(cue,p_info,cue_track);
-
-		double end = 0, start = 0;
-		
-		{
-			bool found = false;
-
-			pfc::chain_list_t<cue_entry>::const_iterator iter;
-
-			for(iter = cue_data.first(); iter.is_valid(); ++iter)
-			{
-				if (iter->m_track_number == cue_track) {
-					start = iter->m_indexes.start();
-					found = true;
-
-					++iter;
-					if (iter.is_valid())
-						end = iter->m_indexes.start();
-					else
-						end = p_baseinfo.get_length();
-
-					if (end < start) throw exception_io_data();
-
-					break;
-				}
-			}
-			if (!found) throw exception_io_data();
-		}
-
-//		p_info.meta_set("tracknumber", pfc::string_formatter() << cue_track);
-//		p_info.meta_set("totaltracks", pfc::string_formatter() << cue_data.get_count());
-
-		extract_meta(p_baseinfo,p_info,cue_track);
-
-		p_info.set_length(end - start);
-		p_info.info_set("cue_embedded","yes");
-	}
-
-	void input_wrapper_cue_base::write_meta_create_field(pfc::string_base & p_out,const char * p_name,int p_index) {
-		p_out.reset();
-		p_out << "CUE_TRACK" << pfc::format_uint((unsigned)p_index%100,2) << "_" << p_name;
-	}
-
-	void input_wrapper_cue_base::write_meta(file_info & p_baseinfo,const file_info & p_trackinfo,unsigned p_subsong_index)
-	{
-		TRACK_CALL_TEXT("input_wrapper_cue_base::write_meta");
-
-		pfc::string8_fastalloc temp;
-
-		{
-			t_size n, m = p_baseinfo.meta_get_count();
-			bit_array_bittable to_remove(m);
-			for(n=0;n<m;n++)
-			{
-				to_remove.set(n, extract_meta_test_field(p_baseinfo.meta_enum_name(n),p_subsong_index) != 0);
-			}
-			p_baseinfo.meta_remove_mask(to_remove);
-		}
-
-		t_size n, m = p_trackinfo.meta_get_count();
-
-		for(n=0;n<m;n++)
-		{
-			write_meta_create_field(temp,p_trackinfo.meta_enum_name(n),p_subsong_index);
-			p_baseinfo.copy_meta_single_rename(p_trackinfo,n,temp);
-		}
-	}
-
-}
-

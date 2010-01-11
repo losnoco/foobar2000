@@ -27,10 +27,12 @@ static void process_fullbuffer(service_ptr_t<file> & p_file,const char * p_path,
 }
 
 void input_helper::open(service_ptr_t<file> p_filehint,const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,bool p_from_redirect,bool p_skip_hints) {
-	p_abort.check_e();
+	p_abort.check();
 
 	if (m_input.is_empty() || metadb::path_compare(p_location.get_path(),m_path) != 0)
 	{
+		m_input.release();
+
 		service_ptr_t<file> l_file = p_filehint;
 		process_fullbuffer(l_file,p_location.get_path(),m_fullbuffer,p_abort);
 
@@ -38,11 +40,21 @@ void input_helper::open(service_ptr_t<file> p_filehint,const playable_location &
 			input_entry::g_open_for_decoding(m_input,l_file,p_location.get_path(),p_abort,p_from_redirect)
 			);
 
+		
+		if (!p_skip_hints) {
+			try {
+				static_api_ptr_t<metadb_io>()->hint_reader(m_input.get_ptr(),p_location.get_path(),p_abort);
+			} catch(exception_io_data) {
+				//don't fail to decode when this barfs
+				m_input.release();
+				if (l_file.is_valid()) l_file->reopen(p_abort);
+				TRACK_CODE("input_entry::g_open_for_decoding",
+					input_entry::g_open_for_decoding(m_input,l_file,p_location.get_path(),p_abort,p_from_redirect)
+					);
+			}
+		}
+
 		m_path = p_location.get_path();
-
-		p_abort.check_e();
-
-		if (!p_skip_hints) static_api_ptr_t<metadb_io>()->hint_reader(m_input.get_ptr(),p_location.get_path(),p_abort);
 	}
 
 	TRACK_CODE("input_decoder::initialize",m_input->initialize(p_location.get_subsong_index(),p_flags,p_abort));
@@ -240,7 +252,7 @@ void input_info_read_helper::get_info_check(const playable_location & p_location
 
 
 void input_helper_cue::open(service_ptr_t<file> p_filehint,const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,double p_start,double p_length) {
-	p_abort.check_e();
+	p_abort.check();
 
 	m_start = p_start;
 	m_position = 0;
@@ -271,7 +283,7 @@ void input_helper_cue::close() {m_input.close();}
 bool input_helper_cue::is_open() {return m_input.is_open();}
 
 bool input_helper_cue::run(audio_chunk & p_chunk,abort_callback & p_abort) {
-	p_abort.check_e();
+	p_abort.check();
 
 
 	if (m_length > 0) {

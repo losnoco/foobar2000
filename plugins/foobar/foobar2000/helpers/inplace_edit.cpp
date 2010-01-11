@@ -13,20 +13,22 @@ namespace {
 	static HHOOK g_hook = NULL;
 
 	static LRESULT CALLBACK GMouseProc(int nCode,WPARAM wParam,LPARAM lParam) {
-		const MOUSEHOOKSTRUCT * mhs = (const MOUSEHOOKSTRUCT *) lParam;
-		switch(wParam) {
-		case WM_NCLBUTTONDOWN:
-		case WM_NCRBUTTONDOWN:
-		case WM_NCMBUTTONDOWN:
-		case WM_NCXBUTTONDOWN:
-		case WM_LBUTTONDOWN:
-		case WM_RBUTTONDOWN:
-		case WM_MBUTTONDOWN:
-		case WM_XBUTTONDOWN:
-			if (!g_editboxes.exists(mhs->hwnd)) {
-				SetFocus(mhs->hwnd);
+		if (nCode >= 0) {
+			const MOUSEHOOKSTRUCT * mhs = (const MOUSEHOOKSTRUCT *) lParam;
+			switch(wParam) {
+			case WM_NCLBUTTONDOWN:
+			case WM_NCRBUTTONDOWN:
+			case WM_NCMBUTTONDOWN:
+			case WM_NCXBUTTONDOWN:
+			case WM_LBUTTONDOWN:
+			case WM_RBUTTONDOWN:
+			case WM_MBUTTONDOWN:
+			case WM_XBUTTONDOWN:
+				if (!g_editboxes.have_item(mhs->hwnd)) {
+					SetFocus(mhs->hwnd);
+				}
+				break;
 			}
-			break;
 		}
 		return CallNextHookEx(g_hook,nCode,wParam,lParam);
 	}
@@ -62,6 +64,7 @@ private:
 		HWND owner = GetParent(p_mywnd);
 		SendMessage(owner,MSG_DISABLE_EDITING,0,0);
 		PostMessage(owner,MSG_COMPLETION,p_code,0);
+		EnableWindow(p_mywnd,FALSE);
 	}
 	~InPlaceEditHook() {}
 	LRESULT EditHook(HWND p_wnd,UINT p_msg,WPARAM p_wp,LPARAM p_lp) {
@@ -71,17 +74,20 @@ private:
 		case WM_KILLFOCUS:
 			ForwardCompletion(p_wnd,KEditLostFocus);
 			return m_oldproc(p_wnd,p_msg,p_wp,p_lp);
-		case WM_KEYDOWN:
+		case WM_CHAR:
 			switch(p_wp) {
 			case VK_RETURN:
-				if (!IsKeyPressed(VK_LCONTROL) && !IsKeyPressed(VK_RCONTROL)) ForwardCompletion(p_wnd,KEditEnter);
+				if (!IsKeyPressed(VK_LCONTROL) && !IsKeyPressed(VK_RCONTROL)) {
+					ForwardCompletion(p_wnd,KEditEnter);
+					return 0;
+				}
 				break;
 			case VK_TAB:
 				ForwardCompletion(p_wnd,IsKeyPressed(VK_SHIFT) ? KEditShiftTab : KEditTab);
-				break;
+				return 0;
 			case VK_ESCAPE:
 				ForwardCompletion(p_wnd,KEditAborted);
-				break;
+				return 0;
 			}
 			return m_oldproc(p_wnd,p_msg,p_wp,p_lp);
 		case WM_DESTROY:
@@ -90,7 +96,7 @@ private:
 				uHookWindowProc(p_wnd,l_wndproc);
 				RemoveProp(p_wnd,g_prop_instance);
 				on_editbox_destruction(p_wnd);
-				try {delete this;}catch(...){}
+				try {delete this;} catch(...) {}
 				return l_wndproc(p_wnd,p_msg,p_wp,p_lp);
 			}
 		default:
@@ -109,7 +115,7 @@ private:
 
 class InPlaceEditContainer {
 public:
-	InPlaceEditContainer(HWND p_parentwnd,const RECT & p_rect,bool p_multiline,pfc::rcptr_t<pfc::string_base> p_content,completion_notify_ptr p_notify) 
+	InPlaceEditContainer(HWND p_parentwnd,const RECT & p_rect,unsigned p_flags,pfc::rcptr_t<pfc::string_base> p_content,completion_notify_ptr p_notify) 
 		: m_content(p_content), m_notify(p_notify), m_completed(false), m_initialized(false), m_changed(false), m_disable_editing(false) {
 		{
 			static volatile unsigned increment;
@@ -151,7 +157,9 @@ public:
 			edit = CreateWindowEx(
 				/*WS_EX_STATICEDGE*/ 0,
 				WC_EDIT,TEXT(""),
-				(p_multiline ? (WS_VSCROLL|ES_MULTILINE) : ES_AUTOHSCROLL) | WS_CHILD|ES_LEFT|WS_VISIBLE,//parent is invisible now
+				((p_flags & KFlagMultiLine) ? (WS_VSCROLL|ES_MULTILINE) : ES_AUTOHSCROLL) | 
+				((p_flags & KFlagReadOnly) ? ES_READONLY : 0) |
+				WS_CHILD|ES_LEFT|WS_VISIBLE,//parent is invisible now
 				0,0,
 				parent_client.right,parent_client.bottom,
 				container,
@@ -190,10 +198,15 @@ private:
 		case WM_MOUSEWHEEL:
 			return 0;
 		case MSG_DISABLE_EDITING:
+			ShowWindow(p_wnd,SW_HIDE);
+			UpdateWindow(GetParent(p_wnd));
 			m_disable_editing = true;
 			return 0;
 		case MSG_COMPLETION:
 			PFC_ASSERT(m_initialized);
+			if ((p_wp & KEditMaskReason) != KEditLostFocus) {
+				SetFocus(GetParent(p_wnd));
+			}
 			OnCompletion(p_wp);
 			DestroyWindow(p_wnd);
 			return 0;
@@ -256,29 +269,11 @@ static void fail(completion_notify_ptr p_notify) {
 }
 
 void InPlaceEdit::Start(HWND p_parentwnd,const RECT & p_rect,bool p_multiline,pfc::rcptr_t<pfc::string_base> p_content,completion_notify_ptr p_notify) {
-	try {
-		new InPlaceEditContainer(p_parentwnd,p_rect,p_multiline,p_content,p_notify);
-	} catch(...) {
-		fail(p_notify);
-	}
-
+	StartEx(p_parentwnd,p_rect,p_multiline ? KFlagMultiLine : 0, p_content,p_notify);
 }
 
 void InPlaceEdit::Start_FromListView(HWND p_listview,unsigned p_item,unsigned p_subitem,unsigned p_linecount,pfc::rcptr_t<pfc::string_base> p_content,completion_notify_ptr p_notify) {
-	try {
-		ListView_EnsureVisible(p_listview,p_item,FALSE);
-		RECT itemrect;
-		if (!ListView_GetSubItemRect(p_listview,p_item,p_subitem,LVIR_BOUNDS,&itemrect)) throw pfc::exception("ListView_GetSubItemRect failure");
-
-		const bool multiline = p_linecount > 1;
-		if (multiline) {
-			itemrect.bottom = itemrect.top + (itemrect.bottom - itemrect.top) * p_linecount;
-		}
-
-		Start(p_listview,itemrect,multiline,p_content,p_notify);
-	} catch(...) {
-		fail(p_notify);
-	}
+	Start_FromListViewEx(p_listview,p_item,p_subitem,p_linecount,0,p_content,p_notify);
 }
 
 bool InPlaceEdit::TableEditAdvance(unsigned & p_item,unsigned & p_column, unsigned p_item_count,unsigned p_column_count, unsigned p_whathappened) {
@@ -317,4 +312,29 @@ bool InPlaceEdit::TableEditAdvance(unsigned & p_item,unsigned & p_column, unsign
 		delta++;
 	}
 	return true;
+}
+
+void InPlaceEdit::StartEx(HWND p_parentwnd,const RECT & p_rect,unsigned p_flags,pfc::rcptr_t<pfc::string_base> p_content,completion_notify_ptr p_notify) {
+	try {
+		new InPlaceEditContainer(p_parentwnd,p_rect,p_flags,p_content,p_notify);
+	} catch(...) {
+		fail(p_notify);
+	}
+}
+
+void InPlaceEdit::Start_FromListViewEx(HWND p_listview,unsigned p_item,unsigned p_subitem,unsigned p_linecount,unsigned p_flags,pfc::rcptr_t<pfc::string_base> p_content,completion_notify_ptr p_notify) {
+	try {
+		ListView_EnsureVisible(p_listview,p_item,FALSE);
+		RECT itemrect;
+		if (!ListView_GetSubItemRect(p_listview,p_item,p_subitem,LVIR_BOUNDS,&itemrect)) throw pfc::exception("ListView_GetSubItemRect failure");
+
+		const bool multiline = p_linecount > 1;
+		if (multiline) {
+			itemrect.bottom = itemrect.top + (itemrect.bottom - itemrect.top) * p_linecount;
+		}
+
+		StartEx(p_listview,itemrect,p_flags | (multiline ? KFlagMultiLine : 0),p_content,p_notify);
+	} catch(...) {
+		fail(p_notify);
+	}
 }

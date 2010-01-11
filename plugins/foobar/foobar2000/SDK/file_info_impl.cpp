@@ -139,61 +139,47 @@ file_info_impl::~file_info_impl()
 {
 }
 
-t_size info_storage::add_item(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) {
+t_size file_info_impl_utils::info_storage::add_item(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) {
 	t_size index = m_info.get_size();
 	m_info.set_size(index + 1);
 	m_info[index].init(p_name,p_name_length,p_value,p_value_length);
 	return index;
 }
 
-void info_storage::remove_mask(const bit_array & p_mask) {
+void file_info_impl_utils::info_storage::remove_mask(const bit_array & p_mask) {
 	pfc::remove_mask_t(m_info,p_mask);
 }
 
-info_storage::~info_storage()
-{
-}
 
 
-
-
-meta_storage::meta_storage()
-{
-}
-
-meta_storage::~meta_storage()
-{
-}
-
-
-t_size meta_storage::add_entry(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
+t_size file_info_impl_utils::meta_storage::add_entry(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
 {
 	meta_entry temp(p_name,p_name_length,p_value,p_value_length);
 	return pfc::append_swap_t(m_data,temp);
 }
 
-void meta_storage::insert_value(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length)
+void file_info_impl_utils::meta_storage::insert_value(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length)
 {
 	m_data[p_index].insert_value(p_value_index,p_value,p_value_length);
 }
 
-void meta_storage::modify_value(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length)
+void file_info_impl_utils::meta_storage::modify_value(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length)
 {
 	m_data[p_index].modify_value(p_value_index,p_value,p_value_length);
 }
 
-void meta_storage::remove_values(t_size p_index,const bit_array & p_mask)
+void file_info_impl_utils::meta_storage::remove_values(t_size p_index,const bit_array & p_mask)
 {
 	m_data[p_index].remove_values(p_mask);
 }
 
-void meta_storage::remove_mask(const bit_array & p_mask)
+void file_info_impl_utils::meta_storage::remove_mask(const bit_array & p_mask)
 {
 	pfc::remove_mask_t(m_data,p_mask);
 }
 	
 
-meta_storage::meta_entry::meta_entry(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len)
+file_info_impl_utils::meta_entry::meta_entry(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len)
 {
 	m_name.set_string(p_name,p_name_len);
 	m_values.set_size(1);
@@ -201,24 +187,24 @@ meta_storage::meta_entry::meta_entry(const char * p_name,t_size p_name_len,const
 }
 
 
-void meta_storage::meta_entry::remove_values(const bit_array & p_mask)
+void file_info_impl_utils::meta_entry::remove_values(const bit_array & p_mask)
 {
 	pfc::remove_mask_t(m_values,p_mask);
 }
 
-void meta_storage::meta_entry::insert_value(t_size p_value_index,const char * p_value,t_size p_value_length)
+void file_info_impl_utils::meta_entry::insert_value(t_size p_value_index,const char * p_value,t_size p_value_length)
 {
 	pfc::string_simple temp;
 	temp.set_string(p_value,p_value_length);
 	pfc::insert_swap_t(m_values,temp,p_value_index);
 }
 
-void meta_storage::meta_entry::modify_value(t_size p_value_index,const char * p_value,t_size p_value_length)
+void file_info_impl_utils::meta_entry::modify_value(t_size p_value_index,const char * p_value,t_size p_value_length)
 {
 	m_values[p_value_index].set_string(p_value,p_value_length);
 }
 
-void meta_storage::reorder(const t_size * p_order)
+void file_info_impl_utils::meta_storage::reorder(const t_size * p_order)
 {
 	pfc::reorder_t(m_data,p_order,m_data.get_size());
 }
@@ -233,7 +219,7 @@ void file_info_impl::copy_info(const file_info & p_source)
 	m_info.copy_from(p_source);
 }
 
-void meta_storage::copy_from(const file_info & p_info)
+void file_info_impl_utils::meta_storage::copy_from(const file_info & p_info)
 {
 	t_size meta_index,meta_count = p_info.meta_get_count();
 	m_data.set_size(meta_count);
@@ -248,7 +234,7 @@ void meta_storage::copy_from(const file_info & p_info)
 	}
 }
 
-void info_storage::copy_from(const file_info & p_info)
+void file_info_impl_utils::info_storage::copy_from(const file_info & p_info)
 {
 	t_size n, count;
 	count = p_info.info_get_count();

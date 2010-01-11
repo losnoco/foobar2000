@@ -348,6 +348,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\cue_parser_embedding.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\cuesheet_index_list.cpp"
 				>
 			</File>

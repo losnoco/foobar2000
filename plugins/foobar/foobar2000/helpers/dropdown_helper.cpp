@@ -34,8 +34,9 @@ static void g_setup_dropdown_fromlist(HWND wnd,const pfc::ptr_list_t<char> & lis
 {
 	t_size n, m = list.get_count();
 	uSendMessage(wnd,CB_RESETCONTENT,0,0);
-	for(n=0;n<m;n++)
+	for(n=0;n<m;n++) {
 		uSendMessageText(wnd,CB_ADDSTRING,0,list[n]);
+	}
 }
 
 void cfg_dropdown_history::setup_dropdown(HWND wnd)

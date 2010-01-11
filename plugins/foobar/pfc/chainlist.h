@@ -226,80 +226,89 @@ namespace pfc {
 		inline t_size get_count() const {return m_count;}
 
 		inline chain_list_t() {_init();}
-		inline chain_list_t(const t_self & p_source) { _init(); *this = p_source; }
+		inline chain_list_t(const t_self & p_other) { _init(); *this = p_other; }
+		template<typename t_other> inline chain_list_t(const t_other & p_other) { _init(); *this = p_other; }
 		inline ~chain_list_t()
 		{
 			remove_all();
 		}
 		
-		const t_self & operator=(const t_self & p_source)
-		{
-			remove_all();
-			for(const_iterator iter = p_source.first();iter.is_valid();iter.next())
-				insert_last(*iter);
+		inline const t_self & operator=(const t_self & p_other) {
+			copy_list_enumerated(*this,p_other);
+			return *this;
+		}
+		template<typename t_other> inline const t_self & operator=(const t_other & p_other) {
+			copy_list_enumerated(*this,p_other);
 			return *this;
 		}
 
+
 		template<typename t_insert> iterator insert_after(iterator const & p_iter,const t_insert & p_item) {
-			bug_check_assert(p_iter.is_valid() && p_iter.m_owner == this);
-			elem * ptr = p_iter.m_ptr;
+			dynamic_assert(p_iter.is_valid() && p_iter.m_owner == this);
 			elem * new_elem = new elem(p_item,0);
-			new_elem->m_prev = ptr;
-			new_elem->m_next = ptr->m_next;
-			(ptr->m_next ? ptr->m_next->m_prev : m_last) = new_elem;
-			ptr->m_next = new_elem;
-			m_count++;
+			__link_after(p_iter,new_elem);
 			return iterator(this,new_elem);
 		}
 
 		template<typename t_insert> iterator insert_before(iterator const & p_iter,const t_insert & p_item) {
-			bug_check_assert(p_iter.is_valid() && p_iter.m_owner == this);
-			elem * ptr = p_iter.m_ptr;
+			dynamic_assert(p_iter.is_valid() && p_iter.m_owner == this);
 			elem * new_elem = new elem(p_item,0);
-			new_elem->m_next = ptr;
-			new_elem->m_prev = ptr->m_prev;
-			(ptr->m_prev ? ptr->m_prev->m_next : m_first) = new_elem;
-			ptr->m_prev = new_elem;
-			m_count++;
+			__link_before(p_iter,new_elem);
 			return iterator(this,new_elem);
 		}
 
 		template<typename t_insert> iterator insert_last(const t_insert & p_item) {
 			elem * new_elem = new elem(p_item,0);
-			new_elem->m_prev = m_last;
-			(m_last ? m_last->m_next : m_first) = new_elem;
-			m_last = new_elem;
-			m_count++;
+			__link_last(new_elem);
 			return iterator(this,new_elem);
 		}
 
 		template<typename t_insert> iterator insert_first(const t_insert & p_item) {
 			elem * new_elem = new elem(p_item,0);
-			new_elem->m_next = m_first;
-			(m_first ? m_first->m_prev : m_last) = new_elem;
-			m_first = new_elem;
-			m_count++;
+			__link_first(new_elem);
 			return iterator(this,new_elem);
 		}
+
+		iterator insert_after(iterator const & p_iter) {
+			dynamic_assert(p_iter.is_valid() && p_iter.m_owner == this);
+			elem * new_elem = new elem();
+			__link_after(p_iter,new_elem);
+			return iterator(this,new_elem);
+		}
+
+		iterator insert_before(iterator const & p_iter) {
+			dynamic_assert(p_iter.is_valid() && p_iter.m_owner == this);
+			elem * new_elem = new elem();
+			__link_before(p_iter,new_elem);
+			return iterator(this,new_elem);
+		}
+
+		iterator insert_last() {
+			elem * new_elem = new elem();
+			__link_last(new_elem);
+			return iterator(this,new_elem);
+		}
+
+		iterator insert_first() {
+			elem * new_elem = new elem();
+			__link_first(new_elem);
+			return iterator(this,new_elem);
+		}
+
 
 		template<typename t_insert> void insert_last_multi(const chain_list_t<t_insert> & p_list) {
 			typename chain_list_t<t_insert>::const_iterator iter;
 			for(iter = p_list.first(); iter.is_valid(); ++iter) {
-				insert_last(*iter);
+				__link_last(new elem(*iter,0));
 			}
 		}
 
 		template<typename t_insert> void insert_first_multi(const chain_list_t<t_insert> & p_list) {
 			typename chain_list_t<t_insert>::const_iterator iter;
 			for(iter = p_list.last(); iter.is_valid(); --iter) {
-				insert_first(*iter);
+				__link_first(new elem(*iter,0));
 			}
 		}
-
-		iterator insert_after(iterator const & p_iter);
-		iterator insert_before(iterator const & p_iter);
-		iterator insert_last();
-		iterator insert_first();
 
 		void remove_single(iterator const & p_iter);
 		void remove_range(iterator const & p_from,iterator const & p_to);
@@ -358,23 +367,82 @@ namespace pfc {
 
 		template<typename t_callback>
 		void enumerate(t_callback & p_callback) const {
-			for(const_iterator walk = first(); walk.is_valid(); ++walk) {
-				p_callback(*walk);
-			}
+			__enumerate_chain<const elem>(m_first,p_callback);
+		}
+
+		template<typename t_callback>
+		void enumerate(t_callback & p_callback) {
+			__enumerate_chain<elem>(m_first,p_callback);
+		}
+
+		template<typename t_value>
+		iterator set_single(const t_value & p_value) {
+			remove_all();
+			return insert_last(p_value);
+		}
+
+		template<typename t_value>
+		iterator set_single() {
+			remove_all();
+			return insert_last();
+		}
+
+		template<typename t_value>
+		void add_item(const t_value & p_value) {
+			__link_last(new elem(p_value,0));
 		}
 
 	private:
-		class elem
-		{
-		public:
-			elem() : m_prev(0), m_next(0) {}
-			elem(const elem & p_source) {*this = p_source;}
+		struct elem {
+			elem() : m_prev(NULL), m_next(NULL) {}
 			template<typename t_param>
 			elem(const t_param & p_source,int) : m_data(p_source), m_prev(0), m_next(0) {}
 
 			T m_data;
 			elem * m_prev, * m_next;
 		};
+
+		void __link_after(iterator const & p_iter,elem * new_elem) {
+			elem * ptr = p_iter.m_ptr;
+			new_elem->m_prev = ptr;
+			new_elem->m_next = ptr->m_next;
+			(ptr->m_next ? ptr->m_next->m_prev : m_last) = new_elem;
+			ptr->m_next = new_elem;
+			m_count++;
+		}
+
+		void __link_before(iterator const & p_iter,elem * new_elem) {
+			elem * ptr = p_iter.m_ptr;
+			new_elem->m_next = ptr;
+			new_elem->m_prev = ptr->m_prev;
+			(ptr->m_prev ? ptr->m_prev->m_next : m_first) = new_elem;
+			ptr->m_prev = new_elem;
+			m_count++;
+		}
+
+		void __link_last(elem * new_elem) {
+			new_elem->m_prev = m_last;
+			(m_last ? m_last->m_next : m_first) = new_elem;
+			m_last = new_elem;
+			m_count++;
+		}
+
+		void __link_first(elem * new_elem) {
+			new_elem->m_next = m_first;
+			(m_first ? m_first->m_prev : m_last) = new_elem;
+			m_first = new_elem;
+			m_count++;
+		}
+
+		template<typename t_elemwalk,typename t_callback>
+		static void __enumerate_chain(t_elemwalk * p_elem,t_callback & p_callback) {
+			t_elemwalk * walk = p_elem;
+			while(walk != NULL) {
+				p_callback(walk->m_data);
+				walk = walk->m_next;
+			}
+		}
+
 
 		elem * m_first, * m_last;
 
@@ -472,62 +540,6 @@ namespace pfc {
 		}
 
 	};//chain_list_t
-
-
-	template<typename T>
-	typename chain_list_t<T>::iterator chain_list_t<T>::insert_after(iterator const & p_iter)
-	{
-		bug_check_assert(p_iter.is_valid() && p_iter.m_owner == this);
-		elem * ptr = p_iter.m_ptr;
-		elem * new_elem = new elem();
-		new_elem->m_prev = ptr;
-		new_elem->m_next = ptr->m_next;
-		(ptr->m_next ? ptr->m_next->m_prev : m_last) = new_elem;
-		ptr->m_next = new_elem;
-		m_count++;
-
-		return iterator(this,new_elem);
-	}
-
-	template<typename T>
-	typename chain_list_t<T>::iterator chain_list_t<T>::insert_before(iterator const & p_iter)
-	{
-		bug_check_assert(p_iter.is_valid() && p_iter.m_owner == this);
-		elem * ptr = p_iter.m_ptr;
-		elem * new_elem = new elem();
-		new_elem->m_next = ptr;
-		new_elem->m_prev = ptr->m_prev;
-		(ptr->m_prev ? ptr->m_prev->m_next : m_first) = new_elem;
-		ptr->m_prev = new_elem;
-		m_count++;
-		
-		return iterator(this,new_elem);			
-	}
-
-	template<typename T>
-	typename chain_list_t<T>::iterator chain_list_t<T>::insert_last()
-	{
-		elem * new_elem = new elem();
-		new_elem->m_prev = m_last;
-		(m_last ? m_last->m_next : m_first) = new_elem;
-		m_last = new_elem;
-		m_count++;
-		
-		return iterator(this,new_elem);
-	}
-
-	template<typename T>
-	typename chain_list_t<T>::iterator chain_list_t<T>::insert_first()
-	{
-		elem * new_elem = new elem();
-		new_elem->m_next = m_first;
-		(m_first ? m_first->m_prev : m_last) = new_elem;
-		m_first = new_elem;
-		m_count++;
-
-		return iterator(this,new_elem);
-	}
-
 
 	template<typename T>
 	void chain_list_t<T>::remove_single(iterator const & p_iter)

@@ -113,3 +113,56 @@ private:
 };
 
 bool uGetClipboardString(pfc::string_base & p_out);
+
+
+
+#ifdef __ATLWIN_H__
+
+class CMenuSelectionReceiver : public CWindowImpl<CMenuSelectionReceiver> {
+public:
+	CMenuSelectionReceiver(HWND p_parent) {
+		SetLastError(NO_ERROR);
+		if (Create(p_parent) == NULL) throw exception_win32(GetLastError());
+	}
+	~CMenuSelectionReceiver() {
+		DestroyWindow();
+	}
+	typedef CWindowImpl<CMenuSelectionReceiver> _baseClass;
+	DECLARE_WND_CLASS_EX(TEXT("{DF0087DB-E765-4283-BBAB-6AB2E8AB64A1}"),0,0);
+
+	BEGIN_MSG_MAP(CMenuSelectionReceiver)
+		MESSAGE_HANDLER(WM_MENUSELECT,OnMenuSelect)
+	END_MSG_MAP()
+protected:
+	virtual bool QueryHint(unsigned p_id,pfc::string_base & p_out) {
+		return false;
+	}
+private:
+	LRESULT OnMenuSelect(UINT,WPARAM p_wp,LPARAM p_lp,BOOL&) {
+		if (p_lp != 0) {
+			if (HIWORD(p_wp) & MF_POPUP) {
+				m_status.release();
+			} else {
+				pfc::string8 msg;
+				if (!QueryHint(LOWORD(p_wp),msg)) {
+					m_status.release();
+				} else {
+					if (m_status.is_empty()) {
+						if (!static_api_ptr_t<ui_control>()->override_status_text_create(m_status)) m_status.release();
+					}
+					if (m_status.is_valid()) {
+						m_status->override_text(msg);
+					}
+				}
+			}
+		} else {
+			m_status.release();
+		}
+		return 0;
+	}
+
+	service_ptr_t<ui_status_text_override> m_status;
+
+	PFC_CLASS_NOT_COPYABLE(CMenuSelectionReceiver,CMenuSelectionReceiver);
+};
+#endif //#ifdef __ATLWIN_H__

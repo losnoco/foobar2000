@@ -124,4 +124,86 @@ namespace byte_order {
 #endif
 };
 
+
+
+namespace pfc {
+	template<typename TInt,unsigned width,bool IsBigEndian>
+	class __EncodeIntHelper {
+	public:
+		inline static void Run(TInt p_value,t_uint8 * p_out) {
+			*p_out = (t_uint8)(p_value);
+			__EncodeIntHelper<TInt,width-1,IsBigEndian>::Run(p_value >> 8,p_out + (IsBigEndian ? -1 : 1));
+		}
+	};
+
+	template<typename TInt,bool IsBigEndian>
+	class __EncodeIntHelper<TInt,1,IsBigEndian> {
+	public:
+		inline static void Run(TInt p_value,t_uint8* p_out) {
+			*p_out = (t_uint8)(p_value);
+		}
+	};
+	template<typename TInt,bool IsBigEndian>
+	class __EncodeIntHelper<TInt,0,IsBigEndian> {
+	public:
+		inline static void Run(TInt,t_uint8*) {}
+	};
+
+	template<typename TInt>
+	inline void encode_little_endian(t_uint8 * p_buffer,TInt p_value) {
+		__EncodeIntHelper<TInt,sizeof(TInt),false>::Run(p_value,p_buffer);
+	}
+	template<typename TInt>
+	inline void encode_big_endian(t_uint8 * p_buffer,TInt p_value) {
+		__EncodeIntHelper<TInt,sizeof(TInt),true>::Run(p_value,p_buffer + (sizeof(TInt) - 1));
+	}
+
+
+	template<typename TInt,unsigned width,bool IsBigEndian>
+	class __DecodeIntHelper {
+	public:
+		inline static TInt Run(const t_uint8 * p_in) {
+			return (__DecodeIntHelper<TInt,width-1,IsBigEndian>::Run(p_in + (IsBigEndian ? -1 : 1)) << 8) + *p_in;
+		}
+	};
+	
+	template<typename TInt,bool IsBigEndian>
+	class __DecodeIntHelper<TInt,1,IsBigEndian> {
+	public:
+		inline static TInt Run(const t_uint8* p_in) {return *p_in;}
+	};
+
+	template<typename TInt,bool IsBigEndian>
+	class __DecodeIntHelper<TInt,0,IsBigEndian> {
+	public:
+		inline static TInt Run(const t_uint8*) {return 0;}
+	};
+
+	template<typename TInt>
+	inline void decode_little_endian(TInt & p_out,const t_uint8 * p_buffer) {
+		p_out = __DecodeIntHelper<TInt,sizeof(TInt),false>::Run(p_buffer);
+	}
+
+	template<typename TInt>
+	inline void decode_big_endian(TInt & p_out,const t_uint8 * p_buffer) {
+		p_out = __DecodeIntHelper<TInt,sizeof(TInt),true>::Run(p_buffer + (sizeof(TInt) - 1));
+	}
+
+	template<typename TInt>
+	inline TInt decode_little_endian(const t_uint8 * p_buffer) {
+		TInt temp;
+		decode_little_endian(temp,p_buffer);
+		return temp;
+	}
+
+	template<typename TInt>
+	inline TInt decode_big_endian(const t_uint8 * p_buffer) {
+		TInt temp;
+		decode_big_endian(temp,p_buffer);
+		return temp;
+	}
+}
+
+
+
 #endif

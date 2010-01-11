@@ -28,7 +28,7 @@ public:
 	~message_filter_impl_base() {static_api_ptr_t<message_loop>()->remove_message_filter(this);}
 	bool pretranslate_message(MSG * p_msg) {return false;}
 	
-	PFC_CLASS_NOT_COPYABLE(message_filter_impl_base);
+	PFC_CLASS_NOT_COPYABLE(message_filter_impl_base,message_filter_impl_base);
 };
 
 class message_filter_impl_accel : public message_filter_impl_base {
@@ -52,5 +52,5 @@ private:
 	HWND m_wnd;
 	win32_accelerator m_accel;
 
-	PFC_CLASS_NOT_COPYABLE(message_filter_impl_accel);
+	PFC_CLASS_NOT_COPYABLE(message_filter_impl_accel,message_filter_impl_accel);
 };

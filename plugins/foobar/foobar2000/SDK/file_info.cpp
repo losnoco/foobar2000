@@ -180,7 +180,7 @@ const char * file_info::info_get_ex(const char * p_name,t_size p_name_length) co
 
 t_int64 file_info::info_get_int(const char * name) const
 {
-	assert(pfc::is_valid_utf8(name));
+	PFC_ASSERT(pfc::is_valid_utf8(name));
 	const char * val = info_get(name);
 	if (val==0) return 0;
 	return _atoi64(val);
@@ -208,14 +208,14 @@ double file_info::info_get_float(const char * name) const
 
 void file_info::info_set_int(const char * name,t_int64 value)
 {
-	assert(pfc::is_valid_utf8(name));
+	PFC_ASSERT(pfc::is_valid_utf8(name));
 	info_set(name,pfc::format_int(value));
 }
 
 void file_info::info_set_float(const char * name,double value,unsigned precision,bool force_sign,const char * unit)
 {
-	assert(pfc::is_valid_utf8(name));
-	assert(unit==0 || strlen(unit) <= 64);
+	PFC_ASSERT(pfc::is_valid_utf8(name));
+	PFC_ASSERT(unit==0 || strlen(unit) <= 64);
 	char temp[128];
 	pfc::float_to_string(temp,64,value,precision,force_sign);
 	temp[63] = 0;

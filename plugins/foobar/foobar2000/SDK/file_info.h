@@ -201,6 +201,11 @@ public:
 	//! Unsafe - does not check whether the field already exists and will result in duplicates if it does - call only when appropriate checks have been applied externally.
 	t_size	__meta_add_unsafe(const char * p_name,const char * p_value) {return meta_set_nocheck_ex(p_name,infinite,p_value,infinite);}
 
+	//! Unsafe - does not check whether the field already exists and will result in duplicates if it does - call only when appropriate checks have been applied externally.
+	t_size __info_add_unsafe_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) {return info_set_nocheck_ex(p_name,p_name_length,p_value,p_value_length);}
+	//! Unsafe - does not check whether the field already exists and will result in duplicates if it does - call only when appropriate checks have been applied externally.
+	t_size __info_add_unsafe(const char * p_name,const char * p_value) {return info_set_nocheck_ex(p_name,infinite,p_value,infinite);}
+
 	static bool g_is_valid_field_name(const char * p_name,t_size p_length = infinite);
 	typedef pfc::comparator_stricmp_ascii field_name_comparator;
 protected:

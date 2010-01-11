@@ -48,10 +48,6 @@ t_size utf8_decode_char(const char *p_utf8,unsigned * wide,t_size max)
 	}
 	cnt++;
 
-	for(n=0;n<cnt;n++)
-		if (utf8[n]==0) return 0;
-
-
 	if (cnt==2 && !(*utf8&0x1E)) return 0;
 
 	if (cnt==1)

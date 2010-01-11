@@ -749,6 +749,8 @@ void foobar2000_io::exception_io_from_win32(DWORD p_code) {
 		throw exception_io_file_corrupted();
 	case ERROR_BUFFER_OVERFLOW:
 		throw exception_io_buffer_overflow();
+	case ERROR_DISK_CHANGE:
+		throw exception_io_disk_change();
 	default:
 		throw exception_io_win32_ex(p_code);
 	}

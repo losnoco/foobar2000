@@ -1,5 +1,19 @@
 namespace bitreader_helper {
 
+	inline static size_t extract_bit(const t_uint8 * p_stream,size_t p_offset) {
+		return (p_stream[p_offset>>3] >> (7-(p_offset&7)))&1;
+	}
+
+	static size_t extract_int(const t_uint8 * p_stream,size_t p_base,size_t p_width) {
+		size_t ret = 0;
+		size_t offset = p_base;
+		for(size_t bit=0;bit<p_width;bit++) {
+			ret <<= 1;
+			ret |= extract_bit(p_stream,offset++);
+		}
+		return ret;
+	}
+
 class bitreader
 {
 public:
@@ -28,6 +42,12 @@ public:
 	t_size read(t_size p_bits) {return read_t<t_size>(p_bits);}
 
 	inline t_size get_bitptr() const {return m_bitptr;}
+
+	inline bool read_bit() {
+		bool state = ( (m_ptr[m_bitptr>>3] >> (7-(m_bitptr&7)))&1 ) != 0;
+		m_bitptr++;
+		return state;
+	}
 
 private:
 

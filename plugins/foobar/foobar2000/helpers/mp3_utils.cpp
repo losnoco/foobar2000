@@ -31,12 +31,12 @@ namespace {
 
 typedef t_uint16 uint16;
 
-static uint16 bitrate_table_l1v1[16]  = {  0, 32, 64, 96,128,160,192,224,256,288,320,352,384,416,448,  0};
-static uint16 bitrate_table_l2v1[16]  = {  0, 32, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,384,  0};
-static uint16 bitrate_table_l3v1[16]  = {  0, 32, 40, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,  0};
-static uint16 bitrate_table_l1v2[16]  = {  0, 32, 48, 56, 64, 80, 96,112,128,144,160,176,192,224,256,  0};
-static uint16 bitrate_table_l23v2[16] = {  0,  8, 16, 24, 32, 40, 48, 56, 64, 80, 96,112,128,144,160,  0};
-static uint16 sample_rate_table[] = {11025,12000,8000};
+static const uint16 bitrate_table_l1v1[16]  = {  0, 32, 64, 96,128,160,192,224,256,288,320,352,384,416,448,  0};
+static const uint16 bitrate_table_l2v1[16]  = {  0, 32, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,384,  0};
+static const uint16 bitrate_table_l3v1[16]  = {  0, 32, 40, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,  0};
+static const uint16 bitrate_table_l1v2[16]  = {  0, 32, 48, 56, 64, 80, 96,112,128,144,160,176,192,224,256,  0};
+static const uint16 bitrate_table_l23v2[16] = {  0,  8, 16, 24, 32, 40, 48, 56, 64, 80, 96,112,128,144,160,  0};
+static const uint16 sample_rate_table[] = {11025,12000,8000};
 
 unsigned mp3_utils::QueryMPEGFrameSize(const t_uint8 p_header[4])
 {
@@ -58,7 +58,8 @@ bool mp3_utils::ParseMPEGFrameHeader(TMPEGFrameInfo & p_info,const t_uint8 p_hea
 	unsigned bitrate_index = parser.read(4);
 	unsigned sample_rate_index = parser.read(2);
 	if (sample_rate_index == 11) return false;//reserved
-	unsigned padding = parser.read(1);
+	unsigned paddingbit = parser.read(1);
+	int paddingdelta = 0;
 	parser.read(1);//private
 	unsigned channel_mode = parser.read(2);
 	parser.read(2);//channel_mode_extension
@@ -73,14 +74,18 @@ bool mp3_utils::ParseMPEGFrameHeader(TMPEGFrameInfo & p_info,const t_uint8 p_hea
 	default:
 		return false;
 	case MPEG_LAYER_3:
+		paddingdelta = paddingbit ? 1 : 0;
+		
 		p_info.m_layer = 3;
 		switch(mpeg_version)
 		{
 		case _MPEG_1:
+			p_info.m_duration = 1152;
 			bitrate = bitrate_table_l3v1[bitrate_index];
 			break;
 		case _MPEG_2:
 		case _MPEG_25:
+			p_info.m_duration = 576;
 			bitrate = bitrate_table_l23v2[bitrate_index];
 			break;
 		default:
@@ -89,6 +94,8 @@ bool mp3_utils::ParseMPEGFrameHeader(TMPEGFrameInfo & p_info,const t_uint8 p_hea
 	
 		break;
 	case MPEG_LAYER_2:
+		paddingdelta = paddingbit ? 1 : 0;
+		p_info.m_duration = 1152;
 		p_info.m_layer = 2;
 		switch(mpeg_version)
 		{
@@ -104,6 +111,8 @@ bool mp3_utils::ParseMPEGFrameHeader(TMPEGFrameInfo & p_info,const t_uint8 p_hea
 		}
 		break;
 	case MPEG_LAYER_1:
+		paddingdelta = paddingbit ? 4 : 0;
+		p_info.m_duration = 384;
 		p_info.m_layer = 1;
 		switch(mpeg_version)
 		{
@@ -126,17 +135,14 @@ bool mp3_utils::ParseMPEGFrameHeader(TMPEGFrameInfo & p_info,const t_uint8 p_hea
 	switch(mpeg_version)
 	{
 	case _MPEG_1:
-		p_info.m_duration = 1152;
 		sample_rate *= 4;
 		p_info.m_mpegversion = MPEG_1;
 		break;
 	case _MPEG_2:
-		p_info.m_duration = 576;
 		sample_rate *= 2;
 		p_info.m_mpegversion = MPEG_2;
 		break;
 	case _MPEG_25:
-		p_info.m_duration = 576;
 		p_info.m_mpegversion = MPEG_25;
 		break;
 	}
@@ -157,7 +163,10 @@ bool mp3_utils::ParseMPEGFrameHeader(TMPEGFrameInfo & p_info,const t_uint8 p_hea
 
 	p_info.m_sample_rate = sample_rate;
 
-	p_info.m_bytes = ( bitrate /*kbps*/ * (1000/8) /* kbps-to-bytes*/ * p_info.m_duration /*samples-per-frame*/) / sample_rate + padding;
+
+	p_info.m_bytes = ( bitrate /*kbps*/ * (1000/8) /* kbps-to-bytes*/ * p_info.m_duration /*samples-per-frame*/ ) / sample_rate + paddingdelta;
+
+	if (p_info.m_layer == 1) p_info.m_bytes &= ~3;
 
 	p_info.m_crc = protection == 0;
 

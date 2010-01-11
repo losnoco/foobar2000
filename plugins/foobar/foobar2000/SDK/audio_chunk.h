@@ -89,7 +89,8 @@ public:
 	inline void set_sample_rate(unsigned val) {set_srate(val);}
 
 	//! Helper; sets channel count to specified value and uses default channel map for this channel count.
-	void set_channels(unsigned val);
+	void set_channels(unsigned val) {set_channels(val,g_guess_channel_config(val));}
+
 
 	//! Helper; resizes audio data buffer when it's current size is smaller than requested.
 	inline void grow_data_size(t_size p_requested) {if (p_requested > get_data_size()) set_data_size(p_requested);}
@@ -208,7 +209,7 @@ public:
 	virtual unsigned get_channels() const {return m_nch;}
 	virtual unsigned get_channel_config() const {return m_setup;}
 	virtual void set_channels(unsigned val,unsigned setup) {m_nch = val;m_setup = setup;}
-	void set_channels(unsigned val);
+	void set_channels(unsigned val) {set_channels(val,g_guess_channel_config(val));}
 
 	virtual t_size get_sample_count() const {return m_samples;}
 	virtual void set_sample_count(t_size val) {m_samples = val;}

@@ -10,7 +10,7 @@ public:
 		}
 	}
 	
-	void set_data_raw(stream_reader * p_stream,abort_callback & p_abort) {
+	void set_data_raw(stream_reader * p_stream,t_size,abort_callback & p_abort) {
 		t_uint32 n,count;
 		p_stream->read_lendian_t(count,p_abort);
 		m_buffer.set_size_e(count);

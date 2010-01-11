@@ -55,6 +55,8 @@ namespace foobar2000_io
 	PFC_DECLARE_EXCEPTION(exception_io_write_protected,		exception_io_denied,"The media is write protected");
 	//! File is corrupted. This indicates filesystem call failure, not actual invalid data being read by the app.
 	PFC_DECLARE_EXCEPTION(exception_io_file_corrupted,		exception_io,"The file is corrupted");
+	//! The disc required for requested operation is not available.
+	PFC_DECLARE_EXCEPTION(exception_io_disk_change,			exception_io,"Disc not available");
 
 	//! Stores file stats (size and timestamp).
 	struct t_filestats {
@@ -328,8 +330,8 @@ namespace foobar2000_io
 		//! Retrieves stats of a file at specified path.
 		virtual void get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort) = 0;
 		
-		virtual bool relative_path_create(const char * file_path,const char * playlist_path,pfc::string_base & out) {return 0;}
-		virtual bool relative_path_parse(const char * relative_path,const char * playlist_path,pfc::string_base & out) {return 0;}
+		virtual bool relative_path_create(const char * file_path,const char * playlist_path,pfc::string_base & out) {return false;}
+		virtual bool relative_path_parse(const char * relative_path,const char * playlist_path,pfc::string_base & out) {return false;}
 
 		//! Creates a directory.
 		virtual void create_directory(const char * p_path,abort_callback & p_abort) = 0;
@@ -348,7 +350,7 @@ namespace foobar2000_io
 		static bool g_is_remote_or_unrecognized(const char * p_path);
 		static bool g_is_recognized_path(const char * p_path);
 		
-		//! Opens file at specified path, with specified access privelages.
+		//! Opens file at specified path, with specified access privileges.
 		static void g_open(service_ptr_t<file> & p_out,const char * p_path,t_open_mode p_mode,abort_callback & p_abort);
 		//! Attempts to open file at specified path; if the operation fails with sharing violation error, keeps retrying (with short sleep period between retries) for specified amount of time.
 		static void g_open_timeout(service_ptr_t<file> & p_out,const char * p_path,t_open_mode p_mode,double p_timeout,abort_callback & p_abort);

@@ -278,16 +278,6 @@ t_size audio_chunk::skip_first_samples(t_size samples_delta)
 	}
 }
 
-void audio_chunk::set_channels(unsigned val)
-{
-	set_channels(val,g_guess_channel_config(val));
-}
-
-void audio_chunk_i::set_channels(unsigned val)
-{
-	set_channels(val,g_guess_channel_config(val));
-}
-
 audio_sample audio_chunk::get_peak(audio_sample peak) const
 {
 	return pfc::max_t<audio_sample>(peak,audio_math::calculate_peak(get_data(),get_sample_count() * get_channels() ));

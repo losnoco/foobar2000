@@ -78,6 +78,19 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE(library_manager_v2,library_manager);
 };
 
+//! New in 0.9.4
+class NOVTABLE library_manager_v3 : public library_manager_v2 {
+public:
+	//! Retrieves directory path and subdirectory/filename formatting scheme for newly encoded/copied/moved tracks.
+	//! @returns True on success, false when the feature has not been configured.
+	virtual bool get_new_file_pattern_tracks(pfc::string_base & p_directory,pfc::string_base & p_format) = 0;
+	//! Retrieves directory path and subdirectory/filename formatting scheme for newly encoded/copied/moved full album images.
+	//! @returns True on success, false when the feature has not been configured.
+	virtual bool get_new_file_pattern_images(pfc::string_base & p_directory,pfc::string_base & p_format) = 0;
+
+	FB2K_MAKE_SERVICE_INTERFACE(library_manager_v3,library_manager_v2);
+};
+
 //! Callback service receiving notifications about Media Library content changes. Methods called only from main thread.\n
 //! Use library_callback_factory_t template to register.
 class NOVTABLE library_callback : public service_base {

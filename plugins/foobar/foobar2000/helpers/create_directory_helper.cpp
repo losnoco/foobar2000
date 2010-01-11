@@ -13,6 +13,10 @@ namespace create_directory_helper
 		}
 	}
 
+	static bool is_valid_netpath_char(char p_char) {
+		return pfc::char_is_ascii_alphanumeric(p_char) || p_char == '_' || p_char == '-';
+	}
+
 	static bool test_localpath(const char * p_path) {
 		if (pfc::strcmp_partial(p_path,"file://") == 0) p_path += strlen("file://");
 		return pfc::char_is_ascii_alpha(p_path[0]) && 
@@ -25,9 +29,9 @@ namespace create_directory_helper
 		p_path++;
 		if (*p_path != '\\') return false;
 		p_path++;
-		if (!pfc::char_is_ascii_alphanumeric(*p_path)) return false;
+		if (!is_valid_netpath_char(*p_path)) return false;
 		p_path++;
-		while(pfc::char_is_ascii_alphanumeric(*p_path)) p_path++;
+		while(is_valid_netpath_char(*p_path)) p_path++;
 		if (*p_path != '\\') return false;
 		return true;
 	}

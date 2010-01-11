@@ -2,6 +2,15 @@
 
 static bool is_numeric(char c) {return c>='0' && c<='9';}
 
+
+bool t_cuesheet_index_list::is_valid() const {
+	if (m_positions[1] < m_positions[0]) return false;
+	for(t_size n = 2; n < count && m_positions[n] > 0; n++) {
+		if (m_positions[n] < m_positions[n-1]) return false;
+	}
+	return true;
+}
+
 void t_cuesheet_index_list::to_infos(file_info & p_out) const
 {
 	double base = m_positions[1];

@@ -89,29 +89,43 @@ namespace pfc {
 		long m_val;
 	};
 
+	class releaser_delete {
+	public:
+		template<typename T> static void release(T* p_ptr) {delete p_ptr;}
+	};
+	class releaser_delete_array {
+	public:
+		template<typename T> static void release(T* p_ptr) {delete[] p_ptr;}
+	};
+	class releaser_free {
+	public:
+		static void release(void * p_ptr) {free(p_ptr);}
+	};
+
 	//! Assumes t_freefunc to never throw exceptions.
-	template<typename T,void t_freefunc(T*) = pfc::delete_t<T> >
+	template<typename T,typename t_releaser = releaser_delete >
 	class ptrholder_t {
 	private:
-		typedef ptrholder_t<T,t_freefunc> t_self;
+		typedef ptrholder_t<T,t_releaser> t_self;
 	public:
 		inline ptrholder_t(T* p_ptr) : m_ptr(p_ptr) {}
 		inline ptrholder_t() : m_ptr(NULL) {}
-		inline ~ptrholder_t() {if (m_ptr != NULL) t_freefunc(m_ptr);}
+		inline ~ptrholder_t() {t_releaser::release(m_ptr);}
 		inline bool is_valid() const {return m_ptr != NULL;}
 		inline bool is_empty() const {return m_ptr == NULL;}
 		inline T* operator->() const {return m_ptr;}
 		inline T* get_ptr() const {return m_ptr;}
-		inline void release() {if (m_ptr) t_freefunc(m_ptr); m_ptr = 0;}
-		inline void set(T * p_ptr) {if (m_ptr) t_freefunc(m_ptr); m_ptr = p_ptr;}
-		inline const ptrholder_t<T,t_freefunc> & operator=(T * p_ptr) {set(p_ptr);return *this;}
-		inline T* detach() {return pfc::replace_t(m_ptr,(T*)NULL);}
-		inline T& operator*() {return *m_ptr;}
-		inline const T& operator*() const {return *m_ptr;}
+		inline void release() {t_releaser::release(replace_null_t(m_ptr));;}
+		inline void attach(T * p_ptr) {release(); m_ptr = p_ptr;}
+		inline const t_self & operator=(T * p_ptr) {set(p_ptr);return *this;}
+		inline T* detach() {return pfc::replace_null_t(m_ptr);}
+		inline T& operator*() const {return *m_ptr;}
 
-		inline t_self & operator<<(t_self & p_source) {set(p_source.detach());return *this;}
-		inline t_self & operator>>(t_self & p_dest) {p_dest.set(detach());return *this;}
+		inline t_self & operator<<(t_self & p_source) {attach(p_source.detach());return *this;}
+		inline t_self & operator>>(t_self & p_dest) {p_dest.attach(detach());return *this;}
 
+		//deprecated
+		inline void set(T * p_ptr) {attach(p_ptr);}
 	private:
 		ptrholder_t(const t_self &) {throw pfc::exception_not_implemented();}
 		const t_self & operator=(const t_self & ) {throw pfc::exception_not_implemented();}
@@ -119,35 +133,36 @@ namespace pfc {
 		T* m_ptr;
 	};
 
-	//! Assumes t_freefunc to never throw exceptions.
-	//! HACK: strip down methods where regular implementation breaks when used with void pointer
-	template<void t_freefunc(void*)>
-	class ptrholder_t<void,t_freefunc> {
+	//avoid "void&" breakage
+	template<typename t_releaser>
+	class ptrholder_t<void,t_releaser> {
 	private:
 		typedef void T;
-		typedef ptrholder_t<T,t_freefunc> t_self;
+		typedef ptrholder_t<T,t_releaser> t_self;
 	public:
 		inline ptrholder_t(T* p_ptr) : m_ptr(p_ptr) {}
 		inline ptrholder_t() : m_ptr(NULL) {}
-		inline ~ptrholder_t() {if (m_ptr != NULL) t_freefunc(m_ptr);}
+		inline ~ptrholder_t() {t_releaser::release(m_ptr);}
 		inline bool is_valid() const {return m_ptr != NULL;}
 		inline bool is_empty() const {return m_ptr == NULL;}
+		inline T* operator->() const {return m_ptr;}
 		inline T* get_ptr() const {return m_ptr;}
-		inline void release() {if (m_ptr) t_freefunc(m_ptr); m_ptr = 0;}
-		inline void set(T * p_ptr) {if (m_ptr) t_freefunc(m_ptr); m_ptr = p_ptr;}
-		inline const ptrholder_t<T,t_freefunc> & operator=(T * p_ptr) {set(p_ptr);return *this;}
-		inline T* detach() {return pfc::replace_t(m_ptr,(void*)NULL);}
+		inline void release() {t_releaser::release(replace_null_t(m_ptr));;}
+		inline void attach(T * p_ptr) {release(); m_ptr = p_ptr;}
+		inline const t_self & operator=(T * p_ptr) {set(p_ptr);return *this;}
+		inline T* detach() {return pfc::replace_null_t(m_ptr);}
 
-		inline t_self & operator<<(t_self & p_source) {set(p_source.detach());return *this;}
-		inline t_self & operator>>(t_self & p_dest) {p_dest.set(detach());return *this;}
+		inline t_self & operator<<(t_self & p_source) {attach(p_source.detach());return *this;}
+		inline t_self & operator>>(t_self & p_dest) {p_dest.attach(detach());return *this;}
 
+		//deprecated
+		inline void set(T * p_ptr) {attach(p_ptr);}
 	private:
 		ptrholder_t(const t_self &) {throw pfc::exception_not_implemented();}
-		t_self & operator=(const t_self & ) {throw pfc::exception_not_implemented();}
+		const t_self & operator=(const t_self & ) {throw pfc::exception_not_implemented();}
 
 		T* m_ptr;
 	};
-
 
 	void crash();
 }

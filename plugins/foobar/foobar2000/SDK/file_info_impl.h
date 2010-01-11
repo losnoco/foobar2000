@@ -1,66 +1,50 @@
 #ifndef _FOOBAR2000_SDK_FILE_INFO_IMPL_H_
 #define _FOOBAR2000_SDK_FILE_INFO_IMPL_H_
 
+namespace file_info_impl_utils {
 
-struct __info_entry {
-	void init(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len) {
-		m_name.set_string(p_name,p_name_len);
-		m_value.set_string(p_value,p_value_len);
-	}
-	
-	inline const char * get_name() const {return m_name;}
-	inline const char * get_value() const {return m_value;}
+	struct info_entry {
+		void init(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len) {
+			m_name.set_string(p_name,p_name_len);
+			m_value.set_string(p_value,p_value_len);
+		}
+		
+		inline const char * get_name() const {return m_name;}
+		inline const char * get_value() const {return m_value;}
 
-	pfc::string_simple m_name,m_value;
-};
+		pfc::string_simple m_name,m_value;
+	};
+
+	typedef pfc::array_t<info_entry,pfc::alloc_fast> info_entry_array;
+
+}
 
 namespace pfc {
-	template<> class traits_t<__info_entry> : public traits_t<pfc::string_simple> {};
+	template<> class traits_t<file_info_impl_utils::info_entry> : public traits_t<pfc::string_simple> {};
 };
 
 
-
-
-class info_storage
-{
-public:
-	t_size add_item(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length);
-	void remove_mask(const bit_array & p_mask);	
-	inline t_size get_count() const {return m_info.get_count();}
-	inline const char * get_name(t_size p_index) const {return m_info[p_index].get_name();}
-	inline const char * get_value(t_size p_index) const {return m_info[p_index].get_value();}
-	void copy_from(const file_info & p_info);
-	~info_storage();
-private:
-	typedef __info_entry info_entry;
-	pfc::array_t<info_entry,pfc::alloc_fast> m_info;
-};
-
-class meta_storage
-{
-public:
-	meta_storage();
-	~meta_storage();
-
-	t_size add_entry(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length);
-	void insert_value(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length);
-	void modify_value(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length);
-	void remove_values(t_size p_index,const bit_array & p_mask);
-	void remove_mask(const bit_array & p_mask);
-	void copy_from(const file_info & p_info);
-
-	inline void reorder(const t_size * p_order);
-
-	inline t_size get_count() const {return m_data.get_size();}
-	
-	inline const char * get_name(t_size p_index) const {assert(p_index < m_data.get_size()); return m_data[p_index].get_name();}
-	inline const char * get_value(t_size p_index,t_size p_value_index) const {assert(p_index < m_data.get_size()); return m_data[p_index].get_value(p_value_index);}
-	inline t_size get_value_count(t_size p_index) const {assert(p_index < m_data.get_size()); return m_data[p_index].get_value_count();}
-
-	struct meta_entry
+namespace file_info_impl_utils {
+	class info_storage
 	{
+	public:
+		t_size add_item(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length);
+		void remove_mask(const bit_array & p_mask);	
+		inline t_size get_count() const {return m_info.get_count();}
+		inline const char * get_name(t_size p_index) const {return m_info[p_index].get_name();}
+		inline const char * get_value(t_size p_index) const {return m_info[p_index].get_value();}
+		void copy_from(const file_info & p_info);
+	private:
+		info_entry_array m_info;
+	};
+}
+
+
+namespace file_info_impl_utils {
+	typedef pfc::array_hybrid_t<pfc::string_simple,1,pfc::alloc_fast > meta_value_array;
+	struct meta_entry {
 		meta_entry() {}
-		meta_entry(const char * p_name,t_size p_name_len,const char * p_avlue,t_size p_value_len);
+		meta_entry(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len);
 
 		void remove_values(const bit_array & p_mask);
 		void insert_value(t_size p_value_index,const char * p_value,t_size p_value_length);
@@ -72,24 +56,38 @@ public:
 		
 
 		pfc::string_simple m_name;
-		pfc::array_hybrid_t<pfc::string_simple,1,pfc::alloc_fast > m_values;
-
+		meta_value_array m_values;
 	};
-private:
-	
+	typedef pfc::array_hybrid_t<meta_entry,10, pfc::alloc_fast> meta_entry_array;
+}
+namespace pfc {
+	template<> class traits_t<file_info_impl_utils::meta_entry> : public pfc::traits_combined<pfc::string_simple,file_info_impl_utils::meta_value_array> {};
+}
 
-	pfc::array_hybrid_t<meta_entry,10, pfc::alloc_fast > m_data;
-};
 
-namespace pfc
-{
-	template<>
-	inline void swap_t(meta_storage::meta_entry & p_item1,meta_storage::meta_entry & p_item2)
+namespace file_info_impl_utils {
+	class meta_storage
 	{
-		swap_t(p_item1.m_name,p_item2.m_name);
-		swap_t(p_item1.m_values,p_item2.m_values);
-	}
-};
+	public:
+		t_size add_entry(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length);
+		void insert_value(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length);
+		void modify_value(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length);
+		void remove_values(t_size p_index,const bit_array & p_mask);
+		void remove_mask(const bit_array & p_mask);
+		void copy_from(const file_info & p_info);
+
+		inline void reorder(const t_size * p_order);
+
+		inline t_size get_count() const {return m_data.get_size();}
+		
+		inline const char * get_name(t_size p_index) const {assert(p_index < m_data.get_size()); return m_data[p_index].get_name();}
+		inline const char * get_value(t_size p_index,t_size p_value_index) const {assert(p_index < m_data.get_size()); return m_data[p_index].get_value(p_value_index);}
+		inline t_size get_value_count(t_size p_index) const {assert(p_index < m_data.get_size()); return m_data[p_index].get_value_count();}
+
+	private:
+		meta_entry_array m_data;
+	};
+}
 
 //! Implements file_info.
 class file_info_impl : public file_info
@@ -134,8 +132,8 @@ protected:
 private:
 
 
-	meta_storage m_meta;
-	info_storage m_info;
+	file_info_impl_utils::meta_storage m_meta;
+	file_info_impl_utils::info_storage m_info;
 	
 
 	double m_length;

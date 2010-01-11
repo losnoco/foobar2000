@@ -5,21 +5,35 @@ static bool g_is_enabled()
 	return standard_config_objects::query_remember_window_positions();
 }
 
-//introduced in win98/win2k
-typedef HANDLE (WINAPI * t_MonitorFromRect)(const RECT*, DWORD);
-
-#ifndef MONITOR_DEFAULTTONULL
-#define MONITOR_DEFAULTTONULL       0x00000000
-#endif
+static BOOL CALLBACK __MonitorEnumProc(
+  HMONITOR hMonitor,  // handle to display monitor
+  HDC hdcMonitor,     // handle to monitor DC
+  LPRECT lprcMonitor, // monitor intersection rectangle
+  LPARAM dwData       // data
+  ) {
+	RECT * clip = (RECT*)dwData;
+	RECT newclip;
+	UnionRect(&newclip,clip,lprcMonitor);
+	*clip = newclip;
+	return TRUE;
+}
 
 static bool test_rect(const RECT * rc) {
-	t_MonitorFromRect p_MonitorFromRect = (t_MonitorFromRect)GetProcAddress(GetModuleHandle(TEXT("user32")),"MonitorFromRect");
-	if (p_MonitorFromRect == NULL) {
-		int max_x = GetSystemMetrics(SM_CXSCREEN), max_y = GetSystemMetrics(SM_CYSCREEN);
-		return rc->left < max_x && rc->right > 0 && rc->top < max_y && rc->bottom > 0;
+	RECT clip = {};
+	if (EnumDisplayMonitors(NULL,NULL,__MonitorEnumProc,(LPARAM)&clip)) {
+		const LONG sanitycheck = 4;
+		const LONG cwidth = clip.right - clip.left;
+		const LONG cheight = clip.bottom - clip.top;
+		
+		const LONG width = rc->right - rc->left;
+		const LONG height = rc->bottom - rc->top;
+
+		if (width > cwidth * sanitycheck || height > cheight * sanitycheck) return false;
 	}
-	return p_MonitorFromRect(rc,MONITOR_DEFAULTTONULL) != NULL;
+	
+	return MonitorFromRect(rc,MONITOR_DEFAULTTONULL) != NULL;
 }
+
 
 
 bool cfg_window_placement::read_from_window(HWND window)
