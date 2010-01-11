@@ -220,7 +220,7 @@
 			>
 		</File>
 		<File
-			RelativePath=".\unpack_7z_FE.cpp"
+			RelativePath=".\unpack_7z.cpp"
 			>
 			<FileConfiguration
 				Name="Release|Win32"
