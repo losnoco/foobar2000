@@ -73,6 +73,8 @@ static const GUID guid_cfg_spc_anti_surround = { 0x5d2b2962, 0x6c57, 0x4303, { 0
 //static const GUID guid_cfg_spc_interpolation = { 0xf3f5df07, 0x7b49, 0x462a, { 0x8a, 0xd5, 0x9c, 0xd5, 0x79, 0x66, 0x31, 0x97 } };
 static const GUID guid_cfg_history_rate = { 0xce4842e1, 0x5707, 0x4e43, { 0xaa, 0x56, 0x48, 0xc8, 0x1d, 0xce, 0x5c, 0xac } };
 static const GUID guid_cfg_vgm_gd3_prefers_japanese = { 0x54ad3715, 0x5491, 0x45a8, { 0x9b, 0x11, 0xc3, 0x9d, 0x65, 0x2b, 0x15, 0x2f } };
+static const GUID guid_cfg_format_enable = { 0xaeda04b5, 0x7b72, 0x4784, { 0xab, 0xda, 0xdf, 0xc8, 0x2f, 0xae, 0x20, 0x9 } };
+
 
 static const GUID guid_cfg_control_override = { 0x550a107e, 0x8b34, 0x41e5, { 0xae, 0xd6, 0x2, 0x1b, 0xf8, 0x3e, 0x14, 0xe4 } };
 static const GUID guid_cfg_control_tempo = { 0xfbddc77c, 0x2a6, 0x41c9, { 0xbf, 0xfa, 0x54, 0x60, 0xbe, 0x2a, 0xa5, 0x23 } };
@@ -91,6 +93,8 @@ cfg_int cfg_spc_anti_surround(guid_cfg_spc_anti_surround, 0);
 //cfg_int cfg_spc_interpolation(guid_cfg_spc_interpolation, 0);
 
 cfg_int cfg_vgm_gd3_prefers_japanese(guid_cfg_vgm_gd3_prefers_japanese, 0);
+
+cfg_int cfg_format_enable(guid_cfg_format_enable, ~0);
 
 cfg_int cfg_control_override(guid_cfg_control_override, 0);
 cfg_int cfg_control_tempo(guid_cfg_control_tempo, 10000);
@@ -214,7 +218,11 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			uSetDlgItemText(wnd, IDC_DFADE, (char *)&temp);
 
 			HWND w;
-			int n;
+			int n,o;
+			for(n=IDC_FORMAT_NSF,o=0;n<=IDC_FORMAT_SAP;n++,o++)
+			{
+				uSendDlgItemMessage(wnd, n, BM_SETCHECK, cfg_format_enable & ( 1 << o ), 0);
+			}
 			for(n=tabsize(srate_tab);n--;)
 			{
 				if (srate_tab[n] != cfg_sample_rate)
@@ -266,6 +274,14 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			break;
 		case IDC_GD3JAPANESE:
 			cfg_vgm_gd3_prefers_japanese = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
+			break;
+		default:
+			if (wp >= IDC_FORMAT_NSF && wp <= IDC_FORMAT_SAP)
+			{
+				unsigned bit = 1 << ( wp - IDC_FORMAT_NSF );
+				unsigned mask = ~0 ^ bit;
+				cfg_format_enable = ( cfg_format_enable & mask ) | ( bit * uSendMessage((HWND)lp, BM_GETCHECK, 0, 0) );
+			}
 			break;
 		case (EN_CHANGE<<16)|IDC_DLENGTH:
 			{

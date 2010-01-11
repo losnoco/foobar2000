@@ -297,6 +297,7 @@ public:
 
 	static bool g_is_our_path( const char * p_path, const char * p_extension )
 	{
+		if ( ! ( cfg_format_enable & 2 ) ) return false;
 		return ! stricmp( p_extension, "spc" );
 	}
 

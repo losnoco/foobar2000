@@ -3,16 +3,13 @@
 // Used by foo_gep.rc
 //
 #define IDB_LOGO1                       101
-#define IDB_LOGO2                       102
-
 #define IDD_CONFIG                      101
+#define IDB_LOGO2                       102
 #define IDD_PLAYLISTINFO                102
 #define IDD_TIME                        103
 #define IDD_MONITOR                     104
-
 #define IDC_LENGTH                      1001
 #define IDC_FADE                        1002
-
 #define IDC_TRACKLIST                   1101
 #define IDC_ADDALL                      1102
 #define IDC_ADD                         1103
@@ -21,7 +18,6 @@
 #define IDC_MOVEUP                      1106
 #define IDC_PLAYLIST                    1107
 #define IDC_MOVEDOWN                    1108
-
 #define IDC_GROUPBOX                    1201
 #define IDC_INDEFINITE                  1202
 #define IDC_DLENGTH                     1203
@@ -31,9 +27,16 @@
 #define IDC_WNSFE                       1207
 #define IDC_NSFEPL                      1208
 #define IDC_ANTISURROUND                1209
-#define IDC_INTERPOLATION               1210
-#define IDC_GD3JAPANESE                 1211
-
+#define IDC_GD3JAPANESE                 1210
+#define IDC_FORMAT_NSF                  1211
+#define IDC_FORMAT_SPC                  1212
+#define IDC_FORMAT_VGM                 1213
+#define IDC_FORMAT_AY                   1214
+#define IDC_FORMAT_GBS                  1215
+#define IDC_FORMAT_GYM                  1216
+#define IDC_FORMAT_HES                  1217
+#define IDC_FORMAT_KSS                  1218
+#define IDC_FORMAT_SAP                  1219
 #define IDC_OVERRIDE                    1301
 #define IDC_RESET                       1302
 #define IDC_TEMPO_CAPTION               1303

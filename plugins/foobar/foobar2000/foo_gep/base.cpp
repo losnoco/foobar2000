@@ -231,6 +231,8 @@ bool input_gep::decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
 
 void input_gep::decode_seek( double p_seconds, abort_callback & p_abort )
 {
+	first_block = true;
+
 	int now = int( audio_math::time_to_samples( p_seconds, sample_rate ) );
 	if ( now == played ) return;
 	else if ( now < played )

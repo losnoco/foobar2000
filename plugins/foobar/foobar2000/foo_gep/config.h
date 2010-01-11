@@ -14,6 +14,8 @@ extern cfg_int cfg_vgm_gd3_prefers_japanese;
 
 extern cfg_int cfg_control_override, cfg_control_tempo;
 
+extern cfg_int cfg_format_enable;
+
 #define BORK_TIME 0xC0CAC01A
 
 unsigned long parse_time_crap(const char *input);

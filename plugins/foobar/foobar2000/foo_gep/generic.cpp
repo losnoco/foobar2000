@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include "base.h"
 #include "reader.h"
 
@@ -33,6 +35,7 @@ public:
 	{
 		for ( unsigned i = 0, j = tabsize( gme_type_list_ ); i < j; ++i )
 		{
+			if ( ! ( cfg_format_enable & ( 1 << ( i + 3 ) ) ) ) continue;
 			if ( ! stricmp( p_extension, gme_type_list_[ i ]->extension_ ) )
 				return 1;
 		}

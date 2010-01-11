@@ -125,6 +125,7 @@ class input_nsf : public input_gep
 public:
 	static bool g_is_our_path( const char * p_path, const char * p_extension )
 	{
+		if ( ! ( cfg_format_enable & 1 ) ) return false;
 		return ! stricmp( p_extension, "nsf" ) || ! stricmp( p_extension, "nsfe" );
 	}
 

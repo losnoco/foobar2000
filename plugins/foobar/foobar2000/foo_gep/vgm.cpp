@@ -137,6 +137,7 @@ class input_vgm : public input_gep
 public:
 	static bool g_is_our_path( const char * p_path, const char * p_extension )
 	{
+		if ( ! ( cfg_format_enable & 4 ) ) return false;
 		return ! stricmp( p_extension, "vgm" ) || ! stricmp( p_extension, "vgz" );
 	}
 
