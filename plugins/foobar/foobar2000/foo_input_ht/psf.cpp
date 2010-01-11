@@ -1,7 +1,12 @@
-#define MYVERSION "2.0.8"
+#define MYVERSION "2.0.9"
 
 /*
 	changelog
+
+2009-08-03 20:49 UTC - kode54
+- Fixed SSF data block load offset handling. (SegaCore originally suggested it should be big endian,
+  while the HT plug-in treated it as little endian on load.)
+- Version is now 2.0.9
 
 2009-08-02 23:58 UTC - kode54
 - Fixed bug with start silence detection hitting the maximum length
@@ -582,7 +587,7 @@ static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, i
 	return precede;
 }
 
-static int load_exe_unpack(pfc::array_t<t_uint8> & dst, const BYTE *src, uLong srclen, int version)
+static int load_exe_unpack(pfc::array_t<t_uint8> & dst, const BYTE *src, uLong srclen)
 {
 	DBG("loading");
 	pfc::array_t<t_uint8> buf;
@@ -603,17 +608,8 @@ static int load_exe_unpack(pfc::array_t<t_uint8> & dst, const BYTE *src, uLong s
 		return 1;
 	}
 
-	DWORD dst_start, src_start;
-	if ( version == 1 )
-	{
-		dst_start = pfc::byteswap_if_le_t( *(DWORD*)(dst.get_ptr()) );
-		src_start = pfc::byteswap_if_le_t( *(DWORD*)(buf.get_ptr()) );
-	}
-	else
-	{
-		dst_start = pfc::byteswap_if_be_t( *(DWORD*)(dst.get_ptr()) );
-		src_start = pfc::byteswap_if_be_t( *(DWORD*)(buf.get_ptr()) );
-	}
+	DWORD dst_start = pfc::byteswap_if_be_t( *(DWORD*)(dst.get_ptr()) );
+	DWORD src_start = pfc::byteswap_if_be_t( *(DWORD*)(buf.get_ptr()) );
 	dst_start &= 0x1FFFFF;
 	src_start &= 0x1FFFFF;
 	DWORD dst_len = dst.get_size() - 4;
@@ -629,8 +625,7 @@ static int load_exe_unpack(pfc::array_t<t_uint8> & dst, const BYTE *src, uLong s
 		memset( dst.get_ptr() + 4, 0, diff );
 		dst_len += diff;
 		dst_start = src_start;
-		if ( version == 1 ) *(DWORD*)(dst.get_ptr()) = pfc::byteswap_if_le_t( dst_start );
-		else *(DWORD*)(dst.get_ptr()) = pfc::byteswap_if_be_t( dst_start );
+		*(DWORD*)(dst.get_ptr()) = pfc::byteswap_if_be_t( dst_start );
 	}
 	if ( ( src_start + src_len ) > ( dst_start + dst_len ) )
 	{
@@ -746,7 +741,7 @@ private:
 			// load executable only
 			info.set_length((double)(tag_song_ms+tag_fade_ms)*.001);
 			if (inherit == -2) return 1;
-			return load_exe_unpack(m_executable, ptr, exe_size, m_version);
+			return load_exe_unpack(m_executable, ptr, exe_size);
 		}
 
 		int precede = 0;
@@ -837,7 +832,7 @@ private:
 			}
 		}
 
-		rtn = load_exe_unpack(m_executable, buf.get_ptr(), exe_size, m_version);
+		rtn = load_exe_unpack(m_executable, buf.get_ptr(), exe_size);
 		buf.set_size(0);
 		if (!rtn)
 		{
