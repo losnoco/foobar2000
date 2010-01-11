@@ -1,0 +1,115 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MOD_CONFIG DIALOG DISCARDABLE  0, 0, 273, 85
+STYLE WS_CHILD
+FONT 8, "Tahoma"
+BEGIN
+    RTEXT           "Sample rate:",IDC_STATIC,25,14,44,8
+    LTEXT           "Hz",IDC_STATIC,136,14,10,8
+    COMBOBOX        IDC_SAMPLERATE,72,12,64,130,CBS_DROPDOWN | WS_VSCROLL | 
+                    WS_TABSTOP
+    CONTROL         "Interpolation",IDC_INTERPOLATION,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,153,14,57,10
+    CONTROL         "Looping",IDC_LOOP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    153,29,40,10
+    COMBOBOX        IDC_SURROUND,72,27,64,58,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    RTEXT           "Surround:",IDC_STATIC,35,29,34,9
+    COMBOBOX        IDC_RAMP,72,42,64,44,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    RTEXT           "Volume ramping:",IDC_STATIC,10,44,59,9
+    COMBOBOX        IDC_MOD,72,57,64,51,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    RTEXT           "MOD playback:",IDC_STATIC,13,59,56,9
+    CONTROL         "Stop notes on seek",IDC_SOS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,153,44,78,10
+    CONTROL         "Write APEv2 tags",IDC_TAG,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,153,59,72,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_MOD_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 266
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 78
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

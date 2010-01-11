@@ -1,0 +1,11 @@
+HKCR
+{
+	NoRemove AppID
+	{
+		'%APPID%' = s 'goggalor_proxy'
+		'goggalor_proxy.DLL'
+		{
+			val AppID = s '%APPID%'
+		}
+	}
+}

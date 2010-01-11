@@ -1,0 +1,182 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+#ifdef _WIN32
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_TIME, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 133
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 37
+    END
+
+    IDD_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 156
+        VERTGUIDE, 16
+        VERTGUIDE, 69
+        VERTGUIDE, 74
+        VERTGUIDE, 121
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 238
+        HORZGUIDE, 70
+        HORZGUIDE, 102
+        HORZGUIDE, 161
+        HORZGUIDE, 188
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_TIME DIALOGEX 31, 26, 140, 44
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+FONT 8, "Tahoma", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,83,6,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,83,23,50,14
+    LTEXT           "Length:",-1,7,9,25,10,0,WS_EX_RIGHT
+    EDITTEXT        IDC_LENGTH,37,7,37,12,ES_AUTOHSCROLL
+    LTEXT           "Fade:",-1,7,26,25,10,0,WS_EX_RIGHT
+    EDITTEXT        IDC_FADE,37,24,37,12,ES_AUTOHSCROLL
+END
+
+IDD_PLAYLISTINFO DIALOGEX 0, 0, 264, 194
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+FONT 8, "Tahoma", 0, 0, 0x0
+BEGIN
+    LISTBOX         IDC_TRACKLIST,7,12,106,160,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "All >>",IDC_ADDALL,117,44,30,14
+    PUSHBUTTON      ">>",IDC_ADD,117,71,30,14
+    PUSHBUTTON      "<<",IDC_REMOVE,117,98,30,14
+    PUSHBUTTON      "<< All",IDC_REMOVEALL,117,125,30,14
+    PUSHBUTTON      "Move Up",IDC_MOVEUP,151,12,106,11
+    LISTBOX         IDC_PLAYLIST,151,25,106,134,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Move Down",IDC_MOVEDOWN,151,161,106,11
+    DEFPUSHBUTTON   "OK",IDOK,80,178,48,12
+    PUSHBUTTON      "Cancel",IDCANCEL,134,178,48,12
+END
+
+IDD_CONFIG DIALOGEX 0, 0, 163, 245
+STYLE DS_SETFONT | WS_CHILD
+FONT 8, "Tahoma", 0, 0, 0x0
+BEGIN
+    GROUPBOX        "Global settings",IDC_STATIC,7,7,149,63
+    CONTROL         "Force all songs to play indefinitely",IDC_INDEFINITE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,18,121,10
+    RTEXT           "Default length is:",IDC_STATIC,11,35,58,8
+    EDITTEXT        IDC_DLENGTH,74,33,47,12,ES_AUTOHSCROLL | ES_WANTRETURN | WS_GROUP
+    LTEXT           "m:s.ms",IDC_STATIC,123,35,24,8
+    RTEXT           "Fade out for:",IDC_STATIC,15,51,54,8
+    EDITTEXT        IDC_DFADE,74,49,47,12,ES_AUTOHSCROLL | WS_GROUP
+    LTEXT           "m:s.ms",IDC_STATIC,123,51,24,8
+    GROUPBOX        "GBS/GYM/NSF/VGM",IDC_STATIC,7,70,149,32
+    RTEXT           "Sample rate:",IDC_STATIC,24,84,45,10
+    COMBOBOX        IDC_SAMPLERATE,74,82,47,106,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "NSF",IDC_STATIC,7,102,149,75
+    CONTROL         "Disable",IDC_NSFDISABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,113,39,10
+    CONTROL         "Write to files",IDC_WRITE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,129,57,10
+    CONTROL         "Convert to NSFE if necessary",IDC_WNSFE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,145,111,10
+    CONTROL         "Ignore NSFE playlists",IDC_NSFEPL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,161,85,10
+    GROUPBOX        "SPC",IDC_STATIC,7,177,149,28
+    CONTROL         "Remove surround effect",IDC_ANTISURROUND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,188,93,10
+    GROUPBOX        "VGM",IDC_STATIC,7,206,149,28
+    CONTROL         "GD3 tag reader prefers Japanese fields",IDC_GD3JAPANESE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,217,138,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// JPG
+//
+
+IDB_LOGO2               JPG                     "gep2.jpg"
+IDB_LOGO1               JPG                     "gep1.jpg"
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

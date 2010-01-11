@@ -1,0 +1,139 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MOD_CONFIG DIALOGEX 0, 0, 286, 171
+STYLE DS_SETFONT | WS_CHILD
+FONT 8, "Tahoma", 0, 0, 0x0
+BEGIN
+    RTEXT           "Sample rate:",IDC_STATIC,25,14,44,8
+    COMBOBOX        IDC_SAMPLERATE,72,12,64,130,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Hz",IDC_STATIC,137,14,10,8
+    RTEXT           "Interpolation:",IDC_STATIC,22,29,47,9
+    COMBOBOX        IDC_INTERPOLATION,72,27,64,58,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "Loops:",IDC_STATIC,22,44,47,9
+    COMBOBOX        IDC_LOOPS,72,42,64,84,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "Volume ramping:",IDC_STATIC,7,59,62,9
+    COMBOBOX        IDC_VOLRAMP,72,57,64,84,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Write APEv2 tags",IDC_TAG,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,153,14,72,10
+    CONTROL         "Trim silent patterns",IDC_TRIM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,153,29,77,10
+    CONTROL         "Dynamic song position info",IDC_DYNAMIC_INFO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,153,44,101,10
+    GROUPBOX        "",IDC_CHIP_BOX,7,79,272,59
+    CONTROL         "Chip-o-matic",IDC_CHIP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,79,53,8
+    RTEXT           "Instruments smaller than",IDC_CHIP_TEXT_0,11,91,82,8
+    EDITTEXT        IDC_CHIP_FORCE,95,89,42,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "samples will always be aliased.",IDC_CHIP_TEXT_1,140,91,114,8
+    RTEXT           "Instruments smaller than",IDC_CHIP_TEXT_2,11,107,82,8
+    EDITTEXT        IDC_CHIP_SCAN,95,105,42,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "samples will be aliased if they contain",IDC_CHIP_TEXT_3,140,107,126,8
+    RTEXT           "delta values greater than",IDC_CHIP_TEXT_4,10,120,83,9
+    EDITTEXT        IDC_CHIP_SCAN_THRESHOLD,95,118,42,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "% of the integer range.",IDC_CHIP_TEXT_5,140,120,79,8
+    LTEXT           "Dynamic info fields: order, pattern, row, speed, tempo, channels, channels_max.\nIn scripts: %__mod_dyn_order%, %__mod_dyn_pattern%, etc.",IDC_STATIC,7,143,272,21
+END
+
+IDD_CONTEXT DIALOGEX 31, 26, 200, 44
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+FONT 8, "Tahoma", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,143,6,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,143,23,50,14
+    LTEXT           "Start at order:",IDC_STATIC,7,10,52,10,0,WS_EX_RIGHT
+    EDITTEXT        IDC_ORDER,63,8,37,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "",IDC_RANGE,109,10,31,10
+    CONTROL         "Replace selected playlist entry",IDC_REPLACE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,23,126,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_MOD_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 279
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 164
+    END
+
+    IDD_CONTEXT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 193
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 37
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

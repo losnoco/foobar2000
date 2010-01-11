@@ -1,0 +1,159 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_REPLAYGAIN_EDIT DIALOG  0, 0, 184, 98
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Replaygain info editor"
+FONT 8, "Tahoma"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,108,81,34,14
+    PUSHBUTTON      "Cancel",IDCANCEL,148,81,34,14
+    RTEXT           "File:",IDC_STATIC,4,8,18,8
+    EDITTEXT        IDC_FILE,24,6,156,12,ES_AUTOHSCROLL | ES_READONLY
+    RTEXT           "replaygain_track_gain:",IDC_STATIC,4,24,86,8
+    EDITTEXT        IDC_TRACK_GAIN,92,22,88,12,ES_AUTOHSCROLL
+    RTEXT           "replaygain_album_gain:",IDC_STATIC,4,38,86,8
+    EDITTEXT        IDC_ALBUM_GAIN,92,36,88,12,ES_AUTOHSCROLL
+    RTEXT           "replaygain_track_peak:",IDC_STATIC,4,52,86,8
+    EDITTEXT        IDC_TRACK_PEAK,92,50,88,12,ES_AUTOHSCROLL
+    RTEXT           "replaygain_album_peak:",IDC_STATIC,4,66,86,8
+    EDITTEXT        IDC_ALBUM_PEAK,92,64,88,12,ES_AUTOHSCROLL
+END
+
+IDD_REPLAYGAIN_CONFIG DIALOGEX 0, 0, 332, 288
+STYLE DS_SETFONT | WS_CHILD
+FONT 8, "Tahoma", 0, 0, 0x0
+BEGIN
+    CONTROL         "Skip tracks / albums that already have ReplayGain info",
+                    IDC_SKIP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,16,228,
+                    10
+    LTEXT           "Album grouping pattern (default: ""%album artist% - %album%"") :",
+                    IDC_STATIC,12,44,252,8
+    EDITTEXT        IDC_ALBUM_PATTERN,16,56,276,12,ES_AUTOHSCROLL
+END
+
+IDD_REPLAYGAIN_RESULTS DIALOG  0, 0, 388, 222
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "ReplayGain scan results"
+FONT 8, "Tahoma"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,280,204,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,332,204,50,14
+    CONTROL         "List1",IDC_LIST,"SysListView32",LVS_REPORT | WS_BORDER | 
+                    WS_TABSTOP,4,4,380,196
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_REPLAYGAIN_EDIT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 177
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 91
+    END
+
+    IDD_REPLAYGAIN_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 325
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 281
+    END
+
+    IDD_REPLAYGAIN_RESULTS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 381
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 215
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.K.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.K.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

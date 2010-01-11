@@ -1,0 +1,9 @@
+; goggalor_proxy.def : Declares the module parameters.
+
+LIBRARY      "goggalor_proxy.DLL"
+
+EXPORTS
+	DllCanUnloadNow		PRIVATE
+	DllGetClassObject	PRIVATE
+	DllRegisterServer	PRIVATE
+	DllUnregisterServer	PRIVATE

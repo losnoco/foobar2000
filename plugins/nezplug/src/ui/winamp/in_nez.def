@@ -1,0 +1,36 @@
+EXPORTS
+	NP_GetEntryPoints   @1
+	NP_Initialize       @2
+	NP_Shutdown         @3
+
+	foobar2000_get_interface
+
+	winampGetInModule2
+
+	NSFSDK_Load
+	NSFSDK_SetSongNo
+	NSFSDK_SetFrequency
+	NSFSDK_SetNosefartFilter
+	NSFSDK_SetChannel
+	NSFSDK_Reset
+	NSFSDK_Volume
+	NSFSDK_Render
+	NSFSDK_Terminate
+	NSFSDK_GetSongNo
+	NSFSDK_GetSongStart
+	NSFSDK_GetSongMax
+	NSFSDK_GetChannel
+	NSFSDK_StartNSD
+	NSFSDK_OutputNSD
+
+	_HSPNEZVersion@16
+	_HSPNSFOpen@16
+	_HSPNSFOpenMemory@16
+	_HSPNSFClose@16
+	_HSPNSFSongNo@16
+	_HSPNSFVolume@16
+	_HSPNSFStop@16
+	_HSPNSFPlay@16
+	_HSPNSFClean@16
+
+	kmp_GetTestModule

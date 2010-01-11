@@ -1,0 +1,136 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PLAYCOUNT_CONFIG DIALOGEX 0, 0, 313, 250
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "Counter Update Settings",IDC_STATIC,7,7,299,118
+    LTEXT           "Update counter when playback percentage is:",IDC_STATIC,
+                    17,19,148,8
+    LTEXT           "0%",IDC_PERC_STATUS,168,19,22,8
+    CONTROL         "",IDC_UPDATE_PERC,"msctls_trackbar32",TBS_BOTH | 
+                    TBS_NOTICKS | WS_TABSTOP,17,31,161,15
+    GROUPBOX        "",IDC_DB_FRAME,15,48,283,69
+    COMBOBOX        IDC_DB,20,46,73,59,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    RTEXT           "Host:",IDC_STATIC,17,63,43,8
+    EDITTEXT        IDC_DB_HOST,64,60,79,14,ES_AUTOHSCROLL
+    RTEXT           "User:",IDC_STATIC,17,81,43,8
+    EDITTEXT        IDC_DB_USER,64,78,79,14,ES_AUTOHSCROLL
+    RTEXT           "Password:",IDC_STATIC,17,99,43,8
+    EDITTEXT        IDC_DB_PASS,64,96,79,14,ES_PASSWORD | ES_AUTOHSCROLL
+    RTEXT           "Database:",IDC_STATIC,157,63,43,8
+    EDITTEXT        IDC_DB_DB,204,60,79,14,ES_AUTOHSCROLL
+    RTEXT           "Table:",IDC_STATIC,156,81,43,8
+    EDITTEXT        IDC_DB_TABLE,204,78,79,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Resync",IDC_DB_RESYNC,147,96,53,14
+    PUSHBUTTON      "Test",IDC_DB_TEST,204,96,28,14
+    PUSHBUTTON      "Create table",IDC_DB_CREATE,236,96,47,14
+    GROUPBOX        "Timestamp handling",IDC_STATIC,7,133,299,109
+    LTEXT           "There are two fields for timestamping the time of playback.  If either the tag name or format are empty, the field is skipped.",
+                    IDC_STATIC,18,145,280,19
+    RTEXT           "First tag:",IDC_STATIC,17,174,43,8
+    EDITTEXT        IDC_STAMP1_TAG,64,171,79,14,ES_AUTOHSCROLL
+    RTEXT           "Format:",IDC_STATIC,148,174,33,8
+    EDITTEXT        IDC_STAMP1_FORMAT,185,171,102,14,ES_AUTOHSCROLL
+    RTEXT           "Second Tag:",IDC_STATIC,17,205,43,8
+    EDITTEXT        IDC_STAMP2_TAG,64,202,79,14,ES_AUTOHSCROLL
+    RTEXT           "Format:",IDC_STATIC,148,205,33,8
+    EDITTEXT        IDC_STAMP2_FORMAT,186,202,102,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Help",IDC_MANUAL,250,225,38,11
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_PLAYCOUNT_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 306
+        VERTGUIDE, 60
+        VERTGUIDE, 64
+        VERTGUIDE, 143
+        VERTGUIDE, 147
+        VERTGUIDE, 200
+        VERTGUIDE, 204
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 242
+        HORZGUIDE, 96
+        HORZGUIDE, 110
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

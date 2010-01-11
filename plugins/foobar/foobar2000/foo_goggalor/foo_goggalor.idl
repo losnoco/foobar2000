@@ -1,0 +1,37 @@
+// foo_goggalor.idl : IDL source for foo_goggalor
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (foo_goggalor.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(3B6BD9E6-6AD8-41B6-AB23-3F66243A6A7E),
+	dual,
+	nonextensible,
+	helpstring("IfoobarCrawlPlugin Interface"),
+	pointer_default(unique)
+]
+interface IfoobarCrawlPlugin : IDispatch{
+	[id(1), helpstring("method HandleFile")] HRESULT HandleFile(BSTR path, IDispatch* event_factory);
+};
+[
+	uuid(5241E96A-7CFD-4871-92A1-C29E5971C136),
+	version(1.0),
+	helpstring("foo_goggalor 1.0 Type Library")
+]
+library foo_goggalorLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(FFB19A40-7A7D-44B2-B429-DA65D3ADB3D4),
+		helpstring("foobarCrawlPlugin Class")
+	]
+	coclass foobarCrawlPlugin
+	{
+		[default] interface IfoobarCrawlPlugin;
+	};
+};

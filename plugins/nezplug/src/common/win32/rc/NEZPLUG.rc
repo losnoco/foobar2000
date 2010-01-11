@@ -1,0 +1,164 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "nezplug.rh"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+#ifdef _WIN32
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "nezplug.rh\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,0,9,4
+ PRODUCTVERSION 0,0,9,4
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "CompanyName", "Befis"
+            VALUE "FileDescription", "NEZplug plugin for NSF/KSS/GBR/GBS/HES/AY sound files"
+            VALUE "FileExtents", "nsd|nsf|nez|nsz"
+            VALUE "FileOpenName", "nsd sound file (*.nsd)|nes sound file (*.nsf)|compressed nsf file(*.nez;*.nsz)"
+            VALUE "FileVersion", "0, 0, 9, 4"
+            VALUE "InternalName", "NPnez"
+            VALUE "LegalCopyright", " --- "
+            VALUE "MIMEType", "audio/x-nezplug-nsd|audio/x-nsf|audio/x-nsf-zip-compressed"
+            VALUE "OriginalFilename", "NPnez.dll"
+            VALUE "ProductName", "NEZplug"
+            VALUE "ProductVersion", "0, 0, 9, 4"
+        END
+        BLOCK "040904e4"
+        BEGIN
+            VALUE "CompanyName", "Befis; NoWork, Inc."
+            VALUE "FileDescription", "NEZplug plugin for NSF/KSS/GBR/GBS/HES/AY sound files"
+            VALUE "FileVersion", "0, 0, 9, 4"
+            VALUE "InternalName", "foo_nez.dll"
+            VALUE "LegalCopyright", " --- "
+            VALUE "OriginalFilename", "foo_nez.dll"
+            VALUE "ProductName", "NEZplug"
+            VALUE "ProductVersion", "0, 0, 9, 4"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200, 0x409, 1252
+    END
+END
+
+#endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_FOO_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 212
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 29
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_FOO_CONFIG DIALOGEX 0, 0, 219, 36
+STYLE DS_SETFONT | WS_CHILD | WS_VISIBLE
+FONT 8, "Tahoma", 0, 0, 0x0
+BEGIN
+    RTEXT           "Sample rate:",-1,7,13,45,10
+    COMBOBOX        IDC_SAMPLERATE,54,11,50,61,CBS_DROPDOWN | WS_VSCROLL | 
+                    WS_TABSTOP
+    CONTROL         "Ignore .NSF extension",IDC_NONSF,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,120,13,87,10
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

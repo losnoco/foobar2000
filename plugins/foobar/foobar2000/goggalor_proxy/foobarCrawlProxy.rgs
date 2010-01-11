@@ -1,0 +1,27 @@
+HKCR
+{
+	goggalor_proxy.foobarCrawlProxy.1 = s 'foobarCrawlProxy Class'
+	{
+		CLSID = s '{D762E411-6F39-4752-8814-CCB40675A73C}'
+	}
+	goggalor_proxy.foobarCrawlProxy = s 'foobarCrawlProxy Class'
+	{
+		CLSID = s '{D762E411-6F39-4752-8814-CCB40675A73C}'
+		CurVer = s 'goggalor_proxy.foobarCrawlProxy.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {D762E411-6F39-4752-8814-CCB40675A73C} = s 'foobarCrawlProxy Class'
+		{
+			ProgID = s 'goggalor_proxy.foobarCrawlProxy.1'
+			VersionIndependentProgID = s 'goggalor_proxy.foobarCrawlProxy'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Both'
+			}
+			val AppID = s '%APPID%'
+			'TypeLib' = s '{C933F345-49FA-4684-A55F-A46006218D13}'
+		}
+	}
+}

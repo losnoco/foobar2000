@@ -1,0 +1,37 @@
+// goggalor_proxy.idl : IDL source for goggalor_proxy
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (goggalor_proxy.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(4CAC5844-45EE-4E8D-B7E7-E2C91E76E5DE),
+	dual,
+	nonextensible,
+	helpstring("IfoobarCrawlProxy Interface"),
+	pointer_default(unique)
+]
+interface IfoobarCrawlProxy : IDispatch{
+	[id(1), helpstring("method HandleFile")] HRESULT HandleFile(BSTR path, IDispatch* event_factory);
+};
+[
+	uuid(C933F345-49FA-4684-A55F-A46006218D13),
+	version(1.0),
+	helpstring("goggalor_proxy 1.0 Type Library")
+]
+library goggalor_proxyLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(D762E411-6F39-4752-8814-CCB40675A73C),
+		helpstring("foobarCrawlProxy Class")
+	]
+	coclass foobarCrawlProxy
+	{
+		[default] interface IfoobarCrawlProxy;
+	};
+};

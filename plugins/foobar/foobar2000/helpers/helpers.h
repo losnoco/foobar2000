@@ -1,0 +1,30 @@
+#ifndef _FOOBAR2000_SDK_HELPERS_H_
+#define _FOOBAR2000_SDK_HELPERS_H_
+
+#include "create_directory_helper.h"
+#include "dialog_resize_helper.h"
+#include "dropdown_helper.h"
+#include "window_placement_helper.h"
+#include "win32_dialog.h"
+#include "wildcard.h"
+#include "cue_creator.h"
+#include "cue_parser.h"
+#include "search_filter.h"
+#include "text_file_loader.h"
+#include "file_list_helper.h"
+#include "preload_info_helper.h"
+#include "listview_helper.h"
+#include "stream_buffer_helper.h"
+#include "file_info_const_impl.h"
+#include "file_wrapper_simple.h"
+#include "decode_error_popup.h"
+#include "dynamic_bitrate_helper.h"
+#include "cfg_guidlist.h"
+#include "cfg_structlist.h"
+#include "file_win32_wrapper.h"
+#include "file_move_helper.h"
+#include "file_cached.h"
+#include "input_helpers.h"
+#include "seekabilizer.h"
+
+#endif //_FOOBAR2000_SDK_HELPERS_H_

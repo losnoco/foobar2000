@@ -1,0 +1,119 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_CONFIG DIALOG DISCARDABLE  0, 0, 340, 246
+STYLE WS_CHILD | WS_SYSMENU
+FONT 8, "Tahoma"
+BEGIN
+    RTEXT           "Load plugins from:",IDC_STATIC,7,9,74,8
+    EDITTEXT        IDC_PATH,84,7,144,12,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "...",IDC_PATHSET,228,7,13,12
+    PUSHBUTTON      "reset",IDC_PATHRESET,241,7,23,12
+    RTEXT           "Winamp plugin to use:",IDC_STATIC,7,28,74,8
+    COMBOBOX        IDC_DLL,84,26,180,111,CBS_DROPDOWNLIST | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    RTEXT           "Visualization module:",IDC_STATIC,7,47,74,8
+    COMBOBOX        IDC_MODULE,84,45,180,107,CBS_DROPDOWNLIST | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Configure Module",IDC_CONFIG,84,63,68,16,WS_DISABLED
+    LTEXT           "Visualization must be stopped for you to configure the module.",
+                    IDC_STATIC,154,63,110,19
+    RTEXT           "Title formatting:",IDC_STATIC,7,88,74,8
+    EDITTEXT        IDC_TITLEFORMAT,84,86,180,12,ES_AUTOHSCROLL
+    LTEXT           "Note: You must do something to trigger a visualization flush for changes to take effect.  This includes stopping foo_vis_bacon, stopping playback, changing songs, and seeking.",
+                    IDC_STATIC,7,106,158,32
+    CONTROL         "Print miscellaneous info to console (unsupported API calls, etc.)",
+                    IDC_CHECK_CONDEBUG,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    7,146,221,13
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO MOVEABLE PURE 
+BEGIN
+    IDD_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 333
+        VERTGUIDE, 81
+        VERTGUIDE, 84
+        VERTGUIDE, 228
+        VERTGUIDE, 241
+        VERTGUIDE, 264
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 239
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
