@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.6"
+#define MYVERSION "2.0.7"
 
 /*
 	changelog
+
+2009-08-02 00:46 UTC - kode54
+- Reimplemented tag reader to not use sscanf
+- Version is now 2.0.7
 
 2007-07-24 23:33 UTC - kode54
 - Implemented UTF-8 tag support
@@ -486,46 +490,62 @@ static bool info_read_line( const BYTE * ptr, int len, pfc::string_base & tag, p
 }
 #endif
 
-static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & tag_song_ms, int & tag_fade_ms)
+static void trim_whitespace( pfc::string_base & val )
+{
+	const char * start = val.get_ptr();
+	const char * end = start + strlen( start ) - 1;
+	while ( *start && *start < 0x20 ) ++start;
+	while ( end >= start && *end < 0x20 ) --end;
+	memcpy( (void *) val.get_ptr(), start, end - start + 2 );
+}
+
+static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, int & tag_song_ms, int & tag_fade_ms)
 {
 	int pos, precede = 0, utf8 = 0;
-	ptr[len] = 0;
+	pfc::string8 whole_tag( (const char *)ptr, len );
 	tag_song_ms = 0;
 	tag_fade_ms = 0;
-	if (!memcmp(ptr, "[TAG]", 5))
+	if (!memcmp(whole_tag, "[TAG]", 5))
 	{
 		DBG("found tag block");
 		pfc::string8_fastalloc tag, value;
 
-		for (ptr += 5, pos = 5; pos < len; pos++, ptr++)
+		for (pos = 5; pos < len; pos++)
 		{
 			DBG("scanning for name/value");
-			char tag[256], value[1024];
+
+			t_size line_end = whole_tag.find_first( '\n', pos );
+			if ( line_end == infinite ) line_end = len;
+			tag.set_string( whole_tag.get_ptr() + pos, line_end - pos );
+			pos = line_end;
+			line_end = tag.find_first( '=' );
+			if ( line_end == infinite ) continue;
+			value.set_string( tag.get_ptr() + line_end + 1 );
+			tag.truncate( line_end );
+			trim_whitespace( tag );
+			trim_whitespace( value );
 			
-			if ( sscanf((char *)ptr, "%[^=]=%[^\n]", tag, value) == 2 ) // I suck
-			{
-			// meh, fuck it
 			if (inherit < 0)
 			{
 				// only parse metadata for top level executable
-				if (!stricmp(tag, "game"))
+				if (!stricmp_utf8(tag, "game"))
 				{
 					DBG("reading game as album");
-					strcpy(tag, "album");
+					tag = "album";
 				}
-				else if (!stricmp(tag, "year"))
+				else if (!stricmp_utf8(tag, "year"))
 				{
 					DBG("reading year as date");
-					strcpy(tag, "date");
+					tag = "date";
 				}
 
-				if (!strnicmp(tag, "replaygain_", 11))
+				if (!stricmp_utf8_partial(tag, "replaygain_"))
 				{
 					DBG("reading RG info");
 					//info.info_set(tag, value);
 					info.info_set_replaygain(tag, value);
 				}
-				else if (!stricmp(tag, "length"))
+				else if (!stricmp_utf8(tag, "length"))
 				{
 					DBG("reading length");
 					int temp = parse_time_crap(value);
@@ -535,7 +555,7 @@ static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & t
 						info.info_set_int(field_length, tag_song_ms);
 					}
 				}
-				else if (!stricmp(tag, "fade"))
+				else if (!stricmp_utf8(tag, "fade"))
 				{
 					DBG("reading fade");
 					int temp = parse_time_crap(value);
@@ -545,17 +565,17 @@ static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & t
 						info.info_set_int(field_fade, tag_fade_ms);
 					}
 				}
-				else if (!stricmp(tag, "utf8"))
+				else if (!stricmp_utf8(tag, "utf8"))
 				{
 					utf8 = 1;
 				}
-				else if (!strnicmp(tag, "_lib", 4))
+				else if (!stricmp_utf8_partial(tag, "_lib"))
 				{
 					DBG("found _lib");
-					if (!tag[4]) precede = 1;
+					if (! *(tag.get_ptr() + 4)) precede = 1;
 					info.info_set(tag, value);
 				}
-				else if (!stricmp(tag, "_refresh"))
+				else if (!stricmp_utf8(tag, "_refresh"))
 				{
 					DBG("found _refresh");
 					info.info_set(tag, value);
@@ -571,29 +591,22 @@ static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & t
 //					char err[64];
 //					wsprintf(err, "found %s", tag);
 //					DBG(err);
-					info_meta_add(info, (char*)&tag, (char*)&value);
+					info_meta_add(info, tag, value);
 				}
 			}
 			else
 			{
 				// handle nested libraries only, and info is now
 				// the top level internal info class
-				if (!strnicmp(tag, "_lib", 4))
+				if (!stricmp_utf8_partial(tag, "_lib"))
 				{
 					pfc::string8 blah;
-					if (!tag[4]) precede = 1;
+					if (!*(tag.get_ptr() + 4)) precede = 1;
 					blah.set_string(tag);
 					blah.add_byte('=');
 					blah.add_string(value);
 					info.meta_add(info.info_get("current"), value);
 				}
-			}
-			}
-			
-			while (pos < len && *ptr && *ptr != 10)
-			{
-				pos++;
-				ptr++;
 			}
 		}
 	}
