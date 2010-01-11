@@ -6,13 +6,12 @@ namespace {
 	class format_meta
 	{
 	public:
-		format_meta(const file_info & p_source,const char * p_name)
+		format_meta(const file_info & p_source,const char * p_name,bool p_allow_space = true)
 		{
 			p_source.meta_format(p_name,m_buffer);
 			m_buffer.replace_byte('\"','\'');
 			uReplaceString(m_buffer,pfc::string8(m_buffer),infinite,"\x0d\x0a",2,"\\",1,false);
-//			m_buffer.replace_byte(10,'\\');
-//			m_buffer.replace_byte(13,'\\');
+			if (!p_allow_space) m_buffer.replace_byte(' ','_');
 			m_buffer.replace_nontext_chars();
 		}
 		inline operator const char*() const {return m_buffer;}
@@ -53,7 +52,6 @@ namespace cue_creator
 			discid_global =			is_meta_same_everywhere(p_data,"discid"),
 			comment_global =		is_meta_same_everywhere(p_data,"comment"),
 			catalog_global =		is_meta_same_everywhere(p_data,"catalog"),
-			isrc_global =			is_meta_same_everywhere(p_data,"isrc"),
 			songwriter_global =		is_meta_same_everywhere(p_data,"songwriter");
 
 		if (genre_global) {
@@ -70,9 +68,6 @@ namespace cue_creator
 		}
 		if (catalog_global) {
 			p_out << "CATALOG " << format_meta(p_data.first()->m_infos,"catalog") << g_eol;
-		}
-		if (isrc_global) {
-			p_out << "ISRC " << format_meta(p_data.first()->m_infos,"isrc") << g_eol;
 		}
 		if (songwriter_global) {
 			p_out << "SONGWRITER \"" << format_meta(p_data.first()->m_infos,"songwriter") << "\"" << g_eol;
@@ -123,6 +118,15 @@ namespace cue_creator
 				p_out << "    SONGWRITER \"" << format_meta(iter->m_infos,"songwriter") << "\"" << g_eol;
 			}
 
+			if (iter->m_infos.meta_find("isrc") != infinite) {
+				p_out << "    ISRC " << format_meta(iter->m_infos,"isrc") << g_eol;
+			}
+
+			if (!date_global && iter->m_infos.meta_find("date") != infinite) {
+				p_out << "    REM DATE " << format_meta(iter->m_infos,"date") << g_eol;
+			}
+
+
 
 			{
 				replaygain_info::t_text_buffer rgbuffer;
@@ -131,6 +135,10 @@ namespace cue_creator
 					p_out << "    REM REPLAYGAIN_TRACK_GAIN " << rgbuffer << g_eol;
 				if (rg.format_track_peak(rgbuffer))
 					p_out << "    REM REPLAYGAIN_TRACK_PEAK " << rgbuffer << g_eol;			
+			}
+
+			if (!iter->m_flags.is_empty()) {
+				p_out << "    FLAGS " << iter->m_flags << g_eol;
 			}
 
 			if (iter->m_index_list.m_positions[0] < iter->m_index_list.m_positions[1])

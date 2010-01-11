@@ -1,3 +1,4 @@
+//! Todo documentme
 class NOVTABLE ogg_stream_handler : public service_base
 {
 public:
@@ -15,17 +16,9 @@ public:
 
 	static void g_open(service_ptr_t<ogg_stream_handler> & p_out,service_ptr_t<file> p_reader,t_input_open_reason p_reason,abort_callback & p_abort);
 
-	static const GUID class_guid;
-	
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	ogg_stream_handler() {}
-	~ogg_stream_handler() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(ogg_stream_handler);
 };
 
 
-template<class T>
-class ogg_stream_handler_factory_t : public service_factory_t<ogg_stream_handler,T> {};
+template<typename T>
+class ogg_stream_handler_factory_t : public service_factory_t<T> {};

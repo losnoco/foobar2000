@@ -2,7 +2,9 @@
 #define _PLAY_CONTROL_H_
 
 //! Provides control for various playback-related operations.
-//! All methods provided by this interface work from main app thread only.
+//! All methods provided by this interface work from main app thread only. Calling from another thread will do nothing or trigger an exception. If you need to trigger one of playback_control methods from another thread, see main_thread_callback.
+//! Do not call playback_control methods from inside any kind of global callback (e.g. playlist callback), otherwise race conditions may occur.
+//! Use static_api_ptr_t to instantiate. See static_api_ptr_t documentation for more info.
 class NOVTABLE playback_control : public service_base
 {
 public:
@@ -82,7 +84,7 @@ public:
 		display_level_all,
 	};
 
-	//! Renders info about currently playing item.
+	//! Renders information about currently playing item.
 	virtual bool playback_format_title(titleformat_hook * p_hook,pfc::string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter,t_display_level p_level) = 0;
 	
 
@@ -103,26 +105,20 @@ public:
 	//! Helper; retrieves length of currently playing item.
 	double playback_get_length();
 
+	//! Toggles stop-after-current state.
 	void toggle_stop_after_current() {set_stop_after_current(!get_stop_after_current());}
+	//! Toggles pause state.
 	void toggle_pause() {pause(!is_paused());}
+
+	//! Starts playback if playback is inactive, otherwise toggles pause.
 	void play_or_pause() {if (is_playing()) toggle_pause(); else start();}
 
 	//deprecated
-	inline void play_start(t_track_command p_command = track_command_play,bool p_paused = false) {start();}
+	inline void play_start(t_track_command p_command = track_command_play,bool p_paused = false) {start(p_command,p_paused);}
 	//deprecated
 	inline void play_stop() {stop();}
 
-	static bool g_get(service_ptr_t<playback_control> & p_out);
-
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	playback_control() {}
-	~playback_control() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playback_control);
 };
 
 

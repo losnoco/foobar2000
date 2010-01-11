@@ -2,8 +2,8 @@
 
 
 void console::info(const char * p_message) {print(p_message);}
-void console::error(const char * p_message) {printf("ERROR : %s",p_message);}
-void console::warning(const char * p_message) {printf("WARNING : %s",p_message);}
+void console::error(const char * p_message) {formatter() << "ERROR : " << p_message;}
+void console::warning(const char * p_message) {formatter() << "WARNING : " << p_message;}
 
 void console::info_location(const playable_location & src) {print_location(src);}
 void console::info_location(const metadb_handle_ptr & src) {print_location(src);}

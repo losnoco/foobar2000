@@ -294,8 +294,7 @@ bool keyboard_shortcut_manager::on_keydown_auto(WPARAM wp)
 bool keyboard_shortcut_manager::on_keydown_auto_playlist(WPARAM wp)
 {
 	metadb_handle_list data;
-	service_ptr_t<playlist_manager> api;
-	if (!playlist_manager::g_get(api)) return false;
+	static_api_ptr_t<playlist_manager> api;
 	api->activeplaylist_get_selected_items(data);
 	return on_keydown_auto_context(data,wp,contextmenu_item::caller_playlist);
 }

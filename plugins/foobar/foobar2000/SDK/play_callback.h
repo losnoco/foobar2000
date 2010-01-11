@@ -1,15 +1,10 @@
 #ifndef _PLAY_CALLBACK_H_
 #define _PLAY_CALLBACK_H_
 
-#include "service.h"
-
-#include "metadb_handle.h"
-//callbacks for getting notified about playback status
-//multithread safety: all play_callback api calls come from main thread.
-
-
-class NOVTABLE play_callback
-{
+/*!
+Class receiving notifications about playback events. Note that all methods are called only from app's main thread.
+*/
+class NOVTABLE play_callback {
 public:
 	//! Playback process is being initialized. on_playback_new_track() should be called soon after this when first file is successfully opened for decoding.
 	virtual void FB2KAPI on_playback_starting(play_control::t_track_command p_command,bool p_paused)=0;
@@ -69,16 +64,7 @@ public:
 	//! @p_callback Previously registered interface to unregister.
 	virtual void FB2KAPI unregister_callback(play_callback * p_callback) = 0;
 
-
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	play_callback_manager() {}
-	~play_callback_manager() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(play_callback_manager);
 };
 
 
@@ -88,19 +74,11 @@ public:
 	//! Controls which methods your callback wants called; returned value should not change in run time, you should expect it to be queried only once (on startup). See play_callback::flag_* constants.
 	virtual unsigned get_flags() = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	play_callback_static() {}
-	~play_callback_static() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(play_callback_static);
 };
 
-template<class T>
-class play_callback_static_factory_t : public service_factory_single_t<play_callback_static,T> {};
+template<typename T>
+class play_callback_static_factory_t : public service_factory_single_t<T> {};
 
 
 //! Gets notified about tracks being played. Notification occurs when at least 60s of the track has been played, or the track has reached its end after at least 1/3 of it has been played through.
@@ -109,17 +87,9 @@ class NOVTABLE playback_statistics_collector : public service_base {
 public:
 	virtual void on_item_played(metadb_handle_ptr p_item) = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	playback_statistics_collector() {}
-	~playback_statistics_collector() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playback_statistics_collector);
 };
 
 template<typename T>
-class playback_statistics_collector_factory_t : public service_factory_single_t<playback_statistics_collector,T> {};
+class playback_statistics_collector_factory_t : public service_factory_single_t<T> {};
 #endif

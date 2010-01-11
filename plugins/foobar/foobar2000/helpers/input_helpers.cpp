@@ -1,8 +1,8 @@
 #include "stdafx.h"
 
-void input_helper::open(metadb_handle_ptr p_location,unsigned p_flags,abort_callback & p_abort,bool p_from_redirect,bool p_skip_hints)
+void input_helper::open(service_ptr_t<file> p_filehint,metadb_handle_ptr p_location,unsigned p_flags,abort_callback & p_abort,bool p_from_redirect,bool p_skip_hints)
 {
-	open(p_location->get_location(),p_flags,p_abort,p_from_redirect,p_skip_hints);
+	open(p_filehint,p_location->get_location(),p_flags,p_abort,p_from_redirect,p_skip_hints);
 }
 
 static void process_fullbuffer(service_ptr_t<file> & p_file,const char * p_path,t_filesize p_fullbuffer,abort_callback & p_abort) {
@@ -26,13 +26,12 @@ static void process_fullbuffer(service_ptr_t<file> & p_file,const char * p_path,
 	}
 }
 
-void input_helper::open(const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,bool p_from_redirect,bool p_skip_hints) {
+void input_helper::open(service_ptr_t<file> p_filehint,const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,bool p_from_redirect,bool p_skip_hints) {
 	p_abort.check_e();
 
 	if (m_input.is_empty() || metadb::path_compare(p_location.get_path(),m_path) != 0)
 	{
-		service_ptr_t<file> l_file;
-
+		service_ptr_t<file> l_file = p_filehint;
 		process_fullbuffer(l_file,p_location.get_path(),m_fullbuffer,p_abort);
 
 		TRACK_CODE("input_entry::g_open_for_decoding",
@@ -231,14 +230,15 @@ void input_info_read_helper::get_info_check(const playable_location & p_location
 
 
 
-void input_helper_cue::open(const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,double p_start,double p_length) {
+void input_helper_cue::open(service_ptr_t<file> p_filehint,const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,double p_start,double p_length) {
 	p_abort.check_e();
 
 	m_start = p_start;
 	m_position = 0;
 	m_dynamic_info_trigger = false;
+	m_dynamic_info_track_trigger = false;
 	
-	m_input.open(p_location,p_flags,p_abort,true,true);
+	m_input.open(p_filehint,p_location,p_flags,p_abort,true,true);
 	
 	if (!m_input.can_seek()) throw exception_io_object_not_seekable();
 
@@ -269,6 +269,7 @@ bool input_helper_cue::run(audio_chunk & p_chunk,abort_callback & p_abort) {
 		if (m_position >= m_length) return false;
 
 		m_dynamic_info_trigger = true;
+		m_dynamic_info_track_trigger = true;
 
 		if (!m_input.run(p_chunk,p_abort)) return false;
 
@@ -302,6 +303,7 @@ bool input_helper_cue::run(audio_chunk & p_chunk,abort_callback & p_abort) {
 void input_helper_cue::seek(double p_seconds,abort_callback & p_abort)
 {
 	m_dynamic_info_trigger = false;
+	m_dynamic_info_track_trigger = false;
 	if (m_length <= 0 || p_seconds < m_length) {
 		m_input.seek(p_seconds + m_start,p_abort);
 		m_position = p_seconds;
@@ -325,7 +327,12 @@ bool input_helper_cue::get_dynamic_info(file_info & p_out,double & p_timestamp_d
 }
 
 bool input_helper_cue::get_dynamic_info_track(file_info & p_out,double & p_timestamp_delta) {
-	return false;
+	if (m_dynamic_info_track_trigger) {
+		m_dynamic_info_track_trigger = false;
+		return m_input.get_dynamic_info_track(p_out,p_timestamp_delta);
+	} else {
+		return false;
+	}
 }
 
 const char * input_helper_cue::get_path() const {return m_input.get_path();}

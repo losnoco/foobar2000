@@ -4,30 +4,14 @@ public:
 	virtual GUID get_parent() = 0;
 	virtual t_uint32 get_sort_priority() = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	mainmenu_group() {}
-	~mainmenu_group() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(mainmenu_group);
 };
 
 class NOVTABLE mainmenu_group_popup : public mainmenu_group {
 public:
 	virtual void get_display_string(pfc::string_base & p_out) = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return mainmenu_group::service_query(p_out,p_guid);
-	}
-protected:
-	mainmenu_group_popup() {}
-	~mainmenu_group_popup() {}
+	FB2K_MAKE_SERVICE_INTERFACE(mainmenu_group_popup,mainmenu_group);
 };
 
 class NOVTABLE mainmenu_commands : public service_base {
@@ -60,15 +44,7 @@ public:
 	static bool g_execute(const GUID & p_guid,service_ptr_t<service_base> p_callback = service_ptr_t<service_base>());
 	static bool g_find_by_name(const char * p_name,GUID & p_guid);
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	mainmenu_commands() {}
-	~mainmenu_commands() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(mainmenu_commands);
 };
 
 class NOVTABLE mainmenu_manager : public service_base {
@@ -90,16 +66,8 @@ public:
 	virtual bool execute_command(t_uint32 p_id,service_ptr_t<service_base> p_callback = service_ptr_t<service_base>()) = 0;
 
 	virtual bool get_description(t_uint32 p_id,pfc::string_base & p_out) = 0;
-	
-	static const GUID class_guid;
 
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	mainmenu_manager() {}
-	~mainmenu_manager() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(mainmenu_manager);
 };
 
 class mainmenu_groups {
@@ -112,6 +80,7 @@ public:
 	static const GUID edit_part2_selection,edit_part2_sort,edit_part2_selection_sort;
 	static const GUID file_etc_preferences, file_etc_exit;
 	static const GUID help_about;
+	static const GUID library_refresh;
 
 	enum {priority_edit_part1,priority_edit_part2,priority_edit_part3};
 	enum {priority_edit_part2_commands,priority_edit_part2_selection,priority_edit_part2_sort};
@@ -141,8 +110,8 @@ private:
 	GUID m_guid,m_parent; t_uint32 m_priority; pfc::string8 m_name;
 };
 
-typedef service_factory_single_t<mainmenu_group,mainmenu_group_impl> __mainmenu_group_factory;
-typedef service_factory_single_t<mainmenu_group,mainmenu_group_popup_impl> __mainmenu_group_popup_factory;
+typedef service_factory_single_t<mainmenu_group_impl> __mainmenu_group_factory;
+typedef service_factory_single_t<mainmenu_group_popup_impl> __mainmenu_group_popup_factory;
 
 class mainmenu_group_factory : public __mainmenu_group_factory {
 public:
@@ -155,4 +124,4 @@ public:
 };
 
 template<typename T>
-class mainmenu_commands_factory_t : public service_factory_single_t<mainmenu_commands,T> {};
+class mainmenu_commands_factory_t : public service_factory_single_t<T> {};

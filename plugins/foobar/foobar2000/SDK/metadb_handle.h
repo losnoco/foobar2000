@@ -1,16 +1,11 @@
 #ifndef _FOOBAR2000_METADB_HANDLE_H_
 #define _FOOBAR2000_METADB_HANDLE_H_
 
-#include "file_info.h"
-
-//namespace foobar2000_io {class file; }
 class titleformat_hook;
 class titleformat_text_filter;
 
-
-
 //! metadb_handle object represents interface to reference-counted file_info cache entry for specified location.\n
-//! To obtain a metadb_handle to specific location, use metadb::handle_create(). To obtain a list of metadb_handle objects corresponding to specific path (directory, playlist, multitrack file, etc), use relevant playlist_loader static helper methods.
+//! To obtain a metadb_handle to specific location, use metadb::handle_create(). To obtain a list of metadb_handle objects corresponding to specific path (directory, playlist, multitrack file, etc), use relevant playlist_loader static helper methods.\n
 //! metadb_handle is also the most efficient way of passing playable object locations around because it provides fast access to both location and infos, and is reference counted so duplicating it is as fast as possible.
 
 class NOVTABLE metadb_handle : public service_base
@@ -55,16 +50,7 @@ public:
 	t_filetimestamp get_filetimestamp();
 	t_filesize get_filesize();
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-
-protected:
-	metadb_handle() {}
-	~metadb_handle() {}
+	FB2K_MAKE_SERVICE_INTERFACE(metadb_handle,service_base);
 };
 
 typedef service_ptr_t<metadb_handle> metadb_handle_ptr;

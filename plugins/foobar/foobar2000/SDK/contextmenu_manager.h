@@ -27,12 +27,7 @@ public:
 	virtual bool get_key_description_for_action(const GUID & p_command,const GUID & p_subcommand, pfc::string_base & out, shortcut_type type, bool is_global)=0;
 
 	
-	
-	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
-protected:
-	keyboard_shortcut_manager() {}
-	~keyboard_shortcut_manager() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(keyboard_shortcut_manager);
 /*
 usage:
 
@@ -105,15 +100,7 @@ public:
 	bool execute_by_id(unsigned id);
 
 
-	static const GUID class_guid;
-	
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	contextmenu_manager() {}
-	~contextmenu_manager() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(contextmenu_manager);
 };
 
 

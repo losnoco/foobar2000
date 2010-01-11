@@ -1,6 +1,7 @@
 #ifndef _FILE_INFO_H_
 #define _FILE_INFO_H_
 
+//! Structure containing ReplayGain scan results from some playable object, also providing various helper methods to manipulate those results.
 struct replaygain_info
 {
 	float m_album_gain,m_track_gain;
@@ -53,37 +54,60 @@ inline bool operator!=(const replaygain_info & item1,const replaygain_info & ite
 static const replaygain_info replaygain_info_invalid = {replaygain_info::gain_invalid,replaygain_info::gain_invalid,replaygain_info::peak_invalid,replaygain_info::peak_invalid};
 
 
-class NOVTABLE file_info
-{
+//! Main interface class for information about some playable object.
+class NOVTABLE file_info {
 public:
+	//! Retrieves length, in seconds.
 	virtual double		get_length() const = 0;
+	//! Sets length, in seconds.
 	virtual void		set_length(double p_length) = 0;
 
+	//! Sets ReplayGain information.
 	virtual void			set_replaygain(const replaygain_info & p_info) = 0;
+	//! Retrieves ReplayGain information.
 	virtual replaygain_info	get_replaygain() const = 0;
 
+	//! Retrieves count of metadata entries.
 	virtual t_size		meta_get_count() const = 0;
+	//! Retrieves the name of metadata entry of specified index. Return value is a null-terminated UTF-8 encoded string.
 	virtual const char*	meta_enum_name(t_size p_index) const = 0;
+	//! Retrieves count of values in metadata entry of specified index. The value is always equal to or greater than 1.
 	virtual t_size		meta_enum_value_count(t_size p_index) const = 0;
+	//! Retrieves specified value from specified metadata entry. Return value is a null-terminated UTF-8 encoded string.
 	virtual const char*	meta_enum_value(t_size p_index,t_size p_value_number) const = 0;
+	//! Finds index of metadata entry of specified name. Returns infinite when not found.
 	virtual t_size		meta_find_ex(const char * p_name,t_size p_name_length) const;
+	//! Creates a new metadata entry of specified name with specified value. If an entry of same name already exists, it is erased. Return value is the index of newly created metadata entry.
 	virtual t_size		meta_set_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) = 0;
+	//! Inserts a new value into specified metadata entry.
 	virtual void		meta_insert_value_ex(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length) = 0;
+	//! Removes metadata entries according to specified bit mask.
 	virtual void		meta_remove_mask(const bit_array & p_mask) = 0;
+	//! Reorders metadata entries according to specified permutation.
 	virtual void		meta_reorder(const t_size * p_order) = 0;
+	//! Removes values according to specified bit mask from specified metadata entry. If all values are removed, entire metadata entry is removed as well.
 	virtual void		meta_remove_values(t_size p_index,const bit_array & p_mask) = 0;
-
+	//! Alters specified value in specified metadata entry.
 	virtual void		meta_modify_value_ex(t_size p_index,t_size p_value_index,const char * p_value,t_size p_value_length) = 0;
-	
+
+	//! Retrieves number of technical info entries.
 	virtual t_size		info_get_count() const = 0;
+	//! Retrieves the name of specified technical info entry. Return value is a null-terminated UTF-8 encoded string.
 	virtual const char*	info_enum_name(t_size p_index) const = 0;
+	//! Retrieves the value of specified technical info entry. Return value is a null-terminated UTF-8 encoded string.
 	virtual const char*	info_enum_value(t_size p_index) const = 0;
+	//! Creates a new technical info entry with specified name and specified value. If an entry of the same name already exists, it is erased. Return value is the index of newly created entry.
 	virtual t_size		info_set_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) = 0;
+	//! Removes technical info entries indicated by specified bit mask.
 	virtual void		info_remove_mask(const bit_array & p_mask) = 0;
+	//! Finds technical info entry of specified name. Returns index of found entry on success, infinite on failure.
 	virtual t_size		info_find_ex(const char * p_name,t_size p_name_length) const;
 
+	//! Copies entire file_info contents from specified file_info object.
 	virtual void		copy(const file_info & p_source);//virtualized for performance reasons, can be faster in two-pass
+	//! Copies metadata from specified file_info object.
 	virtual void		copy_meta(const file_info & p_source);//virtualized for performance reasons, can be faster in two-pass
+	//! Copies technical info from specified file_info object.
 	virtual void		copy_info(const file_info & p_source);//virtualized for performance reasons, can be faster in two-pass
 
 	bool			meta_exists_ex(const char * p_name,t_size p_name_length) const;
@@ -168,6 +192,9 @@ public:
 	bool are_meta_fields_identical(t_size p_index1,t_size p_index2) const;
 
 	inline const file_info & operator=(const file_info & p_source) {copy(p_source);return *this;}
+
+	static bool g_is_meta_equal(const file_info & p_item1,const file_info & p_item2);
+	static bool g_is_info_equal(const file_info & p_item1,const file_info & p_item2);
 
 protected:
 	file_info() {}

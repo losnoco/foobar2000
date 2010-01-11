@@ -21,6 +21,7 @@
 
 typedef const char * pcchar;
 
+#include "core_api.h"
 #include "service.h"
 
 #include "abort_callback.h"
@@ -35,6 +36,7 @@ typedef const char * pcchar;
 #include "playable_location.h"
 #include "file_info.h"
 #include "file_info_impl.h"
+#include "metadb_handle.h"
 #include "metadb.h"
 #include "console.h"
 #include "dsp.h"
@@ -47,7 +49,6 @@ typedef const char * pcchar;
 #include "contextmenu_manager.h"
 #include "menu_helpers.h"
 #include "modeless_dialog.h"
-#include "output.h"
 #include "playback_control.h"
 #include "play_callback.h"
 #include "playlist.h"

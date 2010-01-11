@@ -31,7 +31,7 @@ void playlist_loader::g_load_playlist(const char * p_path,playlist_loader_callba
 
 	pfc::string_extension extension(filename);
 
-	service_ptr_t<file> r;
+	service_ptr_t<file> l_file;
 
 	{
 		bool /*have_content_type, */have_extension;
@@ -44,23 +44,17 @@ void playlist_loader::g_load_playlist(const char * p_path,playlist_loader_callba
 //			have_content_type && l->is_our_content_type(content_type) || 
 				(have_extension && !stricmp_utf8(l->get_extension(),extension)))
 			{
-				if (r.is_empty()) {
-					filesystem::g_open_read(r,filename,callback);
+				if (l_file.is_empty()) {
+					filesystem::g_open_read(l_file,filename,callback);
 				}
 
-				try {
-					TRACK_CODE("playlist_loader::open",l->open(filename,r,callback));
-					return;//success
-				} catch(exception_io_data const &) {
-					//fall thru
-				}
-
-				if (r.is_valid()) r->reopen(callback);
+				TRACK_CODE("playlist_loader::open",l->open(filename,l_file,callback));
+				return;//success
 			}
 		} while(e.next(l));
 	}
 
-	throw exception_io_data();
+	throw exception_io_unsupported_format();
 }
 
 static void track_indexer__g_get_tracks_e(const char * p_path,const service_ptr_t<file> & p_reader,const t_filestats & p_stats,playlist_loader_callback::t_entry_type p_type,playlist_loader_callback & p_callback,bool & p_got_input)
@@ -89,7 +83,7 @@ static void track_indexer__g_get_tracks_e(const char * p_path,const service_ptr_
 			if (p_callback.want_info(handle,p_type,stats,true))
 			{
 				file_info_impl info;
-				instance->get_info(handle->get_subsong_index(),info,p_callback);
+				instance->get_info(index,info,p_callback);
 				p_callback.on_entry_info(handle,p_type,stats,info,true);
 			}
 			else
@@ -138,8 +132,8 @@ static void process_path_internal(const char * p_path,const service_ptr_t<file> 
 					process_path_internal(directory_results.get_item(n),0,p_callback,playlist_loader_callback::entry_directory_enumerated,directory_results.get_item_stats(n));
 				}
 				return;
-			} catch(exception_aborted const &) {throw;}
-			catch(std::exception const & ) {
+			} catch(exception_aborted) {throw;}
+			catch(...) {
 				//do nothing, fall thru
 				//fixme - catch only filesystem exceptions?
 			}
@@ -161,8 +155,8 @@ static void process_path_internal(const char * p_path,const service_ptr_t<file> 
 					try {
 						TRACK_CODE("archive::archive_list",arch->archive_list(p_path,p_reader,archive_results,true));
 						return;
-					} catch(exception_aborted const &) {throw;} 
-					catch(std::exception const &) {}
+					} catch(exception_aborted) {throw;} 
+					catch(...) {}
 				}
 			} 
 		}
@@ -170,7 +164,6 @@ static void process_path_internal(const char * p_path,const service_ptr_t<file> 
 
 	
 
-	bool resolved = false;
 	{
 		service_ptr_t<link_resolver> ptr;
 		if (link_resolver::g_find(ptr,p_path))
@@ -182,17 +175,13 @@ static void process_path_internal(const char * p_path,const service_ptr_t<file> 
 				TRACK_CODE("link_resolver::resolve",ptr->resolve(p_reader,p_path,temp,p_callback));
 
 				track_indexer__g_get_tracks_wrap(temp,0,filestats_invalid,playlist_loader_callback::entry_from_playlist,p_callback);
-				resolved = true;
-			} catch(exception_aborted const &) {throw;}
-			catch(std::exception const &) {}
+				return;//success
+			} catch(exception_aborted) {throw;}
+			catch(...) {}
 		}
 	}
 
-
-	if (!resolved)
-	{
-		track_indexer__g_get_tracks_wrap(p_path,p_reader,p_stats,p_type,p_callback);
-	}
+	track_indexer__g_get_tracks_wrap(p_path,p_reader,p_stats,p_type,p_callback);
 }
 
 void playlist_loader::g_process_path(const char * p_filename,playlist_loader_callback & callback,playlist_loader_callback::t_entry_type type)
@@ -222,14 +211,24 @@ void playlist_loader::g_save_playlist(const char * p_filename,const pfc::list_ba
 				try {
 					TRACK_CODE("playlist_loader::write",l->write(filename,r,data,p_abort));
 					return;
-				} catch(exception_io_data const &) {}
+				} catch(exception_io_data) {}
 			}
 		} while(e.next(l));
 		throw exception_io_data();
-	} catch(std::exception const &) {
-		try {
-			filesystem::g_remove(filename,p_abort);
-		} catch(std::exception const &) {}
+	} catch(...) {
+		try {filesystem::g_remove(filename,p_abort);} catch(...) {}
 		throw;
+	}
+}
+
+
+bool playlist_loader::g_process_path_ex(const char * filename,playlist_loader_callback & callback,playlist_loader_callback::t_entry_type type)
+{
+	try {
+		g_load_playlist(filename,callback);
+		return true;
+	} catch(exception_io_unsupported_format) {//not a playlist format
+		g_process_path(filename,callback,type);
+		return false;
 	}
 }

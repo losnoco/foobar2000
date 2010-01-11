@@ -1,11 +1,4 @@
-#ifndef _DSP_H_
-#define _DSP_H_
-
-#include "service.h"
-#include "audio_chunk.h"
-
-class NOVTABLE dsp_chunk_list//interface (cross-dll safe)
-{
+class NOVTABLE dsp_chunk_list {
 public:
 	virtual t_size get_count() const = 0;
 	virtual audio_chunk * get_item(t_size n) const = 0;
@@ -17,18 +10,16 @@ public:
 
 	void remove_all() {remove_mask(bit_array_true());}
 
-	double get_duration()
-	{
+	double get_duration() {
 		double rv = 0;
 		t_size n,m = get_count();
 		for(n=0;n<m;n++) rv += get_item(n)->get_duration();
 		return rv;
 	}
 
-	void add_chunk(const audio_chunk * chunk)
-	{
+	void add_chunk(const audio_chunk * chunk) {
 		audio_chunk * dst = insert_item(get_count(),chunk->get_data_length());
-		if (dst) dst->copy_from(chunk);
+		if (dst) dst->copy(*chunk);
 	}
 
 	void remove_bad_chunks();
@@ -63,16 +54,7 @@ public:
 	virtual double get_latency() = 0;//amount of data buffered (in seconds)
 	virtual bool need_track_change_mark() = 0;//return true if you need to know exact track change point (eg. for crossfading, removing silence), will force-flush any DSPs placed before you so when you get END_OF_TRACK, chunks you get contain last samples of the track; will often break regular gapless playback so don't use it unless you have reasons to
 
-
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	dsp() {}
-	~dsp() {}
+	FB2K_MAKE_SERVICE_INTERFACE(dsp,service_base);
 };
 
 template<class T>
@@ -179,8 +161,7 @@ private:
 	pfc::array_t<t_uint8> m_data;
 };
 
-class NOVTABLE dsp_entry : public service_base
-{
+class NOVTABLE dsp_entry : public service_base {
 public:
 	virtual void get_name(pfc::string_base & p_out) = 0;
 	virtual bool get_default_preset(dsp_preset & p_out) = 0;
@@ -200,20 +181,11 @@ public:
 	static bool g_have_config_popup(const dsp_preset & p_preset);
 	static bool g_show_config_popup(dsp_preset & p_preset,HWND p_parent);
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	dsp_entry() {}
-	~dsp_entry() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(dsp_entry);
 };
 
-template<class T,class T_entry = dsp_entry>
-class dsp_entry_impl_nopreset_t : public T_entry
-{
+template<class T,class t_entry = dsp_entry>
+class dsp_entry_impl_nopreset_t : public t_entry {
 public:
 	void get_name(pfc::string_base & p_out) {T::g_get_name(p_out);}
 	bool get_default_preset(dsp_preset & p_out)
@@ -237,8 +209,8 @@ public:
 	bool show_config_popup(dsp_preset & p_data,HWND p_parent) {return false;}
 };
 
-template<class T, class T_entry = dsp_entry>
-class dsp_entry_impl_t : public T_entry
+template<class T, class t_entry = dsp_entry>
+class dsp_entry_impl_t : public t_entry
 {
 public:
 	void get_name(pfc::string_base & p_out) {T::g_get_name(p_out);}
@@ -262,10 +234,10 @@ public:
 };
 
 template<class T>
-class dsp_factory_nopreset_t : public service_factory_single_t<dsp_entry,dsp_entry_impl_nopreset_t<T> > {};
+class dsp_factory_nopreset_t : public service_factory_single_t<dsp_entry_impl_nopreset_t<T> > {};
 
 template<class T>
-class dsp_factory_t : public service_factory_single_t<dsp_entry,dsp_entry_impl_t<T> > {};
+class dsp_factory_t : public service_factory_single_t<dsp_entry_impl_t<T> > {};
 
 class NOVTABLE dsp_chain_config
 {
@@ -311,8 +283,7 @@ private:
 	pfc::ptr_list_t<dsp_preset_impl> m_data;
 };
 
-class cfg_dsp_chain_config : public cfg_var
-{
+class cfg_dsp_chain_config : public cfg_var {
 protected:
 	void get_data_raw(stream_writer * p_stream,abort_callback & p_abort);
 	void set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort);
@@ -327,8 +298,3 @@ private:
 	dsp_chain_config_impl m_data;
 	
 };
-
-
-#include "dsp_manager.h"
-
-#endif

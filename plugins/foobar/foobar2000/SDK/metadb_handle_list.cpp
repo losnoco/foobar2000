@@ -86,8 +86,7 @@ void metadb_handle_list_helper::sort_by_relative_path_get_order_partial(const pf
 	t_size n;
 	pfc::array_t<custom_sort_data> data;
 	data.set_size(count);
-	service_ptr_t<library_manager> api;
-	library_manager::g_get(api);
+	static_api_ptr_t<library_manager> api;
 	
 	pfc::string8_fastalloc temp;
 	temp.prealloc(512);

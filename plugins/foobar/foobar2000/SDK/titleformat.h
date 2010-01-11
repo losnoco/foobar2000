@@ -49,15 +49,7 @@ public:
 	void run_hook(const playable_location & p_location,const file_info * p_source,titleformat_hook * p_hook,pfc::string_base & p_out,titleformat_text_filter * p_filter);
 	void run_simple(const playable_location & p_location,const file_info * p_source,pfc::string_base & p_out);
 
-	static const GUID class_guid;
-	
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	titleformat_object() {}
-	~titleformat_object() {}
+	FB2K_MAKE_SERVICE_INTERFACE(titleformat_object,service_base);
 };
 
 class NOVTABLE titleformat_compiler : public service_base
@@ -74,15 +66,7 @@ public:
 	static void remove_forbidden_chars_string_append(pfc::string_receiver & p_out,const char * p_source,t_size p_source_len,const char * p_forbidden_chars);
 	static void remove_forbidden_chars_string(pfc::string_base & p_out,const char * p_source,t_size p_source_len,const char * p_forbidden_chars);
 
-	static const GUID class_guid;
-	
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	titleformat_compiler() {}
-	~titleformat_compiler() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(titleformat_compiler);
 };
 
 

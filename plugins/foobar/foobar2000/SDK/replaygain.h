@@ -1,12 +1,7 @@
 #ifndef _FOOBAR2000_SDK_REPLAYGAIN_H_
 #define _FOOBAR2000_SDK_REPLAYGAIN_H_
 
-#include "service.h"
-
-#include "file_info.h"
-#include "metadb_handle.h"
-#include "metadb.h"
-
+//! Structure storing ReplayGain configuration: album/track source data modes, gain/peak processing modes and preamp values.
 struct t_replaygain_config
 {
 	enum t_source_mode {source_mode_none,source_mode_track,source_mode_album};
@@ -30,32 +25,29 @@ struct t_replaygain_config
 	bool is_active() const;
 };
 
-class NOVTABLE replaygain_manager : public service_base
-{
+//! Core service providing methods to retrieve/alter playback ReplayGain settings, as well as use ReplayGain configuration dialog.
+class NOVTABLE replaygain_manager : public service_base {
 public:
+	//! Retrieves playback ReplayGain settings.
 	virtual void get_core_settings(t_replaygain_config & p_out) = 0;
 
+	//! Creates embedded version of ReplayGain settings dialog. Note that embedded dialog sends WM_COMMAND with id/BN_CLICKED to parent window when user makes changes to settings.
 	virtual HWND configure_embedded(const t_replaygain_config & p_initdata,HWND p_parent,unsigned p_id,bool p_from_modal) = 0;
+	//! Retrieves settings from embedded version of ReplayGain settings dialog.
 	virtual void configure_embedded_retrieve(HWND wnd,t_replaygain_config & p_data) = 0;
-	//sends WM_COMMAND with id/BN_CLICKED to parent when changes
+	
+	//! Shows popup/modal version of ReplayGain settings dialog. Returns true when user changed the settings, false when user cancelled the operation. Title parameter can be null to use default one.
+	virtual bool configure_popup(t_replaygain_config & p_data,HWND p_parent,const char * p_title) = 0;
 
-	virtual bool configure_popup(t_replaygain_config & p_data,HWND p_parent,const char * p_title) = 0;//title can be null
-
+	//! Alters playback ReplayGain settings.
 	virtual void set_core_settings(const t_replaygain_config & p_config) = 0;
 
+	//! Helper; queries scale value for specified item according to core playback settings.
 	audio_sample core_settings_query_scale(const file_info & p_info);
+	//! Helper; queries scale value for specified item according to core playback settings.
 	audio_sample core_settings_query_scale(const metadb_handle_ptr & info);
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	replaygain_manager() {}
-	~replaygain_manager() {}
-
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(replaygain_manager);
 };
 
 #endif //_FOOBAR2000_SDK_REPLAYGAIN_H_

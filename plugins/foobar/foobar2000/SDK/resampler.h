@@ -1,8 +1,3 @@
-#ifndef _RESAMPLER_H_
-#define _RESAMPLER_H_
-
-#include "dsp.h"
-
 class NOVTABLE resampler_entry : public dsp_entry
 {
 public:
@@ -14,18 +9,10 @@ public:
 	static bool g_create(service_ptr_t<dsp> & p_out,unsigned p_srate_from,unsigned p_srate_to,float p_qualityscale);
 	static bool g_create_preset(dsp_preset & p_out,unsigned p_srate_from,unsigned p_srate_to,float p_qualityscale);
 
-	static const GUID class_guid;
-	
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	resampler_entry() {}
-	~resampler_entry() {}
+	FB2K_MAKE_SERVICE_INTERFACE(resampler_entry,dsp_entry);
 };
 
-template<class T>
+template<typename T>
 class resampler_entry_impl_t : public dsp_entry_impl_t<T,resampler_entry>
 {
 public:
@@ -34,10 +21,5 @@ public:
 	float get_priority() {return T::g_get_priority();}
 };
 
-template<class T>
-class resampler_factory_t : public service_factory_single_t<dsp_entry,resampler_entry_impl_t<T> >
-{
-};
-
-
-#endif//_RESAMPLER_H_
+template<typename T>
+class resampler_factory_t : public service_factory_single_t<resampler_entry_impl_t<T> > {};

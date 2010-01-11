@@ -387,10 +387,36 @@ void file_info::info_calculate_bitrate(t_filesize p_filesize,double p_length)
 bool file_info::is_encoding_lossy() const {
 	const char * encoding = info_get("encoding");
 	if (encoding != NULL) {
-		if (stricmp_utf8(encoding,"lossy") == 0 || stricmp_utf8(encoding,"hybrid") == 0) return true;
+		if (stricmp_utf8(encoding,"lossy") == 0 /*|| stricmp_utf8(encoding,"hybrid") == 0*/) return true;
 	} else {
 		//the old way
 		if (info_get("bitspersample") == NULL) return true;
 	}
 	return false;
+}
+
+bool file_info::g_is_meta_equal(const file_info & p_item1,const file_info & p_item2) {
+	t_size count = p_item1.meta_get_count();
+	if (count != p_item2.meta_get_count()) return false;
+	for(t_size n1=0; n1<count; n1++) {
+		t_size n2 = p_item2.meta_find(p_item1.meta_enum_name(n1));
+		if (n2 == infinite) return false;
+		t_size value_count = p_item1.meta_enum_value_count(n1);
+		if (value_count != p_item2.meta_enum_value_count(n2)) return false;
+		for(t_size v = 0; v < value_count; v++) {
+			if (strcmp(p_item1.meta_enum_value(n1,v),p_item2.meta_enum_value(n2,v)) != 0) return false;
+		}
+	}
+	return true;
+}
+
+bool file_info::g_is_info_equal(const file_info & p_item1,const file_info & p_item2) {
+	t_size count = p_item1.info_get_count();
+	if (count != p_item2.info_get_count()) return false;
+	for(t_size n1=0; n1<count; n1++) {
+		t_size n2 = p_item2.info_find(p_item1.info_enum_name(n1));
+		if (n2 == infinite) return false;
+		if (strcmp(p_item1.info_enum_value(n1),p_item2.info_enum_value(n2)) != 0) return false;
+	}
+	return true;
 }

@@ -58,11 +58,11 @@ static void prepare_for_open(service_ptr_t<input_entry> & p_service,service_ptr_
 
 	if (input_entry::g_find_service_by_path(p_service,p_path))
 	{
-		if (p_from_redirect && p_service->is_redirect()) throw exception_io_data();
+		if (p_from_redirect && p_service->is_redirect()) throw exception_io_unsupported_format();
 		return;
 	}
 
-	throw exception_io_data();
+	throw exception_io_unsupported_format();
 }
 
 
@@ -112,7 +112,7 @@ void input_open_file_helper(service_ptr_t<file> & p_file,const char * p_path,t_i
 	if (p_file.is_empty()) {
 		switch(p_reason) {
 		default:
-			throw exception_io_data();
+			throw pfc::exception_bug_check();
 		case input_open_info_read:
 		case input_open_decode:
 			filesystem::g_open(p_file,p_path,filesystem::open_mode_read,p_abort);

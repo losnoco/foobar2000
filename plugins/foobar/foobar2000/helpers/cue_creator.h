@@ -3,7 +3,7 @@ namespace cue_creator
 	struct t_entry
 	{
 		file_info_impl m_infos;
-		pfc::string8 m_file;
+		pfc::string8 m_file,m_flags;
 		unsigned m_track_number;
 
 		t_cuesheet_index_list m_index_list;

@@ -1,10 +1,11 @@
 #ifndef _PLAYLIST_H_
 #define _PLAYLIST_H_
 
+//! This interface allows filtering of playlist modification operations.\n
+//! Implemented by components "locking" playlists; use playlist_manager::playlist_lock_install() etc to takeover specific playlist with your instance of playlist_lock.
 class NOVTABLE playlist_lock : public service_base {
 public:
-	enum 
-	{
+	enum {
 		filter_add		= 1 << 0,
 		filter_remove	= 1 << 1,
 		filter_reorder  = 1 << 2,
@@ -14,28 +15,51 @@ public:
 		filter_default_action = 1 << 6,
 	};
 
-	virtual bool query_items_add(t_size start, const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;
-	virtual bool query_items_reorder(const t_size * order,t_size count)=0;
-	virtual bool query_items_remove(const bit_array & mask,bool p_force)=0;//if p_force is set, files have been physically removed and your return value is ignored
-	virtual bool query_item_replace(t_size idx,const metadb_handle_ptr & p_old,const metadb_handle_ptr & p_new)=0;
+	//! Queries whether specified item insertiion operation is allowed in the locked playlist.
+	//! @param p_base Index from which the items are being inserted.
+	//! @param p_data Items being inserted.
+	//! @param p_selection Caller-requested selection state of items being inserted.
+	//! @returns True to allow the operation, false to block it.
+	virtual bool query_items_add(t_size p_base, const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection) = 0;
+	//! Queries whether specified item reorder operation is allowed in the locked playlist.
+	//! @param p_order Pointer to array containing permutation defining requested reorder operation.
+	//! @param p_count Number of items in array pointed to by p_order. This should always be equal to number of items on the locked playlist.
+	//! @returns True to allow the operation, false to block it.
+	virtual bool query_items_reorder(const t_size * p_order,t_size p_count) = 0;
+	//! Queries whether specified item removal operation is allowed in the locked playlist.
+	//! @param p_mask Specifies which items from locked playlist are being removed.
+	//! @param p_force If set to true, the call is made only for notification purpose and items are getting removed regardless (after e.g. they have been physically removed).
+	//! @returns True to allow the operation, false to block it. Note that return value is ignored if p_force is set to true.
+	virtual bool query_items_remove(const bit_array & p_mask,bool p_force) = 0;
+	//! Queries whether specified item replacement operation is allowed in the locked playlist.
+	//! @param p_index Index of the item being replaced.
+	//! @param p_old Old value of the item being replaced.
+	//! @param p_new New value of the item being replaced.
+	//! @returns True to allow the operation, false to block it.
+	virtual bool query_item_replace(t_size p_index,const metadb_handle_ptr & p_old,const metadb_handle_ptr & p_new)=0;
+	//! Queries whether renaming the locked playlist is allowed.
+	//! @param p_new_name Requested new name of the playlist; a UTF-8 encoded string.
+	//! @param p_new_name_len Length limit of the name string, in bytes (actual string may be shorter if null terminator is encountered before). Set this to infinite to use plain null-terminated strings.
+	//! @returns True to allow the operation, false to block it.
 	virtual bool query_playlist_rename(const char * p_new_name,t_size p_new_name_len) = 0;
+	//! Queries whether removal of the locked playlist is allowed. Note that the lock will be released when the playlist is removed.
+	//! @returns True to allow the operation, false to block it.
 	virtual bool query_playlist_remove() = 0;
+	//! Executes "default action" (doubleclick etc) for specified playlist item. When the playlist is not locked, default action starts playback of the item.
+	//! @returns True if custom default action was executed, false to fall-through to default one for non-locked playlists (start playback).
 	virtual bool execute_default_action(t_size p_item) = 0;
+	//! Notifies lock about changed index of the playlist, in result of user reordering playlists or removing other playlists.
 	virtual void on_playlist_index_change(t_size p_new_index) = 0;
+	//! Notifies lock about the locked playlist getting removed.
 	virtual void on_playlist_remove() = 0;
+	//! Retrieves human-readable name of playlist lock to display.
 	virtual void get_lock_name(pfc::string_base & p_out) = 0;
+	//! Requests user interface of component controlling the playlist lock to be shown.
 	virtual void show_ui() = 0;
+	//! Queries which actions the lock filters. The return value must not change while the lock is registered with playlist_manager. The return value is a combination of one or more filter_* constants.
 	virtual t_uint32 get_filter_mask() = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	playlist_lock() {}
-	~playlist_lock() {}
+	FB2K_MAKE_SERVICE_INTERFACE(playlist_lock,service_base);
 };
 
 struct t_playback_queue_item {
@@ -46,62 +70,117 @@ struct t_playback_queue_item {
 	bool operator!=(const t_playback_queue_item & p_item) const;
 };
 
-//important: playlist engine is SINGLE-THREADED. call any APIs not from main thread and things will either blow up or refuse to work. all callbacks can be assumed to come from main thread.
 
+//! This service provides methods for all sorts of playlist interaction.\n
+//! All playlist_manager methods are valid only from main app thread.\n
+//! Usage: static_api_ptr_t<playlist_manager>.
 class NOVTABLE playlist_manager : public service_base
 {
 public:
 
-	class NOVTABLE enum_items_callback
-	{
+	//! Callback interface for playlist enumeration methods.
+	class NOVTABLE enum_items_callback {
 	public:
+		//! @returns True to continue enumeration, false to abort.
 		virtual bool on_item(t_size p_index,const metadb_handle_ptr & p_location,bool b_selected) = 0;//return false to stop
 	};
 
+	//! Retrieves number of playlists.
 	virtual t_size get_playlist_count() = 0;
-	virtual t_size get_active_playlist() = 0;//infinite if there are no playlists, otherwise valid playlist index
+	//! Retrieves index of active playlist; infinite if no playlist is active.
+	virtual t_size get_active_playlist() = 0;
+	//! Sets active playlist (infinite to set no active playlist).
 	virtual void set_active_playlist(t_size p_index) = 0;
+	//! Retrieves playlist from which items to be played are taken from.
 	virtual t_size get_playing_playlist() = 0;
+	//! Sets playlist from which items to be played are taken from.
 	virtual void set_playing_playlist(t_size p_index) = 0;
-	virtual bool remove_playlists(const bit_array & mask) = 0;
-	virtual t_size create_playlist(const char * p_name,t_size p_name_len,t_size p_index) = 0;//p_index may be infinite to append the new playlist at the end of list; returns actual index of new playlist or infinite on failure (rare)
+	//! Removes playlists according to specified mask. See also: bit_array.
+	virtual bool remove_playlists(const bit_array & p_mask) = 0;
+	//! Creates a new playlist.
+	//! @param p_name Name of playlist to create; a UTF-8 encoded string.
+	//! @param p_name_length Length limit of playlist name string, in bytes (actual string may be shorter if null terminator is encountered before). Set this to infinite to use plain null-terminated strings.
+	//! @param p_index Index at which to insert new playlist; set to infinite to put it at the end of playlist list.
+	//! @returns Actual index of newly inserted playlist, infinite on failure (call from invalid context).
+	virtual t_size create_playlist(const char * p_name,t_size p_name_length,t_size p_index) = 0;
+	//! Reorders playlist list according to specified permutation.
+	//! @returns True on success, false on failure (call from invalid context).
 	virtual bool reorder(const t_size * p_order,t_size p_count) = 0;
 	
 	
-	//retrieving status
+	//! Retrieves number of items on specified playlist.
 	virtual t_size playlist_get_item_count(t_size p_playlist) = 0;
-	virtual void playlist_enum_items(t_size p_playlist,enum_items_callback * p_callback,const bit_array & p_mask) = 0;
-	virtual t_size playlist_get_focus_item(t_size p_playlist) = 0;//focus may be infinite if no item is focused
+	//! Enumerates contents of specified playlist.
+	virtual void playlist_enum_items(t_size p_playlist,enum_items_callback & p_callback,const bit_array & p_mask) = 0;
+	//! Retrieves index of focus item on specified playlist; returns infinite when no item has focus.
+	virtual t_size playlist_get_focus_item(t_size p_playlist) = 0;
+	//! Retrieves name of specified playlist.
 	virtual bool playlist_get_name(t_size p_playlist,pfc::string_base & p_out) = 0;
 	
-	//modifying playlist
-	virtual bool playlist_reorder_items(t_size p_playlist,const t_size * order,t_size count) = 0;
-	virtual void playlist_set_selection(t_size p_playlist,const bit_array & affected,const bit_array & status) = 0;
+	//! Reorders items in specified playlist according to specified permutation.
+	virtual bool playlist_reorder_items(t_size p_playlist,const t_size * p_order,t_size p_count) = 0;
+	//! Selects/deselects items on specified playlist.
+	//! @param p_playlist Index of playlist to alter.
+	//! @param p_affected Mask of items to alter.
+	//! @param p_status Mask of selected/deselected state to apply to items specified by p_affected.
+	virtual void playlist_set_selection(t_size p_playlist,const bit_array & p_affected,const bit_array & p_status) = 0;
+	//! Removes specified items from specified playlist. Returns true on success or false on failure (playlist locked).
 	virtual bool playlist_remove_items(t_size p_playlist,const bit_array & mask)=0;
+	//! Replaces specified item on specified playlist. Returns true on success or false on failure (playlist locked).
 	virtual bool playlist_replace_item(t_size p_playlist,t_size p_item,const metadb_handle_ptr & p_new_item) = 0;
+	//! Sets index of focus item on specified playlist; use infinite to set no focus item.
 	virtual void playlist_set_focus_item(t_size p_playlist,t_size p_item) = 0;
+	//! Inserts new items into specified playlist, at specified position.
 	virtual t_size playlist_insert_items(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection) = 0;
+	//! Tells playlist renderers to make sure that specified item is visible.
 	virtual void playlist_ensure_visible(t_size p_playlist,t_size p_item) = 0;
-	virtual bool playlist_rename(t_size p_index,const char * p_name,t_size p_name_len) = 0;
+	//! Renames specified playlist.
+	//! @param p_name New name of playlist; a UTF-8 encoded string.
+	//! @param p_name_length Length limit of playlist name string, in bytes (actual string may be shorter if null terminator is encountered before). Set this to infinite to use plain null-terminated strings.
+	//! @returns True on success, false on failure (playlist locked).
+	virtual bool playlist_rename(t_size p_index,const char * p_name,t_size p_name_length) = 0;
 
-	virtual void playlist_undo_backup(t_size p_index) = 0;
-	virtual bool playlist_undo_restore(t_size p_index) = 0;
-	virtual bool playlist_redo_restore(t_size p_index) = 0;
+
+	//! Creates an undo restore point for specified playlist.
+	virtual void playlist_undo_backup(t_size p_playlist) = 0;
+	//! Reverts specified playlist to last undo restore point and generates a redo restore point.
+	//! @returns True on success, false on failure (playlist locked or no restore point available).
+	virtual bool playlist_undo_restore(t_size p_playlist) = 0;
+	//! Reverts specified playlist to next redo restore point and generates an undo restore point.
+	//! @returns True on success, false on failure (playlist locked or no restore point available).
+	virtual bool playlist_redo_restore(t_size p_playlist) = 0;
+	//! Returns whether an undo restore point is available for specified playlist.
 	virtual bool playlist_is_undo_available(t_size p_playlist) = 0;
+	//! Returns whether a redo restore point is available for specified playlist.
 	virtual bool playlist_is_redo_available(t_size p_playlist) = 0;
 
-	virtual void playlist_item_format_title(t_size p_playlist,t_size p_item,titleformat_hook * p_hook,pfc::string_base & out,const service_ptr_t<titleformat_object> & p_script,titleformat_text_filter * p_filter,play_control::t_display_level p_playback_info_level)=0;
+	//! Renders information about specified playlist item, using specified titleformatting script parameters.
+	//! @param p_playlist Index of playlist containing item being processed.
+	//! @param p_item Index of item being processed in the playlist containing it.
+	//! @param p_hook Titleformatting script hook to use; see titleformat_hook documentation for more info. Set to NULL when hook functionality is not needed.
+	//! @param p_out String object receiving results.
+	//! @param p_script Compiled titleformatting script to use; see titleformat_object cocumentation for more info.
+	//! @param p_filter Text filter to use; see titleformat_text_filter documentation for more info. Set to NULL when text filter functionality is not needed.
+	//! @param p_playback_info_level Level of playback related information requested. See playback_control::t_display_level documentation for more info.
+	virtual void playlist_item_format_title(t_size p_playlist,t_size p_item,titleformat_hook * p_hook,pfc::string_base & p_out,const service_ptr_t<titleformat_object> & p_script,titleformat_text_filter * p_filter,playback_control::t_display_level p_playback_info_level)=0;
 
+
+	//! Retrieves playlist position of currently playing item.
+	//! @param p_playlist Receives index of playlist containing currently playing item on success.
+	//! @param p_index Receives index of currently playing item in the playlist that contains it on success.
+	//! @returns True on success, false on failure (not playing or currently played item has been removed from the playlist it was on when starting).
 	virtual bool get_playing_item_location(t_size * p_playlist,t_size * p_index) = 0;
 	
-//	virtual t_size playlist_get_playback_cursor(t_size p_playlist) = 0;
-//	virtual void playlist_set_playback_cursor(t_size p_playlist,t_size p_cursor) = 0;
+	//! Sorts specified playlist - entire playlist or selection only - by specified title formatting pattern, or randomizes the order.
+	//! @param p_playlist Index of playlist to alter.
+	//! @param p_pattern Title formatting pattern to sort by (an UTF-8 encoded null-termindated string). Set to NULL to randomize the order of items.
+	//! @param p_sel_only Set to false to sort/randomize whole playlist, or to true to sort/randomize only selection on the playlist.
+	//! @returns True on success, false on failure (playlist locked etc).
+	virtual bool playlist_sort_by_format(t_size p_playlist,const char * p_pattern,bool p_sel_only) = 0;
 
-	virtual bool playlist_sort_by_format(t_size p_playlist,const char * spec,bool p_sel_only) = 0;
-
-	//! p_items must be sorted by metadb::path_compare; use file_operation_callback static methods instead of calling this directly
+	//! For internal use only; p_items must be sorted by metadb::path_compare; use file_operation_callback static methods instead of calling this directly.
 	virtual void on_files_deleted_sorted(const pfc::list_base_const_t<const char *> & p_items) = 0;
-	//! p_from must be sorted by metadb::path_compare; use file_operation_callback static methods instead of calling this directly
+	//! For internal use only; p_from must be sorted by metadb::path_compare; use file_operation_callback static methods instead of calling this directly.
 	virtual void on_files_moved_sorted(const pfc::list_base_const_t<const char *> & p_from,const pfc::list_base_const_t<const char *> & p_to) = 0;
 
 	virtual bool playlist_lock_install(t_size p_playlist,const service_ptr_t<playlist_lock> & p_lock) = 0;//returns false when invalid playlist or already locked
@@ -112,10 +191,18 @@ public:
 	virtual t_uint32 playlist_lock_get_filter_mask(t_size p_playlist) = 0;
 
 
+	//! Retrieves number of available playback order modes.
 	virtual t_size playback_order_get_count() = 0;
+	//! Retrieves name of specified playback order move.
+	//! @param p_index Index of playback order mode to query, from 0 to playback_order_get_count() return value - 1.
+	//! @returns Null-terminated UTF-8 encoded string containing name of the playback order mode. Returned pointer points to statically allocated string and can be safely stored without having to free it later.
 	virtual const char * playback_order_get_name(t_size p_index) = 0;
+	//! Retrieves GUID of specified playback order mode. Used for managing playback modes without relying on names.
+	//! @param p_index Index of playback order mode to query, from 0 to playback_order_get_count() return value - 1.
 	virtual GUID playback_order_get_guid(t_size p_index) = 0;
+	//! Retrieves index of active playback order mode.
 	virtual t_size playback_order_get_active() = 0;
+	//! Sets index of active playback order mode.
 	virtual void playback_order_set_active(t_size p_index) = 0;
 	
 	virtual void queue_remove_mask(bit_array const & p_mask) = 0;
@@ -123,36 +210,59 @@ public:
 	virtual void queue_add_item(metadb_handle_ptr p_item) = 0;
 	virtual t_size queue_get_count() = 0;
 	virtual void queue_get_contents(pfc::list_base_t<t_playback_queue_item> & p_out) = 0;
-	//! Returns index (0-based) on success, infinite on failure.
+	//! Returns index (0-based) on success, infinite on failure (item not in queue).
 	virtual t_size queue_find_index(t_playback_queue_item const & p_item) = 0;
 
+	//! Registers a playlist callback; registered object receives notifications about any modifications of any of loaded playlists.
+	//! @param p_callback Callback interface to register.
+	//! @param p_flags Flags indicating which callback methods are requested. See playlist_callback::flag_* constants for more info. The main purpose of flags parameter is working set optimization by not calling methods that do nothing.
 	virtual void register_callback(class playlist_callback * p_callback,unsigned p_flags) = 0;
+	//! Registers a playlist callback; registered object receives notifications about any modifications of active playlist.
+	//! @param p_callback Callback interface to register.
+	//! @param p_flags Flags indicating which callback methods are requested. See playlist_callback_single::flag_* constants for more info. The main purpose of flags parameter is working set optimization by not calling methods that do nothing.
 	virtual void register_callback(class playlist_callback_single * p_callback,unsigned p_flags) = 0;
+	//! Unregisters a playlist callback (playlist_callback version).
 	virtual void unregister_callback(class playlist_callback * p_callback) = 0;
+	//! Unregisters a playlist callback (playlist_callback_single version).
 	virtual void unregister_callback(class playlist_callback_single * p_callback) = 0;
+	//! Modifies flags indicating which calback methods are requested (playlist_callback version).
 	virtual void modify_callback(class playlist_callback * p_callback,unsigned p_flags) = 0;
+	//! Modifies flags indicating which calback methods are requested (playlist_callback_single version).
 	virtual void modify_callback(class playlist_callback_single * p_callback,unsigned p_flags) = 0;
-
+	
+	//! Executes default doubleclick/enter action for specified item on specified playlist (starts playing the item unless overridden by a lock to do something else).
 	virtual bool playlist_execute_default_action(t_size p_playlist,t_size p_item) = 0;
 
 	
-	//helpers
-	void queue_flush();
-	bool queue_is_active();
+	//! Helper; removes all items from the playback queue.
+	void queue_flush() {queue_remove_mask(bit_array_true());}
+	//! Helper; returns whether there are items in the playback queue.
+	bool queue_is_active() {return queue_get_count() > 0;}
 
+	//! Helper; highlights currently playing item; returns true on success or false on failure (not playing or currently played item has been removed from playlist since playback started).
 	bool highlight_playing_item();
-	bool remove_playlist(t_size idx);
-	bool remove_playlist_switch(t_size idx);//attempts to switch to another playlist after removing
+	//! Helper; removes single playlist of specified index.
+	bool remove_playlist(t_size p_playlist);
+	//! Helper; removes single playlist of specified index, and switches to another playlist when possible.
+	bool remove_playlist_switch(t_size p_playlist);
 
+	//! Helper; returns whether specified item on specified playlist is selected or not.
 	bool playlist_is_item_selected(t_size p_playlist,t_size p_item);
+	//! Helper; retrieves metadb_handle of specified playlist item. Returns true on success, false on failure (invalid parameters).
 	bool playlist_get_item_handle(metadb_handle_ptr & p_out,t_size p_playlist,t_size p_item);
 
+	//! Moves selected items up/down in the playlist by specified offset.
+	//! @param p_playlist Index of playlist to alter.
+	//! @param p_delta Offset to move items by. Set it to a negative valuye to move up, or to a positive value to move down.
+	//! @returns True on success, false on failure (e.g. playlist locked).
 	bool playlist_move_selection(t_size p_playlist,int p_delta);
+	//! Retrieves selection map of specific playlist, using bit_array_var interface.
 	void playlist_get_selection_mask(t_size p_playlist,bit_array_var & out);
 	void playlist_get_items(t_size p_playlist,pfc::list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask);
 	void playlist_get_all_items(t_size p_playlist,pfc::list_base_t<metadb_handle_ptr> & out);
 	void playlist_get_selected_items(t_size p_playlist,pfc::list_base_t<metadb_handle_ptr> & out);
 	
+	//! Clears contents of specified playlist (removes all items from it).
 	void playlist_clear(t_size p_playlist);
 	bool playlist_add_items(t_size playlist,const pfc::list_base_const_t<metadb_handle_ptr> & data,const bit_array & p_selection);
 	void playlist_clear_selection(t_size p_playlist);
@@ -161,7 +271,7 @@ public:
 	
 	//retrieving status
 	t_size activeplaylist_get_item_count();
-	void activeplaylist_enum_items(enum_items_callback * p_callback,const bit_array & p_mask);
+	void activeplaylist_enum_items(enum_items_callback & p_callback,const bit_array & p_mask);
 	t_size activeplaylist_get_focus_item();//focus may be infinite if no item is focused
 	bool activeplaylist_get_name(pfc::string_base & p_out);
 
@@ -235,18 +345,7 @@ public:
 
 	bool get_all_items(pfc::list_base_t<metadb_handle_ptr> & out);
 
-	static bool g_get(service_ptr_t<playlist_manager> & p_out);
-
-	static const GUID class_guid;
-	static inline const GUID & get_class_guid() {return class_guid;}
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	playlist_manager() {}
-	~playlist_manager() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playlist_manager);
 };
 
 class NOVTABLE playlist_callback
@@ -316,15 +415,7 @@ class NOVTABLE playlist_callback_static : public service_base, public playlist_c
 public:
 	virtual unsigned get_flags() = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	playlist_callback_static() {}
-	~playlist_callback_static() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playlist_callback_static);
 };
 
 class NOVTABLE playlist_callback_single
@@ -376,15 +467,7 @@ class playlist_callback_single_static : public service_base, public playlist_cal
 public:
 	virtual unsigned get_flags() = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	playlist_callback_single_static() {}
-	~playlist_callback_single_static() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playlist_callback_single_static);
 };
 
 class NOVTABLE dropped_files_data {
@@ -414,15 +497,7 @@ public:
 
 	static bool g_get(service_ptr_t<playlist_incoming_item_filter> & p_out) {return service_enum_t<playlist_incoming_item_filter>().first(p_out);}
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	playlist_incoming_item_filter() {}
-	~playlist_incoming_item_filter() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playlist_incoming_item_filter);
 };
 
 class dropped_files_data_impl : public dropped_files_data {
@@ -462,15 +537,7 @@ public:
 	};
 	virtual void on_changed(t_change_origin p_origin) = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	playback_queue_callback() {}
-	~playback_queue_callback() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playback_queue_callback);
 };
 
 #endif

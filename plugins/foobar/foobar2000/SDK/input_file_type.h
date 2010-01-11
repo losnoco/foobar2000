@@ -8,15 +8,7 @@ public:
 
 	static void build_openfile_mask(pfc::string_base & out,bool b_include_playlists=true);
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	input_file_type() {}
-	~input_file_type() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(input_file_type);
 };
 
 class input_file_type_impl : public service_impl_single_t<input_file_type>
@@ -34,16 +26,16 @@ public:
 
 #define DECLARE_FILE_TYPE(NAME,MASK) \
 	namespace { static input_file_type_impl g_filetype_instance(NAME,MASK,true); \
-	static service_factory_single_ref_t<input_file_type,input_file_type_impl> g_filetype_service(g_filetype_instance); }
+	static service_factory_single_ref_t<input_file_type_impl> g_filetype_service(g_filetype_instance); }
 
 
 //USAGE: DECLARE_FILE_TYPE("Blah file","*.blah;*.bleh");
 
-class input_file_type_factory : private service_factory_single_transparent_t<input_file_type,input_file_type_impl>
+class input_file_type_factory : private service_factory_single_transparent_t<input_file_type_impl>
 {
 public:
 	input_file_type_factory(const char * p_name,const char * p_mask,bool p_associatable)
-		: service_factory_single_transparent_t<input_file_type,input_file_type_impl>(p_name,p_mask,p_associatable) {}
+		: service_factory_single_transparent_t<input_file_type_impl>(p_name,p_mask,p_associatable) {}
 };
 
 

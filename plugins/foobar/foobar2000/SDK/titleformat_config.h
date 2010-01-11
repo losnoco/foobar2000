@@ -22,15 +22,7 @@ public:
 
 	static const GUID config_playlist,config_copy,config_statusbar,config_systray,config_windowtitle;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	titleformat_config() {}
-	~titleformat_config() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(titleformat_config);
 };
 
 class titleformat_config_callback : public service_base
@@ -40,15 +32,7 @@ public:
 
 	static void g_on_change(const GUID & p_guid,const char * p_name,const char * p_value,t_size p_value_length);
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	titleformat_config_callback() {}
-	~titleformat_config_callback() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(titleformat_config_callback);
 };
 
 class titleformat_config_impl : public titleformat_config, private cfg_var
@@ -75,7 +59,7 @@ private:
 	critical_section m_sync;
 };
 
-typedef service_factory_single_transparent_t<titleformat_config,titleformat_config_impl> titleformat_config_factory;
+typedef service_factory_single_transparent_t<titleformat_config_impl> titleformat_config_factory;
 
 //usage:
 //static titleformat_config_factory g_mytitleformatconfig("this will show up in titleformat config page","%blah%");

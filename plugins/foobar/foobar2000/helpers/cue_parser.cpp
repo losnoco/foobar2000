@@ -37,6 +37,7 @@ namespace {
 		virtual void on_isrc(const char * p_isrc,t_size p_isrc_length) = 0;
 		virtual void on_catalog(const char * p_catalog,t_size p_catalog_length) = 0;
 		virtual void on_comment(const char * p_comment,t_size p_comment_length) = 0;
+		virtual void on_flags(const char * p_flags,t_size p_flags_length) = 0;
 	};
 
 	class NOVTABLE cue_parser_callback_meta : public cue_parser_callback
@@ -86,24 +87,25 @@ namespace {
 		}
 		void on_title(const char * p_title,t_size p_title_length)
 		{
-			on_meta("title",5,p_title,p_title_length);
+			on_meta("title",infinite,p_title,p_title_length);
 		}
 		void on_songwriter(const char * p_songwriter,t_size p_songwriter_length) {
-			on_meta("songwriter",9,p_songwriter,p_songwriter_length);
+			on_meta("songwriter",infinite,p_songwriter,p_songwriter_length);
 		}
 		void on_performer(const char * p_performer,t_size p_performer_length)
 		{
-			on_meta("artist",6,p_performer,p_performer_length);
+			on_meta("artist",infinite,p_performer,p_performer_length);
 		}
 
 		void on_isrc(const char * p_isrc,t_size p_isrc_length)
 		{
-			on_meta("isrc",4,p_isrc,p_isrc_length);
+			on_meta("isrc",infinite,p_isrc,p_isrc_length);
 		}
 		void on_catalog(const char * p_catalog,t_size p_catalog_length)
 		{
-			on_meta("catalog",7,p_catalog,p_catalog_length);
+			on_meta("catalog",infinite,p_catalog,p_catalog_length);
 		}
+		void on_flags(const char * p_flags,t_size p_flags_length) {}
 	};
 
 
@@ -151,6 +153,7 @@ namespace {
 		void on_isrc(const char * p_isrc,t_size p_isrc_length) {}
 		void on_catalog(const char * p_catalog,t_size p_catalog_length) {}
 		void on_comment(const char * p_comment,t_size p_comment_length) {}
+		void on_flags(const char * p_flags,t_size p_flags_length) {}
 
 		void finalize()
 		{
@@ -191,7 +194,7 @@ namespace {
 	class cue_parser_callback_retrieveinfo : public cue_parser_callback_meta
 	{
 	public:
-		cue_parser_callback_retrieveinfo(file_info & p_out,unsigned p_wanted_track) : m_out(p_out), m_wanted_track(p_wanted_track), m_track(0), m_is_va(false), m_index0_set(false), m_index1_set(false), m_pregap(0) {}
+		cue_parser_callback_retrieveinfo(file_info & p_out,unsigned p_wanted_track) : m_out(p_out), m_wanted_track(p_wanted_track), m_track(0), m_is_va(false), m_index0_set(false), m_index1_set(false), m_pregap(0), m_totaltracks(0) {}
 
 		void on_file(const char * p_file,t_size p_file_length,const char * p_type,t_size p_type_length) {}
 
@@ -203,7 +206,7 @@ namespace {
 				if (stricmp_utf8_ex(p_type,p_type_length,"audio",infinite)) throw exception_cue("only tracks of type AUDIO supported",0);
 			}
 			m_track = p_index;
-			
+			m_totaltracks++;
 		}
 
 		void on_pregap(unsigned p_value) {if (m_track == m_wanted_track) m_pregap = (double) p_value / 75.0;}
@@ -311,6 +314,7 @@ namespace {
 					m_out.meta_set(iter->m_name,iter->m_value);
 			}
 			m_out.meta_set("tracknumber",pfc::string_formatter() << m_wanted_track);
+			m_out.meta_set("totaltracks", pfc::string_formatter() << m_totaltracks);
 			m_out.set_replaygain(rg);
 
 		}
@@ -351,7 +355,7 @@ namespace {
 		
 		t_meta_list m_globals,m_locals;
 		file_info & m_out;
-		unsigned m_wanted_track, m_track;
+		unsigned m_wanted_track, m_track,m_totaltracks;
 		pfc::string8 m_album_artist;
 		bool m_is_va;
 		t_cuesheet_index_list m_indexes;
@@ -558,7 +562,9 @@ static void g_parse_cue_line(const char * p_line,t_size p_line_length,cue_parser
 	}
 	else if (!stricmp_utf8_ex(p_line,ptr,"flags",infinite))
 	{
-		//todo?
+		while(ptr < p_line_length && is_spacing(p_line[ptr])) ptr++;
+		if (ptr < p_line_length)
+			p_callback.on_flags(p_line + ptr, p_line_length - ptr);
 	}
 	else if (!stricmp_utf8_ex(p_line,ptr,"rem",infinite))
 	{
@@ -636,6 +642,7 @@ namespace {
 		void on_isrc(const char * p_isrc,t_size p_isrc_length) {}
 		void on_catalog(const char * p_catalog,t_size p_catalog_length) {}
 		void on_comment(const char * p_comment,t_size p_comment_length) {}
+		void on_flags(const char * p_flags,t_size p_flags_length) {}
 	private:
 		unsigned m_count;
 	};
@@ -691,6 +698,9 @@ namespace {
 				m_track = 0;
 			}
 		}
+		void on_flags(const char * p_flags,t_size p_flags_length) {
+			m_flags.set_string(p_flags,p_flags_length);
+		}
 	private:
 		void finalize_track()
 		{
@@ -703,16 +713,18 @@ namespace {
 			iter->m_track_number = m_track;
 			iter->m_file = m_trackfile;
 			iter->m_index_list = m_indexes;			
+			iter->m_flags = m_flags;
 			m_pregap = 0;
 			m_indexes.reset();
 			m_index0_set = m_index1_set = false;
+			m_flags.reset();
 		}
 
 		bool m_index0_set,m_index1_set;
 		double m_pregap;
 		unsigned m_track;
 		cue_creator::t_entry_list & m_out;
-		pfc::string8 m_file,m_trackfile;
+		pfc::string8 m_file,m_trackfile,m_flags;
 		t_cuesheet_index_list m_indexes;
 	};
 }
@@ -828,7 +840,8 @@ namespace cue_parser
 			if (!found) throw exception_io_data();
 		}
 
-		p_info.meta_set("tracknumber", pfc::string_formatter() << cue_track);
+//		p_info.meta_set("tracknumber", pfc::string_formatter() << cue_track);
+//		p_info.meta_set("totaltracks", pfc::string_formatter() << cue_data.get_count());
 
 		extract_meta(p_baseinfo,p_info,cue_track);
 

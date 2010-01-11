@@ -4,8 +4,8 @@
 class input_helper {
 public:
 	input_helper();
-	void open(metadb_handle_ptr p_location,unsigned p_flags,abort_callback & p_abort,bool p_from_redirect = false,bool p_skip_hints = false);
-	void open(const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,bool p_from_redirect = false,bool p_skip_hints = false);
+	void open(service_ptr_t<file> p_filehint,metadb_handle_ptr p_location,unsigned p_flags,abort_callback & p_abort,bool p_from_redirect = false,bool p_skip_hints = false);
+	void open(service_ptr_t<file> p_filehint,const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,bool p_from_redirect = false,bool p_skip_hints = false);
 
 	void close();
 	bool is_open();
@@ -58,7 +58,7 @@ private:
 
 class input_helper_cue {
 public:
-	void open(const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,double p_start,double p_length);
+	void open(service_ptr_t<file> p_filehint,const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,double p_start,double p_length);
 
 	void close();
 	bool is_open();
@@ -77,7 +77,7 @@ public:
 private:
 	input_helper m_input;
 	double m_start,m_length,m_position;
-	bool m_dynamic_info_trigger;
+	bool m_dynamic_info_trigger,m_dynamic_info_track_trigger;
 };
 
 #endif

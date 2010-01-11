@@ -70,13 +70,5 @@ public:
 	//! Static helper, tries to find chapterizer interface that supports specified file.
 	static bool g_find(service_ptr_t<chapterizer> & p_out,const char * p_path,abort_callback & p_abort);
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	chapterizer() {}
-	~chapterizer() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(chapterizer);
 };

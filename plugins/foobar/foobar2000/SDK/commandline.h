@@ -17,15 +17,7 @@ public:
 	virtual void on_files_done() {};//optional
 	virtual bool want_directories() {return false;}
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	commandline_handler() {}
-	~commandline_handler() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(commandline_handler);
 };
 
 class commandline_handler_metadb_handle : public commandline_handler//helper
@@ -50,8 +42,8 @@ how commandline_handler is used:
 		creation => on_token() returning RESULT_PROCESSED_EXPECT_FILES => on_file(), on_file().... => on_files_done() => deletion
 */
 
-template<class T>
-class commandline_handler_factory : public service_factory_t<commandline_handler,T> {};
+template<typename T>
+class commandline_handler_factory_t : public service_factory_t<T> {};
 
 
 

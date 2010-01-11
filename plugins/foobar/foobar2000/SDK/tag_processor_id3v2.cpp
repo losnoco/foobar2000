@@ -59,32 +59,29 @@ void tag_processor_id3v2::g_skip(const service_ptr_t<file> & p_file,t_uint64 & p
 		return;
 	}
 
-	// check id3-tag
 	if ( 0 != memcmp ( tmp, "ID3", 3) ) {
 		p_file->seek ( 0, p_abort );
 		p_size_skipped = 0;
 		return;
 	}
 
-	// read flags
 	int Unsynchronisation = tmp[5] & 0x80;
 	int ExtHeaderPresent  = tmp[5] & 0x40;
 	int ExperimentalFlag  = tmp[5] & 0x20;
 	int FooterPresent     = tmp[5] & 0x10;
 
-	if ( tmp[5] & 0x0F ) {                              // not (yet???) allowed
+	if ( tmp[5] & 0x0F ) {
 		p_file->seek ( 0, p_abort );
 		p_size_skipped = 0;
 		return;
 	}
 
-	if ( (tmp[6] | tmp[7] | tmp[8] | tmp[9]) & 0x80 ) { // not allowed
+	if ( (tmp[6] | tmp[7] | tmp[8] | tmp[9]) & 0x80 ) {
 		p_file->seek ( 0, p_abort );
 		p_size_skipped = 0;
 		return;
 	}
 
-	// read HeaderSize (syncsave: 4 * $0xxxxxxx = 28 significant bits)
 	t_uint32 ret;
 	ret  = tmp[6] << 21;
 	ret += tmp[7] << 14;

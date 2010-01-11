@@ -17,22 +17,38 @@ namespace foobar2000_io
 	//! Invalid/unknown file timestamp constant. Also see: t_filetimestamp.
 	const t_filetimestamp filetimestamp_invalid = 0;
 	//! Invalid/unknown file size constant. Also see: t_filesize.
-	const t_filesize filesize_invalid = (t_filesize)(-1);
+	const t_filesize filesize_invalid = (t_filesize)(~0);
 
 	//! Generic I/O error. Root class for I/O failure exception. See relevant default message for description of each derived exception class.
 	PFC_DECLARE_EXCEPTION(exception_io,						pfc::exception,"I/O error");
+	//! Object not found.
 	PFC_DECLARE_EXCEPTION(exception_io_not_found,			exception_io,"Object not found");
+	//! Access denied.
 	PFC_DECLARE_EXCEPTION(exception_io_denied,				exception_io,"Access denied");
+	//! Unsupported format or corrupted file (unexpected data encountered).
 	PFC_DECLARE_EXCEPTION(exception_io_data,				exception_io,"Unsupported format or corrupted file");
+	//! Unsupported format or corrupted file (truncation encountered).
 	PFC_DECLARE_EXCEPTION(exception_io_data_truncation,		exception_io_data,"Unsupported format or corrupted file");
+	//! Unsupported format.
+	PFC_DECLARE_EXCEPTION(exception_io_unsupported_format,	exception_io_data,"Unsupported file format");
+	//! Object is remote, while specific operation is supported only for local objects.
 	PFC_DECLARE_EXCEPTION(exception_io_object_is_remote,	exception_io,"This operation is not supported on remote objects");
+	//! Sharing violation.
 	PFC_DECLARE_EXCEPTION(exception_io_sharing_violation,	exception_io,"Sharing violation");
+	//! Device full.
 	PFC_DECLARE_EXCEPTION(exception_io_device_full,			exception_io,"Device full");
+	//! Attempt to seek outside valid range.
 	PFC_DECLARE_EXCEPTION(exception_io_seek_out_of_range,	exception_io,"Seek offset out of range");
+	//! This operation requires a seekable object.
 	PFC_DECLARE_EXCEPTION(exception_io_object_not_seekable,	exception_io,"Object is not seekable");
+	//! This operation requires an object with known length.
 	PFC_DECLARE_EXCEPTION(exception_io_no_length,			exception_io,"Length of object is unknown");
+	//! Invalid path.
 	PFC_DECLARE_EXCEPTION(exception_io_no_handler_for_path,	exception_io,"Invalid path");
+	//! Object already exists.
 	PFC_DECLARE_EXCEPTION(exception_io_already_exists,		exception_io,"Object already exists");
+	//! Pipe error.
+	PFC_DECLARE_EXCEPTION(exception_io_no_data,				exception_io,"The process receiving or sending data has terminated.");
 
 	//! Stores file stats (size and timestamp).
 	struct t_filestats {
@@ -136,7 +152,7 @@ namespace foobar2000_io
 		~stream_writer() {}
 	};
 
-	//! Primary class for file I/O. See also: stream_reader, stream_writer (which it inherits read/write methods from). \n
+	//! A class providing abstraction for an open file object, with reading/writing/seeking methods. See also: stream_reader, stream_writer (which it inherits read/write methods from). \n
 	//! Error handling: all methods may throw exception_io or one of derivatives on failure; exception_aborted when abort_callback is signaled.
 	class NOVTABLE file : public service_base, public stream_reader, public stream_writer {
 	public:
@@ -239,33 +255,20 @@ namespace foobar2000_io
 		//! Helper; improved performance over g_transfer_file on streams (avoids disk fragmentation when transferring large blocks).
 		static void g_transfer_object(service_ptr_t<file> p_src,service_ptr_t<file> p_dst,t_filesize p_bytes,abort_callback & p_abort);
 
-		static const GUID class_guid;
-
-		virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-			if (p_guid == class_guid) {p_out = this; return true;}
-			else return service_base::service_query(p_out,p_guid);
-		}
-	protected:
-		file() {}
-		~file() {}
+		FB2K_MAKE_SERVICE_INTERFACE(file,service_base);
 	};
 
 	//! Special hack for shoutcast metadata nonsense handling. Documentme.
 	class file_dynamicinfo : public file {
 	public:
+		//! Retrieves "static" info that doesn't change in the middle of stream, such as station names etc. Returns true on success; false when static info is not available.
 		virtual bool get_static_info(class file_info & p_out) = 0;
+		//! Returns whether dynamic info is available on this stream or not.
 		virtual bool is_dynamic_info_enabled()=0;
+		//! Retrieves dynamic stream info (e.g. online stream track titles). Returns true on success, false when info has not changed since last call.
 		virtual bool get_dynamic_info(class file_info & p_out) = 0;
 
-		static const GUID class_guid;
-
-		virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-			if (p_guid == class_guid) {p_out = this; return true;}
-			else return file::service_query(p_out,p_guid);
-		}
-	protected:
-		file_dynamicinfo() {}
-		~file_dynamicinfo() {}
+		FB2K_MAKE_SERVICE_INTERFACE(file_dynamicinfo,file);
 	};
 
 	//! Implementation helper - contains dummy implementations of methods that modify the file
@@ -285,11 +288,18 @@ namespace foobar2000_io
 	};
 
 
+	//! Entrypoint service for all filesystem operations.\n
+	//! Implementation: standard implementations for local filesystem etc are provided by core.\n
+	//! Instantiation: use static helper functions rather than calling filesystem interface methods directly, e.g. filesystem::g_open() to open a file.
 	class NOVTABLE filesystem : public service_base {
 	public:
+		//! Enumeration specifying how to open a file. See: filesystem::open(), filesystem::g_open().
 		enum t_open_mode {
+			//! Opens an existing file for reading; if the file does not exist, the operation will fail.
 			open_mode_read,
+			//! Opens an existing file for writing; if the file does not exist, the operation will fail.
 			open_mode_write_existing,
+			//! Opens a new file for writing; if the file exists, its contents will be wiped.
 			open_mode_write_new,
 		};
 
@@ -300,15 +310,17 @@ namespace foobar2000_io
 		virtual void open(service_ptr_t<file> & p_out,const char * p_path, t_open_mode p_mode,abort_callback & p_abort)=0;
 		virtual void remove(const char * p_path,abort_callback & p_abort)=0;
 		virtual void move(const char * p_src,const char * p_dst,abort_callback & p_abort)=0;
+		//! Queries whether a file at specified path belonging to this filesystem is a remove object or not.
 		virtual bool is_remote(const char * p_src) = 0;
 
+		//! Retrieves stats of a file at specified path.
 		virtual void get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort) = 0;
 		
 		virtual bool relative_path_create(const char * file_path,const char * playlist_path,pfc::string_base & out) {return 0;}
 		virtual bool relative_path_parse(const char * relative_path,const char * playlist_path,pfc::string_base & out) {return 0;}
 
 		//! Creates a directory.
-		virtual void create_directory(const char * path,abort_callback &) = 0;
+		virtual void create_directory(const char * p_path,abort_callback & p_abort) = 0;
 
 		virtual void list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort)=0;
 
@@ -324,47 +336,45 @@ namespace foobar2000_io
 		static bool g_is_remote_or_unrecognized(const char * p_path);
 		static bool g_is_recognized_path(const char * p_path);
 		
+		//! Opens file at specified path, with specified access privelages.
 		static void g_open(service_ptr_t<file> & p_out,const char * p_path,t_open_mode p_mode,abort_callback & p_abort);
-		static void g_open_ex(service_ptr_t<file> & p_out,const char * path,t_open_mode mode,abort_callback & p_abort);//get_canonical_path + open
+		//! Attempts to open file at specified path; if the operation fails with sharing violation error, keeps retrying (with short sleep period between retries) for specified amount of time.
+		static void g_open_timeout(service_ptr_t<file> & p_out,const char * p_path,t_open_mode p_mode,double p_timeout,abort_callback & p_abort);
 		static void g_open_write_new(service_ptr_t<file> & p_out,const char * p_path,abort_callback & p_abort);
 		static void g_open_read(service_ptr_t<file> & p_out,const char * path,abort_callback & p_abort) {return g_open(p_out,path,open_mode_read,p_abort);}
 		static void g_open_precache(service_ptr_t<file> & p_out,const char * path,abort_callback & p_abort);//open only for precaching data (eg. will fail on http etc)
 		static bool g_exists(const char * p_path,abort_callback & p_abort);
 		static bool g_exists_writeable(const char * p_path,abort_callback & p_abort);
+		//! Removes file at specified path.
 		static void g_remove(const char * p_path,abort_callback & p_abort);
-		static void g_move(const char * p_src,const char * p_dst,abort_callback & p_abort);//needs canonical path
-		static void g_move_ex(const char * p_src,const char * p_dst,abort_callback & p_abort);//converts to canonical path first
+		//! Attempts to remove file at specified path; if the operation fails with a sharing violation error, keeps retrying (with short sleep period between retries) for specified amount of time.
+		static void g_remove_timeout(const char * p_path,double p_timeout,abort_callback & p_abort);
+		//! Moves file from one path to another.
+		static void g_move(const char * p_src,const char * p_dst,abort_callback & p_abort);
+		//! Attempts to move file from one path to another; if the operation fails with a sharing violation error, keeps retrying (with short sleep period between retries) for specified amount of time.
+		static void g_move_timeout(const char * p_src,const char * p_dst,double p_timeout,abort_callback & p_abort);
+
 		static void g_copy(const char * p_src,const char * p_dst,abort_callback & p_abort);//needs canonical path
+		static void g_copy_timeout(const char * p_src,const char * p_dst,double p_timeout,abort_callback & p_abort);//needs canonical path
 		static void g_copy_directory(const char * p_src,const char * p_dst,abort_callback & p_abort);//needs canonical path
-		static void g_copy_ex(const char * p_src,const char * p_dst,abort_callback & p_abort);//converts to canonical path first
 		static void g_get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort);
-		static void g_get_stats_ex(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort);
 		static bool g_relative_path_create(const char * p_file_path,const char * p_playlist_path,pfc::string_base & out);
 		static bool g_relative_path_parse(const char * p_relative_path,const char * p_playlist_path,pfc::string_base & out);
 		
 		static void g_create_directory(const char * p_path,abort_callback & p_abort);
 
-		static FILE * streamio_open(const char * p_path,const char * p_flags); // if for some bloody reason you ever need stream io compatibility, use this, INSTEAD of calling fopen() on the path string you've got; will only work with file:// (and not with http://, unpack:// or whatever)
+		//! If for some bloody reason you ever need stream io compatibility, use this, INSTEAD of calling fopen() on the path string you've got; will only work with file:// (and not with http://, unpack:// or whatever)
+		static FILE * streamio_open(const char * p_path,const char * p_flags); 
 
 		static void g_open_temp(service_ptr_t<file> & p_out,abort_callback & p_abort);
 		static void g_open_tempmem(service_ptr_t<file> & p_out,abort_callback & p_abort);
 
 		static void g_list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort);// path must be canonical
-		static void g_list_directory_ex(const char * p_path,directory_callback & p_out,abort_callback & p_abort);// gets canonical path first
 
 		static bool g_is_valid_directory(const char * path,abort_callback & p_abort);
 		static bool g_is_empty_directory(const char * path,abort_callback & p_abort);
 
-
-		static const GUID class_guid;
-
-		virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-			if (p_guid == class_guid) {p_out = this; return true;}
-			else return service_base::service_query(p_out,p_guid);
-		}
-	protected:
-		filesystem() {}
-		~filesystem() {}
+		FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(filesystem);
 	};
 
 	class directory_callback_impl : public directory_callback
@@ -404,15 +414,7 @@ namespace foobar2000_io
 	public:
 		virtual void archive_list(const char * p_path,const service_ptr_t<file> & p_reader,archive_callback & p_callback,bool p_want_readers) = 0;
 		
-		static const GUID class_guid;
-
-		virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-			if (p_guid == class_guid) {p_out = this; return true;}
-			else return filesystem::service_query(p_out,p_guid);
-		}
-	protected:
-		archive() {}
-		~archive() {}
+		FB2K_MAKE_SERVICE_INTERFACE(archive,filesystem);
 	};
 
 	//! Root class for archive implementations. Derive from this instead of from archive directly.
@@ -447,10 +449,11 @@ namespace foobar2000_io
 		static void g_make_unpack_path(pfc::string_base & path,const char * archive,const char * file,const char * name);
 		void make_unpack_path(pfc::string_base & path,const char * archive,const char * file);
 
+		
 	};
 
 	template<typename T>
-	class archive_factory_t : public service_factory_single_t<filesystem,T> {};
+	class archive_factory_t : public service_factory_single_t<T> {};
 
 
 	t_filetimestamp filetimestamp_from_system_timer();
@@ -469,8 +472,6 @@ namespace foobar2000_io
 }
 
 using namespace foobar2000_io;
-
-//inline pfc::string_base & operator<<(pfc::string_base & p_fmt,t_filetimestamp p_timestamp) {return p_fmt << format_timestamp(p_timestamp);}
 
 #include "filesystem_helper.h"
 

@@ -10,18 +10,10 @@ public:
 	virtual void on_init() {}
 	virtual void on_quit() {}
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	initquit() {}
-	~initquit() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(initquit);
 };
 
-template<class T>
-class initquit_factory_t : public service_factory_single_t<initquit,T> {};
+template<typename T>
+class initquit_factory_t : public service_factory_single_t<T> {};
 
 #endif

@@ -24,19 +24,18 @@ protected:
 	~threaded_process_status() {}
 };
 
-class NOVTABLE threaded_process_callback
+
+class NOVTABLE threaded_process_callback : public service_base
 {
 public:
 	virtual void on_init(HWND p_wnd) {}
 	virtual void run(threaded_process_status & p_status,abort_callback & p_abort) = 0;
 	virtual void on_done(HWND p_wnd,bool p_was_aborted) {}
-protected:
-	threaded_process_callback() {}
-	~threaded_process_callback() {}
+
+	FB2K_MAKE_SERVICE_INTERFACE(threaded_process_callback,service_base);
 };
 
-class NOVTABLE threaded_process : public service_base
-{
+class NOVTABLE threaded_process : public service_base {
 public:
 	enum {
 		flag_show_abort			= 1,
@@ -49,21 +48,13 @@ public:
 		flag_show_delayed		= 1 << 7,//modeless-only
 	};
 
-	virtual bool run_modal(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len) = 0;
-	virtual bool run_modeless(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len) = 0;
+	virtual bool run_modal(service_ptr_t<threaded_process_callback> p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len) = 0;
+	virtual bool run_modeless(service_ptr_t<threaded_process_callback> p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len) = 0;
 
-	static bool g_run_modal(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len = infinite);
-	static bool g_run_modeless(threaded_process_callback & p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len = infinite);
+	static bool g_run_modal(service_ptr_t<threaded_process_callback> p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len = infinite);
+	static bool g_run_modeless(service_ptr_t<threaded_process_callback> p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len = infinite);
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	threaded_process() {}
-	~threaded_process() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(threaded_process);
 };
 
 

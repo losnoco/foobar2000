@@ -18,15 +18,7 @@ public:
 	static void g_on_files_copied(const pfc::list_base_const_t<const char *> & p_from,const pfc::list_base_const_t<const char *> & p_to);
 
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	file_operation_callback() {}
-	~file_operation_callback() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(file_operation_callback);
 };
 
 

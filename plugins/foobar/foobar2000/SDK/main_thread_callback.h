@@ -1,23 +1,20 @@
-class NOVTABLE main_thread_callback {
+//! Callback object class for main_thread_callback_manager service.
+class NOVTABLE main_thread_callback : public service_base {
 public:
+	//! Gets called from main app thread. See main_thread_callback_manager description for more info.
 	virtual void callback_run() = 0;
-protected:
-	main_thread_callback() {}
-	~main_thread_callback() {}
+
+	FB2K_MAKE_SERVICE_INTERFACE(main_thread_callback,service_base);
 };
 
+/*!
+Allows you to queue a callback object to be called from main app thread. This is commonly used to trigger main-thread-only API calls from worker threads.\n
+This can be also used from main app thread, to avoid race conditions when trying to use APIs that dispatch global callbacks from inside some other global callback.
+*/
 class NOVTABLE main_thread_callback_manager : public service_base {
 public:
-	virtual void add_callback(main_thread_callback * p_callback) = 0;
-	virtual void flush() = 0;
+	//! Queues a callback object. This can be called from any thread, implementation ensures multithread safety. Implementation will call p_callback->callback_run() later.
+	virtual void add_callback(service_ptr_t<main_thread_callback> p_callback) = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	main_thread_callback_manager() {}
-	~main_thread_callback_manager() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(main_thread_callback_manager);
 };

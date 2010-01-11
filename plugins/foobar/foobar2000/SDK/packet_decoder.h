@@ -67,16 +67,7 @@ public:
 	//property_signed : if (param1) signed; else unsigned;
 
 
-	static const GUID class_guid;
-	
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-
-protected:
-	packet_decoder() {}
-	~packet_decoder() {}
+	FB2K_MAKE_SERVICE_INTERFACE(packet_decoder,service_base);
 };
 
 class packet_decoder_streamparse : public packet_decoder
@@ -85,16 +76,7 @@ public:
 	virtual void decode_ex(const void * p_buffer,t_size p_bytes,t_size & p_bytes_processed,audio_chunk & p_chunk,abort_callback & p_abort) = 0;
 	virtual void analyze_first_frame_ex(const void * p_buffer,t_size p_bytes,t_size & p_bytes_processed,abort_callback & p_abort) = 0;
 
-	static const GUID class_guid;
-	
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return packet_decoder::service_query(p_out,p_guid);
-	}
-
-protected:
-	packet_decoder_streamparse() {}
-	~packet_decoder_streamparse() {}
+	FB2K_MAKE_SERVICE_INTERFACE(packet_decoder_streamparse,packet_decoder);
 };
 
 class packet_decoder_entry : public service_base
@@ -102,16 +84,8 @@ class packet_decoder_entry : public service_base
 public:
 	virtual bool is_our_setup(const GUID & p_owner,t_size p_param1,const void * p_param2,t_size p_param2size) = 0;
 	virtual void open(service_ptr_t<packet_decoder> & p_out,bool p_decode,const GUID & p_owner,t_size p_param1,const void * p_param2,t_size p_param2size,abort_callback & p_abort) = 0;
-	
-	static const GUID class_guid;
-	
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	packet_decoder_entry() {}
-	~packet_decoder_entry() {}
+
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(packet_decoder_entry);
 };
 
 
@@ -130,5 +104,5 @@ public:
 	}
 };
 
-template<class T>
-class packet_decoder_factory_t : public service_factory_single_t<packet_decoder_entry,packet_decoder_entry_impl_t<T> > {};
+template<typename T>
+class packet_decoder_factory_t : public service_factory_single_t<packet_decoder_entry_impl_t<T> > {};

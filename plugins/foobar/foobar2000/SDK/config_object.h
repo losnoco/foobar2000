@@ -10,15 +10,7 @@ public:
 	static void g_on_changed(const service_ptr_t<config_object> & p_object);
 
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	config_object_notify_manager() {}
-	~config_object_notify_manager() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(config_object_notify_manager);
 };
 
 class NOVTABLE config_object : public service_base
@@ -61,15 +53,8 @@ public:
 	static bool g_get_data_bool_simple(const GUID & p_guid,bool p_default);
 	static t_int32 g_get_data_int32_simple(const GUID & p_guid,t_int32 p_default);
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	config_object() {}
-	~config_object() {}
+	
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(config_object);
 };
 
 class standard_config_objects
@@ -94,15 +79,7 @@ public:
 	virtual GUID get_watched_object(t_size p_index) = 0;
 	virtual void on_watched_object_changed(const service_ptr_t<config_object> & p_object) = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	config_object_notify() {}
-	~config_object_notify() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(config_object_notify);
 };
 
 #endif _CONFIG_OBJECT_H_

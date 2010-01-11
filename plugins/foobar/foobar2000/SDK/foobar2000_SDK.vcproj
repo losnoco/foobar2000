@@ -69,6 +69,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="..\shared\shared.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -136,6 +137,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="..\shared\shared.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -1316,44 +1318,6 @@
 				>
 			</File>
 			<File
-				RelativePath="output.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="packet_decoder.cpp"
 				>
 				<FileConfiguration
@@ -2220,10 +2184,6 @@
 			</File>
 			<File
 				RelativePath=".\ogg_stream_handler.h"
-				>
-			</File>
-			<File
-				RelativePath="output.h"
 				>
 			</File>
 			<File

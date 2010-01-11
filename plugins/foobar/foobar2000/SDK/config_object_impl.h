@@ -46,7 +46,7 @@ private:
 	pfc::array_t<t_uint8> m_data;	
 };
 
-typedef service_factory_single_transparent_t<config_object,config_object_impl> config_object_factory;
+typedef service_factory_single_transparent_t<config_object_impl> config_object_factory;
 
 template<t_size p_size>
 class config_object_fixed_impl_t : public config_object, private cfg_var
@@ -90,12 +90,12 @@ private:
 
 
 template<t_size p_size>
-class config_object_fixed_factory_t : public service_factory_single_transparent_t<config_object,config_object_fixed_impl_t<p_size> >
+class config_object_fixed_factory_t : public service_factory_single_transparent_t<config_object_fixed_impl_t<p_size> >
 {
 public:
 	config_object_fixed_factory_t(const GUID & p_guid,const void * p_initval)
 		:
-		service_factory_single_transparent_t<config_object,config_object_fixed_impl_t<p_size> >
+		service_factory_single_transparent_t<config_object_fixed_impl_t<p_size> >
 		(p_guid,p_initval)
 	{}
 };
@@ -152,6 +152,6 @@ private:
 	t_func m_func;	
 };
 
-typedef service_factory_single_transparent_t<config_object_notify,config_object_notify_impl_simple> config_object_notify_simple_factory;
+typedef service_factory_single_transparent_t<config_object_notify_impl_simple> config_object_notify_simple_factory;
 
 #endif _CONFIG_OBJECT_IMPL_H_

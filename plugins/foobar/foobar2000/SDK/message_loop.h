@@ -19,13 +19,5 @@ public:
     virtual void add_idle_handler(idle_handler * ptr) = 0;
     virtual void remove_idle_handle(idle_handler * ptr) = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	message_loop() {}
-	~message_loop() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(message_loop);
 };

@@ -83,6 +83,7 @@ namespace pfc
 	}
 };
 
+//! Implements file_info.
 class file_info_impl : public file_info
 {
 public:

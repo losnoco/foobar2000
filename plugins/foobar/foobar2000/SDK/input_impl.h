@@ -312,16 +312,16 @@ public:
 
 //! Stardard input factory. For reference of functions that must be supported by registered class, see input_impl.\n Usage: static input_factory_t<myinputclass> g_myinputclass_factory;\n Note that input classes can't be registered through service_factory_t template directly.
 template<class T>
-class input_factory_t : public service_factory_single_t<input_entry,input_entry_impl_t<T,0> > {};
+class input_factory_t : public service_factory_single_t<input_entry_impl_t<T,0> > {};
 
 //! Non-multitrack-enabled input factory (helper) - hides multitrack management functions from input implementation; use this for inputs that handle file types where each physical file can contain only one user-visible playable track. For reference of functions that must be supported by registered class, see input_singletrack_impl.\n Usage: static input_singletrack_factory_t<myinputclass> g_myinputclass_factory;\n Note that input classes can't be registered through service_factory_t template directly.template<class T>
 template<class T>
-class input_singletrack_factory_t : public service_factory_single_t<input_entry,input_entry_impl_t<input_wrapper_singletrack_t<T>,0> > {};
+class input_singletrack_factory_t : public service_factory_single_t<input_entry_impl_t<input_wrapper_singletrack_t<T>,0> > {};
 
 //! Extended version of input_factory_t, with non-default flags. See: input_factory_t, input_entry::get_flags().
 template<class T,unsigned t_flags>
-class input_factory_ex_t : public service_factory_single_t<input_entry,input_entry_impl_t<T,t_flags> > {};
+class input_factory_ex_t : public service_factory_single_t<input_entry_impl_t<T,t_flags> > {};
 
 //! Extended version of input_singletrack_factory_t, with non-default flags. See: input_singletrack_factory_t, input_entry::get_flags().
 template<class T,unsigned t_flags>
-class input_singletrack_factory_ex_t : public service_factory_single_t<input_entry,input_entry_impl_t<input_wrapper_singletrack_t<T>,t_flags> > {};
+class input_singletrack_factory_ex_t : public service_factory_single_t<input_entry_impl_t<input_wrapper_singletrack_t<T>,t_flags> > {};

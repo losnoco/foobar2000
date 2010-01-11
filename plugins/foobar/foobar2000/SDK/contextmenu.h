@@ -4,19 +4,16 @@
 typedef void * t_glyph;
 
 
-class NOVTABLE contextmenu_item_node
-{
+class NOVTABLE contextmenu_item_node {
 public:
-	enum t_flags
-	{
+	enum t_flags {
 		FLAG_CHECKED = 1,
 		FLAG_DISABLED = 2,
 		FLAG_GRAYED = 4,
 		FLAG_DISABLED_GRAYED = FLAG_DISABLED|FLAG_GRAYED,
 	};
 
-	enum t_type
-	{
+	enum t_type {
 		TYPE_POPUP,TYPE_COMMAND,TYPE_SEPARATOR
 	};
 
@@ -89,17 +86,18 @@ public:
 	contextmenu_item_node * get_child(t_size) {return NULL;}
 };
 
-class NOVTABLE contextmenu_item : public service_base
-{
+/*!
+Service class for declaring context menu commands.\n
+See contextmenu_item_simple for implementation helper without dynamic menu generation features.\n
+All methods are valid from main app thread only.
+*/
+class NOVTABLE contextmenu_item : public service_base {
 public:
-
 	enum t_enabled_state {
 		FORCE_OFF,
 		DEFAULT_OFF,
 		DEFAULT_ON,
-		
 	};
-
 
 	virtual unsigned get_num_items() = 0;
 	virtual contextmenu_item_node_root * instantiate_item(unsigned p_index,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller) = 0;
@@ -118,18 +116,10 @@ public:
 	static const GUID caller_undefined;
 	static const GUID caller_keyboard_shortcut_list;
 
-
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	contextmenu_item() {}
-	~contextmenu_item() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(contextmenu_item);
 };
 
+//! contextmenu_item implementation helper for implementing non-dynamically-generated context menu items; derive from this instead of from contextmenu_item directly if your menu items are static.
 class NOVTABLE contextmenu_item_simple : public contextmenu_item
 {
 private:
@@ -146,7 +136,7 @@ private:
 		service_ptr_t<contextmenu_item_simple> m_owner;
 		unsigned m_index;
 	};
-protected:
+
 	contextmenu_item_node_root * instantiate_item(unsigned p_index,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
 	{
 		return new contextmenu_item_node_impl(this,p_index);
@@ -165,7 +155,6 @@ protected:
 	}
 
 
-private:
 	virtual bool get_display_data(unsigned n,const pfc::list_base_const_t<metadb_handle_ptr> & data,pfc::string_base & p_out,unsigned & displayflags,const GUID & caller)
 	{
 		bool rv = false;
@@ -177,6 +166,7 @@ private:
 		return rv;
 	}
 public:
+	//! Same as contextmenu_item_node::t_flags.
 	enum t_flags
 	{
 		FLAG_CHECKED = 1,
@@ -185,10 +175,8 @@ public:
 		FLAG_DISABLED_GRAYED = FLAG_DISABLED|FLAG_GRAYED,
 	};
 
-	//override these
-
+	
 	virtual t_enabled_state get_enabled_state(unsigned p_index) {return contextmenu_item::DEFAULT_ON;}
-
 	virtual unsigned get_num_items()=0;
 	virtual void get_item_name(unsigned p_index,pfc::string_base & p_out)=0;
 	virtual void get_item_default_path(unsigned p_index,pfc::string_base & p_out) = 0;
@@ -204,10 +192,8 @@ public:
 };
 
 
-
-template<class T>
-class contextmenu_item_factory_t : public service_factory_single_t<contextmenu_item,T> {};
-
+template<typename T>
+class contextmenu_item_factory_t : public service_factory_single_t<T> {};
 
 
 #endif //_FOOBAR2000_MENU_ITEM_H_

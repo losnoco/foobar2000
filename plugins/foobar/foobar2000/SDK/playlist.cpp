@@ -91,25 +91,25 @@ void playlist_manager::playlist_get_all_items(t_size p_playlist,pfc::list_base_t
 
 void playlist_manager::playlist_get_selected_items(t_size p_playlist,pfc::list_base_t<metadb_handle_ptr> & out)
 {
-	playlist_enum_items(p_playlist,&enum_items_callback_retrieve_selected_items(out),bit_array_true());
+	playlist_enum_items(p_playlist,enum_items_callback_retrieve_selected_items(out),bit_array_true());
 }
 
 void playlist_manager::playlist_get_selection_mask(t_size p_playlist,bit_array_var & out)
 {
-	playlist_enum_items(p_playlist,&enum_items_callback_retrieve_selection_mask(out),bit_array_true());
+	playlist_enum_items(p_playlist,enum_items_callback_retrieve_selection_mask(out),bit_array_true());
 }
 
 bool playlist_manager::playlist_is_item_selected(t_size p_playlist,t_size p_item)
 {
 	enum_items_callback_retrieve_selection callback;
-	playlist_enum_items(p_playlist,&callback,bit_array_one(p_item));
+	playlist_enum_items(p_playlist,callback,bit_array_one(p_item));
 	return callback.get_state();
 }
 
 bool playlist_manager::playlist_get_item_handle(metadb_handle_ptr & p_out,t_size p_playlist,t_size p_item)
 {
 	enum_items_callback_retrieve_item callback;
-	playlist_enum_items(p_playlist,&callback,bit_array_one(p_item));
+	playlist_enum_items(p_playlist,callback,bit_array_one(p_item));
 	p_out = callback.get_item();
 	return p_out.is_valid();
 }
@@ -172,7 +172,7 @@ t_size playlist_manager::activeplaylist_get_item_count()
 	else return playlist_get_item_count(playlist);
 }
 
-void playlist_manager::activeplaylist_enum_items(enum_items_callback * p_callback,const bit_array & p_mask)
+void playlist_manager::activeplaylist_enum_items(enum_items_callback & p_callback,const bit_array & p_mask)
 {
 	t_size playlist = get_active_playlist();
 	if (playlist != infinite) playlist_enum_items(playlist,p_callback,p_mask);
@@ -283,12 +283,6 @@ void playlist_manager::activeplaylist_get_selected_items(pfc::list_base_t<metadb
 	t_size playlist = get_active_playlist();
 	if (playlist != infinite) playlist_get_selected_items(playlist,out);
 }
-
-bool playlist_manager::g_get(service_ptr_t<playlist_manager> & p_out)
-{
-	return service_enum_create_t(p_out,0);
-}
-
 
 bool playlist_manager::remove_playlist(t_size idx)
 {
@@ -446,7 +440,7 @@ void playlist_manager::activeplaylist_set_selection_single(t_size p_item,bool p_
 t_size playlist_manager::playlist_get_selection_count(t_size p_playlist,t_size p_max)
 {
 	enum_items_callback_count_selection callback(p_max);
-	playlist_enum_items(p_playlist,&callback,bit_array_true());
+	playlist_enum_items(p_playlist,callback,bit_array_true());
 	return callback.get_count();
 }
 
@@ -510,7 +504,7 @@ bool playlist_manager::highlight_playing_item()
 
 void playlist_manager::playlist_get_items(t_size p_playlist,pfc::list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask)
 {
-	playlist_enum_items(p_playlist,&enum_items_callback_retrieve_all_items(out),p_mask);
+	playlist_enum_items(p_playlist,enum_items_callback_retrieve_all_items(out),p_mask);
 }
 
 void playlist_manager::activeplaylist_get_items(pfc::list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask)
@@ -567,7 +561,7 @@ void playlist_manager::remove_items_from_all_playlists(const pfc::list_base_cons
 			if (playlist_item_count == infinite) break;
 			bit_array_bittable table(playlist_item_count);
 			enum_items_callback_remove_list callback(temp,table);
-			playlist_enum_items(playlist_num,&callback,bit_array_true());
+			playlist_enum_items(playlist_num,callback,bit_array_true());
 			if (callback.get_found()>0)
 				playlist_remove_items(playlist_num,table);
 		}
@@ -581,7 +575,7 @@ bool playlist_manager::get_all_items(pfc::list_base_t<metadb_handle_ptr> & out)
 	enum_items_callback_retrieve_all_items callback(out);
 	for(n=0;n<m;n++)
 	{
-		playlist_enum_items(n,&callback,bit_array_true());
+		playlist_enum_items(n,callback,bit_array_true());
 	}
 	return true;
 }
@@ -636,16 +630,6 @@ bool t_playback_queue_item::operator==(const t_playback_queue_item & p_item) con
 bool t_playback_queue_item::operator!=(const t_playback_queue_item & p_item) const
 {
 	return m_handle != p_item.m_handle || m_playlist != p_item.m_playlist || m_item != p_item.m_item;
-}
-
-
-void playlist_manager::queue_flush()
-{
-	return queue_remove_mask(bit_array_true());
-}
-bool playlist_manager::queue_is_active()
-{
-	return queue_get_count() > 0;
 }
 
 

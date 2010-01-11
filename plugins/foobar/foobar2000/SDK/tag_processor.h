@@ -27,21 +27,12 @@ public:
 	virtual void write(const service_ptr_t<file> & p_file,const file_info & p_info,abort_callback & p_abort) = 0;
 	virtual void write_ex(tag_write_callback & p_callback,const service_ptr_t<file> & p_file,const file_info & p_info,abort_callback & p_abort) = 0;
 
-	//note, tag_processor_id3v2 service is not always present; methods to skip/remove id3v2 are implemented in static helper functions below
 	static bool g_get(service_ptr_t<tag_processor_id3v2> & p_out);
 	static void g_skip(const service_ptr_t<file> & p_file,t_filesize & p_size_skipped,abort_callback & p_abort);
 	static void g_remove(const service_ptr_t<file> & p_file,t_filesize & p_size_removed,abort_callback & p_abort);
 	static void g_remove_ex(tag_write_callback & p_callback,const service_ptr_t<file> & p_file,t_filesize & p_size_removed,abort_callback & p_abort);
 
-	static const GUID class_guid;
-	
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	tag_processor_id3v2() {}
-	~tag_processor_id3v2() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(tag_processor_id3v2);
 };
 
 class NOVTABLE tag_processor_trailing : public service_base
@@ -62,17 +53,9 @@ public:
 	void write_id3v1(const service_ptr_t<file> & p_file,const file_info & p_info,abort_callback & p_abort);
 	void write_apev2(const service_ptr_t<file> & p_file,const file_info & p_info,abort_callback & p_abort);
 	void write_apev2_id3v1(const service_ptr_t<file> & p_file,const file_info & p_info,abort_callback & p_abort);
-	
 
-	static const GUID class_guid;
-	
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	tag_processor_trailing() {}
-	~tag_processor_trailing() {}
+
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(tag_processor_trailing);
 };
 
 namespace tag_processor

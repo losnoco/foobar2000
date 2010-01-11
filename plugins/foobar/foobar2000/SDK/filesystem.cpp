@@ -24,7 +24,7 @@ void file::seek_ex(t_sfilesize p_position, file::t_seek_mode p_mode, abort_callb
 		seek(p_position + get_position(p_abort),p_abort);
 		break;
 	case seek_from_eof:
-		seek(p_position + get_size(p_abort),p_abort);
+		seek(p_position + get_size_ex(p_abort),p_abort);
 		break;
 	default:
 		throw exception_io_data();
@@ -106,11 +106,18 @@ void filesystem::g_open(service_ptr_t<file> & p_out,const char * path,t_open_mod
 	fs->open(p_out,path,mode,p_abort);
 }
 
-void filesystem::g_open_ex(service_ptr_t<file> & p_out,const char * path,t_open_mode mode,abort_callback & p_abort)
-{
-	pfc::string8 path_c;
-	g_get_canonical_path(path,path_c);
-	g_open(p_out,path_c,mode,p_abort);
+void filesystem::g_open_timeout(service_ptr_t<file> & p_out,const char * p_path,t_open_mode p_mode,double p_timeout,abort_callback & p_abort) {
+	pfc::lores_timer timer;
+	timer.start();
+	for(;;) {
+		try {
+			g_open(p_out,p_path,p_mode,p_abort);
+			break;
+		} catch(exception_io_sharing_violation) {
+			if (timer.query() > p_timeout) throw;
+			p_abort.sleep(0.01);
+		}
+	}
 }
 
 bool filesystem::g_exists(const char * p_path,abort_callback & p_abort)
@@ -119,7 +126,7 @@ bool filesystem::g_exists(const char * p_path,abort_callback & p_abort)
 	bool dummy;
 	try {
 		g_get_stats(p_path,stats,dummy,p_abort);
-	} catch(std::exception const &) {return false;}
+	} catch(exception_io_not_found) {return false;}
 	return true;
 }
 
@@ -129,7 +136,7 @@ bool filesystem::g_exists_writeable(const char * p_path,abort_callback & p_abort
 	bool writeable;
 	try {
 		g_get_stats(p_path,stats,writeable,p_abort);
-	} catch(std::exception const &) {return false;}
+	} catch(exception_io_not_found) {return false;}
 	return writeable;
 }
 
@@ -139,6 +146,48 @@ void filesystem::g_remove(const char * path,abort_callback & p_abort) {
 	service_ptr_t<filesystem> fs;
 	if (!g_get_interface(fs,path_c)) throw exception_io_no_handler_for_path();
 	fs->remove(path_c,p_abort);
+}
+
+void filesystem::g_remove_timeout(const char * p_path,double p_timeout,abort_callback & p_abort) {
+	pfc::lores_timer timer;
+	timer.start();
+	for(;;) {
+		try {
+			g_remove(p_path,p_abort);
+			break;
+		} catch(exception_io_sharing_violation) {
+			if (timer.query() > p_timeout) throw;
+			p_abort.sleep(0.01);
+		}
+	}
+}
+
+void filesystem::g_move_timeout(const char * p_src,const char * p_dst,double p_timeout,abort_callback & p_abort) {
+	pfc::lores_timer timer;
+	timer.start();
+	for(;;) {
+		try {
+			g_move(p_src,p_dst,p_abort);
+			break;
+		} catch(exception_io_sharing_violation) {
+			if (timer.query() > p_timeout) throw;
+			p_abort.sleep(0.01);
+		}
+	}
+}
+
+void filesystem::g_copy_timeout(const char * p_src,const char * p_dst,double p_timeout,abort_callback & p_abort) {
+	pfc::lores_timer timer;
+	timer.start();
+	for(;;) {
+		try {
+			g_copy(p_src,p_dst,p_abort);
+			break;
+		} catch(exception_io_sharing_violation) {
+			if (timer.query() > p_timeout) throw;
+			p_abort.sleep(0.01);
+		}
+	}
 }
 
 void filesystem::g_create_directory(const char * path,abort_callback & p_abort)
@@ -160,21 +209,6 @@ void filesystem::g_move(const char * src,const char * dst,abort_callback & p_abo
 		}
 	} while(e.next(ptr));
 	throw exception_io_no_handler_for_path();
-}
-
-void filesystem::g_move_ex(const char * _src,const char * _dst,abort_callback & p_abort)
-{
-	pfc::string8 src,dst;
-	g_get_canonical_path(_src,src);
-	g_get_canonical_path(_dst,dst);
-	return g_move(src,dst,p_abort);
-}
-
-void filesystem::g_list_directory_ex(const char * p_path,directory_callback & p_out,abort_callback & p_abort)
-{
-	pfc::string8 path_c;
-	g_get_canonical_path(p_path,path_c);
-	g_list_directory(path_c,p_out,p_abort);
 }
 
 void filesystem::g_list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort)
@@ -501,8 +535,7 @@ void filesystem::g_copy(const char * src,const char * dst,abort_callback & p_abo
 	t_filesize size;
 
 	g_open(r_src,src,open_mode_read,p_abort);
-	size = r_src->get_size(p_abort);
-	if (size == filesize_invalid) throw exception_io_no_length();
+	size = r_src->get_size_ex(p_abort);
 	g_open(r_dst,dst,open_mode_write_new,p_abort);
 	
 	if (size > 0) {
@@ -514,13 +547,6 @@ void filesystem::g_copy(const char * src,const char * dst,abort_callback & p_abo
 			throw;
 		}
 	}
-}
-
-void filesystem::g_copy_ex(const char * _src,const char * _dst,abort_callback & p_abort) {
-	pfc::string8 src,dst;
-	g_get_canonical_path(_src,src);
-	g_get_canonical_path(_dst,dst);
-	g_copy(src,dst,p_abort);
 }
 
 void stream_reader::read_object(void * p_buffer,t_size p_bytes,abort_callback & p_abort) {
@@ -559,9 +585,7 @@ void filesystem::g_open_write_new(service_ptr_t<file> & p_out,const char * p_pat
 	g_open(p_out,p_path,open_mode_write_new,p_abort);
 }
 void file::g_transfer_file(const service_ptr_t<file> & p_from,const service_ptr_t<file> & p_to,abort_callback & p_abort) {
-	t_filesize length;
-	length = p_from->get_size(p_abort);
-	if (length == filesize_invalid) throw exception_io_no_length();
+	t_filesize length = p_from->get_size_ex(p_abort);
 	p_from->seek(0,p_abort);
 	p_to->seek(0,p_abort);
 	p_to->set_eof(p_abort);
@@ -591,12 +615,6 @@ void filesystem::g_get_stats(const char * p_path,t_filestats & p_stats,bool & p_
 	service_ptr_t<filesystem> fs;
 	if (!g_get_interface(fs,p_path)) throw exception_io_no_handler_for_path();
 	return fs->get_stats(p_path,p_stats,p_is_writeable,p_abort);
-}
-
-void filesystem::g_get_stats_ex(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort) {
-	pfc::string8 path_c;
-	g_get_canonical_path(p_path,path_c);
-	g_get_stats(path_c,p_stats,p_is_writeable,p_abort);
 }
 
 void archive_impl::get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort) {
@@ -693,12 +711,16 @@ void foobar2000_io::exception_io_from_win32(DWORD p_code) {
 	case ERROR_PATH_BUSY:
 		throw exception_io_denied();
 	case ERROR_SHARING_VIOLATION:
+	case ERROR_LOCK_VIOLATION:
 		throw exception_io_sharing_violation();
 	default:
 		throw exception_io(pfc::string_formatter() << "I/O error (win32 #" << (t_uint32)p_code << ")");
 	case ERROR_FILE_NOT_FOUND:
 	case ERROR_PATH_NOT_FOUND:
 		throw exception_io_not_found();
+	case ERROR_BROKEN_PIPE:
+	case ERROR_NO_DATA:
+		throw exception_io_no_data();
 	}
 }
 #endif

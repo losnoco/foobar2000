@@ -1,9 +1,9 @@
 #ifndef _METADB_H_
 #define _METADB_H_
 
-#include "metadb_handle.h"
-
-//! API for tag read/write operations. Legal to call from main thread only, except for hint_multi_async() / hint_async().
+//! API for tag read/write operations. Legal to call from main thread only, except for hint_multi_async() / hint_async().\n
+//! Implemented only by core, do not reimplement.\n
+//! Use static_api_ptr_t template to access metadb_io methods.
 class NOVTABLE metadb_io : public service_base
 {
 public:
@@ -57,34 +57,19 @@ public:
 	t_load_info_state load_info(metadb_handle_ptr p_item,t_load_info_type p_type,HWND p_parent_window,bool p_show_errors);
 	t_update_info_state update_info(metadb_handle_ptr p_item,file_info & p_info,HWND p_parent_window,bool p_show_errors);
 	
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	metadb_io() {}
-	~metadb_io() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(metadb_io);
 };
 
-class NOVTABLE metadb_io_callback : public service_base
-{
+class NOVTABLE metadb_io_callback : public service_base {
 public:
 	virtual void on_changed_sorted(const pfc::list_base_const_t<metadb_handle_ptr> & p_items_sorted, bool p_fromhook) = 0;//items are always sorted by pointer value
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	metadb_io_callback() {}
-	~metadb_io_callback() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(metadb_io_callback);
 };
 
-//only one implementation in main exe, do not derive from this
+//! Entrypoint service for metadb_handle related operations.\n
+//! Implemented only by core, do not reimplement.\n
+//! Use static_api_ptr_t template to access it, e.g. static_api_ptr_t<metadb>()->handle_create(myhandle,mylocation);
 class NOVTABLE metadb : public service_base
 {
 public:
@@ -99,12 +84,13 @@ public:
 	//! @returns true on success, false on failure (rare).
 	virtual void handle_create(metadb_handle_ptr & p_out,const playable_location & p_location)=0;
 
-	void handle_create_replace_path_canonical(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path);//should never fail
+	void handle_create_replace_path_canonical(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path);
 	void handle_replace_path_canonical(metadb_handle_ptr & p_out,const char * p_new_path);
-	void handle_create_replace_path(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path);//should never fail
+	void handle_create_replace_path(metadb_handle_ptr & p_out,const metadb_handle_ptr & p_source,const char * p_new_path);
 
+	//! Helper function; attempts to retrieve a handle to any known playable location to be used for e.g. titleformatting script preview.\n
+	//! @returns True on success; false on failure (no known playable locations).
 	static bool g_get_random_handle(metadb_handle_ptr & p_out);
-
 
 	enum {case_sensitive = true};
 
@@ -112,17 +98,7 @@ public:
 	inline static int path_compare(const char * p1,const char * p2) {return case_sensitive ? strcmp(p1,p2) : stricmp_utf8(p1,p2);}
 	inline static int path_compare_metadb_handle(const metadb_handle_ptr & p1,const metadb_handle_ptr & p2) {return path_compare(p1->get_path(),p2->get_path());}
 
-	static bool g_get(service_ptr_t<metadb> & p_out);//should never fail
-
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	metadb() {}
-	~metadb() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(metadb);
 };
 
 
@@ -166,7 +142,6 @@ public:
 	{
 		write_ok,
 		write_aborted,
-		write_busy,
 		write_error
 	};
 	t_write_result write_infos(HWND p_parent,bool p_show_errors);
@@ -203,15 +178,7 @@ public:
 	virtual bool process_field(metadb_handle * p_handle,titleformat_text_out * p_out,const char * p_name,t_size p_name_length,bool & p_found_flag) = 0;
 	virtual bool process_function(metadb_handle * p_handle,titleformat_text_out * p_out,const char * p_name,t_size p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag) = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	metadb_display_hook() {}
-	~metadb_display_hook() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(metadb_display_hook);
 };
 
 

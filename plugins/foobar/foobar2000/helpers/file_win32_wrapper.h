@@ -34,8 +34,17 @@ public:
 	{
 	}
 
-	static void g_create(service_ptr_t<file> & p_out,HANDLE p_handle) {
-		p_out = new service_impl_t<file_win32_wrapper_t<p_seekable,p_writeable> >(p_handle);
+	static service_ptr_t<file> g_CreateFile(const char * p_path,DWORD p_access,DWORD p_sharemode,LPSECURITY_ATTRIBUTES p_security_attributes,DWORD p_createmode,DWORD p_flags,HANDLE p_template) {
+		SetLastError(NO_ERROR);
+		HANDLE handle = uCreateFile(p_path,p_access,p_sharemode,p_security_attributes,p_createmode,p_flags,p_template);
+		if (handle == INVALID_HANDLE_VALUE) exception_io_from_win32(GetLastError());
+		try {
+			return g_create_from_handle(handle);
+		} catch(...) {CloseHandle(handle); throw;}
+	}
+
+	static service_ptr_t<file> g_create_from_handle(HANDLE p_handle) {
+		return new service_impl_t<file_win32_wrapper_t<p_seekable,p_writeable> >(p_handle);
 	}
 
 

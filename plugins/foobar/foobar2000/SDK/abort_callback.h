@@ -19,6 +19,7 @@ public:
 	//! Returns whether user has requested the operation to be aborted.
 	virtual bool is_aborting() const = 0;
 
+	//! Retrieves event object that can be used with some OS calls. The even object becomes signaled when abort is triggered. On win32, this is equivalent to win32 event handle (see: CreateEvent).
 	virtual abort_callback_event get_abort_event() const = 0;
 	
 	//! Checks if user has requested the operation to be aborted, and throws exception_aborted if so.

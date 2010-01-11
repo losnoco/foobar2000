@@ -1,8 +1,3 @@
-#ifndef _DSP_MANAGER_H_
-#define _DSP_MANAGER_H_
-
-#include "dsp.h"
-
 class dsp_manager
 {
 public:
@@ -35,15 +30,7 @@ public:
 	virtual void configure_embedded_retrieve(HWND wnd,dsp_chain_config & p_data) = 0;
 	virtual void configure_embedded_change(HWND wnd,const dsp_chain_config & p_data) = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	dsp_config_manager() {}
-	~dsp_config_manager() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(dsp_config_manager);
 };
 
 class NOVTABLE dsp_config_callback : public service_base
@@ -51,16 +38,5 @@ class NOVTABLE dsp_config_callback : public service_base
 public:
 	virtual void on_core_settings_change(const dsp_chain_config & p_newdata) = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	dsp_config_callback() {}
-	~dsp_config_callback() {}
-
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(dsp_config_callback);
 };
-
-#endif

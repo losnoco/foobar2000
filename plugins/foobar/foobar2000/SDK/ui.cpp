@@ -33,6 +33,3 @@ bool user_interface::g_find(service_ptr_t<user_interface> & p_out,const GUID & p
 	} while(e.next(ptr));
 	return false;
 }
-
-
-bool ui_control::g_get(service_ptr_t<ui_control> & p_out) {return service_enum_create_t(p_out,0);}

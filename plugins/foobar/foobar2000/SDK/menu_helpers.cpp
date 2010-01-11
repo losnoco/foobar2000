@@ -22,23 +22,25 @@ bool menu_helpers::context_get_description(const GUID& p_guid,pfc::string_base &
 
 static bool run_context_command_internal(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data,const GUID & caller)
 {
-	service_enum_t<contextmenu_item> e;
-	service_ptr_t<contextmenu_item> ptr;
 	bool done = false;
-	if (e.first(ptr)) do {
-		unsigned action,num_actions = ptr->get_num_items();
-		for(action=0;action<num_actions;action++)
-		{
-			if (p_command == ptr->get_item_guid(action))
+	if (data.get_count() > 0) {
+		service_enum_t<contextmenu_item> e;
+		service_ptr_t<contextmenu_item> ptr;
+		if (e.first(ptr)) do {
+			unsigned action,num_actions = ptr->get_num_items();
+			for(action=0;action<num_actions;action++)
 			{
-				TRACK_CALL_TEXT("menu_helpers::run_command(), by GUID");
-				ptr->item_execute_simple(action,p_subcommand,data,caller);
-				done = true;
-				break;
+				if (p_command == ptr->get_item_guid(action))
+				{
+					TRACK_CALL_TEXT("menu_helpers::run_command(), by GUID");
+					ptr->item_execute_simple(action,p_subcommand,data,caller);
+					done = true;
+					break;
+				}
 			}
-		}
-		if (done) break;
-	} while(e.next(ptr));
+			if (done) break;
+		} while(e.next(ptr));
+	}
 	return done;
 }
 
@@ -106,8 +108,7 @@ bool menu_helpers::is_command_checked_context(const GUID & p_command,const GUID 
 bool menu_helpers::is_command_checked_context_playlist(const GUID & p_command,const GUID & p_subcommand)
 {
 	metadb_handle_list temp;
-	service_ptr_t<playlist_manager> api;
-	if (!playlist_manager::g_get(api)) return false;
+	static_api_ptr_t<playlist_manager> api;
 	api->activeplaylist_get_selected_items(temp);
 	return g_is_checked(p_command,p_subcommand,temp,contextmenu_item::caller_playlist);
 }
@@ -121,8 +122,7 @@ bool menu_helpers::is_command_checked_context_playlist(const GUID & p_command,co
 bool menu_helpers::run_command_context_playlist(const GUID & p_command,const GUID & p_subcommand)
 {
 	metadb_handle_list temp;
-	service_ptr_t<playlist_manager> api;
-	if (!playlist_manager::g_get(api)) return false;
+	static_api_ptr_t<playlist_manager> api;
 	api->activeplaylist_get_selected_items(temp);
 	return run_command_context_ex(p_command,p_subcommand,temp,contextmenu_item::caller_playlist);
 }
@@ -130,9 +130,7 @@ bool menu_helpers::run_command_context_playlist(const GUID & p_command,const GUI
 bool menu_helpers::run_command_context_now_playing(const GUID & p_command,const GUID & p_subcommand)
 {
 	metadb_handle_ptr item;
-	service_ptr_t<play_control> api;
-	if (!play_control::g_get(api)) return false;
-	if (!api->get_now_playing(item)) return false;//not playing
+	if (!static_api_ptr_t<playback_control>()->get_now_playing(item)) return false;//not playing
 	return run_command_context_ex(p_command,p_subcommand,pfc::list_single_ref_t<metadb_handle_ptr>(item),contextmenu_item::caller_now_playing);
 }
 

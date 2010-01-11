@@ -27,15 +27,7 @@ public:
 	inline static bool g_create(service_ptr_t<audio_postprocessor> & p_out) {return service_enum_create_t(p_out,0);}
 
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	audio_postprocessor() {}
-	~audio_postprocessor() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(audio_postprocessor);
 };
 
 #endif

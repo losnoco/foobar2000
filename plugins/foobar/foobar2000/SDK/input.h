@@ -31,15 +31,7 @@ public:
 	//! Retrieves file stats. Equivalent to calling get_stats() on file object.
 	virtual t_filestats get_file_stats(abort_callback & p_abort) = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	input_info_reader() {}
-	~input_info_reader() {}
+	FB2K_MAKE_SERVICE_INTERFACE(input_info_reader,service_base);
 };
 
 //! Class providing interface for retrieval of PCM audio data from files.\n
@@ -92,15 +84,7 @@ public:
 	virtual void on_idle(abort_callback & p_abort) = 0;
 
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return input_info_reader::service_query(p_out,p_guid);
-	}
-protected:
-	input_decoder() {}
-	~input_decoder() {}
+	FB2K_MAKE_SERVICE_INTERFACE(input_decoder,input_info_reader);
 };
 
 //! Class providing interface for writing metadata and replaygain info to files. Also see: file_info. \n
@@ -120,15 +104,7 @@ public:
 	//! @param p_abort abort_callback object signaling user aborting the operation. WARNING: abort_callback object is provided for consistency; if writing tags actually gets aborted, user will be likely left with corrupted file. Anything calling this should make sure that aborting is either impossible, or gives appropriate warning to the user first.
 	virtual void commit(abort_callback & p_abort) = 0;
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return input_info_reader::service_query(p_out,p_guid);
-	}
-protected:
-	input_info_writer() {}
-	~input_info_writer() {}
+	FB2K_MAKE_SERVICE_INTERFACE(input_info_writer,input_info_reader);
 };
 
 class input_entry : public service_base
@@ -186,14 +162,6 @@ public:
 	static void g_open_for_info_write(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
 	static bool g_is_supported_path(const char * p_path);
 
-	static const GUID class_guid;
-
-	virtual bool FB2KAPI service_query(service_ptr_t<service_base> & p_out,const GUID & p_guid) {
-		if (p_guid == class_guid) {p_out = this; return true;}
-		else return service_base::service_query(p_out,p_guid);
-	}
-protected:
-	input_entry() {}
-	~input_entry() {}
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(input_entry);
 };
 
