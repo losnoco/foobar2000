@@ -52,27 +52,25 @@ unsigned parser_ac3::sync( service_ptr_t<file> & p_file, int & flags, int & samp
 		{
 			if ( i ) buffer_remove( i );
 			buffer_fill( p_file, p_abort );
-			if ( j >= 2 )
+
+			if ( buffer_filled < 7 ) throw exception_io_data_truncation();
+			unsigned block_size = a52_syncinfo( ptr, &flags, &sample_rate, &bit_rate);
+			if ( ! block_size || buffer_filled < block_size )
 			{
-				if ( buffer_filled < 7 ) throw exception_io_data_truncation();
-				unsigned block_size = a52_syncinfo( ptr, &flags, &sample_rate, &bit_rate);
-				if ( ! block_size || buffer_filled < block_size )
-				{
-					buffer_remove( 1 );
-					fault_limit--;
-					continue;
-				}
-				hasher_crc16 crc;
-				crc.process( ptr + 2, block_size - 2 );
-				if ( crc.get_result() )
-				{
-					buffer_remove( 1 );
-					fault_limit--;
-					continue;
-				}
-				packet_size = block_size;
-				break;
+				buffer_remove( 1 );
+				fault_limit--;
+				continue;
 			}
+			hasher_crc16 crc;
+			crc.process( ptr + 2, block_size - 2 );
+			if ( crc.get_result() )
+			{
+				buffer_remove( 1 );
+				fault_limit--;
+				continue;
+			}
+			packet_size = block_size;
+			break;
 		}
 	}
 	if ( ! fault_limit ) throw exception_io_data();

@@ -1,7 +1,11 @@
-#define MY_VERSION "0.9.2"
+#define MY_VERSION "0.9.3"
 
 /*
 	changelog
+
+2009-04-09 01:43 UTC - kode54
+- Fixed AC3 parser and caller to handle EOF when there's extra data after the last packet.
+- Version is now 0.9.3
 
 2009-03-02 21:02 UTC - kode54
 - Fixed AC3 parser to ignore end of file when refilling the buffer, caller handles EOF already.
@@ -453,6 +457,10 @@ public:
 		}
 
 		return true;
+		}
+		catch ( const exception_io_data_truncation & )
+		{
+			return false;
 		}
 		catch ( const exception_io_data & )
 		{
