@@ -184,7 +184,7 @@ fluid_mod_get_value(fluid_mod_t* mod, fluid_channel_t* chan, fluid_voice_t* voic
 	range1 = 0x4000;
 	break;
       case FLUID_MOD_PITCHWHEELSENS:
-	v1 = chan->pitch_wheel_sensitivity;
+	v1 = chan->pitch_wheel_sensitivity / 128.0;
 	break;
       default:
 	v1 = 0.0;
@@ -276,7 +276,7 @@ fluid_mod_get_value(fluid_mod_t* mod, fluid_channel_t* chan, fluid_voice_t* voic
 	v2 = chan->pitch_bend;
 	break;
       case FLUID_MOD_PITCHWHEELSENS:
-	v2 = chan->pitch_wheel_sensitivity;
+	v2 = chan->pitch_wheel_sensitivity / 128.0;
 	break;
       default:
 	v1 = 0.0f;

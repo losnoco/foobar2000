@@ -119,7 +119,7 @@ fluid_channel_init_ctrl(fluid_channel_t* chan, int is_all_ctrl_off)
 
   if (!is_all_ctrl_off) {
 
-    chan->pitch_wheel_sensitivity = 2; /* two semi-tones */
+    chan->pitch_wheel_sensitivity = 2 * 128; /* two semi-tones */
 
     /* Just like panning, a value of 64 indicates no change for sound ctrls */
     for (i = SOUND_CTRL1; i <= SOUND_CTRL10; i++) {
@@ -295,8 +295,7 @@ fluid_channel_cc(fluid_channel_t* chan, int num, int value)
 	switch (chan->cc[RPN_LSB])
 	{
 	  case RPN_PITCH_BEND_RANGE:
-	    fluid_channel_pitch_wheel_sens (chan, value);   /* Set bend range in semitones */
-	    /* FIXME - Handle LSB? (Fine bend range in cents) */
+	    fluid_channel_pitch_wheel_sens (chan, data);   /* Set bend range in semitones */
 	    break;
 	  case RPN_CHANNEL_FINE_TUNE:   /* Fine tune is 14 bit over 1 semitone (+/- 50 cents, 8192 = center) */
 	    fluid_synth_set_gen(chan->synth, chan->channum, GEN_FINETUNE,
