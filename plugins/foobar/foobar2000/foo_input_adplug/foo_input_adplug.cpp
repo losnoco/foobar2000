@@ -1,9 +1,13 @@
-#define MYVERSION "1.3"
+#define MYVERSION "1.31"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2009-09-03 06:20 UTC - kode54
+- Added file not found exception catch around database loader in input class
+- Version is now 1.31
 
 2009-08-28 07:56 UTC - kode54
 - Updated Harekiet's OPL emulator to latest from Dosbox
@@ -167,7 +171,13 @@ public:
 
 		{
 			insync( g_database_lock );
-			refresh_database( p_abort );
+
+			try
+			{
+				refresh_database( p_abort );
+			}
+			catch ( const exception_io_not_found & ) {}
+
 			m_player = CAdPlug::factory( std::string( p_path ), m_emu, CAdPlug::players, CProvider_foobar2000( std::string( p_path ), m_file, p_abort ) );
 			if ( ! m_player )
 				throw exception_io_data();
