@@ -1,6 +1,8 @@
 #include <foobar2000.h>
 
-#include <Zip7_Extractor.h>
+#include <fex/Zip7_Extractor.h>
+
+#include "timefn.h"
 
 class foobar_File_Reader : public File_Reader
 {
@@ -25,7 +27,7 @@ public:
 		}
 	}
 	
-	virtual long remain() const
+	virtual uint64_t remain() const
 	{
 		t_filesize remain = 0;
 		try
@@ -33,10 +35,10 @@ public:
 			remain = m_file->get_size( m_abort ) - m_file->get_position( m_abort );
 		}
 		catch (...) {}
-		return long(min(remain,LONG_MAX));
+		return remain;
 	}
 
-	virtual long size() const
+	virtual uint64_t size() const
 	{
 		t_filesize size = 0;
 		try
@@ -44,10 +46,10 @@ public:
 			size = m_file->get_size_ex( m_abort );
 		}
 		catch (...) {}
-		return long(min(size,LONG_MAX));
+		return size;
 	}
 	
-	virtual long tell() const
+	virtual uint64_t tell() const
 	{
 		t_filesize position = 0;
 		try
@@ -55,7 +57,7 @@ public:
 			position = m_file->get_position( m_abort );
 		}
 		catch (...) {}
-		return long(min(position,LONG_MAX));
+		return position;
 	}
 	
 	virtual error_t seek( long offset )
@@ -127,7 +129,7 @@ public:
 		if ( ex.done() ) throw exception_io_data();
 		t_filestats ret;
 		ret.m_size = ex.size();
-		ret.m_timestamp = ex.timestamp();
+		ret.m_timestamp = dostime_to_timestamp( ex.dos_date() );
 		return ret;
 	}
 
@@ -170,7 +172,7 @@ public:
 		{
 			make_unpack_path( m_path, path, ex.name() );
 			m_stats.m_size = ex.size();
-			m_stats.m_timestamp = ex.timestamp();
+			m_stats.m_timestamp = dostime_to_timestamp( ex.dos_date() );
 			if ( p_want_readers )
 			{
 				filesystem::g_open_tempmem( m_out_file, p_out );

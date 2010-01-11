@@ -445,10 +445,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_unpack_7z", "foo_unpack
 	ProjectSection(ProjectDependencies) = postProject
 		{4A5CC722-A067-487F-9DD3-8EDAC8633FDA} = {4A5CC722-A067-487F-9DD3-8EDAC8633FDA}
 		{C1D9ED71-6AE8-4D27-84E8-93D409BBE45F} = {C1D9ED71-6AE8-4D27-84E8-93D409BBE45F}
-		{5CF610D2-C539-428F-BB43-A5C91526341A} = {5CF610D2-C539-428F-BB43-A5C91526341A}
+		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE} = {E7DD9FB8-A045-42A3-A25A-37A96B1421AE}
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "File_Extractor", "..\..\File_Extractor-0.3.0\File_Extractor\File_Extractor.vcproj", "{66EB9638-A8EF-4023-95B0-AD89FC6DAA9A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_hvl", "foo_input_hvl\foo_input_hvl.vcproj", "{0BAD2631-80EE-4498-BF13-8E8B9B8AFACE}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -490,6 +488,11 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "resid_builder", "..\..\sidplay2\builders\resid-builder\win\VC\resid_builder.vcproj", "{A6924EF7-2833-4D83-9C76-F47ED7F15BB0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsidplay_static", "..\..\sidplay2\libsidplay\win\VC\libsidplay_static.vcproj", "{B39BE781-5BFB-4BF5-8BC2-1ED135F7DBDB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "File_Extractor", "..\..\File_Extractor\win32\File_Extractor\File_Extractor.vcproj", "{E7DD9FB8-A045-42A3-A25A-37A96B1421AE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FBF00162-1B31-4CD0-9F78-3ADA304E325F} = {FBF00162-1B31-4CD0-9F78-3ADA304E325F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SourceCodeControl) = preSolution
@@ -771,39 +774,39 @@ Global
 		SccProjectUniqueName91 = foo_unpack_7z\\foo_unpack_7z.vcproj
 		SccLocalPath91 = ..\\..
 		SccProjectFilePathRelativizedFromConnection91 = foobar\\foobar2000\\foo_unpack_7z\\
-		SccProjectUniqueName92 = ..\\..\\File_Extractor-0.3.0\\File_Extractor\\File_Extractor.vcproj
+		SccProjectUniqueName92 = ..\\..\\Game_Music_Emu\\msvc\\Game_Music_Emu.vcproj
 		SccLocalPath92 = ..\\..
-		SccProjectFilePathRelativizedFromConnection92 = File_Extractor-0.3.0\\File_Extractor\\
-		SccProjectUniqueName93 = ..\\..\\Game_Music_Emu\\msvc\\Game_Music_Emu.vcproj
+		SccProjectFilePathRelativizedFromConnection92 = Game_Music_Emu\\msvc\\
+		SccProjectUniqueName93 = foo_input_hvl\\foo_input_hvl.vcproj
 		SccLocalPath93 = ..\\..
-		SccProjectFilePathRelativizedFromConnection93 = Game_Music_Emu\\msvc\\
-		SccProjectUniqueName94 = foo_input_hvl\\foo_input_hvl.vcproj
+		SccProjectFilePathRelativizedFromConnection93 = foobar\\foobar2000\\foo_input_hvl\\
+		SccProjectUniqueName94 = ..\\..\\adplug\\vc\\playertest\\playertest.vcproj
 		SccLocalPath94 = ..\\..
-		SccProjectFilePathRelativizedFromConnection94 = foobar\\foobar2000\\foo_input_hvl\\
-		SccProjectUniqueName95 = ..\\..\\adplug\\vc\\playertest\\playertest.vcproj
+		SccProjectFilePathRelativizedFromConnection94 = adplug\\vc\\playertest\\
+		SccProjectUniqueName95 = ..\\..\\adplug\\vc\\adplug\\adplug.vcproj
 		SccLocalPath95 = ..\\..
-		SccProjectFilePathRelativizedFromConnection95 = adplug\\vc\\playertest\\
-		SccProjectUniqueName96 = ..\\..\\adplug\\vc\\adplug\\adplug.vcproj
+		SccProjectFilePathRelativizedFromConnection95 = adplug\\vc\\adplug\\
+		SccProjectUniqueName96 = ..\\..\\libbinio\\vc\\libbinio\\libbinio.vcproj
 		SccLocalPath96 = ..\\..
-		SccProjectFilePathRelativizedFromConnection96 = adplug\\vc\\adplug\\
-		SccProjectUniqueName97 = ..\\..\\libbinio\\vc\\libbinio\\libbinio.vcproj
+		SccProjectFilePathRelativizedFromConnection96 = libbinio\\vc\\libbinio\\
+		SccProjectUniqueName97 = foo_input_adplug\\foo_input_adplug.vcproj
 		SccLocalPath97 = ..\\..
-		SccProjectFilePathRelativizedFromConnection97 = libbinio\\vc\\libbinio\\
-		SccProjectUniqueName98 = foo_input_adplug\\foo_input_adplug.vcproj
+		SccProjectFilePathRelativizedFromConnection97 = foobar\\foobar2000\\foo_input_adplug\\
+		SccProjectUniqueName98 = ..\\..\\sidplay2\\builders\\resid-builder\\win\\VC\\resid_builder.vcproj
 		SccLocalPath98 = ..\\..
-		SccProjectFilePathRelativizedFromConnection98 = foobar\\foobar2000\\foo_input_adplug\\
-		SccProjectUniqueName99 = ..\\..\\sidplay2\\builders\\resid-builder\\win\\VC\\resid_builder.vcproj
+		SccProjectFilePathRelativizedFromConnection98 = sidplay2\\builders\\resid-builder\\win\\VC\\
+		SccProjectUniqueName99 = ..\\..\\sidplay2\\libsidplay\\win\\VC\\libsidplay_static.vcproj
 		SccLocalPath99 = ..\\..
-		SccProjectFilePathRelativizedFromConnection99 = sidplay2\\builders\\resid-builder\\win\\VC\\
-		SccProjectUniqueName100 = ..\\..\\sidplay2\\libsidplay\\win\\VC\\libsidplay_static.vcproj
+		SccProjectFilePathRelativizedFromConnection99 = sidplay2\\libsidplay\\win\\VC\\
+		SccProjectUniqueName100 = foo_input_dts\\foo_input_dts.vcproj
 		SccLocalPath100 = ..\\..
-		SccProjectFilePathRelativizedFromConnection100 = sidplay2\\libsidplay\\win\\VC\\
-		SccProjectUniqueName101 = foo_input_dts\\foo_input_dts.vcproj
+		SccProjectFilePathRelativizedFromConnection100 = foobar\\foobar2000\\foo_input_dts\\
+		SccProjectUniqueName101 = ..\\..\\libdca\\vc++\\libdca.vcproj
 		SccLocalPath101 = ..\\..
-		SccProjectFilePathRelativizedFromConnection101 = foobar\\foobar2000\\foo_input_dts\\
-		SccProjectUniqueName102 = ..\\..\\libdca\\vc++\\libdca.vcproj
+		SccProjectFilePathRelativizedFromConnection101 = libdca\\vc++\\
+		SccProjectUniqueName102 = ..\\..\\File_Extractor\\win32\\File_Extractor\\File_Extractor.vcproj
 		SccLocalPath102 = ..\\..
-		SccProjectFilePathRelativizedFromConnection102 = libdca\\vc++\\
+		SccProjectFilePathRelativizedFromConnection102 = File_Extractor\\win32\\File_Extractor\\
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -1355,12 +1358,6 @@ Global
 		{A6009C75-5D08-4F8C-A764-5BD305328987}.Release staticlink|Win32.Build.0 = Release|Win32
 		{A6009C75-5D08-4F8C-A764-5BD305328987}.Release|Win32.ActiveCfg = Release|Win32
 		{A6009C75-5D08-4F8C-A764-5BD305328987}.Release|Win32.Build.0 = Release|Win32
-		{66EB9638-A8EF-4023-95B0-AD89FC6DAA9A}.Debug|Win32.ActiveCfg = Debug|Win32
-		{66EB9638-A8EF-4023-95B0-AD89FC6DAA9A}.Debug|Win32.Build.0 = Debug|Win32
-		{66EB9638-A8EF-4023-95B0-AD89FC6DAA9A}.Release staticlink|Win32.ActiveCfg = Release|Win32
-		{66EB9638-A8EF-4023-95B0-AD89FC6DAA9A}.Release staticlink|Win32.Build.0 = Release|Win32
-		{66EB9638-A8EF-4023-95B0-AD89FC6DAA9A}.Release|Win32.ActiveCfg = Release|Win32
-		{66EB9638-A8EF-4023-95B0-AD89FC6DAA9A}.Release|Win32.Build.0 = Release|Win32
 		{0BAD2631-80EE-4498-BF13-8E8B9B8AFACE}.Debug|Win32.ActiveCfg = Debug|Win32
 		{0BAD2631-80EE-4498-BF13-8E8B9B8AFACE}.Debug|Win32.Build.0 = Debug|Win32
 		{0BAD2631-80EE-4498-BF13-8E8B9B8AFACE}.Release staticlink|Win32.ActiveCfg = Release staticlink|Win32
@@ -1415,6 +1412,12 @@ Global
 		{B39BE781-5BFB-4BF5-8BC2-1ED135F7DBDB}.Release staticlink|Win32.Build.0 = Release|Win32
 		{B39BE781-5BFB-4BF5-8BC2-1ED135F7DBDB}.Release|Win32.ActiveCfg = Release|Win32
 		{B39BE781-5BFB-4BF5-8BC2-1ED135F7DBDB}.Release|Win32.Build.0 = Release|Win32
+		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE}.Debug|Win32.Build.0 = Debug|Win32
+		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE}.Release staticlink|Win32.ActiveCfg = Release|Win32
+		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE}.Release staticlink|Win32.Build.0 = Release|Win32
+		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE}.Release|Win32.ActiveCfg = Release|Win32
+		{E7DD9FB8-A045-42A3-A25A-37A96B1421AE}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

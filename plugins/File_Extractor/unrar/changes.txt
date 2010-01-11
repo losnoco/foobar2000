@@ -1,0 +1,30 @@
+Changes to UnRAR source
+-----------------------
+This library is based on UnRAR (unrarsrc-3.7.8.tar.gz) by Alexander L.
+Roshal. The original sources have been HEAVILY modified, trimmed down,
+and purged of all OS-specific calls for file access and other
+unnecessary operations. Support for encryption, recovery records, and
+volumes has been REMOVED.
+
+The source is as close as possible to the original, to make it simple to
+update it when a new version of UnRAR comes out. In many places the
+original names and object nesting are kept, even though it's a bit
+harder to follow. See rar.hpp for the main "glue".
+
+The biggest change was converting error handling from exceptions to
+longjmp. I had to carefully avoid local objects with destructors, since
+they would leak during a longjmp. I also made reading in arcread.cpp
+more robust. If any headers are cut off or the file doesn't end cleanly
+after a block, the archive is considered corrupt.
+
+Non-class array allocations now use malloc(), allowing the code to be
+linked without the standard C++ library (particularly, operator new).
+Class object allocations use a class-specific allocator that just calls
+malloc(), also avoiding calls to operator new.
+
+Several .cpp files are #included by others. This means you can't compile
+them directly, complicating the build process and producing obscure
+errors if you accidentally try to compile one. I added  #ifdef
+RAR_COMMON_HPP guards on these to avoid this problem.
+-- 
+Shay Green <gblargg@gmail.com>
