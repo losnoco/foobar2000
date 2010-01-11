@@ -46,6 +46,9 @@ public:
 	
 	// If true, prevent channels and global volumes from being phase-negated
 	void disable_surround( bool disable );
+
+	// If true, use cubic interpolation instead of Gaussian
+	void set_cubic_interpolation( bool );
 	
 // End of public interface
 private:
@@ -104,6 +107,8 @@ private:
 };
 
 inline void Snes_Spc::disable_surround( bool disable ) { dsp.disable_surround( disable ); }
+
+inline void Snes_Spc::set_cubic_interpolation( bool enable ) { dsp.set_cubic_interpolation( enable ); }
 
 inline void Snes_Spc::mute_voices( int mask ) { dsp.mute_voices( mask ); }
 
