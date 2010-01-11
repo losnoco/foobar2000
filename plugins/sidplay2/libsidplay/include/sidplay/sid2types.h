@@ -72,7 +72,7 @@ struct sid2_config_t
     sid2_playback_t     playback;
     int                 precision;
     sid2_model_t        sidDefault;    // Intended sid model when unknown
-    class IInterface   *sidEmulation;
+    class ISidUnknown  *sidEmulation;
     sid2_model_t        sidModel;      // User requested sid model
     bool                sidSamples;
     uint_least32_t      leftVolume;

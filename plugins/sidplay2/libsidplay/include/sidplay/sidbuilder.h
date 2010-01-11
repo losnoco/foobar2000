@@ -18,20 +18,18 @@
 #ifndef _sidbuilder_h_
 #define _sidbuilder_h_
 
-#include "sid2types.h"
-#include "component.h"
-#include "c64env.h"
+#include <sidplay/sid2types.h>
+#include <sidplay/component.h>
+#include <sidplay/c64env.h>
 
-class ISidBuilder;
-
-class ISidEmulation: public IComponent
+class ISidEmulation: public ISidComponent
 {
 public:
-    static const InterfaceID &iid () {
-        return SID2IID<0x82c01032, 0x5d8c, 0x447a, 0x89, 0xfa, 0x05, 0x99, 0x09, 0x90, 0xb7, 0x66>();
+    static const Iid &iid () {
+        return SIDIID<0x82c01032, 0x5d8c, 0x447a, 0x89fa, 0x0599, 0x0990b766>();
     }
 
-    virtual ISidBuilder *builder      (void) const = 0;
+    virtual ISidUnknown *builder      (void) const = 0;
     virtual void         clock        (sid2_clock_t clk) = 0;
     virtual void         optimisation (uint_least8_t level) = 0;
     virtual void         reset        (uint_least8_t volume) = 0;
@@ -40,11 +38,11 @@ public:
     virtual int_least32_t output  (uint_least8_t bits) = 0;
 };
 
-class ISidMixer: public IInterface
+class ISidMixer: public ISidUnknown
 {
 public:
-    static const InterfaceID &iid () {
-        return SID2IID<0xc4438750, 0x06ec, 0x11db, 0x9c, 0xd8, 0x08, 0x00, 0x20, 0x0c, 0x9a, 0x66>();
+    static const Iid &iid () {
+        return SIDIID<0xc4438750, 0x06ec, 0x11db, 0x9cd8, 0x0800, 0x200c9a66>();
     }
 
     virtual void mute   (uint_least8_t num, bool enable) = 0;
@@ -52,19 +50,18 @@ public:
     virtual void gain   (int_least8_t precent) = 0;
 };
 
-class ISidBuilder: public IInterface
+class ISidBuilder: public ISidUnknown
 {
 public:
-    static const InterfaceID &iid () {
-        return SID2IID<0x1c9ea475, 0xac10, 0x4345, 0x8b, 0x88, 0x3e, 0x48, 0x04, 0xe0, 0xea, 0x38>();
+    static const Iid &iid () {
+        return SIDIID<0x1c9ea475, 0xac10, 0x4345, 0x8b88, 0x3e48, 0x04e0ea38>();
     }
 
-    virtual operator    bool     () const = 0;
-    virtual const char *credits  (void) = 0;
-    virtual const char *error    (void) const = 0;
-    virtual IInterface *lock     (c64env *env, sid2_model_t model) = 0;
-    virtual const char *name     (void) const = 0;
-    virtual void        unlock   (IInterface *device) = 0;
+    virtual operator     bool    () const = 0;
+    virtual const char  *credits (void) = 0;
+    virtual const char  *error   (void) const = 0;
+    virtual ISidUnknown *lock    (c64env *env, sid2_model_t model) = 0;
+    virtual void         unlock  (ISidUnknown &device) = 0;
 };
 
 #endif // _sidbuilder_h_

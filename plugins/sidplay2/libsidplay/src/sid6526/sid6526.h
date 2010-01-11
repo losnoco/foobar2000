@@ -17,6 +17,9 @@
  ***************************************************************************/
 /***************************************************************************
  *  $Log: sid6526.h,v $
+ *  Revision 1.10  2008/02/27 20:59:27  s_a_white
+ *  Re-sync COM like interface and update to final names.
+ *
  *  Revision 1.9  2006/06/27 19:35:28  s_a_white
  *  Changed ifquery return type.
  *
@@ -52,11 +55,15 @@
 #ifndef _sid6526_h_
 #define _sid6526_h_
 
+#include "sidconfig.h"
 #include "imp/component.h"
 #include "event.h"
-#include "c64env.h"
 
-class SID6526: public Component<IComponent>, private Event
+class c64env;
+
+SIDPLAY2_NAMESPACE_START
+
+class SID6526: public CoComponent<ISidComponent>, private Event
 {
 private:
 
@@ -77,7 +84,7 @@ private:
 
 private:
     // Interface - Later use
-    bool ifquery (const InterfaceID &, void **) { return false; }
+    bool _iquery (const Iid &, void **) { return false; }
 
 public:
     SID6526 (c64env *env);
@@ -95,5 +102,7 @@ public:
     void clock (uint_least16_t count) { m_count = count; }
     void lock  () { locked = true; }
 };
+
+SIDPLAY2_NAMESPACE_STOP
 
 #endif // _sid6526_h_

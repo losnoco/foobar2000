@@ -18,19 +18,22 @@
 #ifndef _nullsid_h_
 #define _nullsid_h_
 
+#include "sidconfig.h"
 #include "sidbuilder.h"
 
-class NullSID: public SidEmulation<ISidEmulation>,
-               public ICoAggregate<ISidMixer>
+SIDPLAY2_NAMESPACE_START
+
+class NullSID: public CoEmulation<ISidEmulation>,
+               public CoAggregate<ISidMixer>
 {
 private:
-    bool ifquery (const InterfaceID &iid, void **implementation)
+    bool _iquery (const Iid &iid, void **implementation)
     {
         if (iid == ISidEmulation::iid())
             *implementation = static_cast<ISidEmulation *>(this);
         else if (iid == ISidMixer::iid())
             *implementation = static_cast<ISidMixer *>(this);
-        else if (iid == IInterface::iid())
+        else if (iid == ISidUnknown::iid())
             *implementation = static_cast<ISidEmulation *>(this);
         else
             return false;
@@ -39,10 +42,10 @@ private:
 
 public:
     NullSID ()
-    :SidEmulation<ISidEmulation>("NullSID", NULL),
-     ICoAggregate<ISidMixer>(*aggregate()) {;}
+    :CoEmulation<ISidEmulation>("NullSID", NULL),
+     CoAggregate<ISidMixer>(*iaggregate()) {;}
 
-    IInterface *aggregate () { return SidEmulation<ISidEmulation>::aggregate (); }
+    ISidUnknown *iaggregate () { return CoEmulation<ISidEmulation>::iaggregate (); }
 
     // Standard component functions
     void    reset (uint8_t) { ; }
@@ -57,5 +60,7 @@ public:
     void          mute   (uint_least8_t, bool) { ; }
     void          gain   (int_least8_t) { ; }
 };
+
+SIDPLAY2_NAMESPACE_STOP
 
 #endif // _nullsid_h_

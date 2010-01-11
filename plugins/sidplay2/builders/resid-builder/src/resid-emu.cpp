@@ -25,12 +25,13 @@
 #include "resid.h"
 #include "resid-emu.h"
 
+SIDPLAY2_NAMESPACE_START
 
 char ReSID::m_credit[];
 
-ReSID::ReSID (ReSIDBuilder *builder)
-:SidEmulation<ISidEmulation,ReSIDBuilder>("ReSID", builder),
- ICoAggregate<ISidMixer>(*aggregate()),
+ReSID::ReSID (IReSIDBuilder *builder)
+:CoEmulation<ISidEmulation,IReSIDBuilder>("ReSID", builder),
+ CoAggregate<ISidMixer>(*iaggregate()),
  m_context(NULL),
  m_phase(EVENT_CLOCK_PHI1),
 #ifdef HAVE_EXCEPTIONS
@@ -246,15 +247,17 @@ void ReSID::optimisation (uint_least8_t level)
 }
 
 // Find the correct interface
-bool ReSID::ifquery (const InterfaceID &iid, void **implementation)
+bool ReSID::_iquery (const Iid &iid, void **implementation)
 {
     if (iid == ISidEmulation::iid())
         *implementation = static_cast<ISidEmulation *>(this);
     else if (iid == ISidMixer::iid())
         *implementation = static_cast<ISidMixer *>(this);
-    else if (iid == IInterface::iid())
+    else if (iid == ISidUnknown::iid())
         *implementation = static_cast<ISidEmulation *>(this);
     else
         return false;
     return true;
 }
+
+SIDPLAY2_NAMESPACE_STOP

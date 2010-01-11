@@ -1,3 +1,5 @@
+#include <vector>
+
 /*
  * /home/ms/files/source/libsidtune/RCS/PP20.cpp,v
  *
@@ -25,6 +27,9 @@
 #ifdef PP20_HAVE_EXCEPTIONS
 #include <new>
 #endif
+
+signed const int *p;
+
 
 /* Read a big-endian 32-bit word from four bytes in memory.
    No endian-specific optimizations applied. */

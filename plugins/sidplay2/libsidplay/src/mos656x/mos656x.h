@@ -18,8 +18,11 @@
 #ifndef _mos656x_h_
 #define _mos656x_h_
 
+#include "sidconfig.h"
 #include "imp/component.h"
 #include "event.h"
+
+SIDPLAY2_NAMESPACE_START
 
 typedef enum
 {
@@ -29,7 +32,7 @@ typedef enum
 } mos656x_model_t;
 
 
-class MOS656X: public Component<IComponent>, private Event
+class MOS656X: public CoComponent<ISidComponent>, private Event
 {
 private:
     static const char *credit;
@@ -54,7 +57,7 @@ protected:
 
 private:
     // Interface - Later use
-    bool ifquery (const InterfaceID &, void **) { return false; }
+    bool _iquery (const Iid &, void **) { return false; }
 
 protected:
     MOS656X (EventContext *context);
@@ -87,5 +90,7 @@ enum
     MOS656X_INTERRUPT_LP      = 1 << 3,
     MOS656X_INTERRUPT_REQUEST = 1 << 7
 };
+
+SIDPLAY2_NAMESPACE_STOP
 
 #endif // _mos656x_h_

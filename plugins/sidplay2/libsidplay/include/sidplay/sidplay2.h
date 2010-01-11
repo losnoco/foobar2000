@@ -18,20 +18,20 @@
 #ifndef _sidplay2_h_
 #define _sidplay2_h_
 
-#include "sidtypes.h"
-#include "iinterface.h"
-#include "SidTune.h"
-#include "sidbuilder.h"
+#include <sidplay/sidtypes.h>
+#include <sidplay/sidunknown.h>
+#include <sidplay/SidTune.h>
+#include <sidplay/sidbuilder.h>
 
 
-class sidplay2: public IInterface 
+class ISidplay2: public ISidUnknown
 {
 public:
-    static const InterfaceID &iid () {
-        return SID2IID<0x25ef79eb, 0x8de6, 0x4076, 0x9c, 0x6b, 0xa9, 0xf9, 0x57, 0x0f, 0x3a, 0x4b>();
+    static const Iid &iid () {
+        return SIDIID<0x25ef79eb, 0x8de6, 0x4076, 0x9c6b, 0xa9f9, 0x570f3a4b>();
     }
 
-    static SID_EXTERN IInterface *create ();
+    static SID_EXTERN ISidUnknown *create ();
 
     virtual const sid2_config_t &config (void) const = 0;
     virtual const sid2_info_t   &info   (void) const = 0;
@@ -45,14 +45,23 @@ public:
     virtual sid2_player_t  state        (void) const = 0;
     virtual void           stop         (void) = 0;
     virtual void           debug        (bool enable, FILE *out) = 0;
-
-    // Timer functions with respect to resolution returned by timebase
-    virtual uint_least32_t timebase (void) const = 0;
-    virtual uint_least32_t time     (void) const = 0;
-    virtual uint_least32_t mileage  (void) const = 0;
 };
 
-// Future interface name
-typedef sidplay2 ISidplay2;
+class ISidTimer: public ISidUnknown
+{
+public:
+    static const Iid &iid () {
+        return SIDIID<0xba2f0dd8, 0xdafb, 0x4aea, 0xb09a, 0x8aa9, 0xd335b36b>();
+    }
+
+    // Timer functions with respect to resolution returned by timebase
+    virtual uint_least32_t mileage  (void) const = 0;
+//    virtual void           schedule (Event &event, event_clock_t ticks) = 0;
+    virtual uint_least32_t timebase (void) const = 0;
+    virtual uint_least32_t time     (void) const = 0;
+};
+
+// Old name
+typedef ISidplay2 sidplay2;
 
 #endif // _sidplay2_h_

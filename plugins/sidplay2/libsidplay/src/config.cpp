@@ -15,6 +15,9 @@
  ***************************************************************************/
 /***************************************************************************
  *  $Log: config.cpp,v $
+ *  Revision 1.51  2008/02/27 20:59:27  s_a_white
+ *  Re-sync COM like interface and update to final names.
+ *
  *  Revision 1.50  2007/01/27 16:18:38  s_a_white
  *  GCC compile fixes.
  *
@@ -238,7 +241,7 @@ int Player::config (const sid2_config_t &cfg)
 
         // SID emulation setup (must be performed before the
         // environment setup call)
-        IfLazyPtr<ISidBuilder> builder(cfg.sidEmulation);
+        SidLazyIPtr<ISidBuilder> builder(cfg.sidEmulation);
         if (sidCreate (builder, cfg.sidModel, cfg.sidDefault) < 0)
         {
             m_errorString      = builder->error ();
@@ -306,7 +309,7 @@ int Player::config (const sid2_config_t &cfg)
         m_info.channels++;
         // Enough sids are available to perform
         // stereo spliting
-        if (monosid && (sid[1]->aggregate() != nullsid.aggregate()))
+        if (monosid && (sid[1]->iaggregate() != nullsid.iaggregate()))
             m_emulateStereo = cfg.emulateStereo;
     }
 
@@ -324,7 +327,7 @@ int Player::config (const sid2_config_t &cfg)
     {   // Try Spliting channels across 2 sids
         if (m_emulateStereo)
         {   // Mute Voices
-            IfLazyPtr<ISidMixer> mixer;
+            SidLazyIPtr<ISidMixer> mixer;
             mixer = sid[0];
             if (mixer)
             {
@@ -608,7 +611,7 @@ int Player::environment (sid2_env_t env)
 
 // Integrate SID emulation from the builder class into
 // libsidplay2
-int Player::sidCreate (IfLazyPtr<ISidBuilder> &builder, sid2_model_t userModel,
+int Player::sidCreate (SidLazyIPtr<ISidBuilder> &builder, sid2_model_t userModel,
                        sid2_model_t defaultModel)
 {
     sid[0] = xsid.emulation ();
@@ -625,24 +628,23 @@ int Player::sidCreate (IfLazyPtr<ISidBuilder> &builder, sid2_model_t userModel,
     ****************************************/
 
     {   // Make xsid forget it's emulation
-        IfPtr<ISidEmulation> none(nullsid.aggregate());
+        SidIPtr<ISidEmulation> none(nullsid.iaggregate());
         xsid.emulation (none);
     }
 
     {   // Release old sids
         for (int i = 0; i < SID2_MAX_SIDS; i++)
         {
-            ISidBuilder *b;
-            b = sid[i]->builder ();
+            SidLazyIPtr<ISidBuilder> b(sid[i]->builder());
             if (b)
-                b->unlock (&sid[i]);
+                b->unlock (sid[i]);
         }
     }
 
     if (!builder)
     {   // No sid
         for (int i = 0; i < SID2_MAX_SIDS; i++)
-            sid[i] = nullsid.aggregate ();
+            sid[i] = nullsid.iaggregate ();
     }
     else
     {   // Detect the Correct SID model
@@ -708,7 +710,7 @@ int Player::sidCreate (IfLazyPtr<ISidBuilder> &builder, sid2_model_t userModel,
         {   // Get first SID emulation
             sid[i] = builder->lock (this, userModel);
             if (!sid[i])
-                sid[i] = nullsid.aggregate ();
+                sid[i] = nullsid.iaggregate ();
             if ((i == 0) && !builder)
                 return -1;
             sid[i]->optimisation (m_cfg.optimisation);
@@ -716,7 +718,7 @@ int Player::sidCreate (IfLazyPtr<ISidBuilder> &builder, sid2_model_t userModel,
         }
     }
     xsid.emulation (sid[0]);
-    sid[0] = xsid.aggregate ();
+    sid[0] = xsid.iaggregate ();
     return 0;
 }
 
@@ -733,11 +735,11 @@ void Player::sidSamples (bool enable)
     sid[0] = xsid.emulation ();
     for (int i = 0; i < SID2_MAX_SIDS; i++)
     {
-        IfPtr<ISidMixer> mixer(sid[i]);
+        SidIPtr<ISidMixer> mixer(sid[i]);
         if (mixer)
             mixer->gain (gain);
     }
-    sid[0] = xsid.aggregate ();
+    sid[0] = xsid.iaggregate ();
 }
 
 SIDPLAY2_NAMESPACE_STOP

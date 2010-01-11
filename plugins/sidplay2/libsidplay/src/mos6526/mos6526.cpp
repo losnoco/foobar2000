@@ -16,6 +16,14 @@
  ***************************************************************************/
 /***************************************************************************
  *  $Log: mos6526.cpp,v $
+ *  Revision 1.28  2008/05/05 11:33:15  s_a_white
+ *  Whilst re-programming and starting a timer causes a 2 cycle overhead,
+ *  restarting a continuous timer from the interrupt has only a 1 cycle overhead.
+ *  The 1 cycle overhead confirmed with NMIs, vice and Iisibiisi.sid.
+ *
+ *  Revision 1.27  2008/02/27 20:59:27  s_a_white
+ *  Re-sync COM like interface and update to final names.
+ *
  *  Revision 1.26  2006/10/28 08:39:55  s_a_white
  *  New, easier to use, COM style interface.
  *
@@ -118,6 +126,8 @@
 #include "sidendian.h"
 #include "mos6526.h"
 
+SIDPLAY2_NAMESPACE_START
+
 enum
 {
     INTERRUPT_TA      = 1 << 0,
@@ -157,7 +167,7 @@ const char *MOS6526::credit =
 
 
 MOS6526::MOS6526 (EventContext *context)
-:Component<IComponent>("MOS6526"),
+:CoComponent<ISidComponent>("MOS6526"),
  pra(regs[PRA]),
  prb(regs[PRB]),
  ddra(regs[DDRA]),
@@ -483,11 +493,11 @@ void MOS6526::ta_event (void)
         cra &= (~0x01);
     } else if (mode == 0x01)
     {   // Reset event
-        m_taEvent.schedule (event_context, (event_clock_t) ta + 3,
+        m_taEvent.schedule (event_context, (event_clock_t) ta + 1,
                             m_phase);
     }
     trigger (INTERRUPT_TA);
-    
+
     // Handle serial port
     if (cra & 0x40)
     {
@@ -513,7 +523,7 @@ void MOS6526::ta_event (void)
     break;
     }
 }
-    
+
 void MOS6526::tb_event (void)
 {   // Timer Modes
     uint8_t mode = crb & 0x61;
@@ -535,7 +545,7 @@ void MOS6526::tb_event (void)
                 return;
         }
     break;
-    
+
     default:
         return;
     }
@@ -548,7 +558,7 @@ void MOS6526::tb_event (void)
         crb &= (~0x01);
     } else if (mode == 0x01)
     {   // Reset event
-        m_tbEvent.schedule (event_context, (event_clock_t) tb + 3,
+        m_tbEvent.schedule (event_context, (event_clock_t) tb + 1,
                             m_phase);
     }
     trigger (INTERRUPT_TB);
@@ -564,8 +574,8 @@ void MOS6526::tod_event(void)
     if (cra & 0x80)
         m_todCycles += (m_todPeriod * 5);
     else
-        m_todCycles += (m_todPeriod * 6);    
-    
+        m_todCycles += (m_todPeriod * 6);
+
     // Fixed precision 25.7
     m_todEvent.schedule (event_context, m_todCycles >> 7, m_phase);
     m_todCycles &= 0x7F; // Just keep the decimal part
@@ -604,3 +614,5 @@ void MOS6526::tod_event(void)
             trigger (INTERRUPT_ALARM);
     }
 }
+
+SIDPLAY2_NAMESPACE_STOP

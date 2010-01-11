@@ -16,6 +16,12 @@
  ***************************************************************************/
 /***************************************************************************
  *  $Log: resid-builder.cpp,v $
+ *  Revision 1.18  2008/03/02 22:50:30  s_a_white
+ *  Create calls should be in global namespace
+ *
+ *  Revision 1.17  2008/02/27 20:58:52  s_a_white
+ *  Re-sync COM like interface and update to final names.
+ *
  *  Revision 1.16  2007/01/27 10:21:39  s_a_white
  *  Updated to use better COM emulation interface.
  *
@@ -76,22 +82,24 @@
 #include "resid-builder.h"
 #include "resid-emu.h"
 
-// Error String(s)
-const char *ReSIDBuilderImpl::ERR_FILTER_DEFINITION = "RESID ERROR: Filter definition is not valid (see docs).";
+SIDPLAY2_NAMESPACE_START
 
-ReSIDBuilderImpl::ReSIDBuilderImpl (const char * name)
-:SidBuilder<ReSIDBuilder>(name)
+// Error String(s)
+const char *CoReSIDBuilder::ERR_FILTER_DEFINITION = "RESID ERROR: Filter definition is not valid (see docs).";
+
+CoReSIDBuilder::CoReSIDBuilder (const char * name)
+:CoBuilder<IReSIDBuilder>(name)
 {
     m_error = "N/A";
 }
 
-ReSIDBuilderImpl::~ReSIDBuilderImpl (void)
+CoReSIDBuilder::~CoReSIDBuilder (void)
 {   // Remove all are SID emulations
     remove ();
 }
 
 // Create a new sid emulation.  Called by libsidplay2 only
-uint ReSIDBuilderImpl::create (uint sids)
+uint CoReSIDBuilder::create (uint sids)
 {
     uint   count;
     ReSID *sid = NULL;
@@ -100,7 +108,7 @@ uint ReSIDBuilderImpl::create (uint sids)
     // Check available devices
     count = devices (false);
     if (!m_status)
-        goto ReSIDBuilderImpl_create_error;
+        goto CoReSIDBuilder_create_error;
     if (count && (count < sids))
         sids = count;
 
@@ -115,30 +123,30 @@ uint ReSIDBuilderImpl::create (uint sids)
         // Memory alloc failed?
         if (!sid)
         {
-            sprintf (m_errorBuffer, "%s ERROR: Unable to create ReSID object", name ());
+            sprintf (m_errorBuffer, "%s ERROR: Unable to create ReSID object", iname ());
             m_error = m_errorBuffer;
-            goto ReSIDBuilderImpl_create_error;
+            goto CoReSIDBuilder_create_error;
         }
 
         // SID init failed?
         if (!*sid)
         {
             m_error = sid->error ();
-            goto ReSIDBuilderImpl_create_error;
+            goto CoReSIDBuilder_create_error;
         }
 
         sidobjs.push_back (sid);
     }
     return count;
 
-ReSIDBuilderImpl_create_error:
+CoReSIDBuilder_create_error:
     m_status = false;
     if (sid)
         delete sid;
     return count;
 }
 
-const char *ReSIDBuilderImpl::credits ()
+const char *CoReSIDBuilder::credits ()
 {
     m_status = true;
 
@@ -162,7 +170,7 @@ const char *ReSIDBuilderImpl::credits ()
 }
 
 
-uint ReSIDBuilderImpl::devices (bool created)
+uint CoReSIDBuilder::devices (bool created)
 {
     m_status = true;
     if (created)
@@ -171,7 +179,7 @@ uint ReSIDBuilderImpl::devices (bool created)
         return 0;
 }
 
-void ReSIDBuilderImpl::filter (const sid_filter_t *filter)
+void CoReSIDBuilder::filter (const sid_filter_t *filter)
 {
     int size = sidobjs.size ();
     m_status = true;
@@ -179,16 +187,16 @@ void ReSIDBuilderImpl::filter (const sid_filter_t *filter)
     {
         ReSID *sid = sidobjs[i];
         if (!sid->filter (filter))
-            goto ReSIDBuilderImpl_sidFilterDef_error;
+            goto CoReSIDBuilder_sidFilterDef_error;
     }
 return;
 
-ReSIDBuilderImpl_sidFilterDef_error:
+CoReSIDBuilder_sidFilterDef_error:
     m_error  = ERR_FILTER_DEFINITION;
     m_status = false;
 }
 
-void ReSIDBuilderImpl::filter (bool enable)
+void CoReSIDBuilder::filter (bool enable)
 {
     int size = sidobjs.size ();
     m_status = true;
@@ -200,7 +208,7 @@ void ReSIDBuilderImpl::filter (bool enable)
 }
 
 // Find a free SID of the required specs
-IInterface *ReSIDBuilderImpl::lock (c64env *env, sid2_model_t model)
+ISidUnknown *CoReSIDBuilder::lock (c64env *env, sid2_model_t model)
 {
     int size = sidobjs.size ();
     m_status = true;
@@ -211,24 +219,24 @@ IInterface *ReSIDBuilderImpl::lock (c64env *env, sid2_model_t model)
         if (sid->lock (env))
         {
             sid->model (model);
-            return sid->aggregate ();
+            return sid->iaggregate ();
         }
     }
     // Unable to locate free SID
     m_status = false;
-    sprintf (m_errorBuffer, "%s ERROR: No available SIDs to lock", name ());
+    sprintf (m_errorBuffer, "%s ERROR: No available SIDs to lock", iname ());
     return NULL;
 }
 
 // Allow something to use this SID
-void ReSIDBuilderImpl::unlock (IInterface *device)
+void CoReSIDBuilder::unlock (ISidUnknown &device)
 {
-    IInterface *emulation = device->aggregate ();
+    ISidUnknown *emulation = device.iaggregate ();
     int size = sidobjs.size ();
     // Maek sure this is our SID
     for (int i = 0; i < size; i++)
     {
-        if (sidobjs[i]->aggregate() == emulation)
+        if (sidobjs[i]->iaggregate() == emulation)
         {   // Unlock it
             ReSID *sid = sidobjs[i];
             sid->lock (NULL);
@@ -238,12 +246,12 @@ void ReSIDBuilderImpl::unlock (IInterface *device)
 }
 
 // Remove all SID emulations.
-void ReSIDBuilderImpl::remove ()
+void CoReSIDBuilder::remove ()
 {
     sidobjs.clear();
 }
 
-void ReSIDBuilderImpl::sampling (uint_least32_t freq)
+void CoReSIDBuilder::sampling (uint_least32_t freq)
 {
     int size = sidobjs.size ();
     m_status = true;
@@ -255,29 +263,32 @@ void ReSIDBuilderImpl::sampling (uint_least32_t freq)
 }
 
 // Find the correct interface
-bool ReSIDBuilderImpl::ifquery (const InterfaceID &iid, void **implementation)
+bool CoReSIDBuilder::_iquery (const Iid &iid, void **implementation)
 {
-    if (iid == ReSIDBuilder::iid())
-        *implementation = static_cast<ReSIDBuilder *>(this);
+    if (iid == IReSIDBuilder::iid())
+        *implementation = static_cast<IReSIDBuilder *>(this);
     else if (iid == ISidBuilder::iid())
-        *implementation = static_cast<ReSIDBuilder *>(this);
-    else if (iid == IInterface::iid())
-        *implementation = static_cast<ReSIDBuilder *>(this);
+        *implementation = static_cast<IReSIDBuilder *>(this);
+    else if (iid == ISidUnknown::iid())
+        *implementation = static_cast<IReSIDBuilder *>(this);
     else
         return false;
     return true;
 }
 
+SIDPLAY2_NAMESPACE_STOP
+
+using SIDPLAY2_NAMESPACE::CoReSIDBuilder;
 
 // Entry point
-IInterface *ReSIDBuilderCreate (const char * const name)
+ISidUnknown *ReSIDBuilderCreate (const char * const name)
 {
 #ifdef HAVE_EXCEPTIONS
-	ReSIDBuilderImpl *builder = new(std::nothrow) ReSIDBuilderImpl(name);
+	CoReSIDBuilder *builder = new(std::nothrow) CoReSIDBuilder(name);
 #else
-    ReSIDBuilderImpl *builder = new ReSIDBuilderImpl(name);
+    CoReSIDBuilder *builder = new CoReSIDBuilder(name);
 #endif
     if (builder)
-        return builder->aggregate ();
+        return builder->iaggregate ();
     return 0;
 }

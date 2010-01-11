@@ -21,8 +21,11 @@
 // The CIA emulations are very generic and here we need to effectively
 // wire them into the computer (like adding a chip to a PCB).
 
+#include "sidconfig.h"
 #include "c64env.h"
 #include "../mos6526/mos6526.h"
+
+SIDPLAY2_NAMESPACE_START
 
 /* CIA 1 specifics:
    Generates IRQs
@@ -81,5 +84,7 @@ public:
      m_env(*env) {}
     const char *error (void) {return "";}
 };
+
+SIDPLAY2_NAMESPACE_STOP
 
 #endif // _c64cia_h_

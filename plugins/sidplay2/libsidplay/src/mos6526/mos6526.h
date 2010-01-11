@@ -16,6 +16,9 @@
  ***************************************************************************/
 /***************************************************************************
  *  $Log: mos6526.h,v $
+ *  Revision 1.21  2008/02/27 20:59:27  s_a_white
+ *  Re-sync COM like interface and update to final names.
+ *
  *  Revision 1.20  2006/06/27 19:35:28  s_a_white
  *  Changed ifquery return type.
  *
@@ -99,10 +102,13 @@
 #ifndef _mos6526_h_
 #define _mos6526_h_
 
+#include "sidconfig.h"
 #include "imp/component.h"
 #include "event.h"
 
-class MOS6526: public Component<IComponent>
+SIDPLAY2_NAMESPACE_START
+
+class MOS6526: public CoComponent<ISidComponent>
 {
 private:
     static const char *credit;
@@ -159,7 +165,7 @@ protected:
 
 private:
     // Interface - Later use
-    bool ifquery (const InterfaceID &, void **) { return false; }
+    bool _iquery (const Iid &, void **) { return false; }
 
 protected:
     MOS6526 (EventContext *context);
@@ -188,5 +194,7 @@ public:
     // connected to pins on the IC.
     void clock (float64_t clock);
 };
+
+SIDPLAY2_NAMESPACE_STOP
 
 #endif // _mos6526_h_

@@ -15,6 +15,18 @@
  ***************************************************************************/
 /***************************************************************************
  *  $Log: player.cpp,v $
+ *  Revision 1.93  2008/03/10 22:16:57  s_a_white
+ *  Prevent initialising objects from itself during construction.
+ *
+ *  Revision 1.92  2008/03/03 08:24:37  s_a_white
+ *  Fixes up various asserts.  Is component.h still needed?
+ *
+ *  Revision 1.91  2008/03/02 23:16:00  s_a_white
+ *  Add Timer API
+ *
+ *  Revision 1.90  2008/02/27 20:59:27  s_a_white
+ *  Re-sync COM like interface and update to final names.
+ *
  *  Revision 1.89  2007/01/27 16:18:38  s_a_white
  *  GCC compile fixes.
  *
@@ -330,13 +342,16 @@
 
 
 // Static Creat function
-IInterface *sidplay2::create ()
+ISidUnknown *ISidplay2::create ()
 {
 #ifdef HAVE_EXCEPTIONS
-    return new(std::nothrow) SIDPLAY2_NAMESPACE::Player;
+    ISidplay2 *sidplay2 = new(std::nothrow) SIDPLAY2_NAMESPACE::Player;
 #else
-    return new SIDPLAY2_NAMESPACE::Player;
+    ISidplay2 *sidplay2 = new SIDPLAY2_NAMESPACE::Player;
 #endif
+    if (sidplay2)
+        return sidplay2->iaggregate ();
+    return 0;
 }
 
 
@@ -388,7 +403,8 @@ const char  *Player::credit[];
 // this player
 Player::Player (void)
 // Set default settings for system
-:ICoInterface<sidplay2>("SIDPlay 2"),
+:CoUnknown<ISidplay2>("SIDPlay 2"),
+ CoAggregate<ISidTimer>(*iaggregate()),
  c64env  (&m_scheduler),
  m_scheduler ("SIDPlay 2"),
  cpu     (&m_scheduler),
@@ -420,10 +436,10 @@ Player::Player (void)
 
     // SID Initialise
     {for (int i = 0; i < SID2_MAX_SIDS; i++)
-        sid[i] = nullsid.aggregate ();
+        sid[i] = nullsid.iaggregate ();
     }
     xsid.emulation(sid[0]);
-    sid[0] = xsid.aggregate ();
+    sid[0] = xsid.iaggregate ();
     // Setup sid mapping table
     {for (int i = 0; i < SID2_MAPPER_SIZE; i++)
         m_sidmapper[i] = 0;
@@ -594,7 +610,7 @@ int Player::load (SidTune *tune)
 
     for (int i = 0; i < SID2_MAX_SIDS; i++)
     {
-        IfPtr<ISidMixer> mixer(sid[1]);
+        SidIPtr<ISidMixer> mixer(sid[1]);
         if (mixer)
         {
             uint_least8_t v = 3;
@@ -966,7 +982,7 @@ void Player::reset (void)
     m_scheduler.reset ();
     for (i = 0; i < SID2_MAX_SIDS; i++)
     {
-        IfPtr<ISidEmulation> s(sid[i]);
+        SidIPtr<ISidEmulation> s(sid[i]);
         s->reset (0x0f);
         // Synchronise the waveform generators
         // (must occur after reset)
@@ -1286,12 +1302,12 @@ void Player::sid2crc (uint8_t data)
     }
 }
 
-bool Player::ifquery (const InterfaceID &iid, void **implementation)
+bool Player::_iquery (const Iid &iid, void **implementation)
 {
-    if (iid == sidplay2::iid())
-        *implementation = static_cast<sidplay2 *>(this);
-    else if (iid == IInterface::iid())
-        *implementation = static_cast<sidplay2 *>(this);
+    if ((iid == ISidplay2::iid()) || (iid == ISidUnknown::iid()))
+        *implementation = static_cast<ISidplay2*>(this);
+    else if (iid == ISidTimer::iid())
+        *implementation = static_cast<ISidTimer*>(this);
     else
         return false;
     return true;

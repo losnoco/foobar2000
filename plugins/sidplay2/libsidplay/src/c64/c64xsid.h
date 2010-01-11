@@ -21,16 +21,21 @@
  */
 
 #include "c64env.h"
+#include "sidconfig.h"
 #include "sidbuilder.h"
+#include "sidlazyiptr.h"
+#include "imp/sidcoaggregate.h"
 #include "../xsid/xsid.h"
 
-class c64xsid: public XSID, ICoAggregate<ISidMixer>
+SIDPLAY2_NAMESPACE_START
+
+class c64xsid: public XSID, CoAggregate<ISidMixer>
 {
 private:
-    c64env                  &m_env;
-    IfLazyPtr<ISidEmulation> m_sid;
-    IfLazyPtr<ISidMixer>     m_mixer;
-    int_least32_t            m_gain;
+    c64env                    &m_env;
+    SidLazyIPtr<ISidEmulation> m_sid;
+    SidLazyIPtr<ISidMixer>     m_mixer;
+    int_least32_t              m_gain;
 
 private:
     uint8_t readMemByte (uint_least16_t addr)
@@ -42,26 +47,26 @@ private:
 
     void writeMemByte (uint8_t data) { m_sid->write (0x18, data); }
 
-    bool ifquery (const InterfaceID &iid, void **implementation)
+    bool _iquery (const Iid &iid, void **implementation)
     {
         if (iid == ISidMixer::iid())
         {
             *implementation = static_cast<ISidMixer *>(this);
             return true;
         }
-        return XSID::ifquery (iid, implementation);
+        return XSID::_iquery (iid, implementation);
     }
 
 public:
     c64xsid (c64env *env)
     :XSID(&env->context ()),
-     ICoAggregate<ISidMixer>(*aggregate()),
+     CoAggregate<ISidMixer>(*iaggregate()),
      m_env(*env), m_sid(0), m_mixer(0), m_gain(100)
     {
         ;
     }
 
-    IInterface *aggregate () { return XSID::aggregate (); }
+    ISidUnknown *iaggregate () { return XSID::iaggregate (); }
 
     // Standard component interface
     const char *error (void) {return "";}
@@ -119,11 +124,13 @@ public:
     }
 
     // Xsid specific
-    void emulation (IfPtr<ISidEmulation> &sid)
+    void emulation (SidIPtr<ISidEmulation> &sid)
     {
         m_mixer = sid;
         m_sid   = sid;
     }
 
-    IInterface *emulation (void) { return &m_sid; }
+    ISidUnknown *emulation (void) { return &m_sid; }
 };
+
+SIDPLAY2_NAMESPACE_STOP

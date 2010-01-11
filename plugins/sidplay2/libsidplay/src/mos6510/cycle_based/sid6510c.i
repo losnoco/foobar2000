@@ -16,6 +16,9 @@
  ***************************************************************************/
 /***************************************************************************
  *  $Log: sid6510c.i,v $
+ *  Revision 1.40  2008/02/27 20:59:27  s_a_white
+ *  Re-sync COM like interface and update to final names.
+ *
  *  Revision 1.39  2004/06/26 11:10:23  s_a_white
  *  Changes to support new calling convention for event scheduler.
  *
@@ -148,6 +151,7 @@
 
 #include "sid6510c.h"
 
+SIDPLAY2_NAMESPACE_START
 
 SID6510::SID6510 (EventContext *context)
 :MOS6510(context),
@@ -464,3 +468,5 @@ void SID6510::triggerIRQ (void)
         }
     }
 }
+
+SIDPLAY2_NAMESPACE_STOP

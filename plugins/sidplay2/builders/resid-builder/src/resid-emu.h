@@ -34,10 +34,13 @@
 #   define RESID
 #endif
 
+#include <sidplay/imp/sidcoaggregate.h>
 #include "resid-builder.h"
 
-class ReSID: public SidEmulation<ISidEmulation,ReSIDBuilder>,
-             public ICoAggregate<ISidMixer>
+SIDPLAY2_NAMESPACE_START
+
+class ReSID: public CoEmulation<ISidEmulation,IReSIDBuilder>,
+             public CoAggregate<ISidMixer>
 {
 private:
     EventContext *m_context;
@@ -52,13 +55,13 @@ private:
     uint_least8_t m_optimisation;
 
 public:
-    ReSID  (ReSIDBuilder *builder);
+    ReSID  (IReSIDBuilder *builder);
     ~ReSID (void);
 
-    IInterface *aggregate () { return SidEmulation<ISidEmulation,ReSIDBuilder>::aggregate (); }
+    ISidUnknown *iaggregate () { return CoEmulation<ISidEmulation,IReSIDBuilder>::iaggregate (); }
 
     // IInterface
-    bool ifquery (const InterfaceID &iid, void **implementation);
+    bool _iquery (const Iid &iid, void **implementation);
 
    // Standard component functions
     const char   *credits (void) {return m_credit;}
@@ -79,9 +82,11 @@ public:
     static   int  devices (char *error);
 
     // Specific to resid
-    void sampling (uint freq);
+    void sampling (uint_least32_t freq);
     bool filter   (const sid_filter_t *filter);
     void model    (sid2_model_t model);
     // Must lock the SID before using the standard functions.
     bool lock     (c64env *env);
 };
+
+SIDPLAY2_NAMESPACE_STOP

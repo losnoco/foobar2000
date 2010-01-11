@@ -20,11 +20,11 @@
 
 #include <sidplay/sidbuilder.h>
 
-class ReSIDBuilder: public ISidBuilder
+class IReSIDBuilder: public ISidBuilder
 {
 public:
-    static const InterfaceID &iid () {
-        return SID2IID<0x90a0aa02, 0xf272, 0x435d, 0x8f, 0x6b, 0x71, 0xb4, 0x5a, 0xc2, 0xf9, 0x9f>();
+    static const Iid &iid () {
+        return SIDIID<0x90a0aa02, 0xf272, 0x435d, 0x8f6b, 0x71b4, 0x5ac2f99f>();
     }
 
     virtual uint create   (uint sids) = 0;
@@ -35,9 +35,8 @@ public:
     virtual void sampling (uint_least32_t freq) = 0;
 };
 
-// Future interface name
-typedef ReSIDBuilder IReSIDBuilder;
+typedef IReSIDBuilder ReSIDBuilder;
 
-extern "C" IInterface *ReSIDBuilderCreate (const char * name);
+extern "C" ISidUnknown *ReSIDBuilderCreate (const char * name);
 
 #endif // _resid_h_

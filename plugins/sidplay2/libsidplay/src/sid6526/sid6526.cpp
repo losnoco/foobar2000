@@ -16,6 +16,14 @@
  ***************************************************************************/
 /***************************************************************************
  *  $Log: sid6526.cpp,v $
+ *  Revision 1.17  2008/05/05 11:33:15  s_a_white
+ *  Whilst re-programming and starting a timer causes a 2 cycle overhead,
+ *  restarting a continuous timer from the interrupt has only a 1 cycle overhead.
+ *  The 1 cycle overhead confirmed with NMIs, vice and Iisibiisi.sid.
+ *
+ *  Revision 1.16  2008/02/27 20:59:27  s_a_white
+ *  Re-sync COM like interface and update to final names.
+ *
  *  Revision 1.15  2006/10/28 08:39:55  s_a_white
  *  New, easier to use, COM style interface.
  *
@@ -65,8 +73,11 @@
 
 #include <time.h>
 #include "config.h"
+#include "c64env.h"
 #include "sidendian.h"
 #include "sid6526.h"
+
+SIDPLAY2_NAMESPACE_START
 
 const char * const SID6526::credit =
 {   // Optional information
@@ -75,7 +86,7 @@ const char * const SID6526::credit =
 };
 
 SID6526::SID6526 (c64env *env)
-:Component<IComponent>("SID6526"),
+:CoComponent<ISidComponent>("SID6526"),
  Event("CIA Timer A"),
  m_env(*env),
  m_eventContext(m_env.context ()),
@@ -165,6 +176,8 @@ void SID6526::event (void)
 {   // Timer Modes
     m_accessClk = m_eventContext.getTime (m_phase);
     ta = ta_latch;
-    schedule (m_eventContext, (event_clock_t) ta + 3, m_phase);
+    schedule (m_eventContext, (event_clock_t) ta + 1, m_phase);
     m_env.interruptIRQ (true);
 }
+
+SIDPLAY2_NAMESPACE_STOP

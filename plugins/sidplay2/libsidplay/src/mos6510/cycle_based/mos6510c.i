@@ -16,6 +16,9 @@
  ***************************************************************************/
 /***************************************************************************
  *  $Log: mos6510c.i,v $
+ *  Revision 1.52  2008/02/27 20:59:27  s_a_white
+ *  Re-sync COM like interface and update to final names.
+ *
  *  Revision 1.51  2004/11/12 20:18:43  s_a_white
  *  Valgrind memory access fixes
  *
@@ -187,6 +190,8 @@
 #ifdef HAVE_EXCEPTIONS
 #   include <new>
 #endif
+
+SIDPLAY2_NAMESPACE_START
 
 //#define PC64_TESTSUITE
 #ifdef PC64_TESTSUITE
@@ -2511,3 +2516,5 @@ void MOS6510::debug (bool enable, FILE *out)
     else
         m_fdbg = out;
 }
+
+SIDPLAY2_NAMESPACE_STOP

@@ -18,14 +18,13 @@
 #ifndef _component_h_
 #define _component_h_
 
-#include "iinterface.h"
-#include "ifptr.h"
+#include <sidplay/sidunknown.h>
 
-class IComponent : public IInterface
+class ISidComponent : public ISidUnknown
 {
 public:
-    static const InterfaceID &iid () {
-        return SID2IID<0xa9f9bf8b, 0xd0c2, 0x4dfa, 0x8b, 0x8a, 0xf0, 0xdd, 0xd7, 0xc8, 0xb0, 0x5b>();
+    static const Iid &iid () {
+        return SIDIID<0xa9f9bf8b, 0xd0c2, 0x4dfa, 0x8b8a, 0xf0dd, 0xd7c8b05b>();
     }
 
     virtual const   char *credits (void) = 0;

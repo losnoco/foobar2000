@@ -17,6 +17,9 @@
  ***************************************************************************/
 /***************************************************************************
  *  $Log: xsid.cpp,v $
+ *  Revision 1.31  2008/02/27 20:59:27  s_a_white
+ *  Re-sync COM like interface and update to final names.
+ *
  *  Revision 1.30  2007/01/27 11:14:21  s_a_white
  *  Must export interfaces correctly via ifquery now.
  *
@@ -101,10 +104,10 @@
 
 #include <string.h>
 #include <stdio.h>
-#include "config.h"
 #include "sidendian.h"
 #include "xsid.h"
 
+SIDPLAY2_NAMESPACE_START
 
 // Convert from 4 bit resolution to 8 bits
 /* Rev 2.0.5 (saw) - Removed for a more non-linear equivalent
@@ -444,7 +447,7 @@ void channel::silence ()
 
 
 XSID::XSID (EventContext *context)
-:SidEmulation<ISidEmulation>("XSID", NULL),
+:CoEmulation<ISidEmulation>("XSID", NULL),
  Event("xSID"),
  ch4("CH4", context, this),
  ch5("CH5", context, this),
@@ -640,13 +643,15 @@ bool XSID::storeSidData0x18 (uint8_t data)
 }
 
 // COM emulation
-bool XSID::ifquery (const InterfaceID &iid, void **implementation)
+bool XSID::_iquery (const Iid &iid, void **implementation)
 {
     if (iid == ISidEmulation::iid())
         *implementation = static_cast<ISidEmulation *>(this);
-    else if (iid == IInterface::iid())
+    else if (iid == ISidUnknown::iid())
         *implementation = static_cast<ISidEmulation *>(this);
     else
         return false;
     return true;
 }
+
+SIDPLAY2_NAMESPACE_STOP

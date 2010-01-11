@@ -23,20 +23,25 @@
 // use interface files instead:
 
 #include <string.h>
+#include <sidplay/sidconfig.h>
 #include <sidplay/component.h>
 
 //-------------------------------------------------------------------------
-#include <sidplay/imp/iinterface.h>
+#include <sidplay/imp/sidcounknown.h>
 
-template <class TImplementation>
-class Component: public ICoInterface<TImplementation>
+SIDPLAY2_NAMESPACE_START
+
+template <class TInterface>
+class CoComponent: public CoUnknown<TInterface>
 {
 public:
-    Component (const char *name) : ICoInterface<TImplementation>(name) {;}
-    virtual ~Component () {;}
+    CoComponent (const char *name) : CoUnknown<TInterface>(name) {;}
+    virtual ~CoComponent () {;}
 
-    // IInterface
-    void _ifrelease () { if (!this->_ifrefcount()) delete this; }
+    // ISidUnknown
+//    void _idestroy () { delete this; }
 };
+
+SIDPLAY2_NAMESPACE_STOP
 
 #endif // _imp_component_h_
