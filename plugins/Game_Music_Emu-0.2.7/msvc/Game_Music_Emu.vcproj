@@ -519,10 +519,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\gme\ym2612.h"
-				>
-			</File>
-			<File
 				RelativePath="..\gme\Ym2612_Emu.h"
 				>
 			</File>
