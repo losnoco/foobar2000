@@ -374,7 +374,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\ahead\cvsroot-nda\NeroDigitalAudio\pfc\com_ptr_t.h"
+			RelativePath=".\com_ptr_t.h"
 			>
 		</File>
 		<File
