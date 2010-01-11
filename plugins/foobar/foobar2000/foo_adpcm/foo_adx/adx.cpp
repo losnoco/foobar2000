@@ -1,7 +1,15 @@
-#define MY_VERSION "1.7"
+#define MY_VERSION "1.8"
 
 /*
 	change log
+
+2009-04-07 00:54 UTC - kode54
+- Added new ADX keys
+
+2009-04-05 05:59 UTC - kode54
+- Read cut-off frequency from file header
+- Implemented encrypted file support from vgmstream
+- Version is now 1.8
 
 2008-02-04 03:45 UTC - kode54
 - Filter coefficients calculated correctly from sample rate and cut-off frequency
@@ -70,9 +78,9 @@ typedef struct {
 
 //#define    CLIP(s)    if (s>32767) s=32767; else if (s<-32768) s=-32768
 
-static void adx_decode(t_int32 *out,const unsigned char *in,PREV *prev, const short * coeff)
+static void adx_decode(t_int32 *out,const unsigned char *in,PREV *prev, const short * coeff, const t_uint16 xor)
 {
-	int scale = ((in[0]<<8)|(in[1]))+1;
+	int scale = (((in[0]<<8)|(in[1]))^xor)+1;
 	int i;
 	int s0,s1,s2,d;
 
@@ -108,13 +116,13 @@ static void adx_decode(t_int32 *out,const unsigned char *in,PREV *prev, const sh
 
 }
 
-static void adx_decode_stereo(t_int32 *out,const unsigned char *in,PREV *prev, const short * coeff)
+static void adx_decode_stereo(t_int32 *out,const unsigned char *in,PREV *prev, const short * coeff, const t_uint16 xor1, const t_uint16 xor2)
 {
 	t_int32 tmp[32*2];
 	int i;
 
-	adx_decode(tmp   ,in   ,prev,   coeff);
-	adx_decode(tmp+32,in+18,prev+1, coeff);
+	adx_decode(tmp   ,in   ,prev,   coeff, xor1);
+	adx_decode(tmp+32,in+18,prev+1, coeff, xor2);
 	for(i=0;i<32;i++) {
 		out[i*2]   = tmp[i];
 		out[i*2+1] = tmp[i+32];
@@ -138,6 +146,8 @@ static inline t_uint32 read_long( const t_uint8 * ptr )
 {
 	return pfc::byteswap_if_le_t( * ( ( t_uint32 * ) ptr ) );
 }
+
+static int find_key(service_ptr_t<file> & p_file, t_uint16 & xor_start, t_uint16 & xor_mult, t_uint16 & xor_add, abort_callback & p_abort);
 
 class input_adx
 {
@@ -167,6 +177,18 @@ class input_adx
 	ADXContext               * loop_context;
 
 	short                      coeff [2];
+
+	bool                       encoded;
+	t_uint16                   xor_start;
+	t_uint16                   xor_mult;
+	t_uint16                   xor_add;
+	t_uint16                   xor;
+	t_uint16                   xor_loop_start;
+
+	inline void next_key()
+	{
+		xor = ( xor * xor_mult + xor_add ) & 0x7FFF;
+	}
 
 public:
 	input_adx() : context(0), loop_context(0), srate(0) {}
@@ -218,6 +240,7 @@ private:
 			ptr = data_buffer.get_ptr();
 			m_file->read_object( ptr + 4, offset - 4, p_abort );
 			if ( memcmp( ptr + offset - 6, signature, 6 ) ) throw exception_io_data();
+			if ( ptr [4] != 3 || ptr [5] != 18 || ptr [6] != 4 ) throw exception_io_data();
 			nch = ptr[7];
 			if ( nch < 1 || nch > 2 ) throw exception_io_data();
 		}
@@ -227,11 +250,22 @@ private:
 
 		unsigned version = 0;
 		
-		if ( offset >= 16 + 4 + 6 ) version = read_long( ptr + 16 );
+		if ( offset >= 16 + 4 + 6 ) version = ptr [18] * 0x100 + ptr [19];
 
 		loop_start = ~0;
 
-		if ( version == 0x01F40300 )
+		// Encryption
+		encoded = false;
+		if ( version == 0x0408 )
+		{
+			if ( find_key( m_file, xor_start, xor_mult, xor_add, p_abort ) )
+			{
+				encoded = true;
+				version = 0x0400;
+			}
+		}
+
+		if ( version == 0x0300 )
 		{
 			if ( ( offset >= 0x28 + 4 + 6 ) && ( read_long( ptr + 0x18 ) == 1 ) )
 			{
@@ -242,7 +276,7 @@ private:
 				if ( loop_start >= loop_end || loop_end > size ) loop_start = ~0;
 			}
 		}
-		else if ( version == 0x01F40400 )
+		else if ( version == 0x0400 )
 		{
 			if ( ( offset >= 0x34 + 4 + 6 ) && ( read_long( ptr + 0x24 ) == 1 ) )
 			{
@@ -258,7 +292,7 @@ private:
 
 		double x,y,a,b,c;
 
-		x = 500;
+		x = ptr [16] * 0x100 + ptr [17];
 		y = srate;
 
 		a = M_SQRT2 - cos( 2.0 * M_PI * x / y );
@@ -308,6 +342,15 @@ public:
 		swallow = 0;
 
 		m_file->seek( head_skip + offset, p_abort );
+
+		if ( encoded )
+		{
+			xor = xor_start;
+		}
+		else
+		{
+			xor = 0;
+		}
 	}
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
@@ -353,13 +396,32 @@ more:
 							if ( ! loop_context ) loop_context = new ADXContext;
 							*loop_context = *context;
 							loop_swallow = loop_start - pos;
+							xor_loop_start = xor;
 						}
 
 						if (pos >= loop_end) break;
 					}
 
-					if (nch == 1) adx_decode( out + done, in + n, context->prev, coeff );
-					else adx_decode_stereo( out + done * 2, in + n, context->prev, coeff );
+					if (nch == 1)
+					{
+						adx_decode( out + done, in + n, context->prev, coeff, xor );
+						if ( encoded ) next_key();
+					}
+					else
+					{
+						if ( encoded )
+						{
+							t_uint16 xor1 = xor;
+							next_key();
+							t_uint16 xor2 = xor;
+							next_key();
+							adx_decode_stereo( out + done * 2, in + n, context->prev, coeff, xor1, xor2 );
+						}
+						else
+						{
+							adx_decode_stereo( out + done * 2, in + n, context->prev, coeff, 0, 0 );
+						}
+					}
 					done += 32; //, dprintf(_T("output\n"));
 				}
 				if (swallow)
@@ -384,6 +446,7 @@ more:
 					unsigned swallow_end = pos - loop_end;
 					pos = loop_start - loop_swallow;
 					*context = *loop_context;
+					xor = xor_loop_start;
 					m_file->seek( head_skip + loop_start_offset, p_abort );
 					if (swallow + swallow_end >= done)
 					{
@@ -523,6 +586,186 @@ public:
 };
 
 #endif
+
+/* guessadx stuff */
+
+static struct {
+	t_uint16 start,mult,add;
+} keys[] = {
+	/* Clover Studio (GOD HAND, Okami) */
+	/* I'm pretty sure this is right, based on a decrypted version of some GOD HAND tracks. */
+	/* Also it is the 2nd result from guessadx */
+	{0x49e1,0x4a57,0x553d},
+
+	/* Grasshopper Manufacture 0 (Blood+) */
+	/* this is estimated */
+	{0x5f5d,0x58bd,0x55ed},
+
+	/* Grasshopper Manufacture 1 (Killer7) */
+	/* this is estimated */
+	{0x50fb,0x5803,0x5701},
+
+	/* Grasshopper Manufacture 2 (Samurai Champloo) */
+	/* confirmed unique with guessadx */
+	{0x4f3f,0x472f,0x562f},
+
+	/* Moss Ltd (Raiden III) */
+	/* this is estimated */
+	{0x66f5,0x58bd,0x4459},
+
+	/* Sonic Team 0 (Phantasy Star Universe) */
+	/* this is estimated */
+	{0x5deb,0x5f27,0x673f},
+
+	/* G.dev (Senko no Ronde) */
+	/* this is estimated */
+	{0x46d3,0x5ced,0x474d},
+
+	/* Sonic Team 1 (NiGHTS: Journey of Dreams) */
+	/* this seems to be dead on, but still estimated */
+	{0x440b,0x6539,0x5723},
+
+	/* from guessadx (unique?), unknown source */
+	{0x586d,0x5d65,0x63eb},
+
+	/* Navel (Shuffle! On the Stage) */
+	/* 2nd key from guessadx */
+	{0x4969,0x5deb,0x467f},
+
+	/* Success (Aoishiro) */
+	/* 1st key from guessadx */
+	{0x4d65,0x5eb7,0x5dfd},
+
+	/* Sonic Team 2 (Sonic and the Black Knight) */
+	/* confirmed unique with guessadx */
+	{0x55b7,0x6191,0x5a77},
+
+	/* (Enterbrain) Amagami */
+	/* one of 32 from guessadx */
+	{0x5a17,0x509f,0x5bfd},
+};
+
+static const int key_count = sizeof(keys)/sizeof(keys[0]);
+
+/* return 0 if not found, 1 if found and set parameters */
+static int find_key(service_ptr_t<file> & p_file, t_uint16 & xor_start, t_uint16 & xor_mult, t_uint16 & xor_add, abort_callback & p_abort)
+{
+	pfc::array_t<t_uint16> scales;
+	pfc::array_t<t_uint16> prescales;
+	int bruteframe=0,bruteframecount=-1;
+	int startoff, endoff;
+	int rc = 0;
+	unsigned char nch;
+
+	p_file->seek( 0, p_abort );
+	p_file->read_bendian_t( startoff, p_abort );
+	startoff = ( startoff & 0x7fffffff ) + 4;
+	p_file->seek( 7, p_abort );
+	p_file->read_object_t( nch, p_abort );
+	p_file->seek( 12, p_abort );
+	p_file->read_bendian_t( endoff, p_abort );
+	endoff = (endoff + 31) / 32 * 18 * nch + startoff;
+
+	/* how many scales? */
+	{
+		int framecount=(endoff-startoff)/18;
+		if (framecount<bruteframecount || bruteframecount<0)
+			bruteframecount=framecount;
+	}
+
+	/* find longest run of nonzero frames */
+	{
+		int longest=-1,longest_length=-1;
+		int i;
+		int length=0;
+		p_file->seek( startoff, p_abort );
+		for (i=0;i<bruteframecount;i++) {
+			static const unsigned char zeroes[18]={0};
+			unsigned char buf[18];
+			p_file->read_object_t( buf, p_abort );
+			if (memcmp(zeroes,buf,18)) length++;
+			else length=0;
+			if (length > longest_length) {
+				longest_length=length;
+				longest=i-length+1;
+				if (longest_length >= 0x8000) break;
+			}
+		}
+		if (longest==-1) {
+			return rc;
+		}
+		bruteframecount = longest_length;
+		bruteframe = longest;
+	}
+
+	{
+		/* try to guess key */
+#define MAX_FRAMES (INT_MAX/0x8000)
+		int scales_to_do;
+		int key_id;
+
+		/* allocate storage for scales */
+		scales_to_do = (bruteframecount > MAX_FRAMES ? MAX_FRAMES : bruteframecount);
+		scales.set_size(scales_to_do);
+		/* prescales are those scales before the first frame we test
+		* against, we use these to compute the actual start */
+		if (bruteframe > 0) {
+			int i;
+			/* allocate memory for the prescales */
+			prescales.set_size(bruteframe);
+			/* read the prescales */
+			for (i=0; i<bruteframe; i++) {
+				p_file->seek( startoff + i * 18, p_abort );
+				p_file->read_bendian_t( prescales [i], p_abort );
+			}
+		}
+
+		/* read in the scales */
+		{
+			int i;
+			for (i=0; i < scales_to_do; i++) {
+				p_file->seek( startoff + ( bruteframe + i ) * 18, p_abort );
+				p_file->read_bendian_t( scales [i], p_abort );
+			}
+		}
+
+		/* guess each of the keys */
+		for (key_id=0;key_id<key_count;key_id++) {
+			/* test pre-scales */
+			t_uint16 xor = keys[key_id].start;
+			t_uint16 mult = keys[key_id].mult;
+			t_uint16 add = keys[key_id].add;
+			int i;
+
+			for (i=0;i<bruteframe &&
+				((prescales[i]&0x6000)==(xor&0x6000) ||
+				prescales[i]==0);
+			i++) {
+				xor = xor * mult + add;
+			}
+
+			if (i == bruteframe)
+			{
+				/* test */
+				for (i=0;i<scales_to_do &&
+					(scales[i]&0x6000)==(xor&0x6000);i++) {
+						xor = xor * mult + add;
+				}
+				if (i == scales_to_do)
+				{
+					xor_start = keys[key_id].start;
+					xor_mult = keys[key_id].mult;
+					xor_add = keys[key_id].add;
+
+					rc = 1;
+					return rc;
+				}
+			}
+		}
+	}
+
+	return rc;
+}
 
 static input_singletrack_factory_t<input_adx> g_input_adx_factory;
 
