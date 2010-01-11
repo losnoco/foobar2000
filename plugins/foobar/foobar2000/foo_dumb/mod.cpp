@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.8"
+#define MYVERSION "0.9.9.9"
 
 /*
 	changelog
+
+2009-11-28 17:13 UTC - kode54
+- Implemented a workaround for detecting and supporting MOD files with VBlank timing
+- Version is now 0.9.9.9
 
 2009-10-24 05:13 UTC - kode54
 - Restored old sample info tag reading method and made the new style optional
@@ -1681,6 +1685,23 @@ static bool g_test_extension(const char * ext)
 	return false;
 }
 
+void dumb_it_convert_tempos( DUMB_IT_SIGDATA * itsd, bool vsync )
+{
+	for ( unsigned i = 0, j = itsd->n_patterns; i < j; i++ )
+	{
+		IT_PATTERN * pat = &itsd->pattern[ i ];
+		for ( unsigned k = 0, l = pat->n_entries; k < l; k++ )
+		{
+			IT_ENTRY * entry = &pat->entry[ k ];
+			if ( entry->mask & IT_ENTRY_EFFECT )
+			{
+				if ( vsync && entry->effect == IT_SET_SONG_TEMPO ) entry->effect = IT_SET_SPEED;
+				else if ( !vsync && entry->effect == IT_SET_SPEED && entry->effectvalue > 0x20 ) entry->effect = IT_SET_SONG_TEMPO;
+			}
+		}
+	}
+}
+
 static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * ext, int & start_order, bool & is_it, bool & is_dos)
 {
 	DUH * duh = 0;
@@ -1841,6 +1862,23 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 		is_dos = false;
 		memdata.offset = 0;
 		duh = dumb_read_mod_quick(f, ( ! stricmp( ext, exts[ 0 ] ) || ! stricmp( ext, exts[ 1 ] ) ) ? 0 : 1 );
+		if ( duh )
+		{
+			DUMB_IT_SIGDATA * itsd = duh_get_it_sigdata( duh );
+			long length_original = dumb_it_build_checkpoints( itsd, 0 );
+			dumb_it_convert_tempos( itsd, true );
+			long length_vsync = dumb_it_build_checkpoints( itsd, 0 );
+			if ( length_original < length_vsync ) dumb_it_convert_tempos( itsd, false );
+			IT_CHECKPOINT *checkpoint = itsd->checkpoint;
+			while ( checkpoint )
+			{
+				IT_CHECKPOINT *next = checkpoint->next;
+				_dumb_it_end_sigrenderer( checkpoint->sigrenderer );
+				free( checkpoint );
+				checkpoint = next;
+			}
+			itsd->checkpoint = NULL;
+		}
 	}
 
 	dumbfile_close(f);
