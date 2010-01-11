@@ -1,6 +1,8 @@
 #ifndef _PFC_PROFILER_H_
 #define _PFC_PROFILER_H_
 
+#ifdef _WINDOWS
+
 #include <intrin.h>
 namespace pfc {
 class profiler_static {
@@ -91,4 +93,8 @@ private:
 	mutable t_uint64 m_last_seen;
 };
 }
+#else 
+//PORTME
+#endif
+
 #endif

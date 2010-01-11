@@ -95,21 +95,22 @@ namespace dialog_helper
 	class dialog_modeless_v2
 	{
 	protected:
-		explicit dialog_modeless_v2(unsigned p_id,HWND p_parent,HINSTANCE p_instance = core_api::get_my_instance());
+		explicit dialog_modeless_v2(unsigned p_id,HWND p_parent,HINSTANCE p_instance = core_api::get_my_instance(),bool p_stealfocus = true);
 		virtual ~dialog_modeless_v2();
 		HWND get_wnd() const {return m_wnd;}
 		virtual BOOL on_message(UINT msg,WPARAM wp,LPARAM lp) {return FALSE;}
 
-		static dialog_modeless_v2 * __unsafe__instance_from_window(HWND p_wnd) {return reinterpret_cast<dialog_modeless_v2*>(GetWindowLong(p_wnd,DWL_USER));}
+		static dialog_modeless_v2 * __unsafe__instance_from_window(HWND p_wnd) {return reinterpret_cast<dialog_modeless_v2*>(GetWindowLongPtr(p_wnd,DWLP_USER));}
 	private:
 		static INT_PTR CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
 		void detach_window();
 		BOOL on_message_internal(UINT msg,WPARAM wp,LPARAM lp);
 		enum {status_construction, status_lifetime, status_destruction_requested, status_destruction} m_status;
 		HWND m_wnd;
+		const bool m_stealfocus;
 
-		const dialog_modeless_v2 & operator=(const dialog_modeless_v2 &) {throw pfc::exception_bug_check();}
-		dialog_modeless_v2(const dialog_modeless_v2 &) {throw pfc::exception_bug_check();}
+		const dialog_modeless_v2 & operator=(const dialog_modeless_v2 &);
+		dialog_modeless_v2(const dialog_modeless_v2 &);
 	};
 
 

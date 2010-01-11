@@ -759,8 +759,12 @@ namespace cue_parser
 	{
 		if (stricmp_utf8_partial(p_field,"CUE_TRACK") != 0) return 0;
 		p_field += pfc::skip_utf8_chars(p_field,9);
-		if ((int)p_field[0] - '0' != p_index / 10) return 0;
-		if ((int)p_field[1] - '0' != p_index % 10) return 0;
+
+		if (!pfc::char_is_numeric(p_field[0]) || !pfc::char_is_numeric(p_field[1])) return NULL;
+		if (p_index >= 0) {
+			if ((int)p_field[0] - '0' != p_index / 10) return 0;
+			if ((int)p_field[1] - '0' != p_index % 10) return 0;
+		}
 		if (p_field[2] != '_') return 0;
 		p_field += 3;
 		if (!stricmp_utf8(p_field,"disc")) return "discnumber";
@@ -849,13 +853,9 @@ namespace cue_parser
 		p_info.info_set("cue_embedded","yes");
 	}
 
-	void input_wrapper_cue_base::write_meta_create_field(pfc::string_base & p_out,const char * p_name,int p_index)
-	{
-		p_out.set_string("CUE_TRACK");
-		p_out.add_char((p_index / 10) + '0');
-		p_out.add_char((p_index % 10) + '0');
-		p_out.add_char('_');
-		p_out.add_string(p_name);
+	void input_wrapper_cue_base::write_meta_create_field(pfc::string_base & p_out,const char * p_name,int p_index) {
+		p_out.reset();
+		p_out << "CUE_TRACK" << pfc::format_uint((unsigned)p_index%100,2) << "_" << p_name;
 	}
 
 	void input_wrapper_cue_base::write_meta(file_info & p_baseinfo,const file_info & p_trackinfo,unsigned p_subsong_index)
@@ -883,15 +883,5 @@ namespace cue_parser
 		}
 	}
 
-	void strip_cue_track_metadata(file_info & p_info)
-	{
-		t_size n, m = p_info.meta_get_count();
-		bit_array_bittable mask(m);
-		for(n=0;n<m;n++)
-		{
-			mask.set(n,!extract_meta_is_global(p_info.meta_enum_name(n)));
-		}
-		p_info.meta_remove_mask(mask);
-	}
 }
 

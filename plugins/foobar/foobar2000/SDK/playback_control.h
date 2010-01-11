@@ -127,6 +127,12 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playback_control);
 };
 
+class playback_control_v2 : public playback_control {
+public:
+	virtual float get_volume_step() = 0;
+
+	FB2K_MAKE_SERVICE_INTERFACE(playback_control_v2,playback_control);
+};
 
 //for compatibility with old code
 typedef playback_control play_control;

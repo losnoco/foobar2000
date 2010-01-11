@@ -1,4 +1,4 @@
-//#define __file_info_const_impl_have_hintmap__
+#define __file_info_const_impl_have_hintmap__
 
 //! Special implementation of file_info that implements only const and copy methods. The difference between this and regular file_info_impl is amount of resources used and speed of the copy operation.
 class file_info_const_impl : public file_info
@@ -58,18 +58,19 @@ public:
 	};
 
 #ifdef __file_info_const_impl_have_hintmap__
-	typedef t_uint16 t_hintentry;
+	typedef t_uint32 t_index;
+	enum {hintmap_cutoff = 20};
 #endif//__file_info_const_impl_have_hintmap__
 private:
 	pfc::array_t<char> m_buffer;
-	t_uint16 m_meta_count;
-	t_uint16 m_info_count;
+	t_index m_meta_count;
+	t_index m_info_count;
 	
 	const meta_entry * m_meta;
 	const info_entry * m_info;
 
 #ifdef __file_info_const_impl_have_hintmap__
-	const t_hintentry * m_hintmap;
+	const t_index * m_hintmap;
 #endif
 
 	double m_length;

@@ -304,7 +304,15 @@
 			>
 		</File>
 		<File
+			RelativePath=".\avltree.h"
+			>
+		</File>
+		<File
 			RelativePath="bit_array.h"
+			>
+		</File>
+		<File
+			RelativePath=".\bit_array_impl.h"
 			>
 		</File>
 		<File
@@ -366,6 +374,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\ahead\cvsroot-nda\NeroDigitalAudio\pfc\com_ptr_t.h"
+			>
+		</File>
+		<File
 			RelativePath="guid.cpp"
 			>
 			<FileConfiguration
@@ -424,6 +436,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\map.h"
+			>
+		</File>
+		<File
+			RelativePath=".\order_helper.h"
+			>
+		</File>
+		<File
 			RelativePath="other.cpp"
 			>
 			<FileConfiguration
@@ -475,6 +495,10 @@
 		</File>
 		<File
 			RelativePath="primitives.h"
+			>
+		</File>
+		<File
+			RelativePath=".\printf.cpp"
 			>
 		</File>
 		<File
@@ -732,15 +756,7 @@
 			>
 		</File>
 		<File
-			RelativePath=".\string_fixed.h"
-			>
-		</File>
-		<File
 			RelativePath=".\string_list.h"
-			>
-		</File>
-		<File
-			RelativePath=".\string_simple.h"
 			>
 		</File>
 		<File

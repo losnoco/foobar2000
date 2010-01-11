@@ -164,6 +164,7 @@ class stream_writer_buffer_append_ref_t : public stream_writer
 public:
 	stream_writer_buffer_append_ref_t(t_storage & p_output) : m_output(p_output) {}
 	void write(const void * p_buffer,t_size p_bytes,abort_callback & p_abort) {
+		pfc::static_assert< sizeof(m_output[0]) == 1>();
 		t_size base = m_output.get_size();
 		if (base + p_bytes < base) throw std::bad_alloc();
 		m_output.set_size(base + p_bytes);

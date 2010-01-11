@@ -18,6 +18,8 @@ static void selftest() //never called, testing done at compile time
 	pfc::static_assert_t<sizeof(t_size) == sizeof(void*)>();
 	pfc::static_assert_t<sizeof(t_ssize) == sizeof(void*)>();
 
-	pfc::static_assert_t<sizeof(wchar_t) == 2>();
+	pfc::static_assert_t<sizeof(wchar_t) == 2 || sizeof(wchar_t) == 4>();
+
+	pfc::static_assert_t<sizeof(GUID) == 16>();
 
 }

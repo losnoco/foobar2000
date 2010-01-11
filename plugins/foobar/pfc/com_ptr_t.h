@@ -1,5 +1,8 @@
 namespace pfc {
 
+
+//this is windows-only
+//update me to new conventions
 template<class T>
 class com_ptr_t
 {
@@ -45,8 +48,7 @@ public:
 		return m_ptr;
 	}
 
-	inline T* duplicate_ptr_release()
-	{
+	inline T* duplicate_ptr_release() {
 		T* ret = m_ptr;
 		m_ptr = 0;
 		return ret;
@@ -60,10 +62,11 @@ public:
 	inline bool operator>(const com_ptr_t<T> & p_item) const {return m_ptr > p_item.m_ptr;}
 	inline bool operator<(const com_ptr_t<T> & p_item) const {return m_ptr < p_item.m_ptr;}
 
-	inline static void g_swap(com_ptr_t<T> & item1, com_ptr_t<T> & item2)
-	{
+	inline static void g_swap(com_ptr_t<T> & item1, com_ptr_t<T> & item2) {
 		pfc::swap_t(item1.m_ptr,item2.m_ptr);
 	}
+
+	inline T** receive_ptr() {release();return &m_ptr;}
 
 private:
 	T* m_ptr;

@@ -2,6 +2,25 @@
 #define _FOOBAR2000_SDK_FILE_INFO_IMPL_H_
 
 
+struct __info_entry {
+	void init(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len) {
+		m_name.set_string(p_name,p_name_len);
+		m_value.set_string(p_value,p_value_len);
+	}
+	
+	inline const char * get_name() const {return m_name;}
+	inline const char * get_value() const {return m_value;}
+
+	pfc::string_simple m_name,m_value;
+};
+
+namespace pfc {
+	template<> class traits_t<__info_entry> : public traits_t<pfc::string_simple> {};
+};
+
+
+
+
 class info_storage
 {
 public:
@@ -13,19 +32,8 @@ public:
 	void copy_from(const file_info & p_info);
 	~info_storage();
 private:
-	struct info_entry
-	{
-	
-		void init(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len);
-		void deinit();
-		inline const char * get_name() const {return m_name;}
-		inline const char * get_value() const {return m_value;}
-		
-	
-		char * m_name;
-		char * m_value;
-	};
-	pfc::list_t<info_entry> m_info;
+	typedef __info_entry info_entry;
+	pfc::array_t<info_entry,pfc::alloc_fast> m_info;
 };
 
 class meta_storage

@@ -34,7 +34,11 @@ void order_helper::g_reverse(t_size * order,t_size base,t_size count)
 
 
 void pfc::crash() {
+#if 0 //def _MSC_VER
 	__debugbreak();
+#else
+	*(char*)NULL = 0;
+#endif
 }
 
 

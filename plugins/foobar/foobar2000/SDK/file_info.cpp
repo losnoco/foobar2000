@@ -5,7 +5,7 @@ t_size file_info::meta_find_ex(const char * p_name,t_size p_name_length) const
 	t_size n, m = meta_get_count();
 	for(n=0;n<m;n++)
 	{
-		if (!stricmp_utf8_ex(meta_enum_name(n),infinite,p_name,p_name_length)) return n;
+		if (pfc::stricmp_ascii_ex(meta_enum_name(n),infinite,p_name,p_name_length) == 0) return n;
 	}
 	return infinite;
 }
@@ -47,9 +47,8 @@ t_size file_info::meta_get_count_by_name_ex(const char * p_name,t_size p_name_le
 t_size file_info::info_find_ex(const char * p_name,t_size p_name_length) const
 {
 	t_size n, m = info_get_count();
-	for(n=0;n<m;n++)
-	{
-		if (!stricmp_utf8_ex(info_enum_name(n),infinite,p_name,p_name_length)) return n;
+	for(n=0;n<m;n++) {
+		if (pfc::stricmp_ascii_ex(info_enum_name(n),infinite,p_name,p_name_length) == 0) return n;
 	}
 	return infinite;
 }
@@ -210,9 +209,7 @@ double file_info::info_get_float(const char * name) const
 void file_info::info_set_int(const char * name,t_int64 value)
 {
 	assert(pfc::is_valid_utf8(name));
-	char temp[32];
-	_i64toa(value,temp,10);
-	info_set(name,temp);
+	info_set(name,pfc::format_int(value));
 }
 
 void file_info::info_set_float(const char * name,double value,unsigned precision,bool force_sign,const char * unit)
@@ -387,7 +384,7 @@ void file_info::info_calculate_bitrate(t_filesize p_filesize,double p_length)
 bool file_info::is_encoding_lossy() const {
 	const char * encoding = info_get("encoding");
 	if (encoding != NULL) {
-		if (stricmp_utf8(encoding,"lossy") == 0 /*|| stricmp_utf8(encoding,"hybrid") == 0*/) return true;
+		if (pfc::stricmp_ascii(encoding,"lossy") == 0 /*|| pfc::stricmp_ascii(encoding,"hybrid") == 0*/) return true;
 	} else {
 		//the old way
 		if (info_get("bitspersample") == NULL) return true;
@@ -396,15 +393,31 @@ bool file_info::is_encoding_lossy() const {
 }
 
 bool file_info::g_is_meta_equal(const file_info & p_item1,const file_info & p_item2) {
-	t_size count = p_item1.meta_get_count();
-	if (count != p_item2.meta_get_count()) return false;
+	const t_size count = p_item1.meta_get_count();
+	if (count != p_item2.meta_get_count()) {
+		//uDebugLog() << "meta count mismatch";
+		return false;
+	}
+	pfc::map_t<const char*,t_size,field_name_comparator> item2_meta_map;
+	for(t_size n=0; n<count; n++) {
+		item2_meta_map.set(p_item2.meta_enum_name(n),n);
+	}
 	for(t_size n1=0; n1<count; n1++) {
-		t_size n2 = p_item2.meta_find(p_item1.meta_enum_name(n1));
-		if (n2 == infinite) return false;
+		t_size n2;
+		if (!item2_meta_map.query(p_item1.meta_enum_name(n1),n2)) {
+			//uDebugLog() << "item2 doesn't have " << p_item1.meta_enum_name(n1);
+			return false;
+		}
 		t_size value_count = p_item1.meta_enum_value_count(n1);
-		if (value_count != p_item2.meta_enum_value_count(n2)) return false;
+		if (value_count != p_item2.meta_enum_value_count(n2)) {
+			//uDebugLog() << "meta value count mismatch: " << p_item1.meta_enum_name(n1) << " : " << value_count << " vs " << p_item2.meta_enum_value_count(n2);
+			return false;
+		}
 		for(t_size v = 0; v < value_count; v++) {
-			if (strcmp(p_item1.meta_enum_value(n1,v),p_item2.meta_enum_value(n2,v)) != 0) return false;
+			if (strcmp(p_item1.meta_enum_value(n1,v),p_item2.meta_enum_value(n2,v)) != 0) {
+				//uDebugLog() << "meta mismatch: " << p_item1.meta_enum_name(n1) << " : " << p_item1.meta_enum_value(n1,v) << " vs " << p_item2.meta_enum_value(n2,v);
+				return false;
+			}
 		}
 	}
 	return true;
@@ -419,4 +432,16 @@ bool file_info::g_is_info_equal(const file_info & p_item1,const file_info & p_it
 		if (strcmp(p_item1.info_enum_value(n1),p_item2.info_enum_value(n2)) != 0) return false;
 	}
 	return true;
+}
+
+static bool is_valid_field_name_char(char p_char) {
+	return p_char >= 32 && p_char < 127 && p_char != '=' && p_char != '%' && p_char != '<' && p_char != '>';
+}
+
+bool file_info::g_is_valid_field_name(const char * p_name,t_size p_length) {
+	t_size walk;
+	for(walk = 0; walk < p_length && p_name[walk] != 0; walk++) {
+		if (!is_valid_field_name_char(p_name[walk])) return false;
+	}
+	return walk > 0;
 }

@@ -149,27 +149,36 @@ bool dead_item_filter::run(const pfc::list_base_const_t<metadb_handle_ptr> & p_l
 	{
 		if (is_aborting()) return false;
 		on_progress(pathidx,path_list.get_count());
-		
-		try {
-			service_ptr_t<input_info_reader> reader;
-			const char * path = path_list[pathidx];
-			input_entry::g_open_for_info_read(reader,0,path,*this);
-			t_uint32 count = reader->get_subsong_count();
-			for(t_uint32 n=0;n<count && !is_aborting();n++) {
-				metadb_handle_ptr ptr;
-				t_uint32 index = reader->get_subsong(n);
-				l_metadb->handle_create(ptr,make_playable_location(path,index));
-				valid_handles.add_item(ptr);
-			}
-		} catch(std::exception const &) {}
+
+		const char * path = path_list[pathidx];
+
+		if (filesystem::g_is_remote_safe(path)) {
+			metadb_handle_ptr temp;
+			l_metadb->handle_create(temp,make_playable_location(path,0));
+			valid_handles.add_item(temp);
+		} else {
+			try {
+				service_ptr_t<input_info_reader> reader;
+				
+				input_entry::g_open_for_info_read(reader,0,path,*this);
+				t_uint32 count = reader->get_subsong_count();
+				for(t_uint32 n=0;n<count && !is_aborting();n++) {
+					metadb_handle_ptr ptr;
+					t_uint32 index = reader->get_subsong(n);
+					l_metadb->handle_create(ptr,make_playable_location(path,index));
+					valid_handles.add_item(ptr);
+				}
+			} catch(...) {}
+		}
 	}
 
 	if (is_aborting()) return false;
 
 	valid_handles.sort_by_pointer();
-	for(t_size listidx=0;listidx<p_list.get_count();listidx++)
-	{
-		p_mask.set(listidx,valid_handles.bsearch_by_pointer(p_list[listidx]) == infinite);
+	for(t_size listidx=0;listidx<p_list.get_count();listidx++) {
+		bool dead = valid_handles.bsearch_by_pointer(p_list[listidx]) == infinite;
+		if (dead) console::formatter() << "Dead item: " << p_list[listidx];
+		p_mask.set(listidx,dead);
 	}
 	return !is_aborting();
 }

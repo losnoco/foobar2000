@@ -95,13 +95,20 @@ static void track_indexer__g_get_tracks_e(const char * p_path,const service_ptr_
 }
 
 
-static void track_indexer__g_get_tracks_wrap(const char * p_path,const service_ptr_t<file> & p_reader,const t_filestats & p_stats,playlist_loader_callback::t_entry_type p_type,playlist_loader_callback & p_callback)
-{
+static void track_indexer__g_get_tracks_wrap(const char * p_path,const service_ptr_t<file> & p_reader,const t_filestats & p_stats,playlist_loader_callback::t_entry_type p_type,playlist_loader_callback & p_callback) {
 	bool got_input = false;
+	bool fail = false;
 	try {
-		track_indexer__g_get_tracks_e(p_path,p_reader,p_stats,p_type,p_callback,got_input); 
+		track_indexer__g_get_tracks_e(p_path,p_reader,p_stats,p_type,p_callback,got_input);
+	} catch(exception_aborted) {
+		throw;
+	} catch(exception_io_unsupported_format) {
+		fail = true;
 	} catch(std::exception const & e) {
+		fail = true;
 		console::formatter() << "could not enumerate tracks (" << e << ") on:\n" << file_path_display(p_path);
+	}
+	if (fail) {
 		if (!got_input && !p_callback.is_aborting()) {
 			if (p_type == playlist_loader_callback::entry_user_requested)
 			{

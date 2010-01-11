@@ -1,5 +1,13 @@
 #if !defined(_MSC_VER) && !defined(_EVC_VER)
 #include <stdint.h>
+typedef int64_t t_int64;
+typedef uint64_t t_uint64;
+typedef int32_t t_int32;
+typedef uint32_t t_uint32;
+typedef int16_t t_int16;
+typedef uint16_t t_uint16;
+typedef int8_t t_int8;
+typedef uint8_t t_uint8;
 #else
 typedef __int64 t_int64;
 typedef unsigned __int64 t_uint64;

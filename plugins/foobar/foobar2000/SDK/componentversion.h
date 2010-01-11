@@ -26,7 +26,7 @@ public:
 
 class componentversion_impl_copy : public componentversion
 {
-	pfc::string_simple name,version,about;
+	pfc::string8 name,version,about;
 public:
 	//do not derive/override
 	virtual void get_file_name(pfc::string_base & out) {out.set_string(core_api::get_my_file_name());}

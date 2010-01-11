@@ -9,7 +9,6 @@
 #define PFC_DLL_EXPORT
 
 #if defined(_WIN32) || defined(_WIN32_WCE)
-#pragma warning(disable:4996)
 
 #ifndef STRICT
 #define STRICT
@@ -39,9 +38,29 @@ inline bool operator==(REFGUID guidOne, REFGUID guidOther) {return __InlineIsEqu
 inline bool operator!=(REFGUID guidOne, REFGUID guidOther) {return !__InlineIsEqualGUID(guidOne,guidOther);}
 #endif
 
+#include <tchar.h>
+
+#elif defined(__GNUC__) && (defined __unix__ || defined __POSIX__)
+#include <stdint.h>
+#include <memory.h>
+typedef struct {
+        uint32_t Data1;
+        uint16_t Data2;
+        uint16_t Data3;
+        uint8_t  Data4[ 8 ];
+    } GUID; //same as win32 GUID
+
+inline bool operator==(const GUID & p_item1,const GUID & p_item2) {
+	return memcmp(&p_item1,&p_item2,sizeof(GUID)) == 0;
+}
+
+inline bool operator!=(const GUID & p_item1,const GUID & p_item2) {
+	return memcmp(&p_item1,&p_item2,sizeof(GUID)) != 0;
+}
+
 #else
 
-#error Only win32 target supported.
+#error Only win32 or unix target supported.
 
 #endif
 
@@ -60,7 +79,6 @@ inline bool operator!=(REFGUID guidOne, REFGUID guidOther) {return !__InlineIsEq
 
 #include <malloc.h>
 
-#include <tchar.h>
 #include <stdio.h>
 
 #include <assert.h>
@@ -94,29 +112,32 @@ namespace pfc { void myassert(const wchar_t * _Message, const wchar_t *_File, un
 #define ASSUME(X) __assume(X)
 #endif
 
+#define PFC_DEPRECATE(X) __declspec(deprecated(X))
 #else
 
 #define NOVTABLE
-
 #define ASSUME(X) assert(X)
+#define PFC_DEPRECATE(X)
 
 #endif
 
 #include "int_types.h"
 #include "traits.h"
+#include "bit_array.h"
 #include "primitives.h"
 #include "alloc.h"
 #include "array.h"
-#include "bit_array.h"
+#include "bit_array_impl.h"
 #include "bsearch_inline.h"
 #include "bsearch.h"
 #include "sort.h"
+#include "order_helper.h"
 #include "list.h"
 #include "ptr_list.h"
-#include "string_simple.h"
 #include "string.h"
-#include "string_fixed.h"
 #include "string_list.h"
+#include "avltree.h"
+#include "map.h"
 #include "profiler.h"
 #include "guid.h"
 #include "byte_order_helper.h"

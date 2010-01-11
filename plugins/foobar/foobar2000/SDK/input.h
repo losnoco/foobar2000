@@ -24,7 +24,7 @@ public:
 	
 	//! Retrieves information about specified subsong.
 	//! @param p_subsong Identifier of the subsong to query. See: input_info_reader::get_subsong(), playable_location.
-	//! @param p_info file_info object to fill.
+	//! @param p_info file_info object to fill. Must be empty on entry.
 	//! @param p_abort abort_callback object signaling user aborting the operation.
 	virtual void get_info(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort) = 0;
 
@@ -160,6 +160,7 @@ public:
 	static void g_open_for_decoding(service_ptr_t<input_decoder> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
 	static void g_open_for_info_read(service_ptr_t<input_info_reader> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
 	static void g_open_for_info_write(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect = false);
+	static void g_open_for_info_write_timeout(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,double p_timeout,bool p_from_redirect = false);
 	static bool g_is_supported_path(const char * p_path);
 
 

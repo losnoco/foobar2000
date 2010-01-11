@@ -24,6 +24,7 @@ typedef const char * pcchar;
 #include "core_api.h"
 #include "service.h"
 
+#include "completion_notify.h"
 #include "abort_callback.h"
 #include "audio_chunk.h"
 #include "componentversion.h"
@@ -77,8 +78,10 @@ typedef const char * pcchar;
 #include "input_file_type.h"
 #include "masstagger_action.h"
 #include "chapterizer.h"
-#include "ogg_stream_handler.h"
 #include "link_resolver.h"
 #include "main_thread_callback.h"
+#include "advconfig.h"
+#include "info_lookup_handler.h"
+#include "track_property.h"
 
 #endif //_FOOBAR2000_H_

@@ -7,7 +7,7 @@ namespace {
 	struct custom_sort_data
 	{
 		HANDLE text;
-		int subsong;
+		//int subsong;
 		t_size index;
 	};
 }
@@ -15,7 +15,7 @@ static int __cdecl custom_sort_compare(const custom_sort_data & elem1, const cus
 {//depends on unicode/ansi, nonportable (win32 lstrcmpi)
 	int ret = uSortStringCompare(elem1.text,elem2.text);//uStringCompare
 //	if (ret == 0) ret = elem1.subsong - elem2.subsong;
-	if (ret == 0) ret = pfc::sgn_t(elem1.index - elem2.index);
+	if (ret == 0) ret = pfc::sgn_t((t_ssize)elem1.index - (t_ssize)elem2.index);
 	return ret;
 }
 
@@ -59,10 +59,10 @@ void metadb_handle_list_helper::sort_by_format_get_order_partial(const pfc::list
 		item->format_title(p_hook,temp,p_script,0);
 		data[n].index = n;
 		data[n].text = uSortStringCreate(temp);
-		data[n].subsong = item->get_subsong_index();
+		//data[n].subsong = item->get_subsong_index();
 	}
 
-	pfc::sort_stable_t(data,custom_sort_compare,count);
+	pfc::sort_t(data,custom_sort_compare,count);
 	//qsort(data.get_ptr(),count,sizeof(custom_sort_data),(int (__cdecl *)(const void *elem1, const void *elem2 ))custom_sort_compare);
 
 	for(n=0;n<count;n++)
@@ -97,7 +97,7 @@ void metadb_handle_list_helper::sort_by_relative_path_get_order_partial(const pf
 		if (!api->get_relative_path(item,temp)) temp = "";
 		data[n].index = n;
 		data[n].text = uSortStringCreate(temp);
-		data[n].subsong = item->get_subsong_index();
+		//data[n].subsong = item->get_subsong_index();
 	}
 
 	pfc::sort_t(data,custom_sort_compare,count);
@@ -119,7 +119,7 @@ void metadb_handle_list_helper::remove_duplicates(pfc::list_base_t<metadb_handle
 		pfc::array_t<t_size> order; order.set_size(count);
 		order_helper::g_fill(order);
 
-		p_list.sort_get_permutation_t(pfc::compare_t<metadb_handle_ptr>,order.get_ptr());
+		p_list.sort_get_permutation_t(pfc::compare_t<metadb_handle_ptr,metadb_handle_ptr>,order.get_ptr());
 		
 		t_size n;
 		bool found = false;
@@ -176,14 +176,14 @@ void metadb_handle_list_helper::sort_by_path_quick(pfc::list_base_t<metadb_handl
 void metadb_handle_list_helper::sort_by_pointer(pfc::list_base_t<metadb_handle_ptr> & p_list)
 {
 	//it seems MSVC71 /GL does something highly retarded here
-	//p_list.sort_t(pfc::compare_t<metadb_handle_ptr>);
+	//p_list.sort_t(pfc::compare_t<metadb_handle_ptr,metadb_handle_ptr>);
 	p_list.sort();
 }
 
 t_size metadb_handle_list_helper::bsearch_by_pointer(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,const metadb_handle_ptr & val)
 {
 	t_size blah;
-	if (p_list.bsearch_t(pfc::compare_t<metadb_handle_ptr>,val,blah)) return blah;
+	if (p_list.bsearch_t(pfc::compare_t<metadb_handle_ptr,metadb_handle_ptr>,val,blah)) return blah;
 	else return ~0;
 }
 

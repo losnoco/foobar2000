@@ -105,10 +105,10 @@ void dialog_resize_helper::on_wm_size()
 {
 	if (parent)
 	{
-		unsigned count = m_table_size;
+		unsigned count = m_table.get_size();
 		if (sizegrip != 0) count++;
 		HDWP hWinPosInfo = BeginDeferWindowPos(count);
-		for(unsigned n=0;n<m_table_size;n++)
+		for(unsigned n=0;n<m_table.get_size();n++)
 		{
 			param & e = m_table[n];
 			const RECT & orig_rect = rects[n];
@@ -184,7 +184,7 @@ bool dialog_resize_helper::process_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp
 		set_parent(wnd);
 		{
 			unsigned n;
-			for(n=0;n<m_table_size;n++)
+			for(n=0;n<m_table.get_size();n++)
 			{
 				GetChildRect(parent,m_table[n].id,&rects[n]);
 			}
@@ -218,16 +218,13 @@ void dialog_resize_helper::add_sizegrip()
 dialog_resize_helper::dialog_resize_helper(const param * src,unsigned count,unsigned p_min_x,unsigned p_min_y,unsigned p_max_x,unsigned p_max_y) 
 	: min_x(p_min_x), min_y(p_min_y), max_x(p_max_x), max_y(p_max_y), parent(0), sizegrip(0)
 {
-	m_table_size = count;
-	m_table = new param[count];
+	m_table.set_size(count);
 	unsigned n;
 	for(n=0;n<count;n++)
 		m_table[n] = src[n];
-	rects = new RECT[count];
+	rects.set_size(count);
 }
 
 dialog_resize_helper::~dialog_resize_helper()
 {
-	delete[] m_table;
-	delete[] rects;
 }

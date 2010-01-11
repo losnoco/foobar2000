@@ -1,22 +1,26 @@
-class bit_array;
-class bit_array_var;
-
 #define tabsize(x) ((size_t)(sizeof(x)/sizeof(*x)))
 
 #define TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD_WITH_INITIALIZER(THISCLASS,MEMBER,INITIALIZER)	\
 	THISCLASS() INITIALIZER	\
-	template<typename t_param1>																								THISCLASS(const t_param1 & p_param1) :																																		MEMBER(p_param1) INITIALIZER	\
-	template<typename t_param1,typename t_param2>																			THISCLASS(const t_param1 & p_param1,const t_param2 & p_param2) :																											MEMBER(p_param1,p_param2) INITIALIZER	\
-	template<typename t_param1,typename t_param2,typename t_param3>															THISCLASS(const t_param1 & p_param1,const t_param2 & p_param2,const t_param3 & p_param3) :																					MEMBER(p_param1,p_param2,p_param3) INITIALIZER	\
-	template<typename t_param1,typename t_param2,typename t_param3,typename t_param4>										THISCLASS(const t_param1 & p_param1,const t_param2 & p_param2,const t_param3 & p_param3,const t_param4 & p_param4) :														MEMBER(p_param1,p_param2,p_param3,p_param4) INITIALIZER	\
-	template<typename t_param1,typename t_param2,typename t_param3,typename t_param4,typename t_param5>						THISCLASS(const t_param1 & p_param1,const t_param2 & p_param2,const t_param3 & p_param3,const t_param4 & p_param4,const t_param5 & p_param5) :								MEMBER(p_param1,p_param2,p_param3,p_param4,p_param5) INITIALIZER	\
-	template<typename t_param1,typename t_param2,typename t_param3,typename t_param4,typename t_param5,typename t_param6>	THISCLASS(const t_param1 & p_param1,const t_param2 & p_param2,const t_param3 & p_param3,const t_param4 & p_param4,const t_param5 & p_param5,const t_param6 & p_param6) :	MEMBER(p_param1,p_param2,p_param3,p_param4,p_param5,p_param6) INITIALIZER
+	template<typename t_param1>																													THISCLASS(const t_param1 & p_param1) :																																								MEMBER(p_param1) INITIALIZER	\
+	template<typename t_param1,typename t_param2>																								THISCLASS(const t_param1 & p_param1,const t_param2 & p_param2) :																																	MEMBER(p_param1,p_param2) INITIALIZER	\
+	template<typename t_param1,typename t_param2,typename t_param3>																				THISCLASS(const t_param1 & p_param1,const t_param2 & p_param2,const t_param3 & p_param3) :																											MEMBER(p_param1,p_param2,p_param3) INITIALIZER	\
+	template<typename t_param1,typename t_param2,typename t_param3,typename t_param4>															THISCLASS(const t_param1 & p_param1,const t_param2 & p_param2,const t_param3 & p_param3,const t_param4 & p_param4) :																				MEMBER(p_param1,p_param2,p_param3,p_param4) INITIALIZER	\
+	template<typename t_param1,typename t_param2,typename t_param3,typename t_param4,typename t_param5>											THISCLASS(const t_param1 & p_param1,const t_param2 & p_param2,const t_param3 & p_param3,const t_param4 & p_param4,const t_param5 & p_param5) :														MEMBER(p_param1,p_param2,p_param3,p_param4,p_param5) INITIALIZER	\
+	template<typename t_param1,typename t_param2,typename t_param3,typename t_param4,typename t_param5,typename t_param6>						THISCLASS(const t_param1 & p_param1,const t_param2 & p_param2,const t_param3 & p_param3,const t_param4 & p_param4,const t_param5 & p_param5,const t_param6 & p_param6) :							MEMBER(p_param1,p_param2,p_param3,p_param4,p_param5,p_param6) INITIALIZER	\
+	template<typename t_param1,typename t_param2,typename t_param3,typename t_param4,typename t_param5,typename t_param6, typename t_param7>	THISCLASS(const t_param1 & p_param1,const t_param2 & p_param2,const t_param3 & p_param3,const t_param4 & p_param4,const t_param5 & p_param5,const t_param6 & p_param6,const t_param7 & p_param7) :	MEMBER(p_param1,p_param2,p_param3,p_param4,p_param5,p_param6,p_param7) INITIALIZER
 
 #define TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(THISCLASS,MEMBER) TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD_WITH_INITIALIZER(THISCLASS,MEMBER,{})
+
+
+#ifdef _MSC_VER
+
+//Bah. I noticed the fact that std::exception carrying a custom message is MS-specific *after* making exception classes a part of ABI. To be nuked next time fb2k component backwards compatibility is axed.
 
 #define PFC_DECLARE_EXCEPTION(NAME,BASECLASS,DEFAULTMSG)	\
 class NAME : public BASECLASS {	\
 public:	\
+	static const char * g_what() {return DEFAULTMSG;}	\
 	NAME() : BASECLASS(DEFAULTMSG,0) {}	\
 	NAME(const char * p_msg) : BASECLASS(p_msg) {}	\
 	NAME(const char * p_msg,int) : BASECLASS(p_msg,0) {}	\
@@ -24,6 +28,77 @@ public:	\
 };
 
 namespace pfc {
+	template<typename t_exception> inline void throw_exception_with_message(const char * p_message) {
+		throw t_exception(p_message);
+	}
+}
+
+#else
+
+#define PFC_DECLARE_EXCEPTION(NAME,BASECLASS,DEFAULTMSG)	\
+class NAME : public BASECLASS { \
+public:	\
+	static const char * g_what() {return DEFAULTMSG;}	\
+	const char* what() const throw() {return DEFAULTMSG;}	\
+};
+
+namespace pfc {
+	template<typename t_base> class __exception_with_message_t : public t_base {
+	private:	typedef __exception_with_message_t<t_base> t_self;
+	public:
+		__exception_with_message_t(const char * p_message) : m_message(NULL) {
+			set_message(p_message);			
+		}
+		__exception_with_message_t() : m_message(NULL) {}
+		__exception_with_message_t(const t_self & p_source) : m_message(NULL) {set_message(p_source.m_message);}
+
+		const char* what() const throw() {return m_message != NULL ? m_message : "unnamed exception";}
+
+		const t_self & operator=(const t_self & p_source) {set_message(p_source.m_message);}
+
+		~__exception_with_message_t() throw() {cleanup();}
+
+	private:
+		void set_message(const char * p_message) throw() {
+			cleanup();
+			if (p_message != NULL) m_message = strdup(p_message);
+		}
+		void cleanup() throw() {
+			if (m_message != NULL) {free(m_message); m_message = NULL;}
+		}
+		char * m_message;
+	};
+	template<typename t_exception> void throw_exception_with_message(const char * p_message) {
+		throw __exception_with_message_t<t_exception>(p_message);
+	}
+}
+#endif
+
+namespace pfc {
+
+	template<typename p_type1,typename p_type2> class assert_same_type;
+	template<typename p_type> class assert_same_type<p_type,p_type> {};
+
+	template<typename p_type1,typename p_type2>
+	class is_same_type { public: enum {value = false}; };
+
+	template<typename p_type>
+	class is_same_type<p_type,p_type> { public: enum {value = true}; };
+
+	template<bool p_val> class __static_assert_switcher_t;
+	template<> class __static_assert_switcher_t<true> {
+	public:
+		typedef void t_assert_failed;
+	};
+
+	//depreacted
+	template<bool p_val> typename __static_assert_switcher_t<p_val>::t_assert_failed static_assert_t() {}
+
+	template<bool p_val> typename __static_assert_switcher_t<p_val>::t_assert_failed static_assert() {}
+
+	template<typename t_type>
+	void assert_raw_type() {static_assert_t< !traits_t<t_type>::needs_constructor && !traits_t<t_type>::needs_destructor >();}
+
 
 	template<typename t_type> void __unsafe__memcpy_t(t_type * p_dst,const t_type * p_src,t_size p_count) {
 		::memcpy(reinterpret_cast<void*>(p_dst), reinterpret_cast<const void*>(p_src), p_count * sizeof(t_type));
@@ -100,14 +175,23 @@ namespace pfc {
 
 	template<typename t_ret,typename t_param> 
 	t_ret safe_cast(t_param const & p_param) {
-		t_ret temp ( p_param );
-		return temp;
+		return p_param;
+	}
+
+	template<typename t_ret,typename t_param>
+	t_ret * safe_ptr_cast(t_param * p_param) {
+		if (pfc::is_same_type<t_ret,t_param>::value) return p_param;
+		else {
+			if (p_param == NULL) return NULL;
+			else return p_param;
+		}
 	}
 
 	typedef std::exception exception;
 
 	PFC_DECLARE_EXCEPTION(exception_overflow,exception,"Overflow");
 	PFC_DECLARE_EXCEPTION(exception_bug_check,exception,"Bug check");
+	PFC_DECLARE_EXCEPTION(exception_unexpected_recursion,exception_bug_check,"Unexpected recursion");
 	PFC_DECLARE_EXCEPTION(exception_not_implemented,exception_bug_check,"Feature not implemented");
 	PFC_DECLARE_EXCEPTION(exception_dynamic_assert,exception_bug_check,"dynamic_assert failure");
 
@@ -121,7 +205,7 @@ namespace pfc {
 	template<typename t_exception,typename t_ret,typename t_param>
 	t_ret downcast_guarded_ex(const t_param & p_param) {
 		t_ret temp = (t_ret) p_param;
-		if ((t_param) temp != p_param) throw t_exception;
+		if ((t_param) temp != p_param) throw t_exception();
 		return temp;
 	}
 
@@ -137,7 +221,7 @@ namespace pfc {
 	inline void bug_check_assert(bool p_condition, const char * p_msg) {
 		if (!p_condition) {
 			PFC_ASSERT(0);
-			throw exception_bug_check(p_msg);
+			throw_exception_with_message<exception_bug_check>(p_msg);
 		}
 	}
 	//deprecated
@@ -151,7 +235,7 @@ namespace pfc {
 	inline void dynamic_assert(bool p_condition, const char * p_msg) {
 		if (!p_condition) {
 			PFC_ASSERT(0);
-			throw exception_dynamic_assert(p_msg);
+			throw_exception_with_message<exception_dynamic_assert>(p_msg);
 		}
 	}
 	inline void dynamic_assert(bool p_condition) {
@@ -223,12 +307,118 @@ namespace pfc {
 			p_buffer[n] = p_filler;
 	}
 
-	template<typename T>
-	inline int compare_t(const T & item1,const T & item2)
-	{
-		if (item1<item2) return -1;
-		else if (item1>item2) return 1;
+	template<typename t_item1, typename t_item2>
+	inline int compare_t(const t_item1 & p_item1, const t_item2 & p_item2) {
+		if (p_item1 < p_item2) return -1;
+		else if (p_item1 > p_item2) return 1;
 		else return 0;
+	}
+
+	//! For use with avltree/map etc.
+	class comparator_default {
+	public:
+		template<typename t_item1,typename t_item2>
+		inline static int compare(const t_item1 & p_item1,const t_item2 & p_item2) {return pfc::compare_t(p_item1,p_item2);}
+	};
+
+	template<typename t_source1, typename t_source2>
+	t_size subtract_sorted_lists_calculate_count(const t_source1 & p_source1, const t_source2 & p_source2) {
+		t_size walk1 = 0, walk2 = 0, walk_out = 0;
+		const t_size max1 = p_source1.get_size(), max2 = p_source2.get_size();
+		for(;;) {
+			int state;
+			if (walk1 < max1 && walk2 < max2) {
+				state = pfc::compare_t(p_source1[walk1],p_source2[walk2]);
+			} else if (walk1 < max1) {
+				state = -1;
+			} else if (walk2 < max2) {
+				state = 1;
+			} else {
+				break;
+			}
+			if (state < 0) walk_out++;
+			if (state <= 0) walk1++;
+			if (state >= 0) walk2++;
+		}
+		return walk_out;
+	}
+
+	//! Subtracts p_source2 contents from p_source1 and stores result in p_destination. Both source lists must be sorted.
+	//! Note: duplicates will be carried over (and ignored for p_source2).
+	template<typename t_destination, typename t_source1, typename t_source2>
+	void subtract_sorted_lists(t_destination & p_destination,const t_source1 & p_source1, const t_source2 & p_source2) {
+		p_destination.set_size(subtract_sorted_lists_calculate_count(p_source1,p_source2));
+		t_size walk1 = 0, walk2 = 0, walk_out = 0;
+		const t_size max1 = p_source1.get_size(), max2 = p_source2.get_size();
+		for(;;) {
+			int state;
+			if (walk1 < max1 && walk2 < max2) {
+				state = pfc::compare_t(p_source1[walk1],p_source2[walk2]);
+			} else if (walk1 < max1) {
+				state = -1;
+			} else if (walk2 < max2) {
+				state = 1;
+			} else {
+				break;
+			}
+			
+			
+			if (state < 0) p_destination[walk_out++] = p_source1[walk1];
+			if (state <= 0) walk1++;
+			if (state >= 0) walk2++;
+		}
+	}
+
+	template<typename t_source1, typename t_source2>
+	t_size merge_sorted_lists_calculate_count(const t_source1 & p_source1, const t_source2 & p_source2) {
+		t_size walk1 = 0, walk2 = 0, walk_out = 0;
+		const t_size max1 = p_source1.get_size(), max2 = p_source2.get_size();
+		for(;;) {
+			int state;
+			if (walk1 < max1 && walk2 < max2) {
+				state = pfc::compare_t(p_source1[walk1],p_source2[walk2]);
+			} else if (walk1 < max1) {
+				state = -1;
+			} else if (walk2 < max2) {
+				state = 1;
+			} else {
+				break;
+			}
+			if (state <= 0) walk1++;
+			if (state >= 0) walk2++;
+			walk_out++;
+		}
+		return walk_out;
+	}
+
+	//! Merges p_source1 and p_source2, storing content in p_destination. Both source lists must be sorted.
+	//! Note: duplicates will be carried over.
+	template<typename t_destination, typename t_source1, typename t_source2>
+	void merge_sorted_lists(t_destination & p_destination,const t_source1 & p_source1, const t_source2 & p_source2) {
+		p_destination.set_size(merge_sorted_lists_calculate_count(p_source1,p_source2));
+		t_size walk1 = 0, walk2 = 0, walk_out = 0;
+		const t_size max1 = p_source1.get_size(), max2 = p_source2.get_size();
+		for(;;) {
+			int state;
+			if (walk1 < max1 && walk2 < max2) {
+				state = pfc::compare_t(p_source1[walk1],p_source2[walk2]);
+			} else if (walk1 < max1) {
+				state = -1;
+			} else if (walk2 < max2) {
+				state = 1;
+			} else {
+				break;
+			}
+			if (state < 0) {
+				p_destination[walk_out] = p_source1[walk1++];
+			} else if (state > 0) {
+				p_destination[walk_out] = p_source2[walk2++];
+			} else {
+				p_destination[walk_out] = p_source1[walk1];
+				walk1++; walk2++;
+			}
+			walk_out++;
+		}
 	}
 
 	
@@ -276,25 +466,6 @@ namespace pfc {
 	}
 
 	
-	template<typename t_array>
-	inline t_size remove_mask_t(t_array & p_array,const bit_array & p_mask)//returns amount of items left
-	{
-		t_size n,count = p_array.get_size(), total = 0;
-
-		n = total = p_mask.find(true,0,count);
-
-		if (n<count)
-		{
-			for(n=p_mask.find(false,n+1,count-n-1);n<count;n=p_mask.find(false,n+1,count-n-1))
-				swap_t(p_array[total++],p_array[n]);
-
-			p_array.set_size(total);
-			
-			return total;
-		}
-		else return count;
-	}
-
 	template<typename T>
 	inline T max_t(const T & item1, const T & item2) {return item1 > item2 ? item1 : item2;};
 
@@ -305,46 +476,15 @@ namespace pfc {
 	inline T abs_t(T item) {return item<0 ? -item : item;}
 
 	template<typename T>
+	inline T sqr_t(T item) {return item * item;}
+
+	template<typename T>
 	inline T clip_t(const T & p_item, const T & p_min, const T & p_max) {
 		if (p_item < p_min) return p_min;
 		else if (p_item <= p_max) return p_item;
 		else return p_max;
 	}
 
-
-
-	template<typename t_array,typename t_compare>
-	t_size find_duplicates_sorted_t(t_array p_array,t_size p_count,t_compare p_compare,bit_array_var & p_out) {
-		t_size ret = 0;
-		t_size n;
-		if (p_count > 0)
-		{
-			p_out.set(0,false);
-			for(n=1;n<p_count;n++)
-			{
-				bool found = p_compare(p_array[n-1],p_array[n]) == 0;
-				if (found) ret++;
-				p_out.set(n,found);
-			}
-		}
-		return ret;
-	}
-
-	template<typename t_array,typename t_compare,typename t_permutation>
-	t_size find_duplicates_sorted_permutation_t(t_array p_array,t_size p_count,t_compare p_compare,t_permutation const & p_permutation,bit_array_var & p_out) {
-		t_size ret = 0;
-		t_size n;
-		if (p_count > 0) {
-			p_out.set(p_permutation[0],false);
-			for(n=1;n<p_count;n++)
-			{
-				bool found = p_compare(p_array[p_permutation[n-1]],p_array[p_permutation[n]]) == 0;
-				if (found) ret++;
-				p_out.set(p_permutation[n],found);
-			}
-		}
-		return ret;
-	}
 
 
 
@@ -367,18 +507,18 @@ namespace pfc {
 		return temp;
 	}
 
-	template<typename T>
-	void memcpy_t(T* p_dst,const T* p_src,t_size p_count) {
+	template<typename t_src,typename t_dst>
+	void memcpy_t(t_dst* p_dst,const t_src* p_src,t_size p_count) {
 		for(t_size n=0;n<p_count;n++) p_dst[n] = p_src[n];
 	}
 
 	template<typename t_dst,typename t_src>
-	void memcpy_t(t_dst & p_dst,const t_src & p_src,t_size p_count) {
+	void copy_array_loop_t(t_dst & p_dst,const t_src & p_src,t_size p_count) {
 		for(t_size n=0;n<p_count;n++) p_dst[n] = p_src[n];
 	}
 
-	template<typename T>
-	void memcpy_backwards_t(T* p_dst,const T* p_src,t_size p_count) {
+	template<typename t_src,typename t_dst>
+	void memcpy_backwards_t(t_dst * p_dst,const t_src * p_src,t_size p_count) {
 		p_dst += p_count; p_src += p_count;
 		for(t_size n=0;n<p_count;n++) *(--p_dst) = *(--p_src);
 	}
@@ -419,157 +559,6 @@ namespace pfc {
 	}
 
 	template<typename T>
-	t_size msize_t(const T * p_ptr) throw() {
-		static_assert_t<sizeof(T) != 0>();
-		t_size size = ::_msize(const_cast<void*>(reinterpret_cast<const void*>(p_ptr)));
-		PFC_ASSERT( size % sizeof(T) == 0);
-		return size / sizeof(T);
-	}
-
-	
-	template<typename T>
-	T* __unsafe__malloc_t(t_size p_size) {
-		return pfc::new_ptr_check_t( reinterpret_cast<T*>(::malloc(mul_safe_t<std::bad_alloc,t_size>(p_size, sizeof(T)))) );
-	}
-
-	template<typename T>
-	void __unsafe__free_t(T * p_ptr) throw() {
-		::free(reinterpret_cast<void*>(p_ptr));
-	}
-
-	template<typename t_type>
-	t_type* malloc_t(t_size p_size) {
-		static_assert_t< sizeof(t_type)!=0 >();
-#if 1
-		t_type* ptr = __unsafe__malloc_t<t_type>(p_size);
-		try {
-			__unsafe__in_place_constructor_array_t(ptr,p_size);
-		} catch(...) {
-			__unsafe__free_t(ptr);
-			throw;
-		}
-		return ptr;
-#else
-		return new t_type[p_size];
-#endif
-	}
-	template<typename t_type,typename t_copyfrom>
-	t_type* malloc_copy_t(t_size p_size,const t_copyfrom * p_copyfrom,t_size p_copyfrom_size) {
-		static_assert_t< sizeof(t_type)!=0 >();
-		t_type * ptr = __unsafe__malloc_t<t_type>(p_size);
-		try {
-			__unsafe__in_place_constructor_array_copy_t(ptr,min_t(p_size,p_copyfrom_size),p_copyfrom);
-			if (p_copyfrom_size < p_size) {
-				try {
-					__unsafe__in_place_constructor_array_t(ptr + p_copyfrom_size, p_size - p_copyfrom_size);
-				} catch(...) {
-					__unsafe__in_place_destructor_array_t(ptr,min_t(p_size,p_copyfrom_size));
-					throw;
-				}
-			}
-		} catch(...) {
-			__unsafe__free_t(ptr);
-			throw;
-		}
-		return ptr;
-	}
-
-	template<typename t_type,typename t_copyfrom>
-	t_type* malloc_copy_t(t_size p_size,const t_copyfrom * p_copyfrom) {
-		static_assert_t< sizeof(t_type)!=0 >();
-		t_type * ptr = __unsafe__malloc_t<t_type>(p_size);
-		try {
-			__unsafe__in_place_constructor_array_copy_t(ptr,p_size,p_copyfrom);
-		} catch(...) {
-			__unsafe__free_t(ptr);
-			throw;
-		}
-		return ptr;
-	}
-
-	template<typename T>
-	T* __unsafe__realloc_t(T* p_ptr,t_size p_size) {
-		return pfc::new_ptr_check_t( reinterpret_cast<T*>(::realloc(reinterpret_cast<void*>(p_ptr),mul_safe_t<std::bad_alloc,t_size>(p_size, sizeof(T)))) );
-	}
-
-	template<typename T>
-	T* __unsafe__expand_nothrow_t(T* p_ptr,t_size p_size) throw() {
-		return reinterpret_cast<T*>(::_expand(reinterpret_cast<void*>(p_ptr),mul_safe_t<std::bad_alloc,t_size>(p_size, sizeof(T))));
-	}
-
-	template<typename T>
-	T* __unsafe__expand_t(T* p_ptr,t_size p_size) {
-		return new_ptr_check_t( __unsafe__expand_nothrow_t(p_ptr,p_size) );
-	}
-
-	template<typename T>
-	void free_t(T* p_ptr) throw() {
-		if (p_ptr != NULL) {
-			__unsafe__in_place_destructor_array_t(p_ptr,msize_t(p_ptr));
-			__unsafe__free_t(p_ptr);
-		}
-	}
-
-	template<typename T>
-	T* realloc_t(T * p_ptr,t_size p_size) {
-		if (p_ptr == NULL) {
-			if (p_size != 0) p_ptr = malloc_t<T>(p_size);
-		} else if (p_size == 0) {
-			free_t(p_ptr); 
-			p_ptr = NULL;
-		} else {//p_ptr != NULL, p_size != 0
-			t_size old_size = msize_t(p_ptr);
-			if (old_size != p_size) {
-				if (traits_t<T>::needs_constructor || traits_t<T>::needs_destructor) {
-					if (p_size < old_size) {//shrinking, _expand should not fail
-						__unsafe__in_place_destructor_array_t(p_ptr+p_size,old_size-p_size);
-						__unsafe__expand_t(p_ptr,p_size);
-					} else {//expanding, try _expand first
-						if (__unsafe__expand_nothrow_t(p_ptr,p_size) != NULL) {
-							//success
-							try {
-								__unsafe__in_place_constructor_array_t(p_ptr + old_size, p_size - old_size);
-							} catch(...) {
-								__unsafe__expand_nothrow_t(p_ptr,old_size);
-								throw;
-							}
-						} else if (traits_t<T>::realloc_safe) {//fresh malloc + raw memcpy of existing items
-							T * newptr = __unsafe__malloc_t<T>(p_size);
-							__unsafe__memcpy_t(newptr,p_ptr,old_size);
-							try {
-								__unsafe__in_place_constructor_array_t(newptr+old_size,p_size-old_size);
-							} catch(...) {__unsafe__free_t(newptr); throw;}
-							__unsafe__free_t(p_ptr);
-							p_ptr = newptr;
-						} else {//attempt fresh malloc
-							T * newptr = malloc_copy_t<T>(p_size,p_ptr,old_size);
-							free_t(p_ptr);
-							p_ptr = newptr;
-						}
-					}
-				} else {
-					p_ptr = __unsafe__realloc_t(p_ptr,p_size);
-				}
-			}
-		}
-		return p_ptr;
-	}
-
-	template<typename T, typename t_val>
-	T* malloc_fill_t(t_size p_size,const t_val & p_val) {
-		T* ptr = malloc_t<T>(p_size);
-		memset_t<T,t_val>(ptr,p_val,p_size);
-		return ptr;
-	}
-
-	template<typename T>
-	T* malloc_fill_t(t_size p_size) {
-		T* ptr = malloc_t<T>(p_size);
-		memset_null_t(ptr,p_size);
-		return ptr;
-	}
-
-	template<typename T>
 	int sgn_t(const T & p_val) {
 		if (p_val < 0) return -1;
 		else if (p_val > 0) return 1;
@@ -588,20 +577,12 @@ namespace pfc {
 		p_var = p_newval;
 		return oldval;
 	}
-
-	template<bool p_val> class __static_assert_switcher_t;
-	template<> class __static_assert_switcher_t<true> {
-	public:
-		typedef void t_assert_failed;
-	};
-
-	//depreacted
-	template<bool p_val> typename __static_assert_switcher_t<p_val>::t_assert_failed static_assert_t() {}
-
-	template<bool p_val> typename __static_assert_switcher_t<p_val>::t_assert_failed static_assert() {}
-
 	template<typename t_type>
-	void assert_raw_type() {static_assert_t< !traits_t<t_type>::needs_constructor && !traits_t<t_type>::needs_destructor >();}
+	t_type replace_null_t(t_type & p_var) {
+		t_type ret = p_var;
+		p_var = NULL;
+		return ret;
+	}
 
 	template<t_size p_size_pow2>
 	inline bool is_ptr_aligned_t(const void * p_ptr) {
@@ -621,11 +602,100 @@ namespace pfc {
 		array_rangecheck_t(p_array,p_from); array_rangecheck_t(p_array,p_to);
 	}
 
-	template<typename p_type1,typename p_type2> class assert_same_type;
-	template<typename p_type> class assert_same_type<p_type,p_type> {};
-
 	inline t_int32 rint32(double p_val) {return (t_int32) floor(p_val + 0.5);}
 	inline t_int64 rint64(double p_val) {return (t_int64) floor(p_val + 0.5);}
+
+
+
+
+	template<typename t_array>
+	inline t_size remove_mask_t(t_array & p_array,const bit_array & p_mask)//returns amount of items left
+	{
+		t_size n,count = p_array.get_size(), total = 0;
+
+		n = total = p_mask.find(true,0,count);
+
+		if (n<count)
+		{
+			for(n=p_mask.find(false,n+1,count-n-1);n<count;n=p_mask.find(false,n+1,count-n-1))
+				swap_t(p_array[total++],p_array[n]);
+
+			p_array.set_size(total);
+			
+			return total;
+		}
+		else return count;
+	}
+
+	template<typename t_array,typename t_compare>
+	t_size find_duplicates_sorted_t(t_array p_array,t_size p_count,t_compare p_compare,bit_array_var & p_out) {
+		t_size ret = 0;
+		t_size n;
+		if (p_count > 0)
+		{
+			p_out.set(0,false);
+			for(n=1;n<p_count;n++)
+			{
+				bool found = p_compare(p_array[n-1],p_array[n]) == 0;
+				if (found) ret++;
+				p_out.set(n,found);
+			}
+		}
+		return ret;
+	}
+
+	template<typename t_array,typename t_compare,typename t_permutation>
+	t_size find_duplicates_sorted_permutation_t(t_array p_array,t_size p_count,t_compare p_compare,t_permutation const & p_permutation,bit_array_var & p_out) {
+		t_size ret = 0;
+		t_size n;
+		if (p_count > 0) {
+			p_out.set(p_permutation[0],false);
+			for(n=1;n<p_count;n++)
+			{
+				bool found = p_compare(p_array[p_permutation[n-1]],p_array[p_permutation[n]]) == 0;
+				if (found) ret++;
+				p_out.set(p_permutation[n],found);
+			}
+		}
+		return ret;
+	}
+
+	template<typename t_char>
+	t_size strlen_t(const t_char * p_string,t_size p_length = infinite) {
+		for(t_size walk = 0;;walk++) {
+			if (walk >= p_length || p_string[walk] == 0) return walk;
+		}
+	}
+
+
+	template<typename t_array>
+	class __list_to_array_enumerator {
+	public:
+		__list_to_array_enumerator(t_array & p_array) : m_array(p_array), m_walk(0) {}
+		template<typename t_item>
+		void operator() (const t_item & p_item) {
+			PFC_ASSERT(m_walk < m_array.get_size());
+			m_array[m_walk++] = p_item;
+		}
+		void finalize() {
+			PFC_ASSERT(m_walk == m_array.get_size());
+		}
+	private:
+		t_size m_walk;
+		t_array & m_array;
+	};
+
+	template<typename t_list,typename t_array>
+	void list_to_array(t_array & p_array,const t_list & p_list) {
+		p_array.set_size(p_list.get_count());
+		__list_to_array_enumerator<t_array> enumerator(p_array);
+		p_list.enumerate(enumerator);
+		enumerator.finalize();
+	}
 };
 
 
+#define PFC_CLASS_NOT_COPYABLE(THISCLASS) \
+	private:	\
+	THISCLASS(const THISCLASS&) {throw pfc::exception_bug_check();}	\
+	const THISCLASS & operator=(const THISCLASS &) {throw pfc::exception_bug_check();}

@@ -31,5 +31,8 @@
 #include "mp3_utils.h"
 #include "win32_misc.h"
 #include "metadb_io_hintlist.h"
+#include "format_title_group.h"
+#include "inplace_edit.h"
+#include "meta_table_builder.h"
 
 #endif //_FOOBAR2000_SDK_HELPERS_H_

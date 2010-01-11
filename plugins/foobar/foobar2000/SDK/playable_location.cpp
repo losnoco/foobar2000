@@ -1,21 +1,9 @@
 #include "foobar2000.h"
 
-int playable_location::compare(const playable_location & src) const
-{
-	int ret = uStringCompare(get_path(),src.get_path());
-	if (ret!=0) return ret;
-	else
-	{
-		ret = metadb::path_compare(get_path(),src.get_path());
-		if (ret != 0) return ret;
-		else
-		{
-			int n1 = get_subsong(), n2 = src.get_subsong();
-			if (n1<n2) return -1;
-			else if (n1>n2) return 1;
-			else return 0;
-		}
-	}
+int playable_location::g_compare(const playable_location & p_item1,const playable_location & p_item2) {
+	int ret = metadb::path_compare(p_item1.get_path(),p_item2.get_path());
+	if (ret != 0) return 0;
+	return pfc::compare_t(p_item1.get_subsong(),p_item2.get_subsong());
 }
 
 pfc::string_base & operator<<(pfc::string_base & p_fmt,const playable_location & p_location)
@@ -24,4 +12,12 @@ pfc::string_base & operator<<(pfc::string_base & p_fmt,const playable_location &
 	t_uint32 index = p_location.get_subsong_index();
 	if (index != 0) p_fmt << " / index: " << p_location.get_subsong_index();
 	return p_fmt;
+}
+
+
+bool playable_location::operator==(const playable_location & p_other) const {
+	return metadb::path_compare(get_path(),p_other.get_path()) == 0 && get_subsong() == p_other.get_subsong();
+}
+bool playable_location::operator!=(const playable_location & p_other) const {
+	return !(*this == p_other);
 }

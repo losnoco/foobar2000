@@ -69,7 +69,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../shared/shared.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -137,7 +136,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../shared/shared.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -498,6 +496,10 @@
 						Optimization="2"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\completion_notify.cpp"
+				>
 			</File>
 			<File
 				RelativePath="config_io_callback.cpp"
@@ -1314,10 +1316,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\ogg_stream_handler.cpp"
-				>
-			</File>
-			<File
 				RelativePath="packet_decoder.cpp"
 				>
 				<FileConfiguration
@@ -2019,6 +2017,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\advconfig.h"
+				>
+			</File>
+			<File
 				RelativePath="app_close_blocker.h"
 				>
 			</File>
@@ -2040,6 +2042,10 @@
 			</File>
 			<File
 				RelativePath="commandline.h"
+				>
+			</File>
+			<File
+				RelativePath=".\completion_notify.h"
 				>
 			</File>
 			<File
@@ -2123,6 +2129,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\info_lookup_handler.h"
+				>
+			</File>
+			<File
 				RelativePath="initquit.h"
 				>
 			</File>
@@ -2180,10 +2190,6 @@
 			</File>
 			<File
 				RelativePath="modeless_dialog.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ogg_stream_handler.h"
 				>
 			</File>
 			<File
@@ -2252,6 +2258,10 @@
 			</File>
 			<File
 				RelativePath="titleformat_config.h"
+				>
+			</File>
+			<File
+				RelativePath=".\track_property.h"
 				>
 			</File>
 			<File

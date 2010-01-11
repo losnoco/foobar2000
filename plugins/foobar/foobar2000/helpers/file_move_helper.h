@@ -44,7 +44,7 @@ private:
 
 	struct t_entry
 	{
-		playable_location_i m_location;
+		playable_location_impl m_location;
 		file_info_i m_info;
 		t_filestats m_stats;
 		bool m_have_info;

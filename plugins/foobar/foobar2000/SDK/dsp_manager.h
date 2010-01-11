@@ -1,20 +1,30 @@
-class dsp_manager
-{
+struct t_dsp_chain_entry {
+	service_ptr_t<dsp> m_dsp;
+	dsp_preset_impl m_preset;
+	bool m_recycle_flag;
+};
+typedef pfc::chain_list_t<t_dsp_chain_entry> t_dsp_chain;
+
+class dsp_manager {
 public:
 	dsp_manager() : m_config_changed(false) {}
 
 	void set_config( const dsp_chain_config & p_data );
-	double run(dsp_chunk_list * list,const metadb_handle_ptr & cur_file,unsigned flags);
+	double run(dsp_chunk_list * p_list,const metadb_handle_ptr & p_cur_file,unsigned p_flags,abort_callback & p_abort);
 	void flush();
+	void close();
 
 	bool is_active();
 
 private:
-	service_list_t<dsp> m_dsp_list;
+	t_dsp_chain m_chain;
 	dsp_chain_config_impl m_config;
 	bool m_config_changed;
 	
-	void dsp_run(t_size idx,dsp_chunk_list * list,const metadb_handle_ptr & cur_file,unsigned flags,double & latency);
+	void dsp_run(t_dsp_chain::const_iterator p_iter,dsp_chunk_list * list,const metadb_handle_ptr & cur_file,unsigned flags,double & latency,abort_callback&);
+
+	dsp_manager(const dsp_manager &) {throw pfc::exception_not_implemented();}
+	const dsp_manager & operator=(const dsp_manager&) {throw pfc::exception_not_implemented();}
 };
 
 

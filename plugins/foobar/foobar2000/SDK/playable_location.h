@@ -17,19 +17,17 @@ public:
 	virtual t_uint32 get_subsong() const =0;
 	virtual void set_subsong(t_uint32)=0;
 	
-	void copy(const playable_location & src)
-	{
-		set_path(src.get_path());
-		set_subsong(src.get_subsong());
+	void copy(const playable_location & p_other) {
+		set_path(p_other.get_path());
+		set_subsong(p_other.get_subsong());
 	}
 
-	int compare(const playable_location & src) const;
+	static int g_compare(const playable_location & p_item1,const playable_location & p_item2);
 
-	const playable_location & operator=(const playable_location & src)
-	{
-		copy(src);
-		return *this;
-	}	
+	const playable_location & operator=(const playable_location & src) {copy(src);return *this;}	
+
+	bool operator==(const playable_location & p_other) const;
+	bool operator!=(const playable_location & p_other) const;
 
 	inline bool is_empty() {return get_path()[0]==0 && get_subsong()==0;}
 	inline void reset() {set_path("");set_subsong(0);}
@@ -66,10 +64,6 @@ private:
 	pfc::string_simple m_path;
 	t_uint32 m_subsong;
 };
-
-//for compatibility
-#define playable_location_i playable_location_impl
-
 
 // usage: something( make_playable_location("file://c:\blah.ogg",0) );
 // only for use as a parameter to a function taking const playable_location &

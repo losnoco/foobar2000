@@ -25,3 +25,44 @@ void registerclass_scope_delayed::toggle_off() {
 		m_class = 0;
 	}
 }
+
+namespace {
+	class clipboard_scope {
+	public:
+		clipboard_scope() : m_open(false) {}
+		~clipboard_scope() {close();}
+		bool open(HWND p_owner) {
+			close();
+			if (OpenClipboard(p_owner) == TRUE) {
+				m_open = true;
+				return true;
+			} else {
+				return false;
+			}
+		}
+		void close() {
+			if (m_open) {
+				m_open = false;
+				CloseClipboard();
+			}
+		}
+	private:
+		bool m_open;
+	};
+};
+bool uGetClipboardString(pfc::string_base & p_out) {
+	clipboard_scope scope;
+	if (!scope.open(NULL)) return false;
+	HANDLE data = GetClipboardData(
+#ifdef UNICODE
+		CF_UNICODETEXT
+#else
+		CF_TEXT
+#endif
+		);
+	if (data == NULL) return false;
+
+	CGlobalLock lock(data);
+	p_out = pfc::stringcvt::string_utf8_from_os( (const TCHAR*) lock.GetPtr(), lock.GetSize() / sizeof(TCHAR) );
+	return true;
+}

@@ -1,6 +1,8 @@
 #include "pfc.h"
 
 
+#ifdef _WINDOWS
+
 namespace {
 	template<typename t_char> 
 	class string_writer_t {
@@ -156,3 +158,6 @@ namespace pfc {
 	}
 
 }
+
+#endif //_WINDOWS
+

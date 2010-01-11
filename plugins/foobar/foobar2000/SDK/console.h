@@ -16,6 +16,7 @@ namespace console
     void printf(const char*,...);
 	void printfv(const char*,va_list p_arglist);
 
+	//! Usage: console::formatter() << "blah " << somenumber << " asdf" << somestring;
 	class formatter : public pfc::string_formatter {
 	public:
 		~formatter() {if (!is_empty()) console::print(get_ptr());}
@@ -26,7 +27,7 @@ namespace console
 class NOVTABLE console_receiver : public service_base
 {
 public:
-	virtual void print(const char * p_message,unsigned p_message_length) = 0;
+	virtual void print(const char * p_message,t_size p_message_length) = 0;
 
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(console_receiver);
 };

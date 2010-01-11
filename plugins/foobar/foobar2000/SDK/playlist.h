@@ -303,7 +303,9 @@ public:
 	bool playlist_insert_items_filter(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
 	bool activeplaylist_insert_items_filter(t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
 
+	//! DEPRECATED (0.9.3) - use playlist_incoming_item_filter_v2::process_locations_async whenever possible
 	bool playlist_insert_locations(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
+	//! DEPRECATED (0.9.3) - use playlist_incoming_item_filter_v2::process_locations_async whenever possible
 	bool activeplaylist_insert_locations(t_size p_base,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
 
 	bool playlist_add_items_filter(t_size p_playlist,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
@@ -472,6 +474,9 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playlist_callback_single_static);
 };
 
+
+//! Class used for async processing of IDataObject. Content of IDataObject can be dumped into dropped_files_data without any time-consuming operations - won't block calling app when used inside drag&drop handler - and actual time-consuming processing (listing directories and reading infos) can be done later.\n
+//! In 0.9.3 and up, instead of going thru dropped_files_data, you can use playlist_incoming_item_filter_v2::process_dropped_files_async().
 class NOVTABLE dropped_files_data {
 public:
 	virtual void set_paths(pfc::string_list_const const & p_paths) = 0;
@@ -486,22 +491,87 @@ class NOVTABLE playlist_incoming_item_filter : public service_base
 {
 public:
 	virtual bool filter_items(const pfc::list_base_const_t<metadb_handle_ptr> & in,pfc::list_base_t<metadb_handle_ptr> & out) = 0;//sort / remove duplicates
-	virtual bool process_locations(const pfc::list_base_const_t<const char*> & urls,pfc::list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_restrict_mask_overide, const char * p_exclude_mask_override,HWND p_parentwnd) = 0;
-	virtual bool process_dropped_files(interface IDataObject * pDataObject,pfc::list_base_t<metadb_handle_ptr> & out,bool filter,HWND p_parentwnd) = 0;
+	
+	//! Deprecated; use playlist_incoming_item_filter_v2::process_locations_async() when possible.\n
+	//! Converts one or more paths to a list of metadb_handles; displays a progress dialog.\n
+	//! Note that this function creates modal dialog and does not return until the operation has completed.
+	//! @returns True on success, false on user abort.
+	virtual bool process_locations(const pfc::list_base_const_t<const char*> & p_urls,pfc::list_base_t<metadb_handle_ptr> & p_out,bool p_filter,const char * p_restrict_mask_override, const char * p_exclude_mask_override,HWND p_parentwnd) = 0;
+	
+	//! Deprecated; use playlist_incoming_item_filter_v2::process_dropped_files_async() when possible.\n
+	//! Converts an IDataObject to a list of metadb_handles.
+	//! Using this function is strongly disrecommended as it implies blocking the drag&drop source app (as well as our app).\n
+	//! @returns True on success, false on user abort or unknown data format.
+	virtual bool process_dropped_files(interface IDataObject * pDataObject,pfc::list_base_t<metadb_handle_ptr> & p_out,bool p_filter,HWND p_parentwnd) = 0;
+
+	//! Checks whether IDataObject contains one of known data formats that can be translated to a list of metadb_handles.
 	virtual bool process_dropped_files_check(interface IDataObject * pDataObject) = 0;
+	
+	//! Checks whether IDataObject contains our own private data format (drag&drop within the app etc).
 	virtual bool process_dropped_files_check_if_native(interface IDataObject * pDataObject) = 0;
-	virtual interface IDataObject * create_dataobject(const pfc::list_base_const_t<metadb_handle_ptr> & data) = 0;
+	
+	//! Creates an IDataObject from specified metadb_handle list.
+	virtual interface IDataObject * create_dataobject(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) = 0;
+
+	//! Checks whether IDataObject contains one of known data formats that can be translated to a list of metadb_handles.\n
+	//! This function also returns drop effects to use (see: IDropTarget::DragEnter(), IDropTarget::DragOver() ). In certain cases, drag effects are necessary for drag&drop to work at all (such as dragging links from IE).\n
 	virtual bool process_dropped_files_check_ex(interface IDataObject * pDataObject, DWORD * p_effect) = 0;
+
+	//! Dumps IDataObject content to specified dropped_files_data object, without any time-consuming processing.\n
+	//! Using this function instead of process_dropped_files() and processing dropped_files_data outside drop handler allows you to avoid blocking drop source app when processing large directories etc.\n
+	//! Note: since 0.9.3, it is recommended to use playlist_incoming_item_filter_v2::process_dropped_files_async() instead.
+	//! @returns True on success, false when IDataObject does not contain any of known data formats.
 	virtual bool process_dropped_files_delayed(dropped_files_data & p_out,interface IDataObject * pDataObject) = 0;
 
 	//helper
 	bool process_location(const char * url,pfc::list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_mask,const char * p_exclude,HWND p_parentwnd);
 
-	static bool g_get(service_ptr_t<playlist_incoming_item_filter> & p_out) {return service_enum_t<playlist_incoming_item_filter>().first(p_out);}
-
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playlist_incoming_item_filter);
 };
 
+//! For use with playlist_incoming_item_filter_v2::process_locations_async().
+class NOVTABLE process_locations_notify : public service_base {
+public:
+	virtual void on_completion(const pfc::list_base_const_t<metadb_handle_ptr> & p_items) = 0;
+	virtual void on_aborted() = 0;
+
+	FB2K_MAKE_SERVICE_INTERFACE(process_locations_notify,service_base);
+};
+
+typedef service_ptr_t<process_locations_notify> process_locations_notify_ptr;
+
+//! New (0.9.3)
+class NOVTABLE playlist_incoming_item_filter_v2 : public playlist_incoming_item_filter {
+public:
+	enum {
+		//! Set this to disable presorting (according to user settings) and duplicate removal in output list. Should be unset in most cases.
+		op_flag_no_filter		= 1 << 0,
+		//! Set this flag to make the progress dialog not steal focus on creation.
+		op_flag_background		= 1 << 1,
+		//! Set this flag to delay the progress dialog becoming visible, so it does not appear at all during short operations. Also implies op_flag_background effect.
+		op_flag_delay_ui		= 1 << 2,
+	};
+
+	//! Converts one or more paths to a list of metadb_handles. The function returns immediately; specified callback object receives results when the operation has completed.
+	//! @param p_urls List of paths to process.
+	//! @param p_op_flags Can be null, or one or more of op_flag_* enum values combined, altering behaviors of the operation.
+	//! @param p_restrict_mask_override Override of "restrict incoming items to" setting. Pass NULL to use the value from preferences.
+	//! @param p_exclude_mask_override Override of "exclude file types" setting. Pass NULL to use value from preferences.
+	//! @param p_parentwnd Parent window for spawned progress dialogs.
+	//! @param p_notify Callback receiving notifications about success/abort of the operation as well as output item list.
+	virtual void process_locations_async(const pfc::list_base_const_t<const char*> & p_urls,t_uint32 p_op_flags,const char * p_restrict_mask_override, const char * p_exclude_mask_override,HWND p_parentwnd,process_locations_notify_ptr p_notify) = 0;
+
+	//! Converts an IDataObject to a list of metadb_handles. The function returns immediately; specified callback object receives results when the operation has completed.
+	//! @param p_dataobject IDataObject to process.
+	//! @param p_op_flags Can be null, or one or more of op_flag_* enum values combined, altering behaviors of the operation.
+	//! @param p_parentwnd Parent window for spawned progress dialogs.
+	//! @param p_notify Callback receiving notifications about success/abort of the operation as well as output item list.
+	virtual void process_dropped_files_async(interface IDataObject * p_dataobject,t_uint32 p_op_flags,HWND p_parentwnd,process_locations_notify_ptr p_notify) = 0;
+
+	FB2K_MAKE_SERVICE_INTERFACE(playlist_incoming_item_filter_v2,playlist_incoming_item_filter);
+};
+
+//! Implementation of dropped_files_data.
 class dropped_files_data_impl : public dropped_files_data {
 public:
 	dropped_files_data_impl() : m_is_paths(false) {}
@@ -513,15 +583,11 @@ public:
 		m_is_paths = false;
 		m_handles = p_handles;
 	}
-	bool to_handles(pfc::list_base_t<metadb_handle_ptr> & p_out,bool p_filter,HWND p_parentwnd) {
-		if (m_is_paths) {
-			return static_api_ptr_t<playlist_incoming_item_filter>()->process_locations(m_paths,p_out,p_filter,0,0,p_parentwnd);
-		} else {
-			if (static_api_ptr_t<metadb_io>()->load_info_multi(m_handles,metadb_io::load_info_default,p_parentwnd,true) == metadb_io::load_info_aborted) return false;
-			p_out = m_handles;
-			return true;
-		}
-	}
+
+	void to_handles_async(bool p_filter,HWND p_parentwnd,service_ptr_t<process_locations_notify> p_notify);
+	//! @param p_op_flags Can be null, or one or more of playlist_incoming_item_filter_v2::op_flag_* enum values combined, altering behaviors of the operation.
+	void to_handles_async_ex(t_uint32 p_op_flags,HWND p_parentwnd,service_ptr_t<process_locations_notify> p_notify);
+	bool to_handles(pfc::list_base_t<metadb_handle_ptr> & p_out,bool p_filter,HWND p_parentwnd);
 private:
 	pfc::string_list_impl m_paths;
 	metadb_handle_list m_handles;

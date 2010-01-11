@@ -196,4 +196,20 @@ template<typename T>
 class contextmenu_item_factory_t : public service_factory_single_t<T> {};
 
 
+#define DECLARE_CONTEXT_MENU_ITEM(P_CLASSNAME,P_NAME,P_DEFAULTPATH,P_FUNC,P_GUID,P_DESCRIPTION)	\
+	namespace { \
+		class P_CLASSNAME : public contextmenu_item_simple {	\
+		public:	\
+			unsigned get_num_items() {return 1;}	\
+			void get_item_name(unsigned p_index,pfc::string_base & p_out) {p_out = P_NAME;}	\
+			void get_item_default_path(unsigned p_index,pfc::string_base & p_out) {p_out = P_DEFAULTPATH;}	\
+			void context_command(unsigned p_index,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const GUID& p_caller) {P_FUNC(p_data);}	\
+			GUID get_item_guid(unsigned p_index) {return P_GUID;}	\
+			bool get_item_description(unsigned p_index,pfc::string_base & p_out) {if (P_DESCRIPTION[0] == 0) return false;p_out = P_DESCRIPTION; return true;}	\
+		};	\
+		static contextmenu_item_factory_t<P_CLASSNAME> g_##P_CLASSNAME##_factory;	\
+	}
+
+
+
 #endif //_FOOBAR2000_MENU_ITEM_H_

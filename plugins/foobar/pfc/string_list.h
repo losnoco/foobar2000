@@ -13,22 +13,21 @@ namespace pfc {
 
 		inline const char * operator[] (t_size n) const {return m_data[n];}
 
-		void add_item(const char * p_string)
-		{
+		void add_item(const char * p_string) {
 			t_size idx = m_data.get_size();
 			m_data.set_size(idx + 1);
-			m_data[idx] = strdup(p_string);
+			m_data[idx] = p_string;
 		}
 
 		void add_items(const string_list_const & p_source) {_append(p_source);}
 
 		void remove_all() 
 		{
-			for(unsigned n=0;n<m_data.get_size();n++) free(m_data[n]);
 			m_data.set_size(0);
 		}
 
-		~string_list_impl() {remove_all();}
+		//unnecessary since pfc::array_t<pfc::string8> is in use for implementation
+		//~string_list_impl() {remove_all();}
 
 		inline string_list_impl() {}
 		inline string_list_impl(const string_list_impl & p_source) {_copy(p_source);}
@@ -40,22 +39,19 @@ namespace pfc {
 
 	private:
 
-		void _append(const string_list_const & p_source)
-		{
+		void _append(const string_list_const & p_source) {
 			const t_size toadd = p_source.get_count(), base = m_data.get_size();
 			m_data.set_size(base+toadd);
-			for(t_size n=0;n<toadd;n++) m_data[base+n] = strdup(p_source[n]);
+			for(t_size n=0;n<toadd;n++) m_data[base+n] = p_source[n];
 		}
 
-		void _copy(const string_list_const & p_source)
-		{
+		void _copy(const string_list_const & p_source) {
 			const t_size newcount = p_source.get_count();
-			for(t_size n=0;n<m_data.get_size();n++) free(m_data[n]);		
 			m_data.set_size(newcount);
-			for(t_size n=0;n<newcount;n++) m_data[n] = strdup(p_source[n]);
+			for(t_size n=0;n<newcount;n++) m_data[n] = p_source[n];
 		}
 
-		pfc::array_t<char*,pfc::alloc_fast> m_data;
+		pfc::array_t<pfc::string8,pfc::alloc_fast> m_data;
 	};
 }
 

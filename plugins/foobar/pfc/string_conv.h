@@ -8,9 +8,6 @@ namespace pfc {
 			codepage_ascii = 20127,
 			codepage_iso_8859_1 = 28591,
 		};
-#else
-#error portme
-#endif
 
 		//! Converts UTF-8 characters to wide character.
 		//! @param p_out Output buffer, receives converted string, with null terminator.
@@ -351,4 +348,8 @@ namespace pfc {
 		typedef string_utf8_from_ansi string_utf8_from_os;
 #endif
 	}
+
+#else
+//PORTME
+#endif
 };

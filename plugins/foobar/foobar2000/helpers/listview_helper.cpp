@@ -11,6 +11,7 @@ namespace listview_helper {
 
 	unsigned insert_item(HWND p_listview,unsigned p_index,const char * p_name,LPARAM p_param)
 	{
+		if (p_index == infinite) p_index = ListView_GetItemCount(p_listview);
 		LVITEM item;
 		memset(&item,0,sizeof(item));
 
@@ -47,6 +48,13 @@ namespace listview_helper {
 		LRESULT ret = uSendMessage(p_listview,uLVM_INSERTCOLUMN,p_index,(LPARAM)&data);
 		if (ret < 0) return infinite;
 		else return (unsigned) ret;
+	}
+
+	void get_item_text(HWND p_listview,unsigned p_index,unsigned p_column,pfc::string_base & p_out) {
+		enum {buffer_length = 4096};
+		TCHAR buffer[buffer_length];
+		ListView_GetItemText(p_listview,p_index,p_column,buffer,buffer_length);
+		p_out = pfc::stringcvt::string_utf8_from_os(buffer,buffer_length);
 	}
 
 	bool set_item_text(HWND p_listview,unsigned p_index,unsigned p_column,const char * p_name)
@@ -90,10 +98,11 @@ namespace listview_helper {
 	{
 		LRESULT temp = SendMessage(p_listview,LVM_GETITEMCOUNT,0,0);
 		if (temp < 0) return false;
+		ListView_SetSelectionMark(p_listview,p_index);
 		unsigned n; const unsigned m = pfc::downcast_guarded<unsigned>(temp);
-		for(n=0;n<m;n++)
-		{
-			if (!set_item_selection(p_listview,n,p_index == n)) return false;
+		for(n=0;n<m;n++) {
+			enum {mask = LVIS_FOCUSED | LVIS_SELECTED};
+			ListView_SetItemState(p_listview,n,n == p_index ? mask : 0, mask);
 		}
 		return ensure_visible(p_listview,p_index);
 	}
@@ -101,5 +110,38 @@ namespace listview_helper {
 	bool ensure_visible(HWND p_listview,unsigned p_index)
 	{
 		return uSendMessage(p_listview,LVM_ENSUREVISIBLE,p_index,FALSE) ? true : false;
+	}
+}
+
+
+
+bool ListView_GetContextMenuPoint(HWND p_list,LPARAM p_coords,POINT & p_point,int & p_selection) {
+	if ((DWORD)p_coords == (DWORD)infinite) {
+		int firstsel = ListView_GetFirstSelection(p_list);
+		if (firstsel >= 0) {
+			RECT rect;
+			if (!ListView_GetItemRect(p_list,firstsel,&rect,LVIR_BOUNDS)) return false;
+			p_point.x = (rect.left + rect.right) / 2;
+			p_point.y = (rect.top + rect.bottom) / 2;
+			if (!ClientToScreen(p_list,&p_point)) return false;
+		} else {
+			RECT rect;
+			if (!GetClientRect(p_list,&rect)) return false;
+			p_point.x = (rect.left + rect.right) / 2;
+			p_point.y = (rect.top + rect.bottom) / 2;
+			if (!ClientToScreen(p_list,&p_point)) return false;
+		}
+		p_selection = firstsel;
+		return true;
+	} else {
+		POINT pt = {(short)LOWORD(p_coords),(short)HIWORD(p_coords)};
+		p_point = pt;
+		POINT client = pt;
+		if (!ScreenToClient(p_list,&client)) return false;
+		LVHITTESTINFO info;
+		memset(&info,0,sizeof(info));
+		info.pt = client;
+		p_selection = ListView_HitTest(p_list,&info);
+		return true;
 	}
 }

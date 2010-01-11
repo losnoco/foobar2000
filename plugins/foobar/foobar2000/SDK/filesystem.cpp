@@ -32,7 +32,7 @@ void file::seek_ex(t_sfilesize p_position, file::t_seek_mode p_mode, abort_callb
 }
 
 t_filesize file::g_transfer(stream_reader * p_src,stream_writer * p_dst,t_filesize p_bytes,abort_callback & p_abort) {
-	enum {BUFSIZE = 1024*1024};
+	enum {BUFSIZE = 1024*1024*8};
 	pfc::array_t<t_uint8> temp;
 	temp.set_size((t_size)pfc::min_t<t_filesize>(BUFSIZE,p_bytes));
 	void* ptr = temp.get_ptr();
@@ -63,7 +63,7 @@ void filesystem::g_get_canonical_path(const char * path,pfc::string_base & out)
 	if (e.first(ptr)) do {
 		if (ptr->get_canonical_path(path,out)) return;
 	} while(e.next(ptr));
-	//noone wants to process this, lets copy over
+	//no one wants to process this, lets copy over
 	out.set_string(path);
 }
 
@@ -140,12 +140,10 @@ bool filesystem::g_exists_writeable(const char * p_path,abort_callback & p_abort
 	return writeable;
 }
 
-void filesystem::g_remove(const char * path,abort_callback & p_abort) {
-	pfc::string8 path_c;
-	g_get_canonical_path(path,path_c);
+void filesystem::g_remove(const char * p_path,abort_callback & p_abort) {
 	service_ptr_t<filesystem> fs;
-	if (!g_get_interface(fs,path_c)) throw exception_io_no_handler_for_path();
-	fs->remove(path_c,p_abort);
+	if (!g_get_interface(fs,p_path)) throw exception_io_no_handler_for_path();
+	fs->remove(p_path,p_abort);
 }
 
 void filesystem::g_remove_timeout(const char * p_path,double p_timeout,abort_callback & p_abort) {
@@ -190,13 +188,11 @@ void filesystem::g_copy_timeout(const char * p_src,const char * p_dst,double p_t
 	}
 }
 
-void filesystem::g_create_directory(const char * path,abort_callback & p_abort)
+void filesystem::g_create_directory(const char * p_path,abort_callback & p_abort)
 {
-	pfc::string8 path_c;
-	g_get_canonical_path(path,path_c);
 	service_ptr_t<filesystem> fs;
-	if (!g_get_interface(fs,path_c)) throw exception_io_no_handler_for_path();
-	fs->create_directory(path_c,p_abort);
+	if (!g_get_interface(fs,p_path)) throw exception_io_no_handler_for_path();
+	fs->create_directory(p_path,p_abort);
 }
 
 void filesystem::g_move(const char * src,const char * dst,abort_callback & p_abort) {
@@ -250,13 +246,11 @@ static int path_unpack_string(pfc::string8 & out,const char * src)
 }
 
 
-void filesystem::g_open_precache(service_ptr_t<file> & p_out,const char * path,abort_callback & p_abort) {
-	pfc::string8 path_c;
-	g_get_canonical_path(path,path_c);
+void filesystem::g_open_precache(service_ptr_t<file> & p_out,const char * p_path,abort_callback & p_abort) {
 	service_ptr_t<filesystem> fs;
-	if (!g_get_interface(fs,path_c)) throw exception_io_no_handler_for_path();
-	if (fs->is_remote(path)) throw exception_io_object_is_remote();
-	fs->open(p_out,path_c,open_mode_read,p_abort);
+	if (!g_get_interface(fs,p_path)) throw exception_io_no_handler_for_path();
+	if (fs->is_remote(p_path)) throw exception_io_object_is_remote();
+	fs->open(p_out,p_path,open_mode_read,p_abort);
 }
 
 bool filesystem::g_is_remote(const char * p_path) {
@@ -402,8 +396,6 @@ bool archive_impl::relative_path_parse(const char * relative_path,const char * p
 	}
 	return false;
 }
-
-// "unpack://zip|17|file://c:\unf.rar|meh.mp3"
 
 bool archive_impl::g_parse_unpack_path(const char * path,pfc::string8 & archive,pfc::string8 & file)
 {
@@ -644,18 +636,21 @@ t_filetimestamp foobar2000_io::filetimestamp_from_system_timer()
 	return ret;
 }
 
-void stream_reader::read_string(pfc::string_base & p_out,abort_callback & p_abort)
-{
-	t_uint32 length;
-	read_lendian_t(length,p_abort);
-	char * ptr = p_out.lock_buffer(length);
+void stream_reader::read_string_ex(pfc::string_base & p_out,t_size p_bytes,abort_callback & p_abort) {
+	char * ptr = p_out.lock_buffer(p_bytes);
 	try {
-		read_object(ptr,length,p_abort);
+		read_object(ptr,p_bytes,p_abort);
 	} catch(...) {
 		p_out.unlock_buffer();
 		throw;
 	}
 	p_out.unlock_buffer();
+}
+void stream_reader::read_string(pfc::string_base & p_out,abort_callback & p_abort)
+{
+	t_uint32 length;
+	read_lendian_t(length,p_abort);
+	read_string_ex(p_out,length,p_abort);
 }
 
 void stream_reader::read_string_raw(pfc::string_base & p_out,abort_callback & p_abort) {
@@ -701,29 +696,61 @@ format_filetimestamp::format_filetimestamp(t_filetimestamp p_timestamp) {
 }
 
 #ifdef _WIN32
+namespace {
+	//rare/weird win32 errors that didn't make it to the main API
+	PFC_DECLARE_EXCEPTION(exception_io_device_not_ready,		exception_io,"Device not ready");
+	PFC_DECLARE_EXCEPTION(exception_io_invalid_drive,			exception_io_not_found,"Drive not found");
+	PFC_DECLARE_EXCEPTION(exception_io_win32,					exception_io,"Generic win32 I/O error");
+	PFC_DECLARE_EXCEPTION(exception_io_buffer_overflow,			exception_io,"The file name is too long");
+
+	class exception_io_win32_ex : public exception_io_win32 {
+	public:
+		exception_io_win32_ex(DWORD p_code) : m_msg(pfc::string_formatter() << "I/O error (win32 #" << (t_uint32)p_code << ")") {}
+		exception_io_win32_ex(const exception_io_win32_ex & p_other) {*this = p_other;}
+		const char * what() const throw() {return m_msg;}
+	private:
+		pfc::string8 m_msg;
+	};
+}
 void foobar2000_io::exception_io_from_win32(DWORD p_code) {
 	switch(p_code) {
 	case ERROR_ALREADY_EXISTS:
 	case ERROR_FILE_EXISTS:
 		throw exception_io_already_exists();
+	case ERROR_NETWORK_ACCESS_DENIED:
 	case ERROR_ACCESS_DENIED:
+		throw exception_io_denied();
+	case ERROR_WRITE_PROTECT:
+		throw exception_io_write_protected();
 	case ERROR_BUSY:
 	case ERROR_PATH_BUSY:
-		throw exception_io_denied();
 	case ERROR_SHARING_VIOLATION:
 	case ERROR_LOCK_VIOLATION:
 		throw exception_io_sharing_violation();
 	case ERROR_HANDLE_DISK_FULL:
 	case ERROR_DISK_FULL:
 		throw exception_io_device_full();
-	default:
-		throw exception_io(pfc::string_formatter() << "I/O error (win32 #" << (t_uint32)p_code << ")");
 	case ERROR_FILE_NOT_FOUND:
 	case ERROR_PATH_NOT_FOUND:
 		throw exception_io_not_found();
 	case ERROR_BROKEN_PIPE:
 	case ERROR_NO_DATA:
 		throw exception_io_no_data();
+	case ERROR_NETWORK_UNREACHABLE:
+	case ERROR_NETNAME_DELETED:
+		throw exception_io_network_not_reachable();
+	case ERROR_NOT_READY:
+		throw exception_io_device_not_ready();
+	case ERROR_INVALID_DRIVE:
+		throw exception_io_invalid_drive();
+	case ERROR_CRC:
+	case ERROR_FILE_CORRUPT:
+	case ERROR_DISK_CORRUPT:
+		throw exception_io_file_corrupted();
+	case ERROR_BUFFER_OVERFLOW:
+		throw exception_io_buffer_overflow();
+	default:
+		throw exception_io_win32_ex(p_code);
 	}
 }
 #endif
@@ -732,6 +759,10 @@ t_filesize file::get_size_ex(abort_callback & p_abort) {
 	t_filesize temp = get_size(p_abort);
 	if (temp == filesize_invalid) throw exception_io_no_length();
 	return temp;
+}
+
+void file::ensure_local() {
+	if (is_remote()) throw exception_io_object_is_remote();
 }
 
 void file::ensure_seekable() {
@@ -763,7 +794,7 @@ void file::g_transfer_object(service_ptr_t<file> p_src,service_ptr_t<file> p_dst
 			if (newpos > oldsize) p_dst->resize(newpos ,p_abort);
 		}
 	}
-	g_transfer(pfc::safe_cast<stream_reader*>(p_src.get_ptr()),pfc::safe_cast<stream_writer*>(p_dst.get_ptr()),p_bytes,p_abort);
+	g_transfer_object(pfc::safe_cast<stream_reader*>(p_src.get_ptr()),pfc::safe_cast<stream_writer*>(p_dst.get_ptr()),p_bytes,p_abort);
 }
 
 

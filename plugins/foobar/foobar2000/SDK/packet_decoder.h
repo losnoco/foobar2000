@@ -1,7 +1,6 @@
 //! Provides interface to decode various audio data types to PCM. Use packet_decoder_factory_t template to register.
 
-class packet_decoder : public service_base
-{
+class packet_decoder : public service_base {
 protected:
 	//! Prototype of function that must be implemented by packet_decoder implementation but is not accessible through packet_decoder interface itself.
 	//! Determines whether specific packet_decoder implementation supports specified decoder setup data.
@@ -20,7 +19,8 @@ public:
 	virtual t_size set_stream_property(const GUID & p_type,t_size p_param1,const void * p_param2,t_size p_param2size) = 0;
 
 	
-	//! Retrieves additional usre-readable tech infos that decoder can provide.
+	//! Retrieves additional user-readable tech infos that decoder can provide.
+	//! @param p_info Interface receiving information about the stream being decoded. Note that it already contains partial info about the file; existing info should not be erased, decoder-provided info should be merged with it.
 	virtual void get_info(file_info & p_info) = 0;
 
 	//! Returns many frames back to start decoding when seeking.
@@ -43,7 +43,7 @@ public:
 	//! Static helper, creates a packet_decoder instance and initializes it with specific decoder setup data.
 	static void g_open(service_ptr_t<packet_decoder> & p_out,bool p_decode,const GUID & p_owner,t_size p_param1,const void * p_param2,t_size p_param2size,abort_callback & p_abort);
 
-	static const GUID owner_MP4,owner_matroska,owner_MP3,owner_MP2,owner_MP1,owner_MP4_ALAC,owner_ADTS,owner_ADIF;
+	static const GUID owner_MP4,owner_matroska,owner_MP3,owner_MP2,owner_MP1,owner_MP4_ALAC,owner_ADTS,owner_ADIF, owner_Ogg;
 
 	struct matroska_setup
 	{
@@ -66,6 +66,11 @@ public:
 	//property_byteorder : if (param1) little_endian; else big_endian;
 	//property_signed : if (param1) signed; else unsigned;
 
+
+	//property_ogg_header : p_param1 = unused, p_param2 = ogg_packet structure, retval: 0 when more headers are wanted, 1 when done parsing headers
+	//property_ogg_query_sample_rate : returns sample rate, no parameters
+	//property_ogg_packet : p_param1 = unused, p_param2 = ogg_packet strucute
+	static const GUID property_ogg_header, property_ogg_query_sample_rate, property_ogg_packet;
 
 	FB2K_MAKE_SERVICE_INTERFACE(packet_decoder,service_base);
 };

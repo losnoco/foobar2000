@@ -3,6 +3,7 @@
 
 /*!
 Class receiving notifications about playback events. Note that all methods are called only from app's main thread.
+Use play_callback_manager to register your dynamically created instances. Statically registered version is available too - see play_callback_static.
 */
 class NOVTABLE play_callback {
 public:

@@ -320,8 +320,7 @@ bool playlist_manager::activeplaylist_add_items(const pfc::list_base_const_t<met
 bool playlist_manager::playlist_insert_items_filter(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select)
 {
 	metadb_handle_list temp;
-	service_ptr_t<playlist_incoming_item_filter> api;
-	if (!playlist_incoming_item_filter::g_get(api)) return false;
+	static_api_ptr_t<playlist_incoming_item_filter> api;
 	if (!api->filter_items(p_data,temp))
 		return false;
 	return playlist_insert_items(p_playlist,p_base,temp,bit_array_val(p_select)) != infinite;
@@ -337,8 +336,7 @@ bool playlist_manager::activeplaylist_insert_items_filter(t_size p_base,const pf
 bool playlist_manager::playlist_insert_locations(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd)
 {
 	metadb_handle_list temp;
-	service_ptr_t<playlist_incoming_item_filter> api;
-	if (!playlist_incoming_item_filter::g_get(api)) return false;
+	static_api_ptr_t<playlist_incoming_item_filter> api;
 	if (!api->process_locations(p_urls,temp,true,0,0,p_parentwnd)) return false;
 	return playlist_insert_items(p_playlist,p_base,temp,bit_array_val(p_select)) != infinite;
 }
@@ -648,4 +646,54 @@ bool playlist_manager::activeplaylist_execute_default_action(t_size p_item) {
 	t_size idx = get_active_playlist();
 	if (idx == infinite) return false;
 	else return playlist_execute_default_action(idx,p_item);
+}
+
+namespace {
+	class completion_notify_dfd : public completion_notify {
+	public:
+		completion_notify_dfd(const pfc::list_base_const_t<metadb_handle_ptr> & p_data,service_ptr_t<process_locations_notify> p_notify) : m_data(p_data), m_notify(p_notify) {}
+		void on_completion(unsigned p_code) {
+			switch(p_code) {
+			case metadb_io::load_info_aborted:
+				m_notify->on_aborted();
+				break;
+			default:
+				m_notify->on_completion(m_data);
+				break;
+			}
+		}
+	private:
+		metadb_handle_list m_data;
+		service_ptr_t<process_locations_notify> m_notify;
+	};
+};
+
+void dropped_files_data_impl::to_handles_async_ex(t_uint32 p_op_flags,HWND p_parentwnd,service_ptr_t<process_locations_notify> p_notify) {
+	if (m_is_paths) {
+		static_api_ptr_t<playlist_incoming_item_filter_v2>()->process_locations_async(
+			m_paths,
+			p_op_flags,
+			NULL,
+			NULL,
+			p_parentwnd,
+			p_notify);
+	} else {
+		t_uint32 flags = 0;
+		if (p_op_flags & playlist_incoming_item_filter_v2::op_flag_background) flags |= metadb_io_v2::op_flag_background;
+		if (p_op_flags & playlist_incoming_item_filter_v2::op_flag_delay_ui) flags |= metadb_io_v2::op_flag_delay_ui;
+		static_api_ptr_t<metadb_io_v2>()->load_info_async(m_handles,metadb_io::load_info_default,p_parentwnd,flags,new service_impl_t<completion_notify_dfd>(m_handles,p_notify));
+	}
+}
+void dropped_files_data_impl::to_handles_async(bool p_filter,HWND p_parentwnd,service_ptr_t<process_locations_notify> p_notify) {
+	to_handles_async_ex(p_filter ? 0 : playlist_incoming_item_filter_v2::op_flag_no_filter,p_parentwnd,p_notify);
+}
+
+bool dropped_files_data_impl::to_handles(pfc::list_base_t<metadb_handle_ptr> & p_out,bool p_filter,HWND p_parentwnd) {
+	if (m_is_paths) {
+		return static_api_ptr_t<playlist_incoming_item_filter>()->process_locations(m_paths,p_out,p_filter,NULL,NULL,p_parentwnd);
+	} else {
+		if (static_api_ptr_t<metadb_io>()->load_info_multi(m_handles,metadb_io::load_info_default,p_parentwnd,true) == metadb_io::load_info_aborted) return false;
+		p_out = m_handles;
+		return true;
+	}
 }

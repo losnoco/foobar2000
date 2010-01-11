@@ -2,6 +2,7 @@
 #define _PFC_STRING_H_
 
 namespace pfc {
+
 	class NOVTABLE string_receiver {
 	public:
 		virtual void add_string(const char * p_string,t_size p_string_size = infinite) = 0;
@@ -18,8 +19,9 @@ namespace pfc {
 
 	bool is_path_separator(unsigned c);
 	bool is_path_bad_char(unsigned c);
-	bool is_valid_utf8(const char * param);
+	bool is_valid_utf8(const char * param,t_size max = infinite);
 	bool is_lower_ascii(const char * param);
+	bool is_multiline(const char * p_string,t_size p_len = infinite);
 	bool has_path_bad_chars(const char * param);
 	void recover_invalid_utf8(const char * src,char * out,unsigned replace);//out must be enough to hold strlen(char) + 1, or appropiately bigger if replace needs multiple chars
 	void convert_to_lower_ascii(const char * src,t_size max,char * out,char replace = '?');//out should be at least strlen(src)+1 long
@@ -37,6 +39,22 @@ namespace pfc {
 	t_size string_find_first_ex(const char * p_string,t_size p_string_length,const char * p_tofind,t_size p_tofind_length,t_size p_start = 0);	//returns infinite if not found
 	t_size string_find_last_ex(const char * p_string,t_size p_string_length,const char * p_tofind,t_size p_tofind_length,t_size p_start = ~0);	//returns infinite if not found
 
+	
+	template<typename t_char>
+	t_size strlen_max_t(const t_char * ptr,t_size max) {
+		if (ptr == NULL) return 0;
+		t_size n = 0;
+		while(n<max && ptr[n] != 0) n++;
+		return n;
+	}
+
+	inline t_size strlen_max(const char * ptr,t_size max) {return strlen_max_t(ptr,max);}
+	inline t_size wcslen_max(const wchar_t * ptr,t_size max) {return strlen_max_t(ptr,max);}
+
+#ifdef _WINDOWS
+	inline t_size tcslen_max(const TCHAR * ptr,t_size max) {return strlen_max_t(ptr,max);}
+#endif
+	
 	bool string_is_numeric(const char * p_string,t_size p_length = infinite);
 	inline bool char_is_numeric(char p_char) {return p_char >= '0' && p_char <= '9';}
 	inline bool char_is_ascii_alpha_upper(char p_char) {return p_char >= 'A' && p_char <= 'Z';}
@@ -44,6 +62,51 @@ namespace pfc {
 	inline bool char_is_ascii_alpha(char p_char) {return char_is_ascii_alpha_lower(p_char) || char_is_ascii_alpha_upper(p_char);}
 	inline bool char_is_ascii_alphanumeric(char p_char) {return char_is_ascii_alpha(p_char) || char_is_numeric(p_char);}
 	
+	unsigned atoui_ex(const char * ptr,t_size max);
+	t_int64 atoi64_ex(const char * ptr,t_size max);
+	t_uint64 atoui64_ex(const char * ptr,t_size max);
+
+	t_size strlen_utf8(const char * s,t_size num = ~0);//returns number of characters in utf8 string; num - no. of bytes (optional)
+	t_size utf8_char_len(const char * s,t_size max = ~0);//returns size of utf8 character pointed by s, in bytes, 0 on error
+	t_size utf8_char_len_from_header(char c);
+	t_size utf8_chars_to_bytes(const char * string,t_size count);
+
+	t_size strcpy_utf8_truncate(const char * src,char * out,t_size maxbytes);
+
+	t_size utf8_decode_char(const char * src,unsigned * out,t_size src_bytes = ~0);//returns length in bytes
+	t_size utf8_encode_char(unsigned c,char * out);//returns used length in bytes, max 6
+	t_size utf16_decode_char(const wchar_t * p_source,unsigned * p_out,t_size p_source_length = ~0);
+	t_size utf16_encode_char(unsigned c,wchar_t * out);
+
+
+	t_size strstr_ex(const char * p_string,t_size p_string_len,const char * p_substring,t_size p_substring_len);
+
+	int strcmp_partial(const char * p_string,const char * p_substring);
+	int strcmp_partial_ex(const char * p_string,t_size p_string_length,const char * p_substring,t_size p_substring_length);
+
+	t_size skip_utf8_chars(const char * ptr,t_size count);
+	char * strdup_n(const char * src,t_size len);
+	int stricmp_ascii(const char * s1,const char * s2);
+	int stricmp_ascii_ex(const char * s1,t_size len1,const char * s2,t_size len2);
+
+	int strcmp_ex(const char* p1,t_size n1,const char* p2,t_size n2);
+
+	unsigned utf8_get_char(const char * src);
+
+	inline bool utf8_advance(const char * & var) {
+		t_size delta = utf8_char_len(var);
+		var += delta;
+		return delta>0;
+	}
+
+	inline bool utf8_advance(char * & var) {
+		t_size delta = utf8_char_len(var);
+		var += delta;
+		return delta>0;
+	}
+
+	inline const char * utf8_char_next(const char * src) {return src + utf8_char_len(src);}
+	inline char * utf8_char_next(char * src) {return src + utf8_char_len(src);}
 
 	class NOVTABLE string_base : public pfc::string_receiver {
 	public:
@@ -87,9 +150,55 @@ namespace pfc {
 		string_base() {}
 		~string_base() {}
 	};
-}
 
-namespace pfc {
+	template<t_size max_length>
+	class string_fixed_t : public pfc::string_base {
+	public:
+		inline string_fixed_t() {init();}
+		inline string_fixed_t(const string_fixed_t<max_length> & p_source) {init(); *this = p_source;}
+		inline string_fixed_t(const char * p_source) {init(); set_string(p_source);}
+		
+		inline const string_fixed_t<max_length> & operator=(const string_fixed_t<max_length> & p_source) {set_string(p_source);return *this;}
+		inline const string_fixed_t<max_length> & operator=(const char * p_source) {set_string(p_source);return *this;}
+
+		char * lock_buffer(t_size p_requested_length) {
+			if (p_requested_length >= max_length) return NULL;
+			memset(m_data,0,sizeof(m_data));
+			return m_data;
+		}
+		void unlock_buffer() {
+			m_length = strlen(m_data);
+		}
+
+		inline operator const char * () const {return m_data;}
+		
+		const char * get_ptr() const {return m_data;}
+
+		void add_string(const char * ptr,t_size len) {
+			len = strlen_max(ptr,len);
+			if (m_length + len < m_length || m_length + len > max_length) throw pfc::exception_overflow();
+			for(t_size n=0;n<len;n++) {
+				m_data[m_length++] = ptr[n];
+			}
+			m_data[m_length] = 0;
+		}
+		void truncate(t_size len) {
+			if (len > max_length) len = max_length;
+			if (m_length > len) {
+				m_length = len;
+				m_data[len] = 0;
+			}
+		}
+		t_size get_length() const {return m_length;}
+	private:
+		inline void init() {
+			pfc::static_assert<(max_length>1)>();
+			m_length = 0; m_data[0] = 0;
+		}
+		t_size m_length;
+		char m_data[max_length+1];
+	};
+
 	template<template<typename> class t_alloc>
 	class string8_t : public pfc::string_base {
 	private:
@@ -107,7 +216,7 @@ namespace pfc {
 				m_data.set_size(s);
 		}
 
-		inline const char * __get_ptr() const {return used > 0 ? m_data.get_ptr() : "";}
+		inline const char * __get_ptr() const throw() {return used > 0 ? m_data.get_ptr() : "";}
 
 	public:
 		inline const t_self & operator= (const char * src) {set_string(src);return *this;}
@@ -117,7 +226,7 @@ namespace pfc {
 		inline const t_self & operator= (const t_self & src) {set_string(src);return *this;}
 		inline const t_self & operator+= (const t_self & src) {add_string(src);return *this;}
 
-		inline operator const char * () const {return __get_ptr();}
+		inline operator const char * () const throw() {return __get_ptr();}
 
 		string8_t() : used(0) {}
 		string8_t(const char * p_string) : used(0) {set_string(p_string);}
@@ -127,7 +236,7 @@ namespace pfc {
 
 		void prealloc(t_size p_size) {m_data.prealloc(p_size+1);}
 
-		const char * get_ptr() const {return __get_ptr();}
+		const char * get_ptr() const throw() {return __get_ptr();}
 
 		void add_string(const char * p_string,t_size p_length = ~0);
 		void set_string(const char * p_string,t_size p_length = ~0);
@@ -137,7 +246,7 @@ namespace pfc {
 			if (used>len) {used=len;m_data[len]=0;makespace(used+1);}
 		}
 
-		t_size get_length() const {return used;}
+		t_size get_length() const throw() {return used;}
 
 
 		void set_char(unsigned offset,char c);
@@ -166,23 +275,36 @@ namespace pfc {
 			makespace(used+1);
 		}
 
-		void force_reset() {used=0;data.force_reset();}
+		void force_reset() {used=0;m_data.force_reset();}
 
 		inline static void g_swap(t_self & p_item1,t_self & p_item2) {
 			pfc::swap_t(p_item1.m_data,p_item2.m_data);
 			pfc::swap_t(p_item1.used,p_item2.used);
 		}
 	};
-}
 
-#include "string8_impl.h"
-
-namespace pfc {
 	typedef string8_t<pfc::alloc_standard> string8;
 	typedef string8_t<pfc::alloc_fast> string8_fast;
 	typedef string8_t<pfc::alloc_fast_aggressive> string8_fast_aggressive;
 	//for backwards compatibility
 	typedef string8_t<pfc::alloc_fast_aggressive> string8_fastalloc;
+
+
+	template<template<typename> class t_alloc> class traits_t<string8_t<t_alloc> > : public pfc::combine_traits<pfc::traits_vtable,pfc::traits_t<pfc::array_t<char,t_alloc> > > {
+	public:
+		enum {
+			needs_constructor = true,
+		};
+	};
+}
+
+
+
+#include "string8_impl.h"
+
+#define PFC_DEPRECATE_PRINTF PFC_DEPRECATE("Use string8/string_fixed_t with operator<< overloads instead.")
+
+namespace pfc {
 
 	class string_buffer {
 	private:
@@ -194,119 +316,47 @@ namespace pfc {
 		operator char* () {return m_buffer;}
 	};
 
-	class string_printf : public string8_fastalloc {
+	class PFC_DEPRECATE_PRINTF string_printf : public string8_fastalloc {
 	public:
 		static void g_run(string_base & out,const char * fmt,va_list list);
-		inline void run(const char * fmt,va_list list) {g_run(*this,fmt,list);}
+		void run(const char * fmt,va_list list);
 
 		explicit string_printf(const char * fmt,...);
 	};
 
-	class string_printf_va : public string8_fastalloc {
+	class PFC_DEPRECATE_PRINTF string_printf_va : public string8_fastalloc {
 	public:
-		explicit string_printf_va(const char * fmt,va_list list) {string_printf::g_run(*this,fmt,list);}
+		string_printf_va(const char * fmt,va_list list);
 	};
 
-	#pragma deprecated(string_printf, string_printf_va)
-
-	class format_time
-	{
+	class format_time {
+	public:
+		format_time(t_uint64 p_seconds);
+		const char * get_ptr() const {return m_buffer;}
+		operator const char * () const {return m_buffer;}
 	protected:
-		char buffer[128];
-	public:
-		format_time(t_int64 s);
-		operator const char * () const {return buffer;}
+		string_fixed_t<127> m_buffer;
 	};
 
 
-	class format_time_ex : private format_time
-	{
+	class format_time_ex {
 	public:
-		format_time_ex(double s,unsigned extra = 3) : format_time((t_int64)s)
-		{
-			if (extra>0)
-			{
-				unsigned mul = 1, n;
-				for(n=0;n<extra;n++) mul *= 10;
-
-				
-				unsigned val = (unsigned)((t_int64)(s*mul) % mul);
-				char fmt[16];
-				sprintf(fmt,".%%0%uu",extra);
-				sprintf(buffer + strlen(buffer),fmt,val);
-			}
-		}
-		const char * get_ptr() const {return buffer;}
-		operator const char * () const {return buffer;}
+		format_time_ex(double p_seconds,unsigned p_extra = 3);
+		const char * get_ptr() const {return m_buffer;}
+		operator const char * () const {return m_buffer;}
+	private:
+		string_fixed_t<127> m_buffer;
 	};
 
 
-	unsigned atoui_ex(const char * ptr,t_size max);
-	t_int64 atoi64_ex(const char * ptr,t_size max);
-
-	t_size strlen_max(const char * ptr,t_size max);
-	t_size wcslen_max(const wchar_t * ptr,t_size max);
 
 
-	#ifdef UNICODE
-	#define tcslen_max wcslen_max
-	#else
-	#define tcslen_max strlen_max
-	#endif
-
-	t_size strlen_utf8(const char * s,t_size num = ~0);//returns number of characters in utf8 string; num - no. of bytes (optional)
-	t_size utf8_char_len(const char * s,t_size max = ~0);//returns size of utf8 character pointed by s, in bytes, 0 on error
-	t_size utf8_char_len_from_header(char c);
-	t_size utf8_chars_to_bytes(const char * string,t_size count);
-
-	t_size strcpy_utf8_truncate(const char * src,char * out,t_size maxbytes);
-
-	t_size utf8_decode_char(const char * src,unsigned * out,t_size src_bytes = ~0);//returns length in bytes
-	t_size utf8_encode_char(unsigned c,char * out);//returns used length in bytes, max 6
-	t_size utf16_decode_char(const wchar_t * p_source,unsigned * p_out,t_size p_source_length = ~0);
-	t_size utf16_encode_char(unsigned c,WCHAR * out);
-
-
-	t_size strstr_ex(const char * p_string,t_size p_string_len,const char * p_substring,t_size p_substring_len);
-
-	int strcmp_partial(const char * p_string,const char * p_substring);
-	int strcmp_partial_ex(const char * p_string,t_size p_string_length,const char * p_substring,t_size p_substring_length);
-
-	t_size skip_utf8_chars(const char * ptr,t_size count);
-	char * strdup_n(const char * src,t_size len);
-	int stricmp_ascii(const char * s1,const char * s2);
-
-	int strcmp_ex(const char* p1,t_size n1,const char* p2,t_size n2);
-
-	unsigned utf8_get_char(const char * src);
-
-	inline bool utf8_advance(const char * & var)
-	{
-		t_size delta = utf8_char_len(var);
-		var += delta;
-		return delta>0;
-	}
-
-	inline bool utf8_advance(char * & var)
-	{
-		t_size delta = utf8_char_len(var);
-		var += delta;
-		return delta>0;
-	}
-
-	inline const char * utf8_char_next(const char * src) {return src + utf8_char_len(src);}
-	inline char * utf8_char_next(char * src) {return src + utf8_char_len(src);}
-
-
-
-	class string_filename : public string_simple
-	{
+	class string_filename : public string8 {
 	public:
 		explicit string_filename(const char * fn);
 	};
 
-	class string_filename_ext : public string_simple
-	{
+	class string_filename_ext : public string8 {
 	public:
 		explicit string_filename_ext(const char * fn);
 	};
@@ -347,12 +397,6 @@ namespace pfc {
 	inline void swap_t(string8 & p_item1,string8 & p_item2)
 	{
 		string8::g_swap(p_item1,p_item2);
-	}
-
-	template<typename T>
-	inline void swap_t(string_simple_t<T> & p_item1,string_simple_t<T> & p_item2)
-	{
-		string_simple_t<T>::g_swap(p_item1,p_item2);
 	}
 
 	class format_float
@@ -443,7 +487,6 @@ namespace pfc {
 	{
 	public:
 		format_fixedpoint(t_int64 p_val,unsigned p_point);
-		format_fixedpoint(const format_fixedpoint & p_source) {*this = p_source;}
 		inline const char * get_ptr() const {return m_buffer;}
 		inline operator const char*() const {return m_buffer;}
 	private:
@@ -453,11 +496,56 @@ namespace pfc {
 	class format_char {
 	public:
 		format_char(char p_char) {m_buffer[0] = p_char; m_buffer[1] = 0;}
-		format_char(const format_char & p_source) { *this = p_source; }
 		inline const char * get_ptr() const {return m_buffer;}
 		inline operator const char*() const {return m_buffer;}
 	private:
 		char m_buffer[2];
+	};
+
+	template<typename t_stringbuffer = pfc::string8_fastalloc>
+	class format_pad_left {
+	public:
+		format_pad_left(t_size p_chars,t_uint32 p_padding /* = ' ' */,const char * p_string,t_size p_string_length = infinite) {
+			t_size source_len = 0, source_walk = 0;
+			
+			while(source_walk < p_string_length && source_len < p_chars) {
+				unsigned dummy;
+				t_size delta = pfc::utf8_decode_char(p_string + source_walk, &dummy, p_string_length - source_walk);
+				if (delta == 0) break;
+				source_len++;
+				source_walk += delta;
+			}
+
+			m_buffer.add_string(p_string,source_walk);
+			m_buffer.add_chars(p_padding,p_chars - source_len);
+		}
+		inline const char * get_ptr() const {return m_buffer;}
+		inline operator const char*() const {return m_buffer;}
+	private:
+		t_stringbuffer m_buffer;
+	};
+
+	template<typename t_stringbuffer = pfc::string8_fastalloc>
+	class format_pad_right {
+	public:
+		format_pad_right(t_size p_chars,t_uint32 p_padding /* = ' ' */,const char * p_string,t_size p_string_length = infinite) {
+			t_size source_len = 0, source_walk = 0;
+			
+			while(source_walk < p_string_length && source_len < p_chars) {
+				unsigned dummy;
+				t_size delta = pfc::utf8_decode_char(p_string + source_walk, &dummy, p_string_length - source_walk);
+				if (delta == 0) break;
+				source_len++;
+				source_walk += delta;
+			}
+
+			m_buffer.add_chars(p_padding,p_chars - source_len);
+			m_buffer.add_string(p_string,source_walk);
+		}
+		inline const char * get_ptr() const {return m_buffer;}
+		inline operator const char*() const {return m_buffer;}
+	private:
+		t_stringbuffer m_buffer;
 	};
 }
 
@@ -469,5 +557,54 @@ inline pfc::string_base & operator<<(pfc::string_base & p_fmt,t_uint64 p_val) {r
 inline pfc::string_base & operator<<(pfc::string_base & p_fmt,double p_val) {return p_fmt << pfc::format_float(p_val,0,7);}
 
 inline pfc::string_base & operator<<(pfc::string_base & p_fmt,std::exception const & p_exception) {return p_fmt << p_exception.what();}
+
+
+
+
+
+
+namespace pfc {
+	template<typename t_char>
+	class string_simple_t {
+	private:
+		typedef string_simple_t<t_char> t_self;
+	public:
+		t_size length(t_size p_limit = infinite) const {return pfc::strlen_t(get_ptr(),infinite);}
+		bool is_empty() const {return length(1) == 0;}
+		void set_string(const t_char * p_source,t_size p_length = infinite) {
+			t_size length = pfc::strlen_t(p_source,p_length);
+			m_buffer.set_size(length + 1);
+			pfc::memcpy_t(m_buffer.get_ptr(),p_source,length);
+			m_buffer[length] = 0;
+		}
+		string_simple_t() {}
+		string_simple_t(const t_char * p_source,t_size p_length = infinite) {set_string(p_source,p_length);}
+		const t_self & operator=(const t_char * p_source) {set_string(p_source);return *this;}
+		operator const t_char* () const {return get_ptr();}
+		const t_char * get_ptr() const {return m_buffer.get_size() > 0 ? m_buffer.get_ptr() : pfc::empty_string_t<t_char>();}
+	private:
+		pfc::array_t<t_char> m_buffer;
+	};
+
+	typedef string_simple_t<char> string_simple;
+
+	template<typename t_char> class traits_t<string_simple_t<t_char> > : public traits_t<array_t<t_char> > {};
+}
+
+
+namespace pfc {
+	//for tree/map classes
+
+	class comparator_strcmp {
+	public:
+		inline static int compare(const char * p_item1,const char * p_item2) {return strcmp(p_item1,p_item2);}
+	};
+
+	class comparator_stricmp_ascii {
+	public:
+		inline static int compare(const char * p_item1,const char * p_item2) {return pfc::stricmp_ascii(p_item1,p_item2);}
+	};
+
+}
 
 #endif //_PFC_STRING_H_

@@ -5,8 +5,7 @@
 namespace file_list_helper
 {
 	//list guaranteed to be sorted by metadb::path_compare
-	class file_list_from_metadb_handle_list : public pfc::list_base_const_t<const char*>
-	{
+	class file_list_from_metadb_handle_list : public pfc::list_base_const_t<const char*> {
 	public:
 
 		void init_from_list(const list_base_const_t<metadb_handle_ptr> & p_list);
@@ -18,6 +17,7 @@ namespace file_list_helper
 		~file_list_from_metadb_handle_list();
 
 	private:
+		void __add(const char * p_what);
 		pfc::ptr_list_t<char> m_data;
 	};
 

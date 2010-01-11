@@ -6,13 +6,14 @@ class titleformat_text_filter;
 
 //! metadb_handle object represents interface to reference-counted file_info cache entry for specified location.\n
 //! To obtain a metadb_handle to specific location, use metadb::handle_create(). To obtain a list of metadb_handle objects corresponding to specific path (directory, playlist, multitrack file, etc), use relevant playlist_loader static helper methods.\n
-//! metadb_handle is also the most efficient way of passing playable object locations around because it provides fast access to both location and infos, and is reference counted so duplicating it is as fast as possible.
+//! metadb_handle is also the most efficient way of passing playable object locations around because it provides fast access to both location and infos, and is reference counted so duplicating it is as fast as possible.\n
+//! To retrieve a path of a file from a metadb_handle, use metadb_handle::get_path() function. Note that metadb_handle is NOT just file path, some formats support multiple subsongs per physical file, which are signaled using subsong indexes.\n
 
 class NOVTABLE metadb_handle : public service_base
 {
 public:
-	//! Retrieves location represented by this metadb_handle object.
-	virtual rcplayable_location get_location() const = 0;//never fails, returned pointer valid till the object is released
+	//! Retrieves location represented by this metadb_handle object. Returned reference is valid until calling context releases metadb_handle that returned it (metadb_handle_ptr is deallocated etc).
+	virtual const playable_location & get_location() const = 0;//never fails, returned pointer valid till the object is released
 
 
 	//! Renders information about item referenced by this metadb_handle object.
@@ -70,7 +71,9 @@ public:
 	//! Bottleneck warning: you should consider using precompiled titleformat script object and calling regular format_title() instead when processing large numbers of items.
 	bool format_title_legacy(titleformat_hook * p_hook,pfc::string_base & out,const char * p_spec,titleformat_text_filter * p_filter);
 
+	//! Retrieves path of item described by this metadb_handle instance. Returned string is valid until calling context releases metadb_handle that returned it (metadb_handle_ptr is deallocated etc).
 	inline const char * get_path() const {return get_location().get_path();}
+	//! Retrieves subsong index of item described by this metadb_handle instance (used for multiple playable tracks within single physical file).
 	inline t_uint32 get_subsong_index() const {return get_location().get_subsong_index();}
 	
 	double get_length();//helper

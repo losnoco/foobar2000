@@ -2,11 +2,14 @@
 #define _PFC_BYTE_ORDER_HELPER_
 
 namespace pfc {
+	void byteswap_raw(void * p_buffer,t_size p_bytes);
+
 	template<typename T> T byteswap_t(T p_source);
 
 	template<> inline char byteswap_t<char>(char p_source) {return p_source;}
 	template<> inline unsigned char byteswap_t<unsigned char>(unsigned char p_source) {return p_source;}
 
+#ifdef _MSC_VER//does this even help with performance/size?
 	template<> inline wchar_t byteswap_t<wchar_t>(wchar_t p_source) {return _byteswap_ushort(p_source);}
 
 	template<> inline short byteswap_t<short>(short p_source) {return _byteswap_ushort(p_source);}
@@ -20,6 +23,24 @@ namespace pfc {
 
 	template<> inline long long byteswap_t<long long>(long long p_source) {return _byteswap_uint64(p_source);}
 	template<> inline unsigned long long byteswap_t<unsigned long long>(unsigned long long p_source) {return _byteswap_uint64(p_source);}
+#else
+	template<> inline t_uint16 byteswap_t<t_uint16>(t_uint16 p_source) {return ((p_source & 0xFF00) >> 8) | ((p_source & 0x00FF) << 8);}
+	template<> inline t_int16 byteswap_t<t_int16>(t_int16 p_source) {return byteswap_t<t_uint16>(p_source);}
+
+	template<> inline t_uint32 byteswap_t<t_uint32>(t_uint32 p_source) {return ((p_source & 0xFF000000) >> 24) | ((p_source & 0x00FF0000) >> 8) | ((p_source & 0x0000FF00) << 8) | ((p_source & 0x000000FF) << 24);}
+	template<> inline t_int32 byteswap_t<t_int32>(t_int32 p_source) {return byteswap_t<t_uint32>(p_source);}
+
+	template<> inline t_uint64 byteswap_t<t_uint64>(t_uint64 p_source) {
+		//optimizeme
+		byteswap_raw(&p_source,sizeof(p_source));
+		return p_source;		
+	}
+	template<> inline t_int64 byteswap_t<t_int64>(t_int64 p_source) {return byteswap_t<t_uint64>(p_source);}
+
+	template<> inline wchar_t byteswap_t<wchar_t>(wchar_t p_source) {
+		return byteswap_t<pfc::sized_int_t<sizeof(wchar_t)>::t_unsigned>(p_source);
+	}
+#endif
 
 	template<> inline float byteswap_t<float>(float p_source) {
 		float ret;
@@ -33,6 +54,7 @@ namespace pfc {
 		return ret;
 	}
 
+	//blargh at GUID byteswap issue
 	template<> inline GUID byteswap_t<GUID>(GUID p_guid) {
 		GUID ret;
 		ret.Data1 = pfc::byteswap_t(p_guid.Data1);
@@ -50,18 +72,32 @@ namespace pfc {
 	}
 
 
-	void byteswap_raw(void * p_buffer,t_size p_bytes);
+	
 };
+
+#ifdef _MSC_VER
 
 #if defined(_M_IX86) || defined(_M_X64)
 #define PFC_BYTE_ORDER_IS_BIG_ENDIAN 0
 #endif
+
+#else//_MSC_VER
+
+#include <endian.h>
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define PFC_BYTE_ORDER_IS_BIG_ENDIAN 1
+#else
+#define PFC_BYTE_ORDER_IS_BIG_ENDIAN 0
+#endif
+
+#endif//_MSC_VER
 
 #ifdef PFC_BYTE_ORDER_IS_BIG_ENDIAN
 #define PFC_BYTE_ORDER_IS_LITTLE_ENDIAN (!(PFC_BYTE_ORDER_IS_BIG_ENDIAN))
 #else
 #error please update byte order #defines
 #endif
+
 
 namespace pfc {
 	enum {

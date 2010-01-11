@@ -22,10 +22,9 @@ void cfg_var::config_read_file(stream_reader * p_stream,abort_callback & p_abort
 		GUID guid;
 		t_uint32 size;
 
-		try {
-			p_stream->read_lendian_t(guid,p_abort);
-			p_stream->read_lendian_t(size,p_abort);
-		} catch(exception_io_data const &) {break;}
+		if (p_stream->read(&guid,sizeof(guid),p_abort) != sizeof(guid)) break;
+		guid = pfc::byteswap_if_be_t(guid);
+		p_stream->read_lendian_t(size,p_abort);
 
 		bool found = false;
 		cfg_var * ptr;

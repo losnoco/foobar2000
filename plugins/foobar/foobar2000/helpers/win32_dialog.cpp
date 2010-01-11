@@ -197,7 +197,7 @@ namespace dialog_helper {
 
 
 
-	dialog_modeless_v2::dialog_modeless_v2(unsigned p_id,HWND p_parent,HINSTANCE p_instance) : m_wnd(0), m_status(status_construction)
+	dialog_modeless_v2::dialog_modeless_v2(unsigned p_id,HWND p_parent,HINSTANCE p_instance,bool p_stealfocus) : m_wnd(0), m_status(status_construction), m_stealfocus(p_stealfocus)
 	{
 		SetLastError(NO_ERROR);
 		HWND result = CreateDialogParam(p_instance,MAKEINTRESOURCE(p_id),p_parent,DlgProc,reinterpret_cast<LPARAM>(this));
@@ -270,7 +270,7 @@ namespace dialog_helper {
 		}
 		else if (m_status == status_construction)
 		{
-			if (msg == WM_INITDIALOG) return TRUE;
+			if (msg == WM_INITDIALOG) return m_stealfocus ? TRUE : FALSE;
 			else return FALSE;
 		}
 		else return FALSE;

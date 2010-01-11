@@ -46,6 +46,7 @@ public:
 		flag_show_pause			= 1 << 5,
 		flag_high_priority		= 1 << 6,
 		flag_show_delayed		= 1 << 7,//modeless-only
+		flag_no_focus			= 1 << 8,//new (0.9.3)
 	};
 
 	virtual bool run_modal(service_ptr_t<threaded_process_callback> p_callback,unsigned p_flags,HWND p_parent,const char * p_title,t_size p_title_len) = 0;

@@ -135,46 +135,23 @@ void file_info_impl::set_replaygain(const replaygain_info & p_info)
 
 
 
-void info_storage::info_entry::init(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
-{
-	p_name_length = pfc::strlen_max(p_name,p_name_length);
-	p_value_length = pfc::strlen_max(p_value,p_value_length);
-	m_name = (char*)malloc(p_name_length + p_value_length + 2);
-	m_value = m_name + p_name_length + 1;
-
-	memcpy(m_name,p_name,p_name_length);
-	m_name[p_name_length] = 0;
-	memcpy(m_value,p_value,p_value_length);
-	m_value[p_value_length] = 0;
-}
-
-void info_storage::info_entry::deinit()
-{
-	free(m_name);
-}
-
 file_info_impl::~file_info_impl()
 {
 }
 
-t_size info_storage::add_item(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
-{
-	info_entry temp;
-	temp.init(p_name,p_name_length,p_value,p_value_length);
-	return m_info.add_item(temp);
+t_size info_storage::add_item(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) {
+	t_size index = m_info.get_size();
+	m_info.set_size(index + 1);
+	m_info[index].init(p_name,p_name_length,p_value,p_value_length);
+	return index;
 }
 
-void info_storage::remove_mask(const bit_array & p_mask)
-{
-	t_size n,max=m_info.get_count();
-	for(n=p_mask.find(true,0,max);n<max;n=p_mask.find(true,n+1,max-n-1))
-		m_info[n].deinit();
-	m_info.remove_mask(p_mask);
+void info_storage::remove_mask(const bit_array & p_mask) {
+	pfc::remove_mask_t(m_info,p_mask);
 }
 
 info_storage::~info_storage()
 {
-	remove_mask(bit_array_true());
 }
 
 
@@ -186,7 +163,6 @@ meta_storage::meta_storage()
 
 meta_storage::~meta_storage()
 {
-	remove_mask(bit_array_true());
 }
 
 
@@ -275,9 +251,6 @@ void meta_storage::copy_from(const file_info & p_info)
 void info_storage::copy_from(const file_info & p_info)
 {
 	t_size n, count;
-	count = m_info.get_count();
-	for(n=0;n<count;n++) m_info[n].deinit();
-	
 	count = p_info.info_get_count();
 	m_info.set_count(count);
 	for(n=0;n<count;n++) m_info[n].init(p_info.info_enum_name(n),infinite,p_info.info_enum_value(n),infinite);	

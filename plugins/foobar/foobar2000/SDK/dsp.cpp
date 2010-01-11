@@ -275,6 +275,19 @@ bool dsp_entry::g_show_config_popup(dsp_preset & p_preset,HWND p_parent)
 	return entry->show_config_popup(p_preset,p_parent);
 }
 
+void dsp_entry::g_show_config_popup_v2(const dsp_preset & p_preset,HWND p_parent,dsp_preset_edit_callback & p_callback) {
+	service_ptr_t<dsp_entry> entry;
+	if (g_get_interface(entry,p_preset.get_owner())) {
+		service_ptr_t<dsp_entry_v2> entry_v2;
+		if (entry->service_query_t(entry_v2)) {
+			entry_v2->show_config_popup_v2(p_preset,p_parent,p_callback);
+		} else {
+			dsp_preset_impl temp(p_preset);
+			if (entry->show_config_popup(temp,p_parent)) p_callback.on_preset_changed(temp);
+		}
+	}
+}
+
 bool dsp_entry::g_get_interface(service_ptr_t<dsp_entry> & p_out,const GUID & p_guid)
 {
 	service_ptr_t<dsp_entry> ptr;
@@ -353,4 +366,30 @@ void dsp_chain_config::get_name_list(pfc::string_base & p_out) const
 			p_out += temp;
 		}
 	}
+}
+
+void dsp::run_abortable(dsp_chunk_list * p_chunk_list,const metadb_handle_ptr & p_cur_file,int p_flags,abort_callback & p_abort) {
+	service_ptr_t<dsp_v2> this_v2;
+	if (this->service_query_t(this_v2)) this_v2->run_v2(p_chunk_list,p_cur_file,p_flags,p_abort);
+	else run(p_chunk_list,p_cur_file,p_flags);
+}
+
+namespace {
+	class dsp_preset_edit_callback_impl : public dsp_preset_edit_callback {
+	public:
+		dsp_preset_edit_callback_impl(dsp_preset & p_data) : m_data(p_data) {}
+		void on_preset_changed(const dsp_preset & p_data) {m_data = p_data;}
+	private:
+		dsp_preset & m_data;
+	};
+};
+
+bool dsp_entry_v2::show_config_popup(dsp_preset & p_data,HWND p_parent) {
+	PFC_ASSERT(p_data.get_owner() == get_guid());
+	dsp_preset_impl temp(p_data);
+	show_config_popup_v2(p_data,p_parent,dsp_preset_edit_callback_impl(temp));
+	PFC_ASSERT(temp.get_owner() == get_guid());
+	if (temp == p_data) return false;
+	p_data = temp;
+	return true;
 }

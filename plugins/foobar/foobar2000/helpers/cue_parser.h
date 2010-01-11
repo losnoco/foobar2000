@@ -1,3 +1,5 @@
+//HINT: for info on how to generate an embedded cuesheet enabled input, see the end of this header.
+
 namespace cue_parser
 {
 	struct cue_entry {
@@ -18,7 +20,6 @@ namespace cue_parser
 
 	//! Throws exception_io_data and derivatives on failure.
 	void extract_info(const file_info & p_baseinfo,file_info & p_info, t_uint32 p_subsong_index);
-	void strip_cue_track_metadata(file_info & p_info);
 
 	namespace input_wrapper_cue_base {
 		void write_meta_create_field(pfc::string_base & p_out,const char * p_name,int p_index);
@@ -66,7 +67,6 @@ namespace cue_parser
 		input_helper_cue m_input;
 	};
 
-#if 1
 	template<typename t_base>
 	class input_wrapper_cue_t {
 	public:
@@ -230,7 +230,7 @@ namespace cue_parser
 			m_retag_entries.remove_all();
 
 			if (cue_modified) {
-				string_formatter temp;
+				pfc::string_formatter temp;
 
 				cue_creator::create(temp,cue_entries);
 
@@ -261,203 +261,14 @@ namespace cue_parser
 		struct t_retag_entry {t_uint32 m_index; file_info_impl m_info;};
 		pfc::chain_list_t<t_retag_entry> m_retag_entries;
 	};
-#else
-	template<typename t_base>
-	class input_wrapper_cue_t
-	{
-	public:
-		input_wrapper_cue_t() {}
-		~input_wrapper_cue_t() {}
 
-		void open(service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort) {
-			m_path = p_path;
-
-			m_instance.open(p_filehint,p_path,p_reason,p_abort);
-			m_instance.get_info(m_info,p_abort);
-
-			{
-				const char *cue = m_info.meta_get("cuesheet",0);
-				if (cue != 0 && cue[0] != 0)
-				{
-					m_cue_data.remove_all();
-					try {
-						cue_parser::parse(cue,m_cue_data);
-					} catch(exception_bad_cuesheet const & e) {console::info(e.what());m_cue_data.remove_all();}
-				}
-			}
-		}
-
-		t_uint32 get_subsong_count() {
-			return m_cue_data.get_count() > 0 ? pfc::downcast_guarded<t_uint32>(m_cue_data.get_count()) : 1;
-		}
-
-		t_uint32 get_subsong(t_uint32 p_index) {
-			pfc::chain_list_t<cue_entry>::const_iterator iter = m_cue_data.by_index(p_index);
-			if (iter.is_valid()) return iter->m_track_number;
-			else return 0;
-		}
-
-		void get_info(t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort)
-		{
-			if (p_subsong == 0) {
-				p_info = m_info;
-				p_info.info_set("cue_embedded","no");
-			} else {
-				extract_info(m_info,p_info, p_subsong);
-			}
-		}
-
-		t_filestats get_file_stats(abort_callback & p_abort) {return m_instance.get_file_stats(p_abort);}
-
-		void decode_initialize(t_uint32 p_subsong,unsigned p_flags,abort_callback & p_abort)
-		{
-			m_decode_subsong = p_subsong;
-			if (m_decode_subsong == 0) return m_instance.decode_initialize(p_flags,p_abort);
-			else
-			{
-				double start = 0, end = m_info.get_length();
-				
-				if (p_subsong != 0)
-				{
-					pfc::chain_list_t<cue_entry>::const_iterator iter;
-					for(iter = m_cue_data.first();iter.is_valid(); ++iter)
-					{
-						if (iter->m_track_number == p_subsong)
-						{
-							start = iter->m_indexes.start();
-							++iter;
-							if (iter.is_valid())
-								end = iter->m_indexes.start();
-							break;
-						}
-					}
-				}
-				
-				if (end <= start) throw exception_io_data();
-
-				m_input_cue.open(NULL/*FIXME*/,make_playable_location(m_path,0),p_flags & ~input_flag_no_seeking,p_abort,start,end-start);
-			}
-		}
-
-		bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort) {
-			return m_decode_subsong > 0 ?
-				m_input_cue.run(p_chunk,p_abort) :
-				m_instance.decode_run(p_chunk,p_abort);
-		}
-		
-		void decode_seek(double p_seconds,abort_callback & p_abort) {
-			if (m_decode_subsong > 0)
-				m_input_cue.seek(p_seconds,p_abort);
-			else
-				m_instance.decode_seek(p_seconds,p_abort);
-		}
-		
-		bool decode_can_seek() {return true;}
-
-		bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta) {
-			return m_decode_subsong > 0 ? 
-				m_input_cue.get_dynamic_info(p_out,p_timestamp_delta) : 
-				m_instance.decode_get_dynamic_info(p_out,p_timestamp_delta);
-		}
-
-		bool decode_get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta) {
-			return m_decode_subsong > 0 ? 
-				m_input_cue.get_dynamic_info_track(p_out,p_timestamp_delta) : 
-				m_instance.decode_get_dynamic_info_track(p_out,p_timestamp_delta);
-		}
-
-		void decode_on_idle(abort_callback & p_abort) {
-			if (m_decode_subsong > 0)
-				m_input_cue.on_idle(p_abort);
-			else
-				m_instance.decode_on_idle(p_abort);
-		}
-
-		void retag_set_info(t_uint32 p_subsong,const file_info & p_info,abort_callback & p_abort) {
-			pfc::chain_list_t<t_retag_entry>::iterator iter;
-			iter = m_retag_entries.insert_last();
-			iter->m_index = p_subsong;
-			iter->m_info = p_info;
-		}
-
-		void retag_commit(abort_callback & p_abort) {
-			if (m_retag_entries.get_count() == 0) return;
-
-			bool cue_modified = false;
-
-			cue_creator::t_entry_list cue_entries;
-
-			{
-				const char * old_cue = m_info.meta_get("cuesheet",0);
-				if (old_cue != 0)
-				{
-					try {
-						parse_full(old_cue,cue_entries);
-					} catch(exception_bad_cuesheet) {
-						cue_entries.remove_all();
-					}
-				}
-			}
-
-			pfc::chain_list_t<t_retag_entry>::iterator iter;
-			for(iter=m_retag_entries.first();iter.is_valid();++iter) {
-				if (iter->m_index == 0) {
-					m_info = iter->m_info;
-				} else {
-					cue_creator::t_entry_list::iterator cueiter;
-					for(cueiter=cue_entries.first();cueiter.is_valid();++cueiter) {
-						if (cueiter->m_track_number == iter->m_index) {
-							cueiter->m_infos.copy_meta(iter->m_info);
-							cueiter->m_infos.set_replaygain(iter->m_info.get_replaygain());
-
-							input_wrapper_cue_base::write_meta(m_info,iter->m_info,iter->m_index);
-							
-							cue_modified = true;
-
-							break;
-						}
-					}
-				}
-			}
-
-			m_retag_entries.remove_all();
-
-			if (cue_modified) {
-				string_formatter temp;
-
-				cue_creator::create(temp,cue_entries);
-
-				m_info.meta_set("cuesheet",temp);
-			}
-
-			m_instance.retag(m_info,p_abort);
-		}
-
-		inline static bool g_is_our_content_type(const char * p_content_type) {return t_base::g_is_our_content_type(p_content_type);}
-		inline static bool g_is_our_path(const char * p_path,const char * p_extension) {return t_base::g_is_our_path(p_path,p_extension);}
-
-	private:
-		t_base m_instance;
-		file_info_impl m_info;
-		t_uint32 m_decode_subsong;
-		input_helper_cue m_input_cue;
-		pfc::string8 m_path;
-		
-		pfc::chain_list_t<cue_entry> m_cue_data;
-		
-		struct t_retag_entry {t_uint32 m_index; file_info_impl m_info;};
-		pfc::chain_list_t<t_retag_entry> m_retag_entries;
-
-	};
-#endif
-
-	template<class I>
+	template<typename I>
 	class chapterizer_impl_t : public chapterizer
 	{
 	public:
 		bool is_our_file(const char * p_path,abort_callback & p_abort) 
 		{
-			return I::g_is_our_path(p_path,string_extension(p_path));
+			return I::g_is_our_path(p_path,pfc::string_extension(p_path));
 		}
 
 		void set_chapters(const char * p_path,chapter_list const & p_list,abort_callback & p_abort) {
@@ -470,7 +281,7 @@ namespace cue_parser
 
 			info.meta_remove_all();
 
-			string_formatter cuesheet;
+			pfc::string_formatter cuesheet;
 						
 			{
 				cue_creator::t_entry_list entries;
@@ -495,7 +306,7 @@ namespace cue_parser
 
 			
 			info.meta_set("cuesheet",cuesheet);
-			
+
 			instance.retag(info,p_abort);
 		}
 
@@ -539,10 +350,12 @@ namespace cue_parser
 
 };
 
-template<class I>
-class input_cuesheet_factory_t
-{
+//! Wrapper template for generating embedded cuesheet enabled inputs.
+//! t_input_impl is a singletrack input implementation (see input_singletrack_impl for method declarations).
+//! To declare an embedded cuesheet enabled input, change your input declaration from input_singletrack_factory_t<myinput> to input_cuesheet_factory_t<myinput>.
+template<typename t_input_impl>
+class input_cuesheet_factory_t {
 public:
-	input_factory_t<cue_parser::input_wrapper_cue_t<I> > m_input_factory;
-	service_factory_single_t<cue_parser::chapterizer_impl_t<I> > m_chapterizer_factory;	
+	input_factory_t<cue_parser::input_wrapper_cue_t<t_input_impl> > m_input_factory;
+	service_factory_single_t<cue_parser::chapterizer_impl_t<t_input_impl> > m_chapterizer_factory;	
 };

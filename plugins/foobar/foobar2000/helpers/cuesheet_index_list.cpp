@@ -5,6 +5,10 @@ static bool is_numeric(char c) {return c>='0' && c<='9';}
 void t_cuesheet_index_list::to_infos(file_info & p_out) const
 {
 	double base = m_positions[1];
+
+	if (base > 0) {
+		p_out.info_set("referenced_offset",cuesheet_format_index_time(base));
+	}
 	
 	if (m_positions[0] < base)
 		p_out.info_set("pregap",cuesheet_format_index_time(base - m_positions[0]));
@@ -72,6 +76,7 @@ double cuesheet_parse_index_time_e(const char * p_string,t_size p_length)
 
 unsigned cuesheet_parse_index_time_ticks_e(const char * p_string,t_size p_length)
 {
+	p_length = pfc::strlen_max(p_string,p_length);
 	t_size ptr = 0;
 	t_size splitmarks[2];
 	t_size splitptr = 0;

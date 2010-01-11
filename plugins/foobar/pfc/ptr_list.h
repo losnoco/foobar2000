@@ -11,8 +11,8 @@ namespace pfc {
 		ptr_list_t(const ptr_list_t<T> & p_source) {*this = p_source;}
 
 		void free_by_idx(t_size n) {free_mask(bit_array_one(n));}
-		void free_all() {remove_all_ex(free);}
-		void free_mask(const bit_array & p_mask) {remove_mask_ex(p_mask,free);}
+		void free_all() {this->remove_all_ex(free);}
+		void free_mask(const bit_array & p_mask) {this->remove_mask_ex(p_mask,free);}
 
 		void delete_item(T* ptr) {delete_by_idx(find_item(ptr));}
 
@@ -21,14 +21,14 @@ namespace pfc {
 		}
 
 		void delete_all() {
-			remove_all_ex(pfc::delete_t<T>);
+			this->remove_all_ex(pfc::delete_t<T>);
 		}
 
 		void delete_mask(const bit_array & p_mask) {
-			remove_mask_ex(p_mask,pfc::delete_t<T>);
+			this->remove_mask_ex(p_mask,pfc::delete_t<T>);
 		}
 
-		T * operator[](t_size n) const {return get_item(n);}
+		T * operator[](t_size n) const {return this->get_item(n);}
 	};
 
 	template<typename T,t_size N>

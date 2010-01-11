@@ -45,13 +45,37 @@ public:
 	//! Pops up Media Library preferences page.
 	virtual void show_preferences() = 0;
 
-	//! Rescans user-specified Media Library directories for new files and removes references to files that no longer exist from the Media Library.
+	//! Deprecated; use library_manager_v2::rescan_async() when possible.\n
+	//! Rescans user-specified Media Library directories for new files and removes references to files that no longer exist from the Media Library.\n
+	//! Note that this function creates modal dialog and does not return until the operation has completed.\n
 	virtual void rescan() = 0;
 	
-	//! Hints Media Library about dead items detected externally.
+	//! Deprecated; use library_manager_v2::check_dead_entries_async() when possible.\n
+	//! Hints Media Library about possible dead items, typically used for "remove dead entries" context action in ML viewers. The implementation will verify whether the items are actually dead before ML contents are altered.\n
+	//! Note that this function creates modal dialog and does not return until the operation has completed.\n
 	virtual void check_dead_entries(const pfc::list_base_t<metadb_handle_ptr> & p_list) = 0;
 
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(library_manager);
+};
+
+//! New in 0.9.3
+class NOVTABLE library_manager_v2 : public library_manager {
+public:
+	//! Returns whether a rescan process is currently running.
+	virtual bool is_rescan_running() = 0;
+
+	//! Starts an async rescan process. Note that if another process is already running, the process is silently aborted.
+	//! @param p_parent Parent window for displayed progress dialog.
+	//! @param p_notify Allows caller to receive notifications about the process finishing. Status code: 1 on success, 0 on user abort. Pass NULL if caller doesn't care.
+	virtual void rescan_async(HWND p_parent,completion_notify_ptr p_notify) = 0;
+
+	//! Hints Media Library about possible dead items, typically used for "remove dead entries" context action in ML viewers. The implementation will verify whether the items are actually dead before ML contents are altered.\n
+	//! @param p_list List of items to process.
+	//! @param p_parent Parent window for displayed progress dialog.
+	//! @param p_notify Allows caller to receive notifications about the process finishing. Status code: 1 on success, 0 on user abort. Pass NULL if caller doesn't care.
+	virtual void check_dead_entries_async(const pfc::list_base_t<metadb_handle_ptr> & p_list,HWND p_parent,completion_notify_ptr p_notify) = 0;
+
+	FB2K_MAKE_SERVICE_INTERFACE(library_manager_v2,library_manager);
 };
 
 //! Callback service receiving notifications about Media Library content changes. Methods called only from main thread.\n

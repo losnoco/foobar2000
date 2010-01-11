@@ -4,16 +4,24 @@
 namespace pfc {
 
 	template<typename T>
-	class chain_list_simple_t
-	{
+	class chain_list_simple_t {
+	private:
+		typedef chain_list_simple_t<T> t_self;
 	public:
 		chain_list_simple_t() : m_first(0), m_last(0), m_count(0) {}
-		chain_list_simple_t(const chain_list_simple_t<T> & p_source) : m_firsT(0), m_last(0), m_count(0)
-		{
+		chain_list_simple_t(const t_self & p_source) : m_first(0), m_last(0), m_count(0) {
 			t_iter iter;
 			for(iter = p_source.first();iter;iter = p_source.next(iter))
 				insert_last(p_source.get_item(iter));
 		}
+
+		t_self const & operator=(t_self const & p_source) {
+			remove_all();
+			for(t_iter iter = p_source.first();iter;iter = p_source.next(iter))
+				insert_last(p_source.get_item(iter));
+			return *this;
+		}
+
 
 		typedef void* t_iter;
 
@@ -40,7 +48,9 @@ namespace pfc {
 		inline void link_before(t_iter p_next,t_iter p_iter) {_insert_before(p_next,reinterpret_cast<elem*>(p_iter));}
 		inline void link_after(t_iter p_prev,t_iter p_iter) {_insert_after(p_prev,reinterpret_cast<elem*>(p_iter));}
 		
-		~chain_list_simple_t() {while(m_count > 0) remove(first());}
+		void remove_all() {while(m_count > 0) remove(first());}
+
+		~chain_list_simple_t() {remove_all();}
 	private:
 		struct elem;
 
@@ -79,7 +89,7 @@ namespace pfc {
 		{
 			elem * p_prev = reinterpret_cast<elem*>(p_iter);
 			p_elem->m_next = p_prev->m_next;
-			p_elem->m_prev = p_rev;
+			p_elem->m_prev = p_prev;
 			(p_prev->m_next ? p_prev->m_next->m_prev : m_last) = p_elem;
 			p_prev->m_next = p_elem;
 			m_count++;
@@ -97,13 +107,34 @@ namespace pfc {
 		struct elem {
 			elem() : m_prev(0), m_next(0) {}
 			elem(const elem & p_src) {*this = p_src;}
-			elem(const T& p_src) : m_data(p_src), m_prev(0), m_next(0) {}
+			elem(const T& p_src) : m_data(p_src), m_prev(NULL), m_next(NULL) {}
 
 			T m_data;
 			elem * m_prev, * m_next;
 		};
 		elem * m_first, * m_last;
 		t_size m_count;
+	};
+
+
+	template<typename t_comparator = comparator_default>
+	class comparator_chainlist {
+	public:
+		template<typename t_list1, typename t_list2>
+		static int compare(const t_list1 & p_list1, const t_list2 p_list2) {
+			typename t_list1::const_iterator iter1 = p_list1.first();
+			typename t_list2::const_iterator iter2 = p_list2.first();
+			for(;;) {
+				if (iter1.is_empty() && iter2.is_empty()) return 0;
+				else if (iter1.is_empty()) return -1;
+				else if (iter2.is_empty()) return 1;
+				else {
+					int state = t_comparator::compare(*iter1,*iter2);
+					if (state != 0) return state;
+				}
+				++iter1; ++iter2;
+			}
+		}
 	};
 
 	template<typename T>
@@ -134,28 +165,29 @@ namespace pfc {
 			
 			inline const_iterator(const chain_list_t<T> * p_owner,elem * p_ptr) : m_owner(p_owner), m_ptr(p_ptr)
 			{
-				if (m_owner) m_owner->_add_iterator(this);
+				if (m_owner != NULL) m_owner->_add_iterator(this);
 			}
 
 
 			inline const const_iterator & operator=(const const_iterator & p_source)
 			{
-				if (m_owner) m_owner->_remove_iterator(this);
+				if (m_owner != NULL) m_owner->_remove_iterator(this);
 				m_owner = p_source.m_owner;
 				m_ptr = p_source.m_ptr;
-				if (m_owner) m_owner->_add_iterator(this);
+				if (m_owner != NULL) m_owner->_add_iterator(this);
 				return *this;
 			}
 
-			inline void next() {if (m_ptr) m_ptr = m_ptr->m_next;}
-			inline void prev() {if (m_ptr) m_ptr = m_ptr->m_prev;}
+			inline void next() {if (m_ptr != NULL) m_ptr = m_ptr->m_next;}
+			inline void prev() {if (m_ptr != NULL) m_ptr = m_ptr->m_prev;}
 			
 			inline const const_iterator & operator++() {next();return *this;}
 			inline const_iterator operator++(int) {const_iterator old = *this; next(); return old;}
 			inline const const_iterator & operator--() {prev();return *this;}
 			inline const_iterator operator--(int) {const_iterator old = *this; prev(); return old;}
 
-			inline bool is_valid() const {return m_ptr != 0;}
+			inline bool is_valid() const {return m_ptr != NULL;}
+			inline bool is_empty() const {return m_ptr == NULL;}
 
 			inline bool operator==(const const_iterator &  p_iter) const {return m_ptr == p_iter.m_ptr;}
 			inline bool operator!=(const const_iterator &  p_iter) const {return m_ptr != p_iter.m_ptr;}
@@ -174,14 +206,14 @@ namespace pfc {
 			inline iterator(const iterator & p_source) : const_iterator(p_source) {}
 			inline iterator(const chain_list_t<T> * p_owner,elem * p_ptr) : const_iterator(p_owner,p_ptr) {}
 			inline const iterator & operator=(const iterator & p_source) { *(const_iterator*)this = *(const const_iterator*) & p_source; return *this;}
-			inline T & operator*() const {return m_ptr->m_data;}
-			inline T * operator->() const {return &m_ptr->m_data;}
-			inline bool operator==(const iterator &  p_iter) const {return m_ptr == p_iter.m_ptr;}
-			inline bool operator!=(const iterator &  p_iter) const {return m_ptr != p_iter.m_ptr;}
-			inline const iterator & operator++() {next();return *this;}
-			inline iterator operator++(int) {iterator old = *this; next(); return old;}
-			inline const iterator & operator--() {prev();return *this;}
-			inline iterator operator--(int) {iterator old = *this; prev(); return old;}
+			inline T & operator*() const {return this->m_ptr->m_data;}
+			inline T * operator->() const {return &this->m_ptr->m_data;}
+			inline bool operator==(const iterator &  p_iter) const {return this->m_ptr == p_iter.m_ptr;}
+			inline bool operator!=(const iterator &  p_iter) const {return this->m_ptr != p_iter.m_ptr;}
+			inline const iterator & operator++() {this->next();return *this;}
+			inline iterator operator++(int) {iterator old = *this; this->next(); return old;}
+			inline const iterator & operator--() {this->prev();return *this;}
+			inline iterator operator--(int) {iterator old = *this; this->prev(); return old;}
 		};
 
 
@@ -207,12 +239,7 @@ namespace pfc {
 				insert_last(*iter);
 			return *this;
 		}
-/*
-		template<typename t_insert> iterator insert_after(iterator const & p_iter,const t_insert & p_item);
-		template<typename t_insert> iterator insert_before(iterator const & p_iter,const t_insert & p_item);
-		template<typename t_insert> iterator insert_last(const t_insert & p_item);
-		template<typename t_insert> iterator insert_first(const t_insert & p_item);
-*/
+
 		template<typename t_insert> iterator insert_after(iterator const & p_iter,const t_insert & p_item) {
 			bug_check_assert(p_iter.is_valid() && p_iter.m_owner == this);
 			elem * ptr = p_iter.m_ptr;
@@ -256,14 +283,14 @@ namespace pfc {
 		}
 
 		template<typename t_insert> void insert_last_multi(const chain_list_t<t_insert> & p_list) {
-			chain_list_t<t_insert>::const_iterator iter;
+			typename chain_list_t<t_insert>::const_iterator iter;
 			for(iter = p_list.first(); iter.is_valid(); ++iter) {
 				insert_last(*iter);
 			}
 		}
 
 		template<typename t_insert> void insert_first_multi(const chain_list_t<t_insert> & p_list) {
-			chain_list_t<t_insert>::const_iterator iter;
+			typename chain_list_t<t_insert>::const_iterator iter;
 			for(iter = p_list.last(); iter.is_valid(); --iter) {
 				insert_first(*iter);
 			}
@@ -319,6 +346,21 @@ namespace pfc {
 				p_idx--;
 			}
 			return iter;
+		}
+
+		bool operator==(const t_self & p_other) const {return comparator_chainlist::compare(*this,p_other) == 0;}
+		bool operator!=(const t_self & p_other) const {return comparator_chainlist::compare(*this,p_other) != 0;}
+
+		bool operator<(const t_self & p_other) const {return comparator_chainlist::compare(*this,p_ohter) < 0;}
+		bool operator>(const t_self & p_other) const {return comparator_chainlist::compare(*this,p_ohter) > 0;}
+		bool operator<=(const t_self & p_other) const {return comparator_chainlist::compare(*this,p_ohter) <= 0;}
+		bool operator>=(const t_self & p_other) const {return comparator_chainlist::compare(*this,p_ohter) >= 0;}
+
+		template<typename t_callback>
+		void enumerate(t_callback & p_callback) const {
+			for(const_iterator walk = first(); walk.is_valid(); ++walk) {
+				p_callback(*walk);
+			}
 		}
 
 	private:
@@ -428,7 +470,8 @@ namespace pfc {
 				entry = entry_next;
 			}
 		}
-	};
+
+	};//chain_list_t
 
 
 	template<typename T>
@@ -521,7 +564,6 @@ namespace pfc {
 	}
 	template<typename T>
 	void chain_list_t<T>::remove_all() {remove_range(first(),last());}
-
-
 }
-#endif _PFC_CHAINLIST_H_
+
+#endif //_PFC_CHAINLIST_H_

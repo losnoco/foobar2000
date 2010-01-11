@@ -22,5 +22,3 @@ t_size service_factory_base::enum_get_count(service_class_ref p_class)
 }
 
 service_factory_base * service_factory_base::__internal__list = NULL;
-
-

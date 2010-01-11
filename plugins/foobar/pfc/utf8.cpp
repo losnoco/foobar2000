@@ -128,22 +128,22 @@ t_size utf8_encode_char(unsigned wide,char * target)
 	return count;
 }
 
-t_size utf16_encode_char(unsigned cur_wchar,WCHAR * out)
+t_size utf16_encode_char(unsigned cur_wchar,wchar_t * out)
 {
 	if (cur_wchar>0 && cur_wchar<(1<<20))
 	{
-		if (cur_wchar>=0x10000)
+		if (sizeof(wchar_t) == 2 && cur_wchar>=0x10000)
 		{
 			unsigned c = cur_wchar - 0x10000;
 			//MSDN:
 			//The first (high) surrogate is a 16-bit code value in the range U+D800 to U+DBFF. The second (low) surrogate is a 16-bit code value in the range U+DC00 to U+DFFF. Using surrogates, Unicode can support over one million characters. For more details about surrogates, refer to The Unicode Standard, version 2.0.
-			out[0] = (WCHAR)(0xD800 | (0x3FF & (c>>10)) );
-			out[1] = (WCHAR)(0xDC00 | (0x3FF & c) ) ;
+			out[0] = (wchar_t)(0xD800 | (0x3FF & (c>>10)) );
+			out[1] = (wchar_t)(0xDC00 | (0x3FF & c) ) ;
 			return 2;
 		}
 		else
 		{
-			*out = (WCHAR)cur_wchar;
+			*out = (wchar_t)cur_wchar;
 			return 1;
 		}
 	}
@@ -202,22 +202,19 @@ t_size skip_utf8_chars(const char * ptr,t_size count)
 	return num;
 }
 
-bool is_valid_utf8(const char * param)
-{
-	__try {
-		while(*param)
-		{
-			t_size d;
-			d = utf8_decode_char(param,0);
-			if (d==0) return false;
-			param += d;
+bool is_valid_utf8(const char * param,t_size max) {
+	t_size walk = 0;
+	while(walk < max && param[walk] != 0) {
+		t_size d;
+		d = utf8_decode_char(param + walk,NULL,max - walk);
+		if (d==0) return false;
+		walk += d;
+		if (walk > max) {
+			PFC_ASSERT(0);//should not be triggerable
+			return false;
 		}
-		return true;
 	}
-	__except(1)
-	{
-		return false;
-	}
+	return true;
 }
 
 bool is_lower_ascii(const char * param)

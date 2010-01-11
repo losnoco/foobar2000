@@ -171,3 +171,6 @@ bool metadb::g_get_random_handle(metadb_handle_ptr & p_out) {
 }
 
 
+void metadb_io_v2::update_info_async_simple(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,const pfc::list_base_const_t<const file_info*> & p_new_info, HWND p_parent_window,t_uint32 p_op_flags,completion_notify_ptr p_notify) {
+	update_info_async(p_list,new service_impl_t<file_info_filter_impl>(p_list,p_new_info),p_parent_window,p_op_flags,p_notify);
+}

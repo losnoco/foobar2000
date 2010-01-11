@@ -13,4 +13,26 @@ namespace listview_helper
 	bool select_single_item(HWND p_listview,unsigned p_index);
 
 	bool ensure_visible(HWND p_listview,unsigned p_index);
+
+	void get_item_text(HWND p_listview,unsigned p_index,unsigned p_column,pfc::string_base & p_out);
+
 };
+
+static int ListView_GetFirstSelection(HWND p_listview) {
+	return ListView_GetNextItem(p_listview,-1,LVNI_SELECTED);
+}
+
+static int ListView_GetSingleSelection(HWND p_listview) {
+	if (ListView_GetSelectedCount(p_listview) != 1) return -1;
+	return ListView_GetFirstSelection(p_listview);
+}
+
+static int ListView_GetFocusItem(HWND p_listview) {
+	return ListView_GetNextItem(p_listview,-1,LVNI_FOCUSED);
+}
+
+static bool ListView_IsItemSelected(HWND p_listview,int p_index) {
+	return ListView_GetItemState(p_listview,p_index,LVIS_SELECTED) != 0;
+}
+
+bool ListView_GetContextMenuPoint(HWND p_list,LPARAM p_coords,POINT & p_point,int & p_selection);

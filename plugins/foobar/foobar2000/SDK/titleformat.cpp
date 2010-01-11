@@ -718,9 +718,7 @@ void titleformat_text_out::write_int_padded(const GUID & p_inputtype,t_int64 val
 
 void titleformat_text_out::write_int(const GUID & p_inputtype,t_int64 val)
 {
-	char temp[32];
-	_i64toa(val,temp,10);
-	write(p_inputtype,temp,32);
+	write(p_inputtype,pfc::format_int(val));
 }
 void titleformat_text_filter_impl_reserved_chars::write(const GUID & p_inputtype,pfc::string_receiver & p_out,const char * p_data,t_size p_data_length)
 {

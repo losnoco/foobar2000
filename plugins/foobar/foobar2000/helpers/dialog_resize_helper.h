@@ -18,7 +18,7 @@ void GetChildRect(HWND wnd,UINT id,RECT* child);
 
 class dialog_resize_helper
 {
-	RECT * rects;
+	pfc::array_t<RECT> rects;
 	RECT orig_client;
 	HWND parent;
 	HWND sizegrip;
@@ -30,8 +30,7 @@ public:
 		unsigned short flags;
 	};
 private:
-	param * m_table;
-	unsigned m_table_size;
+	pfc::array_t<param> m_table;
 
 	void set_parent(HWND wnd);
 	void add_item(UINT id,UINT flags);

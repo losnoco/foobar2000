@@ -196,6 +196,13 @@ public:
 	static bool g_is_meta_equal(const file_info & p_item1,const file_info & p_item2);
 	static bool g_is_info_equal(const file_info & p_item1,const file_info & p_item2);
 
+	//! Unsafe - does not check whether the field already exists and will result in duplicates if it does - call only when appropriate checks have been applied externally.
+	t_size	__meta_add_unsafe_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) {return meta_set_nocheck_ex(p_name,p_name_length,p_value,p_value_length);}
+	//! Unsafe - does not check whether the field already exists and will result in duplicates if it does - call only when appropriate checks have been applied externally.
+	t_size	__meta_add_unsafe(const char * p_name,const char * p_value) {return meta_set_nocheck_ex(p_name,infinite,p_value,infinite);}
+
+	static bool g_is_valid_field_name(const char * p_name,t_size p_length = infinite);
+	typedef pfc::comparator_stricmp_ascii field_name_comparator;
 protected:
 	file_info() {}
 	~file_info() {}
@@ -208,8 +215,8 @@ protected:
 
 	virtual t_size	meta_set_nocheck_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) = 0;
 	virtual t_size	info_set_nocheck_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) = 0;
-	inline t_size		meta_set_nocheck(const char * p_name,const char * p_value) {return meta_set_nocheck_ex(p_name,infinite,p_value,infinite);}
-	inline t_size		info_set_nocheck(const char * p_name,const char * p_value) {return info_set_nocheck_ex(p_name,infinite,p_value,infinite);}
+	inline t_size	meta_set_nocheck(const char * p_name,const char * p_value) {return meta_set_nocheck_ex(p_name,infinite,p_value,infinite);}
+	inline t_size	info_set_nocheck(const char * p_name,const char * p_value) {return info_set_nocheck_ex(p_name,infinite,p_value,infinite);}
 };
 
 

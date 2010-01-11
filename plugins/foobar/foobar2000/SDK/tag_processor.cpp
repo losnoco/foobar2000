@@ -104,14 +104,6 @@ void tag_processor::write_id3v2_id3v1(const service_ptr_t<file> & p_file,const f
 	g_write_tags(g_flag_id3v2|g_flag_id3v1,p_file,&p_info,p_abort);
 }
 
-void tag_processor::write_id3v2_apev2(const service_ptr_t<file> & p_file,const file_info & p_info,abort_callback & p_abort) {
-	g_write_tags(g_flag_id3v2|g_flag_apev2,p_file,&p_info,p_abort);
-}
-
-void tag_processor::write_id3v2_apev2_id3v1(const service_ptr_t<file> & p_file,const file_info & p_info,abort_callback & p_abort) {
-	g_write_tags(g_flag_id3v2|g_flag_apev2|g_flag_id3v1,p_file,&p_info,p_abort);
-}
-
 void tag_processor::remove_trailing(const service_ptr_t<file> & p_file,abort_callback & p_abort) {
 	return static_api_ptr_t<tag_processor_trailing>()->remove(p_file,p_abort);
 }
@@ -144,12 +136,12 @@ void tag_processor::read_id3v2_trailing(const service_ptr_t<file> & p_file,file_
 	bool have_id3v2 = true, have_trailing = true;
 	try {
 		read_id3v2(p_file,temp_infos[0],p_abort);
-	} catch(exception_tag_not_found const &) {
+	} catch(exception_io_data) {
 		have_id3v2 = false;
 	}
 	try {
 		read_trailing(p_file,temp_infos[1],p_abort);
-	} catch(exception_tag_not_found const &) {
+	} catch(exception_io_data) {
 		have_trailing = false;
 	}
 
@@ -162,7 +154,7 @@ void tag_processor::read_id3v2_trailing(const service_ptr_t<file> & p_file,file_
 	}
 }
 
-void tag_processor::skip_d3v2(const service_ptr_t<file> & p_file,t_uint64 & p_size_skipped,abort_callback & p_abort) {
+void tag_processor::skip_id3v2(const service_ptr_t<file> & p_file,t_uint64 & p_size_skipped,abort_callback & p_abort) {
 	tag_processor_id3v2::g_skip(p_file,p_size_skipped,p_abort);
 }
 

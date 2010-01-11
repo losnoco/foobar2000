@@ -10,6 +10,8 @@ public:
 	virtual t_size get_count() const = 0;
 	virtual void get_item_ex(T& p_out, t_size n) const = 0;
 
+	inline t_size get_size() const {return get_count();}
+
 	inline T get_item(t_size n) const {T temp; get_item_ex(temp,n); return temp;}
 	inline T operator[](t_size n) const {T temp; get_item_ex(temp,n); return temp;}
 
@@ -43,6 +45,11 @@ public:
 		return pfc::bsearch_t(get_count(),*this,p_compare,p_param,p_index);
 	}
 
+	template<typename t_compare,typename t_param,typename t_permutation>
+	bool bsearch_permutation_t(t_compare p_compare,t_param const & p_param,const t_permutation & p_permutation,t_size & p_index) {
+		return pfc::bsearch_permutation_t(get_count(),*this,p_compare,p_param,p_permutation,p_index);
+	}
+
 	template<typename t_compare,typename t_permutation>
 	void sort_get_permutation_t(t_compare p_compare,t_permutation const & p_permutation) const {
 		pfc::sort_get_permutation_t<list_base_const_t<T>,t_compare,t_permutation>(*this,p_compare,get_count(),p_permutation);
@@ -51,6 +58,13 @@ public:
 	template<typename t_compare,typename t_permutation>
 	void sort_stable_get_permutation_t(t_compare p_compare,t_permutation const & p_permutation) const {
 		pfc::sort_stable_get_permutation_t<list_base_const_t<T>,t_compare,t_permutation>(*this,p_compare,get_count(),p_permutation);
+	}
+
+	template<typename t_callback>
+	void enumerate(t_callback & p_callback) const {
+		for(t_size n = 0, m = get_count(); n < m; ++n ) {
+			p_callback( (*this)[n] );
+		}
 	}
 	
 protected:
@@ -162,24 +176,24 @@ public:
 	virtual void swap_item_with(t_size p_index,T & p_item) = 0;
 	virtual void swap_items(t_size p_index1,t_size p_index2) = 0;
 
-	inline void reorder(const t_size * p_data) {reorder_partial(0,p_data,get_count());}
+	inline void reorder(const t_size * p_data) {reorder_partial(0,p_data,this->get_count());}
 
 	inline t_size insert_item(const T & item,t_size base) {return insert_items(list_single_ref_t<T>(item),base);}
 	t_size insert_items_repeat(const T & item,t_size num,t_size base) {return insert_items(list_single_ref_t<T>(item,num),base);}
-	inline t_size add_items_repeat(T item,t_size num) {return insert_items_repeat(item,num,get_count());}
+	inline t_size add_items_repeat(T item,t_size num) {return insert_items_repeat(item,num,this->get_count());}
 	t_size insert_items_fromptr(const T* source,t_size num,t_size base) {return insert_items(list_const_ptr_t<T>(source,num),base);}
-	inline t_size add_items_fromptr(const T* source,t_size num) {return insert_items_fromptr(source,num,get_count());}
+	inline t_size add_items_fromptr(const T* source,t_size num) {return insert_items_fromptr(source,num,this->get_count());}
 
-	inline t_size add_items(const list_base_const_t<T> & items) {return insert_items(items,get_count());}
-	inline t_size add_item(const T& item) {return insert_item(item,get_count());}
+	inline t_size add_items(const list_base_const_t<T> & items) {return insert_items(items,this->get_count());}
+	inline t_size add_item(const T& item) {return insert_item(item,this->get_count());}
 
 	inline void remove_mask(const bit_array & mask) {filter_mask(bit_array_not(mask));}
 	inline void remove_all() {filter_mask(bit_array_false());}
-	inline void truncate(t_size val) {if (val < get_count()) remove_mask(bit_array_range(val,get_count()-val,true));}
+	inline void truncate(t_size val) {if (val < this->get_count()) remove_mask(bit_array_range(val,this->get_count()-val,true));}
 	
 	inline T replace_item_ex(t_size p_index,const T & p_item) {T ret = p_item;swap_item_with(p_index,ret);return ret;}
 
-	inline T operator[](t_size n) const {return get_item(n);}
+	inline T operator[](t_size n) const {return this->get_item(n);}
 
 	template<typename t_compare>
 	class sort_callback_impl_t : public sort_callback
@@ -204,7 +218,7 @@ public:
 	template<typename t_compare> void sort_remove_duplicates_t(t_compare p_compare)
 	{
 		sort_t<t_compare>(p_compare);
-		bit_array_bittable array(get_count());		
+		bit_array_bittable array(this->get_count());		
 		if (this->template find_duplicates_sorted_t<t_compare>(p_compare,array) > 0)
 			remove_mask(array);
 	}
@@ -212,7 +226,7 @@ public:
 	template<typename t_compare> void sort_stable_remove_duplicates_t(t_compare p_compare)
 	{
 		sort_stable_t<t_compare>(p_compare);
-		bit_array_bittable array(get_count());		
+		bit_array_bittable array(this->get_count());		
 		if (this->template find_duplicates_sorted_t<t_compare>(p_compare,array) > 0)
 			remove_mask(array);
 	}
@@ -220,24 +234,24 @@ public:
 
 	template<typename t_compare> void remove_duplicates_t(t_compare p_compare)
 	{
-		order_helper order(get_count());
+		order_helper order(this->get_count());
 		sort_get_permutation_t<t_compare,order_helper&>(p_compare,order);
-		bit_array_bittable array(get_count());
+		bit_array_bittable array(this->get_count());
 		if (this->template find_duplicates_sorted_permutation_t<t_compare,order_helper const&>(p_compare,order,array) > 0)
 			remove_mask(array);
 	}
 
 	template<typename t_func>
 	void for_each(t_func p_func) {
-		t_size n,max=get_count();
-		for(n=0;n<max;n++) p_func(get_item(n));
+		t_size n,max=this->get_count();
+		for(n=0;n<max;n++) p_func(this->get_item(n));
 	}
 
 	template<typename t_func>
 	void for_each(t_func p_func,const bit_array & p_mask) {
-		t_size n,max=get_count();
+		t_size n,max=this->get_count();
 		for(n=p_mask.find(true,0,max);n<max;n=p_mask.find(true,n+1,max-n-1)) {
-			p_func(get_item(n));
+			p_func(this->get_item(n));
 		}
 	}
 
@@ -270,6 +284,7 @@ public:
 	void prealloc(t_size count) {m_buffer.prealloc(count);}
 
 	void set_count(t_size p_count) {m_buffer.set_size(p_count);}
+	void set_size(t_size p_count) {m_buffer.set_size(p_count);}
 
 	t_size insert_item(const T& item,t_size idx)
 	{
@@ -320,6 +335,7 @@ public:
 	};
 
 	inline t_size get_count() const {return m_buffer.get_size();}
+	inline t_size get_size() const {return get_count();}
 
 	inline const T & operator[](t_size n) const
 	{

@@ -16,48 +16,7 @@ namespace pfc {
 	typedef vartoggle_t<bool> booltoggle;
 };
 
-class order_helper
-{
-	pfc::array_t<t_size> m_data;
-public:
-	order_helper(t_size p_size) {
-		m_data.set_size(p_size);
-		for(t_size n=0;n<p_size;n++) m_data[n]=n;
-	}
-
-	order_helper(const order_helper & p_order) {*this = p_order;}
-
-
-	template<typename t_int>
-	static void g_fill(t_int * p_order,const t_size p_count) {
-		t_size n; for(n=0;n<p_count;n++) p_order[n] = (t_int)n;
-	}
-
-	template<typename t_array>
-	static void g_fill(t_array & p_array) {
-		t_size n; const t_size max = pfc::array_size_t(p_array);
-		for(n=0;n<max;n++) p_array[n] = n;
-	}
-
-
-	t_size get_item(t_size ptr) const {return m_data[ptr];}
-
-	t_size & operator[](t_size ptr) {return m_data[ptr];}
-	t_size operator[](t_size ptr) const {return m_data[ptr];}
-
-	static void g_swap(t_size * p_data,t_size ptr1,t_size ptr2);
-	inline void swap(t_size ptr1,t_size ptr2) {pfc::swap_t(m_data[ptr1],m_data[ptr2]);}
-
-	const t_size * get_ptr() const {return m_data.get_ptr();}
-
-	static t_size g_find_reverse(const t_size * order,t_size val);
-	inline t_size find_reverse(t_size val) {return g_find_reverse(m_data.get_ptr(),val);}
-
-	static void g_reverse(t_size * order,t_size base,t_size count);
-	inline void reverse(t_size base,t_size count) {g_reverse(m_data.get_ptr(),base,count);}
-
-	t_size get_count() const {return m_data.get_size();}
-};
+#ifdef _MSC_VER
 
 class fpu_control
 {
@@ -67,11 +26,12 @@ public:
 	inline fpu_control(unsigned p_mask,unsigned p_val)
 	{
 		mask = p_mask;
-		old_val = _controlfp(p_val,mask);
+		_controlfp_s(&old_val,p_val,mask);
 	}
 	inline ~fpu_control()
 	{
-		_controlfp(old_val,mask);
+		unsigned dummy;
+		_controlfp_s(&dummy,old_val,mask);
 	}
 };
 
@@ -111,59 +71,80 @@ public:
 };
 #endif
 
+#endif
+
 namespace pfc {
 	class refcounter {
 	public:
 		refcounter(long p_val = 0) : m_val(p_val) {}
+#ifdef _WINDOWS
 		long operator++() {return InterlockedIncrement(&m_val);}
 		long operator--() {return InterlockedDecrement(&m_val);}
+#else
+		long operator++() {return ++m_val;}
+		long operator--() {return --m_val;}
+#pragma message("PORTME")
+#endif
 	private:
 		long m_val;
 	};
 
+	//! Assumes t_freefunc to never throw exceptions.
 	template<typename T,void t_freefunc(T*) = pfc::delete_t<T> >
-	class ptrholder_t
-	{
+	class ptrholder_t {
+	private:
+		typedef ptrholder_t<T,t_freefunc> t_self;
 	public:
 		inline ptrholder_t(T* p_ptr) : m_ptr(p_ptr) {}
-		inline ptrholder_t() : m_ptr(0) {}
-		inline ~ptrholder_t() {if (m_ptr != 0) t_freefunc(m_ptr);}
-		inline bool is_valid() const {return m_ptr != 0;}
-		inline bool is_empty() const {return m_ptr == 0;}
+		inline ptrholder_t() : m_ptr(NULL) {}
+		inline ~ptrholder_t() {if (m_ptr != NULL) t_freefunc(m_ptr);}
+		inline bool is_valid() const {return m_ptr != NULL;}
+		inline bool is_empty() const {return m_ptr == NULL;}
 		inline T* operator->() const {return m_ptr;}
 		inline T* get_ptr() const {return m_ptr;}
 		inline void release() {if (m_ptr) t_freefunc(m_ptr); m_ptr = 0;}
 		inline void set(T * p_ptr) {if (m_ptr) t_freefunc(m_ptr); m_ptr = p_ptr;}
 		inline const ptrholder_t<T,t_freefunc> & operator=(T * p_ptr) {set(p_ptr);return *this;}
-		inline T* detach() {T * temp = m_ptr; m_ptr = 0; return temp;}
+		inline T* detach() {return pfc::replace_t(m_ptr,(T*)NULL);}
 		inline T& operator*() {return *m_ptr;}
 		inline const T& operator*() const {return *m_ptr;}
+
+		inline t_self & operator<<(t_self & p_source) {set(p_source.detach());return *this;}
+		inline t_self & operator>>(t_self & p_dest) {p_dest.set(detach());return *this;}
+
 	private:
-		ptrholder_t(const ptrholder_t<T,t_freefunc> &) {PFC_ASSERT(0);}
-		const ptrholder_t<T,t_freefunc> & operator=(const ptrholder_t<T,t_freefunc> & ) {PFC_ASSERT(0); return *this;}
+		ptrholder_t(const t_self &) {throw pfc::exception_not_implemented();}
+		const t_self & operator=(const t_self & ) {throw pfc::exception_not_implemented();}
 
 		T* m_ptr;
 	};
 
-	//HACK: strip down methods where regular implementation breaks when used with void pointer
+	//! Assumes t_freefunc to never throw exceptions.
+	//! HACK: strip down methods where regular implementation breaks when used with void pointer
 	template<void t_freefunc(void*)>
 	class ptrholder_t<void,t_freefunc> {
 	private:
 		typedef void T;
+		typedef ptrholder_t<T,t_freefunc> t_self;
 	public:
 		inline ptrholder_t(T* p_ptr) : m_ptr(p_ptr) {}
-		inline ptrholder_t() : m_ptr(0) {}
-		inline ~ptrholder_t() {if (m_ptr != 0) t_freefunc(m_ptr);}
-		inline bool is_valid() const {return m_ptr != 0;}
-		inline bool is_empty() const {return m_ptr == 0;}
+		inline ptrholder_t() : m_ptr(NULL) {}
+		inline ~ptrholder_t() {if (m_ptr != NULL) t_freefunc(m_ptr);}
+		inline bool is_valid() const {return m_ptr != NULL;}
+		inline bool is_empty() const {return m_ptr == NULL;}
 		inline T* get_ptr() const {return m_ptr;}
 		inline void release() {if (m_ptr) t_freefunc(m_ptr); m_ptr = 0;}
 		inline void set(T * p_ptr) {if (m_ptr) t_freefunc(m_ptr); m_ptr = p_ptr;}
 		inline const ptrholder_t<T,t_freefunc> & operator=(T * p_ptr) {set(p_ptr);return *this;}
-		inline T* detach() {T * temp = m_ptr; m_ptr = 0; return temp;}
+		inline T* detach() {return pfc::replace_t(m_ptr,(void*)NULL);}
+
+		inline t_self & operator<<(t_self & p_source) {set(p_source.detach());return *this;}
+		inline t_self & operator>>(t_self & p_dest) {p_dest.set(detach());return *this;}
+
 	private:
-		ptrholder_t(const ptrholder_t<T,t_freefunc> &) {PFC_ASSERT(0);}
-		const ptrholder_t<T,t_freefunc> & operator=(const ptrholder_t<T,t_freefunc> & ) {PFC_ASSERT(0); return *this;}
+		ptrholder_t(const t_self &) {throw pfc::exception_not_implemented();}
+		t_self & operator=(const t_self & ) {throw pfc::exception_not_implemented();}
+
 		T* m_ptr;
 	};
 

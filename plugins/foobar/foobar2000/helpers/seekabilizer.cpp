@@ -205,10 +205,11 @@ t_filetimestamp seekabilizer::get_timestamp(abort_callback & p_abort) {
 void seekabilizer::reopen(abort_callback & p_abort) {
 	if (m_position_base - m_buffer.get_depth() == 0) {
 		seek(0,p_abort);
+	} else {
+		m_position = m_position_base = 0;
+		m_buffer.reset();
+		m_file->reopen(p_abort);
 	}
-	m_position = m_position_base = 0;
-	m_buffer.reset();
-	m_file->reopen(p_abort);
 }
 
 bool seekabilizer::is_remote()

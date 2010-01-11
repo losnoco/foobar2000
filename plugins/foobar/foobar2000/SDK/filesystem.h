@@ -29,7 +29,7 @@ namespace foobar2000_io
 	PFC_DECLARE_EXCEPTION(exception_io_data,				exception_io,"Unsupported format or corrupted file");
 	//! Unsupported format or corrupted file (truncation encountered).
 	PFC_DECLARE_EXCEPTION(exception_io_data_truncation,		exception_io_data,"Unsupported format or corrupted file");
-	//! Unsupported format.
+	//! Unsupported format (a subclass of "unsupported format or corrupted file" exception).
 	PFC_DECLARE_EXCEPTION(exception_io_unsupported_format,	exception_io_data,"Unsupported file format");
 	//! Object is remote, while specific operation is supported only for local objects.
 	PFC_DECLARE_EXCEPTION(exception_io_object_is_remote,	exception_io,"This operation is not supported on remote objects");
@@ -48,7 +48,13 @@ namespace foobar2000_io
 	//! Object already exists.
 	PFC_DECLARE_EXCEPTION(exception_io_already_exists,		exception_io,"Object already exists");
 	//! Pipe error.
-	PFC_DECLARE_EXCEPTION(exception_io_no_data,				exception_io,"The process receiving or sending data has terminated.");
+	PFC_DECLARE_EXCEPTION(exception_io_no_data,				exception_io,"The process receiving or sending data has terminated");
+	//! Network not reachable.
+	PFC_DECLARE_EXCEPTION(exception_io_network_not_reachable,exception_io,"Network not reachable");
+	//! Media is write protected.
+	PFC_DECLARE_EXCEPTION(exception_io_write_protected,		exception_io_denied,"The media is write protected");
+	//! File is corrupted. This indicates filesystem call failure, not actual invalid data being read by the app.
+	PFC_DECLARE_EXCEPTION(exception_io_file_corrupted,		exception_io,"The file is corrupted");
 
 	//! Stores file stats (size and timestamp).
 	struct t_filestats {
@@ -110,6 +116,9 @@ namespace foobar2000_io
 		void read_string(pfc::string_base & p_out,abort_callback & p_abort);
 		//! Helper function; alternate way of storing strings; assumes string takes space up to end of stream.
 		void read_string_raw(pfc::string_base & p_out,abort_callback & p_abort);
+
+		//! Helper function; reads string of specified length from the stream.
+		void read_string_ex(pfc::string_base & p_out,t_size p_bytes,abort_callback & p_abort);
 	protected:
 		stream_reader() {}
 		~stream_reader() {}
@@ -241,6 +250,9 @@ namespace foobar2000_io
 
 		//! Helper; throws exception_io_object_not_seekable if file is not seekable.
 		void ensure_seekable();
+
+		//! Helper; throws exception_io_object_is_remote if the file is remote.
+		void ensure_local();
 
 		//! Helper; transfers specified number of bytes between streams.
 		//! @returns number of bytes actually transferred. May be less than requested if e.g. EOF is reached.

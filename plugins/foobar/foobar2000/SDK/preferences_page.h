@@ -24,6 +24,14 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(preferences_page);
 };
 
+class NOVTABLE preferences_page_v2 : public preferences_page {
+public:
+	//! Allows custom sorting order of preferences pages. Return lower value for higher priority (lower resulting index in the list). When sorting priority of two items matches, alphabetic sorting is used. Return 0 to use default alphabetic sorting without overriding priority.
+	virtual double get_sort_priority() = 0;
+
+	FB2K_MAKE_SERVICE_INTERFACE(preferences_page_v2,preferences_page);
+};
+
 template<class T>
 class preferences_page_factory_t : public service_factory_single_t<T> {};
 
@@ -41,15 +49,25 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(preferences_branch);
 };
 
-class preferences_branch_impl : public preferences_branch {
+class preferences_branch_v2 : public preferences_branch {
 public:
-	preferences_branch_impl(const GUID & p_guid,const GUID & p_parent,const char * p_name) : m_guid(p_guid), m_parent(p_parent), m_name(p_name) {}
+	//! Allows custom sorting order of preferences pages. Return lower value for higher priority (lower resulting index in the list). When sorting priority of two items matches, alphabetic sorting is used. Return 0 to use default alphabetic sorting without overriding priority.
+	virtual double get_sort_priority() = 0;
+
+	FB2K_MAKE_SERVICE_INTERFACE(preferences_branch_v2,preferences_branch);
+};
+
+class preferences_branch_impl : public preferences_branch_v2 {
+public:
+	preferences_branch_impl(const GUID & p_guid,const GUID & p_parent,const char * p_name,double p_sort_priority = 0) : m_guid(p_guid), m_parent(p_parent), m_name(p_name), m_sort_priority(p_sort_priority) {}
 	const char * get_name() {return m_name;}
 	GUID get_guid() {return m_guid;}
 	GUID get_parent_guid() {return m_parent;}
+	double get_sort_priority() {return m_sort_priority;}
 private:
-	GUID m_guid,m_parent;
-	pfc::string8 m_name;
+	const GUID m_guid,m_parent;
+	const pfc::string8 m_name;
+	const double m_sort_priority;
 };
 
 typedef service_factory_single_t<preferences_branch_impl> __preferences_branch_factory;
@@ -58,7 +76,7 @@ typedef service_factory_single_t<preferences_branch_impl> __preferences_branch_f
 //! Usage: static preferences_branch_factory g_mybranch(mybranchguid,parentbranchguid,"name of my preferences branch goes here");
 class preferences_branch_factory : public __preferences_branch_factory {
 public:
-	preferences_branch_factory(const GUID & p_guid,const GUID & p_parent,const char * p_name) : __preferences_branch_factory(p_guid,p_parent,p_name) {}
+	preferences_branch_factory(const GUID & p_guid,const GUID & p_parent,const char * p_name,double p_sort_priority = 0) : __preferences_branch_factory(p_guid,p_parent,p_name,p_sort_priority) {}
 };
 
 #endif //_FOOBAR2000_SDK_PREFERENCES_PAGE_H_

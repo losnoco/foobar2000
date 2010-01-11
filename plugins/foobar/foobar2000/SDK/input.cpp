@@ -197,6 +197,20 @@ void input_entry::g_open_for_info_write(service_ptr_t<input_info_writer> & p_ins
 #endif
 }
 
+void input_entry::g_open_for_info_write_timeout(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,double p_timeout,bool p_from_redirect) {
+	pfc::lores_timer timer;
+	timer.start();
+	for(;;) {
+		try {
+			g_open_for_info_write(p_instance,p_filehint,p_path,p_abort,p_from_redirect);
+			break;
+		} catch(exception_io_sharing_violation) {
+			if (timer.query() > p_timeout) throw;
+			p_abort.sleep(0.01);
+		}
+	}
+}
+
 bool input_entry::g_is_supported_path(const char * p_path)
 {
 	service_ptr_t<input_entry> ptr;
@@ -225,5 +239,7 @@ void input_open_file_helper(service_ptr_t<file> & p_file,const char * p_path,t_i
 			filesystem::g_open(p_file,p_path,filesystem::open_mode_write_existing,p_abort);
 			break;
 		}
+	} else {
+		p_file->reopen(p_abort);
 	}
 }

@@ -1,5 +1,6 @@
 #include "pfc.h"
 
+#ifdef _WINDOWS
 namespace pfc {
 
 profiler_static::profiler_static(const char * p_name)
@@ -11,43 +12,23 @@ profiler_static::profiler_static(const char * p_name)
 
 profiler_static::~profiler_static()
 {
-	char blah[512];
-	char total_time_text[128];
-	char num_text[128];
-	char average_text[128];
-	char name_truncated[48];
-	char total_time_truncated[16];
-	_i64toa(total_time,total_time_text,10);
-	{
-		const unsigned max = tabsize(name_truncated) - 1;
-		t_size namelen = strlen(name);
-		if (namelen > max) namelen = max;
-		memcpy(name_truncated,name,max);
-		memset(name_truncated + namelen, ' ',max-namelen);
-		name_truncated[max] = 0;
-	}
-	{
-		t_size timelen = strlen(total_time_text);
-		const t_size max = tabsize(total_time_truncated) - 1;
-		if (timelen > max)
-		{
-			strcpy(total_time_truncated,"<overflow>");
+	try {
+		pfc::string_fixed_t<511> message;
+		message << "profiler: " << pfc::format_pad_left<pfc::string_fixed_t<127> >(48,' ',name) << " - " << 
+			pfc::format_pad_right<pfc::string_fixed_t<128> >(16,' ',pfc::format_uint(total_time) ) << " cycles";
+
+		if (num_called > 0) {
+			message << " (executed " << num_called << " times, " << (total_time / num_called) << " average)";
 		}
-		else
-		{
-			t_size pad = max - timelen;
-			memset(total_time_truncated,' ',pad);
-			memcpy(total_time_truncated + pad, total_time_text, timelen);
-			total_time_truncated[max] = 0;
-		}
+		message << "\n";
+		OutputDebugStringA(message);
+	} catch(...) {
+		//should never happen
+		OutputDebugString(_T("unexpected profiler failure\n"));
 	}
-	
-	_i64toa(num_called,num_text,10);
-	if (num_called > 0)
-		_i64toa(total_time / num_called, average_text,10);
-	else strcpy(average_text,"N/A");
-	sprintf(blah,"profiler: %s - %s cycles (executed %s times, %s average)\n",name_truncated,total_time_truncated,num_text,average_text);
-	OutputDebugStringA(blah);
 }
 
 }
+#else
+//PORTME
+#endif

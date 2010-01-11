@@ -33,31 +33,27 @@ void string_base::skip_trailing_char(unsigned skip)
 	if (need_trunc) truncate(trunc);
 }
 
-format_time::format_time(t_int64 length)
-{
-	if (length<0) length=0;
-	char * out = buffer;
-	int weeks,days,hours,minutes,seconds;
+format_time::format_time(t_uint64 p_seconds) {
+	t_uint64 length = p_seconds;
+	unsigned weeks,days,hours,minutes,seconds;
 	
-	weeks = (int)( ( length / (60*60*24*7) ) );
-	days = (int)( ( length / (60*60*24) ) % 7 );
-	hours = (int) ( ( length / (60 * 60) ) % 24);
-	minutes = (int) ( ( length / (60 ) ) % 60 );
-	seconds = (int) ( ( length ) % 60 );
+	weeks = (unsigned)( ( length / (60*60*24*7) ) );
+	days = (unsigned)( ( length / (60*60*24) ) % 7 );
+	hours = (unsigned) ( ( length / (60 * 60) ) % 24);
+	minutes = (unsigned) ( ( length / (60 ) ) % 60 );
+	seconds = (unsigned) ( ( length ) % 60 );
 
-	if (weeks)
-	{
-		out += sprintf(out,"%uwk ",weeks);
+	if (weeks) {
+		m_buffer << weeks << "wk ";
 	}
-	if (days || weeks)
-	{
-		out += sprintf(out,"%ud ",days);
+	if (days || weeks) {
+		m_buffer << days << "d ";
 	}
-	if (hours || days || weeks)
-	{
-		out += sprintf(out,"%u:%02u:%02u",hours,minutes,seconds);
+	if (hours || days || weeks) {
+		m_buffer << hours << ":" << format_uint(minutes,2) << ":" << format_uint(seconds,2);
+	} else {
+		m_buffer << minutes << ":" << format_uint(seconds,2);
 	}
-	else out += sprintf(out,"%u:%02u",minutes,seconds);
 }
 
 int strcmp_partial(const char * p_string,const char * p_substring) {return strcmp_partial_ex(p_string,infinite,p_substring,infinite);}
@@ -88,126 +84,6 @@ bool is_path_bad_char(unsigned c)
 }
 
 
-void string_printf::g_run(string_base & out,const char * fmt,va_list list)
-{
-	out.reset();
-	while(*fmt)
-	{
-		if (*fmt=='%')
-		{
-			fmt++;
-			if (*fmt=='%')
-			{
-				out.add_char('%');
-				fmt++;
-			}
-			else
-			{
-				bool force_sign = false;
-				if (*fmt=='+')
-				{
-					force_sign = true;
-					fmt++;
-				}
-				char padchar = (*fmt == '0') ? '0' : ' ';
-				t_size pad = 0;
-				while(*fmt>='0' && *fmt<='9')
-				{
-					pad = pad * 10 + (*fmt - '0');
-					fmt++;
-				}
-
-				if (*fmt=='s' || *fmt=='S')
-				{
-					const char * ptr = va_arg(list,const char*);
-					t_size len = strlen(ptr);
-					if (pad>len) out.add_chars(padchar,pad-len);
-					out.add_string(ptr);
-					fmt++;
-
-				}
-				else if (*fmt=='i' || *fmt=='I' || *fmt=='d' || *fmt=='D')
-				{
-					char temp[8*sizeof(int)];
-					int val = va_arg(list,int);
-					if (force_sign && val>0) out.add_char('+');
-					itoa(val,temp,10);
-					t_size len = strlen(temp);
-					if (pad>len) out.add_chars(padchar,pad-len);
-					out.add_string(temp);
-					fmt++;
-				}
-				else if (*fmt=='u' || *fmt=='U')
-				{
-					char temp[8*sizeof(int)];
-					int val = va_arg(list,int);
-					if (force_sign && val>0) out.add_char('+');
-					_ultoa(val,temp,10);
-					t_size len = strlen(temp);
-					if (pad>len) out.add_chars(padchar,pad-len);
-					out.add_string(temp);
-					fmt++;
-				}
-				else if (*fmt=='x' || *fmt=='X')
-				{
-					char temp[8*sizeof(int)];
-					int val = va_arg(list,int);
-					if (force_sign && val>0) out.add_char('+');
-					_ultoa(val,temp,16);
-					if (*fmt=='X')
-					{
-						char * t = temp;
-						while(*t)
-						{
-							if (*t>='a' && *t<='z')
-								*t += 'A' - 'a';
-							t++;
-						}
-					}
-					t_size len = strlen(temp);
-					if (pad>len) out.add_chars(padchar,pad-len);
-					out.add_string(temp);
-					fmt++;
-				}
-				else if (*fmt=='c' || *fmt=='C')
-				{
-					out.add_char(va_arg(list,char));
-					fmt++;
-				}
-			}
-		}
-		else
-		{
-			out.add_char(*(fmt++));
-		}
-	}
-}
-
-string_printf::string_printf(const char * fmt,...)
-{
-	va_list list;
-	va_start(list,fmt);
-	run(fmt,list);
-	va_end(list);
-}
-
-
-
-t_size strlen_max(const char * ptr,t_size max)
-{
-	if (ptr==0) return 0;
-	t_size n = 0;
-	while(n<max && ptr[n]) n++;
-	return n;
-}
-
-t_size wcslen_max(const WCHAR * ptr,t_size max)
-{
-	if (ptr==0) return 0;
-	t_size n = 0;
-	while(n<max && ptr[n]) n++;
-	return n;
-}
 
 char * strdup_n(const char * src,t_size len)
 {
@@ -223,7 +99,7 @@ char * strdup_n(const char * src,t_size len)
 
 string_filename::string_filename(const char * fn)
 {
-	fn += scan_filename(fn);
+	fn += pfc::scan_filename(fn);
 	const char * ptr=fn,*dot=0;
 	while(*ptr && *ptr!='?')
 	{
@@ -237,7 +113,7 @@ string_filename::string_filename(const char * fn)
 
 string_filename_ext::string_filename_ext(const char * fn)
 {
-	fn += scan_filename(fn);
+	fn += pfc::scan_filename(fn);
 	const char * ptr = fn;
 	while(*ptr && *ptr!='?') ptr++;
 	set_string(fn,ptr-fn);
@@ -246,7 +122,7 @@ string_filename_ext::string_filename_ext(const char * fn)
 string_extension::string_extension(const char * src)
 {
 	buffer[0]=0;
-	const char * start = src + scan_filename(src);
+	const char * start = src + pfc::scan_filename(src);
 	const char * end = start + strlen(start);
 	const char * ptr = end-1;
 	while(ptr>start && *ptr!='.')
@@ -278,11 +154,9 @@ bool has_path_bad_chars(const char * param)
 	return false;
 }
 
-void float_to_string(char * out,t_size out_max,double val,unsigned precision,bool b_sign)
-{
-	char temp[64];
+void float_to_string(char * out,t_size out_max,double val,unsigned precision,bool b_sign) {
+	pfc::string_fixed_t<63> temp;
 	t_size outptr;
-	t_size temp_len;
 
 	if (out_max == 0) return;
 	out_max--;//for null terminator
@@ -299,11 +173,11 @@ void float_to_string(char * out,t_size out_max,double val,unsigned precision,boo
 	
 	{
 		double powval = pow((double)10.0,(double)precision);
-		t_int64 blargh = (t_int64)floor(val * powval + 0.5);
-		_i64toa(blargh,temp,10);
+		temp << (t_int64)floor(val * powval + 0.5);
+		//_i64toa(blargh,temp,10);
 	}
 	
-	temp_len = strlen(temp);
+	const t_size temp_len = temp.length();
 	if (temp_len <= precision)
 	{
 		out[outptr++] = '0';
@@ -379,11 +253,13 @@ static double pfc_string_to_float_internal(const char * src)
 	return (double) val * pow(10.0,(double)div);
 }
 
-double string_to_float(const char * src,t_size max)
-{
+double string_to_float(const char * src,t_size max) {
+	//old function wants an oldstyle nullterminated string, and i don't currently care enough to rewrite it as it works appropriately otherwise
 	char blargh[128];
-	strncpy(blargh,src,max>127?127:max);
-	blargh[127]=0;
+	if (max > 127) max = 127;
+	t_size walk;
+	for(walk = 0; walk < max && src[walk]; walk++) blargh[walk] = src[walk];
+	blargh[walk] = 0;
 	return pfc_string_to_float_internal(blargh);
 }
 
@@ -466,9 +342,34 @@ int strcmp_ex(const char* p1,t_size n1,const char* p2,t_size n2)
 	}
 }
 
+t_uint64 atoui64_ex(const char * src,t_size len) {
+	len = strlen_max(src,len);
+	t_uint64 ret = 0, mul = 1;
+	t_size ptr = len;
+	t_size start = 0;
+//	start += skip_spacing(src+start,len-start);
+	
+	while(ptr>start)
+	{
+		char c = src[--ptr];
+		if (c>='0' && c<='9')
+		{
+			ret += (c-'0') * mul;
+			mul *= 10;
+		}
+		else
+		{
+			ret = 0;
+			mul = 1;
+		}
+	}
+	return ret;
+}
+
+
 t_int64 atoi64_ex(const char * src,t_size len)
 {
-	len = strlen_max(src,infinite);
+	len = strlen_max(src,len);
 	t_int64 ret = 0, mul = 1;
 	t_size ptr = len;
 	t_size start = 0;
@@ -494,10 +395,22 @@ t_int64 atoi64_ex(const char * src,t_size len)
 	return neg ? -ret : ret;
 }
 
-int stricmp_ascii(const char * s1,const char * s2)
-{
-	for(;;)
-	{
+int stricmp_ascii_ex(const char * const s1,t_size const len1,const char * const s2,t_size const len2) {
+	t_size walk1 = 0, walk2 = 0;
+	for(;;) {
+		char c1 = (walk1 < len1) ? s1[walk1] : 0;
+		char c2 = (walk2 < len2) ? s2[walk2] : 0;
+		c1 = ascii_tolower(c1); c2 = ascii_tolower(c2);
+		if (c1<c2) return -1;
+		else if (c1>c2) return 1;
+		else if (c1 == 0) return 0;
+		walk1++;
+		walk2++;
+	}
+
+}
+int stricmp_ascii(const char * s1,const char * s2) {
+	for(;;) {
 		char c1 = ascii_tolower(*s1), c2 = ascii_tolower(*s2);
 		if (c1<c2) return -1;
 		else if (c1>c2) return 1;
@@ -762,6 +675,33 @@ bool string_is_numeric(const char * p_string,t_size p_length) {
 void string_base::fix_dir_separator(char p_char) {
 	t_size length = get_length();
 	if (length == 0 || get_ptr()[length-1] != p_char) add_byte(p_char);
+}
+
+bool is_multiline(const char * p_string,t_size p_len) {
+	for(t_size n = 0; n < p_len && p_string[n]; n++) {
+		switch(p_string[n]) {
+		case '\r':
+		case '\n':
+			return true;
+		}
+	}
+	return false;
+}
+
+static t_uint64 pow10_helper(unsigned p_extra) {
+	t_uint64 ret = 1;
+	for(unsigned n = 0; n < p_extra; n++ ) ret *= 10;
+	return ret;
+}
+
+format_time_ex::format_time_ex(double p_seconds,unsigned p_extra) {
+	t_uint64 pow10 = pow10_helper(p_extra);
+	t_uint64 ticks = pfc::rint64(pow10 * p_seconds);
+
+	m_buffer << pfc::format_time(ticks / pow10);
+	if (p_extra>0) {
+		m_buffer << "." << pfc::format_uint(ticks % pow10, p_extra);
+	}
 }
 
 }

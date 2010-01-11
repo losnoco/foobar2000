@@ -64,6 +64,9 @@ public:
 	//! Should never fail, falls back to %filename% in case of failure.
 	void compile_safe(service_ptr_t<titleformat_object> & p_out,const char * p_spec);
 
+	//! Throws bug check when script can't be compiled. For use with hardcoded scripts only.
+	void compile_force(service_ptr_t<titleformat_object> & p_out,const char * p_spec) {if (!compile(p_out,p_spec)) throw pfc::exception_bug_check();}
+
 
 	static void remove_color_marks(const char * src,pfc::string_base & out);//helper
 	static void remove_forbidden_chars(titleformat_text_out * p_out,const GUID & p_inputtype,const char * p_source,t_size p_source_len,const char * p_forbidden_chars);
@@ -73,6 +76,18 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(titleformat_compiler);
 };
 
+
+class titleformat_object_wrapper {
+public:
+	titleformat_object_wrapper(const char * p_script) {
+		static_api_ptr_t<titleformat_compiler>()->compile_force(m_script,p_script);
+	}
+
+	operator const service_ptr_t<titleformat_object> &() const {return m_script;}
+	
+private:
+	service_ptr_t<titleformat_object> m_script;
+};
 
 
 //helpers

@@ -8,7 +8,7 @@ PFC_DECLARE_EXCEPTION(exception_service_extension_not_found,pfc::exception,"Serv
 PFC_DECLARE_EXCEPTION(exception_service_duplicated,pfc::exception,"Service duplicated");
 
 #ifdef _MSC_VER
-#define FOOGUIDDECL __declspec(selectany)	//hack against msvc linker stupidity - seems to be needed to make unreferenced GUIDs removed from binary
+#define FOOGUIDDECL __declspec(selectany)
 #else
 #define FOOGUIDDECL
 #endif
@@ -20,12 +20,22 @@ PFC_DECLARE_EXCEPTION(exception_service_duplicated,pfc::exception,"Service dupli
 //! Special hack to ensure errors when someone tries to ->service_add_ref()/->service_release() on a service_ptr_t
 template<typename T> class service_obscure_refcounting : public T {
 private:
-	int service_add_ref();
-	int service_release();
+	int service_add_ref() throw();
+	int service_release() throw();
 };
 
 //! Converts a service interface pointer to a pointer that obscures service counter functionality.
 template<typename T> static inline service_obscure_refcounting<T>* service_obscure_refcounting_cast(T * p_source) throw() {return static_cast<service_obscure_refcounting<T>*>(p_source);}
+
+//! Multiple inheritance SNAFU fix. In some cases, old service_release_safe method of service_base would not get a NULL this pointer when called on a NULL pointer.
+template<typename T> static void service_release_safe(T * p_ptr) throw() {
+	if (p_ptr != NULL) p_ptr->service_release();
+}
+
+//! Multiple inheritance SNAFU fix. In some cases, old service_add_ref_safe method of service_base would not get a NULL this pointer when called on a NULL pointer.
+template<typename T> static void service_add_ref_safe(T * p_ptr) throw() {
+	if (p_ptr != NULL) p_ptr->service_add_ref();
+}
 
 //! Autopointer class to be used with all services. Manages reference counter calls behind-the-scenes.
 template<typename T>
@@ -43,14 +53,13 @@ public:
 	template<typename t_source>
 	inline service_ptr_t(const service_ptr_t<t_source> & p_source) throw() : m_ptr(NULL) {copy(p_source);}
 
-	inline ~service_ptr_t() throw() {if (m_ptr != NULL) m_ptr->service_release();}
+	inline ~service_ptr_t() throw() {service_release_safe(m_ptr);}
 	
 	template<typename t_source>
-	inline void copy(t_source * p_ptr) throw() {
-		T* torel = pfc::replace_t(m_ptr,p_ptr);
-		if (m_ptr != NULL) m_ptr->service_add_ref();
-		if (torel != NULL) torel->service_release();
-		
+	void copy(t_source * p_ptr) throw() {
+		service_release_safe(m_ptr);
+		m_ptr = pfc::safe_ptr_cast<T>(p_ptr);
+		service_add_ref_safe(m_ptr);
 	}
 
 	template<typename t_source>
@@ -64,8 +73,8 @@ public:
 	template<typename t_source> inline t_self & operator=(t_source * p_ptr) throw() {copy(p_ptr); return *this;}
 	
 	inline void release() throw() {
-		T * temp = pfc::replace_t(m_ptr,(T*)NULL);
-		if (temp != NULL) temp->service_release();
+		service_release_safe(m_ptr);
+		m_ptr = NULL;
 	}
 
 
@@ -81,22 +90,25 @@ public:
 	inline bool operator>(const t_self & p_item) const throw() {return m_ptr > p_item.get_ptr();}
 	inline bool operator<(const t_self & p_item) const throw() {return m_ptr < p_item.get_ptr();}
 
+	template<typename t_other>
+	inline t_self & operator<<(service_ptr_t<t_other> & p_source) throw() {__unsafe_set(p_source.__unsafe_detach());return *this;}
+	template<typename t_other>
+	inline t_self & operator>>(service_ptr_t<t_other> & p_dest) throw() {p_dest.__unsafe_set(__unsafe_detach());return *this;}
 
-	inline T* __unsafe_duplicate() const throw() //should not be used ! temporary !
-	{
-		if (m_ptr) m_ptr->service_add_ref();
+
+	inline T* __unsafe_duplicate() const throw() {//should not be used ! temporary !
+		service_add_ref_safe(m_ptr);
 		return m_ptr;
 	}
 
 	inline T* __unsafe_detach() throw() {//should not be used ! temporary !
-		T* ret = m_ptr;
-		m_ptr = 0;
-		return ret;
+		return pfc::replace_null_t(m_ptr);
 	}
 
-	inline void __unsafe_set(T * p_ptr) throw() {//should not be used ! temporary !
-		release();
-		m_ptr = p_ptr;
+	template<typename t_source>
+	inline void __unsafe_set(t_source * p_ptr) throw() {//should not be used ! temporary !
+		service_release_safe(m_ptr);
+		m_ptr = pfc::safe_ptr_cast<T>(p_ptr);
 	}
 private:
 	T* m_ptr;
@@ -155,7 +167,18 @@ class service_list_t : public pfc::list_t<service_ptr_t<T>, t_alloc >
 	FB2K_MAKE_SERVICE_INTERFACE(THISCLASS,service_base)
 		
 	
+#define FB2K_DECLARE_SERVICE_BEGIN(THISCLASS,BASECLASS) \
+	class NOVTABLE THISCLASS : public BASECLASS	{	\
+		FB2K_MAKE_SERVICE_INTERFACE(THISCLASS,BASECLASS);	\
+	public:
 
+#define FB2K_DECLARE_SERVICE_END() \
+	};
+
+#define FB2K_DECLARE_SERVICE_ENTRYPOINT_BEGIN(THISCLASS) \
+	class NOVTABLE THISCLASS : public service_base {	\
+		FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(THISCLASS)	\
+	public:
 		
 
 //! Base class for all service classes.\n
@@ -185,7 +208,6 @@ public:
 		p_out.__unsafe_set(static_cast<T*>(temp.__unsafe_detach()));
 		return true;
 	}
-
 
 	typedef service_base t_interface;
 	
@@ -273,7 +295,7 @@ public:
 		return true;
 	}
 
-	service_ptr_t<T> create(t_size p_index) {
+	service_ptr_t<T> create(t_size p_index) const {
 		service_ptr_t<T> temp;
 		if (!create(temp,p_index)) throw pfc::exception_bug_check();
 		return temp;
@@ -282,49 +304,46 @@ private:
 	service_class_ref m_class;
 };
 
-template<typename T> static service_ptr_t<T> standard_api_create_t() {
-	service_class_helper_t<T> helper;
-	switch(helper.get_count()) {
-	case 0:
-		throw exception_service_not_found();
-	case 1:
-		return helper.create(0);
-	default:
-		throw exception_service_duplicated();
+template<typename T> static void standard_api_create_t(service_ptr_t<T> & p_out) {
+	if (pfc::is_same_type<T,T::t_interface_entrypoint>::value) {
+		service_class_helper_t<T::t_interface_entrypoint> helper;
+		switch(helper.get_count()) {
+		case 0:
+			throw exception_service_not_found();
+		case 1:
+			if (!helper.create(reinterpret_cast<service_ptr_t<T::t_interface_entrypoint>&>(p_out),0)) throw pfc::exception_bug_check();
+			break;
+		default:
+			throw exception_service_duplicated();
+		}
+	} else {
+		service_ptr_t<T::t_interface_entrypoint> temp;
+		standard_api_create_t(temp);
+		if (!temp->service_query_t(p_out)) throw exception_service_extension_not_found();
 	}
+}
+
+template<typename T> static service_ptr_t<T> standard_api_create_t() {
+	service_ptr_t<T> temp;
+	standard_api_create_t(temp);
+	return temp;
 }
 
 //! Helper template used to easily access core services. \n
 //! Usage: static_api_ptr_t<myclass> api; api->dosomething();
-//! Can be used at any point of code, WITH EXCEPTION of static objects that are initialized during DLL load before service system is initialized. That includes static static_api_ptr_t objects, as well as having static_api_ptr_t as members of statically created objects.
+//! Can be used at any point of code, WITH EXCEPTION of static objects that are initialized during DLL load before service system is initialized; such as static static_api_ptr_t objects or having static_api_ptr_t as members of statically created objects.
 //! Throws exception_service_not_found if service could not be reached (which can be ignored for core APIs that are always present unless there is some kind of bug in the code).
-template<typename T>
+template<typename t_interface>
 class static_api_ptr_t {
 public:
-	static_api_ptr_t() : m_ptr(standard_api_create_t<T>()) {}
-	service_obscure_refcounting<T>* operator->() const {return service_obscure_refcounting_cast(m_ptr.get_ptr());}
-	T* get_ptr() const {return m_ptr.get_ptr();}
-private:
-	service_ptr_t<T> m_ptr;
-};
-
-//! Helper template used to easily access extensions of core services; works in similar way to static_api_ptr_t<>, but queries for specific extension of the interface.\n
-//! Usage: static_api_ptr_ex_t<myclass,myclass_extension> api; api->dosomething();
-//! Can be used at any point of code, WITH EXCEPTION of static objects that are initialized during DLL load before service system is initialized. That includes static static_api_ptr_ex_t objects, as well as having static_api_ptr_ex_t as members of statically created objects.
-//! Throws exception_service_not_found if service could not be reached (which can be ignored for core APIs that are always present unless there is some kind of bug in the code).
-template<typename t_extension>
-class static_api_ptr_ex_t {
-public:
-	static_api_ptr_ex_t() {
-		if (!static_api_ptr_t<t_extension::t_interface_entrypoint>()->service_query_t(m_ptr)) throw exception_service_extension_not_found();
+	static_api_ptr_t() {
+		standard_api_create_t(m_ptr);
 	}
-
-	service_obscure_refcounting<t_extension>* operator->() const {return service_obscure_refcounting_cast(m_ptr.get_ptr());}
-	t_extension* get_ptr() const {return m_ptr.get_ptr();}
+	service_obscure_refcounting<t_interface>* operator->() const {return service_obscure_refcounting_cast(m_ptr.get_ptr());}
+	t_interface* get_ptr() const {return m_ptr.get_ptr();}
 private:
-	service_ptr_t<t_extension> m_ptr;
+	service_ptr_t<t_interface> m_ptr;
 };
-
 
 //! Helper; simulates array with instance of each available implementation of given service class.
 template<typename T> class service_instance_array_t {
@@ -349,20 +368,38 @@ private:
 template<typename t_interface>
 class service_enum_t {
 public:
-	service_enum_t() : m_index(0) {}
+	service_enum_t() : m_index(0) {
+		pfc::assert_same_type<t_interface,typename t_interface::t_interface_entrypoint>();
+	}
 	void reset() {m_index = 0;}
-	bool first(service_ptr_t<t_interface> & p_out) {
+
+	template<typename t_query>
+	bool first(service_ptr_t<t_query> & p_out) {
 		reset();
 		return next(p_out);
 	}
-	bool next(service_ptr_t<t_interface> & p_out) {
+	
+	template<typename t_query>
+	bool next(service_ptr_t<t_query> & p_out) {
+		pfc::assert_same_type<typename t_query::t_interface_entrypoint,t_interface>();
+		if (pfc::is_same_type<t_query,t_interface>::value) {
+			return __next(reinterpret_cast<service_ptr_t<t_interface>&>(p_out));
+		} else {
+			service_ptr_t<t_interface> temp;
+			while(__next(temp)) {
+				if (temp->service_query_t(p_out)) return true;
+			}
+			return false;
+		}
+	}
+
+private:
+	bool __next(service_ptr_t<t_interface> & p_out) {
 		return m_helper.create(p_out,m_index++);
 	}
-private:
 	unsigned m_index;
 	service_class_helper_t<t_interface> m_helper;
 };
-
 
 template<typename T>
 class service_factory_t : public service_factory_base_t<typename T::t_interface_entrypoint> {

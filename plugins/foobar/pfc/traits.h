@@ -2,16 +2,60 @@ namespace pfc {
 
 	class traits_default {
 	public:
-		enum { realloc_safe = false, needs_destructor = true, needs_constructor = true, constructor_may_fail = true};
+		enum { 
+			realloc_safe = false, 
+			needs_destructor = true, 
+			needs_constructor = true, 
+			constructor_may_fail = true
+		};
+	};
+	
+	class traits_default_movable {
+	public:
+		enum { 
+			realloc_safe = true, 
+			needs_destructor = true, 
+			needs_constructor = true, 
+			constructor_may_fail = true
+		};
 	};
 
 	class traits_rawobject : public traits_default {
 	public:
-		enum { realloc_safe = true, needs_destructor = false, needs_constructor = false, constructor_may_fail = false};
+		enum { 
+			realloc_safe = true, 
+			needs_destructor = false, 
+			needs_constructor = false, 
+			constructor_may_fail = false
+		};
+	};
+
+	class traits_vtable {
+	public:
+		enum {
+			realloc_safe = true,
+			needs_destructor = true,
+			needs_constructor = true,
+			constructor_may_fail = false
+		};
 	};
 
 	template<typename T> class traits_t : public traits_default {};
-	
+
+	template<typename traits1,typename traits2>
+	class combine_traits {
+	public:
+		enum {
+			realloc_safe = (traits1::realloc_safe && traits2::realloc_safe),
+			needs_destructor = (traits1::needs_destructor || traits2::needs_destructor),
+			needs_constructor = (traits1::needs_constructor || traits2::needs_constructor),
+			constructor_may_fail = (traits1::constructor_may_fail || traits2::constructor_may_fail),
+		};
+	};
+
+	template<typename type1, typename type2>
+	class traits_combined : public combine_traits<pfc::traits_t<type1>,pfc::traits_t<type2> > {};
+
 	template<typename T> class traits_t<T*> : public traits_rawobject {};
 
 	template<> class traits_t<char> : public traits_rawobject {};

@@ -43,8 +43,8 @@ namespace pfc {
 			m_ptr = p_ptr;
 		}
 
-		bool is_valid() const {return m_ptr != NULL;}
-		bool is_empty() const {return m_ptr == NULL;}
+		bool is_valid() const {return m_container != NULL;}
+		bool is_empty() const {return m_container == NULL;}
 
 		t_self const & operator=(const t_self & p_source) {
 			release(); 
@@ -99,13 +99,16 @@ namespace pfc {
 	class rcptr_t : public rcptr_const_t<t_object> {
 	private:
 		typedef rcptr_t<t_object> t_self;
+	protected:
+		typedef rc_container_base t_container;
+		typedef rc_container_t<t_object> t_container_impl;
 	public:
 		t_self const & operator=(const t_self & p_source) {
-			release(); 
+			this->release(); 
 			if (p_source.is_valid()) {
 				p_source.m_container->add_ref();
-				m_container = p_source.m_container;
-				m_ptr = p_source.m_ptr;
+				this->m_container = p_source.m_container;
+				this->m_ptr = p_source.m_ptr;
 			}
 			return *this;
 		}
@@ -113,14 +116,14 @@ namespace pfc {
 		template<typename t_object_cast>
 		operator rcptr_t<t_object_cast>() const {
 			rcptr_t<t_object_cast> temp;
-			if (is_valid()) temp.__set_from_cast(m_container,m_ptr);
+			if (is_valid()) temp.__set_from_cast(this->m_container,this->m_ptr);
 			return temp;
 		}
 
 		template<typename t_object_cast>
 		rcptr_t<t_object_cast> static_cast_t() const {
 			rcptr_t<t_object_cast> temp;
-			if (is_valid()) temp.__set_from_cast(m_container,static_cast<t_object_cast*>(m_ptr));
+			if (is_valid()) temp.__set_from_cast(this->m_container,static_cast<t_object_cast*>(this->m_ptr));
 			return temp;
 		}
 
@@ -167,48 +170,48 @@ namespace pfc {
 		template<typename t_param1>
 		static t_self g_new_t(t_param1 const & p_param1) {
 			t_self temp;
-			temp.new_t<t_param1>(p_param1);
+			temp.new_t(p_param1);
 			return temp;
 		}
 
 		template<typename t_param1,typename t_param2>
 		static t_self g_new_t(t_param1 const & p_param1,t_param2 const & p_param2) {
 			t_self temp;
-			temp.new_t<t_param1,t_param2>(p_param1,p_param2);
+			temp.new_t(p_param1,p_param2);
 			return temp;
 		}
 
 		template<typename t_param1,typename t_param2,typename t_param3>
 		static t_self g_new_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3) {
 			t_self temp;
-			temp.new_t<t_param1,t_param2,t_param3>(p_param1,p_param2,p_param3);
+			temp.new_t(p_param1,p_param2,p_param3);
 			return temp;
 		}
 
 		template<typename t_param1,typename t_param2,typename t_param3,typename t_param4>
 		static t_self g_new_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3,t_param4 const & p_param4) {
 			t_self temp;
-			temp.new_t<t_param1,t_param2,t_param3,t_param4>(p_param1,p_param2,p_param3,p_param4);
+			temp.new_t(p_param1,p_param2,p_param3,p_param4);
 			return temp;
 		}
 
 		template<typename t_param1,typename t_param2,typename t_param3,typename t_param4,typename t_param5>
 		static t_self g_new_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3,t_param4 const & p_param4,t_param5 const & p_param5) {
 			t_self temp;
-			temp.new_t<t_param1,t_param2,t_param3,t_param4>(p_param1,p_param2,p_param3,p_param4,p_param5);
+			temp.new_t(p_param1,p_param2,p_param3,p_param4,p_param5);
 			return temp;
 		}
 
-		t_object & operator*() const {return *m_ptr;}
+		t_object & operator*() const {return *this->m_ptr;}
 
-		t_object * operator->() const {return m_ptr;}
+		t_object * operator->() const {return this->m_ptr;}
 
 	private:
 		void on_new(t_container_impl * p_container) {
-			release();
+			this->release();
 			p_container->add_ref();
-			m_ptr = &p_container->m_object;
-			m_container = p_container;
+			this->m_ptr = &p_container->m_object;
+			this->m_container = p_container;
 		}
 	};
 
@@ -222,42 +225,42 @@ namespace pfc {
 	template<typename t_object,typename t_param1>
 	rcptr_t<t_object> rcnew_t(t_param1 const & p_param1) {
 		rcptr_t<t_object> temp;
-		temp.new_t<t_param1>(p_param1);
+		temp.new_t(p_param1);
 		return temp;		
 	}
 
 	template<typename t_object,typename t_param1,typename t_param2>
 	rcptr_t<t_object> rcnew_t(t_param1 const & p_param1,t_param2 const & p_param2) {
 		rcptr_t<t_object> temp;
-		temp.new_t<t_param1,t_param2>(p_param1,p_param2);
+		temp.new_t(p_param1,p_param2);
 		return temp;		
 	}
 
 	template<typename t_object,typename t_param1,typename t_param2,typename t_param3>
 	rcptr_t<t_object> rcnew_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3) {
 		rcptr_t<t_object> temp;
-		temp.new_t<t_param1,t_param2,t_param3>(p_param1,p_param2,p_param3);
+		temp.new_t(p_param1,p_param2,p_param3);
 		return temp;		
 	}
 
 	template<typename t_object,typename t_param1,typename t_param2,typename t_param3,typename t_param4>
 	rcptr_t<t_object> rcnew_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3,t_param4 const & p_param4) {
 		rcptr_t<t_object> temp;
-		temp.new_t<t_param1,t_param2,t_param3,t_param4>(p_param1,p_param2,p_param3,p_param4);
+		temp.new_t(p_param1,p_param2,p_param3,p_param4);
 		return temp;		
 	}
 
 	template<typename t_object,typename t_param1,typename t_param2,typename t_param3,typename t_param4,typename t_param5>
 	rcptr_t<t_object> rcnew_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3,t_param4 const & p_param4,t_param5 const & p_param5) {
 		rcptr_t<t_object> temp;
-		temp.new_t<t_param1,t_param2,t_param3,t_param4>(p_param1,p_param2,p_param3,p_param4,p_param5);
+		temp.new_t(p_param1,p_param2,p_param3,p_param4,p_param5);
 		return temp;
 	}
 
 	template<typename t_object,typename t_param1,typename t_param2,typename t_param3,typename t_param4,typename t_param5,typename t_param6>
 	rcptr_t<t_object> rcnew_t(t_param1 const & p_param1,t_param2 const & p_param2,t_param3 const & p_param3,t_param4 const & p_param4,t_param5 const & p_param5,t_param6 const & p_param6) {
 		rcptr_t<t_object> temp;
-		temp.new_t<t_param1,t_param2,t_param3,t_param4>(p_param1,p_param2,p_param3,p_param4,p_param5,p_param6);
+		temp.new_t(p_param1,p_param2,p_param3,p_param4,p_param5,p_param6);
 		return temp;
 	}
 

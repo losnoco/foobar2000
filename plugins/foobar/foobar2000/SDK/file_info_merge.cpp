@@ -1,22 +1,73 @@
 #include "foobar2000.h"
 
-static t_size merge_tags_calc_rating(const char * field,const file_info * info)
-{
-	t_size field_index = info->meta_find(field);
+static t_size merge_tags_calc_rating_by_index(const file_info & p_info,t_size p_index) {
+	t_size n,m = p_info.meta_enum_value_count(p_index);
 	t_size ret = 0;
-	if (field_index != ~0)
-	{
-		t_size n,m = info->meta_enum_value_count(field_index);
-		for(n=0;n<m;n++)
-			ret += strlen(info->meta_enum_value(field_index,n));//yes, strlen on utf8 data
-	}
+	for(n=0;n<m;n++)
+		ret += strlen(p_info.meta_enum_value(p_index,n)) + 10;//yes, strlen on utf8 data, plus a slight bump to prefer multivalue over singlevalue w/ separator
 	return ret;
+}
+
+static t_size merge_tags_calc_rating(const file_info & p_info,const char * p_field) {
+	t_size field_index = p_info.meta_find(p_field);
+	t_size ret = 0;
+	if (field_index != infinite) {
+		return merge_tags_calc_rating_by_index(p_info,field_index);
+	} else {
+		return 0;
+	}
 }
 
 static void merge_tags_copy_info(const char * field,const file_info * from,file_info * to)
 {
 	const char * val = from->info_get(field);
 	if (val) to->info_set(field,val);
+}
+
+namespace {
+	struct meta_merge_entry {
+		meta_merge_entry() : m_rating(0) {}
+		t_size m_rating;
+		pfc::array_t<const char *> m_data;
+	};
+
+	class meta_merge_map_enumerator {
+	public:
+		meta_merge_map_enumerator(file_info & p_out) : m_out(p_out) {
+			m_out.meta_remove_all();
+		}
+		void operator() (const char * p_name, const meta_merge_entry & p_entry) {
+			if (p_entry.m_data.get_size() > 0) {
+				t_size index = m_out.__meta_add_unsafe(p_name,p_entry.m_data[0]);
+				for(t_size walk = 1; walk < p_entry.m_data.get_size(); ++walk) {
+					m_out.meta_add_value(index,p_entry.m_data[walk]);
+				}
+			}
+		}
+	private:
+		file_info & m_out;
+	};
+}
+
+static void merge_meta(file_info & p_out,const pfc::list_base_const_t<const file_info*> & p_in) {
+	pfc::map_t<const char *,meta_merge_entry,pfc::comparator_stricmp_ascii> map;
+	for(t_size in_walk = 0; in_walk < p_in.get_count(); in_walk++) {
+		const file_info & in = * p_in[in_walk];
+		for(t_size meta_walk = 0, meta_count = in.meta_get_count(); meta_walk < meta_count; meta_walk++ ) {
+			meta_merge_entry & entry = map.find_or_add(in.meta_enum_name(meta_walk));
+			t_size rating = merge_tags_calc_rating_by_index(in,meta_walk);
+			if (rating > entry.m_rating) {
+				entry.m_rating = rating;
+				const t_size value_count = in.meta_enum_value_count(meta_walk);
+				entry.m_data.set_size(value_count);
+				for(t_size value_walk = 0; value_walk < value_count; value_walk++ ) {
+					entry.m_data[value_walk] = in.meta_enum_value(meta_walk,value_walk);
+				}
+			}
+		}
+	}
+
+	map.enumerate(meta_merge_map_enumerator(p_out));
 }
 
 void file_info::merge(const pfc::list_base_const_t<const file_info*> & p_in)
@@ -41,46 +92,8 @@ void file_info::merge(const pfc::list_base_const_t<const file_info*> & p_in)
 		
 		return;
 	}
-
-	pfc::ptr_list_t<const char> fieldnames;
-
-	{
-		t_size in_ptr;
-		for(in_ptr = 0; in_ptr < in_count; in_ptr++ )
-		{
-			const file_info * info = p_in[in_ptr];
-			t_size field_ptr, field_max = info->meta_get_count();
-			for(field_ptr = 0; field_ptr < field_max; field_ptr++ )
-				fieldnames.add_item(info->meta_enum_name(field_ptr));
-		}
-	}
 	
-	fieldnames.sort_t(stricmp_utf8);
-	
-	meta_remove_all();
-
-	{
-		t_size fieldnames_ptr, fieldnames_max = fieldnames.get_count();
-		for(fieldnames_ptr = 0; fieldnames_ptr < fieldnames_max; )
-		{
-			const char * fieldname = fieldnames[fieldnames_ptr];
-			t_size in_ptr, in_best = infinite; t_size in_best_rating = 0;
-			for(in_ptr = 0; in_ptr < in_count; in_ptr++)//SLOW
-			{
-				t_size rating = merge_tags_calc_rating(fieldname,p_in[in_ptr]);
-				if (rating > in_best_rating) {in_best = in_ptr; in_best_rating = rating;}
-			}
-
-			if (in_best != infinite)
-			{
-				copy_meta_single_by_name_nocheck(*p_in[in_best],fieldname);
-			}
-
-			do {
-				fieldnames_ptr++;
-			} while(fieldnames_ptr < fieldnames_max && !stricmp_utf8(fieldnames[fieldnames_ptr],fieldname));
-		}
-	}
+	merge_meta(*this,p_in);
 
 	{
 		pfc::string8_fastalloc tagtype;
