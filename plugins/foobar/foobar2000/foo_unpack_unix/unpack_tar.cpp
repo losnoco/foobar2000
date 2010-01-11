@@ -3,6 +3,12 @@
 /*
 	changelog
 
+2009-08-14 00:17 UTC - kode54
+- Disabled pointless unpacker service
+
+2009-08-13 21:27 UTC - kode54
+- tar_parser now caches file size and timestamp
+
 2009-08-12 01:33 UTC - kode54
 - Version is now 1.0
 
@@ -53,6 +59,7 @@ class tar_parser
 	abort_callback            & m_abort;
 
 	pfc::string8_fastalloc      filename;
+	t_filestats                 stats;
 
 	struct header_t
 	{
@@ -179,7 +186,7 @@ public:
 	bool next()
 	{
 		unsigned blank_count = 0;
-		header_t blank = {0};
+		//header_t blank = {0};
 
 		bool long_filename = false;
 
@@ -188,15 +195,17 @@ public:
 			m_file->seek( next_header, m_abort );
 			m_file->read_object( &header, sizeof( header ), m_abort );
 			next_header += sizeof( header );
-			if ( memcmp( &header, &blank, sizeof( header ) ) )
+			if ( header.filename [0] != 0 /*memcmp( &header, &blank, sizeof( header ) )*/ )
 			{
 				verify_checksum();
+
+				if ( !long_filename ) filename.set_string( header.filename, sizeof( header.filename ) );
+				stats.m_size = parse_number( header.size, sizeof( header.size ) );
+				stats.m_timestamp = UnixTimeToFileTime( parse_number( header.mtime, sizeof( header.mtime ) ) );
 
 				t_filesize size = get_size();
 				size = ( size + 511 ) & ~511;
 				next_header += size;
-
-				if ( !long_filename ) filename.set_string( header.filename, sizeof( header.filename ) );
 
 				if ( header.type == '0' || header.type == 0 ) break;
 
@@ -216,27 +225,24 @@ public:
 		return true;
 	}
 
-	const char * get_filename()
+	inline const char * get_filename() const
 	{
 		return filename;
 	}
 
-	t_filesize get_size()
+	inline t_filesize get_size() const
 	{
-		return parse_number( header.size, sizeof( header.size ) );
+		return stats.m_size;
 	}
 
-	t_filetimestamp get_timestamp()
+	inline t_filetimestamp get_timestamp() const
 	{
-		return UnixTimeToFileTime( parse_number( header.mtime, sizeof( header.mtime ) ) );
+		return stats.m_timestamp;
 	}
 
-	t_filestats get_stats()
+	inline t_filestats get_stats() const
 	{
-		t_filestats value;
-		value.m_size = get_size();
-		value.m_timestamp = get_timestamp();
-		return value;
+		return stats;
 	}
 };
 
@@ -310,7 +316,7 @@ public:
 	}
 };
 
-class unpacker_tar : public unpacker
+/*class unpacker_tar : public unpacker
 {
 	inline bool skip_ext( const char * p )
 	{
@@ -341,9 +347,9 @@ public:
 		}
 		throw exception_io_data();
 	}
-};
+};*/
 
 static archive_factory_t < archive_tar >  g_archive_tar_factory;
-static unpacker_factory_t< unpacker_tar > g_unpacker_tar_factory;
+//static unpacker_factory_t< unpacker_tar > g_unpacker_tar_factory;
 
 DECLARE_COMPONENT_VERSION( "TAR reader", MY_VERSION, (const char*)NULL );
