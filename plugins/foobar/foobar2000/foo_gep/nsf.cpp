@@ -191,6 +191,7 @@ public:
 		//p_info.info_set_int("samplerate", sample_rate);
 		p_info.info_set_int("channels", 2);
 		p_info.info_set_int("bitspersample", 16);
+		p_info.info_set( "encoding", "synthesized" );
 	}
 
 	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )

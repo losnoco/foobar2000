@@ -738,6 +738,7 @@ private:
 			info.info_set_int("bitspersample", 16);
 			info.info_set_int("channels", 2);
 			info.info_set("codec", "PSF");
+			info.info_set( "encoding", "synthesized" );
 
 			if (inherit != -2)
 			{
@@ -1514,6 +1515,7 @@ int input_psf::load_psf(service_ptr_t<file> & r, const char * p_path, file_info 
 		info.info_set_int("bitspersample", 16);
 		info.info_set_int("channels", 2);
 		info.info_set("codec", "PSF2");
+		info.info_set( "encoding", "synthesized" );
 
 		tag_bytes = fl - (tag_ofs + 5);
 		if (tag_bytes > 50000) tag_bytes = 50000;

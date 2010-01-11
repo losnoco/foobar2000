@@ -183,6 +183,7 @@ public:
 	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
 		p_info.info_set("codec", "VGM");
+		p_info.info_set( "encoding", "synthesized" );
 
 		//p_info.info_set_int("samplerate", sample_rate);
 		p_info.info_set_int("channels", 2);

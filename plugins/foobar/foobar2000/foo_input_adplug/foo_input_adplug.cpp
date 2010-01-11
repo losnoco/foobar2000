@@ -168,6 +168,7 @@ public:
 
 	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
+		p_info.info_set( "encoding", "synthesized" );
 		p_info.info_set_int( "channels", 2 );
 		if ( !m_player->gettitle().empty() )
 			p_info.meta_set( "title", pfc::stringcvt::string_utf8_from_ansi( m_player->gettitle().c_str() ) );

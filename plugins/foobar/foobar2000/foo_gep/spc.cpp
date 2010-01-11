@@ -479,6 +479,7 @@ public:
 		p_info.copy( m_info );
 
 		p_info.info_set( "codec", "SPC" );
+		p_info.info_set( "encoding", "synthesized" );
 
 		p_info.info_set_int( "samplerate", Spc_Emu::native_sample_rate );
 		p_info.info_set_int( "channels", 2 );

@@ -101,6 +101,7 @@ public:
 		if ( !tune )
 			throw exception_io_data();
 
+		p_info.info_set( "encoding", "synthesized" );
 		p_info.info_set_int( "channels", 2 );
 		p_info.meta_set( "title", pfc::stringcvt::string_utf8_from_ansi( tune->ht_Name, 128 ) );
 		pfc::string8 temp;

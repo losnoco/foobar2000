@@ -2459,6 +2459,7 @@ public:
 
 		//m_info->info_set_int( "samplerate", srate );
 		m_info->info_set_int( "channels", 2 );
+		m_info->info_set( "encoding", "synthesized" );
 
 		// OutputDebugString("loading module");
 
