@@ -1,5 +1,7 @@
 #define MYVERSION "2.0.9"
 
+#define DISABLE_SSF
+
 /*
 	changelog
 
@@ -1405,7 +1407,10 @@ public:
 
 	static bool g_is_our_path( const char * p_full_path, const char * p_extension )
 	{
-		return (!stricmp(p_extension,"ssf") || !stricmp(p_extension,"minissf") ||
+		return (
+#ifndef DISABLE_SSF
+			!stricmp(p_extension,"ssf") || !stricmp(p_extension,"minissf") ||
+#endif
 				!stricmp(p_extension,"dsf") || !stricmp(p_extension, "minidsf"));
 	}
 
@@ -1819,7 +1824,10 @@ public:
 		for (j = 0; j < i; j++)
 		{
 			pfc::string_extension ext(data.get_item(j)->get_path());
-			if (stricmp_utf8(ext, "SSF") && stricmp_utf8(ext, "MINISSF") &&
+			if (
+#ifndef DISABLE_SSF
+				stricmp_utf8(ext, "SSF") && stricmp_utf8(ext, "MINISSF") &&
+#endif
 				stricmp_utf8(ext, "DSF") && stricmp_utf8(ext, "MINIDSF")) return false;
 		}
 		if (i == 1) out = "Edit length";
@@ -1859,6 +1867,7 @@ public:
 	}
 };
 
+#ifndef DISABLE_SSF
 class xsf_file_types : public input_file_type
 {
 	virtual unsigned get_count()
@@ -1887,6 +1896,9 @@ class xsf_file_types : public input_file_type
 		return true;
 	}
 };
+#else
+DECLARE_FILE_TYPE( "DSF files", "*.DSF;*.MINIDSF" );
+#endif
 
 class version_xsf : public componentversion
 {
@@ -1905,5 +1917,7 @@ public:
 static input_singletrack_factory_t<input_xsf>                      g_input_xsf_factory;
 static preferences_page_factory_t <preferences_page_xsf>           g_config_xsf_factory;
 static contextmenu_item_factory_t <context_xsf>                    g_contextmenu_item_xsf_factory;
+#ifndef DISABLE_SSF
 static service_factory_single_t   <xsf_file_types> g_input_file_type_xsf_factory;
+#endif
 static service_factory_single_t   <version_xsf>   g_componentversion_xsf_factory;
