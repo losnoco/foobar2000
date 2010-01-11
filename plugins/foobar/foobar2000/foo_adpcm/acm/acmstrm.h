@@ -3,13 +3,13 @@
 
 #include <stdlib.h>
 
-typedef int (_stdcall* FileReadFunction) (int hFile, unsigned char* buffer, int count);
+typedef int (_stdcall* FileReadFunction) (void * hFile, unsigned char* buffer, int count);
 
 class CACMUnpacker {
 private:
 // File reading
 	FileReadFunction read_file; // file reader function
-	int hFile; // file handle, can be anything, e.g. ptr to reader-object
+	void * hFile; // file handle, can be anything, e.g. ptr to reader-object
 
 	unsigned char *fileBuffPtr, *buffPos; // pointer to file buffer and current position
 	int bufferSize; // size of file buffer
@@ -65,7 +65,7 @@ private:
 	void unpackValues(); // unpack current block
 	int makeNewValues(); // prepare new block, then unpack it
 public:
-	bool init (FileReadFunction readFunc, int fileHandle, int &channels, int &frequency, int &samples);
+	bool init (FileReadFunction readFunc, void * fileHandle, int &channels, int &frequency, int &samples);
 		// samples = count of sound samples (one sample is 16bits)
 
 	CACMUnpacker() {

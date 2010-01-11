@@ -140,49 +140,46 @@ public:
 		return ! stricmp( p_extension, "vgm" ) || ! stricmp( p_extension, "vgz" );
 	}
 
-	t_io_result open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
+	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) return io_result_error_data;
+		if ( p_reason == input_open_info_write ) throw exception_io_data();
 
-		t_io_result status = input_gep::open( p_filehint, p_path, p_reason, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		input_gep::open( p_filehint, p_path, p_reason, p_abort );
 
-		service_ptr_t<file> p_unpackfile;
-		if ( io_result_succeeded( unpacker::g_open( p_unpackfile, m_file, p_abort ) ) )
-			m_file = p_unpackfile;
-		else
+		try
 		{
-			status = m_file->seek( 0, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			service_ptr_t<file> p_unpackfile;
+			unpacker::g_open( p_unpackfile, m_file, p_abort );
+			m_file = p_unpackfile;
+		}
+		catch ( const exception_io_data & )
+		{
+			m_file->seek( 0, p_abort );
 		}
 
 		foobar_File_Reader rdr(m_file, p_abort);
 
-		//try
 		{
 			ERRCHK( rdr.read( &m_header, sizeof(m_header) ) );
 
 			if ( 0 != memcmp( m_header.tag, "Vgm ", 4 ) )
 			{
 				console::info("Not a VGM file");
-				return io_result_error_data;
+				throw exception_io_data();
 			}
 			if ( byte_order::dword_le_to_native( * ( ( t_uint32 * ) &m_header.version ) ) > 0x0150 )
 			{
 				console::info("Unsupported VGM format");
-				return io_result_error_data;
+				throw exception_io_data();
 			}
 			if ( ! m_header.track_duration )
 			{
 				console::info("Header contains empty track duration");
 			}
 		}
-		//catch(exception_io const & e) {return e.get_code();}
-
-		return io_result_success;
 	}
 
-	t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
+	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
 		p_info.info_set("codec", "VGM");
 
@@ -193,17 +190,11 @@ public:
 		Vgm_Emu * emu = ( Vgm_Emu * ) this->emu;
 		if ( ! emu )
 		{
-			emu = new Vgm_Emu( false );
-			if ( ! emu )
-			{
-				console::info("Out of memory");
-				return io_result_error_out_of_memory;
-			}
-			this->emu = emu;
+			this->emu = emu = new Vgm_Emu( false );
 
 			try
 			{
-				m_file->seek_e( 0, p_abort );
+				m_file->seek( 0, p_abort );
 				foobar_File_Reader rdr( m_file, p_abort );
 				rdr.skip( sizeof( m_header ) );
 
@@ -239,26 +230,18 @@ public:
 		{
 			process_gd3_tag( gd3_tag, size, p_info );
 		}
-
-		return io_result_success;
 	}
 
-	t_io_result decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
+	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
 	{
 		Vgm_Emu * emu = ( Vgm_Emu * ) this->emu;
 		if ( ! emu )
 		{
-			emu = new Vgm_Emu( false );
-			if ( ! emu )
-			{
-				console::info("Out of memory");
-				return io_result_error_out_of_memory;
-			}
-			this->emu = emu;
+			this->emu = emu = new Vgm_Emu( false );
 
 			try
 			{
-				m_file->seek_e( 0, p_abort );
+				m_file->seek( 0, p_abort );
 				foobar_File_Reader rdr( m_file, p_abort );
 				rdr.skip( sizeof( m_header ) );
 
@@ -293,7 +276,7 @@ public:
 
 		subsong = 0;
 
-		return io_result_success;
+		stop_on_errors = !! ( p_flags & input_flag_testing_integrity );
 	}
 };
 

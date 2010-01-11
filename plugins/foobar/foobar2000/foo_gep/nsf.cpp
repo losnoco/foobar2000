@@ -14,7 +14,7 @@
 
 // Borrowed from NSF_File.cpp
 #define SAFE_DELETE(p) { if(p){ delete[] p; p = NULL; } }
-#define SAFE_NEW(p,t,s) p = new t[s]; if(!p) throw exception_io(io_result_error_out_of_memory); ZeroMemory(p,sizeof(t) * s)
+#define SAFE_NEW(p,t,s) p = new t[s]; ZeroMemory(p,sizeof(t) * s)
 
 // Info recycled by the tag writer and manipulated by the editor
 static const char field_length[]="nsf_length";
@@ -46,9 +46,8 @@ static cfg_window_placement cfg_placement(guid_cfg_placement);
 #undef HEADER_STRING
 #define HEADER_STRING(i,n,f) if ((f) && (f)[0]) (i).meta_add((n), pfc::stringcvt::string_utf8_from_codepage(pfc::stringcvt::codepage_system, (f)))
 
-static void rename_file(const char * src, const char * ext, string_base & out, abort_callback & p_abort)
+static void rename_file(const char * src, const char * ext, pfc::string_base & out, abort_callback & p_abort)
 {
-	t_io_result status;
 	string8 dst(src);
 	const char * start = dst.get_ptr() + dst.scan_filename();
 	const char * end = start + strlen(start);
@@ -69,17 +68,18 @@ static void rename_file(const char * src, const char * ext, string_base & out, a
 
 	for(;;)
 	{
-		status = filesystem::g_move(src, dst, p_abort);
-		if (io_result_succeeded(status))
+		try
 		{
+			filesystem::g_move(src, dst, p_abort);
+
 			list_t<const char *> from, to;
 			from.add_item(src);
 			to.add_item(dst);
 			file_operation_callback::g_on_files_moved(from, to);
-			out.set_string(dst);
+			out = dst;
 			break;
 		}
-		else
+		catch ( const exception_io & )
 		{
 			string8 msg;
 			msg = "Error renaming file: \n";
@@ -87,16 +87,11 @@ static void rename_file(const char * src, const char * ext, string_base & out, a
 			msg += "\nto:\n";
 			msg += file_path_display(dst);
 			int rv = uMessageBox(core_api::get_main_window(),msg,0,MB_ICONERROR|MB_ABORTRETRYIGNORE);
-			if (rv==IDABORT)
-			{
-				throw exception_io(status);
-			}
-			else if (rv==IDRETRY)
-			{
-				continue;
-			}
+			if (rv==IDABORT) throw;
+			else if (rv==IDRETRY) continue;
 			else if (rv==IDIGNORE)
 			{
+				out = src;
 				break;
 			}
 		}
@@ -133,23 +128,19 @@ public:
 		return ! stricmp( p_extension, "nsf" ) || ! stricmp( p_extension, "nsfe" );
 	}
 
-	t_io_result open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
+	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write && !cfg_write )
+		if ( p_reason == input_open_info_write && ! cfg_write )
 		{
-			console::info("Writing is disabled, see configuration.");
-			return io_result_error_data;
+			console::print("Writing is disabled, see configuration.");
+			throw exception_io_data();
 		}
 
-		t_io_result status = input_gep::open( p_filehint, p_path, p_reason, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		input_gep::open( p_filehint, p_path, p_reason, p_abort );
 
-		status = nsf.LoadFile(m_file, true, p_abort);
-		if (io_result_failed(status)) return status;
+		nsf.LoadFile(m_file, true, p_abort);
 
 		if ( p_reason != input_open_info_write ) m_file.release();
-
-		return io_result_success;
 	}
 
 	unsigned get_subsong_count()
@@ -157,7 +148,7 @@ public:
 		return nsf.nTrackCount;
 	}
 
-	t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
+	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
 		HEADER_STRING(p_info, field_artist, nsf.szArtist);
 		HEADER_STRING(p_info, field_game, nsf.szGameTitle);
@@ -199,39 +190,30 @@ public:
 		p_info.info_set_int("samplerate", sample_rate);
 		p_info.info_set_int("channels", 1);
 		p_info.info_set_int("bitspersample", 16);
-
-		return io_result_success;
 	}
 
-	t_io_result decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
+	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
 	{
 		Nsf_Emu * emu = ( Nsf_Emu * ) this->emu;
 		if ( ! emu )
 		{
-			t_io_result status = filesystem::g_open_tempmem(m_file, p_abort);
-			if (io_result_failed(status)) return status;
+			filesystem::g_open_tempmem(m_file, p_abort);
 
+			bool extended = nsf.bIsExtended;
 			nsf.bIsExtended = false;
-			status = nsf.SaveFile(m_file, p_abort);
-			if (io_result_failed(status)) return status;
+			nsf.SaveFile(m_file, p_abort);
+			nsf.bIsExtended = extended;
 
 			try
 			{
-				m_file->seek_e(0, p_abort);
+				m_file->seek(0, p_abort);
 
 				foobar_File_Reader rdr(m_file, p_abort);
 				Nsf_Emu::header_t header;
 
 				ERRCHK( rdr.read( &header, sizeof(header) ) );
 
-				emu = new Nsf_Emu;
-				if ( !emu )
-				{
-					console::info("Out of memory");
-					return io_result_error_out_of_memory;
-				}
-
-				this->emu = emu;
+				this->emu = emu = new Nsf_Emu;
 
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( header, rdr ) );
@@ -254,44 +236,43 @@ public:
 		if (tag_song_ms < 0) tag_song_ms = cfg_default_length;
 		if (tag_fade_ms < 0) tag_fade_ms = cfg_default_fade;
 
-		return input_gep::decode_initialize( p_subsong, p_flags, p_abort );
+		input_gep::decode_initialize( p_subsong, p_flags, p_abort );
 	}
 
-	t_io_result retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
+	void retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
 	{
 		const char * ptr;
 
-		//try
 		{
-			field_set(artist, nsf.szArtist);
-			field_set(game, nsf.szGameTitle);
-			field_set(copyright, nsf.szCopyright);
+			field_set( artist, nsf.szArtist );
+			field_set( game, nsf.szGameTitle );
+			field_set( copyright, nsf.szCopyright );
 
-			field_set(ripper, nsf.szRipper);
+			field_set( ripper, nsf.szRipper );
 
-			ptr = p_info.meta_get(field_track,0);
+			ptr = p_info.meta_get( field_track, 0 );
 
-			if (ptr)
+			if ( ptr )
 			{
 				// fun!
-				pfc::stringcvt::string_ansi_from_utf8 foo(ptr);
+				pfc::stringcvt::string_ansi_from_utf8 foo( ptr );
 				int len = foo.length() + 1;
 
-				if (len > 1)
+				if ( len > 1 )
 				{
-					if (!nsf.szTrackLabels)
+					if ( ! nsf.szTrackLabels )
 					{
-						SAFE_NEW(nsf.szTrackLabels,char*,nsf.nTrackCount);
-						for (unsigned i = 0; i < nsf.nTrackCount; i++)
+						SAFE_NEW( nsf.szTrackLabels, char*, nsf.nTrackCount );
+						for ( unsigned i = 0; i < nsf.nTrackCount; ++i )
 						{
-							if (i == p_subsong) continue;
-							SAFE_NEW(nsf.szTrackLabels[i],char,1);
+							if ( i == p_subsong ) continue;
+							SAFE_NEW( nsf.szTrackLabels[i], char, 1 );
 						}
 					}
 
-					SAFE_DELETE(nsf.szTrackLabels[p_subsong]);
-					SAFE_NEW(nsf.szTrackLabels[p_subsong],char,len);
-					memcpy(nsf.szTrackLabels[p_subsong],foo.get_ptr(),len);
+					SAFE_DELETE( nsf.szTrackLabels[ p_subsong ] );
+					SAFE_NEW( nsf.szTrackLabels[ p_subsong ], char, len );
+					memcpy( nsf.szTrackLabels[ p_subsong ], foo.get_ptr(), len );
 					nsf.bIsExtended = true;
 				}
 			}
@@ -322,7 +303,6 @@ public:
 			if (!nsf.pTrackTime && tag_song_ms >= 0)
 			{
 				nsf.pTrackTime = new int[nsf.nTrackCount];
-				if (!nsf.pTrackTime) return io_result_error_out_of_memory;
 				memset(nsf.pTrackTime, -1, nsf.nTrackCount * 4);
 			}
 			if (nsf.pTrackTime)
@@ -340,7 +320,6 @@ public:
 			if (!nsf.pTrackFade && tag_fade_ms >= 0)
 			{
 				nsf.pTrackFade = new int[nsf.nTrackCount];
-				if (!nsf.pTrackFade) return io_result_error_out_of_memory;
 				memset(nsf.pTrackFade, -1, nsf.nTrackCount * 4);
 			}
 			if (nsf.pTrackFade)
@@ -374,12 +353,9 @@ public:
 				nsf.nPlaylistSize = count;
 			}
 		}
-		//catch(exception_io const & e) {return e.get_code();}
-
-		return io_result_success;
 	}
 
-	t_io_result retag_commit( abort_callback & p_abort )
+	void retag_commit( abort_callback & p_abort )
 	{
 		if ( !nsf.bIsExtended && cfg_write_nsfe )
 		{
@@ -420,20 +396,19 @@ public:
 
 		//try
 		{
-			m_file->seek_e( 0, p_abort );
-			m_file->set_eof_e( p_abort );
+			m_file->seek( 0, p_abort );
+			m_file->set_eof( p_abort );
 
-			t_io_result status = nsf.SaveFile( m_file, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			nsf.SaveFile( m_file, p_abort );
 
-			m_stats = m_file->get_stats_e( p_abort );
+			m_stats = m_file->get_stats( p_abort );
 
 			m_file.release();
 
 			string8_fastalloc path;
 			path = m_path;
 			const char * ext = nsf.bIsExtended ? "nsfe" : "nsf";
-			if ( stricmp( string_extension_8( m_path ), ext ) )
+			if ( stricmp( string_extension( m_path ), ext ) )
 			{
 				string8_fastalloc newname;
 				rename_file( m_path, ext, newname, p_abort );
@@ -456,9 +431,6 @@ public:
 				}
 			}
 		}
-		//catch(exception_io const & e) {return e.get_code();}
-
-		return io_result_success;
 	}
 };
 
@@ -550,25 +522,25 @@ class context_nsf : public menu_item_legacy_context
 public:
 	virtual unsigned get_num_items() { return 2; }
 
-	virtual void get_item_name(unsigned n, string_base & out)
+	virtual void get_item_name( unsigned n, pfc::string_base & out )
 	{
 		if (!n) out = "Edit length";
 		else out = "Edit playlist";
 	}
 
-	virtual void get_item_default_path(unsigned n, string_base & out)
+	virtual void get_item_default_path( unsigned n, pfc::string_base & out )
 	{
 		out = "NSFE";
 	}
 
-	virtual bool get_item_description(unsigned n, string_base & out)
+	virtual bool get_item_description( unsigned n, pfc::string_base & out )
 	{
 		if (!n) out = "Edits the length for the selected track";
 		else out = "Edits the playlist(s) for the selected NSFE file(s)";
 		return true;
 	}
 
-	virtual GUID get_item_guid(unsigned n)
+	virtual GUID get_item_guid( unsigned n )
 	{
 		static const GUID guids[] = {
 			{ 0x82059528, 0xcb8b, 0x4521, { 0xab, 0x45, 0x61, 0xc3, 0xf9, 0xc3, 0xb, 0x41 } },
@@ -578,7 +550,7 @@ public:
 		return guids[n];
 	}
 
-	virtual bool context_get_display(unsigned n,const list_base_const_t<metadb_handle_ptr> & data,string_base & out,unsigned & displayflags,const GUID &)
+	virtual bool context_get_display( unsigned n, const list_base_const_t<metadb_handle_ptr> & data, pfc::string_base & out,unsigned & displayflags, const GUID & )
 	{
 		if (!cfg_write || !cfg_write_nsfe) return false; // No writing? File doesn't check database for lengths.
 		unsigned i, j;
@@ -586,7 +558,7 @@ public:
 		for (j = 0; j < i; j++)
 		{
 			const playable_location & foo = data.get_item(j)->get_location();
-			string_extension_8 ext(foo.get_path());
+			string_extension ext(foo.get_path());
 			if (stricmp(ext, "nsf") && stricmp(ext, "nsfe")) return false;
 		}
 		if (n) out = "Edit playlist";
@@ -598,7 +570,7 @@ public:
 		return true;
 	}
 
-	virtual void context_command(unsigned n,const list_base_const_t<metadb_handle_ptr> & data,const GUID& caller)
+	virtual void context_command( unsigned n, const list_base_const_t<metadb_handle_ptr> & data, const GUID & )
 	{
 		unsigned i = data.get_count();
 		abort_callback_impl m_abort;
@@ -639,7 +611,7 @@ public:
 						double length = (double)(tag_song_ms + tag_fade_ms) * .001;
 						info.set_length(length);
 					}
-					if (io_result_failed(p_imgr->update_info(foo, info, core_api::get_main_window(), true))) j = i;
+					if ( metadb_io::update_info_success != p_imgr->update_info( foo, info, core_api::get_main_window(), true ) ) j = i;
 				}
 				else j = i;
 				//foo->metadb_unlock();
@@ -673,27 +645,33 @@ public:
 				CNSFFile nsf;
 				metadb_handle_ptr item = files.get_item(j);
 				const char * path = item->get_location().get_path();
-				service_ptr_t<file> m_file;
-				if (io_result_failed(filesystem::g_open(m_file, path, filesystem::open_mode_read, m_abort)) ||
-					io_result_failed(nsf.LoadFile(m_file, false, m_abort))) break;
-				m_file.release();
-				if (!context_playlist_dialog(&nsf,uStringPrintf("%s - NSFE playlist editor",(const char *) string_filename(item->get_location().get_path())))) continue;
+				try
+				{
+					service_ptr_t<file> m_file;
+					filesystem::g_open(m_file, path, filesystem::open_mode_read, m_abort);
+					nsf.LoadFile(m_file, false, m_abort);
+				}
+				catch ( ... )
+				{
+					break;
+				}
+				if ( ! context_playlist_dialog( &nsf, string8() << string_filename( item->get_location().get_path() ) << " - NSFE playlist editor" ) ) continue;
 				list.reset();
-				list.add_int(nsf.nPlaylistSize);
+				list << nsf.nPlaylistSize;
 				for (unsigned k = 0; k < nsf.nPlaylistSize; k++)
 				{
 					list.add_byte(',');
-					list.add_int(nsf.pPlaylist[k]);
+					list << format_int( nsf.pPlaylist[k] );
 				}
 				item->metadb_lock();
 				if (item->get_info(info))
 				{
 					info.info_set(field_playlist, list);
 					// aww fuck it
-					if (io_result_succeeded(p_imgr->update_info(item, info, core_api::get_main_window(), true)))
+					if ( metadb_io::update_info_success == p_imgr->update_info( item, info, core_api::get_main_window(), true ) )
 					{
-						info.info_remove(field_playlist);
-						if (io_result_failed(p_imgr->update_info(item, info, core_api::get_main_window(), true))) j = i;
+						info.info_remove( field_playlist );
+						if ( metadb_io::update_info_success != p_imgr->update_info( item, info, core_api::get_main_window(), true ) ) j = i;
 					}
 					else j = i;
 				}

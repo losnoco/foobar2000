@@ -7,14 +7,14 @@
 #include <foobar2000.h>
 #include "cube.h"
 
-int get16bit(unsigned char* p)
+static inline int get16bit( unsigned char * p )
 {
-	return (p[0] << 8) | p[1];
+	return byte_order::word_be_to_native( * ( ( t_uint16 * ) p ) );
 }
 
-int get32bit(unsigned char* p)
+static inline int get32bit( unsigned char * p )
 {
-	return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+	return ( t_int32 ) byte_order::dword_be_to_native( * ( ( t_uint32 * ) p ) );
 }
 
 // standard devkit version
@@ -217,20 +217,20 @@ long mp2roundup(long addr) {
 // return 1 on failure, 0 on success
 void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 	unsigned char readbuf[0x100];
-	dsp->ch[0].infile->seek_e( 0, p_abort );
+	dsp->ch[0].infile->seek( 0, p_abort );
 
-	unsigned read = dsp->ch[0].infile->read_e( &readbuf, 0x100, p_abort );
+	unsigned read = dsp->ch[0].infile->read( &readbuf, 0x100, p_abort );
 	
 	if ( type == type_spt )
 	{
-		if ( read < 0x4E ) throw exception_io(io_result_error_data);
+		if ( read < 0x4E ) throw exception_io_data();
 
 		dsp->ch[0].infile = dsp->ch[1].infile;
-		dsp->ch[0].infile->seek_e( 0, p_abort );
+		dsp->ch[0].infile->seek( 0, p_abort );
 		get_dspheaderspt( &dsp->ch[0].header, readbuf );
 	}
 
-	t_filesize size = dsp->ch[0].infile->get_size_e( p_abort );
+	t_filesize size = dsp->ch[0].infile->get_size( p_abort );
 
 	bool idsp = false;
 
@@ -238,9 +238,7 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 		// SPT+SPD
 		
 		// only play single archives.
-		if (get32bit(readbuf)!=1) {
-			throw exception_io(io_result_error_data);
-		}
+		if (get32bit(readbuf)!=1) throw exception_io_data();
 
 		dsp->ch[0].header.num_adpcm_nibbles = dsp->ch[1].header.num_adpcm_nibbles = size * 2;
 		dsp->ch[0].header.num_samples = dsp->ch[1].header.num_samples = size * 14 / 8;
@@ -351,8 +349,9 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 				long offset;
 				unsigned sample_count;
 				offset_info( long o, unsigned s ) : offset( o ), sample_count( s ) {}
+				offset_info() {}
 			};
-			class offset_list : public mem_block_t<offset_info>
+			class offset_list : public pfc::array_t<offset_info>
 			{
 			public:
 				bool contains( long i )
@@ -370,9 +369,9 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 			long c=0x80;
 			unsigned sample_count = 0;
 			while ( c >= 0 && !offsets.contains( c ) ) {
-				offsets.append( offset_info( c, sample_count ) );
-				dsp->ch[0].infile->seek_e( c + 4, p_abort );
-				dsp->ch[0].infile->read_object_e( &sc, 8, p_abort );
+				offsets.append_single( offset_info( c, sample_count ) );
+				dsp->ch[0].infile->seek( c + 4, p_abort );
+				dsp->ch[0].infile->read_object( &sc, 8, p_abort );
 				sample_count += get32bit( sc ) + 1;
 				c = get32bit( sc + 4 );
 			}
@@ -472,9 +471,9 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 				if (dsp->ch[0].infile != dsp->ch[1].infile) { // dual-file stereo
 					//DisplayError("stereo");
 
-					dsp->ch[1].infile->seek_e( 0, p_abort );
+					dsp->ch[1].infile->seek( 0, p_abort );
 
-					dsp->ch[1].infile->read_object_e( &readbuf, 0x100, p_abort );
+					dsp->ch[1].infile->read_object( &readbuf, 0x100, p_abort );
 					
 					get_dspheaderstd(&dsp->ch[1].header,readbuf);
 
@@ -524,7 +523,7 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 		0x00, 0x0C, 0x00, 0x63
 		};
 
-		dsp->ch[0].infile->seek_e( 0, p_abort );
+		dsp->ch[0].infile->seek( 0, p_abort );
 
 		if (!memcmp(data,readbuf,28) && !memcmp(data2,readbuf+0x50,19)) {
 			dsp->ch[0].offs+=0x38;
@@ -544,7 +543,7 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 
 	// I got a threshold for the abuse I'll take.
 	if (dsp->ch[0].header.sample_rate<=0 || dsp->ch[0].header.sample_rate>96000) {
-		throw exception_io(io_result_error_data);
+		throw exception_io_data();
 	}
 
 	dsp->file_length=size; //GetFileSize(dsp->ch[0].infile,NULL);
@@ -570,27 +569,27 @@ void InitDSPFILE(CUBEFILE * dsp, abort_callback & p_abort, headertype type) {
 
 // for noninterleaved files (mono, STM)
 // also for reading two mono Metroid Prime files simultaneously as stereo
-void fillbufferDSP(CUBESTREAM * stream, abort_callback & p_abort) {
+bool fillbufferDSP(CUBESTREAM * stream, abort_callback & p_abort) {
 	int i,l;
 	short decodebuf[14];
 	char ADPCMbuf[8];
 
-	stream->infile->seek_e( stream->offs, p_abort );
+	stream->infile->seek( stream->offs, p_abort );
 
 	i=0;
 	do {
 		if (i==0) {
-			l = stream->infile->read_e( ADPCMbuf, 8, p_abort );
-			if ( ! l ) throw exception_io(io_result_eof);
+			l = stream->infile->read( ADPCMbuf, 8, p_abort );
+			if ( ! l ) return false;
 			if ( l < 8 ) memset( ADPCMbuf + l, 0, 8 - l );
 			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf,stream->header.coef,&stream->hist1,&stream->hist2);
 			i=14;
 			stream->offs+=8;
-						
+
 			if (stream->header.loop_flag && (stream->offs-stream->chanstart+8)>=((stream->header.ea*stream->bps/8)&(~7))) {
 				stream->offs=stream->chanstart+((stream->header.sa*stream->bps/8)&(~7));
 				//DisplayError("loop from %08x to %08x",stream->ea,stream->offs);
-				stream->infile->seek_e( stream->offs, p_abort );
+				stream->infile->seek( stream->offs, p_abort );
 			}
 		}
 		stream->chanbuf[stream->writeloc++]=decodebuf[14-i];
@@ -598,10 +597,12 @@ void fillbufferDSP(CUBESTREAM * stream, abort_callback & p_abort) {
 		i--;
 		if (stream->writeloc>=0x8000/8*14) stream->writeloc=0;
 	} while (stream->writeloc != stream->readloc);
+
+	return true;
 }
 
 // each HALP block contains the address of the next one and the size of the current one
-void fillbufferHALP(CUBEFILE * dsp, abort_callback & p_abort) {
+bool fillbufferHALP(CUBEFILE * dsp, abort_callback & p_abort) {
 	int c,i;
 	short decodebuf1[28];
 	short decodebuf2[28];
@@ -613,25 +614,23 @@ void fillbufferHALP(CUBEFILE * dsp, abort_callback & p_abort) {
 			
 			// handle HALPST headers
 			if (dsp->halpsize==0) {
-				if ((long)dsp->nexthalp < 0) {
-					throw exception_io(io_result_eof);
-				}
+				if ((long)dsp->nexthalp < 0) return false;
 				dsp->ch[0].offs=dsp->nexthalp+0x20;
-				dsp->ch[0].infile->seek_e( dsp->nexthalp, p_abort );
-				dsp->ch[0].infile->read_object_e( ADPCMbuf, 16, p_abort );
+				dsp->ch[0].infile->seek( dsp->nexthalp, p_abort );
+				dsp->ch[0].infile->read_object( ADPCMbuf, 16, p_abort );
 				dsp->halpsize=get32bit((unsigned char *)&ADPCMbuf+4)+1; // size to read?
-				
+
 				dsp->ch[1].offs=dsp->nexthalp+0x20+get32bit((unsigned char *)&ADPCMbuf)/2;
 				dsp->nexthalp=get32bit((unsigned char *)&ADPCMbuf+8);
 			}
 
-			dsp->ch[0].infile->seek_e( dsp->ch[0].offs, p_abort );
-			dsp->ch[0].infile->read_object_e( ADPCMbuf, 16, p_abort );
+			dsp->ch[0].infile->seek( dsp->ch[0].offs, p_abort );
+			dsp->ch[0].infile->read_object( ADPCMbuf, 16, p_abort );
 			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf1,dsp->ch[0].header.coef,&dsp->ch[0].hist1,&dsp->ch[0].hist2);
 			DSPdecodebuffer((unsigned char *)&ADPCMbuf+8,decodebuf1+14,dsp->ch[0].header.coef,&dsp->ch[0].hist1,&dsp->ch[0].hist2);
 
-			dsp->ch[1].infile->seek_e( dsp->ch[1].offs, p_abort );
-			dsp->ch[1].infile->read_object_e( ADPCMbuf, 16, p_abort );
+			dsp->ch[1].infile->seek( dsp->ch[1].offs, p_abort );
+			dsp->ch[1].infile->read_object( ADPCMbuf, 16, p_abort );
 			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf2,dsp->ch[1].header.coef,&dsp->ch[1].hist1,&dsp->ch[1].hist2);
 			DSPdecodebuffer((unsigned char *)&ADPCMbuf+8,decodebuf2+14,dsp->ch[1].header.coef,&dsp->ch[1].hist1,&dsp->ch[1].hist2);
 
@@ -651,10 +650,12 @@ void fillbufferHALP(CUBEFILE * dsp, abort_callback & p_abort) {
 		if (dsp->ch[0].writeloc>=0x8000/8*14) dsp->ch[0].writeloc=0;
 		if (dsp->ch[1].writeloc>=0x8000/8*14) dsp->ch[1].writeloc=0;
 	} while (dsp->ch[0].writeloc != dsp->ch[0].readloc);
+
+	return true;
 }
 
 // interleaved files requires streams with knowledge of each other (for proper looping)
-void fillbufferDSPinterleave(CUBEFILE * dsp, abort_callback & p_abort) {
+bool fillbufferDSPinterleave(CUBEFILE * dsp, abort_callback & p_abort) {
 	int i,l;
 	short decodebuf1[14];
 	short decodebuf2[14];
@@ -664,14 +665,14 @@ void fillbufferDSPinterleave(CUBEFILE * dsp, abort_callback & p_abort) {
 	do {
 		if (i==0) {
 
-			dsp->ch[0].infile->seek_e( dsp->ch[0].offs, p_abort );
-			l = dsp->ch[0].infile->read_e( ADPCMbuf, 8, p_abort );
-			if ( l < 8 ) throw exception_io(io_result_eof);
+			dsp->ch[0].infile->seek( dsp->ch[0].offs, p_abort );
+			l = dsp->ch[0].infile->read( ADPCMbuf, 8, p_abort );
+			if ( l < 8 ) return false;
 			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf1,dsp->ch[0].header.coef,&dsp->ch[0].hist1,&dsp->ch[0].hist2);
 
-			dsp->ch[1].infile->seek_e( dsp->ch[1].offs, p_abort );
-			l = dsp->ch[1].infile->read_e( ADPCMbuf, 8, p_abort );
-			if ( l < 8 ) throw exception_io(io_result_eof);
+			dsp->ch[1].infile->seek( dsp->ch[1].offs, p_abort );
+			l = dsp->ch[1].infile->read( ADPCMbuf, 8, p_abort );
+			if ( l < 8 ) return false;
 			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf2,dsp->ch[1].header.coef,&dsp->ch[1].hist1,&dsp->ch[1].hist2);
 
 			i=14;
@@ -728,18 +729,21 @@ void fillbufferDSPinterleave(CUBEFILE * dsp, abort_callback & p_abort) {
 		if (dsp->ch[0].writeloc>=0x8000/8*14) dsp->ch[0].writeloc=0;
 		if (dsp->ch[1].writeloc>=0x8000/8*14) dsp->ch[1].writeloc=0;
 	} while (dsp->ch[0].writeloc != dsp->ch[0].readloc);
+
+	return true;
 }
 
-void fillbuffers(CUBEFILE * dsp, abort_callback & p_abort) {
+bool fillbuffers(CUBEFILE * dsp, abort_callback & p_abort) {
 	if (dsp->ch[0].type==type_adp) {
-		fillbufferADP(dsp, p_abort);
+		return fillbufferADP(dsp, p_abort);
 	} else if (dsp->ch[0].type==type_halp) {
-		fillbufferHALP(dsp, p_abort);
+		return fillbufferHALP(dsp, p_abort);
 	} else if (dsp->ch[0].interleave) {
-		fillbufferDSPinterleave(dsp, p_abort);
+		return fillbufferDSPinterleave(dsp, p_abort);
 	} else {
-		fillbufferDSP(&dsp->ch[0], p_abort);
+		bool ret = fillbufferDSP(&dsp->ch[0], p_abort);
 		if (dsp->NCH==2)
-			fillbufferDSP(&dsp->ch[1], p_abort);
+			ret |= fillbufferDSP(&dsp->ch[1], p_abort);
+		return ret;
 	}
 }

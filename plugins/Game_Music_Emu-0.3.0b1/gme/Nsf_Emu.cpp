@@ -442,6 +442,11 @@ blargg_err_t Nsf_Emu::init_sound()
 
 	if ( exp_flags & mmc5_flag )
 	{
+		mmc5 = BLARGG_NEW mmc5_t;
+		BLARGG_CHECK_ALLOC( mmc5 );
+		mmc5_apu = BLARGG_NEW Nes_Mmc5_Apu;
+		BLARGG_CHECK_ALLOC( mmc5_apu );
+
 		adjusted_gain *= 0.75;
 		cpu.map_memory( 0x5000, Nes_Cpu::page_size, read_mmc5, write_mmc5 );
 		cpu.map_memory( 0x5800, Nes_Cpu::page_size, read_mmc5_exram, write_mmc5_exram );

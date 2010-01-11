@@ -16,15 +16,15 @@
 bool InitADPFILE(CUBEFILE * adp, abort_callback & p_abort) {
 	char readbuf[4];
 
-	adp->ch[0].infile->seek_e( 0, p_abort );
+	adp->ch[0].infile->seek( 0, p_abort );
 
 	// check for valid first frame
-	adp->ch[0].infile->read_object_e( readbuf, 4, p_abort );
+	adp->ch[0].infile->read_object( readbuf, 4, p_abort );
 	if (readbuf[0]!=readbuf[2] || readbuf[1]!=readbuf[3]) {
 		return false;
 	}
 
-	t_filesize size = adp->ch[0].infile->get_size_e( p_abort );
+	t_filesize size = adp->ch[0].infile->get_size( p_abort );
 
 	adp->ch[0].type=type_adp;
 
@@ -43,17 +43,17 @@ bool InitADPFILE(CUBEFILE * adp, abort_callback & p_abort) {
 
 	adp->ch[0].readloc=adp->ch[1].readloc=adp->ch[0].writeloc=adp->ch[1].writeloc=0;
 
-	adp->ch[0].infile->seek_e( 0, p_abort );
+	adp->ch[0].infile->seek( 0, p_abort );
 
 	return true;
 }
 
-void fillbufferADP(CUBEFILE * adp, abort_callback & p_abort) {
+bool fillbufferADP(CUBEFILE * adp, abort_callback & p_abort) {
 	unsigned char ADPCMbuf[32];
 
 	do {
-		unsigned read = adp->ch[0].infile->read_e( ADPCMbuf, 32, p_abort );
-		if ( read < 32 ) throw exception_io(io_result_eof);
+		unsigned read = adp->ch[0].infile->read( ADPCMbuf, 32, p_abort );
+		if ( read < 32 ) return false;
 		ADPdecodebuffer(ADPCMbuf,adp->ch[0].chanbuf+adp->ch[0].writeloc,
 								 adp->ch[1].chanbuf+adp->ch[1].writeloc,
 					&adp->ch[0].lhist1, &adp->ch[0].lhist2, &adp->ch[1].lhist1, &adp->ch[1].lhist2);
@@ -66,6 +66,8 @@ void fillbufferADP(CUBEFILE * adp, abort_callback & p_abort) {
 		if (adp->ch[0].writeloc>=0x8000/8*14) adp->ch[0].writeloc=0;
 		if (adp->ch[1].writeloc>=0x8000/8*14) adp->ch[1].writeloc=0;
 	} while (adp->ch[0].writeloc != adp->ch[0].readloc);
+
+	return true;
 }
 
 DECLARE_FILE_TYPE("GCN ADP audio files", "*.ADP");

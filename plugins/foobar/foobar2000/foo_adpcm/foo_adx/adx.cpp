@@ -105,11 +105,6 @@ static void adx_decode_stereo(audio_sample *out,const unsigned char *in,PREV *pr
 	}
 }
 
-static unsigned read_long(const unsigned char *p)
-{
-	return (p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3];
-}
-
 #ifndef NDEBUG
 #include <stdarg.h>
 void dprintf( const TCHAR * fmt, ... )
@@ -123,12 +118,17 @@ void dprintf( const TCHAR * fmt, ... )
 }
 #endif
 
+static inline t_uint32 read_long( const t_uint8 * ptr )
+{
+	return byte_order::dword_be_to_native( * ( ( t_uint32 * ) ptr ) );
+}
+
 class input_adx
 {
 	service_ptr_t<file>        m_file;
 	ADXContext               * context;
 
-	mem_block_t<unsigned char> data_buffer;
+	pfc::array_t<t_uint8>      data_buffer;
 
 	unsigned srate, nch, size;
 
@@ -157,59 +157,50 @@ public:
 		if (context) delete context;
 	}
 
-	t_io_result open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
+	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) return io_result_error_data;
-
-		t_io_result status;
+		if ( p_reason == input_open_info_write ) throw exception_io_data();
 
 		if ( p_filehint.is_empty() )
 		{
-			status = filesystem::g_open( m_file, p_path, filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			filesystem::g_open( m_file, p_path, filesystem::open_mode_read, p_abort );
 		}
 		else m_file = p_filehint;
-
-		return io_result_success;
 	}
 
 private:
-	t_io_result open_internal( abort_callback & p_abort )
+	void open_internal( abort_callback & p_abort )
 	{
-		t_filesize len = m_file->get_size_e( p_abort );
+		t_filesize len = m_file->get_size( p_abort );
 
-		if ( len < 4 ) return io_result_error_data;
+		if ( len < 4 ) throw exception_io_data();
 
-		if ( ! data_buffer.check_size( 4 ) )
-			return io_result_error_out_of_memory;
+		data_buffer.grow_size( 4 );
 
 		head_skip = 0;
 
-		unsigned char * ptr = data_buffer.get_ptr();
+		t_uint8 * ptr = data_buffer.get_ptr();
 
-		//try
 		{
-			static const unsigned char signature[] = { '(', 'c', ')', 'C', 'R', 'I' };
-			m_file->read_object_e(ptr, 0x4, p_abort);
+			static const t_uint8 signature[] = { '(', 'c', ')', 'C', 'R', 'I' };
+			m_file->read_object(ptr, 4, p_abort);
 			if ( ptr[0] != 0x80 )
 			{
-				m_file->seek_e( 0x20, p_abort );
-				m_file->read_object_e( ptr, 0x4, p_abort );
-				if ( ptr[0] != 0x80 ) return io_result_error_data;
+				m_file->seek( 0x20, p_abort );
+				m_file->read_object( ptr, 4, p_abort );
+				if ( ptr[0] != 0x80 ) throw exception_io_data();
 				head_skip = 0x20;
 			}
 			offset = ( read_long( ptr ) & ~0x80000000 ) + 4;
-			if ( t_filesize( offset ) >= len ) return io_result_error_data;
-			if ( offset < 12 + 4 + 6 ) return io_result_error_data; // need at least srate/size/signature
-			if ( ! data_buffer.check_size( offset ) )
-				return io_result_error_out_of_memory;
+			if ( t_filesize( offset ) >= len ) throw exception_io_data();
+			if ( offset < 12 + 4 + 6 ) throw exception_io_data(); // need at least srate/size/signature
+			data_buffer.grow_size( offset );
 			ptr = data_buffer.get_ptr();
-			m_file->read_object_e( ptr + 4, offset - 4, p_abort );
-			if ( memcmp( ptr + offset - 6, signature, 6 ) ) return io_result_error_data;
+			m_file->read_object( ptr + 4, offset - 4, p_abort );
+			if ( memcmp( ptr + offset - 6, signature, 6 ) ) throw exception_io_data();
 			nch = ptr[7];
-			if ( nch < 1 || nch > 2 ) return io_result_error_data;
+			if ( nch < 1 || nch > 2 ) throw exception_io_data();
 		}
-		//catch(exception_io const & e) {return e.get_code();}
 
 		srate = read_long( ptr + 8 );
 		size = read_long( ptr + 12 );
@@ -243,19 +234,13 @@ private:
 			}
 		}
 
-		if ( ! srate || ! size ) return io_result_error_data;
-
-		return io_result_success;
+		if ( ! srate || ! size ) throw exception_io_data();
 	}
 
 public:
-	t_io_result get_info( file_info & p_info, abort_callback & p_abort )
+	void get_info( file_info & p_info, abort_callback & p_abort )
 	{
-		if ( ! srate )
-		{
-			t_io_result status = open_internal( p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
+		if ( ! srate ) open_internal( p_abort );
 
 		p_info.info_set_int( "samplerate", srate );
 		p_info.info_set_int( "channels", nch );
@@ -271,42 +256,32 @@ public:
 		}
 
 		p_info.set_length( double( size ) / double( srate ) );
-
-		return io_result_success;
 	}
 
-	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
+	t_filestats get_file_stats( abort_callback & p_abort )
 	{
-		return m_file->get_stats( p_stats, p_abort );
+		return m_file->get_stats( p_abort );
 	}
 
-	t_io_result decode_initialize( unsigned p_flags,abort_callback & p_abort )
+	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
-		if ( ! srate )
-		{
-			t_io_result status = open_internal( p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
+		if ( ! srate ) open_internal( p_abort );
 
 		if ( ! cfg_loop || ( p_flags & input_flag_no_looping ) ) loop_start = ~0;
 
 		context = new ADXContext;
-		if ( ! context ) return io_result_error_out_of_memory;
 		memset( context, 0, sizeof( * context ) );
 
 		pos = 0;
 		swallow = 0;
-
-		return io_result_success;
 	}
 
-	t_io_result decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
+	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
-		if (pos >= size) return io_result_eof;
+		if (pos >= size) return false;
 
-		if ( ! data_buffer.check_size( 18 * 32 * nch ) ||
-			! p_chunk.check_data_size(32 * 32 * nch) )
-			return io_result_error_out_of_memory;
+		data_buffer.grow_size( 18 * 32 * nch );
+		p_chunk.check_data_size( 32 * 32 * nch );
 
 		unsigned char * in = data_buffer.get_ptr();
 		audio_sample * out = p_chunk.get_data();
@@ -315,17 +290,17 @@ public:
 
 		done = 0;
 
-		//try
 		{
 more:
-			while (!p_abort.is_aborting() && done < 32 * 32)
+			while ( done < 32 * 32 )
 			{
+				p_abort.check();
 				//dprintf(_T("reading\n"));
-				read = m_file->read_e(in, 18 * 32 * nch, p_abort);
-				if (read < 18 * nch) return io_result_error_data;
+				read = m_file->read( in, 18 * 32 * nch, p_abort );
+				if ( read < 18 * nch ) throw exception_io_data();
 
 				//dprintf(_T("decoding %u bytes\n"),read);
-				for (n = 0; !p_abort.is_aborting() && (pos < size) && (done < 32 * 32) && ((read - n) >= (18 * nch)); n += 18 * nch, pos += 32)
+				for ( n = 0; (pos < size) && (done < 32 * 32) && ((read - n) >= (18 * nch)); n += 18 * nch, pos += 32 )
 				{
 					//dprintf(_T("block: pos = %u, offset = %I64u\n"), pos, m_file->get_position_e(p_abort) - read + t_filesize( n ) );
 					/*t_filesize current_offset = m_file->get_position_e(p_abort) - read + n;
@@ -339,7 +314,7 @@ more:
 						if (loop_start - pos < 32)
 						{
 							//dprintf(_T("loop start found\n"));
-							if (!loop_context) loop_context = new ADXContext;
+							if ( ! loop_context ) loop_context = new ADXContext;
 							*loop_context = *context;
 							loop_swallow = loop_start - pos;
 						}
@@ -347,8 +322,8 @@ more:
 						if (pos >= loop_end) break;
 					}
 
-					if (nch == 1) adx_decode(out + done, in + n, context->prev);
-					else adx_decode_stereo(out + done * 2, in + n, context->prev);
+					if (nch == 1) adx_decode( out + done, in + n, context->prev );
+					else adx_decode_stereo( out + done * 2, in + n, context->prev );
 					done += 32; //, dprintf(_T("output\n"));
 				}
 				if (swallow)
@@ -366,8 +341,6 @@ more:
 				if (pos >= size) break;
 			}
 
-			if (p_abort.is_aborting()) return io_result_aborted;
-
 			if (loop_start != ~0)
 			{
 				if (pos >= loop_end)
@@ -375,7 +348,7 @@ more:
 					swallow += pos - loop_end;
 					pos = loop_start - loop_swallow;
 					*context = *loop_context;
-					m_file->seek_e( head_skip + loop_start_offset, p_abort );
+					m_file->seek( head_skip + loop_start_offset, p_abort );
 					if (swallow >= done)
 					{
 						swallow -= done;
@@ -408,34 +381,33 @@ more:
 				}
 			}
 
-			if (!done) return io_result_eof;
+			if (!done) return false;
 
-			if (pos > size) done -= pos - size;
+			if ( pos > size ) done -= pos - size;
 
 			if (done)
 			{
 				p_chunk.set_sample_count(done);
 				p_chunk.set_srate(srate);
 				p_chunk.set_channels(nch);
-				return io_result_success;
+				return true;
 			}
 		}
-		//catch(exception_io const & e) {return e.get_code();}
 
-		return io_result_error_generic;
+		return false;
 	}
 
-	t_io_result decode_seek( double p_seconds,abort_callback & p_abort )
+	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 //		memset(context, 0, sizeof(*context));
 		swallow = int( p_seconds * double( srate ) + .5 );
 		if ( swallow > pos )
 		{
 			swallow -= pos;
-			return io_result_success;
+			return;
 		}
 		pos = 0;
-		return m_file->seek( head_skip + offset, p_abort );
+		m_file->seek( head_skip + offset, p_abort );
 	}
 
 	bool decode_can_seek()
@@ -457,9 +429,9 @@ more:
 	{
 	}
 
-	t_io_result retag( const file_info & p_info,abort_callback & p_abort )
+	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		return io_result_error_data;
+		throw exception_io_data();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

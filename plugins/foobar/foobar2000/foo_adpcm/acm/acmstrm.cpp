@@ -77,7 +77,7 @@ FillerProc Fillers[32] = {
 void sub_4d3fcc (short *decBuff, int *someBuff, int someSize, int blocks);
 void sub_4d420c (int *decBuff, int *someBuff, int someSize, int blocks);
 
-bool CACMUnpacker::init (FileReadFunction readFunc, int fileHandle, int &channels, int &frequency, int &samples)
+bool CACMUnpacker::init (FileReadFunction readFunc, void * fileHandle, int &channels, int &frequency, int &samples)
 {
 	hFile = fileHandle;
 	do {

@@ -500,6 +500,7 @@ typedef struct
 	UINT8   eg_sel_rr;  /*  (release state) */
 
 	UINT8   ssg;        /* SSG-EG waveform */
+	UINT8   ssgt;       /* SSG-EG running state */
 	UINT8   ssgn;       /* SSG-EG negated output */
 
 	UINT32  key;        /* 0=last key was KEY OFF, 1=KEY ON */
@@ -697,7 +698,7 @@ INLINE void set_timers( FM_ST *ST, void *n, int v )
 		}
 	}
 	else
-	{   /* stop timer b */
+	{	/* stop timer b */
 		if( ST->TBC != 0 )
 		{
 			ST->TBC = 0;
@@ -715,7 +716,7 @@ INLINE void set_timers( FM_ST *ST, void *n, int v )
 		}
 	}
 	else
-	{   /* stop timer a */
+	{	/* stop timer a */
 		if( ST->TAC != 0 )
 		{
 			ST->TAC = 0;
@@ -749,23 +750,23 @@ INLINE void TimerBOver(FM_ST *ST)
 /* ----- internal timer mode , update timer */
 
 /* ---------- calculate timer A ---------- */
-	#define INTERNAL_TIMER_A(ST,CSM_CH)                 \
-	{                                                   \
-		if( ST->TAC &&  (ST->Timer_Handler==0) )        \
-			if( (ST->TAC -= (int)(ST->freqbase*4096)) <= 0 )    \
-			{                                           \
-				TimerAOver( ST );                       \
-				/* CSM mode total level latch and auto key on */    \
-				if( ST->mode & 0x80 )                   \
-					CSMKeyControll( CSM_CH );           \
-			}                                           \
+	#define INTERNAL_TIMER_A(ST,CSM_CH)					\
+	{													\
+		if( ST->TAC &&  (ST->Timer_Handler==0) )		\
+			if( (ST->TAC -= (int)(ST->freqbase*4096)) <= 0 )	\
+			{											\
+				TimerAOver( ST );						\
+				/* CSM mode total level latch and auto key on */	\
+				if( ST->mode & 0x80 )					\
+					CSMKeyControll( CSM_CH );			\
+			}											\
 	}
 /* ---------- calculate timer B ---------- */
-	#define INTERNAL_TIMER_B(ST,step)                       \
-	{                                                       \
-		if( ST->TBC && (ST->Timer_Handler==0) )             \
-			if( (ST->TBC -= (int)(ST->freqbase*4096*step)) <= 0 )   \
-				TimerBOver( ST );                           \
+	#define INTERNAL_TIMER_B(ST,step)						\
+	{														\
+		if( ST->TBC && (ST->Timer_Handler==0) )				\
+			if( (ST->TBC -= (int)(ST->freqbase*4096*step)) <= 0 )	\
+				TimerBOver( ST );							\
 	}
 #else /* FM_INTERNAL_TIMER */
 /* external timer mode */
@@ -781,7 +782,7 @@ INLINE UINT8 FM_STATUS_FLAG(FM_ST *ST)
 	if( ST->BusyExpire )
 	{
 		if( (ST->BusyExpire - FM_GET_TIME_NOW()) > 0)
-			return ST->status | 0x80;   /* with busy */
+			return ST->status | 0x80;	/* with busy */
 		/* expire */
 		ST->BusyExpire = 0;
 	}
@@ -807,8 +808,10 @@ INLINE void FM_KEYON(FM_CH *CH , int s )
 	if( !SLOT->key )
 	{
 		SLOT->key = 1;
-		SLOT->phase = 0;        /* restart Phase Generator */
-		SLOT->state = EG_ATT;   /* phase -> Attack */
+		SLOT->phase = 0;		/* restart Phase Generator */
+		SLOT->ssgt = SLOT->ssg;
+		SLOT->ssgn = (SLOT->ssgt&0x04)>>1;
+		SLOT->state = EG_ATT;	/* phase -> Attack */
 	}
 }
 
@@ -819,7 +822,15 @@ INLINE void FM_KEYOFF(FM_CH *CH , int s )
 	{
 		SLOT->key = 0;
 		if (SLOT->state>EG_REL)
+		{
+			if ( SLOT->ssgt & 0x8 )
+			{
+				if ( SLOT->ssgn & 2 )
+					SLOT->volume ^= ((1<<ENV_BITS)-1);
+				SLOT->ssgn = 0;
+			}
 			SLOT->state = EG_REL;/* phase -> Release */
+		}
 	}
 }
 
@@ -873,13 +884,13 @@ static void setup_connection( FM_HELPER *CRAP, FM_CH *CH, int ch )
 		*om1 = &CRAP->c1;
 		*oc1 = carrier;
 		*om2 = &CRAP->c2;
-		*memc= &CRAP->mem;  /* store it anywhere where it will not be used */
+		*memc= &CRAP->mem;	/* store it anywhere where it will not be used */
 		break;
 	case 5:
 		/*    +----C1----+     */
 		/* M1-+-MEM---M2-+-OUT */
 		/*    +----C2----+     */
-		*om1 = 0;   /* special mark */
+		*om1 = 0;	/* special mark */
 		*oc1 = carrier;
 		*om2 = carrier;
 		*memc= &CRAP->m2;
@@ -892,7 +903,7 @@ static void setup_connection( FM_HELPER *CRAP, FM_CH *CH, int ch )
 		*om1 = &CRAP->c1;
 		*oc1 = carrier;
 		*om2 = carrier;
-		*memc= &CRAP->mem;  /* store it anywhere where it will not be used */
+		*memc= &CRAP->mem;	/* store it anywhere where it will not be used */
 		break;
 	case 7:
 		/* M1-+     */
@@ -903,7 +914,7 @@ static void setup_connection( FM_HELPER *CRAP, FM_CH *CH, int ch )
 		*om1 = carrier;
 		*oc1 = carrier;
 		*om2 = carrier;
-		*memc= &CRAP->mem;  /* store it anywhere where it will not be used */
+		*memc= &CRAP->mem;	/* store it anywhere where it will not be used */
 		break;
 	}
 
@@ -1012,7 +1023,7 @@ INLINE void advance_lfo(FM_HELPER *CRAP, FM_OPN *OPN)
 	UINT8 pos;
 	UINT8 prev_pos;
 
-	if (OPN->lfo_inc)   /* LFO enabled ? */
+	if (OPN->lfo_inc)	/* LFO enabled ? */
 	{
 		prev_pos = (OPN->lfo_cnt>>LFO_SH) & 127;
 
@@ -1065,7 +1076,7 @@ INLINE void advance_eg_channel(FM_OPN *OPN, FM_SLOT *SLOT)
 	{
 		switch(SLOT->state)
 		{
-		case EG_ATT:        /* attack phase */
+		case EG_ATT:		/* attack phase */
 			if ( !(OPN->eg_cnt & ((1<<SLOT->eg_sh_ar)-1) ) )
 			{
 				SLOT->volume += (~SLOT->volume *
@@ -1080,8 +1091,8 @@ INLINE void advance_eg_channel(FM_OPN *OPN, FM_SLOT *SLOT)
 			}
 		break;
 
-		case EG_DEC:    /* decay phase */
-			if (SLOT->ssg&0x08) /* SSG EG type envelope selected */
+		case EG_DEC:	/* decay phase */
+			if (SLOT->ssgt&0x08)	/* SSG EG type envelope selected */
 			{
 				if ( !(OPN->eg_cnt & ((1<<SLOT->eg_sh_d1r)-1) ) )
 				{
@@ -1103,8 +1114,8 @@ INLINE void advance_eg_channel(FM_OPN *OPN, FM_SLOT *SLOT)
 			}
 		break;
 
-		case EG_SUS:    /* sustain phase */
-			if (SLOT->ssg&0x08) /* SSG EG type envelope selected */
+		case EG_SUS:	/* sustain phase */
+			if (SLOT->ssgt&0x08)	/* SSG EG type envelope selected */
 			{
 				if ( !(OPN->eg_cnt & ((1<<SLOT->eg_sh_d2r)-1) ) )
 				{
@@ -1114,14 +1125,14 @@ INLINE void advance_eg_channel(FM_OPN *OPN, FM_SLOT *SLOT)
 					{
 						SLOT->volume = MAX_ATT_INDEX;
 
-						if (SLOT->ssg&0x01) /* bit 0 = hold */
+						if (SLOT->ssgt&0x01)	/* bit 0 = hold */
 						{
-							if (SLOT->ssgn&1)   /* have we swapped once ??? */
+							if (SLOT->ssgn&1)	/* have we swapped once ??? */
 							{
 								/* yes, so do nothing, just hold current level */
 							}
 							else
-								swap_flag = (SLOT->ssg&0x02) | 1 ; /* bit 1 = alternate */
+								swap_flag = (SLOT->ssgt&0x02) | 1 ; /* bit 1 = alternate */
 
 						}
 						else
@@ -1135,7 +1146,7 @@ INLINE void advance_eg_channel(FM_OPN *OPN, FM_SLOT *SLOT)
 							/* phase -> Attack */
 							SLOT->state = EG_ATT;
 
-							swap_flag = (SLOT->ssg&0x02); /* bit 1 = alternate */
+							swap_flag = (SLOT->ssgt&0x02); /* bit 1 = alternate */
 						}
 					}
 				}
@@ -1156,7 +1167,7 @@ INLINE void advance_eg_channel(FM_OPN *OPN, FM_SLOT *SLOT)
 			}
 		break;
 
-		case EG_REL:    /* release phase */
+		case EG_REL:	/* release phase */
 				if ( !(OPN->eg_cnt & ((1<<SLOT->eg_sh_rr)-1) ) )
 				{
 					SLOT->volume += eg_inc[SLOT->eg_sel_rr + ((OPN->eg_cnt>>SLOT->eg_sh_rr)&7)];
@@ -1173,7 +1184,7 @@ INLINE void advance_eg_channel(FM_OPN *OPN, FM_SLOT *SLOT)
 
 		out = ((UINT32)SLOT->volume);
 
-		if ((SLOT->ssg&0x08) && (SLOT->ssgn&2)) /* negate output (changes come from alternate bit, init comes from attack bit) */
+		if ((SLOT->ssgt&0x08) && (SLOT->ssgn&2))	/* negate output (changes come from alternate bit, init comes from attack bit) */
 			out ^= ((1<<ENV_BITS)-1); /* 1023 */
 
 		out += SLOT->tl;
@@ -1203,7 +1214,7 @@ INLINE void chan_calc(FM_HELPER *CRAP, FM_OPN *OPN, FM_CH *CH)
 
 	CRAP->m2 = CRAP->c1 = CRAP->c2 = CRAP->mem = 0;
 
-	*CH->mem_connect = CH->mem_value;   /* restore delayed sample (MEM) value to m2 or c2 */
+	*CH->mem_connect = CH->mem_value;	/* restore delayed sample (MEM) value to m2 or c2 */
 
 	eg_out = volume_calc(&CH->SLOT[SLOT1]);
 	{
@@ -1219,7 +1230,7 @@ INLINE void chan_calc(FM_HELPER *CRAP, FM_OPN *OPN, FM_CH *CH)
 		}
 
 		CH->op1_out[1] = 0;
-		if( eg_out < ENV_QUIET )    /* SLOT 1 */
+		if( eg_out < ENV_QUIET )	/* SLOT 1 */
 		{
 			if (!CH->FB)
 				out=0;
@@ -1229,15 +1240,15 @@ INLINE void chan_calc(FM_HELPER *CRAP, FM_OPN *OPN, FM_CH *CH)
 	}
 
 	eg_out = volume_calc(&CH->SLOT[SLOT3]);
-	if( eg_out < ENV_QUIET )        /* SLOT 3 */
+	if( eg_out < ENV_QUIET )		/* SLOT 3 */
 		*CH->connect3 += op_calc(CH->SLOT[SLOT3].phase, eg_out, CRAP->m2);
 
 	eg_out = volume_calc(&CH->SLOT[SLOT2]);
-	if( eg_out < ENV_QUIET )        /* SLOT 2 */
+	if( eg_out < ENV_QUIET )		/* SLOT 2 */
 		*CH->connect2 += op_calc(CH->SLOT[SLOT2].phase, eg_out, CRAP->c1);
 
 	eg_out = volume_calc(&CH->SLOT[SLOT4]);
-	if( eg_out < ENV_QUIET )        /* SLOT 4 */
+	if( eg_out < ENV_QUIET )		/* SLOT 4 */
 		*CH->connect4 += op_calc(CH->SLOT[SLOT4].phase, eg_out, CRAP->c2);
 
 
@@ -1257,7 +1268,7 @@ INLINE void chan_calc(FM_HELPER *CRAP, FM_OPN *OPN, FM_CH *CH)
 		UINT32 fnum_lfo   = ((block_fnum & 0x7f0) >> 4) * 32 * 8;
 		INT32  lfo_fn_table_index_offset = lfo_pm_table[ fnum_lfo + CH->pms + CRAP->LFO_PM ];
 
-		if (lfo_fn_table_index_offset)  /* LFO phase modulation active */
+		if (lfo_fn_table_index_offset)	/* LFO phase modulation active */
 		{
 			UINT8  blk;
 			UINT32 fn;
@@ -1277,14 +1288,22 @@ INLINE void chan_calc(FM_HELPER *CRAP, FM_OPN *OPN, FM_CH *CH)
 			CH->SLOT[SLOT2].phase += ((fc+CH->SLOT[SLOT2].DT[kc])*CH->SLOT[SLOT2].mul) >> 1;
 			CH->SLOT[SLOT3].phase += ((fc+CH->SLOT[SLOT3].DT[kc])*CH->SLOT[SLOT3].mul) >> 1;
 			CH->SLOT[SLOT4].phase += ((fc+CH->SLOT[SLOT4].DT[kc])*CH->SLOT[SLOT4].mul) >> 1;
-			return;
+		}
+		else	/* LFO phase modulation  = zero */
+		{
+			CH->SLOT[SLOT1].phase += CH->SLOT[SLOT1].Incr;
+			CH->SLOT[SLOT2].phase += CH->SLOT[SLOT2].Incr;
+			CH->SLOT[SLOT3].phase += CH->SLOT[SLOT3].Incr;
+			CH->SLOT[SLOT4].phase += CH->SLOT[SLOT4].Incr;
 		}
 	}
-	/* no LFO phase modulation */
-	CH->SLOT[SLOT1].phase += CH->SLOT[SLOT1].Incr;
-	CH->SLOT[SLOT2].phase += CH->SLOT[SLOT2].Incr;
-	CH->SLOT[SLOT3].phase += CH->SLOT[SLOT3].Incr;
-	CH->SLOT[SLOT4].phase += CH->SLOT[SLOT4].Incr;
+	else	/* no LFO phase modulation */
+	{
+		CH->SLOT[SLOT1].phase += CH->SLOT[SLOT1].Incr;
+		CH->SLOT[SLOT2].phase += CH->SLOT[SLOT2].Incr;
+		CH->SLOT[SLOT3].phase += CH->SLOT[SLOT3].Incr;
+		CH->SLOT[SLOT4].phase += CH->SLOT[SLOT4].Incr;
+	}
 }
 
 /* update phase increment and envelope generator */
@@ -1366,7 +1385,7 @@ static void reset_channels( FM_ST *ST , FM_CH *CH , int num )
 {
 	int c,s;
 
-	ST->mode   = 0; /* normal mode */
+	ST->mode   = 0;	/* normal mode */
 	ST->TA     = 0;
 	ST->TAC    = 0;
 	ST->TB     = 0;
@@ -1378,6 +1397,7 @@ static void reset_channels( FM_ST *ST , FM_CH *CH , int num )
 		for(s = 0 ; s < 4 ; s++ )
 		{
 			CH[c].SLOT[s].ssg = 0;
+			CH[c].SLOT[s].ssgt = 0;
 			CH[c].SLOT[s].ssgn = 0;
 			CH[c].SLOT[s].state= EG_OFF;
 			CH[c].SLOT[s].volume = MAX_ATT_INDEX;
@@ -1401,14 +1421,14 @@ static int init_tables(void)
 		/* we never reach (1<<16) here due to the (x+1) */
 		/* result fits within 16 bits at maximum */
 
-		n = (int)m;     /* 16 bits here */
-		n >>= 4;        /* 12 bits here */
-		if (n&1)        /* round to nearest */
+		n = (int)m;		/* 16 bits here */
+		n >>= 4;		/* 12 bits here */
+		if (n&1)		/* round to nearest */
 			n = (n>>1)+1;
 		else
 			n = n>>1;
 						/* 11 bits here (rounded) */
-		n <<= 2;        /* 13 bits here (as in real chip) */
+		n <<= 2;		/* 13 bits here (as in real chip) */
 		tl_tab[ x*2 + 0 ] = n;
 		tl_tab[ x*2 + 1 ] = -tl_tab[ x*2 + 0 ];
 
@@ -1436,14 +1456,14 @@ static int init_tables(void)
 		/* we never reach zero here due to ((i*2)+1) */
 
 		if (m>0.0)
-			o = 8*log(1.0/m)/log(2.);    /* convert to 'decibels' */
+			o = 8*log(1.0/m)/log(2.);	/* convert to 'decibels' */
 		else
-			o = 8*log(-1.0/m)/log(2.);   /* convert to 'decibels' */
+			o = 8*log(-1.0/m)/log(2.);	/* convert to 'decibels' */
 
 		o = o / (ENV_STEP/4);
 
 		n = (int)(2.0*o);
-		if (n&1)                        /* round to nearest */
+		if (n&1)						/* round to nearest */
 			n = (n>>1)+1;
 		else
 			n = n>>1;
@@ -1574,6 +1594,8 @@ static void FMsave_state_st(const char *state_name,int num,FM_ST *ST)
 
 #if BUILD_OPN
 
+
+
 /* prescaler set (and make time tables) */
 static void OPNSetPres(FM_OPN *OPN , int pres , int TimerPres, int SSGpres)
 {
@@ -1581,8 +1603,8 @@ static void OPNSetPres(FM_OPN *OPN , int pres , int TimerPres, int SSGpres)
 
 	/* frequency base */
 	OPN->ST.freqbase = (OPN->ST.rate) ? ((double)OPN->ST.clock / OPN->ST.rate) / pres : 0;
-	if ( fabs( OPN->ST.freqbase - 1.0 ) < 0.000001 )
-		OPN->ST.freqbase = 1.0; /* run chip at proper rate if really close */
+	if ( fabs( OPN->ST.freqbase - 1.0 ) < 0.0000001 )
+		OPN->ST.freqbase = 1.0;
 
 	OPN->eg_timer_add  = (1<<EG_SH)  *  OPN->ST.freqbase;
 	OPN->eg_timer_overflow = ( 3 ) * (1<<EG_SH);
@@ -1592,7 +1614,7 @@ static void OPNSetPres(FM_OPN *OPN , int pres , int TimerPres, int SSGpres)
 	OPN->ST.TimerBase = 1.0/((double)OPN->ST.clock / (double)TimerPres);
 
 	/* SSG part  prescaler set */
-	/* if( SSGpres ) (*OPN->ST.SSG->set_clock)( OPN->ST.param, OPN->ST.clock * 2 / SSGpres ); */
+	//if( SSGpres ) (*OPN->ST.SSG->set_clock)( OPN->ST.param, OPN->ST.clock * 2 / SSGpres );
 
 	/* make time tables */
 	init_timetables( &OPN->ST, dt_tab );
@@ -1633,9 +1655,9 @@ static void OPNWriteMode(FM_OPN *OPN, int r, int v)
 	FM_CH *CH;
 
 	switch(r){
-	case 0x21:  /* Test */
+	case 0x21:	/* Test */
 		break;
-	case 0x22:  /* LFO FREQ (YM2608/YM2610/YM2610B/YM2612) */
+	case 0x22:	/* LFO FREQ (YM2608/YM2610/YM2610B/YM2612) */
 		if( OPN->type & TYPE_LFOPAN )
 		{
 			if (v&0x08) /* LFO enabled ? */
@@ -1648,19 +1670,19 @@ static void OPNWriteMode(FM_OPN *OPN, int r, int v)
 			}
 		}
 		break;
-	case 0x24:  /* timer A High 8*/
+	case 0x24:	/* timer A High 8*/
 		OPN->ST.TA = (OPN->ST.TA & 0x03)|(((int)v)<<2);
 		break;
-	case 0x25:  /* timer A Low 2*/
+	case 0x25:	/* timer A Low 2*/
 		OPN->ST.TA = (OPN->ST.TA & 0x3fc)|(v&3);
 		break;
-	case 0x26:  /* timer B */
+	case 0x26:	/* timer B */
 		OPN->ST.TB = v;
 		break;
-	case 0x27:  /* mode, timer control */
+	case 0x27:	/* mode, timer control */
 		set_timers( &(OPN->ST),OPN->ST.param,v );
 		break;
-	case 0x28:  /* key on / off */
+	case 0x28:	/* key on / off */
 		c = v & 0x03;
 		if( c == 3 ) break;
 		if( (v&0x04) && (OPN->type & TYPE_6CH) ) c+=3;
@@ -1699,19 +1721,19 @@ static void OPNWriteReg(FM_HELPER *CRAP, FM_OPN *OPN, int r, int v)
 	SLOT = &(CH->SLOT[OPN_SLOT(r)]);
 
 	switch( r & 0xf0 ) {
-	case 0x30:  /* DET , MUL */
+	case 0x30:	/* DET , MUL */
 		set_det_mul(&OPN->ST,CH,SLOT,v);
 		break;
 
-	case 0x40:  /* TL */
+	case 0x40:	/* TL */
 		set_tl(CH,SLOT,v);
 		break;
 
-	case 0x50:  /* KS, AR */
+	case 0x50:	/* KS, AR */
 		set_ar_ksr(CH,SLOT,v);
 		break;
 
-	case 0x60:  /* bit7 = AM ENABLE, DR */
+	case 0x60:	/* bit7 = AM ENABLE, DR */
 		set_dr(SLOT,v);
 
 		if(OPN->type & TYPE_LFOPAN) /* YM2608/2610/2610B/2612 */
@@ -1720,22 +1742,22 @@ static void OPNWriteReg(FM_HELPER *CRAP, FM_OPN *OPN, int r, int v)
 		}
 		break;
 
-	case 0x70:  /*     SR */
+	case 0x70:	/*     SR */
 		set_sr(SLOT,v);
 		break;
 
-	case 0x80:  /* SL, RR */
+	case 0x80:	/* SL, RR */
 		set_sl_rr(SLOT,v);
 		break;
 
-	case 0x90:  /* SSG-EG */
-		
-		//if ( OPN->type & TYPE_SSG )
+	case 0x90:	/* SSG-EG */
+
+		//if( OPN->type & TYPE_SSG )
 		{
 			SLOT->ssg  =  v&0x0f;
-			SLOT->ssgn = (v&0x04)>>1; /* bit 1 in ssgn = attack */
+			//SLOT->ssgn = (v&0x04)>>1; /* bit 1 in ssgn = attack */
 		}
-		
+
 		/* SSG-EG envelope shapes :
 
 		E AtAlH
@@ -1815,7 +1837,7 @@ static void OPNWriteReg(FM_HELPER *CRAP, FM_OPN *OPN, int r, int v)
 
 	case 0xa0:
 		switch( OPN_SLOT(r) ){
-		case 0:     /* 0xa0-0xa2 : FNUM1 */
+		case 0:		/* 0xa0-0xa2 : FNUM1 */
 			{
 				UINT32 fn = (((UINT32)( (OPN->ST.fn_h)&7))<<8) + v;
 				UINT8 blk = OPN->ST.fn_h>>3;
@@ -1830,10 +1852,10 @@ static void OPNWriteReg(FM_HELPER *CRAP, FM_OPN *OPN, int r, int v)
 				CH->SLOT[SLOT1].Incr=-1;
 			}
 			break;
-		case 1:     /* 0xa4-0xa6 : FNUM2,BLK */
+		case 1:		/* 0xa4-0xa6 : FNUM2,BLK */
 			OPN->ST.fn_h = v&0x3f;
 			break;
-		case 2:     /* 0xa8-0xaa : 3CH FNUM1 */
+		case 2:		/* 0xa8-0xaa : 3CH FNUM1 */
 			if(r < 0x100)
 			{
 				UINT32 fn = (((UINT32)(OPN->SL3.fn_h&7))<<8) + v;
@@ -1846,7 +1868,7 @@ static void OPNWriteReg(FM_HELPER *CRAP, FM_OPN *OPN, int r, int v)
 				(OPN->P_CH)[2].SLOT[SLOT1].Incr=-1;
 			}
 			break;
-		case 3:     /* 0xac-0xae : 3CH FNUM2,BLK */
+		case 3:		/* 0xac-0xae : 3CH FNUM2,BLK */
 			if(r < 0x100)
 				OPN->SL3.fn_h = v&0x3f;
 			break;
@@ -1855,7 +1877,7 @@ static void OPNWriteReg(FM_HELPER *CRAP, FM_OPN *OPN, int r, int v)
 
 	case 0xb0:
 		switch( OPN_SLOT(r) ){
-		case 0:     /* 0xb0-0xb2 : FB,ALGO */
+		case 0:		/* 0xb0-0xb2 : FB,ALGO */
 			{
 				int feedback = (v>>3)&7;
 				CH->ALGO = v&7;
@@ -1863,7 +1885,7 @@ static void OPNWriteReg(FM_HELPER *CRAP, FM_OPN *OPN, int r, int v)
 				setup_connection( CRAP, CH, c );
 			}
 			break;
-		case 1:     /* 0xb4-0xb6 : L , R , AMS , PMS (YM2612/YM2610B/YM2610/YM2608) */
+		case 1:		/* 0xb4-0xb6 : L , R , AMS , PMS (YM2612/YM2610B/YM2610/YM2608) */
 			if( OPN->type & TYPE_LFOPAN)
 			{
 				/* b0-2 PMS */
@@ -1875,6 +1897,7 @@ static void OPNWriteReg(FM_HELPER *CRAP, FM_OPN *OPN, int r, int v)
 				/* PAN :  b7 = L, b6 = R */
 				OPN->pan_regs [c] = v & 0xc0;
 				OPNUpdatePan( OPN, c );
+
 			}
 			break;
 		}
@@ -1886,33 +1909,34 @@ static void OPNWriteReg(FM_HELPER *CRAP, FM_OPN *OPN, int r, int v)
 
 #if BUILD_YM2612
 /*******************************************************************************/
-/*      YM2612 local section                                                   */
+/*		YM2612 local section                                                   */
 /*******************************************************************************/
 /* here's the virtual YM2612 */
 struct Ym2612_Impl
 {
 #ifdef _STATE_H
-	UINT8       REGS[512];          /* registers            */
+	UINT8		REGS[512];			/* registers			*/
 #endif
 	FM_HELPER   CRAP;
-	FM_OPN      OPN;                /* OPN state            */
-	FM_CH       CH[6];              /* channel state        */
-	UINT8       addr_A1;            /* address line A1      */
+	FM_OPN		OPN;				/* OPN state			*/
+	FM_CH		CH[6];				/* channel state		*/
+	UINT8		addr_A1;			/* address line A1		*/
 
 	/* dac output (YM2612) */
-	int         dacen;
-	INT32       dacout;
+	int			dacen;
+	INT32		dacout;
 };
 
+//static int dacen;
+
 /* Generate samples for one of the YM2612s */
-void YM2612UpdateOne(YM2612* F2612, short *buffer, int length)
+void YM2612UpdateOne(YM2612 *F2612, short *buffer, int length)
 {
 	FM_HELPER *CRAP = &F2612->CRAP;
 	FM_OPN *OPN   = &F2612->OPN;
 	int i;
 	INT32 dacout  = F2612->dacout;
-	int active_chan;
-	
+
 	if( (void *)F2612 != CRAP->cur_chip ){
 		CRAP->cur_chip = (void *)F2612;
 		CRAP->State = &OPN->ST;
@@ -1925,29 +1949,29 @@ void YM2612UpdateOne(YM2612* F2612, short *buffer, int length)
 		/* DAC mode */
 		CRAP->dacen = F2612->dacen;
 	}
-	
+
 	/* refresh PG and EG */
-	for ( i = 0; i < 6; i++ )
+	refresh_fc_eg_chan( CRAP->cch[0] );
+	refresh_fc_eg_chan( CRAP->cch[1] );
+	if( (CRAP->State->mode & 0xc0) )
 	{
-		if ( i != 2 || !(CRAP->State->mode & 0xc0) )
-		{
-			refresh_fc_eg_chan( CRAP->cch[i] );
-		}
 		/* 3SLOT MODE */
-		else if( CRAP->cch[2]->SLOT[SLOT1].Incr==-1)
+		if( CRAP->cch[2]->SLOT[SLOT1].Incr==-1)
 		{
 			refresh_fc_eg_slot(&CRAP->cch[2]->SLOT[SLOT1] , OPN->SL3.fc[1] , OPN->SL3.kcode[1] );
 			refresh_fc_eg_slot(&CRAP->cch[2]->SLOT[SLOT2] , OPN->SL3.fc[2] , OPN->SL3.kcode[2] );
 			refresh_fc_eg_slot(&CRAP->cch[2]->SLOT[SLOT3] , OPN->SL3.fc[0] , OPN->SL3.kcode[0] );
 			refresh_fc_eg_slot(&CRAP->cch[2]->SLOT[SLOT4] , CRAP->cch[2]->fc , CRAP->cch[2]->kcode );
 		}
-	}
-	
-	active_chan = CRAP->dacen ? 5 : 6;
-	
+	}else refresh_fc_eg_chan( CRAP->cch[2] );
+	refresh_fc_eg_chan( CRAP->cch[3] );
+	refresh_fc_eg_chan( CRAP->cch[4] );
+	refresh_fc_eg_chan( CRAP->cch[5] );
+
 	/* buffering */
-	while ( length-- > 0 )
+	for(i=0; i < length ; i++)
 	{
+
 		advance_lfo(CRAP,OPN);
 
 		/* clear outputs */
@@ -1964,44 +1988,27 @@ void YM2612UpdateOne(YM2612* F2612, short *buffer, int length)
 		{
 			OPN->eg_timer -= OPN->eg_timer_overflow;
 			OPN->eg_cnt++;
-			
-			#if BLARGG_CPU_X86
-				advance_eg_channel(OPN, &CRAP->cch[0]->SLOT[SLOT1]);
-				advance_eg_channel(OPN, &CRAP->cch[1]->SLOT[SLOT1]);
-				advance_eg_channel(OPN, &CRAP->cch[2]->SLOT[SLOT1]);
-				advance_eg_channel(OPN, &CRAP->cch[3]->SLOT[SLOT1]);
-				advance_eg_channel(OPN, &CRAP->cch[4]->SLOT[SLOT1]);
-				advance_eg_channel(OPN, &CRAP->cch[5]->SLOT[SLOT1]);
-			#else
-				for ( i = 0; i < 6; i++ )
-					advance_eg_channel(OPN, &CRAP->cch[i]->SLOT[SLOT1]);
-			#endif
+
+			advance_eg_channel(OPN, &CRAP->cch[0]->SLOT[SLOT1]);
+			advance_eg_channel(OPN, &CRAP->cch[1]->SLOT[SLOT1]);
+			advance_eg_channel(OPN, &CRAP->cch[2]->SLOT[SLOT1]);
+			advance_eg_channel(OPN, &CRAP->cch[3]->SLOT[SLOT1]);
+			advance_eg_channel(OPN, &CRAP->cch[4]->SLOT[SLOT1]);
+			advance_eg_channel(OPN, &CRAP->cch[5]->SLOT[SLOT1]);
 		}
 
 		/* calculate FM */
-		#if BLARGG_CPU_X86
-			chan_calc(CRAP, OPN, CRAP->cch[0] );
-			chan_calc(CRAP, OPN, CRAP->cch[1] );
-			chan_calc(CRAP, OPN, CRAP->cch[2] );
-			chan_calc(CRAP, OPN, CRAP->cch[3] );
-			chan_calc(CRAP, OPN, CRAP->cch[4] );
-			
-			if( !CRAP->dacen )
-				chan_calc(CRAP, OPN, CRAP->cch[5] );
-			/* handle DAC externally
-			else
-				*CRAP->cch[5]->connect4 += dacout;
-			*/
-		#else
-			for ( i = 0; i < active_chan; i++ )
-				chan_calc(CRAP, OPN, CRAP->cch[i] );
+		chan_calc(CRAP, OPN, CRAP->cch[0] );
+		chan_calc(CRAP, OPN, CRAP->cch[1] );
+		chan_calc(CRAP, OPN, CRAP->cch[2] );
+		chan_calc(CRAP, OPN, CRAP->cch[3] );
+		chan_calc(CRAP, OPN, CRAP->cch[4] );
+		if( ! CRAP->dacen )
+			chan_calc(CRAP, OPN, CRAP->cch[5] );
+		/* handle DAC externally
+		else
+			*CRAP->cch[5]->connect4 += dacout;*/
 
-			/* handle DAC externally
-			if( CRAP->dacen )
-				*CRAP->cch[5]->connect4 += dacout;
-			*/
-		#endif
-		
 		{
 			int lt,rt;
 
@@ -2017,7 +2024,8 @@ void YM2612UpdateOne(YM2612* F2612, short *buffer, int length)
 			rt += ((CRAP->out_fm[4]>>0) & OPN->pan[9]);
 			lt += ((CRAP->out_fm[5]>>0) & OPN->pan[10]);
 			rt += ((CRAP->out_fm[5]>>0) & OPN->pan[11]);
-			
+
+
 			lt >>= 1;
 			rt >>= 1;
 
@@ -2039,7 +2047,7 @@ void YM2612UpdateOne(YM2612* F2612, short *buffer, int length)
 }
 
 #ifdef _STATE_H
-void YM2612Postload(YM2612* chip)
+void YM2612Postload(void *chip)
 {
 	if (chip)
 	{
@@ -2048,7 +2056,7 @@ void YM2612Postload(YM2612* chip)
 		int r;
 
 		/* DAC data & port */
-			F2612->dacout = ((int)F2612->REGS[0x2a] - 0x80) << 0;   /* level unknown */
+			F2612->dacout = ((int)F2612->REGS[0x2a] - 0x80) << 0;	/* level unknown */
 			F2612->dacen  = F2612->REGS[0x2d] & 0x80;
 		/* OPN registers */
 		/* DT / MULTI , TL , KS / AR , AMON / DR , SR , SL / RR , SSG-EG */
@@ -2067,7 +2075,7 @@ void YM2612Postload(YM2612* chip)
 			}
 		/* channels */
 			/*FM_channel_postload(F2612->CH,6);*/
-			CRAP->cur_chip = 0;
+			CRAP->cur_chip = NULL;
 		}
 }
 
@@ -2088,18 +2096,19 @@ static void YM2612_save_state(YM2612 *F2612, int index)
 #endif /* _STATE_H */
 
 /* initialize YM2612 emulator(s) */
-YM2612 * YM2612Init( void* param, int index, long clock, long rate,
-               FM_TIMERHANDLER TimerHandler, FM_IRQHANDLER IRQHandler )
+YM2612 * YM2612Init(void *param, int index, long clock, long rate,
+               FM_TIMERHANDLER TimerHandler,FM_IRQHANDLER IRQHandler)
 {
-	YM2612* F2612 = (YM2612*) calloc( sizeof *F2612, 1 );
-	if ( !F2612 )
-		return 0;
-	
+	YM2612 *F2612;
+
+	/* allocate extend state space */
+	if( (F2612 = (YM2612 *)calloc(1, sizeof(YM2612)))==NULL)
+		return NULL;
 	/* allocate total level table (128kb space) */
 	if( !init_tables() )
 	{
 		free( F2612 );
-		return 0;
+		return NULL;
 	}
 
 	F2612->OPN.ST.param = param;
@@ -2131,14 +2140,14 @@ void YM2612Mute(YM2612* F2612, int mask)
 }
 
 /* shut down emulator */
-void YM2612Shutdown(YM2612* F2612)
+void YM2612Shutdown(YM2612 *F2612)
 {
 	FMCloseTable();
 	free(F2612);
 }
 
 /* reset one of chip */
-void YM2612ResetChip(YM2612* F2612)
+void YM2612ResetChip(YM2612 *F2612)
 {
 	int i;
 	FM_HELPER *CRAP = &F2612->CRAP;
@@ -2175,21 +2184,21 @@ void YM2612ResetChip(YM2612* F2612)
 /* n = number  */
 /* a = address */
 /* v = value   */
-int YM2612Write(YM2612* F2612, int a, UINT8 v)
+int YM2612Write(YM2612 *F2612, int a, UINT8 v)
 {
 	int addr;
 
-	v &= 0xff;  /* adjust to 8 bit bus */
+	v &= 0xff;	/* adjust to 8 bit bus */
 
 	switch( a&3){
-	case 0: /* address port 0 */
+	case 0:	/* address port 0 */
 		F2612->OPN.ST.address = v;
 		F2612->addr_A1 = 0;
 		break;
 
-	case 1: /* data port 0    */
+	case 1:	/* data port 0    */
 		if (F2612->addr_A1 != 0)
-			break;  /* verified on real YM2608 */
+			break;	/* verified on real YM2608 */
 
 		addr = F2612->OPN.ST.address;
 #ifdef _STATE_H
@@ -2197,39 +2206,39 @@ int YM2612Write(YM2612* F2612, int a, UINT8 v)
 #endif
 		switch( addr & 0xf0 )
 		{
-		case 0x20:  /* 0x20-0x2f Mode */
+		case 0x20:	/* 0x20-0x2f Mode */
 			switch( addr )
 			{
-			case 0x2a:  /* DAC data (YM2612) */
+			case 0x2a:	/* DAC data (YM2612) */
 				YM2612UpdateReq(F2612->OPN.ST.param);
-				F2612->dacout = ((int)v - 0x80) << 8;   /* level unknown */
+				F2612->dacout = ((int)v - 0x80) << 8;	/* level unknown */
 				break;
-			case 0x2b:  /* DAC Sel  (YM2612) */
+			case 0x2b:	/* DAC Sel  (YM2612) */
 				/* b7 = dac enable */
 				F2612->dacen = v & 0x80;
-				F2612->CRAP.cur_chip = 0;
+				F2612->CRAP.cur_chip = NULL;
 				break;
-			default:    /* OPN section */
+			default:	/* OPN section */
 				YM2612UpdateReq(F2612->OPN.ST.param);
 				/* write register */
 				OPNWriteMode(&(F2612->OPN),addr,v);
 			}
 			break;
-		default:    /* 0x30-0xff OPN section */
+		default:	/* 0x30-0xff OPN section */
 			YM2612UpdateReq(F2612->OPN.ST.param);
 			/* write register */
 			OPNWriteReg(&(F2612->CRAP),&(F2612->OPN),addr,v);
 		}
 		break;
 
-	case 2: /* address port 1 */
+	case 2:	/* address port 1 */
 		F2612->OPN.ST.address = v;
 		F2612->addr_A1 = 1;
 		break;
 
-	case 3: /* data port 1    */
+	case 3:	/* data port 1    */
 		if (F2612->addr_A1 != 1)
-			break;  /* verified on real YM2608 */
+			break;	/* verified on real YM2608 */
 
 		addr = F2612->OPN.ST.address;
 #ifdef _STATE_H
@@ -2242,10 +2251,10 @@ int YM2612Write(YM2612* F2612, int a, UINT8 v)
 	return F2612->OPN.ST.irq;
 }
 
-UINT8 YM2612Read(YM2612* F2612,int a)
+UINT8 YM2612Read(YM2612 *F2612,int a)
 {
 	switch( a&3){
-	case 0: /* status 0 */
+	case 0:	/* status 0 */
 		return FM_STATUS_FLAG(&F2612->OPN.ST);
 	case 1:
 	case 2:
@@ -2256,20 +2265,20 @@ UINT8 YM2612Read(YM2612* F2612,int a)
 	return 0;
 }
 
-int YM2612TimerOver(YM2612* F2612,int c)
+int YM2612TimerOver(YM2612 *F2612,int c)
 {
 	if( c )
-	{   /* Timer B */
+	{	/* Timer B */
 		TimerBOver( &(F2612->OPN.ST) );
 	}
 	else
-	{   /* Timer A */
+	{	/* Timer A */
 		YM2612UpdateReq(F2612->OPN.ST.param);
 		/* timer update */
 		TimerAOver( &(F2612->OPN.ST) );
 		/* CSM mode key,TL controll */
 		if( F2612->OPN.ST.mode & 0x80 )
-		{   /* CSM mode total level latch and auto key on */
+		{	/* CSM mode total level latch and auto key on */
 			CSMKeyControll( &(F2612->CH[2]) );
 		}
 	}

@@ -54,7 +54,7 @@ public:
 		}
 		while(0);
 		set_string("Track ");
-		add_int(track + 1);
+		add_string(format_int(track + 1));
 	}
 };
 

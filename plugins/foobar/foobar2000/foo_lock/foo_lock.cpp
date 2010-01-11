@@ -339,15 +339,15 @@ class menu_item_main_foolock : public menu_item_legacy_main {
 		return 1;
 	}
 
-	virtual void get_item_name(unsigned n, string_base & out) {
+	virtual void get_item_name(unsigned n, pfc::string_base & out) {
 		out = "Pause on lock";
 	}
 
-	virtual void get_item_default_path(unsigned n, string_base & out) {
+	virtual void get_item_default_path(unsigned n, pfc::string_base & out) {
 		out = "Components";
 	}
 
-	virtual bool get_item_description(unsigned n, string_base & out) {
+	virtual bool get_item_description(unsigned n, pfc::string_base & out) {
 		return false;
 	}
 
@@ -381,7 +381,7 @@ class menu_item_main_foolock : public menu_item_legacy_main {
 		return !win_ver;
 	}
 
-	virtual bool get_description(unsigned n, string_base & out) {
+	virtual bool get_description(unsigned n, pfc::string_base & out) {
 		if (n == 0) {
 			out = "Toggles PauseOnLock";
 			return true;

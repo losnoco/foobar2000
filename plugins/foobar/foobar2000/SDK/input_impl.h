@@ -39,7 +39,7 @@ public:
 	//! See: input_decoder::initialize(). Valid after open() with input_open_decode reason.
 	void decode_initialize(t_uint32 p_subsong,unsigned p_flags,abort_callback & p_abort);
 	//! See: input_decoder::run(). Valid after decode_initialize().
-	void decode_run(audio_chunk & p_chunk,abort_callback & p_abort);
+	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort);
 	//! See: input_decoder::seek(). Valid after decode_initialize().
 	void decode_seek(double p_seconds,abort_callback & p_abort);
 	//! See: input_decoder::can_seek(). Valid after decode_initialize().

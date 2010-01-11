@@ -25,56 +25,52 @@ static cfg_window_placement cfg_placement(guid_cfg_placement);
 
 
 //Sub-chunk ID's
-#define	XID_SONG		0x01
-#define	XID_GAME		0x02
-#define	XID_ARTIST	0x03
-#define	XID_DUMPER	0x04
-#define	XID_DATE		0x05
-#define	XID_EMU		0x06
-#define	XID_CMNTS	0x07
-#define	XID_INTRO	0x30
-#define	XID_LOOP		0x31
-#define	XID_END		0x32
-#define	XID_FADE		0x33
-#define	XID_MUTE		0x34
-#define	XID_OST		0x10
-#define	XID_DISC		0x11
-#define	XID_TRACK	0x12
-#define	XID_PUB		0x13
-#define	XID_COPY		0x14
+#define	XID_SONG    0x01
+#define	XID_GAME    0x02
+#define	XID_ARTIST  0x03
+#define	XID_DUMPER  0x04
+#define	XID_DATE    0x05
+#define	XID_EMU     0x06
+#define	XID_CMNTS   0x07
+#define	XID_INTRO   0x30
+#define	XID_LOOP    0x31
+#define	XID_END     0x32
+#define	XID_FADE    0x33
+#define	XID_MUTE    0x34
+#define XID_LOOPX   0x35
+#define XID_AMP     0x36
+#define	XID_OST     0x10
+#define	XID_DISC    0x11
+#define	XID_TRACK   0x12
+#define	XID_PUB     0x13
+#define	XID_COPY    0x14
 
 //Data types
 #define	XTYPE_DATA	0x00
 #define	XTYPE_STR	0x01
 #define	XTYPE_INT	0x04
-#define	XTYPE_BCD	0x10
-
-typedef struct _SUBCHK
-{
-	unsigned char	id;                        //Subchunk ID
-	unsigned char	type;                      //Type of data
-	unsigned short	data;                      //Data
-}SUBCHK,*PSUBCHK,FAR *LPSUBCHK;
 
 typedef struct _ID666TAG
 {
-	char szTitle[256];			//Title of song
-	char szGame[256];			//Name of game
-	char szArtist[256];		//Name of artist
-	char szPublisher[256];		//Game publisher
-	char szDumper[256];		//Name of dumper
-	char szDate[256];			//Date dumped
-	char szComment[256];		//Optional comment
-	char szOST[256];			//Original soundtrack title
-	UINT uSong_ms;				//Length of song
-	UINT uLoop_ms;				//Length of loop
-	UINT uEnd_ms;				//Length of end
-	UINT uFade_ms;				//Length of fadeout
-	BYTE bDisc;					//OST disc number
-	WORD wTrack;				//OST track number
-	WORD wCopyright;			//Game copyright date
-	BYTE bMute;					//Bitmask for channel states	
-	BYTE bEmulator;				//Emulator used to dump
+	char     szTitle[256];     //Title of song
+	char     szGame[256];      //Name of game
+	char     szArtist[256];    //Name of artist
+	char     szPublisher[256]; //Game publisher
+	char     szDumper[256];    //Name of dumper
+	char     szDate[256];      //Date dumped
+	char     szComment[256];   //Optional comment
+	char     szOST[256];       //Original soundtrack title
+	t_uint32 uSong_ms;         //Length of song
+	t_uint32 uLoop_ms;         //Length of loop
+	t_uint32 uLoopCount;       //Loop count
+	t_uint32 uEnd_ms;          //Length of end
+	t_uint32 uFade_ms;         //Length of fadeout
+	t_uint8  bDisc;            //OST disc number
+	t_uint16 wTrack;           //OST track number
+	t_uint16 wCopyright;       //Game copyright date
+	t_uint8  bMute;            //Bitmask for channel states	
+	t_uint8  bEmulator;        //Emulator used to dump
+	t_uint32 uAmplification;   //Amplification level
 }ID666TAG,*PID666TAG,FAR *LPID666TAG;
 
 static void SetDate(LPSTR lpszDate,int year,int month,int day)
@@ -98,132 +94,192 @@ static void SetDate(LPSTR lpszDate,int year,int month,int day)
 		}
 */
 		string8 temp;
-		temp.add_int(month);
+		temp << month;
 		temp.add_char('/');
-		temp.add_int(day);
+		temp << day;
 		temp.add_char('/');
-		temp.add_int(year);
+		temp << year;
 		strcpy(lpszDate, temp);
 	}
 	else lpszDate[0]='\0';
 }
 
-static bool load_id666(const service_ptr_t<file> & p_file,LPID666TAG lpTag, abort_callback & p_abort)//must be seeked to correct spot before calling
+static void parse_id666( service_ptr_t< file > & p_file, LPID666TAG lpTag, bool aligned, abort_callback & p_abort )
 {
-	bool ret = false;
-	DWORD dwBytesRead;
-	SUBCHK sub;
-	char szBuf[5]={0};
-	p_file->read_object_e((char*)szBuf, 4, p_abort);
-
-	if(!stricmp(szBuf, "xid6"))
+	while ( ! p_file->is_eof( p_abort ) )
 	{
-		{
-			DWORD zzz;
-			p_file->read_object_e(&zzz, 4, p_abort);
-		}
-		dwBytesRead = p_file->read_e(&sub, sizeof(sub), p_abort);
+		t_uint8 id, type;
+		t_uint16    data;
 
-#define ReadFile(a,b,c,d,e) (*d)=p_file->read_e((b), c, p_abort)
+		p_file->read_object_t( id, p_abort );
+		p_file->read_object_t( type, p_abort );
+		p_file->read_lendian_t( data, p_abort );
 
-		while(dwBytesRead && sub.data <= (p_file->get_size_e(p_abort) - p_file->get_position_e(p_abort)))
+		switch ( type )
 		{
-			switch(sub.id)
+		case XTYPE_STR:
 			{
-			case XID_SONG:
-				ReadFile(hFile,lpTag->szTitle,sub.data,&dwBytesRead,NULL);
-				break;
-			case XID_GAME:
-				ReadFile(hFile,lpTag->szGame,sub.data,&dwBytesRead,NULL);
-				break;
-			case XID_ARTIST:
-				ReadFile(hFile,lpTag->szArtist,sub.data,&dwBytesRead,NULL);
-				break;
-			case XID_DUMPER:
-				ReadFile(hFile,lpTag->szDumper,sub.data,&dwBytesRead,NULL);
-				break;
-			case XID_DATE:
-				UINT uDate;
-				ReadFile(hFile,&uDate,sub.data,&dwBytesRead,NULL);
-				SetDate(lpTag->szDate,uDate>>16,(uDate>>8)&0xFF,uDate&0xFF);
-				break;
-			case XID_EMU:
-				lpTag->bEmulator=(BYTE)sub.data;
-				break;
-			case XID_CMNTS:
-				ReadFile(hFile,lpTag->szComment,sub.data,&dwBytesRead,NULL);
-				break;
-			case XID_OST:
-				ReadFile(hFile,lpTag->szOST,sub.data,&dwBytesRead,NULL);
-				break;
-			case XID_DISC:
-				lpTag->bDisc=(BYTE)sub.data;
-				break;
-			case XID_TRACK:
-				lpTag->wTrack=(WORD)sub.data;
-				break;
-			case XID_PUB:
-				ReadFile(hFile,lpTag->szPublisher,sub.data,&dwBytesRead,NULL);
-				break;
-			case XID_COPY:
-				lpTag->wCopyright=(WORD)sub.data;
-				break;
-			case XID_INTRO:
-				ReadFile(hFile,&lpTag->uSong_ms,sub.data,&dwBytesRead,NULL);
-				if(lpTag->uSong_ms>61376000)lpTag->uSong_ms=61376000;
-				lpTag->uSong_ms/=64;
-				break;
-			case XID_LOOP:
-				ReadFile(hFile,&lpTag->uLoop_ms,sub.data,&dwBytesRead,NULL);
-				if(lpTag->uLoop_ms>383936000)lpTag->uLoop_ms=383936000;
-				lpTag->uLoop_ms/=64;
-				break;
-			case XID_END:
-				if (sub.data == sizeof(lpTag->uEnd_ms))
+				if ( data < 1 || data > 256 ) throw exception_io_data();
+
+				switch ( id )
 				{
-					ReadFile(hFile,&lpTag->uEnd_ms,sub.data,&dwBytesRead,NULL);
-					if(lpTag->uEnd_ms>61376000)lpTag->uEnd_ms=61376000;
-					lpTag->uEnd_ms/=64;
+				case XID_SONG:
+					p_file->read_object( lpTag->szTitle, data, p_abort );
+					break;
+
+				case XID_GAME:
+					p_file->read_object( lpTag->szGame, data, p_abort );
+					break;
+
+				case XID_ARTIST:
+					p_file->read_object( lpTag->szArtist, data, p_abort );
+					break;
+
+				case XID_PUB:
+					p_file->read_object( lpTag->szPublisher, data, p_abort );
+					break;
+
+				case XID_OST:
+					p_file->read_object( lpTag->szOST, data, p_abort );
+					break;
+
+				case XID_DUMPER:
+					p_file->read_object( lpTag->szDumper, data, p_abort );
+					break;
+
+				case XID_CMNTS:
+					p_file->read_object( lpTag->szComment, data, p_abort );
+					break;
+
+				default:
+					p_file->skip( data, p_abort );
+					break;
 				}
-				else
-				{
-					p_file->seek2_e(sub.data, SEEK_CUR, p_abort);
-				}
-				break;
-			case XID_FADE:
-				ReadFile(hFile,&lpTag->uFade_ms,sub.data,&dwBytesRead,NULL);
-				if(lpTag->uFade_ms>3839360)lpTag->uFade_ms=3839360;
-				lpTag->uFade_ms/=64;
-				break;
-			case XID_MUTE:
-				lpTag->bMute=(BYTE)sub.data;
-				break;
-			default:
-				if(sub.type)
-				{
-					char foo[0x100];
-					UINT size=sub.data;
-					while(size)
-					{
-						UINT delta=size;
-						if (delta>0x100) delta=0x100;
-						p_file->read_e(foo, delta, p_abort);
-						size-=delta;
-					}
-				}
-				break;
+
+				if ( aligned && ( data & 3 ) ) p_file->skip( 4 - ( data & 3 ), p_abort );
 			}
-			ReadFile(hFile,&sub,sizeof(sub),&dwBytesRead,NULL);
+			break;
+
+		case XTYPE_INT:
+			{
+				if ( data != 4 ) throw exception_io_data();
+
+				t_uint32 value;
+				p_file->read_lendian_t( value, p_abort );
+
+				switch ( id )
+				{
+				case XID_DATE:
+					SetDate( lpTag->szDate, ( value >> 16 ) & 255, ( value >> 8 ) & 255, value & 255 );
+					break;
+
+				case XID_INTRO:
+					if ( value > 383999999 ) value = 383999999;
+					lpTag->uSong_ms = value / 64;
+					break;
+
+				case XID_LOOP:
+					if ( value > 383999999 ) value = 383999999;
+					lpTag->uLoop_ms = value / 64;
+					break;
+
+				case XID_END:
+					if ( value > 383999999 ) value = 383999999;
+					lpTag->uEnd_ms = value / 64;
+					break;
+
+				case XID_FADE:
+					if ( value > 3839999 ) value = 3839999;
+					lpTag->uFade_ms = value / 64;
+					break;
+
+				case XID_AMP:
+					if ( value < 32768 ) value = 32768;
+					else if ( value > 524288 ) value = 524288;
+					lpTag->uAmplification = value;
+					break;
+				}
+			}
+			break;
+
+		case XTYPE_DATA:
+			{
+				switch ( id )
+				{
+				case XID_EMU:
+					lpTag->bEmulator = t_uint8( data );
+					break;
+
+				case XID_DISC:
+					lpTag->bDisc = t_uint8( data );
+					if ( lpTag->bDisc > 9 ) lpTag->bDisc = 9;
+					break;
+
+				case XID_TRACK:
+					if ( data > ( ( 100 << 8 ) - 1 ) ) data = 0;
+					lpTag->wTrack = data;
+					break;
+
+				case XID_COPY:
+					lpTag->wCopyright = data;
+					break;
+
+				case XID_MUTE:
+					lpTag->bMute = t_uint8( data );
+					break;
+
+				case XID_LOOPX:
+					if ( data < 1 ) data = 1;
+					else if ( data > 9 ) data = 9;
+					lpTag->uLoopCount = data;
+					break;
+
+				case XID_AMP:
+					lpTag->uAmplification = data;
+					lpTag->uAmplification <<= 12;
+					if ( lpTag->uAmplification < 32768 ) lpTag->uAmplification = 32768;
+					else if ( lpTag->uAmplification > 524288 ) lpTag->uAmplification = 524288;
+					break;
+				}
+			}
+			break;
 		}
-#undef ReadFile
-		ret = true;
 	}
-	if ((!lpTag->uSong_ms && !lpTag->uFade_ms)/* || cfg_ignore_time*/)
+}
+
+static void load_id666(service_ptr_t<file> & p_file, LPID666TAG lpTag, abort_callback & p_abort)//must be seeked to correct spot before calling
+{
+	t_uint8 szBuf[4];
+	p_file->read_object( &szBuf, 4, p_abort );
+
+	static t_uint8 signature[] = {'x', 'i', 'd', '6'};
+
+	if( ! memcmp( szBuf, signature, 4 ) )
 	{
-		lpTag->uSong_ms=0;//cfg_def_song;
-		lpTag->uFade_ms=0;//cfg_def_fade;
+		t_uint32 tag_size;
+		p_file->read_lendian_t( tag_size, p_abort );
+
+		t_filesize offset = p_file->get_position( p_abort );
+
+		service_ptr_t< reader_limited > m_file = new service_impl_t< reader_limited >;
+		m_file->init( p_file, offset, offset + tag_size, p_abort );
+
+		service_ptr_t<file> p_file = m_file.get_ptr();
+
+		try
+		{
+			parse_id666( p_file, lpTag, false, p_abort );
+		}
+		catch ( const exception_io_data & )
+		{
+			p_file->seek( 0, p_abort );
+
+			memset( lpTag, 0, sizeof( *lpTag ) );
+
+			parse_id666( p_file, lpTag, true, p_abort );
+		}
 	}
-	return ret;
+	else throw exception_tag_not_found();
 }
 
 class input_spc : public input_gep
@@ -243,30 +299,29 @@ public:
 		return ! stricmp( p_extension, "spc" );
 	}
 
-	t_io_result open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
+	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
 		assert(sample_rate == Spc_Emu::native_sample_rate);
 
-		t_io_result status = input_gep::open( p_filehint, p_path, p_reason, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		input_gep::open( p_filehint, p_path, p_reason, p_abort );
 
 		foobar_File_Reader rdr(m_file, p_abort);
 
-		//try
 		{
 			ERRCHK( rdr.read( &m_header, sizeof(m_header) ) );
 
 			if ( strncmp( m_header.tag, "SNES-SPC700 Sound File Data", 27 ) != 0 )
 			{
 				console::info("Not an SPC file");
-				return io_result_error_data;
+				throw exception_io_data();
 			}
 
-			t_io_result status = tag_processor::read_trailing( m_file, m_info, p_abort );
-			if ( status != io_result_error_data && status != io_result_error_not_found && io_result_failed( status ) ) return status;
+			bool valid_tag = false;
 
-			if ( status != io_result_error_not_found )
+			try
 			{
+				tag_processor::read_trailing( m_file, m_info, p_abort );
+
 				const char * p;
 				p = m_info.meta_get( field_length, 0 );
 				if (p)
@@ -290,13 +345,14 @@ public:
 				{
 					tag_fade_ms = 0;
 				}
+
+				valid_tag = true;
 			}
-			else
+			catch ( const exception_tag_not_found & ) {}
+			catch ( const exception_io_data & ) {}
+
+			if ( ! valid_tag )
 			{
-				ID666TAG tag;
-
-				memset(&tag, 0, sizeof(tag));
-
 				HEADER_STRING(m_info, "title", m_header.song);
 				HEADER_STRING(m_info, "album", m_header.game);
 				HEADER_STRING(m_info, "dumper", m_header.dumper);
@@ -310,42 +366,44 @@ public:
 
 				try
 				{
-					m_file->seek_e( 66048, p_abort );
-					if ( load_id666( m_file, & tag, p_abort ) )
+					ID666TAG tag;
+
+					memset(&tag, 0, sizeof(tag));
+
+					m_file->seek( 66048, p_abort );
+					load_id666( m_file, & tag, p_abort );
+
+					HEADER_STRING(m_info, "title", tag.szTitle);
+					HEADER_STRING(m_info, "album", tag.szGame);
+					HEADER_STRING(m_info, "artist", tag.szArtist);
+					HEADER_STRING(m_info, "dumper", tag.szDumper);
+					HEADER_STRING(m_info, "date", tag.szDate);
+					HEADER_STRING(m_info, "comment", tag.szComment);
+
+					HEADER_STRING(m_info, "OST", tag.szOST);
+					HEADER_STRING(m_info, "publisher", tag.szPublisher);
+
+					if (tag.wTrack > 0)
 					{
-						char temp[16];
-
-						HEADER_STRING(m_info, "title", tag.szTitle);
-						HEADER_STRING(m_info, "album", tag.szGame);
-						HEADER_STRING(m_info, "artist", tag.szArtist);
-						HEADER_STRING(m_info, "dumper", tag.szDumper);
-						HEADER_STRING(m_info, "date", tag.szDate);
-						HEADER_STRING(m_info, "comment", tag.szComment);
-
-						HEADER_STRING(m_info, "OST", tag.szOST);
-						HEADER_STRING(m_info, "publisher", tag.szPublisher);
-
-						if (tag.wTrack > 0)
+						string8 temp;
+						temp = format_int( tag.wTrack >> 8 );
+						if ( tag.wTrack & 255 )
 						{
-							itoa( ( ( tag.wTrack & 0xFF00 ) >> 8 ) | ( ( tag.wTrack & 0x00FF ) << 8 ), temp, 10 );
-							m_info.meta_set("tracknumber", temp);
+							char foo[ 2 ] = { tag.wTrack & 255, 0 };
+							temp << pfc::stringcvt::string_utf8_from_ansi( foo );
 						}
-						if (tag.bDisc > 0)
-						{
-							itoa( tag.bDisc, temp, 10 );
-							m_info.meta_set("disc", temp);
-						}
-
-						if (tag.uSong_ms) tag_song_ms = tag.uSong_ms;
-						if (tag.uFade_ms) tag_fade_ms = tag.uFade_ms;
-						voice_mask = tag.bMute;
+						m_info.meta_set("tracknumber", temp);
 					}
+
+					if ( tag.bDisc > 0 )
+						m_info.meta_set("disc", format_int( tag.bDisc ) );
+
+					if (tag.uSong_ms) tag_song_ms = tag.uSong_ms;
+					if (tag.uFade_ms) tag_fade_ms = tag.uFade_ms;
+					voice_mask = tag.bMute;
 				}
-				catch(exception_io const & /*code*/)
-				{
-					//return code;
-					// failed to read id666 tag? do nothing...
-				}
+				catch ( const exception_tag_not_found & ) {}
+				catch ( const exception_io_data & ) {}
 
 				if (tag_song_ms > 0) m_info.info_set_int(field_length, tag_song_ms);
 				if (tag_fade_ms > 0) m_info.info_set_int(field_fade, tag_fade_ms);
@@ -357,44 +415,33 @@ public:
 				tag_fade_ms = cfg_default_fade;
 			}
 		}
-		//catch(exception_io const & e) {return e.get_code();}
 
-		bool retagging = p_reason == input_open_info_write;
-
-		return io_result_success;
+		retagging = p_reason == input_open_info_write;
 	}
 
-	t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
+	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
 		p_info.copy( m_info );
 
-		p_info.info_set("codec", "SPC");
+		p_info.info_set( "codec", "SPC" );
 
-		p_info.info_set_int("samplerate", Spc_Emu::native_sample_rate );
-		p_info.info_set_int("channels", 2 );
-		p_info.info_set_int("bitspersample", 16 );
+		p_info.info_set_int( "samplerate", Spc_Emu::native_sample_rate );
+		p_info.info_set_int( "channels", 2 );
+		p_info.info_set_int( "bitspersample", 16 );
 
-		p_info.set_length(double(tag_song_ms + tag_fade_ms) * .001);
-
-		return io_result_success;
+		p_info.set_length( double( tag_song_ms + tag_fade_ms ) * .001 );
 	}
 
-	t_io_result decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
+	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
 	{
 		Spc_Emu * emu = ( Spc_Emu * ) this->emu;
 		if ( ! emu )
 		{
-			emu = new Spc_Emu;
-			if ( ! emu )
-			{
-				console::info("Out of memory");
-				return io_result_error_out_of_memory;
-			}
-			this->emu = emu;
+			this->emu = emu = new Spc_Emu;
 
 			try
 			{
-				m_file->seek_e( 0, p_abort );
+				m_file->seek( 0, p_abort );
 				foobar_File_Reader rdr( m_file, p_abort );
 				rdr.skip( sizeof( m_header ) );
 
@@ -415,20 +462,16 @@ public:
 
 			emu->mute_voices( voice_mask );
 
-			emu->disable_surround(cfg_spc_anti_surround);
+			emu->disable_surround( !! ( cfg_spc_anti_surround ) );
 		}
 
-		return input_gep::decode_initialize( 0, p_flags, p_abort );
+		input_gep::decode_initialize( 0, p_flags, p_abort );
 	}
 
-	virtual t_io_result set_info(const service_ptr_t<file> & p_reader,const playable_location & p_location,file_info & p_info,abort_callback & p_abort)
+	void retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
 	{
-		//try
-		{
-			m_file->seek_e( 66048, p_abort );
-			m_file->set_eof_e( p_abort );
-		}
-		//catch(exception_io const & e) {return e.get_code();}
+		m_file->seek( 66048, p_abort );
+		m_file->set_eof( p_abort );
 
 		m_info.copy( p_info );
 
@@ -449,10 +492,13 @@ public:
 			}
 		}
 
-		t_io_result status = tag_processor::write_apev2( m_file, l_info, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		tag_processor::write_apev2( m_file, l_info, p_abort );
 
-		return m_file->get_stats( m_stats, p_abort );
+		m_stats = m_file->get_stats( p_abort );
+	}
+
+	void retag_commit( abort_callback & p_abort )
+	{
 	}
 };
 
@@ -536,17 +582,17 @@ class context_spc : public menu_item_legacy_context
 public:
 	virtual unsigned get_num_items() { return 1; }
 
-	virtual void get_item_name(unsigned n, string_base & out)
+	virtual void get_item_name(unsigned n, pfc::string_base & out)
 	{
 		out = "Edit length";
 	}
 
-	virtual void get_item_default_path(unsigned n, string_base & out)
+	virtual void get_item_default_path(unsigned n, pfc::string_base & out)
 	{
 		out.reset();
 	}
 
-	virtual bool get_item_description(unsigned n, string_base & out)
+	virtual bool get_item_description(unsigned n, pfc::string_base & out)
 	{
 		out = "Edits the length of the selected SPC file, or sets the length of all selected SPC files.";
 		return true;
@@ -560,21 +606,21 @@ public:
 		return guid;
 	}
 
-	virtual bool context_get_display(unsigned n,const list_base_const_t<metadb_handle_ptr> & data,string_base & out,unsigned & displayflags,const GUID &)
+	virtual bool context_get_display( unsigned n, const list_base_const_t< metadb_handle_ptr > & data, pfc::string_base & out, unsigned & displayflags, const GUID & )
 	{
 		unsigned i, j;
 		i = data.get_count();
 		for (j = 0; j < i; j++)
 		{
 			const playable_location & foo = data.get_item(j)->get_location();
-			if (stricmp(string_extension_8(foo.get_path()), "spc")) return false;
+			if ( stricmp( string_extension( foo.get_path() ), "spc" ) ) return false;
 		}
 		if (i == 1) out = "Edit length";
 		else out = "Set length";
 		return true;
 	}
 
-	virtual void context_command(unsigned n,const list_base_const_t<metadb_handle_ptr> & data,const GUID& caller)
+	virtual void context_command( unsigned n, const list_base_const_t< metadb_handle_ptr > & data, const GUID& )
 	{
 		unsigned tag_song_ms = 0, tag_fade_ms = 0;
 		unsigned i = data.get_count();
@@ -616,7 +662,7 @@ public:
 					double length = (double)(tag_song_ms + tag_fade_ms) * .001;
 					info.set_length(length);
 				}
-				if (io_result_failed(p_imgr->update_info(foo, info, core_api::get_main_window(), true))) j = i;
+				if ( metadb_io::update_info_success != p_imgr->update_info( foo, info, core_api::get_main_window(), true ) ) j = i;
 			}
 			else j = i;
 			//foo->metadb_unlock();

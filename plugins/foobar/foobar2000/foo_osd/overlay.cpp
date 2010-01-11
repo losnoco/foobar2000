@@ -146,7 +146,7 @@ BOOL uTextOutColorz(Graphics * graphics, Font * font, const char * text,UINT len
 #else
 	temp_len = pfc::stringcvt::estimate_utf8_to_ansi(text,len);
 #endif
-	mem_block_t<TCHAR> temp_block;
+	pfc::array_t<TCHAR> temp_block;
 	TCHAR * temp;
 	if ( ( temp_len * sizeof(TCHAR) ) <= PFC_ALLOCA_LIMIT )
 	{
@@ -154,10 +154,7 @@ BOOL uTextOutColorz(Graphics * graphics, Font * font, const char * text,UINT len
 	}
 	else
 	{
-		if ( ! temp_block.set_size( temp_len ) )
-		{
-			return FALSE;
-		}
+		temp_block.set_size( temp_len );
 
 		temp = temp_block.get_ptr();
 	}
@@ -422,7 +419,7 @@ COsdWnd::COsdWnd(osd_state & _state) : m_state(_state)
 
 typedef const char * pconst;
 
-BOOL uFormatMessage(DWORD dw_error, string_base & out)
+BOOL uFormatMessage(DWORD dw_error, pfc::string_base & out)
 {
 	PVOID buffer;
 	size_t length = FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, 0, dw_error, 0, (LPTSTR) &buffer, 256, 0 );
@@ -447,7 +444,7 @@ bool COsdWnd::Initialize()
 	{
 		string8 error;
 		uFormatMessage(GetLastError(), error);
-		console::info(uStringPrintf("Failed to register window class - %s", pconst(error)));
+		console::formatter() << "Failed to register window class - " << error.get_ptr();
 		return 0;
 	}
 
@@ -460,7 +457,7 @@ bool COsdWnd::Initialize()
 	{
 		string8 error;
 		uFormatMessage(GetLastError(), error);
-		console::info(uStringPrintf("Failed to create window - %s", pconst(error)));
+		console::formatter() << "Failed to create window - " << error.get_ptr();
 		rwc.Unregister();
 		return false;
 	}

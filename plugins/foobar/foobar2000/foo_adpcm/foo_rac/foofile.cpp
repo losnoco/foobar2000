@@ -7,7 +7,7 @@ foofile::foofile(const service_ptr_t<file> & in)
 
 void foofile::requirebuf()
 {
-	buffer.check_size(buffer_size);
+	buffer.grow_size( buffer_size );
 }
 
 void foofile::bufclear()
@@ -16,24 +16,23 @@ void foofile::bufclear()
 	bufend = 0;
 }
 
-void foofile::bufvalidate(abort_callback & p_abort)
+void foofile::bufvalidate( abort_callback & p_abort )
 {
 	requirebuf();
 	bufclear();
-	bufend = r->read_e(buffer.get_ptr(), buffer.get_size(), p_abort);
-	abspos += t_int64(bufend);
-	if (bufend == 0) eof = true;
+	bufend = r->read( buffer.get_ptr(), buffer.get_size(), p_abort );
+	abspos += t_int64( bufend );
+	if ( bufend == 0 ) eof = true;
 }
 
-
-void foofile::seek(t_int64 newpos, abort_callback & p_abort)
+void foofile::seek( t_filesize newpos, abort_callback & p_abort )
 {
-    if (buffer.get_size() != 0) 
+    if ( buffer.get_size() != 0 )
     {
-        t_int64 newbufpos = newpos - (abspos - bufend);
-        if (newbufpos >= 0 && newbufpos <= t_int64(bufend)) 
+        t_filesize newbufpos = newpos - ( abspos - bufend );
+        if ( newbufpos >= 0 && newbufpos <= t_filesize( bufend ) ) 
         {
-            bufpos = int(newbufpos);
+            bufpos = unsigned( newbufpos );
             eof = false;
             return;
         }
@@ -42,28 +41,26 @@ void foofile::seek(t_int64 newpos, abort_callback & p_abort)
 	bufclear();
 	eof = false;
 	abspos = newpos;
-    r->seek_e(newpos, p_abort);
+    r->seek( newpos, p_abort );
 }
 
-
-bool foofile::get_eof(abort_callback & p_abort) 
+bool foofile::get_eof( abort_callback & p_abort )
 {
-    if (!eof && buffer.get_size() != 0 && bufpos >= bufend)
-        bufvalidate(p_abort);
+    if ( !eof && buffer.get_size() != 0 && bufpos >= bufend )
+        bufvalidate( p_abort );
     return eof;
 }
 
-
-char foofile::preview(abort_callback & p_abort) 
+char foofile::preview( abort_callback & p_abort )
 {
-    if (!eof && bufpos >= bufend)
-        bufvalidate(p_abort);
-    if (eof)
+    if ( !eof && bufpos >= bufend )
+        bufvalidate( p_abort );
+    if ( eof )
         return eofchar;
-    return buffer[bufpos];
+    return buffer[ bufpos ];
 }
 
-char foofile::get(abort_callback & p_abort) 
+char foofile::get( abort_callback & p_abort )
 {
     char ret = preview(p_abort);
     if (!eof)

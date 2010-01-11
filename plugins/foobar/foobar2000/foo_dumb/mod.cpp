@@ -709,7 +709,7 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 				{
 					name = field_sample;
 					if (i < 10) name.add_byte('0');
-					name.add_int(i);
+					name << i;
 					if (dos) info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)&itsd->sample[i].name, sizeof(itsd->sample[i].name)));
 					else info.meta_add(name, pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->sample[i].name, sizeof(itsd->sample[i].name)));
 				}
@@ -729,7 +729,7 @@ static void ReadDUH(DUH * duh, file_info & info, bool meta, bool dos)
 				{
 					name = field_instrument;
 					if (i < 10) name.add_byte('0');
-					name.add_int(i);
+					name << i;
 					if (dos) info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name)));
 					else info.meta_add(name, pfc::stringcvt::string_utf8_from_ansi((char *)&itsd->instrument[i].name, sizeof(itsd->instrument[i].name)));
 				}
@@ -788,27 +788,26 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 	string8_fastalloc ver;
 
 	ver = "IT v";
-	ver.add_int(pifh->cmwt >> 8);
+	ver << format_int( pifh->cmwt >> 8 );
 	ver.add_byte('.');
-	ver.add_int((pifh->cmwt >> 4) & 15, 16);
-	ver.add_int(pifh->cmwt & 15, 16);
-	info.info_set("codec", ver);
+	ver << format_int( ( pifh->cmwt >> 4 ) & 15, 16 );
+	ver << format_int( pifh->cmwt & 15, 16);
+	info.info_set( "codec", ver );
 
-	ver.reset();
-	ver.add_int(pifh->cwtv >> 8);
+	ver = format_int( pifh->cwtv >> 8 );
 	ver.add_byte('.');
-	ver.add_int((pifh->cwtv >> 4) & 15, 16);
-	ver.add_int(pifh->cwtv & 15, 16);
-	info.info_set(field_trackerver, ver);
+	ver << format_int( ( pifh->cwtv >> 4 ) & 15, 16);
+	ver << format_int( pifh->cwtv & 15, 16 );
+	info.info_set( field_trackerver, ver );
 
-	if (pifh->smpnum) info.info_set_int(field_samples, pifh->smpnum);
-	if (pifh->insnum) info.info_set_int(field_instruments, pifh->insnum);
+	if ( pifh->smpnum ) info.info_set_int( field_samples, pifh->smpnum );
+	if ( pifh->insnum ) info.info_set_int( field_instruments, pifh->insnum );
 
-	if (meta && pifh->songname[0]) info.meta_add(field_title, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(char*)&pifh->songname, 26));
+	if ( meta && pifh->songname[0] ) info.meta_add( field_title, pfc::stringcvt::string_utf8_from_codepage( CP_OEMCP,(char*)&pifh->songname, 26 ) );
 
 	unsigned n, l, m_nChannels = 0;
 
-	if (meta && (pifh->special & 1) && (pifh->msglength) && (pifh->msgoffset + pifh->msglength < size))
+	if ( meta && ( pifh->special & 1 ) && ( pifh->msglength ) && ( pifh->msgoffset + pifh->msglength < size ) )
 	{
 		string8 msg;
 		const char * str = (const char *) ptr + pifh->msgoffset;
@@ -834,7 +833,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			}
 			msg.add_byte(*str);
 		}
-		info.meta_add(field_comment, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,msg));
+		info.meta_add( field_comment, pfc::stringcvt::string_utf8_from_codepage( CP_OEMCP, msg ) );
 	}
 
 	unsigned * offset;
@@ -851,7 +850,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			{
 				name = field_sample;
 				if (n < 10) name.add_byte('0');
-				name.add_int(n);
+				name << n;
 				info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + *offset + 0x14, 26));
 			}
 		}
@@ -865,7 +864,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 			{
 				name = field_instrument;
 				if (n < 10) name.add_byte('0');
-				name.add_int(n);
+				name << n;
 				info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + *offset + 0x20, 26));
 			}
 		}
@@ -903,7 +902,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 					{
 						name = field_pattern;
 						if (n < 10) name.add_byte('0');
-						name.add_int(n);
+						name << n;
 						info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + pos + n * 32, 32));
 					}
 				}
@@ -928,7 +927,7 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 					{
 						name = field_channel;
 						if (n < 10) name.add_byte('0');
-						name.add_int(n);
+						name << n;
 						info.meta_add(name, pfc::stringcvt::string_utf8_from_codepage(CP_OEMCP,(const char *) ptr + pos + n * 20, 20));
 					}
 				}
@@ -1192,8 +1191,7 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 	memdata.size = size;
 
 	DUMBFILE * f = dumbfile_open_ex(&memdata, &mem_dfs);
-
-	if (!f) return 0;
+	if ( ! f ) throw std::bad_alloc();
 
 	is_it = false;
 	is_dos = true;
@@ -1508,6 +1506,8 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 		}
 	}
 
+	if ( ! duh ) throw exception_io_data();
+
 	return duh;
 }
 
@@ -1526,6 +1526,8 @@ struct dumb_subsong_info
 class dumb_info_scanner
 {
 	ptr_list_t< dumb_subsong_info > m_info;
+
+	DUH * duh;
 
 	struct callback_info
 	{
@@ -1548,12 +1550,14 @@ class dumb_info_scanner
 	}
 
 public:
+	dumb_info_scanner() : duh( 0 ) {}
 	~dumb_info_scanner()
 	{
 		m_info.delete_all();
+		if ( duh ) unload_duh( duh );
 	}
 
-	t_io_result run( const t_uint8 * ptr, unsigned size, const char * ext, abort_callback & p_abort )
+	void run( const t_uint8 * ptr, unsigned size, const char * ext, abort_callback & p_abort )
 	{
 		dumbfile_mem_status memdata;
 
@@ -1562,8 +1566,7 @@ public:
 		memdata.size = size;
 
 		DUMBFILE * f = dumbfile_open_ex( & memdata, & mem_dfs );
-
-		if ( ! f ) return io_result_error_out_of_memory;
+		if ( ! f ) throw std::bad_alloc();
 
 		int subsongs = dumb_get_psm_subsong_count(f);
 
@@ -1576,11 +1579,12 @@ public:
 		{
 			// new PSM stuffs
 
-			for ( int i = 0; i < subsongs && ! p_abort.is_aborting(); ++i )
+			for ( int i = 0; i < subsongs; ++i )
 			{
+				p_abort.check();
+
 				start_order = i;
-				DUH * duh = g_open_module( ptr, size, "PSM", start_order, is_it, is_dos );
-				if ( ! duh ) break;
+				duh = g_open_module( ptr, size, "PSM", start_order, is_it, is_dos );
 
 				dumb_subsong_info * song = new dumb_subsong_info;
 
@@ -1588,6 +1592,7 @@ public:
 				song->length = _dumb_it_build_checkpoints( duh_get_it_sigdata( duh ), 0 );
 
 				unload_duh( duh );
+				duh = 0;
 
 				m_info.add_item( song );
 			}
@@ -1595,19 +1600,19 @@ public:
 		else
 		{
 			start_order = 0;
-			DUH * duh = g_open_module(ptr, size, ext, start_order, is_it, is_dos);
-			if (!duh) return io_result_error_data;
+			duh = g_open_module(ptr, size, ext, start_order, is_it, is_dos);
 
 			callback_info cdata = { m_info, p_abort };
 
 			start_order = dumb_it_scan_for_playable_orders( duh_get_it_sigdata( duh ), scan_callback, & cdata );
 
 			unload_duh( duh );
+			duh = 0;
 
-			if ( start_order ) return io_result_error_data;
+			if ( start_order ) throw exception_io_data();
 		}
 
-		return p_abort.is_aborting() ? io_result_aborted : io_result_success;
+		p_abort.check();
 	}
 
 	void get_info( ptr_list_t< dumb_subsong_info > & out )
@@ -1646,7 +1651,7 @@ public:
 		m_cache.delete_all();
 	}
 
-	t_io_result run( const t_uint8 * ptr, unsigned size, const char * p_path, t_filetimestamp p_timestamp, ptr_list_t< dumb_subsong_info > & p_out, abort_callback & p_abort )
+	void run( const t_uint8 * ptr, unsigned size, const char * p_path, t_filetimestamp p_timestamp, ptr_list_t< dumb_subsong_info > & p_out, abort_callback & p_abort )
 	{
 		insync( sync );
 
@@ -1666,14 +1671,22 @@ public:
 				if ( i != m_cache.get_count() - 1 )
 					m_cache.swap_items( i, m_cache.get_count() - 1 );
 
-				return io_result_success;
+				return;
 			}
 		}
 
 		t_info * item = new t_info;
 		dumb_info_scanner scanner;
-		t_io_result code = scanner.run( ptr, size, string_extension( p_path ), p_abort );
-		if ( io_result_succeeded( code ) )
+		try
+		{
+			scanner.run( ptr, size, string_extension( p_path ), p_abort );
+		}
+		catch (...)
+		{
+			delete item;
+			throw;
+		}
+
 		{
 			scanner.get_info( item->info );
 			for ( unsigned i = 0, j = item->info.get_count(); i < j; ++i )
@@ -1694,8 +1707,6 @@ public:
 
 			m_cache.add_item( item );
 		}
-
-		return code;
 	}
 };
 
@@ -1710,7 +1721,7 @@ class reader_membuffer : public reader_membuffer_base
 	const void * get_buffer() {return m_buffer;}
 	unsigned get_buffer_size() {return m_size;}
 
-	void init_e( void * p_buffer, unsigned p_size, t_filetimestamp p_timestamp )
+	void init( void * p_buffer, unsigned p_size, t_filetimestamp p_timestamp )
 	{
 		m_buffer = p_buffer;
 		m_size = p_size;
@@ -1724,88 +1735,76 @@ public:
 		if ( m_buffer ) free( m_buffer );
 	}
 
-	t_io_result get_timestamp(t_filetimestamp & p_timestamp,abort_callback & p_abort) {p_timestamp = m_timestamp; return io_result_success;}
+	t_filetimestamp get_timestamp( abort_callback & p_abort ) { return m_timestamp; }
 	bool is_remote() {return false;}
 
-	static bool g_create_e( service_ptr_t<file> & p_out, void * p_buffer, unsigned p_size, t_filetimestamp p_timestamp )
+	static void g_create( service_ptr_t<file> & p_out, void * p_buffer, unsigned p_size, t_filetimestamp p_timestamp )
 	{
 		service_ptr_t<reader_membuffer> ptr = new service_impl_t<reader_membuffer>();
-		if ( ptr.is_empty() ) return false;
-		ptr->init_e( p_buffer, p_size, p_timestamp );
+		ptr->init( p_buffer, p_size, p_timestamp );
 		p_out = ptr.get_ptr();
-		return true;
 	}
 };
 
-t_io_result unpack_j2b( service_ptr_t<file> & p_out, const service_ptr_t<file> & p_source, abort_callback & p_abort )
+void unpack_j2b( service_ptr_t<file> & p_out, const service_ptr_t<file> & p_source, abort_callback & p_abort )
 {
 	unsigned char * uncompressed = 0;
 
 	try
 	{
-		p_source->seek_e( 0, p_abort );
+		p_source->seek( 0, p_abort );
 
 		unsigned char header[ 8 ];
-		p_source->read_object_e( header, 8, p_abort );
+		p_source->read_object( header, 8, p_abort );
 		if ( header[ 0 ] != 'M' || header[ 1 ] != 'U' ||
 			header[ 2 ] != 'S' || header[ 3 ] != 'E' ||
 			header[ 4 ] != 0xDE || header[ 5 ] != 0xAD ||
 			( ( header[ 6 ] != 0xBE || header[ 7 ] != 0xAF ) &&
 			( header[ 6 ] != 0xBA || header[ 7 ] != 0xBE ) ) )
-			throw exception_io(io_result_error_data);
+			throw exception_io_data();
 
 		t_uint32 file_length;
-		p_source->read_lendian_e_t( file_length, p_abort );
+		p_source->read_lendian_t( file_length, p_abort );
 
-		if ( file_length < 12 ) throw exception_io(io_result_error_data);
+		if ( file_length < 12 ) throw exception_io_data();
 
 		t_uint32 checksum;
 		t_uint32 len_compressed;
 		t_uint32 len_uncompressed;
 
-		p_source->read_lendian_e_t( checksum, p_abort );
-		p_source->read_lendian_e_t( len_compressed, p_abort );
-		p_source->read_lendian_e_t( len_uncompressed, p_abort );
+		p_source->read_lendian_t( checksum, p_abort );
+		p_source->read_lendian_t( len_compressed, p_abort );
+		p_source->read_lendian_t( len_uncompressed, p_abort );
 
-		if ( len_compressed + 8 > file_length ) throw exception_io(io_result_error_data);
+		if ( len_compressed + 8 > file_length ) throw exception_io_data();
 
-		mem_block_t< unsigned char > compressed;
-		if ( ! compressed.set_size( len_compressed ) ) throw exception_io(io_result_error_out_of_memory);
+		pfc::array_t< t_uint8 > compressed;
+		compressed.set_size( len_compressed );
 
-		p_source->read_object_e( compressed.get_ptr(), len_compressed, p_abort );
+		p_source->read_object( compressed.get_ptr(), len_compressed, p_abort );
 
 		if ( crc32( 0, compressed.get_ptr(), len_compressed ) != checksum )
-			throw exception_io(io_result_error_data);
+			throw exception_io_data();
 
 		uncompressed = ( unsigned char * ) malloc( len_uncompressed );
-		if ( ! uncompressed ) throw exception_io(io_result_error_out_of_memory);
+		if ( ! uncompressed ) throw std::bad_alloc();
 
 		uLong data_uncompressed = len_uncompressed;
 
 		int z_err = uncompress( uncompressed, & data_uncompressed, compressed.get_ptr(), len_compressed );
 		if ( z_err != Z_OK )
 		{
-			if ( z_err == Z_MEM_ERROR ) throw exception_io(io_result_error_out_of_memory);
-			else throw exception_io(io_result_error_data);
+			if ( z_err == Z_MEM_ERROR ) throw std::bad_alloc();
+			else throw exception_io_data();
 		}
 
-		if ( ! reader_membuffer::g_create_e( p_out, uncompressed, data_uncompressed, p_source->get_timestamp_e( p_abort ) ) )
-		{
-			throw exception_io(io_result_error_out_of_memory);
-		}
-	}
-	catch(exception_io const & e)
-	{
-		if ( uncompressed ) free( uncompressed );
-		return e.get_code();
+		reader_membuffer::g_create( p_out, uncompressed, data_uncompressed, p_source->get_timestamp( p_abort ) );
 	}
 	catch(...)
 	{
 		if ( uncompressed ) free( uncompressed );
 		throw;
 	}
-
-	return io_result_success;
 }
 
 class input_mod
@@ -1821,9 +1820,11 @@ class input_mod
 	DUH_SIGRENDERER *sr;
 	sample_t **buf;
 
+	pfc::array_t< sample_t > dbuf;
+
 	string_simple extension;
 	service_ptr_t< file > m_file;
-	mem_block_t< t_uint8 > buffer;
+	pfc::array_t< t_uint8 > buffer;
 
 	t_filestats m_stats;
 
@@ -1854,14 +1855,11 @@ public:
 		m_subsong_info.delete_all();
 	}
 
-	t_io_result open( service_ptr_t<file> m_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
+	void open( service_ptr_t<file> m_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		t_io_result status;
-
 		if ( m_file.is_empty() )
 		{
-			status = filesystem::g_open( m_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			filesystem::g_open( m_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
 		}
 
 		t_uint8            * ptr;
@@ -1871,48 +1869,50 @@ public:
 
 		bool read_tag;
 
-		//try
 		{
 			service_ptr_t<file> m_unpack;
 
 			m_info = new file_info_impl;
 
-			if ( io_result_succeeded( unpacker::g_open( m_unpack, m_file, p_abort ) ) )
+			try
 			{
+				unpacker::g_open( m_unpack, m_file, p_abort );
+
 				m_file = m_unpack;
 				read_tag = false;
-
-				if ( p_reason == input_open_info_write ) return io_result_error_data;
 			}
-			else if ( io_result_succeeded( unpack_j2b( m_unpack, m_file, p_abort ) ) )
+			catch ( const exception_io_data & )
 			{
-				m_file = m_unpack;
-				read_tag = false;
+				try
+				{
+					unpack_j2b( m_unpack, m_file, p_abort );
 
-				if ( p_reason == input_open_info_write ) return io_result_error_data;
-			}
-			else
-			{
-				m_file->seek_e( 0, p_abort );
-				read_tag = true;
+					m_file = m_unpack;
+					read_tag = false;
+				}
+				catch ( const exception_io_data & )
+				{
+					m_file->seek( 0, p_abort );
+					read_tag = true;
+				}
 			}
 
-			m_stats = m_file->get_stats_e( p_abort );
+			if ( !read_tag && p_reason == input_open_info_write ) throw exception_io_data();
+
+			m_stats = m_file->get_stats( p_abort );
 			if ( m_stats.m_size < 1 || m_stats.m_size > ( 1UL << 30 ) )
 			{
-				return io_result_error_data;
+				throw exception_io_data();
 			}
 
 			size = unsigned( m_stats.m_size );
 
 			// OutputDebugString("allocating buffer");
-			if ( ! buffer.set_size( size ) )
-				return io_result_error_out_of_memory;
-
+			buffer.set_size( size );
 			ptr = buffer.get_ptr();
 
 			// OutputDebugString("reading file");
-			m_file->read_object_e( ptr, size, p_abort );
+			m_file->read_object( ptr, size, p_abort );
 		}
 		//catch(exception_io const & e) {return e.get_code();}
 
@@ -1927,43 +1927,23 @@ public:
 		start_order = 0;
 		duh = g_open_module( ( const t_uint8 *& ) ptr, size, extension, start_order, is_it, is_dos );
 
-		if ( ! duh )
-		{
-			return io_result_error_data;
-		}
-
 		if ( read_tag )
 		{
-			status = tag_processor::read_trailing( m_file, *m_info, p_abort );
-			if (status != io_result_error_data && status != io_result_error_not_found && io_result_failed(status)) return status;
+			try
+			{
+				tag_processor::read_trailing( m_file, *m_info, p_abort );
+			}
+			catch ( const exception_tag_not_found & ) { read_tag = false; }
+			catch ( const exception_io_data & )       { read_tag = false; }
 		}
-		if ( ! read_tag || status == io_result_error_not_found )
-		{
-			if (is_it) ReadIT(ptr, size, *m_info, true);
-			else ReadDUH(duh, *m_info, true, is_dos);
-		}
-		else
-		{
-			if (is_it) ReadIT(ptr, size, *m_info, false);
-			else ReadDUH(duh, *m_info, false, is_dos);
-		}
+
+		if (is_it) ReadIT(ptr, size, *m_info, !read_tag);
+		else ReadDUH(duh, *m_info, !read_tag, is_dos);
 
 		// subsong magic time
-		{
-			t_filetimestamp timestamp;
-			status = m_file->get_timestamp( timestamp, p_abort );
-			if ( io_result_failed( status ) ) return status;
+		g_cache.run( ptr, size, p_path, m_file->get_timestamp( p_abort ), m_subsong_info, p_abort );
 
-			status = g_cache.run( ptr, size, p_path, timestamp, m_subsong_info, p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
-
-		if ( p_reason == input_open_info_write )
-		{
-			this->m_file = m_file;
-		}
-
-		return io_result_success;
+		if ( p_reason == input_open_info_write ) this->m_file = m_file;
 	}
 
 	unsigned get_subsong_count()
@@ -1977,7 +1957,7 @@ public:
 		return m_subsong_info[ p_index ]->start_order;
 	}
 
-	t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
+	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
 		p_info.copy( * m_info );
 
@@ -2002,17 +1982,14 @@ public:
 		{
 			if ( info->length >= 0 ) p_info.set_length( double( info->length ) / 65536. );
 		}
-
-		return io_result_success;
 	}
 
-	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
+	t_filestats get_file_stats( abort_callback & p_abort )
 	{
-		p_stats = m_stats;
-		return io_result_success;
+		return m_stats;
 	}
 
-	t_io_result decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
+	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
 	{
 		if ( sr )
 		{
@@ -2032,25 +2009,19 @@ public:
 		no_loop = ( p_flags & input_flag_no_looping ) || ( loop_count < 0 );
 		start_order = p_subsong;
 
-		//try
 		{
 			const t_uint8 * ptr = buffer.get_ptr();
 			unsigned size = buffer.get_size();
 			duh = g_open_module( ptr, size, extension, start_order, is_it, is_dos );
-			if ( ! duh ) return io_result_error_data;
 		}
-		//catch(exception_io const & e) {return e.get_code();}
 
-		if ( ! open2() )
-			return io_result_error_data;
+		if ( ! open2() ) throw exception_io_data();
 
 		eof = false;
 		dynamic_info = !!cfg_dynamic_info;
 		written = 0;
 		dyn_order = dyn_row = dyn_speed = dyn_tempo = dyn_channels = -1;
 		dyn_max_channels = 0;
-
-		return io_result_success;
 	}
 
 private:
@@ -2081,9 +2052,9 @@ private:
 	}
 
 public:
-	t_io_result decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
+	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 	{
-		if (eof) return io_result_eof;
+		if (eof) return false;
 
 		/*int*/ written=0;
 
@@ -2092,10 +2063,16 @@ public:
 		long samples = long( ( ( (LONG_LONG)itsr->time_left << 16 ) | itsr->sub_time_left ) / dt );
 		if ( ! samples || samples > 2048 ) samples = 2048;
 
-		if ( ! buf ) buf = create_sample_buffer( 2, 2048 );
+		if ( ! buf )
+		{
+			buf = create_sample_buffer( 2, 2048 );
+			if ( ! buf ) throw std::bad_alloc();
+		}
+
+		dbuf.grow_size( 2048 * 2 );
 
 retry:
-		if ( p_abort.is_aborting() ) return io_result_aborted;
+		p_abort.check();
 
 		dumb_silence( buf[0], 2048 * 2 );
 		written = duh_sigrenderer_get_samples( sr, 1.f, delta, samples, buf );
@@ -2129,33 +2106,32 @@ retry:
 			}
 		}
 
-		if      ( written == 0 )  return io_result_eof;
-		else if ( written == -1 ) return io_result_error_data;
-
-		if ( ! p_chunk.check_data_size( written * 2 ) )
-			return io_result_error_out_of_memory;
+		if      ( written == 0 )  return false;
+		else if ( written == -1 ) throw exception_io_data();
 
 		sample_t * in_l = buf[0];
 		sample_t * in_r = buf[1];
-		audio_sample * out = p_chunk.get_data();
+		sample_t * out = dbuf.get_ptr();
+		for ( unsigned i = 0; i < written; ++i )
+		{
+			*out++ = *in_l++;
+			*out++ = *in_r++;
+		}
+		p_chunk.check_data_size( written * 2 );
+		audio_math::convert_from_int32( dbuf.get_ptr(), written * 2, p_chunk.get_data(), 1 << 8 );
 		p_chunk.set_srate( srate );
 		p_chunk.set_channels( 2 );
 		p_chunk.set_sample_count( written );
-		for ( unsigned i = 0; i < written; ++i )
-		{
-			*out++ = *in_l++ * (1. / float(0x800000));
-			*out++ = *in_r++ * (1. / float(0x800000));
-		}
 
-		return io_result_success;
+		return true;
 	}
 
-	t_io_result decode_seek( double p_seconds, abort_callback & p_abort )
+	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		long from_pos = duh_sigrenderer_get_position( sr );
 		eof = false;
 
-		if ( from_pos < 0 ) return io_result_error_generic;
+		if ( from_pos < 0 ) throw exception_io();
 
 		long to_pos = long( 65536. * p_seconds + .5 );
 
@@ -2163,15 +2139,12 @@ retry:
 		{
 			duh_end_sigrenderer( sr );
 			sr = NULL;
-			if ( ! open2( to_pos ) )
-				return io_result_error_data;
+			if ( ! open2( to_pos ) ) throw exception_io_data();
 		}
 		else if ( to_pos > from_pos )
 		{
 			duh_sigrenderer_get_samples( sr, 0., 1.f, to_pos - from_pos, 0 );
 		}
-
-		return io_result_success;
 	}
 
 	bool decode_can_seek()
@@ -2251,28 +2224,26 @@ retry:
 	{
 	}
 
-	t_io_result retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
+	void retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
 	{
-		if (cfg_tag)
+		if ( cfg_tag )
 		{
-			if ( p_subsong > 0 || m_subsong_info.get_count() > 1 ) return io_result_error_data;
+			if ( p_subsong > 0 || m_subsong_info.get_count() > 1 ) throw exception_io_data();
 
 			m_info->copy( p_info );
 
-			t_io_result status = tag_processor::write_apev2( m_file, p_info, p_abort );
-			if ( io_result_failed ( status ) ) return status;
+			tag_processor::write_apev2( m_file, p_info, p_abort );
 
-			return m_file->get_stats( m_stats, p_abort );
+			m_stats = m_file->get_stats( p_abort );
 		}
 		else
 		{
-			return io_result_error_data;
+			throw exception_io_data();
 		}
 	}
 
-	t_io_result retag_commit( abort_callback & p_abort )
+	void retag_commit( abort_callback & p_abort )
 	{
-		return io_result_success;
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )
@@ -2514,18 +2485,6 @@ public:
 	}
 };
 
-class version_mod : public componentversion
-{
-public:
-	virtual void get_file_name(string_base & out) { out.set_string(core_api::get_my_file_name()); }
-	virtual void get_component_name(string_base & out) { out.set_string("DUMB module decoder"); }
-	virtual void get_component_version(string_base & out) { out.set_string(MYVERSION); }
-	virtual void get_about_message(string_base & out)
-	{
-		out.set_string("Using DUMB v" DUMB_VERSION_STR "-cvs-" DUMB_YEAR_STR4 DUMB_MONTH_STR2 DUMB_DAY_STR2 ",\nwith several modifications.\n\nhttp://dumb.sourceforge.net/");
-	}
-};
-
 class mod_file_types : public input_file_type
 {
 	virtual unsigned get_count()
@@ -2533,22 +2492,21 @@ class mod_file_types : public input_file_type
 		return 1;
 	}
 
-	virtual bool get_name(unsigned idx, string_base & out)
+	virtual bool get_name(unsigned idx, pfc::string_base & out)
 	{
 		if (idx > 0) return false;
 		out = "Module files";
 		return true;
 	}
 
-	virtual bool get_mask(unsigned idx, string_base & out)
+	virtual bool get_mask(unsigned idx, pfc::string_base & out)
 	{
 		if (idx > 0) return false;
 		out.reset();
 		for (int n = 0; n < tabsize(exts); n++)
 		{
 			if (n) out.add_byte(';');
-			out += "*.";
-			out += exts[n];
+			out << "*." << exts[n];
 		}
 		return true;
 	}
@@ -2922,4 +2880,5 @@ static input_factory_t           <input_mod>                      g_input_mod_fa
 static preferences_page_factory_t<preferences_page_mod>           g_config_mod_factory;
 static service_factory_single_t  <input_file_type,mod_file_types> g_input_file_type_mod_factory;
 //static menu_item_factory_t       <context_mod>                    g_menu_item_mod_factory;
-static service_factory_single_t  <componentversion,version_mod>   g_component_version_mod_factory;
+
+DECLARE_COMPONENT_VERSION( "DUMB module decoder", MYVERSION, "Using DUMB v" DUMB_VERSION_STR "-cvs-" DUMB_YEAR_STR4 DUMB_MONTH_STR2 DUMB_DAY_STR2 ",\nwith several modifications.\n\nhttp://dumb.sourceforge.net/");

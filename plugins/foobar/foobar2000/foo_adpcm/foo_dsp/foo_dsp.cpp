@@ -35,10 +35,10 @@ static const char * exts[] =
 
 class input_dsp
 {
-	headertype         type;
-	CUBEFILE           dsp;
+	headertype            type;
+	CUBEFILE              dsp;
 
-	mem_block_t<short> sample_buffer;
+	pfc::array_t<t_int16> sample_buffer;
 
 	int pos, swallow;
 
@@ -59,22 +59,19 @@ public:
 	input_dsp() { type = type_std; pos = 0; dsp.file_length = 0; looped = false; }
 	~input_dsp() {}
 
-	t_io_result open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
+	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) return io_result_error_data;
-
-		t_io_result status;
+		if ( p_reason == input_open_info_write ) throw exception_io_data();
 
 		if ( p_filehint.is_empty() )
 		{
-			status = filesystem::g_open( p_filehint, p_path, filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			filesystem::g_open( p_filehint, p_path, filesystem::open_mode_read, p_abort );
 		}
 
 		dsp.ch[0].infile = p_filehint;
 
-		const char * ptr = p_path + string8::g_scan_filename( p_path );
-		string_extension_8 ext( ptr );
+		const char * ptr = p_path + pfc::scan_filename( p_path );
+		string_extension ext( ptr );
 		const char * dot = strrchr( ptr, '.' );
 		if ( dot ) ptr = dot - 1;
 		else if ( *ptr ) ptr += strlen( ptr ) - 1;
@@ -87,10 +84,10 @@ public:
 			if ( mp1 ) temp.set_char( ptr - p_path, *ptr ^ ( 'L' ^ 'R' ) );
 			else if ( ww ) temp.set_char( ptr - p_path, *ptr ^ ( '0' ^ '1' ) );
 			else temp.set_char( ptr - p_path + 4, ptr[4] ^ ( 'D' ^ 'T' ) );
-			status = filesystem::g_open( p_filehint, temp, filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) && ( status != io_result_error_not_found || spt ) ) return status;
-			if ( status != io_result_error_not_found )
+			try
 			{
+				filesystem::g_open( p_filehint, temp, filesystem::open_mode_read, p_abort );
+
 				dsp.ch[1].infile = p_filehint;
 				bool swap = false;
 				if ( mp1 ) swap = ( *ptr | 0x20 ) == 'r';
@@ -98,30 +95,28 @@ public:
 				else swap = ( ptr[4] | 0x20 ) == 'd';
 				if ( swap ) pfc::swap_t( dsp.ch[0].infile, dsp.ch[1].infile );
 			}
-			else dsp.ch[1].infile = dsp.ch[0].infile;
+			catch ( const exception_io_not_found & )
+			{
+				if ( spt ) throw;
+				dsp.ch[1].infile = dsp.ch[0].infile;
+			}
 		}
 		else dsp.ch[1].infile = dsp.ch[0].infile;
 
 		if ( ! stricmp_utf8( ext, "MSS" ) ) type = type_mss;
 		else if ( ! stricmp_utf8( ext, "GCM" ) ) type = type_gcm;
 		else if ( ! stricmp_utf8( ext, "ADP" ) ) type = type_adp;
-
-		return io_result_success;
 	}
 
-	t_io_result get_info( file_info & p_info, abort_callback & p_abort )
+	void get_info( file_info & p_info, abort_callback & p_abort )
 	{
 		if ( ! dsp.file_length )
 		{
-			//try
+			if ( type == type_adp )
 			{
-				if ( type == type_adp )
-				{
-					if ( ! InitADPFILE( & dsp, p_abort ) ) type = type_std;
-				}
-				if ( type != type_adp ) InitDSPFILE( & dsp, p_abort, type );
+				if ( ! InitADPFILE( & dsp, p_abort ) ) type = type_std;
 			}
-			//catch(exception_io const & e) {return e.get_code();}
+			if ( type != type_adp ) InitDSPFILE( & dsp, p_abort, type );
 
 			if ( dsp.ch[0].header.loop_flag ) looped = true;
 		}
@@ -159,28 +154,22 @@ public:
 		}
 
 		p_info.set_length( double( dsp.nrsamples ) / double( dsp.ch[0].header.sample_rate ) );
-
-		return io_result_success;
 	}
 
-	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
+	t_filestats get_file_stats( abort_callback & p_abort )
 	{
-		return dsp.ch[0].infile->get_stats( p_stats, p_abort );
+		return dsp.ch[0].infile->get_stats( p_abort );
 	}
 
-	t_io_result decode_initialize( unsigned p_flags,abort_callback & p_abort )
+	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
 		if ( ! dsp.file_length || pos )
 		{
-			//try
+			if ( type == type_adp )
 			{
-				if ( type == type_adp )
-				{
-					if ( ! InitADPFILE( & dsp, p_abort ) ) type = type_std;
-				}
-				if ( type != type_adp ) InitDSPFILE( & dsp, p_abort, type );
+				if ( ! InitADPFILE( & dsp, p_abort ) ) type = type_std;
 			}
-			//catch(exception_io const & e) {return e.get_code();}
+			if ( type != type_adp ) InitDSPFILE( & dsp, p_abort, type );
 
 			if ( dsp.ch[0].header.loop_flag ) looped = true;
 		}
@@ -198,13 +187,11 @@ public:
 
 		pos = 0;
 		swallow = 0;
-
-		return io_result_success;
 	}
 
-	t_io_result decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
+	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
-		bool eof = false;
+		bool status = true;
 		int todo, done = 0;
 
 		if ( dsp.ch[0].header.loop_flag ) todo = 1024;
@@ -212,31 +199,22 @@ public:
 		{
 			todo = dsp.nrsamples - pos;
 			if ( todo > 1024 ) todo = 1024;
-			if ( ! todo ) return io_result_eof;
+			if ( ! todo ) return false;
 		}
 
-		if ( ! sample_buffer.check_size( todo * dsp.NCH ) )
-			return io_result_error_out_of_memory;
+		sample_buffer.grow_size( todo * dsp.NCH );
 
-		while ( done < todo && !eof )
+		while ( done < todo && status )
 		{
 			if ( dsp.ch[0].filled < todo )
 			{
-				try
-				{
-					fillbuffers( & dsp, p_abort );
-				}
-				catch(exception_io const & e)
-				{
-					if ( e.get_code() != io_result_eof ) return e.get_code();
-					eof = true;
-				}
+				status = fillbuffers( & dsp, p_abort );
 			}
 
 			done = dsp.ch[0].filled;
 			if ( done > todo ) done = todo;
 
-			if ( ! done && eof ) return io_result_eof;
+			if ( ! done && ! status ) return false;
 
 			pos += done;
 
@@ -260,7 +238,7 @@ public:
 		dsp.ch[0].filled -= done;
 		if ( dsp.NCH == 2 ) dsp.ch[1].filled -= done;
 
-		short * out = sample_buffer.get_ptr();
+		t_int16 * out = sample_buffer.get_ptr();
 
 		if ( dsp.NCH == 2 )
 		{
@@ -284,25 +262,24 @@ public:
 		if (done)
 		{
 			p_chunk.set_data_fixedpoint( sample_buffer.get_ptr(), ( ( unsigned char * ) out ) - ( ( unsigned char * ) sample_buffer.get_ptr() ), dsp.ch[0].header.sample_rate, dsp.NCH, 16, audio_chunk::g_guess_channel_config( dsp.NCH ) );
-			return io_result_success;
+			return true;
 		}
 
-		return io_result_eof;
+		return false;
 	}
 
-	t_io_result decode_seek( double p_seconds,abort_callback & p_abort )
+	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		swallow = int( p_seconds * double( dsp.ch[0].header.sample_rate ) + .5 );
 		if ( swallow >= pos )
 		{
 			swallow -= pos;
-			return io_result_success;
+			return;
 		}
 
 		unsigned swallow = this->swallow;
-		t_io_result status = decode_initialize( dsp.ch[0].header.loop_flag ? 0 : input_flag_no_looping, p_abort );
+		decode_initialize( dsp.ch[0].header.loop_flag ? 0 : input_flag_no_looping, p_abort );
 		this->swallow = swallow;
-		return status;
 	}
 
 	bool decode_can_seek()
@@ -324,9 +301,9 @@ public:
 	{
 	}
 
-	t_io_result retag( const file_info & p_info,abort_callback & p_abort )
+	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		return io_result_error_data;
+		throw exception_io_data();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

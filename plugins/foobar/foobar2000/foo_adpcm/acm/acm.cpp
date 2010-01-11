@@ -18,7 +18,7 @@ class input_acm
 	service_ptr_t<file>         m_file;
 	CACMUnpacker              * m_unpacker;
 
-	mem_block_t<int>            data_buffer;
+	pfc::array_t<int>           data_buffer;
 
 	int srate, nch, size;
 
@@ -26,6 +26,16 @@ class input_acm
 
 	/* for reader callback */
 	abort_callback            * m_abort;
+
+	static int _stdcall reader_callback(void * hFile, unsigned char * buffer, int count)
+	{
+		return ((input_acm *)hFile)->reader_callback_i(buffer, count);
+	}
+
+	int reader_callback_i(unsigned char * buffer, int count)
+	{
+		return m_file->read(buffer, count, *m_abort);
+	}
 
 public:
 	input_acm() : m_unpacker(0), m_abort(0) {}
@@ -35,93 +45,58 @@ public:
 		if (m_unpacker) delete m_unpacker;
 	}
 
-	static int _stdcall reader_callback(int hFile, unsigned char * buffer, int count)
+	void open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
 	{
-		return ((input_acm *)hFile)->reader_callback_i(buffer, count);
-	}
-
-	int reader_callback_i(unsigned char * buffer, int count)
-	{
-		return m_file->read_e(buffer, count, *m_abort);
-	}
-
-	t_io_result open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
-	{
-		if ( p_reason == input_open_info_write ) return io_result_error_data;
-
-		t_io_result status;
+		if ( p_reason == input_open_info_write ) throw exception_io_data();
 
 		if ( p_filehint.is_empty() )
 		{
-			status = filesystem::g_open( m_file, p_path, filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			filesystem::g_open( m_file, p_path, filesystem::open_mode_read, p_abort );
 		}
 		else m_file = p_filehint;
-
-		return io_result_success;
 	}
 
 private:
-	t_io_result open_internal( abort_callback & p_abort )
+	void open_internal( abort_callback & p_abort )
 	{
 		m_unpacker = new CACMUnpacker;
-		if (!m_unpacker) return io_result_error_out_of_memory;
 
-		//try
-		{
-			m_abort = &p_abort;
-			if (!m_unpacker->init( reader_callback, (int)this, nch, srate, size) ) return io_result_error_data;
-		}
-		//catch(exception_io const & e) {return e.get_code();}
-
-		return io_result_success;
+		m_abort = &p_abort;
+		if ( ! m_unpacker->init( reader_callback, this, nch, srate, size) ) throw exception_io_data();
 	}
 
 public:
-	t_io_result get_info( file_info & p_info, abort_callback & p_abort )
+	void get_info( file_info & p_info, abort_callback & p_abort )
 	{
-		if ( ! m_unpacker )
-		{
-			t_io_result status = open_internal( p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
+		if ( ! m_unpacker ) open_internal( p_abort );
 
 		p_info.info_set_int( "samplerate", srate );
 		p_info.info_set_int( "channels", nch );
 		p_info.info_set( "codec", "Interplay ACM" );
 
 		p_info.set_length( double( size / nch ) / double( srate ) );
-
-		return io_result_success;
 	}
 
-	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
+	t_filestats get_file_stats( abort_callback & p_abort )
 	{
-		return m_file->get_stats( p_stats, p_abort );
+		return m_file->get_stats( p_abort );
 	}
 
-	t_io_result decode_initialize( unsigned p_flags,abort_callback & p_abort )
+	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
-		if ( ! m_unpacker )
-		{
-			t_io_result status = open_internal( p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
+		if ( ! m_unpacker ) open_internal( p_abort );
 
 		pos = 0;
 		swallow = 0;
-
-		return io_result_success;
 	}
 
-	t_io_result decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
+	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
-		if (pos >= size) return io_result_eof;
+		if (pos >= size) return false;
 
 		int todo = 588 * nch, done;
 
-		if ( ! data_buffer.check_size( todo ) )
-			return io_result_error_out_of_memory;
+		data_buffer.grow_size( todo );
 
 		int * out = data_buffer.get_ptr();
 
@@ -149,51 +124,38 @@ public:
 				}
 			} while(!done);
 		}
-		//catch(exception_io const & e) {return e.get_code();}
 
 		if (done)
 		{
-			if ( ! p_chunk.check_data_size( done ) )
-				return io_result_error_out_of_memory;
-
-			audio_sample * final = p_chunk.get_data();
-			for (int i = 0; i < done; i++)
-			{
-				*final++ = audio_sample(*out++) * (1. / 32768.);
-			}
+			p_chunk.check_data_size( done );
+			audio_math::convert_from_int32( out, done, p_chunk.get_data(), 1 << 16 );
 			p_chunk.set_srate(srate);
 			p_chunk.set_channels(nch);
 			p_chunk.set_sample_count(done / nch);
-			return io_result_success;
+			return true;
 		}
 
-		return io_result_eof;
+		return false;
 	}
 
-	t_io_result decode_seek( double p_seconds,abort_callback & p_abort )
+	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		swallow = int( p_seconds * double( srate ) + .5 ) * nch;
 		if ( swallow > pos )
 		{
 			swallow -= pos;
-			return io_result_success;
+			return;
 		}
+
 		pos = 0;
 		delete m_unpacker;
 
-		m_file->seek_e( 0, p_abort );
+		m_file->seek( 0, p_abort );
 
 		m_unpacker = new CACMUnpacker;
-		if ( ! m_unpacker ) return io_result_error_out_of_memory;
 
-		//try
-		{
-			m_abort = &p_abort;
-			if ( ! m_unpacker->init( reader_callback, (int) this, nch, srate, size ) ) return io_result_error_data;
-		}
-		//catch(exception_io const & e) {return e.get_code();}
-
-		return io_result_success;
+		m_abort = &p_abort;
+		if ( ! m_unpacker->init( reader_callback, this, nch, srate, size ) ) throw exception_io_data();
 	}
 
 	bool decode_can_seek()
@@ -215,9 +177,9 @@ public:
 	{
 	}
 
-	t_io_result retag( const file_info & p_info,abort_callback & p_abort )
+	void retag( const file_info & p_info, abort_callback & p_abort )
 	{
-		return io_result_error_data;
+		throw exception_io_data();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

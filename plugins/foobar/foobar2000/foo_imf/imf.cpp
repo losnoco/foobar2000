@@ -123,8 +123,7 @@ static float getrate(unsigned long crc, unsigned long size)
 
 class input_imf
 {
-	mem_block_aligned_t<audio_sample> outbuffer;
-	mem_block_t<Xdata> imf_data;
+	pfc::array_t<Xdata> imf_data;
 
 	Xdata *pLog;
 	float TicksPerSecond;
@@ -148,9 +147,19 @@ class input_imf
 		Xdata * out = (Xdata*) in;
 		for (int i = LogCount - 1; i >= 0; i--)
 		{
-			out[i].time = in[i].time;
+			out[i].time = byte_order::word_le_to_native( in[i].time );
 			out[i].val = in[i].val;
 			out[i].reg = in[i].reg;
+		}
+	}
+
+	void swap()
+	{
+		Xdata * ptr = imf_data.get_ptr();
+		for ( int i = 0; i < LogCount; ++i )
+		{
+			ptr[ i ].reg = byte_order::word_le_to_native( ptr[ i ].reg );
+			ptr[ i ].time = byte_order::word_le_to_native( ptr[ i ].time );
 		}
 	}
 
@@ -204,50 +213,52 @@ public:
 		}
 	}
 
-	t_io_result open( service_ptr_t<file> p_file,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
+	void open( service_ptr_t<file> p_file,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) return io_result_error_data;
-
-		t_io_result status;
+		if ( p_reason == input_open_info_write ) throw exception_io_data();
 
 		if ( p_file.is_empty() )
 		{
-			status = filesystem::g_open( p_file, p_path, filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			filesystem::g_open( p_file, p_path, filesystem::open_mode_read, p_abort );
 		}
 
-		status = p_file->get_stats( m_stats, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		m_stats = p_file->get_stats( p_abort );
 
-		if ( m_stats.m_size > (1 << 30)) return io_result_error_data;
+		if ( m_stats.m_size > (1 << 30)) throw exception_io_data();
 
 		//srate = cfg_srate;
 
 		{
 			unsigned wanted;
 
+			union
+			{
+				t_uint8  byte;
+				t_uint16 word;
+			};
+
 			//try
 			{
-				LogCount = 0;
-				p_file->read_object_e(&LogCount, 2, p_abort);
+				p_file->read_lendian_t( word, p_abort );
+				LogCount = word;
 
 				Chips = 1;
 				extended = 0;
 
-				if (!LogCount)
+				if ( !LogCount )
 				{
 					TicksPerSecond = 280.f;
 					LogCount = (int)(m_stats.m_size / 4);
-					p_file->seek_e(0, p_abort);
+					p_file->seek( 0, p_abort );
 				}
 				else
 				{
-					if (LogCount == 'MI')
+					if ( LogCount == 'MI' )
 					{
 						unsigned char blah[9];
-						p_file->read_object_e(&blah, 9, p_abort);
-						if (blah[0] != 'F' || blah[1] != 26) return io_result_error_data;
-						if (!(blah[2] | blah[3] | blah[4] | blah[5] | blah[6] | blah[7] | blah[8])) return io_result_error_data;
+						p_file->read_object( &blah, 9, p_abort );
+						if (blah[0] != 'F' || blah[1] != 26) throw exception_io_data();
+						if ( !(blah[2] | blah[3] | blah[4] | blah[5] | blah[6] | blah[7] | blah[8]) ) throw exception_io_data();
 						extended = 1;
 						LogCount = blah[2] | (blah[3] << 8) | (blah[4] << 16) | (blah[5] << 24);
 						TicksPerSecond = (float)(blah[6] | (blah[7] << 8));
@@ -260,31 +271,29 @@ public:
 					}
 				}
 
-				if ( ! imf_data.set_size( LogCount ) )
-					return io_result_error_out_of_memory;
+				imf_data.set_size( LogCount );
 
 				pLog = imf_data.get_ptr();
 
 				wanted = LogCount * 4;
 				if (Chips > 1) wanted += LogCount;
 
-				p_file->read_object_e(pLog, wanted, p_abort);
+				p_file->read_object(pLog, wanted, p_abort);
 			}
 			//catch(exception_io const & e) {return e.get_code();}
 
-			if (!extended)
+			if ( !extended )
 			{
 				float meh = getrate(crc32((unsigned char*) pLog, wanted), wanted);
 				if (meh) TicksPerSecond = meh;
 			}
 
 			if (Chips == 1) extend();
+			else swap();
 		}
-
-		return io_result_success;
 	}
 
-	t_io_result get_info( file_info & p_info, abort_callback & p_abort )
+	void get_info( file_info & p_info, abort_callback & p_abort )
 	{
 		p_info.info_set_int("samplerate", srate);
 		p_info.info_set_int("bitspersample", 16);
@@ -293,23 +302,17 @@ public:
 
 		string8 temp;
 
-		temp.add_int((__int64)TicksPerSecond);
-		temp.add_char('.');
-		temp.add_int((__int64)(TicksPerSecond * 100) % 100);
-		p_info.info_set("imf_ticks_per_second", temp);
+		p_info.info_set("imf_ticks_per_second", format_float( TicksPerSecond, 0, 2 ) );
 
 		p_info.set_length( get_length() );
-
-		return io_result_success;
 	}
 
-	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
+	t_filestats get_file_stats( abort_callback & p_abort )
 	{
-		p_stats = m_stats;
-		return io_result_success;
+		return m_stats;
 	}
 
-	t_io_result decode_initialize( unsigned p_flags,abort_callback & p_abort )
+	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
 		if ( ! chip )
 		{
@@ -319,8 +322,6 @@ public:
 			{
 				chip[i].init(OPL_TYPE_WAVESEL, MASTER_CLOCK, srate);
 			}
-
-			outbuffer.set_size(576);
 		}
 
 		for (int i = 0; i < Chips; i++)
@@ -334,16 +335,13 @@ public:
 		remainder = 0;
 
 		no_loop = p_flags & input_flag_no_looping;
-	
-		return io_result_success;
 	}
 
-public:
-	virtual t_io_result decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
+	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
-		if (CurrentLog == LogCount && !remainder)
+		if ( CurrentLog == LogCount && !remainder )
 		{
-			if (no_loop) return io_result_eof;
+			if ( no_loop ) return false;
 			else
 			{
 				CurrentLog = 0;
@@ -351,23 +349,26 @@ public:
 			}
 		}
 
+		p_chunk.check_data_size( 1024 );
+		p_chunk.set_srate( srate );
+		p_chunk.set_channels( 1 );
+
 		int samples, rendered;
 		float remain;
-		audio_sample *p = outbuffer.get_ptr();
+		audio_sample *p = p_chunk.get_data();
 
-		outbuffer.zeromemory();
-		
+		memset( p, 0, sizeof( audio_sample ) * 1024 );
+
 		rendered = 0;
 
 		if (remainder)
 		{
-			if (remainder > 576)
+			if (remainder > 1024)
 			{
-				render(p, 576);
-				remainder -= 576;
-				if ( ! p_chunk.set_data(p, 576, 1, srate) )
-					return io_result_error_out_of_memory;
-				return io_result_success;
+				render( p, 1024 );
+				remainder -= 1024;
+				p_chunk.set_sample_count( 1024 );
+				return true;
 			}
 			render(p, remainder);
 			p += remainder;
@@ -377,9 +378,8 @@ public:
 			{
 				if (no_loop)
 				{
-					if ( ! p_chunk.set_data(outbuffer.get_ptr(), rendered, 1, srate) )
-						return io_result_error_out_of_memory;
-					return io_result_success;
+					p_chunk.set_sample_count( rendered );
+					return true;
 				}
 				else
 				{
@@ -391,13 +391,13 @@ public:
 
 		remain = 0.;
 
-		while (CurrentLog < LogCount)
+		while ( CurrentLog < LogCount )
 		{
 			int time;
-			while (CurrentLog < LogCount)
+			while ( CurrentLog < LogCount )
 			{
 another:
-				write(pLog[CurrentLog].reg, pLog[CurrentLog].val);
+				write( pLog[CurrentLog].reg, pLog[CurrentLog].val );
 				time = pLog[CurrentLog].time;
 				CurrentLog++;
 				if (time) break;
@@ -420,11 +420,11 @@ another:
 			}
 			else
 				samples = time;
-			if (samples > (576 - rendered))
+			if (samples > (1024 - rendered))
 			{
-				remainder = samples - (576 - rendered);
-				samples = 576 - rendered;
-				rendered = 576;
+				remainder = samples - (1024 - rendered);
+				samples = 1024 - rendered;
+				rendered = 1024;
 				render(p, samples);
 				break;
 			}
@@ -438,15 +438,14 @@ another:
 
 		if (rendered)
 		{
-			if ( ! p_chunk.set_data(outbuffer.get_ptr(), rendered, 1, srate) )
-				return io_result_error_out_of_memory;
-			return io_result_success;
+			p_chunk.set_sample_count( rendered );
+			return true;
 		}
 		else
-			return io_result_eof;
+			return false;
 	}
 
-	t_io_result decode_seek( double p_seconds, abort_callback & p_abort )
+	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		double current = (double)CurrentTick + remainder * (float)srate / TicksPerSecond;
 		p_seconds *= TicksPerSecond;
@@ -461,8 +460,10 @@ another:
 
 		remainder = 0;
 
-		while (p_seconds > 0. && !p_abort.is_aborting())
+		while (p_seconds > 0.)
 		{
+			p_abort.check();
+
 			write(pLog[CurrentLog].reg, pLog[CurrentLog].val);
 			if ((double)pLog[CurrentLog].time <= p_seconds)
 			{
@@ -472,16 +473,13 @@ another:
 			else
 			{
 				remainder = (int)(((double)pLog[CurrentLog].time - p_seconds) * (float)srate / TicksPerSecond);
-				mem_block_aligned_t<audio_sample> meh;
+				pfc::array_t<audio_sample> meh;
 				int wanted = (int)(p_seconds * (float)srate / TicksPerSecond);
-				if ( ! meh.set_size( wanted ) )
-					return io_result_error_out_of_memory;
+				meh.set_size( wanted );
 				render( meh.get_ptr(), wanted );
 				break;
 			}
 		}
-
-		return p_abort.is_aborting() ? io_result_aborted : io_result_success;
 	}
 
 	bool decode_can_seek()
@@ -503,9 +501,9 @@ another:
 	{
 	}
 
-	t_io_result retag( const file_info & p_info,abort_callback & p_abort )
+	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		return io_result_error_data;
+		throw exception_io_data();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

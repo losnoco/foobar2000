@@ -21,7 +21,7 @@ public:
         return guid;
     }
 
-    static void g_get_name(string_base & p_out)
+	static void g_get_name(pfc::string_base & p_out)
     {
         p_out = "Crossfeed";
     }

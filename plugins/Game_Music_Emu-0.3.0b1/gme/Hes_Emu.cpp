@@ -46,7 +46,7 @@ blargg_err_t Hes_Emu::load( const header_t& h, Data_Reader& in )
 		return "Unsupported HES version";
 	
 	set_voice_count( 6 );
-	set_track_count( 1 );
+	set_track_count( 256 );
 	
 	synth.volume( 0.6 / voice_count() );
 

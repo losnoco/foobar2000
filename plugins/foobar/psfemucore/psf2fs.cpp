@@ -118,10 +118,6 @@ static void errormessagethrown(struct PSF2FS *fs, const char *fn, const char *me
   errormessageadd(fs, message );
 }
 
-static void errormessagethrown(struct PSF2FS *fs, const char *fn, t_io_result status) {
-  errormessagethrown( fs, fn, io_result_get_message( status ) );
-}
-
 static void errormessage(struct PSF2FS *fs, const char *message) {
   fs->errorstring[0] = 0;
   errormessageadd(fs, message);
@@ -154,7 +150,7 @@ static void makelibpath(const char *path, const char *libpath, char *finalpath, 
 
 static unsigned read32lsb(const service_ptr_t<file> & f, abort_callback & p_abort) {
   unsigned char foo[4];
-  f->read_object_e(foo, 4, p_abort);
+  f->read_object(foo, 4, p_abort);
   return (
     ((foo[0] & 0xFF) <<  0) |
     ((foo[1] & 0xFF) <<  8) |
@@ -196,7 +192,7 @@ static struct DIR_ENTRY *makearchivedir(
   if(offset >= source->reserved_size) { errormessageadd(fs, ""); goto corrupt; }
   if((offset + 4) > source->reserved_size) { errormessageadd(fs, ""); goto corrupt; }
   try {
-  f->seek_e(16 + offset, *fs->p_abort);
+  f->seek(16 + offset, *fs->p_abort);
   num = read32lsb(f, *fs->p_abort);
   offset += 4;
   if(num < 0) goto corrupt;
@@ -209,8 +205,8 @@ static struct DIR_ENTRY *makearchivedir(
       entry->next = dir;
       dir = entry;
     }
-	f->seek_e(16 + offset, *fs->p_abort);
-	f->read_object_e(dir->name, 36, *fs->p_abort);
+	f->seek(16 + offset, *fs->p_abort);
+	f->read_object(dir->name, 36, *fs->p_abort);
     o = read32lsb(f, *fs->p_abort);
     u = read32lsb(f, *fs->p_abort);
     b = read32lsb(f, *fs->p_abort);
@@ -247,7 +243,7 @@ static struct DIR_ENTRY *makearchivedir(
       for(i = 0; i < blocks; i++) {
         int cbs;
         if((o + 4) > source->reserved_size) { errormessageadd(fs, ""); goto corrupt; }
-		f->seek_e(16 + o, *fs->p_abort);
+		f->seek(16 + o, *fs->p_abort);
         cbs = read32lsb(f, *fs->p_abort);
         o += 4;
         dir->offset_table[i] = dataofs;
@@ -256,10 +252,6 @@ static struct DIR_ENTRY *makearchivedir(
       dir->offset_table[i] = dataofs;
     }
   }
-  }
-  catch(exception_io const & e) {
-    errormessagethrown(fs, "makearchivedir", e.get_code());
-    goto error;
   }
   catch(std::exception const & e) {
     errormessagethrown(fs, "makearchivedir", e.what());
@@ -364,7 +356,6 @@ static int addarchive(
   struct DIR_ENTRY **pdir
 ) {
   char *tag = NULL;
-  t_io_result status;
   service_ptr_t<file> f;
   int fl, tag_ofs, tag_bytes;
   t_filesize fl64;
@@ -393,22 +384,35 @@ static int addarchive(
   }
 
 dofile:
-  status = filesystem::g_open(f, path, filesystem::open_mode_read, *fs->p_abort);
-  if(io_result_failed(status)) {
+  try { filesystem::g_open(f, path, filesystem::open_mode_read, *fs->p_abort); }
+  catch ( std::exception const & e ) {
     errormessageadd(fs, "Unable to open ");
 	errormessageadd(fs, path);
 	errormessageadd(fs, " - ");
-	errormessageadd(fs, io_result_get_message( status ) );
+	errormessageadd(fs, e.what() );
     goto error;
   }
-  status = f->get_size(fl64, *fs->p_abort);
-  if (io_result_failed(status))
-  {
-	  errormessageadd(fs, "Unable to query size for ");
-	  errormessageadd(fs, path);
-	  errormessageadd(fs, " - ");
-	  errormessageadd(fs, io_result_get_message( status ) );
-	  goto error;
+  catch ( ... ) {
+    errormessageadd(fs, "Unable to open ");
+	errormessageadd(fs, path);
+	errormessageadd(fs, " - ");
+	errormessageadd(fs, "unknown" );
+    goto error;
+  }
+  try { fl64 = f->get_size(*fs->p_abort); }
+  catch ( std::exception const & e ) {
+    errormessageadd(fs, "Unable to query size for ");
+	errormessageadd(fs, path);
+	errormessageadd(fs, " - ");
+	errormessageadd(fs, e.what() );
+    goto error;
+  }
+  catch ( ... ) {
+	errormessageadd(fs, "Unable to query size for ");
+	errormessageadd(fs, path);
+	errormessageadd(fs, " - ");
+	errormessageadd(fs, "unknown" );
+    goto error;
   }
   if (fl64 > 1<<30)
   {
@@ -418,12 +422,19 @@ dofile:
   }
   fl = (int)fl64;
   if(fl < 16) goto invalidformat;
-  status = f->read_object(header, 16, *fs->p_abort);
-  if(io_result_failed(status)) {
+  try { f->read_object(header, 16, *fs->p_abort); }
+  catch ( std::exception const & e ) {
     errormessageadd(fs, "Unable to read ");
 	errormessageadd(fs, path);
 	errormessageadd(fs, " - ");
-	errormessageadd(fs, io_result_get_message( status ) );
+	errormessageadd(fs, e.what() );
+    goto error;
+  }
+  catch ( ... ) {
+    errormessageadd(fs, "Unable to read ");
+	errormessageadd(fs, path);
+	errormessageadd(fs, " - ");
+	errormessageadd(fs, "unknown" );
     goto error;
   }
   if(
@@ -458,19 +469,25 @@ dofile:
 
   if(skip_tag) goto notag;
 
-  status = f->seek(tag_ofs, *fs->p_abort);
-  if(io_result_failed(status)) goto notag;
-  status = f->read_object(tagmarker, 5, *fs->p_abort);
-  if(io_result_failed_or_eof(status)) goto notag;
+  try {
+	f->seek(tag_ofs, *fs->p_abort);
+	f->read_object(tagmarker, 5, *fs->p_abort);
+  } catch (...) { goto notag; }
   if(memcmp(tagmarker, "[TAG]", 5)) goto notag;
   tag = new char[tag_bytes + 1];
   if(!tag) goto outofmemory;
   tag[tag_bytes] = 0;
-  status = f->read_object(tag, tag_bytes, *fs->p_abort);
-  if(io_result_failed(status)) {
+  try { f->read_object(tag, tag_bytes, *fs->p_abort); }
+  catch ( std::exception const & e ) {
     errormessageadd(fs, "Error reading tag");
 	errormessageadd(fs, " - ");
-	errormessageadd(fs, io_result_get_message( status ) );
+	errormessageadd(fs, e.what() );
+    goto error;
+  }
+  catch ( ... ) {
+    errormessageadd(fs, "Error reading tag");
+	errormessageadd(fs, " - ");
+	errormessageadd(fs, "unknown" );
     goto error;
   }
   f.release();
@@ -538,7 +555,6 @@ int psf2fs_addarchive(void *psf2fs, const char *path, unsigned char compare_vers
 //
 //
 static int virtual_read(struct PSF2FS *fs, struct DIR_ENTRY *entry, int offset, char *buffer, int length) {
-  t_io_result status;
   service_ptr_t<file> f;
   char *zdata = NULL;
   int length_read = 0;
@@ -568,25 +584,51 @@ static int virtual_read(struct PSF2FS *fs, struct DIR_ENTRY *entry, int offset, 
     ) {
       zdata = new char[block_zsize];
       if(!zdata) goto outofmemory;
-	  status = filesystem::g_open(f, entry->source->name, filesystem::open_mode_read, *fs->p_abort);
-      if(io_result_failed(status)) {
-	    errormessage(fs, io_result_get_message( status ) );
-        goto error;
-      }
-	  status = f->seek(16 + block_zofs, *fs->p_abort);
-	  if (io_result_failed(status)) {
+	  try { filesystem::g_open(f, entry->source->name, filesystem::open_mode_read, *fs->p_abort); }
+  catch ( std::exception const & e ) {
+    errormessage(fs, "Unable to open ");
+	errormessageadd(fs, entry->source->name);
+	errormessageadd(fs, " - ");
+	errormessageadd(fs, e.what() );
+    goto error;
+  }
+  catch ( ... ) {
+    errormessage(fs, "Unable to open ");
+	errormessageadd(fs, entry->source->name);
+	errormessageadd(fs, " - ");
+	errormessageadd(fs, "unknown" );
+    goto error;
+  }
+  try { f->seek(16 + block_zofs, *fs->p_abort); }
+  catch ( std::exception const & e ) {
 	    errormessage(fs, "Error seeking");
 		errormessageadd(fs, " - ");
-		errormessageadd(fs, io_result_get_message( status ) );
-		goto error;
-	  }
-	  status = f->read_object(zdata, block_zsize, *fs->p_abort);
-      if(io_result_failed(status)) {
+	errormessageadd(fs, " - ");
+	errormessageadd(fs, e.what() );
+    goto error;
+  }
+  catch ( ... ) {
+	    errormessage(fs, "Error seeking");
+		errormessageadd(fs, " - ");
+	errormessageadd(fs, " - ");
+	errormessageadd(fs, "unknown" );
+    goto error;
+  }
+  try { f->read_object(zdata, block_zsize, *fs->p_abort); }
+  catch ( std::exception const & e ) {
         errormessage(fs, "Error reading virtual block");
 		errormessageadd(fs, " - ");
-		errormessageadd(fs, io_result_get_message( status ) );
-        goto error;
-      }
+	errormessageadd(fs, " - ");
+	errormessageadd(fs, e.what() );
+    goto error;
+  }
+  catch ( ... ) {
+        errormessage(fs, "Error reading virtual block");
+		errormessageadd(fs, " - ");
+	errormessageadd(fs, " - ");
+	errormessageadd(fs, "unknown" );
+    goto error;
+  }
 	  f.release();
 
       // invalidate cache without freeing buffer

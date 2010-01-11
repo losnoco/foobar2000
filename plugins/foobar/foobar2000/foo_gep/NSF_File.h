@@ -40,34 +40,34 @@
 
 struct NESM_HEADER
 {
-	UINT			nHeader;
-	BYTE			nHeaderExtra;
-	BYTE			nVersion;
-	BYTE			nTrackCount;
-	BYTE			nInitialTrack;
-	WORD			nLoadAddress;
-	WORD			nInitAddress;
-	WORD			nPlayAddress;
-	char			szGameTitle[32];
-	char			szArtist[32];
-	char			szCopyright[32];
-	WORD			nSpeedNTSC;
-	BYTE			nBankSwitch[8];
-	WORD			nSpeedPAL;
-	BYTE			nNTSC_PAL;
-	BYTE			nExtraChip;
-	BYTE			nExpansion[4];
+	t_uint32		nHeader;
+	t_uint8			nHeaderExtra;
+	t_uint8			nVersion;
+	t_uint8			nTrackCount;
+	t_uint8			nInitialTrack;
+	t_uint16		nLoadAddress;
+	t_uint16		nInitAddress;
+	t_uint16		nPlayAddress;
+	t_int8			szGameTitle[32];
+	t_int8			szArtist[32];
+	t_int8			szCopyright[32];
+	t_uint16		nSpeedNTSC;
+	t_uint8			nBankSwitch[8];
+	t_uint16		nSpeedPAL;
+	t_uint8			nNTSC_PAL;
+	t_uint8			nExtraChip;
+	t_uint8			nExpansion[4];
 };
 
 struct NSFE_INFOCHUNK
 {
-	WORD			nLoadAddress;
-	WORD			nInitAddress;
-	WORD			nPlayAddress;
-	BYTE			nIsPal;
-	BYTE			nExt;
-	BYTE			nTrackCount;
-	BYTE			nStartingTrack;
+	t_uint16		nLoadAddress;
+	t_uint16		nInitAddress;
+	t_uint16		nPlayAddress;
+	t_uint8			nIsPal;
+	t_uint8			nExt;
+	t_uint8			nTrackCount;
+	t_uint8			nStartingTrack;
 };
 
 
@@ -77,20 +77,20 @@ class CNSFFile
 public:
 	CNSFFile() { ZeroMemory(this,sizeof(CNSFFile)); }
 	~CNSFFile() { Destroy(); }
-	t_io_result LoadFile(const service_ptr_t<file> & p_file, bool needdata, abort_callback & p_abort);//Loads a file from a specified path.  If needdata is false,
+	void LoadFile( service_ptr_t< file > & p_file, bool needdata, abort_callback & p_abort );//Loads a file from a specified path.  If needdata is false,
 														//  the NSF code is not loaded, only the other information
 														//  (like track times, game title, Author, etc)
 														//If you're loading an NSF with intention to play it, needdata
 														//  must be true
-	t_io_result     SaveFile(service_ptr_t<file> & p_file, abort_callback & p_abort);				//Saves the NSF to a file... including any changes you made (like to track times, etc)
+	void SaveFile( service_ptr_t< file > & p_file, abort_callback & p_abort );				//Saves the NSF to a file... including any changes you made (like to track times, etc)
 	void			Destroy();							//Cleans up memory
 
 protected:
-	t_io_result LoadFile_NESM(const service_ptr_t<file> & p_file,bool needdata, abort_callback & p_abort);	//these functions are used internally and should not be called
-	t_io_result LoadFile_NSFE(const service_ptr_t<file> & p_file,bool needdata, abort_callback & p_abort);
+	void LoadFile_NESM(service_ptr_t<file> & p_file,bool needdata, abort_callback & p_abort);	//these functions are used internally and should not be called
+	void LoadFile_NSFE(service_ptr_t<file> & p_file,bool needdata, abort_callback & p_abort);
 
-	t_io_result SaveFile_NESM(service_ptr_t<file> & p_file, abort_callback & p_abort);
-	t_io_result SaveFile_NSFE(service_ptr_t<file> & p_file, abort_callback & p_abort);
+	void SaveFile_NESM(service_ptr_t<file> & p_file, abort_callback & p_abort);
+	void SaveFile_NSFE(service_ptr_t<file> & p_file, abort_callback & p_abort);
 
 public:
 
@@ -122,8 +122,8 @@ public:
 	UINT				nPlaylistSize;		//the size of the above buffer (and the number of tracks in the playlist)
 
 	//track time / fade
-	int*				pTrackTime;			//the buffer containing the track times.  NULL if no track times specified.  Otherwise this buffer MUST BE (nTrackCount * sizeof(int)) in size
-	int*				pTrackFade;			//the buffer containing the track fade times.  NULL if none are specified.  Same conditions as pTrackTime
+	t_int32*				pTrackTime;			//the buffer containing the track times.  NULL if no track times specified.  Otherwise this buffer MUST BE (nTrackCount * sizeof(int)) in size
+	t_int32*				pTrackFade;			//the buffer containing the track fade times.  NULL if none are specified.  Same conditions as pTrackTime
 
 	//track labels
 	char**				szTrackLabels;		//the buffer containing track labels.  NULL if there are no labels.  There must be nTrackCount char pointers (or none if NULL).

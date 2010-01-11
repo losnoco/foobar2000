@@ -465,7 +465,7 @@ static int find_crlf(string8 & blah)
 	return -1;
 }
 
-static void info_meta_write(string_base & tag, const file_info & info, const char * name, int idx, int & first)
+static void info_meta_write(pfc::string_base & tag, const file_info & info, const char * name, int idx, int & first)
 {
 	string8 v = pfc::stringcvt::string_ansi_from_utf8(info.meta_enum_value(idx, 0));
 	int pos = find_crlf(v);
@@ -571,7 +571,7 @@ static int info_read(BYTE * ptr, int len, file_info & info, int inherit, int & t
 				else if (tag[0] == '_')
 				{
 					DBG("found unknown required tag, failing");
-					console::info(uStringPrintf("Unsupported tag found: %s, required to play file.", &tag));
+					console::formatter() << "Unsupported tag found: " << tag << ", required to play file.";
 					return -1;
 				}
 				else
@@ -614,7 +614,7 @@ static int EMU_CALL virtual_readfile(void *context, const char *path, int offset
 
 static void EMU_CALL virtual_console_out(void * context, char c)
 {
-	string_base * out = reinterpret_cast<string_base *>(context);
+	pfc::string_base * out = reinterpret_cast<pfc::string_base *>(context);
 	if (c == 13 || c == 10)
 	{
 		if (out->length())
@@ -627,12 +627,12 @@ static void EMU_CALL virtual_console_out(void * context, char c)
 		out->add_char(c);
 }
 
-static int load_exe_unpack(void *state, BYTE *data, uLong srclen, int inherit, unsigned & refresh)
+static int load_exe_unpack(void *state, const BYTE *data, uLong srclen, int inherit, unsigned & refresh)
 {
 	DBG("loading");
 	int err;
-	mem_block_t<BYTE> buf;
-	if ( ! buf.set_size( 2048 ) ) return 0;
+	pfc::array_t<t_uint8> buf;
+	buf.set_size( 2048 );
 	BYTE *ptr = buf.get_ptr();
 
 	uLong destlen = 2048;
@@ -660,7 +660,7 @@ static int load_exe_unpack(void *state, BYTE *data, uLong srclen, int inherit, u
 
 	destlen += t_size;
 
-	if ( ! buf.set_size( destlen ) ) return 0;
+	buf.set_size( destlen );
 	ptr = buf.get_ptr();
 
 	err = uncompress(ptr, &destlen, data, srclen);
@@ -692,56 +692,45 @@ class load_exe_recursive
 {
 	file_info_impl   internal;
 
-	void           * state;
-	abort_callback & m_abort;
-	const char     * base_path;
-	const char     * filename;
-	string_base    & errors;
-	unsigned       & refresh;
-	unsigned       & tag_refresh;
-
-	t_io_result      status;
+	void             * state;
+	abort_callback   & m_abort;
+	const char       * base_path;
+	const char       * filename;
+	pfc::string_base & errors;
+	unsigned         & refresh;
+	unsigned         & tag_refresh;
 
 public:
-	load_exe_recursive(void * p_state, const service_ptr_t<file> & p_reader, const char * p_path, file_info & p_info, const char * p_base_path, string_base & p_errors, int inherit, unsigned & p_refresh, unsigned & p_tag_refresh, abort_callback & p_abort)
-	: state(p_state), m_abort(p_abort), base_path(p_base_path), filename( p_path ), errors(p_errors), refresh(p_refresh), tag_refresh(p_tag_refresh), status(io_result_success)
+	load_exe_recursive(void * p_state, service_ptr_t<file> & p_reader, const char * p_path, file_info & p_info, const char * p_base_path, pfc::string_base & p_errors, int inherit, unsigned & p_refresh, unsigned & p_tag_refresh, abort_callback & p_abort)
+	: state(p_state), m_abort(p_abort), base_path(p_base_path), filename( p_path ), errors(p_errors), refresh(p_refresh), tag_refresh(p_tag_refresh)
 	{
-		try
-		{
-			if (!load(p_reader, p_info, inherit)) status = io_result_error_data;
-		}
-		catch(exception_io const & e)
-		{
-			status = e.get_code();
-		}
+		if (!load(p_reader, p_info, inherit)) throw exception_io_data();
 	}
 
-	inline operator t_io_result () const { return status; }
-
 private:
-	int load( const service_ptr_t<file> & r, file_info & info, int inherit )
+	int load( service_ptr_t<file> & r, file_info & info, int inherit )
 	{
-		mem_block_t<BYTE> buf;
+		pfc::array_t<t_uint8> buf;
 		DBG("r->get_length()");
-		t_filesize size64 = r->get_size_e(m_abort);
+		t_filesize size64 = r->get_size_ex(m_abort);
 		if (size64 < 16 || size64 > 0x10000000) return 0;
 		int size = (int)size64;
 
-		if ( ! buf.set_size( 16 ) ) return 0;
+		buf.set_size( 16 );
 		BYTE *ptr = buf.get_ptr();
 		DBG("seek(0)");
-		r->seek_e(0, m_abort);
+		r->seek(0, m_abort);
 		DBG("read(16)");
-		r->read_object_e(ptr, 16, m_abort);
-		int reserved_size = ((unsigned long*)ptr)[1];
-		int exe_size = ((unsigned long*)ptr)[2];
+		r->read_object(ptr, 16, m_abort);
+		int reserved_size = byte_order::dword_le_to_native( ((unsigned long*)ptr)[1] );
+		int exe_size = byte_order::dword_le_to_native( ((unsigned long*)ptr)[2] );
 		if (size < 16 + reserved_size + exe_size) return 0;
 		DBG("size okay");
-		uLong exe_crc = ((unsigned long*)ptr)[3];
-		r->seek_e(reserved_size + 16, m_abort);
-		if ( ! buf.set_size( exe_size ) ) throw exception_io(io_result_error_out_of_memory);
+		uLong exe_crc = byte_order::dword_le_to_native( ((unsigned long*)ptr)[3] );
+		r->seek(reserved_size + 16, m_abort);
+		buf.set_size( exe_size );
 		ptr = buf.get_ptr();
-		r->read_object_e(ptr, exe_size, m_abort);
+		r->read_object(ptr, exe_size, m_abort);
 		if (exe_crc != crc32(crc32(0L, Z_NULL, 0), ptr, exe_size)) return 0;
 		DBG("CRC okay");
 
@@ -784,15 +773,15 @@ private:
 
 		// check for tags
 		{
-			mem_block_t<BYTE> buf2;
+			pfc::array_t<t_uint8> buf2;
 			int len = size - (16 + reserved_size + exe_size);
-			if ( ! buf2.set_size( len + 1 ) ) return 0;
+			buf2.set_size( len + 1 );
 			BYTE * ptr = buf2.get_ptr();
-			r->read_object_e(ptr, 5, m_abort);
+			r->read_object(ptr, 5, m_abort);
 			ptr[len] = 0;
 			if (!memcmp(ptr, "[TAG]", 5))
 			{
-				r->read_object_e(ptr + 5, len - 5, m_abort);
+				r->read_object(ptr + 5, len - 5, m_abort);
 				precede = info_read(ptr, len, info, inherit, tag_song_ms, tag_fade_ms);
 				if (precede < 0) return 0;
 			}
@@ -856,8 +845,7 @@ private:
 			string8 fn = base_path;
 			fn += n;
 			DBG(fn);
-			t_io_result status = filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
-			if ( io_result_failed( status ) ) throw exception_io(status);
+			filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
 			DBG("g_open success");
 			if (inherit < 0)
 			{
@@ -875,7 +863,7 @@ private:
 			}
 		}
 
-		rtn = load_exe_unpack(state, buf, exe_size, inherit * (1-precede), refresh);
+		rtn = load_exe_unpack(state, buf.get_ptr(), exe_size, inherit * (1-precede), refresh);
 		buf.set_size(0);
 		if (!rtn)
 		{
@@ -898,8 +886,7 @@ private:
 
 				string8 fn(base_path);
 				fn += v;
-				t_io_result status = filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
-				if ( io_result_failed( status ) ) throw exception_io(status);
+				filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
 				if ( !load( rdr, internal, 0 ) ) return 0;
 				rdr.release();
 			}
@@ -931,8 +918,7 @@ private:
 					info.info_set("current", v);
 					string8 fn(base_path);
 					fn.add_string(n);
-					t_io_result status = filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
-					if ( io_result_failed( status ) ) throw exception_io(status);
+					filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
 					if ( !load( rdr, info, 0 ) ) return 0;
 					rdr.release();
 					found = true;
@@ -948,8 +934,8 @@ class input_psf
 {
 	bool no_loop, eof;
 
-	mem_block psx_state;
-	mem_block_t<short> sample_buffer;
+	pfc::array_t<t_uint8> psx_state;
+	pfc::array_t<t_int16> sample_buffer;
 
 	void * psf2fs;
 
@@ -975,7 +961,9 @@ class input_psf
 
 	file_info_impl m_info;
 
-	int load_psf(const service_ptr_t<file> & r, const char * p_path, file_info & info, bool full_open, abort_callback & p_abort);
+	bool do_filter, do_suppressendsilence;
+
+	int load_psf(service_ptr_t<file> & r, const char * p_path, file_info & info, bool full_open, abort_callback & p_abort);
 
 public:
 	input_psf()
@@ -991,17 +979,13 @@ public:
 		if (errors.length()) console::info(errors);
 	}
 
-	t_io_result open( service_ptr_t<file> p_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
+	void open( service_ptr_t<file> p_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		t_io_result status;
-
 		if ( p_file.is_empty() )
 		{
-			status = filesystem::g_open( p_file, p_path, p_reason == input_open_info_write ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			filesystem::g_open( p_file, p_path, p_reason == input_open_info_write ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
 		}
 
-		//try
 		{
 			psf_version = load_psf( p_file, p_path, m_info, false, p_abort );
 
@@ -1020,23 +1004,19 @@ public:
 				base_path = f;
 			}
 		}
-		//catch(exception_io const & e) {return e.get_code();}
-
-		return io_result_success;
 	}
 
-	t_io_result get_info( file_info & p_info, abort_callback & p_abort )
+	void get_info( file_info & p_info, abort_callback & p_abort )
 	{
 		p_info.copy( m_info );
-		return io_result_success;
 	}
 
-	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
+	t_filestats get_file_stats( abort_callback & p_abort )
 	{
-		return m_file->get_stats( p_stats, p_abort );
+		return m_file->get_stats( p_abort );
 	}
 
-	t_io_result decode_initialize( unsigned p_flags, abort_callback & p_abort )
+	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
 		const char *t = m_info.info_get(field_length);
 		if (t)
@@ -1056,25 +1036,22 @@ public:
 			if (!initialized)
 			{
 				DBG("psx_init()");
-				if (psx_init()) return io_result_error_generic;
+				if (psx_init()) throw std::exception("PSX emulator static initialization failed");
 				initialized = 1;
 			}
 		}
 
-		if ( ! psx_state.set_size( psx_get_state_size( psf_version ) ) )
-			return io_result_error_out_of_memory;
+		psx_state.set_size( psx_get_state_size( psf_version ) );
 
 		void * pEmu = psx_state.get_ptr();
 
 		m_info.reset();
 
-		//try
 		{
 			string8 path = base_path;
 			path += filename;
 			err = load_psf( m_file, path, m_info, true, p_abort );
 		}
-		//catch(exception_io const & e) {return e.get_code();}
 
 		psfemu_pos = 0.;
 
@@ -1090,19 +1067,24 @@ public:
 
 		calcfade();
 
+		do_filter = !! cfg_freq;
+		do_suppressendsilence = !! cfg_suppressendsilence;
+
 		if ( cfg_suppressopeningsilence ) // ohcrap
 		{
 			if ( psf2fs ) psf2fs_setabortcallback( psf2fs, p_abort );
 
 			unsigned skip_max = cfg_endsilenceseconds * ( ( psf_version == 2 ) ? 48000 : 44100 );
-			while ( ! p_abort.is_aborting() )
+
+			for (;;)
 			{
+				p_abort.check();
+
 				unsigned skip_howmany = skip_max - silence;
-				if ( skip_howmany > 576 ) skip_howmany = 576;
-				if ( ! sample_buffer.check_size( skip_howmany * 2 ) )
-					return io_result_error_out_of_memory;
+				if ( skip_howmany > 1024 ) skip_howmany = 1024;
+				sample_buffer.grow_size( skip_howmany * 2 );
 				int rtn = psx_execute( pEmu, 0x7FFFFFFF, sample_buffer.get_ptr(), & skip_howmany, 0 );
-				if ( rtn < 0 ) return io_result_eof;
+				if ( rtn < 0 ) throw exception_io_data();
 				short * foo = sample_buffer.get_ptr();
 				unsigned i;
 				for ( i = 0; i < skip_howmany; ++i )
@@ -1117,29 +1099,25 @@ public:
 					memmove( sample_buffer.get_ptr(), foo, remainder * sizeof( short ) * 2 );
 					break;
 				}
-				if ( silence >= skip_max ) return io_result_eof;
+				if ( silence >= skip_max ) eof = true;
 			}
 
 			startsilence += silence;
 			silence = 0;
 		}
-
-		return io_result_success;
 	}
 
-	t_io_result decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
+	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
 		int srate;
 
-		if ( eof )
-			return io_result_eof;
+		if ( eof ) return false;
 
 		srate = ( psf_version == 2 ) ? 48000 : 44100;
 
-		if ( err < 0 )
-			return io_result_error_generic;
+		if ( err < 0 ) throw exception_io_data();
 		if ( no_loop && tag_song_ms && ( pos_delta + MulDiv( data_written, 1000, srate ) ) >= tag_song_ms + tag_fade_ms )
-			return io_result_eof;
+			return false;
 
 		UINT written = 0;
 
@@ -1148,17 +1126,16 @@ public:
 		if ( no_loop )
 		{
 			samples = ( song_len + fade_len ) - data_written;
-			if ( samples > 576 ) samples = 576;
+			if ( samples > 1024 ) samples = 1024;
 		}
 		else
 		{
-			samples = 576;
+			samples = 1024;
 		}
 
 		if ( psf2fs ) psf2fs_setabortcallback( psf2fs, p_abort );
 
-		if ( ! sample_buffer.check_size( samples * 2 ) )
-			return io_result_error_out_of_memory;
+		sample_buffer.grow_size( samples * 2 );
 
 		if ( remainder )
 		{
@@ -1174,9 +1151,8 @@ public:
 			{
 				console::formatter() << "Execution halted with an error in " << filename;
 			}
-			if ( ! written )
-				return io_result_error_generic;
-			if ( err < 0 ) eof = 1;
+			if ( ! written ) throw exception_io_data();
+			if ( err < 0 ) eof = true;
 		}
 
 		psfemu_pos += double( written ) / double( srate );
@@ -1184,7 +1160,7 @@ public:
 		if ( cfg_suppressendsilence )
 		{
 			uLong n;
-			short * foo = ( short * ) sample_buffer;
+			short * foo = sample_buffer.get_ptr();
 			for ( n = 0; n < written; ++n )
 			{
 				if ( foo[ 0 ] == 0 && foo[ 1 ] == 0 ) ++silence;
@@ -1192,7 +1168,7 @@ public:
 				foo += 2;
 			}
 			if ( silence >= srate * cfg_endsilenceseconds )
-				return io_result_eof;
+				return false;
 		}
 
 		int d_start, d_end;
@@ -1202,7 +1178,7 @@ public:
 
 		if ( tag_song_ms && d_end > song_len && no_loop )
 		{
-			short * foo = ( short * ) sample_buffer;
+			short * foo = sample_buffer.get_ptr();
 			int n;
 			for( n = d_start; n < d_end; ++n )
 			{
@@ -1225,7 +1201,7 @@ public:
 
 		p_chunk.set_data_fixedpoint( sample_buffer.get_ptr(), written * 4, srate, 2, 16, audio_chunk::channel_config_stereo );
 
-		if ( cfg_freq )
+		if ( do_filter )
 		{
 			if ( ! filter )
 			{
@@ -1243,12 +1219,12 @@ public:
 			}
 		}
 
-		return io_result_success;
+		return true;
 	}
 
-	t_io_result decode_seek( double p_seconds, abort_callback & p_abort )
+	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-		eof = 0;
+		eof = false;
 
 		if ( psf2fs ) psf2fs_setabortcallback( psf2fs, p_abort );
 
@@ -1280,12 +1256,18 @@ public:
 
 
 		// more abortable, and emu doesn't like doing huge numbers of samples per call anyway
-		while ( howmany && ! p_abort.is_aborting() )
+		while ( howmany )
 		{
+			p_abort.check();
+
 			unsigned todo = howmany;
 			if ( todo > 2048 ) todo = 2048;
 			int rtn = psx_execute( pEmu, 0x7FFFFFFF, 0, & todo, 0 );
-			if ( rtn < 0 || ! todo ) return io_result_eof;
+			if ( rtn < 0 || ! todo )
+			{
+				eof = true;
+				return;
+			}
 			howmany -= todo;
 		}
 
@@ -1294,8 +1276,6 @@ public:
 		psfemu_pos = p_seconds;
 
 		calcfade();
-
-		return io_result_success;
 	}
 
 	bool decode_can_seek()
@@ -1317,28 +1297,23 @@ public:
 	{
 	}
 
-	t_io_result retag( const file_info & p_info, abort_callback & p_abort )
+	void retag( const file_info & p_info, abort_callback & p_abort )
 	{
 		m_info.copy( p_info );
 
-		mem_block_t<BYTE> buffer;
-		if ( ! buffer.set_size( 16 ) )
-			return io_result_error_out_of_memory;
+		pfc::array_t<t_uint8> buffer;
+		buffer.set_size( 16 );
 
-		t_io_result status = m_file->seek( 0, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		m_file->seek( 0, p_abort );
 
 		BYTE *ptr = buffer.get_ptr();
-		status = m_file->read_object(ptr, 16, p_abort);
-		if (io_result_failed(status)) return status;
+		m_file->read_object( ptr, 16, p_abort );
 		if (ptr[0] != 'P' || ptr[1] != 'S' || ptr[2] != 'F' ||
-			(ptr[3] != 1 && ptr[3] != 2)) return io_result_error_data;
-		int reserved_size = ((unsigned long*)ptr)[1];
-		int exe_size = ((unsigned long*)ptr)[2];
-		status = m_file->seek(16 + reserved_size + exe_size, p_abort);
-		if (io_result_failed(status)) return status;
-		status = m_file->set_eof(p_abort);
-		if (io_result_failed(status)) return status;
+			(ptr[3] != 1 && ptr[3] != 2)) throw exception_io_data();
+		int reserved_size = byte_order::dword_le_to_native( ((unsigned long*)ptr)[1] );
+		int exe_size = byte_order::dword_le_to_native( ((unsigned long*)ptr)[2] );
+		m_file->seek(16 + reserved_size + exe_size, p_abort);
+		m_file->set_eof(p_abort);
 
 		string8 tag = "[TAG]";
 
@@ -1458,7 +1433,7 @@ public:
 			tag += rgbuf;
 		}
 
-		return m_file->write_object(tag.get_ptr(), tag.length(), p_abort);
+		m_file->write_object( tag.get_ptr(), tag.length(), p_abort );
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )
@@ -1480,24 +1455,18 @@ private:
 	}
 };
 
-int input_psf::load_psf(const service_ptr_t<file> & r, const char * p_path, file_info & info, bool full_open, abort_callback & p_abort)
+int input_psf::load_psf(service_ptr_t<file> & r, const char * p_path, file_info & info, bool full_open, abort_callback & p_abort)
 {
 	unsigned char header[16];
-	int read, fl;
+	int fl;
 	__int64 fl64;
-	fl64 = r->get_size_e(p_abort);
-	if (fl64 > 1<<30) throw exception_io(io_result_error_data);
+	fl64 = r->get_size_ex(p_abort);
+	if (fl64 > 1<<30) throw exception_io_data();
 	fl = (int)fl64;
-	if (fl < 16) throw exception_io(io_result_error_data);
-	r->seek_e(0, p_abort);
-	read = r->read_e(header, 16, p_abort);
-	if ((read < 16) ||
-		(memcmp(header, "PSF", 3)))
-	{
-		throw exception_io(io_result_error_data);
-	}
-
-	t_io_result status;
+	if (fl < 16) throw exception_io_data();
+	r->seek(0, p_abort);
+	r->read_object(header, 16, p_abort);
+	if (memcmp(header, "PSF", 3)) throw exception_io_data();
 
 	if (header[3] == 1)
 	{
@@ -1505,13 +1474,11 @@ int input_psf::load_psf(const service_ptr_t<file> & r, const char * p_path, file
 
 		if (!full_open)
 		{
-			status = load_exe_recursive(0, r, p_path, info, 0, string8(), -2, refresh, tag_refresh, p_abort);
-			if (io_result_failed(status)) throw exception_io(status);
+			load_exe_recursive(0, r, p_path, info, 0, string8(), -2, refresh, tag_refresh, p_abort);
 			return 1;
 		}
 		
-		status = load_exe_recursive(psx_state.get_ptr(), r, p_path, info, base_path, errors, -1, refresh, tag_refresh, p_abort);
-		if (io_result_failed(status)) throw exception_io(status);
+		load_exe_recursive(psx_state.get_ptr(), r, p_path, info, base_path, errors, -1, refresh, tag_refresh, p_abort);
 
 		if (refresh || tag_refresh)
 		{
@@ -1542,12 +1509,12 @@ int input_psf::load_psf(const service_ptr_t<file> & r, const char * p_path, file
 		if ((reserved_size < 0) ||
 			(program_size < 0) ||
 			(reserved_size > fl) ||
-			(program_size > fl)) throw exception_io(io_result_error_data);
+			(program_size > fl)) throw exception_io_data();
 
 		tag_ofs = 16 + reserved_size + program_size;
 
 		if ((tag_ofs < 16) ||
-			(tag_ofs > fl)) throw exception_io(io_result_error_data);
+			(tag_ofs > fl)) throw exception_io_data();
 
 		info.info_set_int("samplerate", 48000);
 		info.info_set_int("bitspersample", 16);
@@ -1558,20 +1525,20 @@ int input_psf::load_psf(const service_ptr_t<file> & r, const char * p_path, file
 		if (tag_bytes > 50000) tag_bytes = 50000;
 		if (tag_bytes > 0)
 		{
-			mem_block_t<unsigned char> tag;
-			if ( ! tag.set_size( tag_bytes + 6 ) ) throw exception_io(io_result_error_out_of_memory);
+			pfc::array_t<t_uint8> tag;
+			tag.set_size( tag_bytes + 6 );
 			unsigned char * ptr = tag.get_ptr();
-			r->seek_e(tag_ofs, p_abort);
-			if (r->read_e(ptr, 5, p_abort) == 5)
+			r->seek(tag_ofs, p_abort);
+			if (r->read(ptr, 5, p_abort) == 5)
 			{
 				if (!memcmp(ptr, "[TAG]", 5))
 				{
-					if (r->read_e(ptr + 5, tag_bytes, p_abort) == tag_bytes)
+					if (r->read(ptr + 5, tag_bytes, p_abort) == tag_bytes)
 					{
 						ptr[tag_bytes + 5] = 0;
 						if (info_read(ptr, tag_bytes + 5, info, -1, tag_song_ms, tag_fade_ms) < 0)
 						{
-							throw exception_io(io_result_error_data);
+							throw exception_io_data();
 						}
 					}
 				}
@@ -1926,17 +1893,17 @@ class context_psf : public menu_item_legacy_context
 public:
 	virtual unsigned get_num_items() { return 1; }
 
-	virtual void get_item_name(unsigned n, string_base & out)
+	virtual void get_item_name(unsigned n, pfc::string_base & out)
 	{
 		out = "Edit length";
 	}
 
-	virtual void get_item_default_path(unsigned n, string_base & out)
+	virtual void get_item_default_path(unsigned n, pfc::string_base & out)
 	{
 		out.reset();
 	}
 
-	virtual bool get_item_description(unsigned n, string_base & out)
+	virtual bool get_item_description(unsigned n, pfc::string_base & out)
 	{
 		out = "Edits the length of the selected PSF file, or sets the length of all selected PSF files.";
 		return true;
@@ -1953,13 +1920,13 @@ public:
 		return guids[p_index];
 	}
 
-	virtual bool context_get_display(unsigned n,const list_base_const_t<metadb_handle_ptr> & data,string_base & out,unsigned & displayflags,const GUID &)
+	virtual bool context_get_display(unsigned n,const list_base_const_t<metadb_handle_ptr> & data,pfc::string_base & out,unsigned & displayflags,const GUID &)
 	{
 		unsigned i, j;
 		i = data.get_count();
 		for (j = 0; j < i; j++)
 		{
-			string_extension_8 ext(data.get_item(j)->get_path());
+			string_extension ext(data.get_item(j)->get_path());
 			int c1 = strnicmp(ext, "PSF", 3);
 			int c2 = strnicmp(ext, "MINIPSF", 7);
 			if (c1 && c2) return false;
@@ -2013,7 +1980,7 @@ public:
 					double length = (double)(tag_song_ms + tag_fade_ms) * .001;
 					info.set_length(length);
 				}
-				if (io_result_failed(p_imgr->update_info(foo, info, core_api::get_main_window(), true))) j = i;
+				if ( metadb_io::update_info_success != p_imgr->update_info(foo, info, core_api::get_main_window(), true) ) j = i;
 			}
 			else j = i;
 //			foo->metadb_unlock();
@@ -2028,7 +1995,7 @@ class psf_file_types : public input_file_type
 		return 2;
 	}
 
-	virtual bool get_name(unsigned idx, string_base & out)
+	virtual bool get_name(unsigned idx, pfc::string_base & out)
 	{
 		if (idx > 1) return false;
 		else if (idx == 0) out = "PSF files";
@@ -2036,7 +2003,7 @@ class psf_file_types : public input_file_type
 		return true;
 	}
 
-	virtual bool get_mask(unsigned idx, string_base & out)
+	virtual bool get_mask(unsigned idx, pfc::string_base & out)
 	{
 		if (idx > 1) return false;
 		else if (idx == 0) out = "*.PSF;*.MINIPSF";
@@ -2053,10 +2020,10 @@ class psf_file_types : public input_file_type
 class version_psf : public componentversion
 {
 public:
-	virtual void get_file_name(string_base & out) { out.set_string(core_api::get_my_file_name()); }
-	virtual void get_component_name(string_base & out) { out.set_string("Highly Experimental"); }
-	virtual void get_component_version(string_base & out) { out.set_string(MYVERSION); }
-	virtual void get_about_message(string_base & out)
+	virtual void get_file_name(pfc::string_base & out) { out.set_string(core_api::get_my_file_name()); }
+	virtual void get_component_name(pfc::string_base & out) { out.set_string("Highly Experimental"); }
+	virtual void get_component_version(pfc::string_base & out) { out.set_string(MYVERSION); }
+	virtual void get_about_message(pfc::string_base & out)
 	{
 		out.set_string("Foobar2000 version by kode54\nOriginal library and concept by Neill Corlett\n\nCore: ");
 		out.add_string(psx_getversion());

@@ -67,19 +67,19 @@ static cfg_int cfg_loop("brr_infinite",0);
 #endif
 
 unsigned
-readval (const service_ptr_t<file> & r, abort_callback & p_abort)
+readval ( service_ptr_t<file> & r, abort_callback & p_abort )
 {
 	unsigned val;
-	unsigned char i;
-	r->read_object_e(&i, 1, p_abort);
+	t_uint8 i;
+	r->read_object_t( i, p_abort );
 	val = i & 0x7f;
-	while (i & 0x80)
+	while ( i & 0x80 )
     {
-		r->read_object_e(&i, 1, p_abort);
+		r->read_object_t( i, p_abort );
 		val <<= 7;
 		val |= i & 0x7f;
     }
-	return (val);
+	return val;
 }
 
 const int f[5][2] = {   {    0,  0  },
@@ -416,12 +416,12 @@ static int brr_dec_snes_s(unsigned char *start, signed short *out, int blocks, c
 	return now | (end ? 0x80000000 : 0);
 }
 
-static const unsigned char g_signature[] = { 'B', 'R', 'R', 26 };
+static const t_uint8 g_signature[] = { 'B', 'R', 'R', 26 };
 
 class input_brr
 {
-	mem_block_t<unsigned char> brr_buffer;
-	mem_block_t<signed short>  sample_buffer;
+	pfc::array_t<t_uint8>      brr_buffer;
+	pfc::array_t<t_int16>      sample_buffer;
 
 	service_ptr_t<file>        m_file;
 
@@ -434,28 +434,22 @@ class input_brr
 public:
 	input_brr() : start( 0 ) {}
 
-	t_io_result open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
+	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		t_io_result status;
-
 		if ( p_filehint.is_empty() )
 		{
-			status = filesystem::g_open( m_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			filesystem::g_open( m_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
 		}
 		else m_file = p_filehint;
-
-		return io_result_success;
 	}
 
 private:
-	t_io_result open_internal( abort_callback & p_abort )
+	void open_internal( abort_callback & p_abort )
 	{
-		//try
 		{
-			unsigned char hdr[4];
-			m_file->read_object_e( hdr, 4, p_abort );
-			if ( memcmp( hdr, g_signature, 4 ) ) return io_result_error_data;
+			t_uint8 hdr[4];
+			m_file->read_object( hdr, 4, p_abort );
+			if ( memcmp( hdr, g_signature, 4 ) ) throw exception_io_data();
 			unsigned flags = readval( m_file, p_abort );
 			stereo = flags & 1;
 			psx = flags & 16;
@@ -473,51 +467,42 @@ private:
 			else
 				loopstart = ~0;
 
+			start = int( m_file->get_position(p_abort) );
+
 			if (size < 0)
 			{
-				if ( ! m_file->can_seek() ) return io_result_error_data;
-				t_filesize len64 = m_file->get_size_e( p_abort );
-				if ( len64 < 0 || len64 > (1 << 30) ) return io_result_error_data;
-				size = int( len64 - m_file->get_position_e( p_abort ) );
+				if ( ! m_file->can_seek() ) throw exception_io_data();
+				t_filesize len64 = m_file->get_size_ex( p_abort );
+				if ( len64 > (1 << 30) ) throw exception_io_data();
+				size = int( len64 - t_filesize( start ) );
 			}
 
-			start = int( m_file->get_position_e(p_abort) );
-
-			if ( m_file->get_size_e( p_abort ) > 0 && size > m_file->get_size_e( p_abort ) ) return io_result_error_data;
+			t_filesize size64 = m_file->get_size_ex( p_abort );
+			if ( size64 > 0 && size > size64 ) throw exception_io_data();
 		}
-		//catch(exception_io const & e) {return e.get_code();}
-
-		return io_result_success;
 	}
 
 public:
-	t_io_result get_info( file_info & p_info, abort_callback & p_abort )
+	void get_info( file_info & p_info, abort_callback & p_abort )
 	{
-		t_io_result status;
-
 		bool saved_offset = false;
 		t_filesize offset;
 
-		if ( ! start )
-		{
-			status = open_internal( p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
+		if ( ! start ) open_internal( p_abort );
 		else if ( sample_buffer.get_size() )
 		{
-			offset = m_file->get_position_e( p_abort );
+			offset = m_file->get_position( p_abort );
 			saved_offset = true;
 		}
 
-		status = tag_processor::read_trailing( m_file, p_info, p_abort );
-		if ( status != io_result_error_data &&
-			 status != io_result_error_not_found &&
-			 io_result_failed( status ) ) return status;
-
-		if ( saved_offset )
+		try
 		{
-			m_file->seek_e( offset, p_abort );
+			tag_processor::read_trailing( m_file, p_info, p_abort );
 		}
+		catch ( const exception_tag_not_found & ) {}
+		catch ( const exception_io_data & ) {}
+
+		if ( saved_offset ) m_file->seek( offset, p_abort );
 
 		p_info.set_length( double ( psx ? ( size * 28 / ( stereo ? 32 : 16 ) ) : ( size * 16 / ( stereo ? 18 : 9 ) ) ) / double( rate ) );
 
@@ -528,22 +513,16 @@ public:
 		p_info.info_set_int( "bitrate", rate * ( stereo + 1 ) * 8 * ( psx ? 16 : 9 ) / ( psx ? 28 : 16 ) / 1000 );
 		if (loopstart!=~0) p_info.info_set_int( "brr_loop_start", loopstart );
 		p_info.info_set( "codec", psx ? "PSX ADPCM" : "SNES ADPCM" );
-
-		return io_result_success;
 	}
 
-	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
+	t_filestats get_file_stats( abort_callback & p_abort )
 	{
-		return m_file->get_stats( p_stats, p_abort );
+		return m_file->get_stats( p_abort );
 	}
 
-	t_io_result decode_initialize( unsigned p_flags,abort_callback & p_abort )
+	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
-		if ( ! start )
-		{
-			t_io_result status = open_internal( p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
+		if ( ! start ) open_internal( p_abort );
 
 		eof = 0;
 		pos = 0;
@@ -554,13 +533,11 @@ public:
 		if ( ! dontloop && ( p_flags & input_flag_no_looping ) ) dontloop = 1;
 
 		sample_buffer.set_size( 576 << stereo );
-
-		return io_result_success;
 	}
 
-	t_io_result decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
+	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
-		if (eof) return io_result_eof;
+		if ( eof ) return false;
 
 		signed short * output = sample_buffer.get_ptr();
 
@@ -580,41 +557,42 @@ public:
 			perblock = 16;
 			blocksize = 9;
 		}
-		unit = blocksize * (576/perblock) << stereo;
+		unit = blocksize * ( 576 / perblock ) << stereo;
 
-		if ( ! brr_buffer.check_size( unit ) )
-			return io_result_error_out_of_memory;
+		brr_buffer.grow_size( unit );
 
 		unsigned char * ptr = brr_buffer.get_ptr();
 
 more:
-		if (p_abort.is_aborting()) return io_result_aborted;
+		p_abort.check();
 
-		todo = m_file->read_e(ptr, unit, p_abort);
+		todo = m_file->read( ptr, unit, p_abort );
 		
-		if (todo) todo = todo * perblock / blocksize;
-		else (end = 1);
+		if ( todo ) todo = todo * perblock / blocksize;
+		else end = 1;
 
-		while (!p_abort.is_aborting() && end == 0 && now < todo)
+		while ( end == 0 && now < todo )
 		{
+			p_abort.check();
+
 			if (psx)
 			{
-				if (stereo) end = brr_dec_psx_s(ptr, output, todo / 56, &prev);
-				else end = brr_dec_psx_m(ptr, output, todo / 28, &prev);
+				if (stereo) end = brr_dec_psx_s( ptr, output, todo / 56, &prev );
+				else end = brr_dec_psx_m( ptr, output, todo / 28, &prev );
 			}
 			else
 			{
-				if (stereo) end = brr_dec_snes_s(ptr, output, todo / 32, &prev);
-				else end = brr_dec_snes_m(ptr, output, todo / 16, &prev);
+				if (stereo) end = brr_dec_snes_s( ptr, output, todo / 32, &prev );
+				else end = brr_dec_snes_m( ptr, output, todo / 16, &prev );
 			}
 			if (swallow)
 			{
-				unsigned swallowed = (end & 0x7fffffff) >> stereo;
-				if (swallowed < swallow) swallow -= swallowed;
+				unsigned swallowed = ( end & 0x7fffffff ) >> stereo;
+				if ( swallowed < swallow ) swallow -= swallowed;
 				else
 				{
-					now = (swallowed - swallow) << 1;
-					if (now)
+					now = ( swallowed - swallow ) << stereo;
+					if ( now )
 					{
 						output += swallow << stereo;
 						swallow = 0;
@@ -622,7 +600,7 @@ more:
 					}
 					swallow = 0;
 				}
-				todo = m_file->read_e(ptr, unit, p_abort);
+				todo = m_file->read( ptr, unit, p_abort );
 				if (todo) todo = todo * perblock / blocksize;
 				else end = 0x80000000;
 			}
@@ -641,14 +619,14 @@ more:
 				if (loopstart != ~0)
 				{
 					int offset = start + (loopstart ? (loopstart * blocksize << stereo) : 0);
-					m_file->seek_e(offset, p_abort);
+					m_file->seek(offset, p_abort);
 				}
 				else
 				{
 					prev.prev0 = prev.prev1 = 0;
 					if (stereo)
 						prev.prev2 = prev.prev3 = 0;
-					m_file->seek_e(start, p_abort);
+					m_file->seek(start, p_abort);
 				}
 			}
 			else
@@ -659,25 +637,25 @@ more:
 
 		if (now)
 		{
-			if ( ! p_chunk.set_data_fixedpoint(output, now << 1, rate, 1 + stereo, 16, audio_chunk::g_guess_channel_config( 1 + stereo ) ) )
-				return io_result_error_out_of_memory;
-			return io_result_success;
+			p_chunk.set_data_fixedpoint( output, now << 1, rate, 1 + stereo, 16, audio_chunk::g_guess_channel_config( 1 + stereo ) );
+			return true;
 		}
-		else return eof ? io_result_eof : io_result_error_generic;
+		
+		return false;
 	}
 
-	t_io_result decode_seek( double p_seconds,abort_callback & p_abort )
+	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		eof = 0;
 		swallow = int( p_seconds * rate + .5 );
 		if ( swallow > pos )
 		{
 			swallow -= pos;
-			return io_result_success;
+			return;
 		}
 		pos = 0;
 		memset( & prev, 0, sizeof( prev ) );
-		return m_file->seek( start, p_abort );
+		m_file->seek( start, p_abort );
 	}
 
 	bool decode_can_seek()
@@ -699,30 +677,25 @@ more:
 	{
 	}
 
-	t_io_result retag( const file_info & p_info,abort_callback & p_abort )
+	void retag( const file_info & p_info, abort_callback & p_abort )
 	{
-		t_io_result status;
-
 		bool saved_offset = false;
 		t_filesize offset;
 
 		if ( sample_buffer.get_size() )
 		{
-			offset = m_file->get_position_e( p_abort );
+			offset = m_file->get_position( p_abort );
 			saved_offset = true;
 		}
 
-		unsigned char hdr[4];
-		m_file->seek_e( 0, p_abort );
-		m_file->read_object_e( hdr, 4, p_abort );
-		if ( memcmp( hdr, g_signature, 4 ) ) return io_result_error_data;
-		status = tag_processor::write_apev2( m_file, p_info, p_abort );
-		if ( io_result_failed( status ) ) return status;
-		if ( saved_offset )
-		{
-			return m_file->seek( offset, p_abort );
-		}
-		return io_result_success;
+		t_uint8 hdr[4];
+		m_file->seek( 0, p_abort );
+		m_file->read_object( hdr, 4, p_abort );
+		if ( memcmp( hdr, g_signature, 4 ) ) throw exception_io_data();
+
+		tag_processor::write_apev2( m_file, p_info, p_abort );
+
+		if ( saved_offset ) m_file->seek( offset, p_abort );
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )
@@ -773,6 +746,7 @@ public:
 
 #endif
 
+#if 0
 const signed short iCoef[4][2] = {
   {0, 0},
   {240, 0},
@@ -1172,7 +1146,6 @@ writeval (service_ptr_t<file> & r, unsigned val, abort_callback & p_abort)
 	r->write_object_e(&out, i, p_abort);
 }
 
-#if 0
 class NOVTABLE converter_brr : public converter_presetless
 {
 public:

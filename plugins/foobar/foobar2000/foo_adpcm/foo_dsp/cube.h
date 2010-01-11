@@ -96,9 +96,9 @@ int ADPdecodebuffer(
 	long *histr2
 );
 
-void fillbuffers(CUBEFILE * dsp, abort_callback & p_abort);
+bool fillbuffers(CUBEFILE * dsp, abort_callback & p_abort);
 
-void fillbufferDSP(CUBESTREAM * stream, abort_callback & p_abort);
-void fillbufferDSPinterleave(CUBEFILE * stream, abort_callback & p_abort);
-void fillbufferHALP(CUBEFILE * stream, abort_callback & p_abort);
-void fillbufferADP(CUBEFILE * adp, abort_callback & p_abort);
+bool fillbufferDSP(CUBESTREAM * stream, abort_callback & p_abort);
+bool fillbufferDSPinterleave(CUBEFILE * stream, abort_callback & p_abort);
+bool fillbufferHALP(CUBEFILE * stream, abort_callback & p_abort);
+bool fillbufferADP(CUBEFILE * adp, abort_callback & p_abort);

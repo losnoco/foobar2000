@@ -9,12 +9,12 @@ class foofile
 
 protected:
 	service_ptr_t<file>        r;
-	mem_block_t<unsigned char> buffer;
+	pfc::array_t<t_uint8>      buffer;
 	unsigned                   bufpos;
 	unsigned                   bufend;
 
 	bool                       eof;
-	t_int64                    abspos;
+	t_filesize                 abspos;
 
 public:
 	foofile(const service_ptr_t<file> & r);
@@ -24,7 +24,7 @@ public:
 	char preview(abort_callback &);
 	char get(abort_callback &);
 
-	void seek(t_int64, abort_callback &);
+	void seek(t_filesize, abort_callback &);
 
 protected:
 	void requirebuf();

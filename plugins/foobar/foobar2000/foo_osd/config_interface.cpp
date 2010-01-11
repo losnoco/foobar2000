@@ -270,8 +270,8 @@ class preferences_page_osd : public preferences_page
 		case WM_INITDIALOG:
 			uSetWindowLong(wnd, DWL_USER, lp);
 			{
-				string_base * ptr = reinterpret_cast<string_base*>(lp);
-				uSetWindowText(wnd, uStringPrintf("Rename preset: \"%s\"", ptr->get_ptr()));
+				pfc::string_base * ptr = reinterpret_cast<pfc::string_base*>(lp);
+				uSetWindowText( wnd, string8() << "Rename preset: \"" << ptr->get_ptr() << "\"" );
 				uSetDlgItemText(wnd, IDC_EDIT, ptr->get_ptr());
 				cfg_placement.on_window_creation(wnd);
 			}
@@ -281,7 +281,7 @@ class preferences_page_osd : public preferences_page
 			switch(wp)
 			{
 			case IDOK:
-				uGetDlgItemText(wnd, IDC_EDIT, *reinterpret_cast<string_base*>(uGetWindowLong(wnd, DWL_USER)));
+				uGetDlgItemText(wnd, IDC_EDIT, *reinterpret_cast<pfc::string_base*>(uGetWindowLong(wnd, DWL_USER)));
 				EndDialog(wnd, 1);
 				break;
 
@@ -301,7 +301,7 @@ class preferences_page_osd : public preferences_page
 		return 0;
 	}
 
-	static bool rename(string_base & param,HWND parent)
+	static bool rename(pfc::string_base & param,HWND parent)
 	{
 		return !!uDialogBox(IDD_RENAME, parent, RenameProc, reinterpret_cast<long>(&param));
 	}
@@ -368,7 +368,7 @@ class preferences_page_osd : public preferences_page
 
 				ShowWindow(uGetDlgItem(hTab, IDC_CONFIG1), SW_SHOW);
 
-				array_t<string_simple> names;
+				pfc::array_t<string_simple> names;
 				g_osd.get_names(names);
 
 				w = GetDlgItem(wnd, IDC_OVERLAY);
@@ -647,11 +647,11 @@ class preferences_page_osd : public preferences_page
 						if (uChooseColor(&color, wnd, (DWORD*)&meh.colors))
 						{
 							temp = "$rgb(";
-							temp.add_int(color & 255);
+							temp << format_int( color & 255 );
 							temp.add_byte(',');
-							temp.add_int((color >> 8) & 255);
+							temp << format_int( (color >> 8) & 255 );
 							temp.add_byte(',');
-							temp.add_int((color >> 16) & 255);
+							temp << format_int( (color >> 16) & 255 );
 							temp.add_byte(')');
 							uSetWindowText(w, temp);
 						}

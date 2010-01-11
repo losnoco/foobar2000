@@ -510,7 +510,7 @@ class input_lunar2
 {
 	int size, loop_start, loop_end, channels, pos, postmp, no_loop;
 	service_ptr_t<file> m_file;
-	mem_block_t<unsigned char> buffer;
+	pfc::array_t<t_uint8> buffer;
 	hasher_md5_result digest;
 
 public:
@@ -523,40 +523,33 @@ public:
 	{
 	}
 
-	t_io_result open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
+	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) return io_result_error_data;
-
-		t_io_result status;
+		if ( p_reason == input_open_info_write ) throw exception_io_data();
 
 		if ( p_filehint.is_empty() )
 		{
-			status = filesystem::g_open( m_file, p_path, filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			filesystem::g_open( m_file, p_path, filesystem::open_mode_read, p_abort );
 		}
 		else m_file = p_filehint;
-
-		return io_result_success;
 	}
 
 private:
-	t_io_result open_internal( abort_callback & p_abort )
+	void open_internal( abort_callback & p_abort )
 	{
-		if ( ! m_file->can_seek() ) return io_result_error_data;
+		if ( ! m_file->can_seek() ) throw exception_io_data();
 
-		t_io_result status;
 		unsigned char * p;
 
-		t_filesize sz = m_file->get_size_e( p_abort );
-		if ( sz < 0 || sz > ( 1 << 30 ) ) return io_result_error_data;
+		t_filesize sz = m_file->get_size_ex( p_abort );
+		if ( sz < 0 || sz > ( 1 << 30 ) ) throw exception_io_data();
 		size = int( sz );
 
-		if ( ! buffer.set_size( 8192 ) )
-			return io_result_error_out_of_memory;
+		buffer.set_size( 8192 );
 		
 		p = buffer.get_ptr();
 
-		m_file->read_object_e( p, 8192, p_abort );
+		m_file->read_object( p, 8192, p_abort );
 
 		if ( p[ 1 ] == 1 ) channels = 2;
 		else if ( p[ 1 ] == 2 ) channels = 1;
@@ -564,18 +557,12 @@ private:
 		loop_end = ( ( p[ 6 ] << 24 ) | ( p[ 7 ] << 16 ) | (p[ 8 ] << 8 ) | p[ 9 ] ) + 1;
 
 		digest = static_api_ptr_t<hasher_md5>()->process_single( buffer.get_ptr(), 8192 );
-
-		return io_result_success;
 	}
 
 public:
-	t_io_result get_info( file_info & p_info, abort_callback & p_abort )
+	void get_info( file_info & p_info, abort_callback & p_abort )
 	{
-		if ( ! channels )
-		{
-			t_io_result status = open_internal( p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
+		if ( ! channels ) open_internal( p_abort );
 
 		int n;
 
@@ -583,15 +570,13 @@ public:
 		{
 			if ( ! memcmp( sums[n], & digest, 16 ) )
 			{
-				char meh[ 16 ];
 				p_info.meta_add( "title", titles[ n ] );
-				itoa( tracks[n], meh, 10 );
-				p_info.meta_add( "tracknumber", meh );
+				p_info.meta_add( "tracknumber", format_int( tracks[ n ] ) );
 				break;
 			}
 		}
 
-		if (n == 219) return io_result_error_data;
+		if (n == 219) throw exception_io_data();
 
 		p_info.meta_add( "album", "Lunar: Eternal Blue" );
 		p_info.meta_add( "artist", "Isao Mizoguchi" );
@@ -602,39 +587,28 @@ public:
 		p_info.info_set_int( "bitrate", 16282 * 2 * channels / 125 );
 		p_info.info_set( "codec", "Lunar:EB PCM" );
 		p_info.set_length( double( loop_end ) / 16282. );
-
-		return io_result_success;
 	}
 
-	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
+	t_filestats get_file_stats( abort_callback & p_abort )
 	{
-		return m_file->get_stats( p_stats, p_abort );
+		return m_file->get_stats( p_abort );
 	}
 
-	t_io_result decode_initialize( unsigned p_flags, abort_callback & p_abort )
+	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
-		t_io_result status;
+		if ( ! channels ) open_internal( p_abort );
 
-		if ( ! channels )
-		{
-			status = open_internal( p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
+		m_file->seek( 2048, p_abort );
 
-		m_file->seek_e( 2048, p_abort );
-
-		if ( ! buffer.set_size(2048 * channels) )
-			return io_result_error_out_of_memory;
+		buffer.set_size( 2048 * channels );
 
 		pos = postmp = 0;
 		no_loop = p_flags & input_flag_no_looping;
-
-		return io_result_success;
 	}
 
-	t_io_result decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
+	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
-		if ( no_loop && ( pos >= loop_end ) ) return io_result_eof;
+		if ( no_loop && ( pos >= loop_end ) ) return false;
 
 		unsigned char * p = buffer.get_ptr();
 
@@ -642,7 +616,7 @@ public:
 
 		if (channels == 1)
 		{
-			m_file->read_object_e(p, 2048, p_abort);
+			m_file->read_object( p, 2048, p_abort );
 			for (n=0; n<1024; n++)
 			{
 				t = p[n*2+1];
@@ -652,7 +626,7 @@ public:
 		}
 		else
 		{
-			m_file->read_object_e(p, 4096, p_abort);
+			m_file->read_object( p, 4096, p_abort );
 			for (n=0; n<1024; n++)
 			{
 				t = p[n*2+1];
@@ -670,7 +644,7 @@ public:
 			if (!no_loop)
 			{
 				pos = loop_start >> channels;
-				m_file->seek_e(loop_start + 2048, p_abort);
+				m_file->seek(loop_start + 2048, p_abort);
 			}
 			n = (loop_end % 1024) * channels;
 		}
@@ -678,22 +652,18 @@ public:
 		{
 			n = 1024 * channels;
 		}
-		bool res;
-		if (postmp)
-		{
-			res = p_chunk.set_data_fixedpoint( p + postmp * channels, n - postmp * channels, 16282, channels, 8, audio_chunk::g_guess_channel_config( channels ) );
-			postmp = 0;
-		}
-		else res = p_chunk.set_data_fixedpoint( p, n, 16282, channels, 8, audio_chunk::g_guess_channel_config( channels ) );
-		return res ? io_result_success : io_result_error_out_of_memory;
+		p_chunk.set_data_fixedpoint( p + postmp * channels, n - postmp * channels, 16282, channels, 8, audio_chunk::g_guess_channel_config( channels ) );
+		postmp = 0;
+
+		return true;
 	}
 
-	t_io_result decode_seek( double p_seconds, abort_callback & p_abort )
+	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		pos = int( p_seconds * 16282. );
 		postmp = pos & 1023;
 		pos &= ~1023;
-		return m_file->seek( ( pos << channels ) + 2048, p_abort );
+		m_file->seek( ( pos << channels ) + 2048, p_abort );
 	}
 
 	bool decode_can_seek()
@@ -715,9 +685,9 @@ public:
 	{
 	}
 
-	t_io_result retag( const file_info & p_info,abort_callback & p_abort )
+	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		return io_result_error_data;
+		throw exception_io_data();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )
@@ -728,7 +698,7 @@ public:
 	static bool g_is_our_path( const char * p_full_path, const char * p_extension )
 	{
 		if ( stricmp( p_extension, "pcm" ) ) return false;
-		string8 name( p_full_path + string8::g_scan_filename( p_full_path ) );
+		string8 name( p_full_path + pfc::scan_filename( p_full_path ) );
 		name.truncate( name.find_last( '.' ) );
 		if ( name.length() != 5 ) return false;
 

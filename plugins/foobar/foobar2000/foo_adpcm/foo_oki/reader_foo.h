@@ -9,12 +9,12 @@ struct STREAM_READER : public libpcm_IReader
 static void LIBPCM_CALLBACK reader_seek(void *pv, uint32_t bytes)
 {
 	STREAM_READER *s = static_cast <STREAM_READER *> (pv);
-	s->reader->seek_e(bytes, *s->m_abort);
+	s->reader->seek(bytes, *s->m_abort);
 }
 static uint_t LIBPCM_CALLBACK reader_read(void *pv, void *buf, uint_t nbytes)
 {
 	STREAM_READER *s = static_cast <STREAM_READER *> (pv);
-	return s->reader->read_e(buf, nbytes, *s->m_abort);
+	return s->reader->read(buf, nbytes, *s->m_abort);
 }
 static uint32_t LIBPCM_CALLBACK reader_size(void *pv)
 {
@@ -49,7 +49,7 @@ static const libpcm_IReaderVtbl FooReaderVtbl =
 
 libpcm_IReader * libpcm_CreateFooReader( service_ptr_t<file> & preader, abort_callback & p_abort )
 {
-	if ( preader->get_size_e( p_abort ) <= 0) return 0;
+	if ( preader->get_size_ex( p_abort ) <= 0) return 0;
 	if (!preader->can_seek()) return 0;
 	STREAM_READER *s = new STREAM_READER;
 	if (!s) return 0;
@@ -57,7 +57,7 @@ libpcm_IReader * libpcm_CreateFooReader( service_ptr_t<file> & preader, abort_ca
 	s->refcount = 1;
 	s->reader = preader;
 	s->m_abort = & p_abort;
-	t_uint64 size = preader->get_size_e( p_abort );
+	t_uint64 size = preader->get_size( p_abort );
 	if ( size > UINT_MAX ) size = UINT_MAX;
 	s->size = uint32_t(size);
 	return s;

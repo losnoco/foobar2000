@@ -5,7 +5,7 @@
 class menu_item_osd_enable : public menu_item_node
 {
 public:
-	bool get_display_data(string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
+	bool get_display_data( pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
 	{
 		p_displayflags = cfg_enable ? FLAG_CHECKED : 0;
 		p_out = "Enable";
@@ -31,7 +31,7 @@ public:
 
 	menu_item_node * get_child(unsigned p_index) {return 0;}
 
-	bool get_description(string_base & p_out)
+	bool get_description(pfc::string_base & p_out)
 	{
 		if (cfg_enable) p_out = "Disable";
 		else p_out = "Enable";
@@ -72,7 +72,7 @@ public:
 		m_guid = p_guid;
 	}
 
-	bool get_display_data(string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
+	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
 	{
 		p_displayflags = 0;
 		p_out = "Show current track";
@@ -90,7 +90,7 @@ public:
 
 	menu_item_node * get_child(unsigned p_index) {return 0;}
 
-	bool get_description(string_base & p_out)
+	bool get_description(pfc::string_base & p_out)
 	{
 		p_out = "Displays the current track";
 		return true;
@@ -113,7 +113,7 @@ public:
 		m_guid = p_guid;
 	}
 
-	bool get_display_data(string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
+	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
 	{
 		p_displayflags = 0;
 		p_out = "Show active playlist";
@@ -131,7 +131,7 @@ public:
 
 	menu_item_node * get_child(unsigned p_index) {return 0;}
 
-	bool get_description(string_base & p_out)
+	bool get_description(pfc::string_base & p_out)
 	{
 		p_out = "Displays the active playlist";
 		return true;
@@ -154,7 +154,7 @@ public:
 		m_guid = p_guid;
 	}
 
-	bool get_display_data(string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
+	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
 	{
 		p_displayflags = 0;
 		p_out = "Show volume level";
@@ -172,7 +172,7 @@ public:
 
 	menu_item_node * get_child(unsigned p_index) {return 0;}
 
-	bool get_description(string_base & p_out)
+	bool get_description(pfc::string_base & p_out)
 	{
 		p_out = "Displays the volume level";
 		return true;
@@ -195,7 +195,7 @@ public:
 		m_guid = p_guid;
 	}
 
-	bool get_display_data(string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
+	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
 	{
 		p_displayflags = 0;
 		p_out = "Hide";
@@ -213,7 +213,7 @@ public:
 
 	menu_item_node * get_child(unsigned p_index) {return 0;}
 
-	bool get_description(string_base & p_out)
+	bool get_description(pfc::string_base & p_out)
 	{
 		p_out = "Hides the overlay";
 		return true;
@@ -248,7 +248,7 @@ public:
 		m_c_hide.set_data(p_index, x_guid);
 	}
 
-	bool get_display_data(string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
+	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
 	{
 		p_displayflags = 0;
 		p_out = m_config;
@@ -273,7 +273,7 @@ public:
 		return 0;
 	}
 
-	bool get_description(string_base & p_out)
+	bool get_description(pfc::string_base & p_out)
 	{
 		p_out = "Controls an OSD preset : \"";
 		p_out += m_config;
@@ -307,7 +307,7 @@ public:
 		}
 	}
 
-	bool get_display_data(string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
+	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
 	{
 		if (m_children.get_size() == 0) return false;
 		p_displayflags = 0;
@@ -329,15 +329,15 @@ public:
 		if (p_index) return &m_children[p_index-1];
 		else return &m_c_enable;
 	}
-	bool get_description(string_base & p_out)
+	bool get_description(pfc::string_base & p_out)
 	{
 		p_out = "Controls the On-Screen Display.";
 		return true;
 	}
 	GUID get_guid() {return pfc::guid_null;}
 private:
-	array_t<string_simple> m_config;
-	array_t<menu_item_osd> m_children;
+	pfc::array_t<string_simple> m_config;
+	pfc::array_t<menu_item_osd> m_children;
 	menu_item_osd_enable   m_c_enable;
 };
 
@@ -365,19 +365,19 @@ public:
 		return guid;
 	}
 
-	void get_item_name(unsigned p_index,string_base & p_out)
+	void get_item_name(unsigned p_index,pfc::string_base & p_out)
 	{
 		assert(p_index == 0);
 		p_out = "On-Screen Display";
 	}
 
-	void get_item_default_path(unsigned p_index,string_base & p_out)
+	void get_item_default_path(unsigned p_index,pfc::string_base & p_out)
 	{
 		assert(p_index == 0);
 		p_out = "Components";
 	}
 
-	bool get_item_description(unsigned p_index,string_base & p_out)
+	bool get_item_description(unsigned p_index,pfc::string_base & p_out)
 	{
 		return false;
 	}
@@ -406,7 +406,7 @@ public:
 				return;
 			}
 
-			array_t<string_simple> m_names;
+			pfc::array_t<string_simple> m_names;
 			g_osd.get_names(m_names);
 			unsigned n, m = m_names.get_size();
 			for(n = 0; n < m; n++)

@@ -13,34 +13,29 @@ public:
 		return ! stricmp( p_extension, "gbs" );
 	}
 
-	t_io_result open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
+	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) return io_result_error_data;
+		if ( p_reason == input_open_info_write ) throw exception_io_data();
 
-		t_io_result status = input_gep::open( p_filehint, p_path, p_reason, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		input_gep::open( p_filehint, p_path, p_reason, p_abort );
 
 		foobar_File_Reader rdr( m_file, p_abort );
 
-		//try
 		{
 			ERRCHK( rdr.read( & m_header, sizeof( m_header ) ) );
 
 			if ( 0 != memcmp( m_header.tag, "GBS", 3 ) )
 			{
 				console::print("Not a GBS file");
-				return io_result_error_data;
+				throw exception_io_data();
 			}
 
 			if ( m_header.vers != 1 )
 			{
 				console::print("Unsupported GBS format");
-				return io_result_error_data;
+				throw exception_io_data();
 			}
 		}
-		//catch(exception_io const & e) {return e.get_code();}
-
-		return io_result_success;
 	}
 
 	unsigned get_subsong_count()
@@ -48,7 +43,7 @@ public:
 		return m_header.track_count;
 	}
 
-	t_io_result get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
+	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
 		HEADER_STRING(p_info, "album", m_header.game);
 		HEADER_STRING(p_info, "artist", m_header.author);
@@ -61,26 +56,18 @@ public:
 		p_info.info_set_int("bitspersample", 16);
 
 		p_info.set_length(double(tag_song_ms + tag_fade_ms) * .001);
-
-		return io_result_success;
 	}
 
-	t_io_result decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
+	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
 	{
 		Gbs_Emu * emu = ( Gbs_Emu * ) this->emu;
 		if ( ! emu )
 		{
-			emu = new Gbs_Emu;
-			if ( !emu )
-			{
-				console::print("Out of memory");
-				return io_result_error_out_of_memory;
-			}
-			this->emu = emu;
+			this->emu = emu = new Gbs_Emu;
 
 			try
 			{
-				m_file->seek_e( 0, p_abort );
+				m_file->seek( 0, p_abort );
 				foobar_File_Reader rdr( m_file, p_abort );
 				rdr.skip( sizeof( m_header ) );
 
@@ -100,7 +87,7 @@ public:
 			m_file.release();
 		}
 
-		return input_gep::decode_initialize( p_subsong, p_flags, p_abort );
+		input_gep::decode_initialize( p_subsong, p_flags, p_abort );
 	}
 };
 

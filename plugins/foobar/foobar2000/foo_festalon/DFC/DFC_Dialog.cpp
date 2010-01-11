@@ -97,7 +97,7 @@ int		CDDialog::DoModal(HINSTANCE instance,HWND parentwnd,UINT dlgtemplate)
 	bIsModal = 1;
 	hInstance = instance;
 	
-	return (int)uDialogBox(instance,dlgtemplate,parentwnd,
+	return (int)DialogBox(instance,MAKEINTRESOURCE(dlgtemplate),parentwnd,
 		GenericWindowProc,(LPARAM)this);
 }
 
@@ -108,7 +108,7 @@ HWND	CDDialog::DoModeless(HINSTANCE instance,HWND parentwnd,UINT dlgtemplate)
 	bIsModal = 0;
 	hInstance = instance;
 
-	return uCreateDialog(instance,dlgtemplate,parentwnd,
+	return CreateDialog(instance,MAKEINTRESOURCE(dlgtemplate),parentwnd,
 		GenericWindowProc,(LPARAM)this);
 }
 
@@ -140,7 +140,7 @@ void CDDialogControl::AttachToControl(HWND hParent,UINT id)
 //////////////////////////////////////////////////////////////////////////
 //  CDListBox
 
-void CDListBox::GetText(UINT index, string_base & out)
+void CDListBox::GetText(UINT index, pfc::string_base & out)
 {
 	uListBox_GetText(hWnd,index,out);
 }

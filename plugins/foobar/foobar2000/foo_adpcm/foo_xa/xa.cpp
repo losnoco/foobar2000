@@ -318,7 +318,7 @@ LPTRACKBUF newTrackBuf( DWORD numFrames )
   return t;
 }
 
-static void get_volume_label(const char * path, string_base & out)
+static void get_volume_label(const char * path, pfc::string_base & out)
 {
 	if (IsUnicode())
 	{
@@ -444,8 +444,10 @@ public:
 		iso_vol_desc * desc = ReadISO9660(readf_gfi, 0, this);
 		iso_vol_desc * next = desc;
 		struct iso_primary_descriptor * ivd;
-		while (!p_abort.is_aborting() && next)
+		while (next)
 		{
+			p_abort.check();
+
 			switch(isonum_711(desc->data.type))
 			{
 			case ISO_VD_PRIMARY:
@@ -553,7 +555,7 @@ static HCDROM cdrom_from_path(const char * path)
 {
 	string8 root, label;
 
-	if (strcmp_partial(path, "file://")) return 0;
+	if (pfc::strcmp_partial(path, "file://")) return 0;
 
 	root.set_string(path + 7);
 	root.truncate(root.find_first(':') + 2);
@@ -619,6 +621,7 @@ class reader_raw : public file
 {
 	akrip_reference akref;
 	t_filetimestamp m_timestamp;
+	bool eof;
 public:
 	void limit_speed()
 	{
@@ -643,16 +646,18 @@ public:
 			frame = start;
 			ptr = 0;
 
+			eof = false;
+
 			return true;
 		}
 
 		return false;
 	}
 
-	virtual t_io_result read(void * p_buffer,unsigned p_bytes,unsigned & p_bytes_read,abort_callback & p_abort)
+	virtual t_size read( void * p_buffer, unsigned p_bytes, abort_callback & p_abort )
 	{
 		unsigned dwStatus, retries;
-		p_bytes_read = 0;
+		unsigned p_bytes_read = 0;
 		if (p_bytes > t->len)
 		{
 			if (t->len)
@@ -663,11 +668,16 @@ public:
 				p_bytes -= t->len;
 				t->len = 0;
 			}
-			if (frame >= start + len) return p_bytes_read ? io_result_success : io_result_eof;
+			if (frame >= start + len)
+			{
+				eof = true;
+				return p_bytes_read;
+			}
 			retries = 3;
 			dwStatus = SS_ERR;
-			while ( !p_abort.is_aborting() && retries-- && (dwStatus != SS_COMP) )
+			while ( retries-- && (dwStatus != SS_COMP) )
 			{
+				p_abort.check();
 				t->numFrames = (start + len) - frame;
 				if (t->numFrames > 8) t->numFrames = 8;
 				t->startOffset = 0;
@@ -677,8 +687,7 @@ public:
 				dwStatus = ReadCDAudioLBA(hCD, t);
 				g_access_sync.leave();
 			}
-			if (p_abort.is_aborting()) return io_result_aborted;
-			if (dwStatus != SS_COMP) return io_result_error_generic;
+			if (dwStatus != SS_COMP) throw exception_io();
 			frame += t->numFrames;
 			ptr = t->startOffset;
 		}
@@ -687,48 +696,52 @@ public:
 		t->len -= p_bytes;
 		ptr += p_bytes;
 		p_bytes_read += p_bytes;
-		return io_result_success;
+		return p_bytes_read;
 	}
 
-	virtual t_io_result write(const void * p_buffer,unsigned p_bytes,unsigned & p_bytes_written,abort_callback & p_abort)
+	virtual void write( const void * p_buffer, unsigned p_bytes, abort_callback & p_abort )
 	{
-		return io_result_error_generic;
+		throw exception_io();
 	}
 
-	virtual t_io_result set_eof(abort_callback & p_abort)
+	virtual void set_eof( abort_callback & p_abort )
 	{
-		return io_result_error_generic;
+		throw exception_io();
 	}
 
-	virtual t_io_result get_timestamp(t_filetimestamp & p_timestamp, abort_callback & p_abort)
+	virtual t_filetimestamp get_timestamp( abort_callback & p_abort )
 	{
-		p_timestamp = m_timestamp;
-		return io_result_success;
+		return m_timestamp;
 	}
 
-	virtual t_io_result get_size(t_filesize & p_length, abort_callback & p_abort)
+	virtual t_filesize get_size( abort_callback & p_abort )
 	{
-		p_length = 2352 * t_filesize(len);
-		return io_result_success;
+		return 2352 * t_filesize(len);
 	}
 
-	virtual t_io_result get_position(t_uint64 & p_position, abort_callback & p_abort)
+	virtual t_filesize get_position( abort_callback & p_abort )
 	{
-		p_position = t_uint64(frame - start) * 2352 + t_uint64(ptr - t->startOffset);
-		return io_result_success;
+		return t_filesize(frame - start) * 2352 + t_filesize(ptr - t->startOffset);
 	}
 
-	virtual t_io_result seek(t_filesize position,abort_callback & p_abort)
+	virtual void seek( t_filesize position, abort_callback & p_abort )
 	{
+		eof = false;
 		unsigned newframe = (unsigned)(position / 2352);
 		unsigned newptr = (unsigned)(position % 2352);
-		if (newframe >= len) return io_result_eof;
+		if (newframe >= len)
+		{
+			eof = true;
+			return;
+		}
 		newframe += start;
 		int dwStatus, retries;
 		retries = 3;
 		dwStatus = SS_ERR;
-		while ( !p_abort.is_aborting() && retries-- && (dwStatus != SS_COMP) )
+		while ( retries-- && (dwStatus != SS_COMP) )
 		{
+			p_abort.check();
+
 			t->numFrames = (start + len) - newframe;
 			if (t->numFrames > 8) t->numFrames = 8;
 			t->startOffset = 0;
@@ -738,12 +751,25 @@ public:
 			dwStatus = ReadCDAudioLBA(hCD, t);
 			g_access_sync.leave();
 		}
-		if (p_abort.is_aborting()) return io_result_aborted;
-		if (dwStatus != SS_COMP) return io_result_error_generic;
+		if (dwStatus != SS_COMP) throw exception_io();
 		frame = newframe + t->numFrames;
 		ptr = t->startOffset + newptr;
 		t->len -= newptr;
-		return io_result_success;
+	}
+
+	virtual void resize(t_filesize p_size,abort_callback & p_abort)
+	{
+		throw exception_io();
+	}
+
+	virtual bool get_content_type(pfc::string_base & p_out)
+	{
+		return false;
+	}
+
+	virtual void reopen(abort_callback & p_abort)
+	{
+		seek( 0, p_abort );
 	}
 
 	bool can_seek()
@@ -756,7 +782,7 @@ public:
 		return false;
 	}
 
-	void set_timestamp(const t_filetimestamp & p_timestamp)
+	void set_timestamp( const t_filetimestamp & p_timestamp )
 	{
 		m_timestamp = p_timestamp;
 	}
@@ -799,49 +825,51 @@ typedef struct SoundSector {
 
 static t_filesize check_cdxa(service_ptr_t<file> & r, abort_callback & p_abort)
 {
-	mem_block_t<char> foo;
-	if ( ! foo.set_size( 8 ) ) throw io_result_error_out_of_memory;
-	char *header = foo.get_ptr();
-	r->seek_e(0, p_abort);
-	r->read_object_e(header, 4, p_abort);
-	t_filesize length = r->get_size_e(p_abort);
-	if (*(int*)header != 'FFIR')
+	pfc::array_t<t_uint8> foo;
+	foo.set_size( 8 );
+
+	t_uint8 * header = foo.get_ptr();
+	r->seek( 0, p_abort );
+	r->read_object( header, 4, p_abort );
+	t_filesize length = r->get_size( p_abort );
+
+	if ( byte_order::dword_le_to_native( * ( ( t_uint32 * ) header ) ) != 'FFIR' )
 	{
 		if (!(length & 2047)) return ~0;
 		return 0; // no header
 	}
-	r->read_object_e(header, 4, p_abort);
-	if (byte_order::dword_le_to_native(*(t_uint32*)header) + 8 > length) throw io_result_error_data;
-	r->read_object_e(header, 8, p_abort);
-	if (byte_order::dword_le_to_native(*(t_uint32*)header) != 'AXDC' ||
-		byte_order::dword_le_to_native(((t_uint32*)header)[1]) != ' tmf') throw io_result_error_data;
+	r->read_object( header, 4, p_abort );
+	if ( byte_order::dword_le_to_native( * ( ( t_uint32 * ) header ) ) + 8 > length ) throw exception_io_data();
+	r->read_object( header, 8, p_abort );
+	if ( byte_order::dword_le_to_native( * ( ( t_uint32 * ) header ) ) != 'AXDC' ||
+		byte_order::dword_le_to_native( ( ( t_uint32 * ) header )[ 1 ] ) != ' tmf' ) throw exception_io_data();
 	unsigned size;
-	r->read_object_e(header, 4, p_abort);
-	size = byte_order::dword_le_to_native(*(t_uint32*)header);
-	if ( ! foo.check_size( size ) ) throw io_result_error_out_of_memory;
+	r->read_object( header, 4, p_abort );
+	size = byte_order::dword_le_to_native( * ( ( t_uint32 * ) header ) );
+	foo.grow_size( size );
 	header = foo.get_ptr();
-	r->read_object_e(header, size, p_abort);
-	if (header[5] != 'U' || header[6] != 'X' || header[7] != 'A') throw io_result_error_data;
+	r->read_object( header, size, p_abort );
+	if ( header[5] != 'U' || header[6] != 'X' || header[7] != 'A' ) throw exception_io_data();
 blah:
-	r->read_object_e(header, 8, p_abort);
-	size = byte_order::dword_le_to_native(((t_uint32*)header)[1]);
-	if (byte_order::dword_le_to_native(*(t_uint32*)header) != 'atad')
+	r->read_object( header, 8, p_abort );
+	size = byte_order::dword_le_to_native( ( ( t_uint32 * ) header )[ 1 ] );
+	if ( byte_order::dword_le_to_native( * ( ( t_uint32 * ) header ) ) != 'atad' )
 	{
 		// yay! let's skip ahead
-		r->seek_e(r->get_position_e(p_abort) + (t_int64)size, p_abort);
+		r->seek_ex( size, file::seek_from_current, p_abort );
 		goto blah;
 	}
 
-	return r->get_position_e(p_abort);
+	return r->get_position( p_abort );
 }
 
-bool check_single(service_ptr_t<file> & r, abort_callback & p_abort)
+bool check_single( service_ptr_t< file > & r, abort_callback & p_abort )
 {
 	unsigned read, meh = 0;
-	mem_block_t<BYTE> xabuffer;
-	if ( ! xabuffer.set_size( 2352 * 4 ) ) throw io_result_error_out_of_memory;
+	pfc::array_t< t_uint8 > xabuffer;
+	xabuffer.set_size( 2352 * 4 );
 	BYTE * xa = xabuffer.get_ptr();
-	read = r->read_e(xa, 2352 * 4, p_abort) / 2352;
+	read = r->read( xa, 2352 * 4, p_abort ) / 2352;
 	
 	switch (read)
 	{
@@ -865,9 +893,9 @@ bool check_single(service_ptr_t<file> & r, abort_callback & p_abort)
 	else return false;
 }
 
-#define CLAMP_TO_SHORT(x) if ((x) != ((short)(x))) (x) = 0x7fff - ((x) >> 20)
+#define CLAMP_TO_SHORT(x) if ((x) != ((short)(x))) (x) = 0x7fff - ((x) >> ( sizeof(x) * 8 - 1 ) )
 
-static void xa_decode_4m(audio_sample *out, const unsigned char *in, short * temp)
+static void xa_decode_4m(t_int16 *out, const unsigned char *in, short * temp)
 {
 	int h, i, j;
 	int shift,filter,f0,f1;
@@ -895,7 +923,7 @@ static void xa_decode_4m(audio_sample *out, const unsigned char *in, short * tem
 				t = t >> 4;
 				s = (t << shift) + ((s_1 * f0 + s_2 * f1 + 32) >> 6);
 				CLAMP_TO_SHORT(s);
-				*out++ = ((audio_sample)s) * (1. / 32768.);
+				*out++ = s;
 				s_2 = s_1;
 				s_1 = s;
 			}
@@ -913,7 +941,7 @@ static void xa_decode_4m(audio_sample *out, const unsigned char *in, short * tem
 				t = t >> 4;
 				s = (t << shift) + ((s_1 * f0 + s_2 * f1 + 32) >> 6);
 				CLAMP_TO_SHORT(s);
-				*out++ = ((audio_sample)s) * (1. / 32768.);
+				*out++ = s;
 				s_2 = s_1;
 				s_1 = s;
 			}
@@ -924,7 +952,7 @@ static void xa_decode_4m(audio_sample *out, const unsigned char *in, short * tem
 	temp[1] = s_2;
 }
 
-static void xa_decode_4s(audio_sample *out, const unsigned char *in, short * temp)
+static void xa_decode_4s(t_int16 *out, const unsigned char *in, short * temp)
 {
 	int h, i, j;
 	int shift,filter,f0,f1;
@@ -955,7 +983,7 @@ static void xa_decode_4s(audio_sample *out, const unsigned char *in, short * tem
 				t = t >> 4;
 				s = (t << shift) + ((s_1 * f0 + s_2 * f1 + 32) >> 6);
 				CLAMP_TO_SHORT(s);
-				*out = ((audio_sample)s) * (1. / 32768.);
+				*out = s;
 				out += 2;
 				s_2 = s_1;
 				s_1 = s;
@@ -976,7 +1004,7 @@ static void xa_decode_4s(audio_sample *out, const unsigned char *in, short * tem
 				//if (t & 8) t |= -8;
 				s = (t << shift) + ((s_3 * f0 + s_4 * f1 + 32) >> 6);
 				CLAMP_TO_SHORT(s);
-				*out = ((audio_sample)s) * (1. / 32768.);
+				*out = s;
 				out += 2;
 				s_4 = s_3;
 				s_3 = s;
@@ -992,7 +1020,7 @@ static void xa_decode_4s(audio_sample *out, const unsigned char *in, short * tem
 	temp[3] = s_4;
 }
 
-static void xa_decode_8m(audio_sample *out, const unsigned char *in, short * temp)
+static void xa_decode_8m(t_int16 *out, const unsigned char *in, short * temp)
 {
 	int h, i, j;
 	int shift,filter,f0,f1;
@@ -1020,7 +1048,7 @@ static void xa_decode_8m(audio_sample *out, const unsigned char *in, short * tem
 				t = (signed char)d;
 				s = (t << shift) + ((s_1 * f0 + s_2 * f1 + 32) >> 6);
 				CLAMP_TO_SHORT(s);
-				*out++ = ((audio_sample)s) * (1. / 32768.);
+				*out++ = s;
 				s_2 = s_1;
 				s_1 = s;
 			}
@@ -1031,7 +1059,7 @@ static void xa_decode_8m(audio_sample *out, const unsigned char *in, short * tem
 	temp[1] = s_2;
 }
 
-static void xa_decode_8s(audio_sample *out, const unsigned char *in, short * temp)
+static void xa_decode_8s(t_int16 *out, const unsigned char *in, short * temp)
 {
 	int h, i, j;
 	int shift,filter,f0,f1;
@@ -1061,7 +1089,7 @@ static void xa_decode_8s(audio_sample *out, const unsigned char *in, short * tem
 				t = (signed char)d;
 				s = (t << shift) + ((s_1 * f0 + s_2 * f1 + 32) >> 6);
 				CLAMP_TO_SHORT(s);
-				*out = ((audio_sample)s) * (1. / 32768.);
+				*out = s;
 				out += 2;
 				s_2 = s_1;
 				s_1 = s;
@@ -1081,7 +1109,7 @@ static void xa_decode_8s(audio_sample *out, const unsigned char *in, short * tem
 				t = (signed char)d;
 				s = (t << shift) + ((s_3 * f0 + s_4 * f1 + 32) >> 6);
 				CLAMP_TO_SHORT(s);
-				*out = ((audio_sample)s) * (1. / 32768.);
+				*out = s;
 				out += 2;
 				s_4 = s_3;
 				s_3 = s;
@@ -1125,8 +1153,10 @@ struct xa_subsong_scanner_loop_info
 
 class xa_subsong_scanner /*: public threaded_process_callback*/
 {
-	ptr_list_t< xa_subsong_scanner_info >       m_info;
-	mem_block_t< xa_subsong_scanner_loop_info > m_loop_data;
+	ptr_list_t< xa_subsong_scanner_info >        m_info;
+	pfc::array_t< xa_subsong_scanner_loop_info > m_loop_data;
+
+	pfc::array_t< xa_subsong_scanner_info * >    info;
 
 	/*service_ptr_t<file> m_file;*/
 
@@ -1134,36 +1164,34 @@ public:
 	~xa_subsong_scanner()
 	{
 		m_info.delete_all();
+		for ( unsigned i = 0, j = info.get_size(); i < j; ++i ) delete info[ i ];
 	}
 
-	/*virtual void*/
-	t_io_result run( /*threaded_process_status & p_status,*/
-		service_ptr_t<file> & m_file,
-		abort_callback & p_abort )
+	void run( service_ptr_t<file> & m_file, abort_callback & p_abort )
 	{
-		//try
 		{
-			t_filesize length = m_file->get_size_e( p_abort );
+			t_filesize length = m_file->get_size( p_abort );
 			
 			t_uint64 sector_count = length / 2352;
 
 			m_loop_data.set_size( unsigned( sector_count ) );
 
-			array_t< xa_subsong_scanner_info * > info;
 			info.set_size( 256 );
 			for ( unsigned i = 0; i < 256; ++i ) info[ i ] = 0;
 
-			mem_block_t< unsigned char > xa_buffer;
-			if ( ! xa_buffer.set_size( 2352 ) ) throw io_result_error_out_of_memory;
+			pfc::array_t< t_uint8 > xa_buffer;
+			xa_buffer.set_size( 2352 );
 			unsigned char * ptr = xa_buffer.get_ptr();
 
-			m_file->seek_e( 0, p_abort );
+			m_file->seek( 0, p_abort );
 
 			t_uint64 sector = 0;
 
-			while ( ! p_abort.is_aborting() && sector < sector_count )
+			while ( sector < sector_count )
 			{
-				m_file->read_object_e( ptr, 2352, p_abort );
+				p_abort.check();
+
+				m_file->read_object( ptr, 2352, p_abort );
 				sector++;
 				/*p_status.set_progress_float( double( sector ) / double( sector_count ) );*/
 
@@ -1208,7 +1236,7 @@ public:
 						p_info->loop_start = ~0;
 
 						p_info->bits_per_sample = ( ptr[19] & 48 ) >> 4;
-						if (p_info->bits_per_sample > 1) throw io_result_error_data;
+						if (p_info->bits_per_sample > 1) throw exception_io_data();
 						switch ( ptr[19] & 12 )
 						{
 						case 0:
@@ -1218,7 +1246,7 @@ public:
 							p_info->srate = 18900;
 							break;
 						default:
-							throw io_result_error_data;
+							throw exception_io_data();
 						}
 						switch ( ptr[19] & 3 )
 						{
@@ -1229,7 +1257,7 @@ public:
 							p_info->nch = 2;
 							break;
 						default:
-							throw io_result_error_data;
+							throw exception_io_data();
 						}
 					}
 				}
@@ -1243,15 +1271,21 @@ public:
 
 			for ( unsigned i = 0; i < 256; ++i )
 			{
-				if ( info[ i ] ) m_info.add_item( info[ i ] );
+				if ( info[ i ] )
+				{
+					m_info.add_item( info[ i ] );
+					info[ i ] = 0;
+				}
 			}
 
 			// loop processing!
 			/*p_status.set_title( "Scanning for loop offsets..." );
 			p_status.set_progress( threaded_process_status::progress_min );*/
 
-			for ( unsigned i = 0, j = m_info.get_count(); i < j && !p_abort.is_aborting(); ++i )
+			for ( unsigned i = 0, j = m_info.get_count(); i < j; ++i )
 			{
+				p_abort.check();
+
 				xa_subsong_scanner_info & p_info = * m_info[ i ];
 
 				xa_subsong_scanner_loop_info & p_end = m_loop_data[ p_info.sector_offset_end ];
@@ -1289,8 +1323,6 @@ public:
 			m_loop_data.set_size( 0 );
 		}
 		//catch(exception_io const & e) {return e.get_code();}
-
-		return p_abort.is_aborting() ? io_result_aborted : io_result_success;
 	}
 
 	void get_info( ptr_list_t< xa_subsong_scanner_info > & out )
@@ -1349,7 +1381,7 @@ public:
 		m_cache.delete_all();
 	}
 
-	t_io_result run( service_ptr_t<file> & p_file, const char * p_path, t_filetimestamp p_timestamp, ptr_list_t< xa_subsong_scanner_info > & p_out, abort_callback & p_abort )
+	void run( service_ptr_t<file> & p_file, const char * p_path, t_filetimestamp p_timestamp, ptr_list_t< xa_subsong_scanner_info > & p_out, abort_callback & p_abort )
 	{
 		insync( sync );
 
@@ -1366,14 +1398,24 @@ public:
 					p_out.add_item( out_item );
 				}
 
-				return io_result_success;
+				return;
 			}
 		}
 
 		t_info * item = new t_info;
+
 		xa_subsong_scanner scanner;
-		t_io_result code = scanner.run( p_file, p_abort );
-		if ( io_result_succeeded( code ) )
+
+		try
+		{
+			scanner.run( p_file, p_abort );
+		}
+		catch (...)
+		{
+			delete item;
+			throw;
+		}
+
 		{
 			scanner.get_info( item->info );
 			for ( unsigned i = 0, j = item->info.get_count(); i < j; ++i )
@@ -1394,8 +1436,6 @@ public:
 
 			m_cache.add_item( item );
 		}
-
-		return code;
 	}
 };
 
@@ -1403,10 +1443,11 @@ static xa_subsong_info_cache g_cache;
 
 class input_xa
 {
-	mem_block_t<BYTE> xabuffer;
+	pfc::array_t< t_uint8 > xabuffer;
+	pfc::array_t< t_int16 > samplebuffer;
 
-	reader_raw        * m_raw;
-	service_ptr_t<file> m_file;
+	service_ptr_t<reader_raw> m_raw;
+	service_ptr_t<file>       m_file;
 	// reader * wrt;
 
 	t_filesize header;
@@ -1425,7 +1466,7 @@ class input_xa
 
 	void setSector( long sector, abort_callback & p_abort )
 	{
-		m_file->seek_e( header + t_filesize(sector) * 2352, p_abort );
+		m_file->seek( header + t_filesize(sector) * 2352, p_abort );
 	}
 
 	/*long getSector()
@@ -1450,10 +1491,8 @@ public:
 		m_info.delete_all();
 	}
 
-	t_io_result open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
+	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		t_io_result status;
-
 		string_simple fn( p_path );
 
 		if ( p_filehint.is_empty() )
@@ -1466,8 +1505,7 @@ public:
 				fn = temp;
 			}
 
-			status = filesystem::g_open( m_file, fn, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			filesystem::g_open( m_file, fn, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
 		}
 		else m_file = p_filehint;
 
@@ -1475,37 +1513,27 @@ public:
 		{
 			header = check_cdxa(m_file, p_abort);
 		}
-		catch(exception_io const & e)
+		catch(exception_io const &)
 		{
-			(void) e;
 			header = ~0;
 		}
 
 		if (header == ~0) // read failed, try alternate reader
 		{
-			if ( p_reason == input_open_info_write ) return io_result_error_data;
+			if ( p_reason == input_open_info_write ) throw exception_io_data();
 
 			m_raw = new service_impl_t<reader_raw>;
 			t_filetimestamp p_timestamp;
-			if ( io_result_succeeded( m_file->get_timestamp( p_timestamp, p_abort ) ) )
-				m_raw->set_timestamp( p_timestamp );
-			m_file = m_raw;
+			m_raw->set_timestamp( m_file->get_timestamp( p_abort ) );
+			m_file = m_raw.get_ptr();
 			if ( ! m_raw->open( fn, p_abort ) )
 			{
-				return io_result_error_generic;
+				throw exception_io();
 			}
 			header = 0;
 		}
 
-		{
-			t_filetimestamp p_timestamp;
-			status = m_file->get_timestamp( p_timestamp, p_abort );
-			if ( io_result_failed( status ) ) return status;
-			status = g_cache.run( m_file, p_path, p_timestamp, m_info, p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
-
-		return io_result_success;
+		g_cache.run( m_file, p_path, m_file->get_timestamp( p_abort ), m_info, p_abort );
 	}
 
 	unsigned get_subsong_count()
@@ -1518,19 +1546,20 @@ public:
 		return p_index;
 	}
 
-	t_io_result get_info( t_uint32 p_subsong,file_info & p_info,abort_callback & p_abort )
+	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
 	{
 		assert( p_subsong < m_info.get_count() );
 
 		if ( m_info.get_count() == 1 )
 		{
-			t_filesize ptr;
-			t_io_result status = m_file->get_position( ptr, p_abort );
-			if ( io_result_failed( status ) ) return status;
-			status = tag_processor::read_trailing( m_file, p_info, p_abort);
-			if ( status != io_result_error_data && status != io_result_error_not_found && io_result_failed( status ) ) return status;
-			status = m_file->seek( ptr, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			t_filesize ptr = m_file->get_position( p_abort );
+			try
+			{
+				tag_processor::read_trailing( m_file, p_info, p_abort);
+			}
+			catch ( const exception_tag_not_found & ) {}
+			catch ( const exception_io_data & ) {}
+			m_file->seek( ptr, p_abort );
 		}
 
 		xa_subsong_scanner_info * info = m_info[ p_subsong ];
@@ -1554,16 +1583,14 @@ public:
 			p_info.info_set_bitrate( t_int64( 2352. / seconds_per_sector * 8. / 1000. + .5 ) );
 		}
 		//else p_info.info_set_bitrate( 2458 ); // 2457.6
-
-		return io_result_success;
 	}
 
-	t_io_result get_file_stats(t_filestats & p_stats,abort_callback & p_abort)
+	t_filestats get_file_stats( abort_callback & p_abort )
 	{
-		return m_file->get_stats( p_stats, p_abort );
+		return m_file->get_stats( p_abort );
 	}
 
-	t_io_result decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
+	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
 	{
 		assert( p_subsong < m_info.get_count() );
 
@@ -1576,11 +1603,7 @@ public:
 		loopstart = info->loop_start;
 		if ( loopstart == ~0 ) loopstart = start;
 
-		//try
-		{
-			setSector( start, p_abort );
-		}
-		//catch(exception_io const & e) {return e.get_code();}
+		setSector( start, p_abort );
 
 		file_number = info->file_number;
 		channel = info->channel;
@@ -1589,7 +1612,7 @@ public:
 
 		no_loop = ( p_flags & input_flag_no_looping ) || !cfg_loop;
 
-		if ( m_raw && ( p_flags & input_flag_playback ) )
+		if ( m_raw.is_valid() && ( p_flags & input_flag_playback ) )
 		{
 			m_raw->limit_speed();
 		}
@@ -1598,54 +1621,49 @@ public:
 
 		pos = 0.;
 		swallow = 0.;
-
-		return io_result_success;
 	}
 
-	t_io_result decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
+	bool decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
 	{
-		if (eof) return io_result_eof;
+		if (eof) return false;
 
-		if ( ! xabuffer.check_size( 2352 ) )
-			return io_result_error_out_of_memory;
+		xabuffer.grow_size( 2352 );
 		BYTE *xa = xabuffer.get_ptr();
-		audio_sample *out;
 		int stereo;
-		t_io_result status;
 
 		UINT srate;
 		int bits_per_sample;
 		long samples;
+
+		t_int16 * out;
 		
 		//try
 		{
 retry1:
-			status = m_file->read_object(xa, 2352, p_abort);
-			if (status == io_result_eof || status == io_result_error_data)
+			if ( m_file->read( xa, 2352, p_abort ) < 2352 )
 			{
 				if (!no_loop)
 				{
 					setSector(loopstart, p_abort);
 					goto retry1;
 				}
-				else return io_result_eof;
+				else return false;
 			}
-			else if (io_result_failed(status)) return status;
 
-			while (!p_abort.is_aborting() && memcmp(sync, xa, 12) || xa[15] != 2 || !(xa[18] & 0x20) || xa[17] != channel || (xa[18] & 0xe) != 4)
+			while (memcmp(sync, xa, 12) || xa[15] != 2 || !(xa[18] & 0x20) || xa[17] != channel || (xa[18] & 0xe) != 4)
 			{
 retry2:
-				status = m_file->read_object(xa, 2352, p_abort);
-				if (status == io_result_eof || status == io_result_error_data)
+				p_abort.check();
+
+				if ( m_file->read(xa, 2352, p_abort) < 2352 )
 				{
 					if (!no_loop)
 					{
 						setSector(loopstart, p_abort);
 						goto retry2;
 					}
-					else return io_result_eof;
+					else return false;
 				}
-				else if (io_result_failed(status)) return status;
 			}
 
 			if (xa[16] != file_number)
@@ -1655,13 +1673,13 @@ retry2:
 					setSector(loopstart, p_abort);
 					goto retry1;
 				}
-				else return io_result_eof;
+				else return false;
 			}
 
 			// if (wrt) wrt->write(xa, 2352);
 
 			bits_per_sample = xa[19] & 48;
-			if (bits_per_sample > 16) return io_result_error_data; // reserved values
+			if ( bits_per_sample > 16 ) throw exception_io_data(); // reserved values
 			switch (xa[19] & 12)
 			{
 			case 0:
@@ -1671,7 +1689,7 @@ retry2:
 				srate = 18900;
 				break;
 			default:
-				return io_result_error_data; // wtf? reserved rate
+				throw exception_io_data(); // wtf? reserved rate
 			}
 			switch (xa[19] & 3)
 			{
@@ -1682,7 +1700,7 @@ retry2:
 				stereo = 1;
 				break;
 			default:
-				return io_result_error_data; // another reserved value
+				throw exception_io_data(); // another reserved value
 			}
 
 			if (xa[18] & 0x81)
@@ -1694,19 +1712,17 @@ retry2:
 
 			if (bits_per_sample)
 			{
-				if ( ! p_chunk.check_data_size( 2016 ) )
-					throw io_result_error_out_of_memory;
-				out = p_chunk.get_data();
-				if (stereo) xa_decode_8s(out, xa, temp), samples = 1008;
-				else xa_decode_8m(out, xa, temp), samples = 2016;
+				samplebuffer.grow_size( 2016 );
+				out = samplebuffer.get_ptr();
+				if ( stereo ) { xa_decode_8s(out, xa, temp); samples = 1008; }
+				else { xa_decode_8m(out, xa, temp); samples = 2016; }
 			}
 			else
 			{
-				if ( ! p_chunk.check_data_size( 4032 ) )
-					throw io_result_error_out_of_memory;
-				out = p_chunk.get_data();
-				if (stereo) xa_decode_4s(out, xa, temp), samples = 2016;
-				else xa_decode_4m(out, xa, temp), samples = 4032;
+				samplebuffer.grow_size( 4032 );
+				out = samplebuffer.get_ptr();
+				if ( stereo ) { xa_decode_4s(out, xa, temp); samples = 2016; }
+				else { xa_decode_4m(out, xa, temp); samples = 4032; }
 			}
 
 			pos += double(samples) / double(srate);
@@ -1721,40 +1737,31 @@ retry2:
 				samples -= iswallowed;
 				if (samples <= 0) goto retry1;
 				//out += iswallowed << stereo;
-				memmove(out, out + ( iswallowed << stereo ), sizeof(audio_sample) * iswallowed << stereo);
+				memmove( out, out + ( iswallowed << stereo ), sizeof(*out) * iswallowed << stereo);
 			}
 		}
 		//catch(exception_io const & e) {return e.get_code();}
 
 		if (samples)
 		{
-			//p_chunk.set_data(out, samples, stereo + 1, srate);
-			p_chunk.set_sample_rate( srate );
-			p_chunk.set_channels( stereo + 1 );
-			p_chunk.set_sample_count( samples );
-			return io_result_success;
+			p_chunk.set_data_fixedpoint( out, samples * 2 << stereo, srate, stereo + 1, 16, audio_chunk::g_guess_channel_config( stereo + 1 ) );
+			return true;
 		}
 
-		return io_result_eof;
+		return false;
 	}
 
-	t_io_result decode_seek( double p_seconds,abort_callback & p_abort )
+	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		swallow = p_seconds;
 		if ( swallow > pos )
 		{
 			swallow -= pos;
-			return io_result_success;
+			return;
 		}
 		pos = 0.;
 
-		//try
-		{
-			setSector( start, p_abort );
-		}
-		//catch(exception_io const & e) {return e.get_code();}
-
-		return io_result_success;
+		setSector( start, p_abort );
 	}
 
 	bool decode_can_seek()
@@ -1776,17 +1783,16 @@ retry2:
 	{
 	}
 
-	t_io_result retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
+	void retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
 	{
 		if ( p_subsong > 0 || m_info.get_count() > 1 )
-			return io_result_error_data;
+			throw exception_io_data();
 
-		return tag_processor::write_apev2(m_file, p_info, p_abort);
+		tag_processor::write_apev2( m_file, p_info, p_abort );
 	}
 
-	t_io_result retag_commit( abort_callback & p_abort )
+	void retag_commit( abort_callback & p_abort )
 	{
-		return io_result_success;
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

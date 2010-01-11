@@ -71,15 +71,10 @@ struct APETagFooterStruct {
     char   Reserved [8];
 };
 
-static unsigned long Read_LE_Uint32_unsigned ( const unsigned char* p )
+namespace pfc
 {
-    return ((unsigned long)p[0] <<  0) |
-           ((unsigned long)p[1] <<  8) |
-           ((unsigned long)p[2] << 16) |
-           ((unsigned long)p[3] << 24);
+	template<> class traits_t<::APETagFooterStruct> : public traits_rawobject {};
 }
-
-static unsigned long Read_LE_Uint32 ( const char* p ) {return Read_LE_Uint32_unsigned((const unsigned char*)p);}
 
 class input_ac3
 {
@@ -99,13 +94,13 @@ private:
 	t_uint32 skip_samples;
 
 	a52_state_t * state;
-	mem_block_t<t_uint8> buffer;
+	pfc::array_t<t_uint8> buffer;
 
 	bool sync_e( const service_ptr_t<file> & r, t_uint8 * buffer, abort_callback & p_abort )
 	{
 		t_uint32 meh = 0;
 		t_uint8 * ptr = buffer;
-		int left = int( r->read_e( ptr + 7, 3840 - 7, p_abort ) + 7 );
+		int left = int( r->read( ptr + 7, 3840 - 7, p_abort ) + 7 );
 retry:
 		while ( left > 1 )
 		{
@@ -115,14 +110,14 @@ retry:
 		}
 		if (left > 1)
 		{
-			r->seek2_e(-left, SEEK_CUR, p_abort);
-			r->read_object_e(ptr = buffer, 7, p_abort);
+			r->seek_ex(-left, file::seek_from_current, p_abort);
+			r->read_object(ptr = buffer, 7, p_abort);
 			if (ptr[5] >= 0x60 || (ptr[4] & 63) >= 38)
 			{
 				meh = 8192 - left;
 				ptr += 7;
 				left -= 7;
-				r->seek2_e(left, SEEK_CUR, p_abort);
+				r->seek_ex(left, file::seek_from_current, p_abort);
 				goto retry;
 			}
 
@@ -135,7 +130,7 @@ retry:
 				uint32_t toread = meh;
 				if (toread > 3840) toread = 3840;
 				ptr -= 3840;
-				left = r->read_e(ptr, toread, p_abort);
+				left = r->read(ptr, toread, p_abort);
 				meh -= toread;
 				goto retry;
 			}
@@ -154,21 +149,16 @@ public:
 		if (state) a52_free(state);
 	}
 	
-	t_io_result open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
+	void open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
 	{
-		t_io_result status;
-
 		if ( p_filehint.is_empty() )
 		{
-			status = filesystem::g_open( m_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			filesystem::g_open( m_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
 		}
 		else m_file = p_filehint;
-
-		return io_result_success;
 	}
 
-	t_io_result get_info( file_info & p_info, abort_callback & p_abort )
+	void get_info( file_info & p_info, abort_callback & p_abort )
 	{
 		static const char nch[] = {2,1,2,3,3,4,4,5,1,1,2};
 
@@ -177,78 +167,65 @@ public:
 
 		if ( state )
 		{
-			offset = m_file->get_position_e( p_abort );
+			offset = m_file->get_position( p_abort );
 			saved_offset = true;
 		}
 
-		mem_block_t<t_uint8> buffer;
-		if ( ! buffer.set_size(3840) )
-			return io_result_error_out_of_memory;
+		pfc::array_t<t_uint8> buffer;
+		buffer.set_size(3840);
 
 		uint8_t * ptr = buffer.get_ptr();
 
 		//try
 		{
-			m_file->read_object_e(ptr, 7, p_abort);
+			m_file->read_object(ptr, 7, p_abort);
 
 			int flags, srate, bitrate;
 			DWORD bs = a52_syncinfo(ptr, &flags, &srate, &bitrate);
 
 			if ( ! bs )
 			{
-				if ( ! sync_e( m_file, ptr, p_abort ) ) return io_result_error_data;
+				if ( ! sync_e( m_file, ptr, p_abort ) ) throw exception_io_data();
 				bs = a52_syncinfo( ptr, & flags, & srate, & bitrate );
 			}
 
-			t_filesize pos = m_file->get_position_e(p_abort);
-			t_filesize end = m_file->get_size_e(p_abort);
-			t_io_result status;
-			status = tag_processor::read_trailing( m_file, p_info, p_abort );
-			if ( status != io_result_error_not_found && status != io_result_error_data && io_result_failed( status ) ) return status;
-
-			if ( status != io_result_error_not_found )
+			t_filesize pos = m_file->get_position(p_abort);
+			t_filesize end = m_file->get_size(p_abort);
+			try
 			{
-				// tag is present, so let's just assume it's legal, huh.
+				tag_processor::read_trailing( m_file, p_info, p_abort );
+
 				struct APETagFooterStruct   T;
-				m_file->seek_e( end - ( sizeof T ), p_abort );
-				m_file->read_object_e( &T, sizeof T, p_abort );
-				end -= t_filesize( Read_LE_Uint32( T.Length ) );
+				m_file->seek( end - ( sizeof T ), p_abort );
+				m_file->read_object_t( T, p_abort );
+				end -= t_filesize( byte_order::dword_le_to_native( * ( ( t_uint32 * ) & T.Length ) ) );
 				if ( T.Flags[3] & 0x80 ) end -= sizeof(T);
 			}
+			catch ( const exception_tag_not_found & ) {}
+			catch ( const exception_io_data & ) {}
 
 			p_info.info_set_int( "bitrate", bitrate / 1000 );
 			p_info.set_length( double( end ) / double( bitrate >> 3 ) );
 
-			if ( saved_offset )
-			{
-				m_file->seek_e( offset, p_abort );
-			}
+			if ( saved_offset ) m_file->seek( offset, p_abort );
 
 			p_info.info_set( "codec", "ATSC A/52" );
 			p_info.info_set_int( "channels", nch[ flags & A52_CHANNEL_MASK ] + !!( flags & A52_LFE ) );
 			p_info.info_set_int( "samplerate", srate );
 		}
-		//catch(exception_io const & e) {return e.get_code();}
-
-		return io_result_success;
 	}
 
-	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
+	t_filestats get_file_stats( abort_callback & p_abort )
 	{
-		return m_file->get_stats( p_stats, p_abort );
+		return m_file->get_stats( p_abort );
 	}
 
-	t_io_result decode_initialize( unsigned p_flags,abort_callback & p_abort )
+	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
 		state = a52_init(0);
-		if (!state)
-		{
-			//console::info("Could not allocate new a52dec state.");
-			return io_result_error_out_of_memory;
-		}
+		if (!state) throw std::bad_alloc();
 
-		if ( ! buffer.set_size( 3840 ) )
-			return io_result_error_out_of_memory;
+		buffer.set_size( 3840 );
 
 		uint8_t * ptr = buffer.get_ptr();
 
@@ -256,39 +233,38 @@ public:
 
 		//try
 		{
-			m_file->seek_e( 0, p_abort );
-			m_file->read_object_e(ptr, 7, p_abort);
+			m_file->seek( 0, p_abort );
+			m_file->read_object(ptr, 7, p_abort);
 
 			DWORD bs = a52_syncinfo(ptr, &flags, &srate, &bitrate);
 
 			if ( ! bs )
 			{
-				if ( ! sync_e( m_file, ptr, p_abort ) ) return io_result_error_data;
+				if ( ! sync_e( m_file, ptr, p_abort ) ) throw exception_io_data();
 				bs = a52_syncinfo( ptr, & flags, & srate, & bitrate );
 			}
 
-			first_frame = m_file->get_position_e( p_abort ) - 7;
+			first_frame = m_file->get_position( p_abort ) - 7;
 
 			struct APETagFooterStruct   T;
 
-			end = m_file->get_size_e(p_abort);
+			end = m_file->get_size(p_abort);
 
-			m_file->seek_e( end - sizeof( T ), p_abort );
-			m_file->read_object_e( & T, sizeof( T ), p_abort );
-			m_file->seek_e( first_frame, p_abort );
+			m_file->seek( end - sizeof( T ), p_abort );
+			m_file->read_object_t( T, p_abort );
+			m_file->seek( first_frame, p_abort );
 
 			static t_uint8 signature[] = { 'A', 'P', 'E', 'T', 'A', 'G', 'E', 'X' };
 			if ( !memcmp ( T.ID, signature, sizeof ( T.ID ) ) )
 			{
-				unsigned long Ver = Read_LE_Uint32 ( T.Version );
+				unsigned Ver = byte_order::dword_le_to_native( * ( ( t_uint32 * ) &T.Version ) );
 				if ( (Ver == 1000) || (Ver == 2000) )
 				{
-					end -= t_filesize( Read_LE_Uint32( T.Length ) );
+					end -= t_filesize( byte_order::dword_le_to_native( * ( ( t_uint32 * ) &T.Length ) ) );
 					if ( T.Flags[ 3 ] & 0x80 ) end -= sizeof( T );
 				}
 			}
 		}
-		//catch(exception_io const & e) {return e.get_code();}
 
 		do_dynrng = !! cfg_dynrng;
 
@@ -301,29 +277,29 @@ public:
 		frames_done = 0;
 		skip_frames = 0;
 		skip_samples = 0;
-
-		return io_result_success;
 	}
 
-	t_io_result decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
+	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
-		while (!remain && !p_abort.is_aborting())
+		while (!remain)
 		{
+			p_abort.check();
+
 			if ( total_frames && frames_done >= total_frames )
 			{
 				//console::info(string_printf("Hit end of file. (current: %d, total: %d)", (int)frames_done, (int)total_frames));
-				return io_result_eof;
+				return false;
 			}
 
 			uint8_t * ptr = buffer.get_ptr();
 
 			//try
 			{
-				m_file->read_object_e( ptr, 7, p_abort );
+				m_file->read_object( ptr, 7, p_abort );
 				DWORD bs = a52_syncinfo( ptr, &flags, &srate, &bitrate );
 				if (!bs)
 				{
-					if ( ! sync_e( m_file, ptr, p_abort ) ) return io_result_error_data;
+					if ( ! sync_e( m_file, ptr, p_abort ) ) throw exception_io_data();
 					bs = a52_syncinfo( ptr, & flags, & srate, & bitrate );
 				}
 
@@ -333,11 +309,11 @@ public:
 				{
 					if ( m_file->can_seek() )
 					{
-						m_file->seek2_e( bs - 7, SEEK_CUR, p_abort );
+						m_file->seek_ex( bs - 7, file::seek_from_current, p_abort );
 					}
 					else
 					{
-						m_file->read_object_e( ptr + 7, bs - 7, p_abort );
+						m_file->read_object( ptr + 7, bs - 7, p_abort );
 					}
 
 					--skip_frames;
@@ -345,16 +321,16 @@ public:
 					continue;
 				}
 
-				m_file->read_object_e( ptr + 7, bs - 7, p_abort );
+				m_file->read_object( ptr + 7, bs - 7, p_abort );
 			}
-			//catch(exception_io const & e) {return e.get_code();}
 
-			if ( a52_frame( state, ptr, & flags, & level, bias) ) return io_result_error_data;
+			if ( a52_frame( state, ptr, & flags, & level, bias) ) throw exception_io_data();
 			if ( ! do_dynrng ) a52_dynrng(state, NULL, NULL);
 			remain = 6;
 
-			while ( skip_samples >= 256 && remain && !p_abort.is_aborting() )
+			while ( skip_samples >= 256 && remain )
 			{
+				p_abort.check();
 				--remain;
 				a52_block( state );
 				skip_samples -= 256;
@@ -362,7 +338,7 @@ public:
 		}
 
 		--remain;
-		if ( a52_block( state ) ) return io_result_error_data;
+		if ( a52_block( state ) ) throw exception_io_data();
 		int meh;
 		{
 			meh = 0;
@@ -393,11 +369,10 @@ public:
 			if (!meh)
 			{
 				console::print( "Unsupported channel configuration" );
-				return io_result_error_data;
+				throw exception_io_data();
 			}
 		}
-		if ( ! p_chunk.check_data_size( ( 256 - skip_samples ) * meh ) )
-			return io_result_error_out_of_memory;
+		p_chunk.check_data_size( ( 256 - skip_samples ) * meh );
 		audio_sample * foo = p_chunk.get_data();
 		sample_t * bar = a52_samples( state ) + skip_samples;
 		if ( flags & A52_LFE )
@@ -573,12 +548,12 @@ public:
 		p_chunk.set_srate(srate);
 		p_chunk.set_sample_count(256 - skip_samples);
 		skip_samples = 0;
-		return io_result_success;
+		return true;
 	}
 
-	t_io_result decode_seek( double p_seconds,abort_callback & p_abort )
+	void decode_seek( double p_seconds,abort_callback & p_abort )
 	{
-		if ( ! m_file->can_seek() ) return io_result_error_data;
+		if ( ! m_file->can_seek() ) throw exception_io_data();
 		if ( p_seconds < 0 ) p_seconds = 0;
 
 		t_uint64 dest_sample = t_uint64( p_seconds * double( srate ) );
@@ -586,14 +561,11 @@ public:
 		t_uint64 dest_skip = dest_sample % 1536;
 		t_uint64 dest_offset = ( dest_sample - dest_skip ) * ( bitrate >> 3 ) / srate;
 		
-		m_file->seek_e( dest_offset, p_abort );
+		m_file->seek( dest_offset, p_abort );
 
 		skip_samples = t_uint32( dest_skip );
 
-		//console::info(string_printf("skip %d samples", skip_samples));
-
 		remain = 0;
-		return io_result_success;
 	}
 
 	bool decode_can_seek()
@@ -615,27 +587,20 @@ public:
 	{
 	}
 
-	t_io_result retag( const file_info & p_info,abort_callback & p_abort )
+	void retag( const file_info & p_info, abort_callback & p_abort )
 	{
-		t_io_result status;
-
 		bool saved_offset = false;
 		t_filesize offset;
 
 		if ( state )
 		{
-			offset = m_file->get_position_e( p_abort );
+			offset = m_file->get_position( p_abort );
 			saved_offset = true;
 		}
 
-		status = tag_processor::write_apev2( m_file, p_info, p_abort );
-		if ( io_result_failed( status ) ) return status;
+		tag_processor::write_apev2( m_file, p_info, p_abort );
 
-		if ( saved_offset )
-		{
-			m_file->seek_e( offset, p_abort );
-		}
-		return io_result_success;
+		if ( saved_offset ) m_file->seek( offset, p_abort );
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

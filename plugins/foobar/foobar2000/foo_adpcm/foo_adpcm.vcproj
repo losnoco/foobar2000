@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="foo_adpcm"
 	ProjectGUID="{E4CA8D7E-1AEE-431F-A5CD-D4AB2FAA7E3E}"
+	RootNamespace="foo_adpcm"
 	SccProjectName="SAK"
 	SccAuxPath="SAK"
 	SccLocalPath="SAK"
@@ -320,6 +321,14 @@
 		<Filter
 			Name="Decoders"
 			>
+			<File
+				RelativePath=".\ima_adpcm.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ima_adpcm.h"
+				>
+			</File>
 			<Filter
 				Name="ADX"
 				>
@@ -421,6 +430,14 @@
 				</File>
 				<File
 					RelativePath=".\foo_oki\reader_foo.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="EA MUS"
+				>
+				<File
+					RelativePath=".\foo_ea\mus.cpp"
 					>
 				</File>
 			</Filter>

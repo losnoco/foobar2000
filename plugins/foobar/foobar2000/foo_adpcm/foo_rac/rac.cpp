@@ -26,37 +26,7 @@ static cfg_int cfg_loop("rac_loop", 0);
 
 #endif
 
-#define STRICT_IMA
-
-#define ISSTMAX 88
-
-static const int imaStepSizeTable[ISSTMAX + 1] = {
-	7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34,
-	37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143,
-	157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449, 494,
-	544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552,
-	1707, 1878, 2066, 2272, 2499, 2749, 3024, 3327, 3660, 4026,
-	4428, 4871, 5358, 5894, 6484, 7132, 7845, 8630, 9493, 10442,
-	11487, 12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623,
-	27086, 29794, 32767
-};
-
-#define imaStateAdjust(c) (((c)<4)? -1:(2*(c)-6))
-
-static unsigned char imaStateAdjustTable[ISSTMAX+1][8];
-
-static void initImaTable(void)
-{
-	int i,j,k;
-	for (i=0; i<=ISSTMAX; i++) {
-		for (j=0; j<8; j++) {
-			k = i + imaStateAdjust(j);
-			if (k<0) k=0;
-			else if (k>ISSTMAX) k=ISSTMAX;
-			imaStateAdjustTable[i][j] = k;
-		}
-	}
-}
+#include "../ima_adpcm.h"
 
 class ImaExpandM
 {
@@ -289,17 +259,6 @@ public:
 	}
 };
 
-class rac_setup
-{
-public:
-	rac_setup()
-	{
-		initImaTable();
-	}
-};
-
-static rac_setup asdf;
-
 /* without crossfade, these loops pop annoyingly */
 
 const int xfade_shift = 6;
@@ -307,13 +266,13 @@ const int xfade_size = (1UL << xfade_shift);
 
 class input_rac
 {
-	service_ptr_t<file> m_file;
-	foofile           * inf;
+	service_ptr_t<file>   m_file;
+	foofile             * inf;
 
-	/*ImaExpandM      * expand_m;*/
-	ImaExpandS        * expand_s;
+	/*ImaExpandM        * expand_m;*/
+	ImaExpandS          * expand_s;
 
-	mem_block_t<short>  sample_buffer;
+	pfc::array_t<t_int16> sample_buffer;
 
 	unsigned pos, filled, total, swallow;
 	int loop_start;
@@ -333,47 +292,36 @@ public:
 		if (inf) delete inf;
 	}
 
-	t_io_result open( service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort )
+	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) return io_result_error_data;
-
-		t_io_result status;
+		if ( p_reason == input_open_info_write ) throw exception_io_data();
 
 		if ( p_filehint.is_empty() )
 		{
-			status = filesystem::g_open( m_file, p_path, filesystem::open_mode_read, p_abort );
-			if ( io_result_failed( status ) ) return status;
+			filesystem::g_open( m_file, p_path, filesystem::open_mode_read, p_abort );
 		}
 		else m_file = p_filehint;
 
 		file_name = string_filename( p_path );
 		file_name.truncate( file_name.find_last( '.' ) );
-
-		return io_result_success;
 	}
 
 private:
-	t_io_result open_internal( abort_callback & p_abort )
+	void open_internal( abort_callback & p_abort )
 	{
-		file_length = m_file->get_size_e( p_abort );
+		file_length = m_file->get_size_ex( p_abort );
 
-		if (file_length == 0 || file_length > (1UL << 30)) return io_result_error_data;
+		if ( file_length == 0 || file_length > (1UL << 30) ) throw exception_io_data();
 
-		if (file_length & 1) return io_result_error_data;
+		if ( file_length & 1 ) throw exception_io_data();
 
-		loop_start = find_loop_start( file_name, int(file_length) );
-
-		return io_result_success;
+		loop_start = find_loop_start( file_name, int( file_length ) );
 	}
 
 public:
-	t_io_result get_info( file_info & p_info, abort_callback & p_abort )
+	void get_info( file_info & p_info, abort_callback & p_abort )
 	{
-		if ( ! file_length )
-		{
-			t_io_result status = open_internal( p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
+		if ( ! file_length ) open_internal( p_abort );
 
 		p_info.info_set_int( "samplerate", 22050 );
 		p_info.info_set_int( "channels", 2 );
@@ -385,68 +333,57 @@ public:
 		if ( loop_start >= 0 ) p_info.info_set_int( "rac_loop_start", loop_start );
 
 		p_info.set_length( double( file_length ) * ( 1. / 22050. ) );
-
-		return io_result_success;
 	}
 
-	t_io_result get_file_stats( t_filestats & p_stats,abort_callback & p_abort )
+	t_filestats get_file_stats( abort_callback & p_abort )
 	{
-		return m_file->get_stats( p_stats, p_abort );
+		return m_file->get_stats( p_abort );
 	}
 
-	t_io_result decode_initialize( unsigned p_flags,abort_callback & p_abort )
+	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
-		if ( ! file_length )
-		{
-			t_io_result status = open_internal( p_abort );
-			if ( io_result_failed( status ) ) return status;
-		}
+		if ( ! file_length ) open_internal( p_abort );
 
 		if ( ! cfg_loop || ( p_flags & input_flag_no_looping ) ) loop_start = -1;
 
 		inf = new foofile( m_file );
 		expand_s = new ImaExpandS( inf, loop_start );
 
-		if ( ! inf || ! expand_s ) return io_result_error_out_of_memory;
-
 		pos = 0;
 		filled = 0;
 		swallow = 0;
 		total = 0;
 		eof = false;
-
-		return io_result_success;
 	}
 
-	t_io_result decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
+	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
-		if ( ! sample_buffer.check_size( 2048 + xfade_size * 2 ) )
-			return io_result_error_out_of_memory;
+		sample_buffer.grow_size( 2048 + xfade_size * 2 );
 
 		short * buffer = sample_buffer.get_ptr();
 
 		unsigned done, todo;
 
-		if (eof)
+		if ( eof )
 		{
-			if (filled > 0)
+			if ( filled > 0 )
 			{
 eof:
-				done = (pos - filled) & 0x7FF;
+				done = ( pos - filled ) & 0x7FF;
 				todo = 2048 - done;
-				if (todo > filled) todo = filled;
-				if ( ! p_chunk.set_data_fixedpoint( buffer + done, todo * 2, 22050, 2, 16, audio_chunk::channel_config_stereo ) )
-					return io_result_error_out_of_memory;
+				if ( todo > filled ) todo = filled;
+				p_chunk.set_data_fixedpoint( buffer + done, todo * 2, 22050, 2, 16, audio_chunk::channel_config_stereo );
 				filled -= todo;
-				return io_result_success;
+				return true;
 			}
-			return io_result_eof;
+			return false;
 		}
 
-		//try
 		{
-			while ( ! p_abort.is_aborting() && ( filled < 2048 || swallow ) )
+			while ( filled < 2048 || swallow )
 			{
+				p_abort.check();
+
 				todo = 2048 - filled;
 				if ( ( 2048 - pos ) < todo ) todo = 2048 - pos;
 				done = expand_s->decode( buffer + pos, todo, p_abort );
@@ -496,9 +433,8 @@ eof:
 				}
 			}
 		}
-		//catch(exception_io const & e) {return e.get_code();}
 
-		if ( ! filled ) return io_result_eof;
+		if ( ! filled ) return false;
 
 		if ( filled < xfade_size * 2 )
 		{
@@ -509,32 +445,25 @@ eof:
 		done = ( pos - filled ) & 0x7FF;
 		todo = 2048 - done;
 		if ( todo > ( filled - xfade_size * 2 ) ) todo = filled - xfade_size * 2;
-		if ( ! p_chunk.set_data_fixedpoint( buffer + done, todo * 2, 22050, 2, 16, audio_chunk::channel_config_stereo ) )
-			return io_result_error_out_of_memory;
+		p_chunk.set_data_fixedpoint( buffer + done, todo * 2, 22050, 2, 16, audio_chunk::channel_config_stereo );
 		filled -= todo;
 
-		return io_result_success;
+		return true;
 	}
 
-	t_io_result decode_seek( double p_seconds,abort_callback & p_abort )
+	void decode_seek( double p_seconds,abort_callback & p_abort )
 	{
 		eof = false;
 		swallow = int( p_seconds * 22050. + .5 );
-		if ( swallow < total )
+		if ( swallow > total )
 		{
 			swallow -= total;
-			return io_result_success;
+			return;
 		}
 		total = 0;
 		expand_s->reset_state();
 
-		//try
-		{
-			inf->seek( 0, p_abort );
-		}
-		//catch(exception_io const & e) {return e.get_code();}
-
-		return io_result_success;
+		inf->seek( 0, p_abort );
 	}
 
 	bool decode_can_seek()
@@ -556,9 +485,9 @@ eof:
 	{
 	}
 
-	t_io_result retag( const file_info & p_info,abort_callback & p_abort )
+	void retag( const file_info & p_info,abort_callback & p_abort )
 	{
-		return io_result_error_data;
+		throw exception_io_data();
 	}
 
 	static bool g_is_our_content_type( const char * p_content_type )

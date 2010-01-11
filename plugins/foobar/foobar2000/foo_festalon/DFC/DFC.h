@@ -54,7 +54,7 @@ public:
 	~CDWnd();
 
 	virtual void				SetWindowText(const char * text) { uSetWindowText(hWnd,text); }
-	virtual void				GetWindowText(string_base & out) { uGetWindowText(hWnd, out); }
+	virtual void				GetWindowText(pfc::string_base & out) { uGetWindowText(hWnd, out); }
 
 	virtual HWND				GetHandle() { return hWnd; }
 	virtual HWND				GetParentHandle() { return hParentWnd; }
@@ -210,7 +210,7 @@ public:
 
 	//text retrieval
 	//  -is unsafe in non-Unicode environments, and is not used in my project -kode54
-	void			GetText(UINT index, string_base & out);
+	void			GetText(UINT index, pfc::string_base & out);
 };
 
 //////////////////////////////////////////////////////////////////////////
