@@ -44,7 +44,7 @@
 
 2006-05-22 21:44 UTC - kode54
 - XM reader now supports up to 256 instruments, even though FT2 only
-  supports up to 128. ModPlug Tracker again.
+  supports up to 128. ModPlug Tracker again. (no_utndgs2.xm)
 - g_open_module now supports other files misnamed as .MOD (hilse.mod .it)
 
 2006-05-22 18:43 UTC - kode54
