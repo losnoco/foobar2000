@@ -21,7 +21,17 @@ void CLhaArchive::make_table(unsigned int nchar, unsigned char *bitlen, unsigned
 	}
 
 /* count */
-	for (i = 0; i < nchar; i++) count[bitlen[i]]++;
+    for (i = 0; i < nchar; i++) {
+        if (bitlen[i] > 16) {
+            /* CVE-2006-4335 */
+		#ifdef _DEBUG
+            OutputDebugStringA("Bad table (case a)");
+		#endif
+            throw lha_error_bad_huffman_table();
+        }
+        else
+            count[bitlen[i]]++;
+    }
 
 /* calculate first code */
 	total = 0;
@@ -29,12 +39,11 @@ void CLhaArchive::make_table(unsigned int nchar, unsigned char *bitlen, unsigned
 		start[i] = total;
 		total += weight[i] * count[i];
 	}
-	if ((total & 0xffff) != 0)
+	if ((total & 0xffff) != 0 || tablebits > 16) /* 16 for weight below */
 	{
 	#ifdef _DEBUG
-		//OutputDebugString("Bad table (5)\n");
+		OutputDebugString("Bad table (case b)\n");
 	#endif
-		//return;
 		throw lha_error_bad_huffman_table();
 	}
 
@@ -47,7 +56,7 @@ void CLhaArchive::make_table(unsigned int nchar, unsigned char *bitlen, unsigned
 
 /* initialize */
 	j = start[tablebits + 1] >> m;
-	k = 1 << tablebits;
+	k = min(1 << tablebits, 4096);
 	if (j != 0)
 		for (i = j; i < (unsigned int)k; i++) table[i] = 0;
 
@@ -57,11 +66,20 @@ void CLhaArchive::make_table(unsigned int nchar, unsigned char *bitlen, unsigned
 		if (k == 0) continue;
 		l = start[k] + weight[k];
 		if (k <= (int)tablebits) {
-		/* code in table */
+			/* code in table */
+			l = min(l, 4096);
 			for (i = start[k]; i < (unsigned int)l; i++) table[i] = j;
 		} else {
 		/* code not in table */
-			p = &table[(i = start[k]) >> m];
+            i = start[k];
+            if ((i >> m) > 4096) {
+                /* CVE-2006-4337 */
+			#ifdef _DEBUG
+                OutputDebugString("Bad table (case c)");
+			#endif
+                throw lha_error_bad_huffman_table();
+            }
+            p = &table[i >> m];
 			i <<= tablebits;
 			n = k - tablebits;
 		/* make tree (n length) */

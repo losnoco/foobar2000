@@ -1,7 +1,13 @@
-#define MY_VERSION "1.1"
+#define MY_VERSION "1.2"
 
 /*
 	changelog
+
+2007-01-11 05:50 UTC - kode54
+- Integrated security fixes from 1.14i-ac20050924p1, and two sanity checks
+  to get rid of compiler warnings.
+- Updated file_cached.h a bit and eliminated a compiler warning.
+- Version is now 1.2
 
 2006-09-19 16:37 UTC - kode54
 - Added extra checks to LHA header parsers so padding skip functions don't

@@ -37,7 +37,7 @@ void CLhaArchive::read_pt_len(short nn, short nbit, short i_special)
 		for (i = 0; i < 256; i++) gpHufData->pt_table[i] = c;
 	} else {
 		i = 0;
-		while (i < n) {
+		while (i < min(n, NPT)) {
 			c = bitbuf >> (16 - 3);
 			if ( c != 7 )
 				fillbuf( 3 );
@@ -50,7 +50,7 @@ void CLhaArchive::read_pt_len(short nn, short nbit, short i_special)
 			gpHufData->pt_len[i++] = (unsigned char)c;
 			if (i == i_special) {
 				c = getbits(2);
-				while (--c >= 0) gpHufData->pt_len[i++] = 0;
+				while (--c >= 0 && i < NPT) gpHufData->pt_len[i++] = 0;
 			}
 		}
 		while (i < nn) gpHufData->pt_len[i++] = 0;
@@ -69,14 +69,14 @@ void CLhaArchive::read_c_len()
 		for (i = 0; i < 4096; i++) gpHufData->c_table[i] = c;
 	} else {
 		i = 0;
-		while (i < n) {
+		while (i < min(n,NC)) {
 			c = gpHufData->pt_table[bitbuf >> (16 - 8)];
 			if (c >= NT) {
 				unsigned short mask = 1 << (16 - 9);
 				do {
 					c = (bitbuf & mask) ? right[c] : left[c];
 					mask >>= 1;
-				} while (c >= NT);
+				} while (c >= NT && (mask || c != left[c])); /* CVE-2006-4338 */
 			}
 			fillbuf(gpHufData->pt_len[c]);
 			if (c <= 2) {
@@ -117,7 +117,7 @@ unsigned short CLhaArchive::decode_c_st1()
 		do {
 			j = (bitbuf & mask) ? right[j] : left[j];
 			mask >>= 1;
-		} while (j >= NC);
+		} while (j >= NC && (mask || j != left[j])); /* CVE-2006-4338 */
 		fillbuf(gpHufData->c_len[j] - 12);
 	}
 	return j;
@@ -134,7 +134,7 @@ unsigned short CLhaArchive::decode_p_st1()
 		do {
 			j = (bitbuf & mask) ? right[j] : left[j];
 			mask >>= 1;
-		} while (j >= np);
+		} while (j >= np && (mask || j != left[j])); /* CVE-2006-4338 */
 		fillbuf(gpHufData->pt_len[j] - 8);
 	}
 	if (j != 0) j = (1 << (j - 1)) + getbits(j - 1);

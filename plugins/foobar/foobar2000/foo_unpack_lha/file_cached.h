@@ -30,13 +30,13 @@ private:
 	}
 public:
 
-	t_size read( void * p_buffer,t_size p_bytes,abort_callback & p_abort )
+	t_size read( void * p_buffer, t_size p_bytes, abort_callback & p_abort )
 	{
 		t_uint8 * outptr = ( t_uint8* )p_buffer;
 		t_size done = 0;
 		while( done < p_bytes && m_position < m_size )
 		{
-			p_abort.check_e();
+			p_abort.check();
 
 			if ( m_position >= m_buffer_position && m_position < m_buffer_position + m_buffer_status )
 			{				
@@ -52,9 +52,9 @@ public:
 				m_buffer_position = m_position - m_position % blocksize;
 				adjust_position( m_buffer_position, p_abort );
 
-				t_size toread = m_size - m_position;
+				t_filesize toread = m_size - m_position;
 				if ( toread > sizeof( m_buffer ) ) toread = sizeof( m_buffer );
-				m_buffer_status = m_base->read( m_buffer, toread, p_abort );
+				m_buffer_status = m_base->read( m_buffer, static_cast<t_size>(toread), p_abort );
 				m_position_base += m_buffer_status;
 
 				if ( m_buffer_status <= ( t_size ) ( m_position - m_buffer_position ) ) break;
@@ -71,13 +71,13 @@ public:
 
 	t_filesize get_size(abort_callback & p_abort)
 	{
-		p_abort.check_e();
+		p_abort.check();
 		return m_size;
 	}
 
 	t_filesize get_position(abort_callback & p_abort)
 	{
-		p_abort.check_e();
+		p_abort.check();
 		return m_position;
 	}
 
@@ -88,25 +88,21 @@ public:
 
 	void seek( t_filesize p_position, abort_callback & p_abort )
 	{
-		p_abort.check_e();
+		p_abort.check();
 		if ( ! m_can_seek ) throw exception_io_object_not_seekable();
 		if ( p_position > m_size ) throw exception_io_seek_out_of_range();
 		m_position = p_position;
 	}
+	void reopen(abort_callback & p_abort) {seek(0,p_abort);}
 	bool can_seek() { return m_can_seek; }
 	bool get_content_type( pfc::string_base & out ) { return m_base->get_content_type( out ); }
-	void on_idle( abort_callback & p_abort ) { p_abort.check_e(); m_base->on_idle( p_abort ); }
-	t_filetimestamp get_timestamp( abort_callback & p_abort ) { p_abort.check_e(); return m_base->get_timestamp( p_abort ); }
+	void on_idle(abort_callback & p_abort) {p_abort.check();m_base->on_idle(p_abort);}
+	t_filetimestamp get_timestamp(abort_callback & p_abort) {p_abort.check(); return m_base->get_timestamp(p_abort);}
+	bool is_remote() {return m_base->is_remote();}
 	void resize( t_filesize p_size, abort_callback & p_abort )
 	{
 		throw exception_io_denied();
 	}
-	void reopen( abort_callback & p_abort )
-	{
-		p_abort.check_e();
-		if ( m_position != 0 ) adjust_position( 0, p_abort );
-	}
-	bool is_remote() { return m_base->is_remote(); }
 private:
 	void adjust_position(t_filesize p_target,abort_callback & p_abort) {
 		if (p_target != m_position_base) {
@@ -126,5 +122,4 @@ private:
 	t_filesize m_buffer_position;
 	t_size m_buffer_status;
 	t_uint8 m_buffer[blocksize];
-	
 };

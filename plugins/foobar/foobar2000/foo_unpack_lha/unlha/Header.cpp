@@ -497,7 +497,7 @@ BOOL CLhaArchive::get_header_level2( LzHeader *hdr, char *data )
 	hdr->crc = get_word();
 	hdr->extend_type = get_byte();
 	extend_size = get_word();
-	if ( header_size < I_LEVEL2_HEADER_SIZE + extend_size )
+	if ( extend_size < 0 || header_size < static_cast<unsigned>( I_LEVEL2_HEADER_SIZE + extend_size ) )
 		return FALSE;
 
 	INITIALIZE_CRC( hcrc );
@@ -573,7 +573,7 @@ BOOL CLhaArchive::get_header_level3( LzHeader *hdr, char *data )
 	hdr->extend_type = get_byte();
 	hdr->header_size = header_size = get_longword();
 	extend_size = get_longword();
-	if ( header_size < I_LEVEL3_HEADER_SIZE + extend_size )
+	if ( extend_size < 0 || header_size < static_cast<unsigned>( I_LEVEL3_HEADER_SIZE + extend_size ) )
 		return FALSE;
 
 	INITIALIZE_CRC( hcrc );

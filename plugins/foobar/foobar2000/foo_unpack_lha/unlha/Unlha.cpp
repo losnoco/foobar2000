@@ -21,7 +21,7 @@
 #define NOUSER
 #define NONLS
 #define NOMETAFILE
-#define NOMINMAX
+//#define NOMINMAX
 #define NOMSG
 #define NOOPENFILE
 #define NOSCROLL
