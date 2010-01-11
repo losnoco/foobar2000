@@ -412,6 +412,18 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="OKI"
+				>
+				<File
+					RelativePath=".\foo_oki\foo_okiadpcm.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\foo_oki\reader_foo.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath=".\foo_adpcm.rc"

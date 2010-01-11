@@ -655,7 +655,7 @@ void fillbufferHALP(CUBEFILE * dsp, abort_callback & p_abort) {
 
 // interleaved files requires streams with knowledge of each other (for proper looping)
 void fillbufferDSPinterleave(CUBEFILE * dsp, abort_callback & p_abort) {
-	int i;
+	int i,l;
 	short decodebuf1[14];
 	short decodebuf2[14];
 	char ADPCMbuf[8];
@@ -665,11 +665,13 @@ void fillbufferDSPinterleave(CUBEFILE * dsp, abort_callback & p_abort) {
 		if (i==0) {
 
 			dsp->ch[0].infile->seek_e( dsp->ch[0].offs, p_abort );
-			dsp->ch[0].infile->read_object_e( ADPCMbuf, 8, p_abort );
+			l = dsp->ch[0].infile->read_e( ADPCMbuf, 8, p_abort );
+			if ( l < 8 ) throw exception_io(io_result_eof);
 			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf1,dsp->ch[0].header.coef,&dsp->ch[0].hist1,&dsp->ch[0].hist2);
 
 			dsp->ch[1].infile->seek_e( dsp->ch[1].offs, p_abort );
-			dsp->ch[1].infile->read_object_e( ADPCMbuf, 8, p_abort );
+			l = dsp->ch[1].infile->read_e( ADPCMbuf, 8, p_abort );
+			if ( l < 8 ) throw exception_io(io_result_eof);
 			DSPdecodebuffer((unsigned char *)&ADPCMbuf,decodebuf2,dsp->ch[1].header.coef,&dsp->ch[1].hist1,&dsp->ch[1].hist2);
 
 			i=14;
