@@ -1,5 +1,6 @@
 #include "base.h"
 #include "config.h"
+#include "monitor.h"
 
 static t_size sjis_decode_char( const char * p_sjis, t_size max )
 {
@@ -77,6 +78,8 @@ input_gep::input_gep()
 	//voice_mask = 0;
 
 	sample_rate = cfg_sample_rate;
+
+	monitoring = false;
 }
 
 input_gep::~input_gep()
@@ -86,6 +89,8 @@ input_gep::~input_gep()
 		handle_warning();
 		delete emu;
 	}
+
+	if ( monitoring ) monitor_stop();
 }
 
 void input_gep::handle_warning()
@@ -97,6 +102,23 @@ void input_gep::handle_warning()
 		filesystem::g_get_display_path( m_path, path );
 		console::formatter() << "Emulation warning: " << s << " (" << path << ")";
 	}
+}
+
+void input_gep::monitor_start()
+{
+	monitoring = true;
+	::monitor_start( emu, m_path );
+}
+
+void input_gep::monitor_update()
+{
+	::monitor_update( emu );
+}
+
+void input_gep::monitor_stop()
+{
+	monitoring = false;
+	::monitor_stop( emu );
 }
 
 void input_gep::open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
@@ -135,6 +157,8 @@ void input_gep::decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_c
 	played = 0;
 	no_infinite = !cfg_indefinite || ( p_flags & input_flag_no_looping );
 
+	if ( p_flags & input_flag_playback ) monitor_start();
+
 	subsong = p_subsong;
 	emu->start_track( subsong );
 	handle_warning();
@@ -143,8 +167,8 @@ void input_gep::decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_c
 	{
 		/*song_len=MulDiv(tag_song_ms, sample_rate, 1000);
 		fade_len=MulDiv(tag_fade_ms, sample_rate, 1000);*/
-		int fade_min = ( 512 * 8 * 1000 / 2 + sample_rate / 2 ) / sample_rate;
-		emu->set_fade( tag_song_ms, max( tag_fade_ms, fade_min ) );
+		//int fade_min = ( 512 * 8 * 1000 / 2 + sample_rate - 1 ) / sample_rate;
+		emu->set_fade( tag_song_ms, tag_fade_ms /*max( tag_fade_ms, fade_min )*/ );
 	}
 
 	stop_on_errors = !! ( p_flags & input_flag_testing_integrity );
@@ -157,6 +181,8 @@ bool input_gep::decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
 	if ( ! emu->track_ended() )
 	{
 		//if ( no_infinite && played >= song_len + fade_len ) return false;
+
+		if ( monitoring ) monitor_update();
 
 		sample_buffer.grow_size( 1024 );
 		blip_sample_t * buf = sample_buffer.get_ptr();

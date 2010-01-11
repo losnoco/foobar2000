@@ -266,6 +266,8 @@ public:
 			m_file.release();
 		}
 
+		if ( p_flags & input_flag_playback ) monitor_start();
+
 		emu->start_track( 0 );
 		handle_warning();
 
@@ -277,8 +279,8 @@ public:
 			int song_len = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.track_duration ) );
 			if ( song_len )
 			{
-				int fade_min = ( 512 * 8 * 1000 / 2 + sample_rate / 2 ) / sample_rate;
-				emu->set_fade( song_len * 10 / 441, fade_min );
+				//int fade_min = ( 512 * 8 * 1000 / 2 + sample_rate - 1 ) / sample_rate;
+				emu->set_fade( song_len * 10 / 441, 0 /*fade_min*/ );
 			}
 		}
 

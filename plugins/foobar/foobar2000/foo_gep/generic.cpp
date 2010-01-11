@@ -2,11 +2,12 @@
 #include "reader.h"
 
 #include <gme/blargg_endian.h>
+#include <gme/Gym_Emu.h>
 
 #undef HEADER_STRING
 #define HEADER_STRING(i,n,f) meta_add((i), (n), (f), sizeof(f))
 
-static gme_type_t const gme_type_list_ [] = { gme_ay_type, gme_gbs_type, gme_hes_type, gme_kss_type, gme_sap_type };
+static gme_type_t const gme_type_list_ [] = { gme_ay_type, gme_gbs_type, gme_gym_type, gme_hes_type, gme_kss_type, gme_sap_type };
 
 static unsigned identify_header( void const* header )
 {
@@ -14,10 +15,11 @@ static unsigned identify_header( void const* header )
 	{
 		case BLARGG_4CHAR('Z','X','A','Y'):  return 1;
 		case BLARGG_4CHAR('G','B','S',0x01): return 2;
-		case BLARGG_4CHAR('H','E','S','M'):  return 3;
+		case BLARGG_4CHAR('G','Y','M','X'):  return 3;
+		case BLARGG_4CHAR('H','E','S','M'):  return 4;
 		case BLARGG_4CHAR('K','S','C','C'):
-		case BLARGG_4CHAR('K','S','S','X'):  return 4;
-		case BLARGG_4CHAR('S','A','P',0x0D): return 5;
+		case BLARGG_4CHAR('K','S','S','X'):  return 5;
+		case BLARGG_4CHAR('S','A','P',0x0D): return 6;
 	}
 	return 0;
 }
@@ -48,15 +50,23 @@ public:
 		type = identify_header( header );
 		if ( !type ) throw exception_io_data();
 
+		gme_type_t const gtype = gme_type_list_[ type - 1 ];
+
+		// Disallow type / extension overlap
+		if ( stricmp( gtype->extension_, pfc::string_extension( p_path ) ) ) throw exception_io_data();
+
 		m_file->seek( 0, p_abort );
 
 		foobar_File_Reader rdr( m_file, p_abort );
 
 		if ( p_reason == input_open_info_read )
-			emu = gme_type_list_[ type - 1 ]->new_info();
+			emu = gtype->new_info();
 		else if ( p_reason == input_open_decode )
-			emu = gme_type_list_[ type - 1 ]->new_emu();
+			emu = gtype->new_emu();
 		if ( !emu ) throw std::bad_alloc();
+
+		if ( gtype == gme_gym_type && p_reason == input_open_decode )
+			static_cast<Gym_Emu *>( emu )->disable_oversampling();
 
 		ERRCHK( emu->set_sample_rate( sample_rate ) );
 		ERRCHK( emu->load( rdr ) );
@@ -64,13 +74,16 @@ public:
 
 		m_file.release();
 
-		pfc::string_replace_extension list( p_path, "m3u" );
-		if ( filesystem::g_exists( list, p_abort ) )
+		if ( gtype != gme_gym_type )
 		{
-			filesystem::g_open( p_filehint, list, filesystem::open_mode_read, p_abort );
-			foobar_File_Reader rdr( p_filehint, p_abort );
-			ERRCHK( emu->load_m3u( rdr ) );
-			handle_warning();
+			pfc::string_replace_extension list( p_path, "m3u" );
+			if ( filesystem::g_exists( list, p_abort ) )
+			{
+				filesystem::g_open( p_filehint, list, filesystem::open_mode_read, p_abort );
+				foobar_File_Reader rdr( p_filehint, p_abort );
+				ERRCHK( emu->load_m3u( rdr ) );
+				handle_warning();
+			}
 		}
 	}
 
@@ -125,6 +138,7 @@ public:
 
 DECLARE_FILE_TYPE_n( a, "AY files", "*.AY" );
 DECLARE_FILE_TYPE_n( b, "GBS files", "*.GBS" );
+DECLARE_FILE_TYPE_n( c, "GYM files", "*.GYM" );
 DECLARE_FILE_TYPE_n( d, "HES files", "*.HES" );
 DECLARE_FILE_TYPE_n( e, "KSS files", "*.KSS" );
 DECLARE_FILE_TYPE_n( f, "SAP files", "*.SAP" );

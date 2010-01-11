@@ -38,6 +38,8 @@ protected:
 
 	bool                        first_block;
 
+	bool                        monitoring;
+
 	pfc::array_t<blip_sample_t> sample_buffer;
 
 	service_ptr_t<file>         m_file;
@@ -47,6 +49,10 @@ protected:
 	void handle_warning();
 
 	void meta_add( file_info & p_info, const char * name, const char * value, t_size max );
+
+	void monitor_start();
+	void monitor_update();
+	void monitor_stop();
 
 public:
 	input_gep();

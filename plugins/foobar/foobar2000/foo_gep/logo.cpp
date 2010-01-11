@@ -1,5 +1,7 @@
 #include <foobar2000.h>
 
+#include "../helpers/win32_misc.h"
+
 #include "resource.h"
 
 #include "loadpic.h"
@@ -208,69 +210,14 @@ static LRESULT CALLBACK GEPProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
 	return uDefWindowProc(wnd, msg, wp, lp);
 }
+
+registerclass_scope_delayed wnd_class;
+
 static const TCHAR class_name[] = _T( "F8257899-79EC-4860-96E0-6CC6EC80A367" );
 
-class register_window_class
+bool CreateLogo( HWND parent, int x, int y )
 {
-	volatile LONG ref_count;
-	ATOM class_atom;
-
-public:
-	register_window_class() : ref_count(0), class_atom(0) {}
-	~register_window_class()
-	{
-		if (ref_count) _unregister();
-	}
-
-	ATOM Register()
-	{
-		if (InterlockedIncrement(&ref_count) == 1)
-		{
-			_register();
-			if (!class_atom) ref_count = 0;
-		}
-		return class_atom;
-	}
-
-	void Unregister()
-	{
-		if (InterlockedDecrement(&ref_count) == 0) _unregister();
-	}
-
-private:
-	void _register()
-	{
-		WNDCLASS wc;
-		memset(&wc, 0, sizeof(wc));
-		wc.lpfnWndProc   = GEPProc;
-		wc.hInstance     = core_api::get_my_instance();
-		wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
-		wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
-		wc.lpszClassName = class_name;
-		class_atom = RegisterClass(&wc);
-	}
-
-	void _unregister()
-	{
-		if (class_atom)
-		{
-			UnregisterClass((const TCHAR *)class_atom, core_api::get_my_instance());
-			class_atom = 0;
-		}
-	}
-};
-
-static register_window_class rwc;
-
-bool CreateLogo( HWND parent, HMENU menu , int x, int y )
-{
-	ATOM wnd_class = rwc.Register();
-	if (wnd_class) return !!CreateWindowEx(0, (const TCHAR *)wnd_class, 0, WS_CHILD | WS_VISIBLE, x, y, CW_USEDEFAULT, CW_USEDEFAULT, parent, menu, core_api::get_my_instance(), 0);
+	if (!wnd_class.is_registered()) wnd_class.toggle_on( 0, GEPProc, 0, 0, 0, LoadCursor(NULL, IDC_ARROW), (HBRUSH)(COLOR_BTNFACE+1), class_name, 0 );
+	if (wnd_class.is_registered()) return !!CreateWindowEx(0, (const TCHAR *)wnd_class.get_class(), 0, WS_CHILD | WS_VISIBLE, x, y, CW_USEDEFAULT, CW_USEDEFAULT, parent, 0, core_api::get_my_instance(), 0);
 	return false;
-}
-
-void DestroyLogo( HWND logo )
-{
-	DestroyWindow( logo );
-	rwc.Unregister();
 }

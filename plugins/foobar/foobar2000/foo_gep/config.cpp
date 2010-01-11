@@ -1,7 +1,17 @@
-#define MYVERSION "1.4.1"
+#define MYVERSION "1.5"
 
 /*
 	change log
+
+2006-12:18 17:07 UTC - kode54
+- Logo is now self-cleaning and unregisters on shutdown.
+- Version is now 1.5
+
+2006-12-18 14:12 UTC - kode54
+- Implemented tempo and voice control and pop-up dialog control
+
+2006-12-17 21:19 UTC - kode54
+- Updated Game_Music_Emu to v0.5.2
 
 2006-11-29 13:47 UTC - kode54
 - Added configuration for SPC cubic interpolation.
@@ -64,6 +74,8 @@ static const GUID guid_cfg_spc_interpolation = { 0xf3f5df07, 0x7b49, 0x462a, { 0
 static const GUID guid_cfg_history_rate = { 0xce4842e1, 0x5707, 0x4e43, { 0xaa, 0x56, 0x48, 0xc8, 0x1d, 0xce, 0x5c, 0xac } };
 static const GUID guid_cfg_vgm_gd3_prefers_japanese = { 0x54ad3715, 0x5491, 0x45a8, { 0x9b, 0x11, 0xc3, 0x9d, 0x65, 0x2b, 0x15, 0x2f } };
 
+static const GUID guid_cfg_control_override = { 0x550a107e, 0x8b34, 0x41e5, { 0xae, 0xd6, 0x2, 0x1b, 0xf8, 0x3e, 0x14, 0xe4 } };
+static const GUID guid_cfg_control_tempo = { 0xfbddc77c, 0x2a6, 0x41c9, { 0xbf, 0xfa, 0x54, 0x60, 0xbe, 0x2a, 0xa5, 0x23 } };
 
 cfg_int cfg_sample_rate(guid_cfg_sample_rate, 44100);
 
@@ -79,6 +91,9 @@ cfg_int cfg_spc_anti_surround(guid_cfg_spc_anti_surround, 0);
 cfg_int cfg_spc_interpolation(guid_cfg_spc_interpolation, 0);
 
 cfg_int cfg_vgm_gd3_prefers_japanese(guid_cfg_vgm_gd3_prefers_japanese, 0);
+
+cfg_int cfg_control_override(guid_cfg_control_override, 0);
+cfg_int cfg_control_tempo(guid_cfg_control_tempo, 10000);
 
 static cfg_dropdown_history cfg_history_rate(guid_cfg_history_rate,16);
 
@@ -218,7 +233,17 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			uSendMessageText(w, CB_ADDSTRING, 0, "Cubic");
 			uSendMessage(w, CB_SETCURSEL, cfg_spc_interpolation, 0);
 
-			CreateLogo( wnd, (HMENU)IDC_LOGO, 239, 72 );
+			union
+			{
+				RECT r;
+				POINT p [2];
+			};
+
+			w = GetDlgItem( wnd, IDC_GROUPBOX );
+			GetClientRect( w, &r );
+			MapWindowPoints( w, wnd, &p [1], 1 );
+
+			CreateLogo( wnd, p [1].x + 2, 72 );
 		}
 		return 1;
 	case WM_COMMAND:
@@ -285,8 +310,6 @@ static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		itoa(cfg_sample_rate, temp, 10);
 		cfg_history_rate.add_item(temp);
 
-		DestroyLogo( GetDlgItem( wnd, IDC_LOGO ) );
-
 		break;
 	}
 	return 0;
@@ -327,4 +350,4 @@ public:
 };
 
 static preferences_page_factory_t<preferences_page_gep> foo1;
-DECLARE_COMPONENT_VERSION("Game Emu Player", MYVERSION, "Based on Game_Music_Emu v0.3.0 by Shay Green\n\nhttp://www.slack.net/~ant/")
+DECLARE_COMPONENT_VERSION("Game Emu Player", MYVERSION, "Based on Game_Music_Emu v0.5.2 by Shay Green\n\nhttp://www.slack.net/~ant/")

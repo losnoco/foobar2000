@@ -497,7 +497,7 @@ public:
 			//emu->mute_voices( voice_mask );
 
 			emu->disable_surround( !! ( cfg_spc_anti_surround ) );
-			//emu->set_cubic_interpolation( !! ( cfg_spc_interpolation ) );
+			emu->set_cubic_interpolation( !! ( cfg_spc_interpolation ) );
 		}
 
 		input_gep::decode_initialize( 0, p_flags, p_abort );
