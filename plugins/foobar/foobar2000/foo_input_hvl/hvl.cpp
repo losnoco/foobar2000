@@ -332,4 +332,4 @@ static input_factory_t           <input_hvl>            g_input_hvl_factory;
 static preferences_page_factory_t<preferences_page_hvl> g_config_mod_factory;
 static service_factory_single_t  <hvl_file_types>       g_input_file_type_hvl_factory;
 
-DECLARE_COMPONENT_VERSION( "Hively Tracker decoder", MYVERSION, "Using Hively Tracker player v1.5.");
+DECLARE_COMPONENT_VERSION( "Hively Tracker decoder", MYVERSION, "Using Hively Tracker player v1.6.");

@@ -4,6 +4,8 @@
 ** code.
 **
 ** Changes for 1.5 are marked also.
+**
+** ... as are those for 1.6
 */
 
 
@@ -64,14 +66,6 @@ const uint16 period_tab[] =
 };
 
 uint32 panning_left[256], panning_right[256];
-
-static void clr_l( uint32 *src, uint32 longs)
-{
-  do {
-    *src++ = 0;
-    longs--;
-  } while (longs > 0);
-}
 
 void hvl_GenPanningTables( void )
 {
@@ -284,10 +278,10 @@ void hvl_reset_some_stuff( struct hvl_tune *ht )
     ht->ht_Voices[i].vc_RingMixSource = NULL;
     ht->ht_Voices[i].vc_RingAudioSource = NULL;
 
-    clr_l((uint32 *)&ht->ht_Voices[i].vc_SquareTempBuffer,0x80/4);
-    clr_l((uint32 *)&ht->ht_Voices[i].vc_ADSR,sizeof(struct hvl_envelope)/4);
-    clr_l((uint32 *)&ht->ht_Voices[i].vc_VoiceBuffer,0x281/4);
-    clr_l((uint32 *)&ht->ht_Voices[i].vc_RingVoiceBuffer,0x281/4);
+    memset(&ht->ht_Voices[i].vc_SquareTempBuffer,0,0x80);
+    memset(&ht->ht_Voices[i].vc_ADSR,0,sizeof(struct hvl_envelope));
+    memset(&ht->ht_Voices[i].vc_VoiceBuffer,0,0x281);
+    memset(&ht->ht_Voices[i].vc_RingVoiceBuffer,0,0x281);
   }
   
   for( i=0; i<MAX_CHANNELS; i++ )
@@ -568,6 +562,14 @@ struct hvl_tune *hvl_load_ahx( uint8 *buf, uint32 buflen, uint32 defstereo, uint
       ht->ht_Instruments[i].ins_PList.pls_Entries[j].ple_Note       = bptr[1]&0x3f;
       ht->ht_Instruments[i].ins_PList.pls_Entries[j].ple_FXParam[0] = bptr[2];
       ht->ht_Instruments[i].ins_PList.pls_Entries[j].ple_FXParam[1] = bptr[3];
+
+      // 1.6: Strip "toggle filter" commands if the module is
+      //      version 0 (pre-filters). This is what AHX also does.
+      if( ( buf[3] == 0 ) && ( l == 4 ) && ( (bptr[2]&0xf0) != 0 ) )
+        ht->ht_Instruments[i].ins_PList.pls_Entries[j].ple_FXParam[0] &= 0x0f;
+      if( ( buf[3] == 0 ) && ( k == 4 ) && ( (bptr[3]&0xf0) != 0 ) )
+        ht->ht_Instruments[i].ins_PList.pls_Entries[j].ple_FXParam[0] &= 0x0f;
+
       bptr += 4;
     }
   }
@@ -888,22 +890,8 @@ void hvl_process_stepfx_1( struct hvl_tune *ht, struct hvl_voice *voice, int32 F
             }
           }
           break;
-        case 0xd: // Note delay
-          if( voice->vc_NoteDelayOn )
-          {
-            voice->vc_NoteDelayOn = 0;
-          } else {
-            if( (FXParam & 0x0f) < ht->ht_Tempo )
-            {
-              voice->vc_NoteDelayWait = FXParam & 0x0f;
-              if( voice->vc_NoteDelayWait )
-              {
-                voice->vc_NoteDelayOn = 1;
-                return;
-              }
-            }
-          }
-          break;
+          
+          // 1.6: 0xd case removed
       }
       break;
     
@@ -982,7 +970,8 @@ void hvl_process_stepfx_3( struct hvl_tune *ht, struct hvl_voice *voice, int32 F
         break;
       }
       
-      FXParam -= 0x50;
+      if( (FXParam -= 0x50) < 0 ) break;  // 1.6
+
       if( FXParam <= 0x40 )
       {
         for( i=0; i<ht->ht_Channels; i++ )
@@ -990,7 +979,8 @@ void hvl_process_stepfx_3( struct hvl_tune *ht, struct hvl_voice *voice, int32 F
         break;
       }
       
-      FXParam -= 0xa0-0x50;
+      if( (FXParam -= 0xa0-0x50) < 0 ) break; // 1.6
+
       if( FXParam <= 0x40 )
         voice->vc_TrackMasterVolume = FXParam;
       break;
@@ -1042,7 +1032,7 @@ void hvl_process_stepfx_3( struct hvl_tune *ht, struct hvl_voice *voice, int32 F
 
 void hvl_process_step( struct hvl_tune *ht, struct hvl_voice *voice )
 {
-  int32  Note, Instr;
+  int32  Note, Instr, donenotedel;
   struct hvl_step *Step;
   
   if( voice->vc_TrackOn == 0 )
@@ -1055,6 +1045,50 @@ void hvl_process_step( struct hvl_tune *ht, struct hvl_voice *voice )
   Note    = Step->stp_Note;
   Instr   = Step->stp_Instrument;
   
+  // --------- 1.6: from here --------------
+
+  donenotedel = 0;
+
+  // Do notedelay here
+  if( ((Step->stp_FX&0xf)==0xe) && ((Step->stp_FXParam&0xf0)==0xd0) )
+  {
+    if( voice->vc_NoteDelayOn )
+    {
+      voice->vc_NoteDelayOn = 0;
+      donenotedel = 1;
+    } else {
+      if( (Step->stp_FXParam&0x0f) < ht->ht_Tempo )
+      {
+        voice->vc_NoteDelayWait = Step->stp_FXParam & 0x0f;
+        if( voice->vc_NoteDelayWait )
+        {
+          voice->vc_NoteDelayOn = 1;
+          return;
+        }
+      }
+    }
+  }
+
+  if( (donenotedel==0) && ((Step->stp_FXb&0xf)==0xe) && ((Step->stp_FXbParam&0xf0)==0xd0) )
+  {
+    if( voice->vc_NoteDelayOn )
+    {
+      voice->vc_NoteDelayOn = 0;
+    } else {
+      if( (Step->stp_FXbParam&0x0f) < ht->ht_Tempo )
+      {
+        voice->vc_NoteDelayWait = Step->stp_FXbParam & 0x0f;
+        if( voice->vc_NoteDelayWait )
+        {
+          voice->vc_NoteDelayOn = 1;
+          return;
+        }
+      }
+    }
+  }
+
+  // --------- 1.6: to here --------------
+
   if( Note ) voice->vc_OverrideTranspose = 1000; // 1.5
 
   hvl_process_stepfx_1( ht, voice, Step->stp_FX&0xf,  Step->stp_FXParam );  
