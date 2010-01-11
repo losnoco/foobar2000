@@ -88,6 +88,7 @@ struct hvl_voice
   int16                  vc_NextTrack;
   int16                  vc_Transpose;
   int16                  vc_NextTranspose;
+  int16                  vc_OverrideTranspose; // 1.5
   int32                  vc_ADSRVolume;
   struct hvl_envelope    vc_ADSR;
   struct hvl_instrument *vc_Instrument;
@@ -194,8 +195,8 @@ struct hvl_tune
   uint8                  ht_TrackNr;
   uint8                  ht_InstrumentNr;
   uint8                  ht_SubsongNr;
-  uint8                  ht_PosJump;
-  uint16                 ht_PlayingTime;
+  uint16                 ht_PosJump;
+  uint32                 ht_PlayingTime;
   int16                  ht_Tempo;
   int16                  ht_PosNr;
   int16                  ht_StepWaitFrames;
@@ -215,6 +216,7 @@ struct hvl_tune
   int32                  ht_defpanleft;
   int32                  ht_defpanright;
   int32                  ht_mixgain;
+  uint8                  ht_Version;
 };
 
 void hvl_DecodeFrame( struct hvl_tune *ht, int8 *buf1, int8 *buf2, int32 bufmod );

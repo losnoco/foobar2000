@@ -2,6 +2,8 @@
 ** Changes for the 1.4 release are commented. You can do
 ** a search for "1.4" and merge them into your own replay
 ** code.
+**
+** Changes for 1.5 are marked also.
 */
 
 
@@ -264,6 +266,7 @@ void hvl_reset_some_stuff( struct hvl_tune *ht )
   for( i=0; i<MAX_CHANNELS; i++ )
   {
     ht->ht_Voices[i].vc_Delta=1;
+    ht->ht_Voices[i].vc_OverrideTranspose=1000;  // 1.5
     ht->ht_Voices[i].vc_SamplePos=ht->ht_Voices[i].vc_Track=ht->ht_Voices[i].vc_Transpose=ht->ht_Voices[i].vc_NextTrack = ht->ht_Voices[i].vc_NextTranspose = 0;
     ht->ht_Voices[i].vc_ADSRVolume=ht->ht_Voices[i].vc_InstrPeriod=ht->ht_Voices[i].vc_TrackPeriod=ht->ht_Voices[i].vc_VibratoPeriod=ht->ht_Voices[i].vc_NoteMaxVolume=ht->ht_Voices[i].vc_PerfSubVolume=ht->ht_Voices[i].vc_TrackMasterVolume=0;
     ht->ht_Voices[i].vc_NewWaveform=ht->ht_Voices[i].vc_Waveform=ht->ht_Voices[i].vc_PlantSquare=ht->ht_Voices[i].vc_PlantPeriod=ht->ht_Voices[i].vc_IgnoreSquare=0;
@@ -576,7 +579,7 @@ struct hvl_tune *hvl_LoadTune( uint8 *buf, uint32 buflen, uint32 freq, uint32 de
   if( ( buf[0] != 'H' ) ||
       ( buf[1] != 'V' ) ||
       ( buf[2] != 'L' ) ||
-      ( buf[3] > 0 ) )
+      ( buf[3] > 1 ) )
   {
     return NULL;
   }
@@ -626,6 +629,7 @@ struct hvl_tune *hvl_LoadTune( uint8 *buf, uint32 buflen, uint32 freq, uint32 de
     return NULL;
   }
   
+  ht->ht_Version         = buf[3]; // 1.5
   ht->ht_Frequency       = freq;
   ht->ht_FreqF           = (float64)freq;
   
@@ -980,6 +984,16 @@ void hvl_process_stepfx_3( struct hvl_tune *ht, struct hvl_voice *voice, int32 F
           if( voice->vc_NoteMaxVolume < 0 )
             voice->vc_NoteMaxVolume = 0;
           break;
+        
+        case 0x0f: // Misc flags (1.5)
+          if( ht->ht_Version < 1 ) break;
+          switch( FXParam & 0xf )
+          {
+            case 1:
+              voice->vc_OverrideTranspose = voice->vc_Transpose;
+              break;
+          }
+          break;
       } 
       break;
   }
@@ -999,6 +1013,8 @@ void hvl_process_step( struct hvl_tune *ht, struct hvl_voice *voice )
   
   Note    = Step->stp_Note;
   Instr   = Step->stp_Instrument;
+  
+  if( Note ) voice->vc_OverrideTranspose = 1000; // 1.5
 
   hvl_process_stepfx_1( ht, voice, Step->stp_FX&0xf,  Step->stp_FXParam );  
   hvl_process_stepfx_1( ht, voice, Step->stp_FXb&0xf, Step->stp_FXbParam );
@@ -1615,7 +1631,12 @@ void hvl_process_frame( struct hvl_tune *ht, struct hvl_voice *voice )
     voice->vc_RingAudioPeriod = voice->vc_RingBasePeriod;
   
     if( !(voice->vc_RingFixedPeriod) )
-      voice->vc_RingAudioPeriod += voice->vc_Transpose + voice->vc_TrackPeriod - 1;
+    {
+      if( voice->vc_OverrideTranspose != 1000 )  // 1.5
+        voice->vc_RingAudioPeriod += voice->vc_OverrideTranspose + voice->vc_TrackPeriod - 1;
+      else
+        voice->vc_RingAudioPeriod += voice->vc_Transpose + voice->vc_TrackPeriod - 1;
+    }
   
     if( voice->vc_RingAudioPeriod > 5*12 )
       voice->vc_RingAudioPeriod = 5*12;
@@ -1641,7 +1662,12 @@ void hvl_process_frame( struct hvl_tune *ht, struct hvl_voice *voice )
   voice->vc_AudioPeriod = voice->vc_InstrPeriod;
   
   if( !(voice->vc_FixedNote) )
-    voice->vc_AudioPeriod += voice->vc_Transpose + voice->vc_TrackPeriod - 1;
+  {
+    if( voice->vc_OverrideTranspose != 1000 ) // 1.5
+      voice->vc_AudioPeriod += voice->vc_OverrideTranspose + voice->vc_TrackPeriod - 1;
+    else
+      voice->vc_AudioPeriod += voice->vc_Transpose + voice->vc_TrackPeriod - 1;
+  }
     
   if( voice->vc_AudioPeriod > 5*12 )
     voice->vc_AudioPeriod = 5*12;
