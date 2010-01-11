@@ -27,8 +27,7 @@
 	//TODO Don't delay first operator 1 sample in opl3 mode
 	//TODO Maybe not use class method pointers but a regular function pointers with operator as first parameter
 	//TODO Fix panning for the Percussion channels, would any opl3 player use it and actually really change it though?
-	//TODO don't use variables in work structure for tremolo and vibrato but give the variables as parameters to GetSample
-	//TODO Since the vibrato takes 1024 samples it's easier to run the emulator in same vibrato chunks, vibrato would be costfree
+	//TODO Check if having the same accuracy in all frequency multipliers sounds better or not
 
 	//DUNNO Keyon in 4op, switch to 2op without keyoff.
 */
@@ -48,20 +47,30 @@
 namespace DBOPL {
 
 #define OPLRATE		((double)(14318180.0 / 288.0))
-
-//Only need 4 valid bits at the top for vibrato
-#define VIBRATO_SH	( 32 - 4 )
-//Need 6 bits of accuracy
-#define TREMOLO_SH	( 32 - 6 )
 #define TREMOLO_TABLE 52
 
+//Try to use most precision for frequencies
+//Else try to keep different waves in synch
+//#define WAVE_PRECISION        1
+#ifndef WAVE_PRECISION
 //Wave bits available in the top of the 32bit range
-//Original adlib uses 10.10, we use 12.20
-//Have to keep some bits in the top to allow for freqmul 0.5
-#define WAVE_BITS	12
+//Original adlib uses 10.10, we use 10.22
+#define WAVE_BITS      10
+#else
+//Need some extra bits at the top to have room for octaves and frequency multiplier
+//We support to 8 times lower rate
+//128 * 15 * 8 = 15350, 2^13.9, so need 14 bits
+#define WAVE_BITS      14
+#endif
 #define WAVE_SH		( 32 - WAVE_BITS )
 #define WAVE_MASK	( ( 1 << WAVE_SH ) - 1 )
 
+//Use the same accuracy as the waves
+#define LFO_SH ( WAVE_SH - 10 )
+//LFO is controlled by our tremolo 256 sample limit
+#define LFO_MAX ( 256 << ( LFO_SH ) )
+
+	
 //Maximum amount of attenuation bits
 //Envelope goes to 511, 9 bits
 #if (DBOPL_WAVE == WAVE_TABLEMUL )
@@ -328,10 +337,19 @@ void Operator::UpdateFrequency(  ) {
 	Bit32u freq = chanData & (( 1 << 10 ) - 1);
 	Bit32u block = (chanData >> 10) & 0xff;
 	
+#ifdef WAVE_PRECISION
+	block = 7 - block;
+	waveAdd = ( freq * freqMul ) >> block;
+#else
 	waveAdd = (freq << block) * freqMul;
+#endif
 	if ( reg20 & MASK_VIBRATO ) {
 		vibStrength = (Bit8u)(freq >> 7);
+#ifdef WAVE_PRECISION
+		vibrato = ( vibStrength * freqMul ) >> block;
+#else
 		vibrato = ( vibStrength << block ) * freqMul;
+#endif
 	} else {
 		vibStrength = 0;
 		vibrato = 0;
@@ -362,7 +380,7 @@ INLINE Bit32s Operator::RateForward( Bit32u add ) {
 
 template< Operator::State yes>
 Bits Operator::TemplateVolume(  ) {
-	Bit32s vol = activeLevel;
+	Bit32s vol = volume;
 	Bit32s change;
 	switch ( yes ) {
 	case OFF:
@@ -373,7 +391,7 @@ Bits Operator::TemplateVolume(  ) {
 			return vol;
 		vol += ( (~vol) * change ) >> 3;
 		if ( vol < ENV_MIN ) {
-			activeLevel = ENV_MIN;
+			volume = ENV_MIN;
 			rateIndex = 0;
 			SetState( DECAY );
 			return ENV_MIN;
@@ -384,7 +402,7 @@ Bits Operator::TemplateVolume(  ) {
 		if ( vol >= sustainLevel ) {
 			//Check if we didn't overshoot max attenuation, then just go off
 			if ( vol >= ENV_MAX ) {
-				activeLevel = ENV_MAX;
+				volume = ENV_MAX;
 				SetState( OFF );
 				return ENV_MAX;
 			}
@@ -401,13 +419,13 @@ Bits Operator::TemplateVolume(  ) {
 	case RELEASE: 
 		vol += RateForward( releaseAdd );;
 		if ( vol >= ENV_MAX ) {
-			activeLevel = ENV_MAX;
+			volume = ENV_MAX;
 			SetState( OFF );
 			return ENV_MAX;
 		}
 		break;
 	}
-	activeLevel = vol;
+	volume = vol;
 	return vol;
 }
 
@@ -419,31 +437,15 @@ static const VolumeHandler VolumeHandlerTable[5] = {
 	&Operator::TemplateVolume< Operator::ATTACK >
 };
 
-INLINE Bitu Operator::ForwardVolume(Work_Data & Work) {
-	return  totalLevel + (this->*volHandler)()
-#if defined ( DBOPL_TREMOLO )
-		+ (Work.tremolo & tremoloMask)
-#endif
-	;
+INLINE Bitu Operator::ForwardVolume() {
+	return currentLevel + (this->*volHandler)();
 }
 
 
-INLINE Bitu Operator::ForwardWave(Work_Data & Work) {
-#if defined ( DBOPL_VIBRATO )
-	if ( vibStrength >> (Bit8u)(Work.vibrato) ) {
-		Bit32s add = vibrato >> (Bit8u)(Work.vibrato);
-		//Sign extend over the shift value
-		Bit32s neg = Work.vibrato >> 16;
-		//Negate the add with -1 or 0
-		add = ( add ^ neg ) - neg; 
-		waveIndex += add + waveAdd;
-		return waveIndex >> WAVE_SH;
-	}
-#endif
-	waveIndex += waveAdd;	
+INLINE Bitu Operator::ForwardWave() {
+	waveIndex += waveCurrent;
 	return waveIndex >> WAVE_SH;
 }
-
 
 void Operator::Write20( const Chip* chip, Bit8u val ) {
 	Bit8u change = (reg20 ^ val );
@@ -523,12 +525,25 @@ INLINE void Operator::SetState( Bit8u s ) {
 }
 
 INLINE bool Operator::Silent() const {
-	if ( !ENV_SILENT( totalLevel + activeLevel ) )
+	if ( !ENV_SILENT( totalLevel + volume ) )
 		return false;
 	if ( !(rateZero & ( 1 << state ) ) )
 		return false;
 	return true;
 };
+
+ INLINE void Operator::Prepare( const Chip* chip )  {
+	currentLevel = totalLevel + (chip->tremoloValue & tremoloMask);
+	waveCurrent = waveAdd;
+	if ( vibStrength >> chip->vibratoShift ) {
+		Bit32s add = vibrato >> chip->vibratoShift;
+		//Sign extend over the shift value
+		Bit32s neg = chip->vibratoSign;
+		//Negate the add with -1 or 0
+		add = ( add ^ neg ) - neg;
+		waveCurrent += add;
+	}
+}
 
 void Operator::KeyOn( Bit8u mask ) {
 	if ( !keyOn ) {
@@ -570,14 +585,14 @@ INLINE Bits Operator::GetWave( Bitu index, Bitu vol ) {
 #endif
 }
 
-Bits INLINE Operator::GetSample( Bits modulation, Work_Data & Work ) {
-	Bitu vol = ForwardVolume(Work);
+Bits INLINE Operator::GetSample( Bits modulation ) {
+	Bitu vol = ForwardVolume();
 	if ( ENV_SILENT( vol ) ) {
 		//Simply forward the wave
-		waveIndex += waveAdd;
+		waveIndex += waveCurrent;
 		return 0;
 	} else {
-		Bitu index = ForwardWave(Work);
+		Bitu index = ForwardWave();
 		index += modulation;
 		return GetWave( index, vol );
 	}
@@ -588,6 +603,7 @@ Operator::Operator() {
 	freqMul = 0;
 	waveIndex = 0;
 	waveAdd = 0;
+	waveCurrent = 0;
 	keyOn = 0;
 	ksr = 0;
 	reg20 = 0;
@@ -598,8 +614,9 @@ Operator::Operator() {
 	SetState( OFF );
 	rateZero = (1 << OFF);
 	sustainLevel = ENV_MAX;
-	activeLevel = ENV_MAX;
+	currentLevel = ENV_MAX;
 	totalLevel = ENV_MAX;
+	volume = ENV_MAX;
 }
 
 /*
@@ -770,13 +787,13 @@ void Channel::ResetC0( const Chip* chip ) {
 };
 
 template< bool opl3Mode>
-void Channel::GeneratePercussion( Bit32s* output, Work_Data & Work ) {
+void Channel::GeneratePercussion( Chip* chip, Bit32s* output ) {
 	Channel* chan = this;
 
 	//BassDrum
 	Bit32s mod = (Bit32u)((old[0] + old[1])) >> feedback;
 	old[0] = old[1];
-	old[1] = Op(0)->GetSample( mod, Work ); 
+	old[1] = Op(0)->GetSample( mod ); 
 
 	//When bassdrum is in AM mode first operator is ignoed
 	if ( chan->regC0 & 1 ) {
@@ -784,23 +801,23 @@ void Channel::GeneratePercussion( Bit32s* output, Work_Data & Work ) {
 	} else {
 		mod = old[0];
 	}
-	Bit32s sample = Op(1)->GetSample( mod, Work ); 
+	Bit32s sample = Op(1)->GetSample( mod ); 
 
 	Operator* op2 = ( this + 1 )->Op(0);
 	Operator* op4 = ( this + 2 )->Op(0);
 
-	//Precalculate stuff used by other oupts
-	Bit32u noiseBit = rand() & 0x2;
-	Bit32u c2 = op2->ForwardWave( Work );
+	//Precalculate stuff used by other outputs
+	Bit32u noiseBit = (chip->ForwardNoise() & 0x1) << 1;
+	Bit32u c2 = op2->ForwardWave();
 	//(bit 7 ^ bit 2) | bit 3 -> combined in bit 1
 	Bit32u phaseBit = ( (c2 >> 6) ^ ( c2 >> 1 ) ) | ( c2 >> 2 );
-	Bit32u c4 = op4->ForwardWave( Work );
+	Bit32u c4 = op4->ForwardWave();
 	//bit 5 ^ bit 3 to bit 1
 	Bit32u gateBit = ( c4 >> 4 ) ^ ( c4 >> 3 );
 	phaseBit = (phaseBit | gateBit) & 0x2;
 
 	//Hi-Hat
-	Bit32u hhVol = op2->ForwardVolume( Work );
+	Bit32u hhVol = op2->ForwardVolume();
 	if ( !ENV_SILENT( hhVol ) ) {
 		/* when phase & 0x200 is set and noise=1 then phase = 0x200|0xd0 */
 		/* when phase & 0x200 is set and noise=0 then phase = 0x200|(0xd0>>2), ie no change */
@@ -809,17 +826,20 @@ void Channel::GeneratePercussion( Bit32s* output, Work_Data & Work ) {
 	}
 	//Snare Drum
 	Operator* op3 = ( this + 1 )->Op(1);
-	Bit32u sdVol = op3->ForwardVolume( Work );
+	Bit32u sdVol = op3->ForwardVolume();
 	if ( !ENV_SILENT( sdVol ) ) {
 		Bit32u sdBits = 0x100 + (c2 & 0x100);
 		Bit32u sdIndex = sdBits ^ ( noiseBit << 7 );
 		sample += op3->GetWave( sdIndex, sdVol );
 	}
 	//Tom-tom
-	sample += op4->GetSample( 0, Work );
+	Bit32u ttVol = op4->ForwardVolume();
+	if ( !ENV_SILENT( ttVol ) ) {
+		sample += op4->GetWave( c4, ttVol );
+	}
 	//Top-Cymbal
 	Operator* op5 = ( this + 2 )->Op(1);
-	Bit32u tcVol = op5->ForwardVolume( Work );
+	Bit32u tcVol = op5->ForwardVolume();
 	if ( !ENV_SILENT( tcVol ) ) {
 		Bit32u tcIndex = (1 + phaseBit) << 8;
 		sample += op5->GetWave( tcIndex, tcVol );
@@ -834,7 +854,7 @@ void Channel::GeneratePercussion( Bit32s* output, Work_Data & Work ) {
 }
 
 template<SynthMode mode>
-Channel* Channel::BlockTemplate( Work_Data & Work ) {
+Channel* Channel::BlockTemplate( Chip* chip, Bit32u samples, Bit32s* output ) {
 	switch( mode ) {
 	case sm2AM:
 	case sm3AM:
@@ -875,52 +895,60 @@ Channel* Channel::BlockTemplate( Work_Data & Work ) {
 		}
 		break;
 	}
-	for ( Bitu i = 0; i < Work.samples; i++ ) {
-		Work.vibrato = Work.vibTable[i];
-		Work.tremolo = Work.tremTable[i];
-	
+	//Init the operators with the the current vibrato and tremolo values
+	Op( 0 )->Prepare( chip );
+	Op( 1 )->Prepare( chip );
+	if ( mode > sm4Start ) {
+		Op( 2 )->Prepare( chip );
+		Op( 3 )->Prepare( chip );
+	}
+	if ( mode > sm6Start ) {
+		Op( 4 )->Prepare( chip );
+		Op( 5 )->Prepare( chip );
+	}
+	for ( Bitu i = 0; i < samples; i++ ) {
 		//Early out for percussion handlers
 		if ( mode == sm2Percussion ) {
-			GeneratePercussion<false>( Work.output + i, Work );
+			GeneratePercussion<false>( chip, output + i );
 			continue;	//Prevent some unitialized value bitching
 		} else if ( mode == sm3Percussion ) {
-			GeneratePercussion<true>( Work.output + i * 2, Work );
+			GeneratePercussion<true>( chip, output + i * 2 );
 			continue;	//Prevent some unitialized value bitching
 		}
 
 		//Do unsigned shift so we can shift out all bits but still stay in 10 bit range otherwise
 		Bit32s mod = (Bit32u)((old[0] + old[1])) >> feedback;
 		old[0] = old[1];
-		old[1] = Op(0)->GetSample( mod, Work );
+		old[1] = Op(0)->GetSample( mod );
 		Bit32s sample;
 		Bit32s out0 = old[0];
 		if ( mode == sm2AM || mode == sm3AM ) {
-			sample = out0 + Op(1)->GetSample( 0, Work );
+			sample = out0 + Op(1)->GetSample( 0 );
 		} else if ( mode == sm2FM || mode == sm3FM ) {
-			sample = Op(1)->GetSample( out0, Work );
+			sample = Op(1)->GetSample( out0 );
 		} else if ( mode == sm3FMFM ) {
-			Bits next = Op(1)->GetSample( out0, Work ); 
-			next = Op(2)->GetSample( next, Work );
-			sample = Op(3)->GetSample( next, Work );
+			Bits next = Op(1)->GetSample( out0 ); 
+			next = Op(2)->GetSample( next );
+			sample = Op(3)->GetSample( next );
 		} else if ( mode == sm3AMFM ) {
 			sample = out0;
-			Bits next = Op(1)->GetSample( 0, Work ); 
-			next = Op(2)->GetSample( next, Work );
-			sample += Op(3)->GetSample( next, Work );
+			Bits next = Op(1)->GetSample( 0 ); 
+			next = Op(2)->GetSample( next );
+			sample += Op(3)->GetSample( next );
 		} else if ( mode == sm3FMAM ) {
-			sample = Op(1)->GetSample( out0, Work );
-			Bits next = Op(2)->GetSample( 0, Work );
-			sample += Op(3)->GetSample( next, Work );
+			sample = Op(1)->GetSample( out0 );
+			Bits next = Op(2)->GetSample( 0 );
+			sample += Op(3)->GetSample( next );
 		} else if ( mode == sm3AMAM ) {
 			sample = out0;
-			Bits next = Op(1)->GetSample( 0, Work ); 
-			sample += Op(2)->GetSample( next, Work );
-			sample += Op(3)->GetSample( 0, Work );
+			Bits next = Op(1)->GetSample( 0 ); 
+			sample += Op(2)->GetSample( next );
+			sample += Op(3)->GetSample( 0 );
 		}
 		switch( mode ) {
 		case sm2AM:
 		case sm2FM:
-			Work.output[ i ] += sample;
+			output[ i ] += sample;
 			break;
 		case sm3AM:
 		case sm3FM:
@@ -928,8 +956,8 @@ Channel* Channel::BlockTemplate( Work_Data & Work ) {
 		case sm3AMFM:
 		case sm3FMAM:
 		case sm3AMAM:
-			Work.output[ i * 2 + 0 ] += sample & maskLeft;
-			Work.output[ i * 2 + 1 ] += sample & maskRight;
+			output[ i * 2 + 0 ] += sample & maskLeft;
+			output[ i * 2 + 1 ] += sample & maskRight;
 			break;
 		}
 	}
@@ -963,21 +991,42 @@ Chip::Chip() {
 	opl3Active = 0;
 }
 
-
-Bit8u Chip::ForwardTremolo(  ) {
-	tremoloCounter += tremoloAdd;
-	if ( tremoloCounter >= (TREMOLO_TABLE << TREMOLO_SH) ) {
-		tremoloCounter -= TREMOLO_TABLE << TREMOLO_SH;
+INLINE Bit32u Chip::ForwardNoise() {
+	noiseCounter += noiseAdd;
+	Bitu count = noiseCounter >> LFO_SH;
+	noiseCounter &= WAVE_MASK;
+	for ( ; count > 0; --count ) {
+		//Noise calculation from mame
+		noiseValue ^= ( 0x800302 ) & ( 0 - (noiseValue & 1 ) );
+		noiseValue >>= 1;
 	}
-	Bitu index = tremoloCounter >> TREMOLO_SH;
-	return TremoloTable[ index ] >> tremoloShift;
+	return noiseValue;
 }
 
-Bit8s Chip::ForwardVibrato(  ) {
-	vibratoCounter += vibratoAdd;
-	Bitu index = vibratoCounter >> VIBRATO_SH;
-	//Vibrato shift, basically makes the shift greater reducing the actual final value
-	return VibratoTable[index & 7] + vibratoShift;
+Bit32u Chip::ForwardLFO( Bit32u samples ) {
+	//Current vibrato value, runs 4x slower than tremolo
+	vibratoSign = ( VibratoTable[ vibratoIndex >> 2] ) >> 7;
+	vibratoShift = ( VibratoTable[ vibratoIndex >> 2] & 7) + vibratoStrength;
+	tremoloValue = TremoloTable[ tremoloIndex ] >> tremoloStrength;
+
+	//Check hom many samples there can be done before the value changes
+	Bit32u todo = LFO_MAX - lfoCounter;
+	Bit32u count = (todo + lfoAdd - 1) / lfoAdd;
+	if ( count > samples ) {
+		count = samples;
+		lfoCounter += count * lfoAdd;
+	} else {
+		lfoCounter += count * lfoAdd;
+		lfoCounter &= (LFO_MAX - 1);
+		//Maximum of 7 vibrato value * 4
+		vibratoIndex = ( vibratoIndex + 1 ) & 31;
+		//Clip tremolo to the the table size
+		if ( tremoloIndex + 1 < TREMOLO_TABLE  )
+			++tremoloIndex;
+		else
+			tremoloIndex = 0;
+	}
+	return count;
 }
 
 void Chip::WriteBD( Bit8u val ) {
@@ -986,8 +1035,8 @@ void Chip::WriteBD( Bit8u val ) {
 		return;
 	regBD = val;
 	//TODO could do this with shift and xor?
-	vibratoShift = (val & 0x40) ? 0x00 : 0x01;
-	tremoloShift = (val & 0x80) ? 0x00 : 0x02;
+	vibratoStrength = (val & 0x40) ? 0x00 : 0x01;
+	tremoloStrength = (val & 0x80) ? 0x00 : 0x02;
 	if ( val & 0x20 ) {
 		//Drum was just enabled, make sure channel 6 has the right synth
 		if ( change & 0x20 ) {
@@ -1134,51 +1183,69 @@ Bit32u Chip::WriteAddr( Bit32u port, Bit8u val ) {
 	return 0;
 }
 
-void Chip::GenerateBlock2( Bitu samples  ) {
-	Work.samples = samples;
-	for ( Bitu i = 0; i < Work.samples; i++ ) {
-		Work.vibTable[i] = ForwardVibrato();
-		Work.tremTable[i] = ForwardTremolo();
-		Work.output[i] = 0;
-	}
-	int count = 0;
-	for( Channel* ch = chan; ch < chan + 9; ) {
-		count++;
-		ch = (ch->*(ch->synthHandler))( Work );
+void Chip::GenerateBlock2( Bitu total, Bit32s* output ) {
+	while ( total > 0 ) {
+		Bit32u samples = ForwardLFO( total );
+		for ( Bitu i = 0; i < samples; i++ ) {
+			output[i] = 0;
+		}
+		int count = 0;
+		for( Channel* ch = chan; ch < chan + 9; ) {
+			count++;
+			ch = (ch->*(ch->synthHandler))( this, samples, output );
+		}
+		total -= samples;
+		output += samples;
 	}
 }
 
-void Chip::GenerateBlock3( Bitu samples ) {
-	Work.samples = samples;
-	for ( Bitu i = 0; i < Work.samples; i++ ) {
-		Work.vibTable[i] = ForwardVibrato();
-		Work.tremTable[i] = ForwardTremolo();
-		Work.output[i*2 + 0] = 0;
-		Work.output[i*2 + 1] = 0;
-	}
-	int count = 0;
-	for( Channel* ch = chan; ch < chan + 18; ) {
-		count++;
-		ch = (ch->*(ch->synthHandler))( Work );
+void Chip::GenerateBlock3( Bitu total, Bit32s* output  ) {
+	while ( total > 0 ) {
+		Bit32u samples = ForwardLFO( total );
+		for ( Bitu i = 0; i < samples; i++ ) {
+			output[i * 2 + 0 ] = 0;
+			output[i * 2 + 1 ] = 0;
+		}
+		int count = 0;
+		for( Channel* ch = chan; ch < chan + 18; ) {
+			count++;
+			ch = (ch->*(ch->synthHandler))( this, samples, output );
+		}
+		total -= samples;
+		output += samples * 2;
 	}
 }
 
 void Chip::Setup( Bit32u rate ) {
-	//Vibrato forwards every 1024 samples
-	vibratoAdd = (Bit32u)((double)rate * (double)( 1 << (VIBRATO_SH - 10) ) / OPLRATE);
-	vibratoCounter = 0;
-	//tremolo forwards every 64 samples
-	//We use a 52 entry table, real is 210, so repeat each sample an extra 4 times
-	tremoloAdd = (Bit32u)((double)rate * (double)( 1 << (TREMOLO_SH - 6 - 2) ) / OPLRATE);
-	tremoloCounter = 0;
-	//10 bits of frequency counter
+	double original = OPLRATE;
+//	double original = rate;
+	double scale = original / (double)rate;
+
+	//Noise counter is run at the same precision as general waves
+	noiseAdd = (Bit32u)( 0.5 + scale * ( 1 << LFO_SH ) );
+	noiseCounter = 0;
+	noiseValue = 1; //Make sure it triggers the noise xor the first time
+	//The low frequency oscillation counter
+	//Every time his overflows vibrato and tremoloindex are increased
+	lfoAdd = (Bit32u)( 0.5 + scale * ( 1 << LFO_SH ) );
+	lfoCounter = 0;
+	vibratoIndex = 0;
+	tremoloIndex = 0;
+
 	//With higher octave this gets shifted up
 	//-1 since the freqCreateTable = *2
-	double scale = (OPLRATE * (double)( 1 << ( WAVE_SH - 10 - 1))) / rate;
+#ifdef WAVE_PRECISION
+	double freqScale = ( 1 << 7 ) * scale * ( 1 << ( WAVE_SH - 1 - 10));
 	for ( int i = 0; i < 16; i++ ) {
 		//Use rounding with 0.5
-		freqMul[i] = (Bit32u)( 0.5 + scale * FreqCreateTable[ i ] );
+		freqMul[i] = (Bit32u)( 0.5 + freqScale * FreqCreateTable[ i ] );
 	}
+#else
+	Bit32u freqScale = (Bit32u)( 0.5 + scale * ( 1 << ( WAVE_SH - 1 - 10)));
+	for ( int i = 0; i < 16; i++ ) {
+		freqMul[i] = freqScale * FreqCreateTable[ i ];
+	}
+#endif
 
 	scale = OPLRATE / rate;
 	//-3 since the real envelope takes 8 steps to reach the single value we supply
@@ -1440,12 +1507,15 @@ void Handler::WriteReg( Bit32u addr, Bit8u val ) {
 }
 
 void Handler::Generate( MixerChannel* chan, Bitu samples ) {
+	Bit32s buffer[ 512 * 2 ];
+	if ( samples > 512 )
+		samples = 512;
 	if ( !chip.opl3Active ) {
-		chip.GenerateBlock2( samples );
-		chan->AddSamples_m32( samples, Work.output );
+		chip.GenerateBlock2( samples, buffer );
+		chan->AddSamples_m32( samples, buffer );
 	} else {
-		chip.GenerateBlock3( samples );
-		chan->AddSamples_s32( samples, Work.output );
+		chip.GenerateBlock3( samples, buffer );
+		chan->AddSamples_s32( samples, buffer );
 	}
 }
 

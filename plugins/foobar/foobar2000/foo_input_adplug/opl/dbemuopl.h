@@ -43,52 +43,61 @@ public:
 	{
 	}
 
-	void update(short *buf, int samples)
+	void update(short *buf, int total)
 	{
-		if ( !chip.opl3Active )
+		Bit32s buffer[256 * 2];
+		while (total > 0)
 		{
-			chip.GenerateBlock2( samples );
-			if ( ! usestereo )
+			int samples = total;
+			if ( samples > 256 ) samples = 256;
+			if ( !chip.opl3Active )
 			{
-				for ( unsigned i = 0; i < samples; i++ )
+				chip.GenerateBlock2( samples, buffer );
+				if ( ! usestereo )
 				{
-					int sample = chip.Work.output [i];
-					clip(sample);
-					buf [i] = sample;
+					for ( unsigned i = 0; i < samples; i++ )
+					{
+						int sample = buffer [i];
+						clip(sample);
+						buf [i] = sample;
+					}
+				}
+				else
+				{
+					for ( unsigned i = 0; i < samples; i++ )
+					{
+						int sample = buffer [i];
+						clip(sample);
+						buf [i * 2 + 0] = sample;
+						buf [i * 2 + 1] = sample;
+					}
 				}
 			}
 			else
 			{
-				for ( unsigned i = 0; i < samples; i++ )
+				chip.GenerateBlock3( samples, buffer );
+				if ( usestereo )
 				{
-					int sample = chip.Work.output [i];
-					clip(sample);
-					buf [i * 2 + 0] = sample;
-					buf [i * 2 + 1] = sample;
+					for ( unsigned i = 0, j = samples * 2; i < j; i++ )
+					{
+						int sample = buffer [i];
+						clip(sample);
+						buf [i] = sample;
+					}
+				}
+				else
+				{
+					for ( unsigned i = 0; i < samples; i++ )
+					{
+						int sample = ( buffer [i * 2 + 0] + buffer [i * 2 + 1] ) / 2;
+						clip(sample);
+						buf [i] = sample;
+					}
 				}
 			}
-		}
-		else
-		{
-			chip.GenerateBlock3( samples );
-			if ( usestereo )
-			{
-				for ( unsigned i = 0, j = samples * 2; i < j; i++ )
-				{
-					int sample = chip.Work.output [i];
-					clip(sample);
-					buf [i] = sample;
-				}
-			}
-			else
-			{
-				for ( unsigned i = 0; i < samples; i++ )
-				{
-					int sample = ( chip.Work.output [i * 2 + 0] + chip.Work.output [i * 2 + 1] ) / 2;
-					clip(sample);
-					buf [i] = sample;
-				}
-			}
+			total -= samples;
+			if ( usestereo ) buf += samples * 2;
+			else buf += samples;
 		}
 	}
 
