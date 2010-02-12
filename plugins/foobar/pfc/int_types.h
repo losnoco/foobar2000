@@ -68,12 +68,6 @@ typedef pfc::sized_int_t<sizeof(void*)>::t_unsigned __PFC_WP64 t_size;
 typedef pfc::sized_int_t<sizeof(void*)>::t_signed __PFC_WP64 t_ssize;
 
 
-#define infinite (~0)
-
-const t_uint16 infinite16 = (t_uint16)(~0);
-const t_uint32 infinite32 = (t_uint32)(~0);
-const t_uint64 infinite64 = (t_uint64)(~0);
-const t_size infinite_size = (t_size)(~0);
 
 
 #if defined(_WIN32) && !defined(_WIN64)
@@ -84,8 +78,14 @@ inline t_size MulDiv_Size(t_size x,t_size y,t_size z) {return (x*y)/z;}
 #error portme
 #endif
 
+#define pfc_infinite (~0)
 
 namespace pfc {
+	const t_uint16 infinite16 = (t_uint16)(~0);
+	const t_uint32 infinite32 = (t_uint32)(~0);
+	const t_uint64 infinite64 = (t_uint64)(~0);
+	const t_size infinite_size = (t_size)(~0);
+
 	template<typename T> class int_specs_t;
 
 	template<typename T>

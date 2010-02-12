@@ -9,6 +9,11 @@ public:
 	void from_stream(stream_reader * p_stream,t_size p_bytes,abort_callback & p_abort);
 
 	void set(const void * p_buffer,t_size p_size);
+	void set(const mem_block_container & source) {copy(source);}
+	template<typename t_source> void set(const t_source & source) {
+		PFC_STATIC_ASSERT( sizeof(source[0]) == 1 );
+		set(source.get_ptr(), source.get_size());
+	}
 
 	inline void copy(const mem_block_container & p_source) {set(p_source.get_ptr(),p_source.get_size());}
 	inline void reset() {set_size(0);}
@@ -46,4 +51,18 @@ public:
 private:
 	t_size m_size,m_buffer_size;
 	void * m_buffer;
+};
+
+template<typename t_ref>
+class mem_block_container_ref_impl : public mem_block_container {
+public:
+	mem_block_container_ref_impl(t_ref & ref) : m_ref(ref) {
+		PFC_STATIC_ASSERT( sizeof(ref[0]) == 1 );
+	}
+	const void * get_ptr() const {return m_ref.get_ptr();}
+	void * get_ptr() {return m_ref.get_ptr();}
+	t_size get_size() const {return m_ref.get_size();}
+	void set_size(t_size p_size) {m_ref.set_size(p_size);}
+private:
+	t_ref & m_ref;
 };

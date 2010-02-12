@@ -1,7 +1,11 @@
-#define MYVERSION "1.3"
+#define MYVERSION "1.4"
 
 /*
 	changelog
+
+2010-01-11 12:39 UTC - kode54
+- Updated preferences page to 1.0 API
+- Version is now 1.4
 
 2009-12-12 15:02 UTC - kode54
 - Updated Hively Tracker player to 1.6
@@ -19,6 +23,7 @@
 
 #include <foobar2000.h>
 #include "../helpers/dropdown_helper.h"
+#include "../ATLHelpers/ATLHelpers.h"
 
 #include "hvl_replay.h"
 
@@ -31,9 +36,14 @@ static const GUID guid_cfg_samplerate =
 static const GUID guid_cfg_history_rate = 
 { 0x84f70b27, 0x7fe6, 0x4a4a, { 0xa2, 0x56, 0x8c, 0x65, 0x42, 0x9d, 0x35, 0x4c } };
 
-static cfg_int cfg_samplerate(guid_cfg_samplerate,44100);
+enum
+{
+	default_cfg_samplerate = 44100
+};
 
-class init_stuff
+static cfg_int cfg_samplerate(guid_cfg_samplerate,default_cfg_samplerate);
+
+static class init_stuff
 {
 public:
 	init_stuff()
@@ -42,9 +52,7 @@ public:
 	}
 
 	~init_stuff() {}
-};
-
-static init_stuff asdf;
+} asdf;
 
 class input_hvl
 {
@@ -233,73 +241,113 @@ static cfg_dropdown_history cfg_history_rate(guid_cfg_history_rate,16);
 
 static const int srate_tab[]={8000,11025,16000,22050,24000,32000,44100,48000,64000,88200,96000};
 
-class preferences_page_hvl : public preferences_page
-{
-	static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
-	{
-		switch(msg)
-		{
-		case WM_INITDIALOG:
-			{
-				HWND w;
-				char temp[16];
-				int n;
-				for(n=tabsize(srate_tab);n--;)
-				{
-					if (srate_tab[n] != cfg_samplerate)
-					{
-						itoa(srate_tab[n], temp, 10);
-						cfg_history_rate.add_item(temp);
-					}
-				}
-				itoa(cfg_samplerate, temp, 10);
-				cfg_history_rate.add_item(temp);
-				cfg_history_rate.setup_dropdown(w = GetDlgItem(wnd,IDC_SAMPLERATE));
-				uSendMessage(w, CB_SETCURSEL, 0, 0);
-			}
-			return 1;
-		case WM_COMMAND:
-			switch(wp)
-			{
-			case (CBN_KILLFOCUS<<16)|IDC_SAMPLERATE:
-				{
-					int t = GetDlgItemInt(wnd,IDC_SAMPLERATE,0,0);
-					if (t<6000) t=6000;
-					else if (t>192000) t=192000;
-					cfg_samplerate = t;
-				}
-				break;
-			}
-			break;
-		case WM_DESTROY:
-			char temp[16];
-			itoa(cfg_samplerate, temp, 10);
-			cfg_history_rate.add_item(temp);
-			break;
-		}
-		return 0;
-	}
-
+class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
 public:
-	virtual HWND create(HWND parent)
+	//Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us
+	CMyPreferences(preferences_page_callback::ptr callback) : m_callback(callback) {}
+
+	//Note that we don't bother doing anything regarding destruction of our class.
+	//The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
+
+
+	//dialog resource ID
+	enum {IDD = IDD_CONFIG};
+	// preferences_page_instance methods (not all of them - get_wnd() is supplied by preferences_page_impl helpers)
+	t_uint32 get_state();
+	void apply();
+	void reset();
+
+	//WTL message map
+	BEGIN_MSG_MAP(CMyPreferences)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_EDITCHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_SELCHANGE, OnSelectionChange)
+		DROPDOWN_HISTORY_HANDLER(IDC_SAMPLERATE, cfg_history_rate)
+	END_MSG_MAP()
+private:
+	BOOL OnInitDialog(CWindow, LPARAM);
+	void OnEditChange(UINT, int, CWindow);
+	void OnSelectionChange(UINT, int, CWindow);
+	bool HasChanged();
+	void OnChanged();
+
+	void enable_vgm_loop_count(BOOL);
+
+	const preferences_page_callback::ptr m_callback;
+};
+
+BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
+	CWindow w;
+	char temp[16];
+	int n;
+	for(n=tabsize(srate_tab);n--;)
 	{
-		return uCreateDialog(IDD_CONFIG,parent,ConfigProc);
+		if (srate_tab[n] != cfg_samplerate)
+		{
+			itoa(srate_tab[n], temp, 10);
+			cfg_history_rate.add_item(temp);
+		}
 	}
-	GUID get_guid()
-	{
+	itoa(cfg_samplerate, temp, 10);
+	cfg_history_rate.add_item(temp);
+	w = GetDlgItem( IDC_SAMPLERATE );
+	cfg_history_rate.setup_dropdown( w );
+	::SendMessage( w, CB_SETCURSEL, 0, 0 );
+	
+	return TRUE;
+}
+
+void CMyPreferences::OnEditChange(UINT, int, CWindow) {
+	OnChanged();
+}
+
+void CMyPreferences::OnSelectionChange(UINT, int, CWindow) {
+	OnChanged();
+}
+
+t_uint32 CMyPreferences::get_state() {
+	t_uint32 state = preferences_state::resettable;
+	if (HasChanged()) state |= preferences_state::changed;
+	return state;
+}
+
+void CMyPreferences::reset() {
+	SetDlgItemInt( IDC_SAMPLERATE, default_cfg_samplerate );
+	
+	OnChanged();
+}
+
+void CMyPreferences::apply() {
+	char temp[16];
+	int t = GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE );
+	if ( t < 6000 ) t = 6000;
+	else if ( t > 192000 ) t = 192000;
+	SetDlgItemInt( IDC_SAMPLERATE, t, FALSE );
+	itoa( t, temp, 10 );
+	cfg_history_rate.add_item( temp );
+	cfg_samplerate = t;
+	
+	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
+}
+
+bool CMyPreferences::HasChanged() {
+	return GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE ) != cfg_samplerate;
+}
+void CMyPreferences::OnChanged() {
+	//tell the host that our state has changed to enable/disable the apply button appropriately.
+	m_callback->on_state_changed();
+}
+
+class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
+	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
+public:
+	const char * get_name() {return "Hively Tracker decoder";}
+	GUID get_guid() {
 		// {94F07062-C0FC-455e-A6BE-0F008F980231}
-		static const GUID guid = 
-		{ 0x94f07062, 0xc0fc, 0x455e, { 0xa6, 0xbe, 0xf, 0x0, 0x8f, 0x98, 0x2, 0x31 } };
+		static const GUID guid = { 0x94f07062, 0xc0fc, 0x455e, { 0xa6, 0xbe, 0xf, 0x0, 0x8f, 0x98, 0x2, 0x31 } };
 		return guid;
 	}
-	virtual const char * get_name() {return "Hively Tracker decoder";}
 	GUID get_parent_guid() {return guid_input;}
-
-	bool reset_query() {return true;}
-	void reset()
-	{
-		cfg_samplerate = 44100;
-	}
 };
 
 class hvl_file_types : public input_file_type
@@ -332,8 +380,10 @@ class hvl_file_types : public input_file_type
 	}
 };
 
-static input_factory_t           <input_hvl>            g_input_hvl_factory;
-static preferences_page_factory_t<preferences_page_hvl> g_config_mod_factory;
-static service_factory_single_t  <hvl_file_types>       g_input_file_type_hvl_factory;
+static input_factory_t           <input_hvl>               g_input_hvl_factory;
+static preferences_page_factory_t<preferences_page_myimpl> g_config_mod_factory;
+static service_factory_single_t  <hvl_file_types>          g_input_file_type_hvl_factory;
 
 DECLARE_COMPONENT_VERSION( "Hively Tracker decoder", MYVERSION, "Using Hively Tracker player v1.6.");
+
+VALIDATE_COMPONENT_FILENAME( "foo_input_hvl.dll" );

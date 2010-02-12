@@ -4,6 +4,7 @@ public:
 	void hint_reader(service_ptr_t<input_info_reader> p_reader, const char * p_path,abort_callback & p_abort);
 	void add(metadb_handle_ptr const & p_handle,const file_info & p_info,t_filestats const & p_stats,bool p_fresh);
 	void run();
+	t_size get_pending_count() const {return m_entries.get_count();}
 private:
 	struct t_entry {
 		metadb_handle_ptr m_handle;

@@ -49,8 +49,21 @@ private:
 typedef service_factory_single_transparent_t<config_object_impl> config_object_factory;
 
 template<t_size p_size>
-class config_object_fixed_impl_t : public config_object, private cfg_var
-{
+class config_object_fixed_const_impl_t : public config_object {
+public:
+	config_object_fixed_const_impl_t(const GUID & p_guid, const void * p_data) : m_guid(p_guid) {memcpy(m_data,p_data,p_size);}
+	GUID get_guid() const {return m_guid;}
+
+	void get_data(stream_writer * p_stream, abort_callback & p_abort) const { p_stream->write_object(m_data,p_size,p_abort); }
+	void set_data(stream_reader * p_stream, abort_callback & p_abort, bool p_notify) { PFC_ASSERT(!"Should not get here."); }
+
+private:
+	t_uint8 m_data[p_size];
+	const GUID m_guid;
+};
+
+template<t_size p_size>
+class config_object_fixed_impl_t : public config_object, private cfg_var {
 public:
 	GUID get_guid() const {return cfg_var::get_guid();}
 	
@@ -88,14 +101,17 @@ private:
 	
 };
 
+template<t_size p_size, bool isConst> class _config_object_fixed_impl_switch;
+template<t_size p_size> class _config_object_fixed_impl_switch<p_size,false> { public: typedef config_object_fixed_impl_t<p_size> type; };
+template<t_size p_size> class _config_object_fixed_impl_switch<p_size,true> { public: typedef config_object_fixed_const_impl_t<p_size> type; };
 
-template<t_size p_size>
-class config_object_fixed_factory_t : public service_factory_single_transparent_t<config_object_fixed_impl_t<p_size> >
+template<t_size p_size, bool isConst = false>
+class config_object_fixed_factory_t : public service_factory_single_transparent_t< typename _config_object_fixed_impl_switch<p_size,isConst>::type >
 {
 public:
 	config_object_fixed_factory_t(const GUID & p_guid,const void * p_initval)
 		:
-		service_factory_single_transparent_t<config_object_fixed_impl_t<p_size> >
+		service_factory_single_transparent_t< typename _config_object_fixed_impl_switch<p_size,isConst>::type >
 		(p_guid,p_initval)
 	{}
 };
@@ -104,20 +120,21 @@ public:
 class config_object_string_factory : public config_object_factory
 {
 public:
-	config_object_string_factory(const GUID & p_guid,const char * p_string,t_size p_string_length = infinite)
-		: config_object_factory(p_guid,p_string,pfc::strlen_max(p_string,infinite)) {}
+	config_object_string_factory(const GUID & p_guid,const char * p_string,t_size p_string_length = ~0)
+		: config_object_factory(p_guid,p_string,pfc::strlen_max(p_string,~0)) {}
 
 };
 
-class config_object_bool_factory : public config_object_fixed_factory_t<1>
-{
+template<bool isConst = false>
+class config_object_bool_factory_t : public config_object_fixed_factory_t<1,isConst> {
 public:
-	config_object_bool_factory(const GUID & p_guid,bool p_initval)
-		: config_object_fixed_factory_t<1>(p_guid,&p_initval) {}
+	config_object_bool_factory_t(const GUID & p_guid,bool p_initval)
+		: config_object_fixed_factory_t<1,isConst>(p_guid,&p_initval) {}
 };
+typedef config_object_bool_factory_t<> config_object_bool_factory;
 
-template<class T>
-class config_object_int_factory_t : public config_object_fixed_factory_t<sizeof(T)>
+template<class T,bool isConst = false>
+class config_object_int_factory_t : public config_object_fixed_factory_t<sizeof(T),isConst>
 {
 private:
 	template<class T>

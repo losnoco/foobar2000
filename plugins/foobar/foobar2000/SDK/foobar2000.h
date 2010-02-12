@@ -1,3 +1,5 @@
+// This is the master foobar2000 SDK header file; it includes headers for all functionality exposed through the SDK project. #include this in your source code, never reference any of the other headers directly.
+
 #ifndef _FOOBAR2000_H_
 #define _FOOBAR2000_H_
 
@@ -5,9 +7,12 @@
 #error Only UNICODE environment supported.
 #endif
 
+// #define FOOBAR2000_TARGET_VERSION 75 // 0.9.6
+#define FOOBAR2000_TARGET_VERSION 76 // 1.0
+
 #include "../../pfc/pfc.h"
 
-#include "shared.h"
+#include "../shared/shared.h"
 
 #ifndef NOTHROW
 #ifdef _MSC_VER
@@ -26,11 +31,11 @@ typedef const char * pcchar;
 
 #include "completion_notify.h"
 #include "abort_callback.h"
-#include "audio_chunk.h"
 #include "componentversion.h"
 #include "preferences_page.h"
 #include "coreversion.h"
 #include "filesystem.h"
+#include "audio_chunk.h"
 #include "cfg_var.h"
 #include "mem_block_container.h"
 #include "audio_postprocessor.h"
@@ -43,6 +48,7 @@ typedef const char * pcchar;
 #include "dsp.h"
 #include "dsp_manager.h"
 #include "initquit.h"
+#include "event_logger.h"
 #include "input.h"
 #include "input_impl.h"
 #include "menu.h"
@@ -58,7 +64,6 @@ typedef const char * pcchar;
 #include "resampler.h"
 #include "tag_processor.h"
 #include "titleformat.h"
-#include "titleformat_config.h"
 #include "ui.h"
 #include "unpack.h"
 #include "vis.h"
@@ -76,12 +81,25 @@ typedef const char * pcchar;
 #include "hasher_md5.h"
 #include "message_loop.h"
 #include "input_file_type.h"
-#include "masstagger_action.h"
 #include "chapterizer.h"
 #include "link_resolver.h"
 #include "main_thread_callback.h"
 #include "advconfig.h"
 #include "info_lookup_handler.h"
 #include "track_property.h"
+
+#include "album_art.h"
+#include "icon_remap.h"
+#include "ui_element.h"
+#include "ole_interaction.h"
+#include "search_tools.h"
+#include "autoplaylist.h"
+#include "replaygain_scanner.h"
+#include "ui_edit_context.h"
+
+#include "system_time_keeper.h"
+#include "playback_stream_capture.h"
+#include "http_client.h"
+#include "exceptions.h"
 
 #endif //_FOOBAR2000_H_

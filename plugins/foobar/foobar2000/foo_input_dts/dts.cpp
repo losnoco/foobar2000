@@ -5,6 +5,7 @@
 // foobar2000 component copyright (C) 2004-2006 Janne Hyvärinen
 //
 // Changes:
+//  0.2.8  (2010-01-11): Updated to 1.0 SDK
 //  0.2.7  (2009-12-13): Found and fixed another false positive with the DSP
 //  0.2.6  (2009-12-13): Really fixed DTS decoder DSP this time
 //  0.2.5  (2009-12-05): Fixed heap corruption on bad DTS files, DSP doesn't output until two consecutive frames are found
@@ -32,7 +33,7 @@
 //  0.0.4  (2004-10-15): Simplified packet decoder, added codec reporting, fixed typo in version number
 //  0.0.3  (2004-10-15): Added Matroska packet decoder support
 
-#define FD_VERSION  "0.2.7"
+#define FD_VERSION  "0.2.8"
 
 //#define DTS_DEBUG // print status info to console
 
@@ -730,7 +731,7 @@ public:
     }
 
     bool decode_run_raw(audio_chunk &p_chunk, mem_block_container &p_raw, abort_callback &p_abort) { throw pfc::exception_not_implemented(); }
-    //void set_logger(event_logger::ptr ptr) {}
+    void set_logger(event_logger::ptr ptr) {}
 };
 
 static input_cuesheet_factory_t<input_dts> g_input_dts_factory;
@@ -743,3 +744,5 @@ DECLARE_COMPONENT_VERSION("DTS decoder", FD_VERSION,
   "Licensed under GNU GPL.\n");
 
 DECLARE_FILE_TYPE("DTS files", "*.DTS;*.DTSWAV");
+
+VALIDATE_COMPONENT_FILENAME("foo_input_dts.dll");

@@ -1,13 +1,17 @@
-template<unsigned blocksize>
 class file_cached : public file {
 public:
-	static void g_create(service_ptr_t<file> & p_out,service_ptr_t<file> p_base,abort_callback & p_abort) {
-		service_ptr_t<file_cached<blocksize> > temp;
-		temp = new service_impl_t<file_cached<blocksize> >();
+	static file::ptr g_create(service_ptr_t<file> p_base,abort_callback & p_abort, t_size blockSize) {
+		service_ptr_t<file_cached> temp = new service_impl_t<file_cached>(blockSize);
 		temp->initialize(p_base,p_abort);
-		p_out = temp.get_ptr();
+		return temp;
 	}
-private:
+	static void g_create(service_ptr_t<file> & p_out,service_ptr_t<file> p_base,abort_callback & p_abort, t_size blockSize) {
+		p_out = g_create(p_base, p_abort, blockSize);
+	}
+protected:
+	file_cached(t_size blocksize) {
+		m_buffer.set_size(blocksize);
+	}
 	void initialize(service_ptr_t<file> p_base,abort_callback & p_abort) {
 		m_base = p_base;
 		m_position = 0;
@@ -33,15 +37,15 @@ public:
 			if (m_position >= m_buffer_position && m_position < m_buffer_position + m_buffer_status) {				
 				t_size delta = pfc::min_t<t_size>((t_size)(m_buffer_position + m_buffer_status - m_position),p_bytes - done);
 				t_size bufptr = (t_size)(m_position - m_buffer_position);
-				memcpy(outptr+done,m_buffer+bufptr,delta);
+				memcpy(outptr+done,m_buffer.get_ptr()+bufptr,delta);
 				done += delta;
 				m_position += delta;
-				if (m_buffer_status != sizeof(m_buffer) && done < p_bytes) break;//EOF before m_size is hit
+				if (m_buffer_status != m_buffer.get_size() && done < p_bytes) break;//EOF before m_size is hit
 			} else {
-				m_buffer_position = m_position - m_position % blocksize;
+				m_buffer_position = m_position - m_position % m_buffer.get_size();
 				adjust_position(m_buffer_position,p_abort);
 
-				m_buffer_status = m_base->read(m_buffer,sizeof(m_buffer),p_abort);
+				m_buffer_status = m_base->read(m_buffer.get_ptr(),m_buffer.get_size(),p_abort);
 				m_position_base += m_buffer_status;
 
 				if (m_buffer_status <= (t_size)(m_position - m_buffer_position)) break;
@@ -111,5 +115,5 @@ private:
 	bool m_can_seek;
 	t_filesize m_buffer_position;
 	t_size m_buffer_status;
-	t_uint8 m_buffer[blocksize];	
+	pfc::array_t<t_uint8> m_buffer;
 };

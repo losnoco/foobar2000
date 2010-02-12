@@ -13,8 +13,9 @@ static BOOL CALLBACK __MonitorEnumProc(
   ) {
 	RECT * clip = (RECT*)dwData;
 	RECT newclip;
-	UnionRect(&newclip,clip,lprcMonitor);
-	*clip = newclip;
+	if (UnionRect(&newclip,clip,lprcMonitor)) {
+		*clip = newclip;
+	}
 	return TRUE;
 }
 
@@ -35,13 +36,10 @@ static bool test_rect(const RECT * rc) {
 }
 
 
-
 bool cfg_window_placement::read_from_window(HWND window)
 {
-	WINDOWPLACEMENT wp;
-	memset(&wp,0,sizeof(wp));
-	if (g_is_enabled())
-	{
+	WINDOWPLACEMENT wp = {};
+	if (g_is_enabled()) {
 		wp.length = sizeof(wp);
 		if (!GetWindowPlacement(window,&wp))
 			memset(&wp,0,sizeof(wp));
@@ -54,6 +52,10 @@ bool cfg_window_placement::read_from_window(HWND window)
 	return m_data.length == sizeof(m_data);
 }
 
+void cfg_window_placement::on_window_creation_silent(HWND window) {
+	PFC_ASSERT(!m_windows.have_item(window));
+	m_windows.add_item(window);
+}
 bool cfg_window_placement::on_window_creation(HWND window)
 {
 	bool ret = false;
@@ -102,10 +104,11 @@ void cfg_window_placement::get_data_raw(stream_writer * p_stream,abort_callback 
 }
 
 void cfg_window_placement::set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort) {
+	if (p_sizehint == 0) return;
 	WINDOWPLACEMENT temp;
 	try {
 		p_stream->read_object(&temp,sizeof(temp),p_abort);
-	} catch(exception_io_data const &) {return;}
+	} catch(exception_io_data) {return;}
 	if (temp.length == sizeof(temp)) m_data = temp;
 }
 
@@ -116,11 +119,11 @@ cfg_window_placement::cfg_window_placement(const GUID & p_guid) : cfg_var(p_guid
 }
 
 
-cfg_window_size::cfg_window_size(const GUID & p_guid) : cfg_var(p_guid), m_width(infinite32), m_height(infinite32) {}
+cfg_window_size::cfg_window_size(const GUID & p_guid) : cfg_var(p_guid), m_width(~0), m_height(~0) {}
 
 static BOOL SetWindowSize(HWND p_wnd,unsigned p_x,unsigned p_y)
 {
-	if (p_x != infinite32 && p_y != infinite32)
+	if (p_x != ~0 && p_y != ~0)
 		return SetWindowPos(p_wnd,0,0,0,p_x,p_y,SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOZORDER);
 	else
 		return FALSE;
@@ -162,13 +165,13 @@ bool cfg_window_size::read_from_window(HWND p_wnd)
 		}
 		else
 		{
-			m_width = m_height = infinite32;
+			m_width = m_height = ~0;
 			return false;
 		}
 	}
 	else
 	{
-		m_width = m_height = infinite32;
+		m_width = m_height = ~0;
 		return false;
 	}
 }
@@ -184,7 +187,7 @@ void cfg_window_size::get_data_raw(stream_writer * p_stream,abort_callback & p_a
 			}
 		}
 
-		if (m_width != infinite32 && m_height != infinite32) {
+		if (m_width != ~0 && m_height != ~0) {
 			p_stream->write_lendian_t(m_width,p_abort);
 			p_stream->write_lendian_t(m_height,p_abort);
 		}
@@ -192,11 +195,12 @@ void cfg_window_size::get_data_raw(stream_writer * p_stream,abort_callback & p_a
 }
 
 void cfg_window_size::set_data_raw(stream_reader * p_stream,t_size p_sizehint,abort_callback & p_abort) {
+	if (p_sizehint == 0) return;
 	t_uint32 width,height;
 	try {
 		p_stream->read_lendian_t(width,p_abort);
 		p_stream->read_lendian_t(height,p_abort);
-	} catch(exception_io_data const &) {return;}
+	} catch(exception_io_data) {return;}
 
 	m_width = width; m_height = height;
 }

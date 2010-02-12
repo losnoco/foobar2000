@@ -13,7 +13,7 @@ critical_section           lock;
 
 class monitor_dialog *     dialog           = 0;
 
-Music_Emu const*           emu              = 0;
+gme_t const*           emu              = 0;
 
 bool                       changed_info     = false;
 pfc::string8               path;
@@ -25,7 +25,7 @@ int                        mute_mask        = 0;
 static const GUID guid_cfg_placement = { 0x2ea726fb, 0x60b, 0x471c, { 0x99, 0x40, 0xdc, 0x9a, 0xf1, 0x4e, 0x51, 0x88 } };
 static cfg_window_placement cfg_placement(guid_cfg_placement);
 
-void monitor_start( Music_Emu * p_emu, const char * p_path )
+void monitor_start( gme_t * p_emu, const char * p_path )
 {
 	insync( lock );
 
@@ -34,7 +34,9 @@ void monitor_start( Music_Emu * p_emu, const char * p_path )
 	emu = p_emu;
 	path = p_path;
 
-	voice_names.set_data_fromptr( p_emu->voice_names(), p_emu->voice_count() );
+	voice_names.set_size( p_emu->voice_count() );
+	for ( unsigned i = 0, j = p_emu->voice_count(); i < j; i++ )
+		voice_names [i] = p_emu->voice_name( i );
 
 	if ( cfg_control_override )
 	{
@@ -44,7 +46,7 @@ void monitor_start( Music_Emu * p_emu, const char * p_path )
 	}
 }
 
-void monitor_update( Music_Emu * p_emu )
+void monitor_update( gme_t * p_emu )
 {
 	insync( lock );
 
@@ -65,7 +67,7 @@ void monitor_update( Music_Emu * p_emu )
 	}
 }
 
-void monitor_stop( const Music_Emu * p_emu )
+void monitor_stop( const gme_t * p_emu )
 {
 	insync( lock );
 
@@ -273,7 +275,7 @@ public:
 	monitor_dialog( HWND parent )
 	{
 		wnd = 0;
-		if ( ! uCreateDialog( IDD_MONITOR, parent, g_dialog_proc, reinterpret_cast<long> (this) ) )
+		if ( ! CreateDialogParam(core_api::get_my_instance(), MAKEINTRESOURCE(IDD_MONITOR), parent, g_dialog_proc, reinterpret_cast<LPARAM> (this) ) )
 			throw exception_win32( GetLastError() );
 	}
 

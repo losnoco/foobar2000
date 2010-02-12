@@ -1,7 +1,15 @@
-#define MY_VERSION "1.4"
+#define MY_VERSION "1.6"
 
 /*
 	changelog
+
+2010-01-14 01:44 UTC - kode54
+- Fixed componentversion about message declaration
+- Version is now 1.6
+
+2010-01-11 19:41 UTC - kode54
+- Added filename validator
+- Version is now 1.5
 
 2009-04-21 21:37 UTC - kode54
 - Attempts to query missing files now correctly throws exception_io_not_found
@@ -276,7 +284,7 @@ protected:
 	{
 		service_ptr_t< file > p_temp;
 		filesystem::g_open( p_temp, p_archive, filesystem::open_mode_read, p_abort );
-		file_cached< 4096 >::g_create( m_in, p_temp, p_abort );
+		file_cached::g_create( m_in, p_temp, p_abort, 4096 );
 
 		m_abort = &p_abort;
 
@@ -291,7 +299,7 @@ protected:
 	{
 		service_ptr_t< file > p_temp;
 		filesystem::g_open( p_temp, p_archive, filesystem::open_mode_read, p_abort );
-		file_cached< 4096 >::g_create( m_in, p_temp, p_abort );
+		file_cached::g_create( m_in, p_temp, p_abort, 4096 );
 
 		LzHeader hdr;
 
@@ -313,7 +321,7 @@ protected:
 			p_temp->reopen( p_out );
 		}
 		else filesystem::g_open( p_temp, path, filesystem::open_mode_read, p_out );
-		file_cached< 4096 >::g_create( m_in, p_temp, p_out );
+		file_cached::g_create( m_in, p_temp, p_out, 4096 );
 
 		if ( ! table_initialized )
 		{
@@ -449,4 +457,6 @@ public:
 static archive_factory_t < archive_lha >  g_archive_lha_factory;
 static unpacker_factory_t< unpacker_lha > g_unpacker_lha_factory;
 
-DECLARE_COMPONENT_VERSION( "LHA reader", MY_VERSION, (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "LHA reader", MY_VERSION, "" );
+
+VALIDATE_COMPONENT_FILENAME("foo_unpack_lha.dll");

@@ -39,6 +39,8 @@ namespace pfc {
 	};
 
 	typedef ptr_list_t<void> ptr_list;
+
+	template<typename item, typename base> class traits_t<ptr_list_t<item, base> > : public traits_t<base> {};
 }
 
 

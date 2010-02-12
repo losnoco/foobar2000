@@ -631,15 +631,18 @@ public:
 				{
 					// XXX needs to be in sync with crap in decode_initialize, or something
 					emu = new Spc_Emu; //_Filtered;
-					static_cast<Spc_Emu *> (this->emu)->disable_surround( !! ( cfg_spc_anti_surround ) );
-					static_cast<Spc_Emu *> (this->emu)->cubic_interpolation( !! ( cfg_spc_interpolation ) );
-					emu->enable_accuracy();
 				}
 				if ( !emu ) throw std::bad_alloc();
 
 				ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
 				ERRCHK( emu->load( rdr ) );
 				handle_warning();
+
+				if ( p_reason == input_open_decode )
+				{
+					static_cast<Spc_Emu *> (this->emu)->disable_surround( !! ( cfg_spc_anti_surround ) );
+					static_cast<Spc_Emu *> (this->emu)->interpolation_level( cfg_spc_interpolation );
+				}
 
 				track_info_t i;
 				ERRCHK( emu->track_info( &i, 0 ) );
@@ -744,7 +747,6 @@ public:
 		if ( ! emu )
 		{
 			this->emu = emu = new Spc_Emu;//_Filtered;
-			emu->enable_accuracy();
 
 			try
 			{
@@ -770,7 +772,7 @@ public:
 			//emu->mute_voices( voice_mask );
 
 			emu->disable_surround( !! ( cfg_spc_anti_surround ) );
-			emu->cubic_interpolation( !! ( cfg_spc_interpolation ) );
+			emu->interpolation_level( cfg_spc_interpolation );
 		}
 
 		input_gep::decode_initialize( 0, p_flags, p_abort );
@@ -822,15 +824,16 @@ class archive_rsn : public archive_impl
 	class archive_rsn_callback : public archive_callback
 	{
 		archive_callback & m_callback;
+		pfc::string8       m_extension;
 
 	public:
-		archive_rsn_callback( archive_callback & p_callback ) : m_callback( p_callback ) { }
+		archive_rsn_callback( archive_callback & p_callback, const char * p_extension ) : m_callback( p_callback ), m_extension( p_extension ) { }
 
 		virtual bool on_entry( archive * owner, const char * url, const t_filestats & p_stats, const service_ptr_t<file> & p_reader )
 		{
 			pfc::string8 m_url, archive, file;
 			archive_impl::g_parse_unpack_path( url, archive, file );
-			archive_impl::g_make_unpack_path( m_url, pfc::string_replace_extension( archive, "rsn" ), file, "rar" );
+			archive_impl::g_make_unpack_path( m_url, pfc::string_replace_extension( archive, m_extension ), file, "rar" );
 			return m_callback.on_entry( owner, m_url, p_stats, p_reader );
 		}
 
@@ -904,7 +907,8 @@ public:
 
 	virtual void archive_list( const char * path, const service_ptr_t< file > & p_reader, archive_callback & p_out, bool p_want_readers )
 	{
-		if ( stricmp_utf8( pfc::string_extension( path ), "rsn" ) )
+		pfc::string_extension p_extension( path );
+		if ( stricmp_utf8( p_extension, "rsn" ) )
 			throw exception_io_unsupported_format();
 
 		pfc::string8 m_path;
@@ -915,7 +919,7 @@ public:
 			if ( m_file.is_empty() )
 				filesystem::g_open( m_file, path, filesystem::open_mode_read, p_out );
 
-			archive_rsn_callback m_out( p_out );
+			archive_rsn_callback m_out( p_out, p_extension );
 
 			m_arch->archive_list( pfc::string_replace_extension(path, "rar"), m_file, m_out, p_want_readers );
 		}
@@ -988,7 +992,7 @@ static bool context_time_dialog(unsigned *song_ms, unsigned *fade_ms)
 	i->song = *song_ms;
 	i->fade = *fade_ms;
 	HWND hwnd = core_api::get_main_window();
-	ret = uDialogBox(IDD_TIME, hwnd, TimeProc, (long)i) > 0;
+	ret = DialogBoxParam(core_api::get_my_instance(), MAKEINTRESOURCE(IDD_TIME), hwnd, TimeProc, (LPARAM)i) > 0;
 	if (ret)
 	{
 		*song_ms = i->song;
@@ -1063,22 +1067,26 @@ public:
 
 	virtual void get_item_name(unsigned n, pfc::string_base & out)
 	{
+		if (n) uBugCheck();
 		out = "Edit length";
 	}
 
-	virtual void get_item_default_path(unsigned n, pfc::string_base & out)
+	/*virtual void get_item_default_path(unsigned n, pfc::string_base & out)
 	{
 		out.reset();
-	}
+	}*/
+	GUID get_parent() {return contextmenu_groups::tagging;}
 
 	virtual bool get_item_description(unsigned n, pfc::string_base & out)
 	{
+		if (n) uBugCheck();
 		out = "Edits the length of the selected SPC file, or sets the length of all selected SPC files.";
 		return true;
 	}
 
 	virtual GUID get_item_guid(unsigned n)
 	{
+		if (n) uBugCheck();
 		// {1B41F297-E794-42ac-AC56-0111D99A238E}
 		static const GUID guid = 
 		{ 0x1b41f297, 0xe794, 0x42ac, { 0xac, 0x56, 0x1, 0x11, 0xd9, 0x9a, 0x23, 0x8e } };
@@ -1087,6 +1095,7 @@ public:
 
 	virtual bool context_get_display( unsigned n, const pfc::list_base_const_t< metadb_handle_ptr > & data, pfc::string_base & out, unsigned & displayflags, const GUID & )
 	{
+		if (n) uBugCheck();
 		unsigned i, j;
 		i = data.get_count();
 		for (j = 0; j < i; j++)
@@ -1101,6 +1110,7 @@ public:
 
 	virtual void context_command( unsigned n, const pfc::list_base_const_t< metadb_handle_ptr > & data, const GUID& )
 	{
+		if (n) uBugCheck();
 		unsigned tag_song_ms = ~0, tag_fade_ms = ~0;
 		unsigned i = data.get_count();
 		file_info_impl info;
@@ -1131,8 +1141,9 @@ public:
 	}
 };
 
-DECLARE_FILE_TYPE("SPC files", "*.SPC");
+namespace a { DECLARE_FILE_TYPE("SPC files", "*.SPC"); }
+namespace b { DECLARE_FILE_TYPE("RSN files", "*.RSN"); }
 
 static input_factory_t           <input_spc>   g_input_spc_factory;
-static archive_factory_t         <archive_rsn> g_archive_rar_factory;
+static archive_factory_t         <archive_rsn> g_archive_rsn_factory;
 static contextmenu_item_factory_t<context_spc> g_contextmenu_item_spc_factory;

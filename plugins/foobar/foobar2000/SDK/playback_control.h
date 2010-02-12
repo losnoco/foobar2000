@@ -1,6 +1,3 @@
-#ifndef _PLAY_CONTROL_H_
-#define _PLAY_CONTROL_H_
-
 //! Provides control for various playback-related operations.
 //! All methods provided by this interface work from main app thread only. Calling from another thread will do nothing or trigger an exception. If you need to trigger one of playback_control methods from another thread, see main_thread_callback.
 //! Do not call playback_control methods from inside any kind of global callback (e.g. playlist callback), otherwise race conditions may occur.
@@ -20,10 +17,16 @@ public:
 	enum t_track_command {
 		track_command_default = 0,
 		track_command_play,
+		//! Plays the next track from the current playlist according to the current playback order.
 		track_command_next,
+		//! Plays the previous track from the current playlist according to the current playback order.
 		track_command_prev,
+		//! For internal use only, do not use.
 		track_command_settrack,
+		//! Plays a random track from the current playlist.
 		track_command_rand,
+
+		//! For internal use only, do not use.
 		track_command_resume,
 	};
 
@@ -78,9 +81,9 @@ public:
 		display_level_none,
 		//! Static info and is_playing/is_paused stats
 		display_level_basic,
-		//! Display_level_static + dynamic track titles on e.g. live streams
+		//! display_level_basic + dynamic track titles on e.g. live streams
 		display_level_titles,
-		//! Display_level_titles + timing + VBR bitrate display etc
+		//! display_level_titles + timing + VBR bitrate display etc
 		display_level_all,
 	};
 
@@ -124,6 +127,8 @@ public:
 	//deprecated
 	inline void play_stop() {stop();}
 
+	static const int volume_mute = -100;
+
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playback_control);
 };
 
@@ -136,5 +141,3 @@ public:
 
 //for compatibility with old code
 typedef playback_control play_control;
-
-#endif

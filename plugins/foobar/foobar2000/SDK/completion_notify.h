@@ -15,7 +15,13 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE(completion_notify,service_base);
 };
 
-//! Helper implementation.
+//! Implementation helper.
+class completion_notify_dummy : public completion_notify {
+public:
+	void on_completion(unsigned p_code) {}
+};
+
+//! Implementation helper.
 class completion_notify_orphanable : public completion_notify {
 public:
 	virtual void orphan() = 0;
@@ -39,10 +45,55 @@ private:
 };
 
 template<typename t_receiver>
-service_ptr_t<completion_notify_orphanable> completion_notify_create(t_receiver * p_receiver,unsigned p_taskid) {
-	service_ptr_t<completion_notify_impl<t_receiver> > instance = new service_impl_t<completion_notify_impl<t_receiver> >();
+service_nnptr_t<completion_notify_orphanable> completion_notify_create(t_receiver * p_receiver,unsigned p_taskid) {
+	service_nnptr_t<completion_notify_impl<t_receiver> > instance = new service_impl_t<completion_notify_impl<t_receiver> >();
 	instance->setup(p_receiver,p_taskid);
 	return instance;
 }
 
 typedef service_ptr_t<completion_notify> completion_notify_ptr;
+typedef service_ptr_t<completion_notify_orphanable> completion_notify_orphanable_ptr;
+typedef service_nnptr_t<completion_notify> completion_notify_nnptr;
+typedef service_nnptr_t<completion_notify_orphanable> completion_notify_orphanable_nnptr;
+
+//! Helper base class for classes that manage nonblocking tasks and get notified back thru completion_notify interface.
+class completion_notify_receiver {
+public:
+	completion_notify::ptr create_or_get_task(unsigned p_id) {
+		completion_notify_orphanable_ptr ptr;
+		if (!m_tasks.query(p_id,ptr)) {
+			ptr = completion_notify_create(this,p_id);
+			m_tasks.set(p_id,ptr);
+		}
+		return ptr;
+	}
+	completion_notify_ptr create_task(unsigned p_id) {
+		completion_notify_orphanable_ptr ptr;
+		if (m_tasks.query(p_id,ptr)) ptr->orphan();
+		ptr = completion_notify_create(this,p_id);
+		m_tasks.set(p_id,ptr);
+		return ptr;
+	}
+	bool have_task(unsigned p_id) const {
+		return m_tasks.have_item(p_id);
+	}
+	void orphan_task(unsigned p_id) {
+		completion_notify_orphanable_ptr ptr;
+		if (m_tasks.query(p_id,ptr)) {
+			ptr->orphan();
+			m_tasks.remove(p_id);
+		}
+	}
+	~completion_notify_receiver() {
+		orphan_all_tasks();
+	}
+	void orphan_all_tasks() {
+		m_tasks.enumerate(orphanfunc);
+		m_tasks.remove_all();
+	}
+
+	virtual void on_task_completion(unsigned p_id,unsigned p_status) {}
+private:
+	static void orphanfunc(unsigned,completion_notify_orphanable_nnptr p_item) {p_item->orphan();}
+	pfc::map_t<unsigned,completion_notify_orphanable_nnptr> m_tasks;
+};

@@ -2,6 +2,42 @@
 
 DWORD _fastcall rev32(DWORD d) {return _rv(d);}
 
+DWORD read_16_le(const void * d)
+{
+	const unsigned char * d_ = (const unsigned char *) d;
+	return ( d_ [0] + ( d_ [1] * 256 ) );
+}
+
+DWORD read_16_be(const void *d)
+{
+	const unsigned char * d_ = (const unsigned char *) d;
+	return ( d_ [1] + ( d_ [0] * 256 ) );
+}
+
+DWORD read_24_le(const void *d)
+{
+	const unsigned char * d_ = (const unsigned char *) d;
+	return ( d_ [0] + ( d_ [1] * 256 ) + ( d_ [2] * 65536 ) );
+}
+
+DWORD read_24_be(const void *d)
+{
+	const unsigned char * d_ = (const unsigned char *) d;
+	return ( d_ [2] + ( d_ [1] * 256 ) + ( d_ [0] * 65536 ) );
+}
+
+DWORD read_32_le(const void *d)
+{
+	const unsigned char * d_ = (const unsigned char *) d;
+	return ( d_ [0] + ( d_ [1] * 256 ) + ( d_ [2] * 65536 ) + ( d_ [3] * 16777216 ) );
+}
+
+DWORD read_32_be(const void *d)
+{
+	const unsigned char * d_ = (const unsigned char *) d;
+	return ( d_ [3] + ( d_ [2] * 256 ) + ( d_ [1] * 65536 ) + ( d_ [0] * 16777216 ) );
+}
+
 #ifdef USE_LOG
 static HANDLE hLog;
 void log_start()
@@ -459,7 +495,7 @@ MIDI_EVENT* do_table(MIDI_file * mf,UINT prec,UINT * size,/*UINT* _lstart,UINT* 
 	UINT ts;
 	BYTE* track;
 	track=data_ptr+8+6+8;
-	ts=rev32(*(DWORD*)(track-4));
+	ts=read_32_be(track - 4);//rev32(*(DWORD*)(track-4));
 	CTempoMap* tmap=mf->tmap;
 	UINT n=0;
 	UINT pt=0;
@@ -502,7 +538,7 @@ MIDI_EVENT* do_table(MIDI_file * mf,UINT prec,UINT * size,/*UINT* _lstart,UINT* 
 			if (track_pos<smap_pos)
 			{
 				d=track_pos-pos;
-				ev=(*(DWORD*)(track+n))&0xFFFFFF;
+				ev=track[n];//(*(DWORD*)(track+n))&0xFFFFFF;
 				if ((ev&0xF0)==0xF0)
 				{
 					track_pos=-1;
@@ -510,10 +546,12 @@ MIDI_EVENT* do_table(MIDI_file * mf,UINT prec,UINT * size,/*UINT* _lstart,UINT* 
 				}
 				if ((ev&0xF0)==0xC0 || (ev&0xF0)==0xD0)
 				{
-					ev&=0xFFFF;n+=2;
+					ev |= track[n+1] * 256;
+					n+=2;
 				}
 				else
 				{
+					ev |= track[n+1] * 256 + track[n+2] * 65536;
 					n+=3;
 				}
 				if ((ev&0xFF00F0)==0x90)
@@ -608,7 +646,7 @@ KAR_ENTRY * kmap_create(MIDI_file* mf,UINT prec,UINT * num,char** text)
 	grow_buf b_data,b_map;
 	KAR_ENTRY te;
 	BYTE *track=(BYTE*)mf->data+mf->kar_track+8;
-	BYTE *track_end = track+rev32(*(DWORD*)(mf->data+mf->kar_track+4));
+	BYTE *track_end = track+read_32_be(mf->data + mf->kar_track + 4);//rev32(*(DWORD*)(mf->data+mf->kar_track+4));
 	int time=0;
 	int ptr=0;
 	BYTE lc=0;

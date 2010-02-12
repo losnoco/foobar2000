@@ -61,6 +61,8 @@ public:
 	}
 };
 
+//! Combines two arrays using the AND logical operator. \n
+//! Valid index range is an intersection of valid index ranges of the parameter arrays.
 class bit_array_and : public bit_array
 {
 	const bit_array & a1, & a2;
@@ -69,6 +71,8 @@ public:
 	bool get(t_size n) const {return a1.get(n) && a2.get(n);}
 };
 
+//! Combines two arrays using the OR logical operator. \n
+//! Valid index range is an intersection of valid index ranges of the parameter arrays.
 class bit_array_or : public bit_array
 {
 	const bit_array & a1, & a2;
@@ -77,6 +81,8 @@ public:
 	bool get(t_size n) const {return a1.get(n) || a2.get(n);}
 };
 
+//! Combines two arrays using the XOR logical operator. \n
+//! Valid index range is an intersection of valid index ranges of the parameter arrays.
 class bit_array_xor : public bit_array
 {
 	const bit_array & a1, & a2;
@@ -89,6 +95,8 @@ public:
 	}
 };
 
+//! Negation of another array. \n
+//! Valid index range is the same as valid index range of the parameter array.
 class bit_array_not : public bit_array
 {
 	const bit_array & a1;
@@ -151,6 +159,8 @@ public:
 	}
 };
 
+//! Generic variable bit_array implementation. \n
+//! Needs to be initialized with requested array size before use.
 class bit_array_bittable : public bit_array_var
 {
 	pfc::array_t<t_uint8> m_data;
@@ -183,6 +193,7 @@ public:
 	}
 
 	bit_array_bittable(t_size p_count) : m_count(0) {resize(p_count);}
+	bit_array_bittable() : m_count() {}
 		
 	void set(t_size n,bool val)
 	{
@@ -203,8 +214,9 @@ public:
 };
 
 
-class bit_array_order_changed : public bit_array
-{
+//! Bit array that takes a permutation and signals indexes reordered by the permutation. \n
+//! Valid index range same as length of the permutation.
+class bit_array_order_changed : public bit_array {
 public:
 	bit_array_order_changed(const t_size * p_order) : m_order(p_order) {}
 	bool get(t_size n) const

@@ -17,7 +17,7 @@ void string_base::skip_trailing_char(unsigned skip)
 	for(ptr=0;str[ptr];)
 	{
 		unsigned c;
-		t_size delta = utf8_decode_char(str+ptr,&c);
+		t_size delta = utf8_decode_char(str+ptr,c);
 		if (delta==0) break;
 		if (c==skip)
 		{
@@ -54,23 +54,6 @@ format_time::format_time(t_uint64 p_seconds) {
 	} else {
 		m_buffer << minutes << ":" << format_uint(seconds,2);
 	}
-}
-
-int strcmp_partial(const char * p_string,const char * p_substring) {return strcmp_partial_ex(p_string,infinite,p_substring,infinite);}
-
-static int __strcmp_partial_ex(const char * p_string,t_size p_string_length,const char * p_substring,t_size p_substring_length) throw() {
-	for(t_size walk=0;walk<p_substring_length;walk++) {
-		char stringchar = (walk>=p_string_length ? 0 : p_string[walk]);
-		char substringchar = p_substring[walk];
-		int result = compare_t(stringchar,substringchar);
-		if (result != 0) return result;
-	}
-	return 0;
-}
-
-int strcmp_partial_ex(const char * p_string,t_size p_string_length,const char * p_substring,t_size p_substring_length) /*throw()*/ {
-	p_string_length = strlen_max(p_string,p_string_length); p_substring_length = strlen_max(p_substring,p_substring_length);
-	return __strcmp_partial_ex(p_string,p_string_length,p_substring,p_substring_length);
 }
 
 bool is_path_separator(unsigned c)
@@ -139,7 +122,7 @@ string_extension::string_extension(const char * src)
 	{
 		ptr++;
 		t_size len = end-ptr;
-		if (len<tabsize(buffer))
+		if (len<PFC_TABSIZE(buffer))
 		{
 			memcpy(buffer,ptr,len*sizeof(char));
 			buffer[len]=0;
@@ -276,7 +259,7 @@ void string_base::convert_to_lower_ascii(const char * src,char replace)
 	while(*src)
 	{
 		unsigned c;
-		t_size delta = utf8_decode_char(src,&c);
+		t_size delta = utf8_decode_char(src,c);
 		if (delta==0) {c = replace; delta = 1;}
 		else if (c>=0x80) c = replace;
 		add_byte((char)c);
@@ -291,7 +274,7 @@ void convert_to_lower_ascii(const char * src,t_size max,char * out,char replace)
 	while(ptr<max && src[ptr])
 	{
 		unsigned c;
-		t_size delta = utf8_decode_char(src+ptr,&c,max-ptr);
+		t_size delta = utf8_decode_char(src+ptr,c,max-ptr);
 		if (delta==0) {c = replace; delta = 1;}
 		else if (c>=0x80) c = replace;
 		*(out++) = (char)c;
@@ -300,7 +283,7 @@ void convert_to_lower_ascii(const char * src,t_size max,char * out,char replace)
 	*out = 0;
 }
 
-t_size strstr_ex(const char * p_string,t_size p_string_len,const char * p_substring,t_size p_substring_len)
+t_size strstr_ex(const char * p_string,t_size p_string_len,const char * p_substring,t_size p_substring_len) throw()
 {
 	p_string_len = strlen_max(p_string,p_string_len);
 	p_substring_len = strlen_max(p_substring,p_substring_len);
@@ -399,7 +382,7 @@ t_int64 atoi64_ex(const char * src,t_size len)
 	return neg ? -ret : ret;
 }
 
-int stricmp_ascii_ex(const char * const s1,t_size const len1,const char * const s2,t_size const len2) {
+int stricmp_ascii_ex(const char * const s1,t_size const len1,const char * const s2,t_size const len2) throw() {
 	t_size walk1 = 0, walk2 = 0;
 	for(;;) {
 		char c1 = (walk1 < len1) ? s1[walk1] : 0;
@@ -413,7 +396,7 @@ int stricmp_ascii_ex(const char * const s1,t_size const len1,const char * const 
 	}
 
 }
-int stricmp_ascii(const char * s1,const char * s2) {
+int stricmp_ascii(const char * s1,const char * s2) throw() {
 	for(;;) {
 		char c1 = ascii_tolower(*s1), c2 = ascii_tolower(*s2);
 		if (c1<c2) return -1;
@@ -435,7 +418,7 @@ format_float::format_float(double p_val,unsigned p_width,unsigned p_prec)
 	m_buffer += temp;
 }
 
-static char format_hex_char(unsigned p_val)
+char format_hex_char(unsigned p_val)
 {
 	PFC_ASSERT(p_val < 16);
 	return (p_val < 10) ? p_val + '0' : p_val - 10 + 'A';
@@ -463,7 +446,7 @@ format_hex::format_hex(t_uint64 p_val,unsigned p_width)
 	*out = 0;
 }
 
-static char format_hex_char_lowercase(unsigned p_val)
+char format_hex_char_lowercase(unsigned p_val)
 {
 	PFC_ASSERT(p_val < 16);
 	return (p_val < 10) ? p_val + '0' : p_val - 10 + 'a';
@@ -494,7 +477,7 @@ format_hex_lowercase::format_hex_lowercase(t_uint64 p_val,unsigned p_width)
 format_uint::format_uint(t_uint64 val,unsigned p_width,unsigned p_base)
 {
 	
-	enum {max_width = tabsize(m_buffer) - 1};
+	enum {max_width = PFC_TABSIZE(m_buffer) - 1};
 
 	if (p_width > max_width) p_width = max_width;
 	else if (p_width == 0) p_width = 1;
@@ -537,7 +520,7 @@ format_int::format_int(t_int64 p_val,unsigned p_width,unsigned p_base)
 	if (p_val < 0) {neg = true; val = (t_uint64)(-p_val);}
 	else val = (t_uint64)p_val;
 	
-	enum {max_width = tabsize(m_buffer) - 1};
+	enum {max_width = PFC_TABSIZE(m_buffer) - 1};
 
 	if (p_width > max_width) p_width = max_width;
 	else if (p_width == 0) p_width = 1;
@@ -609,7 +592,10 @@ string_replace_extension::string_replace_extension(const char * p_path,const cha
 string_directory::string_directory(const char * p_path)
 {
 	t_size ptr = scan_filename(p_path);
-	if (ptr > 0) m_data.set_string(p_path,ptr-1);
+	if (ptr > 1) {
+		if (is_path_separator(p_path[ptr-1]) && !is_path_separator(p_path[ptr-2])) --ptr;
+	}
+	m_data.set_string(p_path,ptr);
 }
 
 t_size scan_filename(const char * ptr)
@@ -626,16 +612,16 @@ t_size scan_filename(const char * ptr)
 
 
 t_size string_find_first(const char * p_string,char p_tofind,t_size p_start) {
-	return string_find_first_ex(p_string,infinite,&p_tofind,1,p_start);
+	return string_find_first_ex(p_string,~0,&p_tofind,1,p_start);
 }
 t_size string_find_last(const char * p_string,char p_tofind,t_size p_start) {
-	return string_find_last_ex(p_string,infinite,&p_tofind,1,p_start);
+	return string_find_last_ex(p_string,~0,&p_tofind,1,p_start);
 }
 t_size string_find_first(const char * p_string,const char * p_tofind,t_size p_start) {
-	return string_find_first_ex(p_string,infinite,p_tofind,infinite,p_start);
+	return string_find_first_ex(p_string,~0,p_tofind,~0,p_start);
 }
 t_size string_find_last(const char * p_string,const char * p_tofind,t_size p_start) {
-	return string_find_last_ex(p_string,infinite,p_tofind,infinite,p_start);
+	return string_find_last_ex(p_string,~0,p_tofind,~0,p_start);
 }
 
 t_size string_find_first_ex(const char * p_string,t_size p_string_length,char p_tofind,t_size p_start) {
@@ -649,24 +635,24 @@ t_size string_find_first_ex(const char * p_string,t_size p_string_length,const c
 	if (p_string_length >= p_tofind_length) {
 		t_size max = p_string_length - p_tofind_length;
 		for(t_size walk = p_start; walk <= max; walk++) {
-			if (__strcmp_partial_ex(p_string+walk,p_string_length-walk,p_tofind,p_tofind_length) == 0) return walk;
+			if (_strcmp_partial_ex(p_string+walk,p_string_length-walk,p_tofind,p_tofind_length) == 0) return walk;
 		}
 	}
-	return infinite;
+	return ~0;
 }
 t_size string_find_last_ex(const char * p_string,t_size p_string_length,const char * p_tofind,t_size p_tofind_length,t_size p_start) {
 	p_string_length = strlen_max(p_string,p_string_length); p_tofind_length = strlen_max(p_tofind,p_tofind_length);
 	if (p_string_length >= p_tofind_length) {
 		t_size max = min_t<t_size>(p_string_length - p_tofind_length,p_start);
 		for(t_size walk = max; walk != (t_size)(-1); walk--) {
-			if (__strcmp_partial_ex(p_string+walk,p_string_length-walk,p_tofind,p_tofind_length) == 0) return walk;
+			if (_strcmp_partial_ex(p_string+walk,p_string_length-walk,p_tofind,p_tofind_length) == 0) return walk;
 		}
 	}
-	return infinite;
+	return ~0;
 }
 
 
-bool string_is_numeric(const char * p_string,t_size p_length) {
+bool string_is_numeric(const char * p_string,t_size p_length) throw() {
 	bool retval = false;
 	for(t_size walk = 0; walk < p_length && p_string[walk] != 0; walk++) {
 		if (!char_is_numeric(p_string[walk])) {retval = false; break;}
@@ -708,4 +694,210 @@ format_time_ex::format_time_ex(double p_seconds,unsigned p_extra) {
 	}
 }
 
+t_uint32 charLower(t_uint32 param)
+{
+	if (param<128)
+	{
+		if (param>='A' && param<='Z') param += 'a' - 'A';
+		return param;
+	}
+#ifdef WIN32
+	else if (param<0x10000)
+	{
+		unsigned ret;
+#ifdef UNICODE
+		ret = (unsigned)CharLowerW((WCHAR*)param);
+#else
+#error Nein! Verboten!
+#endif
+		return ret;
+	}
+	else return param;
+#else
+	else
+	{
+		setlocale(LC_CTYPE,"");
+		return towlower(param);
+	}
+#endif
 }
+
+t_uint32 charUpper(t_uint32 param)
+{
+	if (param<128)
+	{
+		if (param>='a' && param<='z') param += 'A' - 'a';
+		return param;
+	}
+#ifdef WIN32
+	else if (param<0x10000)
+	{
+		unsigned ret;
+#ifdef UNICODE
+		ret = (unsigned)CharUpperW((WCHAR*)param);
+#else
+#error Nein! Verboten!
+#endif
+		return ret;
+	}
+	else return param;
+#else
+	else
+	{
+		setlocale(LC_CTYPE,"");
+		return towupper(param);
+	}
+#endif
+}
+
+void stringToUpperAppend(string_base & out, const char * src, t_size len) {
+	while(len && *src) {
+		unsigned c; t_size d;
+		d = utf8_decode_char(src,c,len);
+		if (d==0 || d>len) break;
+		out.add_char(charUpper(c));
+		src+=d;
+		len-=d;
+	}
+}
+void stringToLowerAppend(string_base & out, const char * src, t_size len) {
+	while(len && *src) {
+		unsigned c; t_size d;
+		d = utf8_decode_char(src,c,len);
+		if (d==0 || d>len) break;
+		out.add_char(charLower(c));
+		src+=d;
+		len-=d;
+	}
+}
+int stringCompareCaseInsensitiveEx(string_part_ref s1, string_part_ref s2) {
+	t_size w1 = 0, w2 = 0;
+	for(;;) {
+		unsigned c1, c2; t_size d1, d2;
+		d1 = utf8_decode_char(s1.m_ptr + w1, c1, s1.m_len - w1);
+		d2 = utf8_decode_char(s2.m_ptr + w2, c2, s2.m_len - w2);
+		if (d1 == 0 && d2 == 0) return 0;
+		else if (d1 == 0) return -1;
+		else if (d2 == 0) return 1;
+		else {
+			c1 = charLower(c1); c2 = charLower(c2);
+			if (c1 < c2) return -1;
+			else if (c1 > c2) return 1;
+		}
+		w1 += d1; w2 += d2;
+	}
+}
+int stringCompareCaseInsensitive(const char * s1, const char * s2) {
+	for(;;) {
+		unsigned c1, c2; t_size d1, d2;
+		d1 = utf8_decode_char(s1,c1);
+		d2 = utf8_decode_char(s2,c2);
+		if (d1 == 0 && d2 == 0) return 0;
+		else if (d1 == 0) return -1;
+		else if (d2 == 0) return 1;
+		else {
+			c1 = charLower(c1); c2 = charLower(c2);
+			if (c1 < c2) return -1;
+			else if (c1 > c2) return 1;
+		}
+		s1 += d1; s2 += d2;
+	}
+}
+
+format_file_size_short::format_file_size_short(t_uint64 size) {
+	t_uint64 scale = 1;
+	const char * unit = "B";
+	const char * const unitTable[] = {"B","KB","MB","GB","TB"};
+	for(t_size walk = 1; walk < PFC_TABSIZE(unitTable); ++walk) {
+		t_uint64 next = scale * 1024;
+		if (size < next) break;
+		scale = next; unit = unitTable[walk];
+	}
+	*this << ( size  / scale );
+
+	if (scale > 1 && length() < 3) {
+		t_size digits = 3 - length();
+		const t_uint64 mask = pow_int(10,digits);
+		t_uint64 remaining = ( (size * mask / scale) % mask );
+		while(digits > 0 && (remaining % 10) == 0) {
+			remaining /= 10; --digits;
+		}
+		if (digits > 0) {
+			*this << "." << format_uint(remaining, (t_uint32)digits);
+		}
+	}
+	*this << unit;
+	m_scale = scale;
+}
+
+bool string_base::truncate_eol(t_size start)
+{
+	const char * ptr = get_ptr() + start;
+	for(t_size n=start;*ptr;n++)
+	{
+		if (*ptr==10 || *ptr==13)
+		{
+			truncate(n);
+			return true;
+		}
+		ptr++;
+	}
+	return false;
+}
+
+bool string_base::fix_eol(const char * append,t_size start)
+{
+	const bool rv = truncate_eol(start);
+	if (rv) add_string(append);
+	return rv;
+}
+
+bool string_base::limit_length(t_size length_in_chars,const char * append)
+{
+	bool rv = false;
+	const char * base = get_ptr(), * ptr = base;
+	while(length_in_chars && utf8_advance(ptr)) length_in_chars--;
+	if (length_in_chars==0)
+	{
+		truncate(ptr-base);
+		add_string(append);
+		rv = true;
+	}
+	return rv;
+}
+
+void urlEncodeAppendRaw(pfc::string_base & out, const char * in, t_size inSize) {
+	for(t_size walk = 0; walk < inSize; ++walk) {
+		const char c = in[walk];
+		if (c == ' ') out.add_byte('+');
+		else if (pfc::char_is_ascii_alphanumeric(c) || c == '_') out.add_byte(c);
+		else out << "%" << pfc::format_hex((t_uint8)c, 2);
+	}
+}
+void urlEncodeAppend(pfc::string_base & out, const char * in) {
+	for(;;) {
+		const char c = *(in++);
+		if (c == 0) break;
+		else if (c == ' ') out.add_byte('+');
+		else if (pfc::char_is_ascii_alphanumeric(c) || c == '_') out.add_byte(c);
+		else out << "%" << pfc::format_hex((t_uint8)c, 2);
+	}
+}
+void urlEncode(pfc::string_base & out, const char * in) {
+	out.reset(); urlEncodeAppend(out, in);
+}
+
+unsigned char_to_dec(char c) {
+	if (c >= '0' && c <= '9') return (unsigned)(c - '0');
+	else throw exception_invalid_params();
+}
+
+unsigned char_to_hex(char c) {
+	if (c >= '0' && c <= '9') return (unsigned)(c - '0');
+	else if (c >= 'a' && c <= 'f') return (unsigned)(c - 'a' + 10);
+	else if (c >= 'A' && c <= 'F') return (unsigned)(c - 'A' + 10);
+	else throw exception_invalid_params();
+}
+
+
+} //namespace pfc

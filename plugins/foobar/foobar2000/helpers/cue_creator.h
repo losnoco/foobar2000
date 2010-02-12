@@ -9,9 +9,10 @@ namespace cue_creator
 		t_cuesheet_index_list m_index_list;
 
 		void set_simple_index(double p_time);
+		void set_index01(double index0, double index1);
 	};
 	
-	typedef pfc::chain_list_t<t_entry> t_entry_list;
+	typedef pfc::chain_list_v2_t<t_entry> t_entry_list;
 
-	void create(pfc::string_formatter & p_out,const pfc::chain_list_t<t_entry> & p_list);
+	void create(pfc::string_formatter & p_out,const t_entry_list & p_list);
 };

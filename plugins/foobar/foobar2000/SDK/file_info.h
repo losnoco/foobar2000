@@ -1,6 +1,3 @@
-#ifndef _FILE_INFO_H_
-#define _FILE_INFO_H_
-
 //! Structure containing ReplayGain scan results from some playable object, also providing various helper methods to manipulate those results.
 struct replaygain_info
 {
@@ -20,14 +17,14 @@ struct replaygain_info
 	inline bool format_album_peak(char p_buffer[text_buffer_size]) const {return g_format_peak(m_album_peak,p_buffer);}
 	inline bool format_track_peak(char p_buffer[text_buffer_size]) const {return g_format_peak(m_track_peak,p_buffer);}
 
-	void set_album_gain_text(const char * p_text,t_size p_text_len = infinite);
-	void set_track_gain_text(const char * p_text,t_size p_text_len = infinite);
-	void set_album_peak_text(const char * p_text,t_size p_text_len = infinite);
-	void set_track_peak_text(const char * p_text,t_size p_text_len = infinite);
+	void set_album_gain_text(const char * p_text,t_size p_text_len = pfc_infinite);
+	void set_track_gain_text(const char * p_text,t_size p_text_len = pfc_infinite);
+	void set_album_peak_text(const char * p_text,t_size p_text_len = pfc_infinite);
+	void set_track_peak_text(const char * p_text,t_size p_text_len = pfc_infinite);
 
-	static bool g_is_meta_replaygain(const char * p_name,t_size p_name_len = infinite);
+	static bool g_is_meta_replaygain(const char * p_name,t_size p_name_len = pfc_infinite);
 	bool set_from_meta_ex(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len);
-	inline bool set_from_meta(const char * p_name,const char * p_value) {return set_from_meta_ex(p_name,infinite,p_value,infinite);}
+	inline bool set_from_meta(const char * p_name,const char * p_value) {return set_from_meta_ex(p_name,pfc_infinite,p_value,pfc_infinite);}
 
 	inline bool is_album_gain_present() const {return m_album_gain != gain_invalid;}
 	inline bool is_track_gain_present() const {return m_track_gain != gain_invalid;}
@@ -120,7 +117,8 @@ public:
 	void			meta_add_value_ex(t_size p_index,const char * p_value,t_size p_value_length);
 	t_size			meta_add_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length);
 	t_size			meta_calc_total_value_count() const;
-	bool			meta_format(const char * p_name,pfc::string_base & p_out) const;
+	bool			meta_format(const char * p_name,pfc::string_base & p_out, const char * separator = ", ") const;
+	void			meta_format_entry(t_size index, pfc::string_base & p_out, const char * separator = ", ") const;//same as meta_format but takes index instead of meta name.
 	
 	
 	bool			info_exists_ex(const char * p_name,t_size p_name_length) const;
@@ -129,29 +127,29 @@ public:
 	bool			info_remove_ex(const char * p_name,t_size p_name_length);
 	const char *	info_get_ex(const char * p_name,t_size p_name_length) const;
 
-	inline t_size		meta_find(const char * p_name) const	{return meta_find_ex(p_name,infinite);}
-	inline bool			meta_exists(const char * p_name) const		{return meta_exists_ex(p_name,infinite);}
-	inline void			meta_remove_field(const char * p_name)		{meta_remove_field_ex(p_name,infinite);}
-	inline t_size		meta_set(const char * p_name,const char * p_value)		{return meta_set_ex(p_name,infinite,p_value,infinite);}
-	inline void			meta_insert_value(t_size p_index,t_size p_value_index,const char * p_value) {meta_insert_value_ex(p_index,p_value_index,p_value,infinite);}
-	inline void			meta_add_value(t_size p_index,const char * p_value)	{meta_add_value_ex(p_index,p_value,infinite);}
-	inline const char*	meta_get(const char * p_name,t_size p_index) const	{return meta_get_ex(p_name,infinite,p_index);}
-	inline t_size		meta_get_count_by_name(const char * p_name) const		{return meta_get_count_by_name_ex(p_name,infinite);}
-	inline t_size		meta_add(const char * p_name,const char * p_value)		{return meta_add_ex(p_name,infinite,p_value,infinite);}
-	inline void			meta_modify_value(t_size p_index,t_size p_value_index,const char * p_value) {meta_modify_value_ex(p_index,p_value_index,p_value,infinite);}
+	inline t_size		meta_find(const char * p_name) const	{return meta_find_ex(p_name,pfc_infinite);}
+	inline bool			meta_exists(const char * p_name) const		{return meta_exists_ex(p_name,pfc_infinite);}
+	inline void			meta_remove_field(const char * p_name)		{meta_remove_field_ex(p_name,pfc_infinite);}
+	inline t_size		meta_set(const char * p_name,const char * p_value)		{return meta_set_ex(p_name,pfc_infinite,p_value,pfc_infinite);}
+	inline void			meta_insert_value(t_size p_index,t_size p_value_index,const char * p_value) {meta_insert_value_ex(p_index,p_value_index,p_value,pfc_infinite);}
+	inline void			meta_add_value(t_size p_index,const char * p_value)	{meta_add_value_ex(p_index,p_value,pfc_infinite);}
+	inline const char*	meta_get(const char * p_name,t_size p_index) const	{return meta_get_ex(p_name,pfc_infinite,p_index);}
+	inline t_size		meta_get_count_by_name(const char * p_name) const		{return meta_get_count_by_name_ex(p_name,pfc_infinite);}
+	inline t_size		meta_add(const char * p_name,const char * p_value)		{return meta_add_ex(p_name,pfc_infinite,p_value,pfc_infinite);}
+	inline void			meta_modify_value(t_size p_index,t_size p_value_index,const char * p_value) {meta_modify_value_ex(p_index,p_value_index,p_value,pfc_infinite);}
 
 	
 
-	inline t_size		info_set(const char * p_name,const char * p_value)	{return info_set_ex(p_name,infinite,p_value,infinite);}
-	inline t_size		info_find(const char * p_name) const				{return info_find_ex(p_name,infinite);}
-	inline t_size		info_exists(const char * p_name) const				{return info_exists_ex(p_name,infinite);}
-	inline bool			info_remove(const char * p_name)					{return info_remove_ex(p_name,infinite);}
-	inline const char *	info_get(const char * p_name) const					{return info_get_ex(p_name,infinite);}
+	inline t_size		info_set(const char * p_name,const char * p_value)	{return info_set_ex(p_name,pfc_infinite,p_value,pfc_infinite);}
+	inline t_size		info_find(const char * p_name) const				{return info_find_ex(p_name,pfc_infinite);}
+	inline bool			info_exists(const char * p_name) const				{return info_exists_ex(p_name,pfc_infinite);}
+	inline bool			info_remove(const char * p_name)					{return info_remove_ex(p_name,pfc_infinite);}
+	inline const char *	info_get(const char * p_name) const					{return info_get_ex(p_name,pfc_infinite);}
 
 	bool				info_set_replaygain_ex(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len);
-	inline bool			info_set_replaygain(const char * p_name,const char * p_value) {return info_set_replaygain_ex(p_name,infinite,p_value,infinite);}
+	inline bool			info_set_replaygain(const char * p_name,const char * p_value) {return info_set_replaygain_ex(p_name,pfc_infinite,p_value,pfc_infinite);}
 	void				info_set_replaygain_auto_ex(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len);
-	inline void			info_set_replaygain_auto(const char * p_name,const char * p_value) {info_set_replaygain_auto_ex(p_name,infinite,p_value,infinite);}
+	inline void			info_set_replaygain_auto(const char * p_name,const char * p_value) {info_set_replaygain_auto_ex(p_name,pfc_infinite,p_value,pfc_infinite);}
 
 	
 
@@ -159,12 +157,12 @@ public:
 	void		copy_info_single(const file_info & p_source,t_size p_index);
 	void		copy_meta_single_by_name_ex(const file_info & p_source,const char * p_name,t_size p_name_length);
 	void		copy_info_single_by_name_ex(const file_info & p_source,const char * p_name,t_size p_name_length);
-	inline void	copy_meta_single_by_name(const file_info & p_source,const char * p_name) {copy_meta_single_by_name_ex(p_source,p_name,infinite);}
-	inline void	copy_info_single_by_name(const file_info & p_source,const char * p_name) {copy_info_single_by_name_ex(p_source,p_name,infinite);}
+	inline void	copy_meta_single_by_name(const file_info & p_source,const char * p_name) {copy_meta_single_by_name_ex(p_source,p_name,pfc_infinite);}
+	inline void	copy_info_single_by_name(const file_info & p_source,const char * p_name) {copy_info_single_by_name_ex(p_source,p_name,pfc_infinite);}
 	void		reset();
 	void		reset_replaygain();
 	void		copy_meta_single_rename_ex(const file_info & p_source,t_size p_index,const char * p_new_name,t_size p_new_name_length);
-	inline void	copy_meta_single_rename(const file_info & p_source,t_size p_index,const char * p_new_name) {copy_meta_single_rename_ex(p_source,p_index,p_new_name,infinite);}
+	inline void	copy_meta_single_rename(const file_info & p_source,t_size p_index,const char * p_new_name) {copy_meta_single_rename_ex(p_source,p_index,p_new_name,pfc_infinite);}
 	void		overwrite_info(const file_info & p_source);
 
 	t_int64 info_get_int(const char * name) const;
@@ -189,6 +187,8 @@ public:
 
 	void merge(const pfc::list_base_const_t<const file_info*> & p_sources);
 
+	void merge_fallback(const file_info & fallback);
+
 	bool are_meta_fields_identical(t_size p_index1,t_size p_index2) const;
 
 	inline const file_info & operator=(const file_info & p_source) {copy(p_source);return *this;}
@@ -199,15 +199,20 @@ public:
 	//! Unsafe - does not check whether the field already exists and will result in duplicates if it does - call only when appropriate checks have been applied externally.
 	t_size	__meta_add_unsafe_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) {return meta_set_nocheck_ex(p_name,p_name_length,p_value,p_value_length);}
 	//! Unsafe - does not check whether the field already exists and will result in duplicates if it does - call only when appropriate checks have been applied externally.
-	t_size	__meta_add_unsafe(const char * p_name,const char * p_value) {return meta_set_nocheck_ex(p_name,infinite,p_value,infinite);}
+	t_size	__meta_add_unsafe(const char * p_name,const char * p_value) {return meta_set_nocheck_ex(p_name,pfc_infinite,p_value,pfc_infinite);}
 
 	//! Unsafe - does not check whether the field already exists and will result in duplicates if it does - call only when appropriate checks have been applied externally.
 	t_size __info_add_unsafe_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) {return info_set_nocheck_ex(p_name,p_name_length,p_value,p_value_length);}
 	//! Unsafe - does not check whether the field already exists and will result in duplicates if it does - call only when appropriate checks have been applied externally.
-	t_size __info_add_unsafe(const char * p_name,const char * p_value) {return info_set_nocheck_ex(p_name,infinite,p_value,infinite);}
+	t_size __info_add_unsafe(const char * p_name,const char * p_value) {return info_set_nocheck_ex(p_name,pfc_infinite,p_value,pfc_infinite);}
 
-	static bool g_is_valid_field_name(const char * p_name,t_size p_length = infinite);
-	typedef pfc::comparator_stricmp_ascii field_name_comparator;
+	void _copy_meta_single_nocheck(const file_info & p_source,t_size p_index) {copy_meta_single_nocheck(p_source, p_index);}
+
+	static bool g_is_valid_field_name(const char * p_name,t_size p_length = pfc_infinite);
+	//typedef pfc::comparator_stricmp_ascii field_name_comparator;
+	typedef pfc::string::comparatorCaseInsensitiveASCII field_name_comparator;
+
+	void to_console() const;
 protected:
 	file_info() {}
 	~file_info() {}
@@ -215,14 +220,11 @@ protected:
 	void	copy_info_single_nocheck(const file_info & p_source,t_size p_index);
 	void	copy_meta_single_by_name_nocheck_ex(const file_info & p_source,const char * p_name,t_size p_name_length);
 	void	copy_info_single_by_name_nocheck_ex(const file_info & p_source,const char * p_name,t_size p_name_length);
-	inline void	copy_meta_single_by_name_nocheck(const file_info & p_source,const char * p_name) {copy_meta_single_by_name_nocheck_ex(p_source,p_name,infinite);}
-	inline void	copy_info_single_by_name_nocheck(const file_info & p_source,const char * p_name) {copy_info_single_by_name_nocheck_ex(p_source,p_name,infinite);}
+	inline void	copy_meta_single_by_name_nocheck(const file_info & p_source,const char * p_name) {copy_meta_single_by_name_nocheck_ex(p_source,p_name,pfc_infinite);}
+	inline void	copy_info_single_by_name_nocheck(const file_info & p_source,const char * p_name) {copy_info_single_by_name_nocheck_ex(p_source,p_name,pfc_infinite);}
 
 	virtual t_size	meta_set_nocheck_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) = 0;
 	virtual t_size	info_set_nocheck_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length) = 0;
-	inline t_size	meta_set_nocheck(const char * p_name,const char * p_value) {return meta_set_nocheck_ex(p_name,infinite,p_value,infinite);}
-	inline t_size	info_set_nocheck(const char * p_name,const char * p_value) {return info_set_nocheck_ex(p_name,infinite,p_value,infinite);}
+	inline t_size	meta_set_nocheck(const char * p_name,const char * p_value) {return meta_set_nocheck_ex(p_name,pfc_infinite,p_value,pfc_infinite);}
+	inline t_size	info_set_nocheck(const char * p_name,const char * p_value) {return info_set_nocheck_ex(p_name,pfc_infinite,p_value,pfc_infinite);}
 };
-
-
-#endif //_FILE_INFO_H_

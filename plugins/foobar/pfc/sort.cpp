@@ -1,8 +1,13 @@
 #include "pfc.h"
 
+#if defined(_M_IX86) || defined(_M_IX64)
+#include <intrin.h>
+#define PFC_HAVE_RDTSC
+#endif
+
 namespace pfc {
 
-PFC_DLL_EXPORT void swap_void(void * item1,void * item2,t_size width)
+void swap_void(void * item1,void * item2,t_size width)
 {
 	unsigned char * ptr1 = (unsigned char*)item1, * ptr2 = (unsigned char*)item2;
 	t_size n;
@@ -17,7 +22,7 @@ PFC_DLL_EXPORT void swap_void(void * item1,void * item2,t_size width)
 	}
 }
 
-PFC_DLL_EXPORT void reorder(reorder_callback & p_callback,const t_size * p_order,t_size p_count)
+void reorder(reorder_callback & p_callback,const t_size * p_order,t_size p_count)
 {
 	t_size done_size = bit_array_bittable::g_estimate_size(p_count);
 	pfc::array_hybrid_t<unsigned char,1024> done;
@@ -32,9 +37,9 @@ PFC_DLL_EXPORT void reorder(reorder_callback & p_callback,const t_size * p_order
 			t_size prev = n;
 			do
 			{
-				assert(!bit_array_bittable::g_get(done,next));
-				assert(next>n);
-				assert(n<p_count);
+				PFC_ASSERT(!bit_array_bittable::g_get(done,next));
+				PFC_ASSERT(next>n);
+				PFC_ASSERT(n<p_count);
 				p_callback.swap(prev,next);
 				bit_array_bittable::g_set(done,next,true);
 				prev = next;
@@ -45,7 +50,7 @@ PFC_DLL_EXPORT void reorder(reorder_callback & p_callback,const t_size * p_order
 	}
 }
 
-PFC_DLL_EXPORT void reorder_void(void * data,t_size width,const t_size * order,t_size num,void (*swapfunc)(void * item1,void * item2,t_size width))
+void reorder_void(void * data,t_size width,const t_size * order,t_size num,void (*swapfunc)(void * item1,void * item2,t_size width))
 {
 	unsigned char * base = (unsigned char *) data;
 	t_size done_size = bit_array_bittable::g_estimate_size(num);
@@ -61,9 +66,9 @@ PFC_DLL_EXPORT void reorder_void(void * data,t_size width,const t_size * order,t
 			t_size prev = n;
 			do
 			{
-				assert(!bit_array_bittable::g_get(done,next));
-				assert(next>n);
-				assert(n<num);
+				PFC_ASSERT(!bit_array_bittable::g_get(done,next));
+				PFC_ASSERT(next>n);
+				PFC_ASSERT(n<num);
 				swapfunc(base+width*prev,base+width*next,width);
 				bit_array_bittable::g_set(done,next,true);
 				prev = next;
@@ -108,7 +113,7 @@ private:
 };
 }
 
-PFC_DLL_EXPORT void sort_void_ex (
+void sort_void_ex (
     void *base,
     t_size num,
     t_size width,
@@ -132,10 +137,37 @@ inline static void __sort_2elem_helper(pfc::sort_callback & p_callback,t_size & 
 	if (p_callback.compare(p_elem1,p_elem2) > 0) pfc::swap_t(p_elem1,p_elem2);
 }
 
+
+#ifdef PFC_HAVE_RDTSC
+static inline t_uint64 uniqueVal() {return __rdtsc();}
+#else
+static counter::t_val uniqueVal() {
+	static counter c; return ++c;
+}
+#endif
+
+static t_size myrand(t_size count) {
+	PFC_STATIC_ASSERT( RAND_MAX == 0x7FFF );
+
+	t_uint64 val;
+	val = (t_uint64) rand() | (t_uint64)( (t_uint32)rand() << 16 );
+
+	val ^= uniqueVal();
+
+	return (t_size)(val % count);
+}
+
 inline static t_size __pivot_helper(pfc::sort_callback & p_callback,t_size const p_base,t_size const p_count) {
-	PFC_ASSERT(p_count > 1);
-	//take middle element from lowest/middle/highest ones in original order. todo: try to come up with smarter approach?
-	t_size val1 = p_base, val2 = p_base + (p_count / 2), val3 = p_base + (p_count - 1);
+	PFC_ASSERT(p_count > 2);
+	
+	//t_size val1 = p_base, val2 = p_base + (p_count / 2), val3 = p_base + (p_count - 1);
+	
+	t_size val1 = myrand(p_count), val2 = myrand(p_count-1), val3 = myrand(p_count-2);
+	if (val2 >= val1) val2++;
+	if (val3 >= val1) val3++;
+	if (val3 >= val2) val3++;
+
+	val1 += p_base; val2 += p_base; val3 += p_base;
 	
 	__sort_2elem_helper(p_callback,val1,val2);
 	__sort_2elem_helper(p_callback,val1,val3);
@@ -187,11 +219,12 @@ static void newsort(pfc::sort_callback & p_callback,t_size const p_base,t_size c
 }
 
 void sort(pfc::sort_callback & p_callback,t_size p_num) {
+	srand((unsigned int)(uniqueVal() ^ p_num));
 	newsort(p_callback,0,p_num);
 }
 
 
-PFC_DLL_EXPORT void sort_void(void * base,t_size num,t_size width,int (*comp)(const void *, const void *) )
+void sort_void(void * base,t_size num,t_size width,int (*comp)(const void *, const void *) )
 {
 	sort_void_ex(base,num,width,comp,swap_void);
 }
@@ -221,7 +254,7 @@ void sort_callback_stabilizer::swap(t_size p_index1, t_size p_index2)
 }
 
 
-PFC_DLL_EXPORT void sort_stable(sort_callback & p_callback,t_size p_count)
+void sort_stable(sort_callback & p_callback,t_size p_count)
 {
 	sort(sort_callback_stabilizer(p_callback,p_count),p_count);
 }

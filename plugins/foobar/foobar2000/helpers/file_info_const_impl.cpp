@@ -1,45 +1,27 @@
 #include "stdafx.h"
 
-static const char * const standard_fieldnames[] = 
-{
-	"artist","ARTIST","Artist",
-	"album","ALBUM","Album",
-	"tracknumber","TRACKNUMBER","Tracknumber",
-	"totaltracks","TOTALTRACKS","Totaltracks",
-	"genre","GENRE","Genre",
-	"title","TITLE","Title",
-	"comment","COMMENT","Comment",
-	"date","DATE","Date",
-	"discnumber","DISCNUMBER","Discnumber"
+// presorted - do not change without a proper strcmp resort
+static const char * const standard_fieldnames[] = {
+	"ALBUM","ALBUM ARTIST","ARTIST","Album","Album Artist","Artist","COMMENT","Comment","DATE","DISCNUMBER","Date",
+	"Discnumber","GENRE","Genre","TITLE","TOTALTRACKS","TRACKNUMBER","Title","TotalTracks","Totaltracks","TrackNumber",
+	"Tracknumber","album","album artist","artist","comment","date","discnumber","genre","title","totaltracks","tracknumber",
 };
 
-static const char * const standard_infonames[] = 
-{
-	"bitspersample", "channels", "bitrate", "codec", "codec_profile","tool","tagtype", "samplerate"
+// presorted - do not change without a proper strcmp resort
+static const char * const standard_infonames[] = {
+	"bitrate","bitspersample","channels","codec","codec_profile","encoding","samplerate","tagtype","tool",
 };
 
-static const char * optimize_fieldname(const char * p_string)
-{
-	for(t_size n=0;n<tabsize(standard_fieldnames);n++)
-	{
-		const char * stdstring = standard_fieldnames[n];
-		if (/*p_string[0] == stdstring[0] && */strcmp(p_string,stdstring) == 0) {
-			return stdstring;
-		}
-	}
-	return NULL;
+static const char * optimize_fieldname(const char * p_string) {
+	t_size index;
+	if (!pfc::binarySearch<pfc::comparator_strcmp>::run(standard_fieldnames,0,PFC_TABSIZE(standard_fieldnames),p_string,index)) return NULL;
+	return standard_fieldnames[index];
 }
 
-static const char * optimize_infoname(const char * p_string)
-{
-	for(t_size n=0;n<tabsize(standard_infonames);n++)
-	{
-		const char * stdstring = standard_infonames[n];
-		if (/*p_string[0] == stdstring[0] && */strcmp(p_string,stdstring) == 0) {
-			return stdstring;
-		}
-	}
-	return NULL;
+static const char * optimize_infoname(const char * p_string) {
+	t_size index;
+	if (!pfc::binarySearch<pfc::comparator_strcmp>::run(standard_infonames,0,PFC_TABSIZE(standard_infonames),p_string,index)) return NULL;
+	return standard_infonames[index];
 }
 
 /*
@@ -86,7 +68,7 @@ namespace {
 		file_info_const_impl::t_index * m_hintmap;
 	};
 
-	class bsearch_callback_hintmap_impl : public pfc::bsearch_callback
+	class bsearch_callback_hintmap_impl// : public pfc::bsearch_callback
 	{
 	public:
 		bsearch_callback_hintmap_impl(
@@ -98,9 +80,9 @@ namespace {
 		{
 		}
 
-		int test(t_size p_index) const
+		inline int test(t_size p_index) const
 		{
-			return pfc::stricmp_ascii_ex(m_meta[m_hintmap[p_index]].m_name,infinite,m_name,m_name_length);
+			return pfc::stricmp_ascii_ex(m_meta[m_hintmap[p_index]].m_name,~0,m_name,m_name_length);
 		}
 
 	private:
@@ -260,8 +242,8 @@ t_size file_info_const_impl::meta_find_ex(const char * p_name,t_size p_name_leng
 {
 #ifdef __file_info_const_impl_have_hintmap__
 	if (m_hintmap != NULL) {
-		t_size result = infinite;
-		if (!pfc::bsearch(m_meta_count,bsearch_callback_hintmap_impl(m_meta,m_hintmap,p_name,p_name_length),result)) return infinite;
+		t_size result = ~0;
+		if (!pfc::bsearch_inline_t(m_meta_count,bsearch_callback_hintmap_impl(m_meta,m_hintmap,p_name,p_name_length),result)) return ~0;
 		else return m_hintmap[result];
 	} else {
 		return file_info::meta_find_ex(p_name,p_name_length);

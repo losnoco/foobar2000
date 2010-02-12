@@ -1,7 +1,16 @@
-#define MYVERSION "0.9.9.10"
+#define MYVERSION "0.9.9.12"
 
 /*
 	changelog
+
+2010-01-16 15:00 UTC - kode54
+- Fixed track termination when loops are set to none
+- Version is now 0.9.9.12
+
+2010-01-11 06:36 UTC - kode54
+- Updated preferences page to 1.0 API
+- Fixed loop/fade when no_loop is set
+- Version is now 0.9.9.11
 
 2009-12-29 07:07 UTC - kode54
 - Fixed VBlank MOD detection for when one of the length probes returns 0 (an error, or length exceeds two hours)
@@ -748,6 +757,7 @@
 
 #include "../SDK/foobar2000.h"
 #include "../helpers/dropdown_helper.h"
+#include "../ATLHelpers/ATLHelpers.h"
 
 #include "resource.h"
 #include <stdio.h>
@@ -835,29 +845,46 @@ static const GUID guid_cfg_fade_time =
 static const GUID guid_cfg_multi_value_tags = 
 { 0xd72a249d, 0x63df, 0x42f8, { 0x81, 0x8a, 0x4, 0xfb, 0x39, 0x48, 0x2b, 0x7d } };
 
+enum
+{
+	default_cfg_samplerate = 44100,
+	default_cfg_interp = 2,
+	default_cfg_fade = 0,
+	default_cfg_fade_time = 10000,
+	default_cfg_volramp = 0,
+	default_cfg_autochip = 0,
+	default_cfg_autochip_size_force = 100,
+	default_cfg_autochip_size_scan = 500,
+	default_cfg_autochip_scan_threshold = 12,
+	default_cfg_loop = 0,
+	default_cfg_tag = 0,
+	default_cfg_trim = 0,
+	default_cfg_multi_value_tags = 0,
+	default_cfg_dynamic_info = 0
+};
 
-static cfg_int cfg_samplerate(guid_cfg_samplerate,44100);
-static cfg_int cfg_interp(guid_cfg_interp,2);
-static cfg_int cfg_fade(guid_cfg_fade,0);
-static cfg_int cfg_fade_time(guid_cfg_fade_time,10000);
-static cfg_int cfg_volramp(guid_cfg_volramp, 0);
+static cfg_int cfg_samplerate(guid_cfg_samplerate,default_cfg_samplerate);
+static cfg_int cfg_interp(guid_cfg_interp,default_cfg_interp);
+static cfg_int cfg_fade(guid_cfg_fade,default_cfg_fade);
+static cfg_int cfg_fade_time(guid_cfg_fade_time,default_cfg_fade_time);
+static cfg_int cfg_volramp(guid_cfg_volramp, default_cfg_volramp);
 
-static cfg_int cfg_autochip(guid_cfg_autochip, 0);
-static cfg_int cfg_autochip_size_force(guid_cfg_autochip_size_force, 100);
-static cfg_int cfg_autochip_size_scan(guid_cfg_autochip_size_scan, 500);
-static cfg_int cfg_autochip_scan_threshold(guid_cfg_autochip_scan_threshold, 12);
+static cfg_int cfg_autochip(guid_cfg_autochip, default_cfg_autochip);
+static cfg_int cfg_autochip_size_force(guid_cfg_autochip_size_force, default_cfg_autochip_size_force);
+static cfg_int cfg_autochip_size_scan(guid_cfg_autochip_size_scan, default_cfg_autochip_size_scan);
+static cfg_int cfg_autochip_scan_threshold(guid_cfg_autochip_scan_threshold, default_cfg_autochip_scan_threshold);
 
-static cfg_int cfg_loop(guid_cfg_loop,0);
+static cfg_int cfg_loop(guid_cfg_loop,default_cfg_loop);
 
-static cfg_int cfg_tag(guid_cfg_tag, 0);
+static cfg_int cfg_tag(guid_cfg_tag, default_cfg_tag);
 
-static cfg_int cfg_trim(guid_cfg_trim, 0);
+static cfg_int cfg_trim(guid_cfg_trim, default_cfg_trim);
 
-static cfg_int cfg_multi_value_tags(guid_cfg_multi_value_tags, 0);
+static cfg_int cfg_multi_value_tags(guid_cfg_multi_value_tags, default_cfg_multi_value_tags);
 
 /*static cfg_int cfg_scan_subsongs(guid_cfg_scan_subsongs, 0);*/
 
-static cfg_int cfg_dynamic_info(guid_cfg_dynamic_info, 0);
+static cfg_int cfg_dynamic_info(guid_cfg_dynamic_info, default_cfg_dynamic_info);
 
 extern "C" void init_cubic(void);
 
@@ -3079,7 +3106,7 @@ private:
 		DUMB_IT_SIGRENDERER * itsr = duh_get_it_sigrenderer( sr );
 		dumb_it_set_resampling_quality( itsr, interp );
 		dumb_it_set_ramp_style( itsr, volramp );
-		if ( no_loop && ! limit_info.fade )
+		if ( no_loop && ! limit_info.fade && loop_count < 0 )
 			dumb_it_set_loop_callback( itsr, & dumb_it_callback_terminate, NULL );
 		else if ( loop_count != 0 )
 			dumb_it_set_loop_callback( itsr, & dumb_it_callback_limit_int, & limit_info );
@@ -3449,268 +3476,271 @@ void print_time_crap(int ms, char *out)
 	else sprintf(out, "%d%s",s,frac);
 }
 
-class preferences_page_mod : public preferences_page
-{
-	static void enable_chip(HWND wnd, bool status)
-	{
-		EnableWindow(GetDlgItem(wnd, IDC_CHIP_BOX), status);
-		EnableWindow(GetDlgItem(wnd, IDC_CHIP), status);
-		EnableWindow(GetDlgItem(wnd, IDC_CHIP_FORCE), status);
-		EnableWindow(GetDlgItem(wnd, IDC_CHIP_SCAN), status);
-		EnableWindow(GetDlgItem(wnd, IDC_CHIP_SCAN_THRESHOLD), status);
-		EnableWindow(GetDlgItem(wnd, IDC_CHIP_TEXT_0), status);
-		EnableWindow(GetDlgItem(wnd, IDC_CHIP_TEXT_1), status);
-		EnableWindow(GetDlgItem(wnd, IDC_CHIP_TEXT_2), status);
-		EnableWindow(GetDlgItem(wnd, IDC_CHIP_TEXT_3), status);
-		EnableWindow(GetDlgItem(wnd, IDC_CHIP_TEXT_4), status);
-		EnableWindow(GetDlgItem(wnd, IDC_CHIP_TEXT_5), status);
-	}
-
-	static void enable_fade(HWND wnd, bool status)
-	{
-		EnableWindow(GetDlgItem(wnd, IDC_FADE), status);
-		EnableWindow(GetDlgItem(wnd, IDC_FADE_TIME), status);
-		EnableWindow(GetDlgItem(wnd, IDC_FADE_TEXT), status);
-	}
-
-	static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
-	{
-		switch(msg)
-		{
-		case WM_INITDIALOG:
-			{
-				HWND w;
-				char temp[16];
-				int n;
-				for(n=tabsize(srate_tab);n--;)
-				{
-					if (srate_tab[n] != cfg_samplerate)
-					{
-						itoa(srate_tab[n], temp, 10);
-						cfg_history_rate.add_item(temp);
-					}
-				}
-				itoa(cfg_samplerate, temp, 10);
-				cfg_history_rate.add_item(temp);
-				cfg_history_rate.setup_dropdown(w = GetDlgItem(wnd,IDC_SAMPLERATE));
-				uSendMessage(w, CB_SETCURSEL, 0, 0);
-
-				w = GetDlgItem(wnd, IDC_INTERPOLATION);
-				uSendMessageText(w, CB_ADDSTRING, 0, "none");
-				uSendMessageText(w, CB_ADDSTRING, 0, "linear");
-				uSendMessageText(w, CB_ADDSTRING, 0, "cubic");
-				uSendMessage(w, CB_SETCURSEL, cfg_interp, 0);
-
-				w = GetDlgItem(wnd, IDC_LOOPS);
-				uSendMessageText(w, CB_ADDSTRING, 0, "none");
-				uSendMessageText(w, CB_ADDSTRING, 0, "infinite");
-				for (n = 1; n <= 16; n++)
-				{
-					itoa(n, temp, 10);
-					uSendMessageText(w, CB_ADDSTRING, 0, temp);
-				}
-				uSendMessage(w, CB_SETCURSEL, cfg_loop, 0);
-
-				enable_fade( wnd, cfg_loop != 1 );
-				uSendDlgItemMessage( wnd, IDC_FADE, BM_SETCHECK, cfg_fade, 0 );
-				print_time_crap( cfg_fade_time, ( char * ) &temp );
-				uSetDlgItemText( wnd, IDC_FADE_TIME, ( char * ) &temp );
-
-				w = GetDlgItem(wnd, IDC_VOLRAMP);
-				uSendMessageText(w, CB_ADDSTRING, 0, "none");
-				uSendMessageText(w, CB_ADDSTRING, 0, "logarithmic");
-				uSendMessageText(w, CB_ADDSTRING, 0, "linear");
-				uSendMessageText(w, CB_ADDSTRING, 0, "XM=lin, else none");
-				uSendMessageText(w, CB_ADDSTRING, 0, "XM=lin, else log");
-				uSendMessage(w, CB_SETCURSEL, cfg_volramp, 0);
-
-				uSendDlgItemMessage(wnd, IDC_TAG, BM_SETCHECK, cfg_tag, 0);
-				uSendDlgItemMessage(wnd, IDC_TRIM, BM_SETCHECK, cfg_trim, 0);
-				/*uSendDlgItemMessage(wnd, IDC_SCAN, BM_SETCHECK, cfg_scan_subsongs, 0);*/
-				uSendDlgItemMessage(wnd, IDC_DYNAMIC_INFO, BM_SETCHECK, cfg_dynamic_info, 0);
-				uSendDlgItemMessage(wnd, IDC_MULTI_VALUE_TAGS, BM_SETCHECK, cfg_multi_value_tags, 0);
-
-				enable_chip(wnd, cfg_interp > 0);
-				uSendDlgItemMessage(wnd, IDC_CHIP, BM_SETCHECK, cfg_autochip, 0);
-				uSetDlgItemText(wnd, IDC_CHIP_FORCE, uStringPrintf("%u", (int)cfg_autochip_size_force));
-				uSetDlgItemText(wnd, IDC_CHIP_SCAN, uStringPrintf("%u", (int)cfg_autochip_size_scan));
-				uSetDlgItemText(wnd, IDC_CHIP_SCAN_THRESHOLD, uStringPrintf("%u", (int)cfg_autochip_scan_threshold));
-
-				uSetWindowLong(wnd, DWL_USER, 1);
-			}
-			return 1;
-		case WM_COMMAND:
-			switch(wp)
-			{
-				/*
-				case (CBN_SELCHANGE<<16)|IDC_SAMPLERATE:
-				{
-				pfc::string8 meh;
-				cfg_history_rate.get_item(meh, SendMessage((HWND)lp,CB_GETCURSEL,0,0));
-				cfg_samplerate = atoi(meh);
-				}			
-				break;
-				case (CBN_EDITCHANGE<<16)|IDC_SAMPLERATE:
-				*/
-			case (CBN_KILLFOCUS<<16)|IDC_SAMPLERATE:
-				{
-					int t = GetDlgItemInt(wnd,IDC_SAMPLERATE,0,0);
-					if (t<6000) t=6000;
-					else if (t>192000) t=192000;
-					cfg_samplerate = t;
-				}
-				break;
-			case (CBN_SELCHANGE<<16)|IDC_INTERPOLATION:
-				cfg_interp = uSendMessage((HWND)lp,CB_GETCURSEL,0,0);
-				enable_chip(wnd, cfg_interp > 0);
-				break;
-			case (CBN_SELCHANGE<<16)|IDC_LOOPS:
-				cfg_loop = uSendMessage((HWND)lp,CB_GETCURSEL,0,0);
-				enable_fade( wnd, cfg_loop != 1 );
-				break;
-			case (CBN_SELCHANGE<<16)|IDC_VOLRAMP:
-				cfg_volramp = uSendMessage((HWND)lp,CB_GETCURSEL,0,0);
-				break;
-			case IDC_TAG:
-				cfg_tag = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-				break;
-			case IDC_TRIM:
-				cfg_trim = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-				break;
-			/*case IDC_SCAN:
-				cfg_scan_subsongs = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-				break;*/
-			case IDC_DYNAMIC_INFO:
-				cfg_dynamic_info = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-				break;
-
-			case IDC_CHIP:
-				cfg_autochip = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-				break;
-
-			case IDC_FADE:
-				cfg_fade = uSendMessage( ( HWND ) lp, BM_GETCHECK, 0, 0 );
-				break;
-
-			case IDC_MULTI_VALUE_TAGS:
-				cfg_multi_value_tags = uSendMessage( ( HWND ) lp, BM_GETCHECK, 0, 0 );
-				break;
-
-			case ( EN_CHANGE << 16 ) | IDC_FADE_TIME:
-				{
-					int meh = parse_time_crap( string_utf8_from_window( ( HWND ) lp ) );
-					if ( meh != BORK_TIME ) cfg_fade_time = meh;
-				}
-				break;
-			case ( EN_KILLFOCUS << 16 ) | IDC_FADE_TIME:
-				{
-					char temp[16];
-					print_time_crap( cfg_fade_time, ( char * ) &temp );
-					uSetWindowText( ( HWND ) lp, temp );
-				}
-				break;
-
-			case (EN_CHANGE<<16)|IDC_CHIP_FORCE:
-				if (uGetWindowLong(wnd,DWL_USER))
-				{
-					int t = atoi(string_utf8_from_window((HWND)lp));
-					int scan = cfg_autochip_size_scan;
-					if (t < 1) t = 1;
-					if (t > scan) t = scan;
-					if (t > 10000) t = 10000;
-					cfg_autochip_size_force = t;
-				}
-				break;
-			case (EN_KILLFOCUS<<16)|IDC_CHIP_FORCE:
-				{
-					uSetWindowText((HWND)lp, uStringPrintf("%u", (int)cfg_autochip_size_force));
-				}
-				break;
-
-			case (EN_CHANGE<<16)|IDC_CHIP_SCAN:
-				if (uGetWindowLong(wnd,DWL_USER))
-				{
-					int t = atoi(string_utf8_from_window((HWND)lp));
-					int force = cfg_autochip_size_force;
-					if (t < 1) t = 1;
-					if (t <= force) t = force + 1;
-					if (t > 20000) t = 20000;
-					cfg_autochip_size_scan = t;
-				}
-				break;
-			case (EN_KILLFOCUS<<16)|IDC_CHIP_SCAN:
-				{
-					uSetWindowText((HWND)lp, uStringPrintf("%u", (int)cfg_autochip_size_scan));
-				}
-				break;
-
-			case (EN_CHANGE<<16)|IDC_CHIP_SCAN_THRESHOLD:
-				if (uGetWindowLong(wnd,DWL_USER))
-				{
-					int t = atoi(string_utf8_from_window((HWND)lp));
-					if (t < 1) t = 1;
-					if (t > 100) t = 100;
-					cfg_autochip_scan_threshold = t;
-				}
-				break;
-			case (EN_KILLFOCUS<<16)|IDC_CHIP_SCAN_THRESHOLD:
-				{
-					uSetWindowText((HWND)lp, uStringPrintf("%u", (int)cfg_autochip_scan_threshold));
-				}
-				break;
-
-			}
-			break;
-		case WM_DESTROY:
-			char temp[16];
-			itoa(cfg_samplerate, temp, 10);
-			cfg_history_rate.add_item(temp);
-			break;
-		}
-		return 0;
-	}
-
+class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
 public:
-	virtual HWND create(HWND parent)
+	//Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us
+	CMyPreferences(preferences_page_callback::ptr callback) : m_callback(callback) {}
+
+	//Note that we don't bother doing anything regarding destruction of our class.
+	//The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
+
+
+	//dialog resource ID
+	enum {IDD = IDD_MOD_CONFIG};
+	// preferences_page_instance methods (not all of them - get_wnd() is supplied by preferences_page_impl helpers)
+	t_uint32 get_state();
+	void apply();
+	void reset();
+
+	//WTL message map
+	BEGIN_MSG_MAP(CMyPreferences)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_EDITCHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_SELCHANGE, OnSelectionChange)
+		DROPDOWN_HISTORY_HANDLER(IDC_SAMPLERATE, cfg_history_rate)
+		COMMAND_HANDLER_EX(IDC_INTERPOLATION, CBN_SELCHANGE, OnSelectionChange)
+		COMMAND_HANDLER_EX(IDC_LOOPS, CBN_SELCHANGE, OnSelectionChange)
+		COMMAND_HANDLER_EX(IDC_VOLRAMP, CBN_SELCHANGE, OnSelectionChange)
+		COMMAND_HANDLER_EX(IDC_TAG, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_TRIM, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_DYNAMIC_INFO, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_CHIP, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FADE, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_MULTI_VALUE_TAGS, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FADE_TIME, EN_CHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_CHIP_FORCE, EN_CHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_CHIP_SCAN, EN_CHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_CHIP_SCAN_THRESHOLD, EN_CHANGE, OnEditChange)
+	END_MSG_MAP()
+private:
+	BOOL OnInitDialog(CWindow, LPARAM);
+	void OnEditChange(UINT, int, CWindow);
+	void OnSelectionChange(UINT, int, CWindow);
+	void OnButtonClick(UINT, int, CWindow);
+	bool HasChanged();
+	void OnChanged();
+
+	void enable_chip(BOOL status);
+	void enable_fade(BOOL status);
+
+	const preferences_page_callback::ptr m_callback;
+};
+
+void CMyPreferences::enable_chip(BOOL status)
+{
+	GetDlgItem(IDC_CHIP_BOX).EnableWindow(status);
+	GetDlgItem(IDC_CHIP).EnableWindow(status);
+	GetDlgItem(IDC_CHIP_FORCE).EnableWindow(status);
+	GetDlgItem(IDC_CHIP_SCAN).EnableWindow(status);
+	GetDlgItem(IDC_CHIP_SCAN_THRESHOLD).EnableWindow(status);
+	GetDlgItem(IDC_CHIP_TEXT_0).EnableWindow(status);
+	GetDlgItem(IDC_CHIP_TEXT_1).EnableWindow(status);
+	GetDlgItem(IDC_CHIP_TEXT_2).EnableWindow(status);
+	GetDlgItem(IDC_CHIP_TEXT_3).EnableWindow(status);
+	GetDlgItem(IDC_CHIP_TEXT_4).EnableWindow(status);
+	GetDlgItem(IDC_CHIP_TEXT_5).EnableWindow(status);
+}
+
+void CMyPreferences::enable_fade(BOOL status)
+{
+	GetDlgItem(IDC_FADE).EnableWindow(status);
+	GetDlgItem(IDC_FADE_TIME).EnableWindow(status);
+	GetDlgItem(IDC_FADE_TEXT).EnableWindow(status);
+}
+
+BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
+	CWindow w;
+	char temp[16];
+	int n;
+	for(n=tabsize(srate_tab);n--;)
 	{
-		return uCreateDialog(IDD_MOD_CONFIG,parent,ConfigProc);
+		if (srate_tab[n] != cfg_samplerate)
+		{
+			itoa(srate_tab[n], temp, 10);
+			cfg_history_rate.add_item(temp);
+		}
 	}
-	GUID get_guid()
+	itoa(cfg_samplerate, temp, 10);
+	cfg_history_rate.add_item(temp);
+	w = GetDlgItem( IDC_SAMPLERATE );
+	cfg_history_rate.setup_dropdown(w);
+	::SendMessage(w, CB_SETCURSEL, 0, 0);
+
+	w = GetDlgItem(IDC_INTERPOLATION);
+	uSendMessageText(w, CB_ADDSTRING, 0, "none");
+	uSendMessageText(w, CB_ADDSTRING, 0, "linear");
+	uSendMessageText(w, CB_ADDSTRING, 0, "cubic");
+	::SendMessage(w, CB_SETCURSEL, cfg_interp, 0);
+
+	w = GetDlgItem(IDC_LOOPS);
+	uSendMessageText(w, CB_ADDSTRING, 0, "none");
+	uSendMessageText(w, CB_ADDSTRING, 0, "infinite");
+	for (n = 1; n <= 16; n++)
 	{
+		itoa(n, temp, 10);
+		uSendMessageText(w, CB_ADDSTRING, 0, temp);
+	}
+	::SendMessage(w, CB_SETCURSEL, cfg_loop, 0);
+
+	enable_fade( cfg_loop != 1 );
+	SendDlgItemMessage( IDC_FADE, BM_SETCHECK, cfg_fade );
+	print_time_crap( cfg_fade_time, ( char * ) &temp );
+	uSetDlgItemText( m_hWnd, IDC_FADE_TIME, ( char * ) &temp );
+
+	w = GetDlgItem(IDC_VOLRAMP);
+	uSendMessageText(w, CB_ADDSTRING, 0, "none");
+	uSendMessageText(w, CB_ADDSTRING, 0, "logarithmic");
+	uSendMessageText(w, CB_ADDSTRING, 0, "linear");
+	uSendMessageText(w, CB_ADDSTRING, 0, "XM=lin, else none");
+	uSendMessageText(w, CB_ADDSTRING, 0, "XM=lin, else log");
+	::SendMessage(w, CB_SETCURSEL, cfg_volramp, 0);
+
+	SendDlgItemMessage( IDC_TAG, BM_SETCHECK, cfg_tag );
+	SendDlgItemMessage( IDC_TRIM, BM_SETCHECK, cfg_trim );
+	SendDlgItemMessage( IDC_DYNAMIC_INFO, BM_SETCHECK, cfg_dynamic_info );
+	SendDlgItemMessage( IDC_MULTI_VALUE_TAGS, BM_SETCHECK, cfg_multi_value_tags );
+
+	enable_chip( cfg_interp > 0 );
+	SendDlgItemMessage( IDC_CHIP, BM_SETCHECK, cfg_autochip, 0 );
+	SetDlgItemInt( IDC_CHIP_FORCE, cfg_autochip_size_force, FALSE );
+	SetDlgItemInt( IDC_CHIP_SCAN, cfg_autochip_size_scan, FALSE );
+	SetDlgItemInt( IDC_CHIP_SCAN_THRESHOLD, cfg_autochip_scan_threshold, FALSE );
+
+	SetWindowLong( DWL_USER, 1 );
+
+	return TRUE;
+}
+
+void CMyPreferences::OnEditChange(UINT, int, CWindow) {
+	if ( GetWindowLong( DWL_USER ) )
+	{
+		OnChanged();
+	}
+}
+
+void CMyPreferences::OnSelectionChange(UINT, int, CWindow) {
+	enable_chip( SendDlgItemMessage( IDC_INTERPOLATION, CB_GETCURSEL ) > 0 );
+	enable_fade( SendDlgItemMessage( IDC_LOOPS, CB_GETCURSEL ) != 1 );
+	OnChanged();
+}
+
+void CMyPreferences::OnButtonClick(UINT, int, CWindow) {
+	OnChanged();
+}
+
+t_uint32 CMyPreferences::get_state() {
+	t_uint32 state = preferences_state::resettable;
+	if (HasChanged()) state |= preferences_state::changed;
+	return state;
+}
+
+void CMyPreferences::reset() {
+	char temp[16];
+	SetDlgItemInt( IDC_SAMPLERATE, default_cfg_samplerate, FALSE );
+	SendDlgItemMessage( IDC_INTERPOLATION, CB_SETCURSEL, default_cfg_interp );
+	SendDlgItemMessage( IDC_LOOPS, CB_SETCURSEL, default_cfg_loop );
+	enable_fade( default_cfg_loop != 1 );
+	SendDlgItemMessage( IDC_FADE, BM_SETCHECK, default_cfg_fade );
+	print_time_crap( default_cfg_fade_time, ( char * ) &temp );
+	uSetDlgItemText( m_hWnd, IDC_FADE_TIME, ( char * ) &temp );
+	SendDlgItemMessage( IDC_VOLRAMP, CB_SETCURSEL, default_cfg_volramp );
+	SendDlgItemMessage( IDC_TAG, BM_SETCHECK, default_cfg_tag );
+	SendDlgItemMessage( IDC_TRIM, BM_SETCHECK, default_cfg_trim );
+	SendDlgItemMessage( IDC_DYNAMIC_INFO, BM_SETCHECK, default_cfg_dynamic_info );
+	SendDlgItemMessage( IDC_MULTI_VALUE_TAGS, BM_SETCHECK, default_cfg_multi_value_tags );
+	enable_chip( default_cfg_interp > 0 );
+	SendDlgItemMessage( IDC_CHIP, BM_SETCHECK, default_cfg_autochip, 0 );
+	SetDlgItemInt( IDC_CHIP_FORCE, default_cfg_autochip_size_force, FALSE );
+	SetDlgItemInt( IDC_CHIP_SCAN, default_cfg_autochip_size_scan, FALSE );
+	SetDlgItemInt( IDC_CHIP_SCAN_THRESHOLD, default_cfg_autochip_scan_threshold, FALSE );
+
+	OnChanged();
+}
+
+void CMyPreferences::apply() {
+	char temp[16];
+	int t = GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE );
+	if ( t < 6000 ) t = 6000;
+	else if ( t > 192000 ) t = 192000;
+	SetDlgItemInt( IDC_SAMPLERATE, t, FALSE );
+	itoa( t, temp, 10 );
+	cfg_history_rate.add_item(temp);
+	cfg_samplerate = t;
+	cfg_interp = SendDlgItemMessage( IDC_INTERPOLATION, CB_GETCURSEL );
+	cfg_loop = SendDlgItemMessage( IDC_LOOPS, CB_GETCURSEL );
+	cfg_fade = SendDlgItemMessage( IDC_FADE, BM_GETCHECK );
+	t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_FADE_TIME ) ) );
+	if ( t != BORK_TIME ) cfg_fade_time = t;
+	else
+	{
+		print_time_crap( cfg_fade_time, ( char * ) &temp );
+		uSetDlgItemText( m_hWnd, IDC_FADE_TIME, ( char * ) &temp );
+	}
+	cfg_volramp = SendDlgItemMessage( IDC_VOLRAMP, CB_GETCURSEL );
+	cfg_tag = SendDlgItemMessage( IDC_TAG, BM_GETCHECK );
+	cfg_trim = SendDlgItemMessage( IDC_TRIM, BM_GETCHECK );
+	cfg_dynamic_info = SendDlgItemMessage( IDC_DYNAMIC_INFO, BM_GETCHECK );
+	cfg_multi_value_tags = SendDlgItemMessage( IDC_MULTI_VALUE_TAGS, BM_GETCHECK );
+	cfg_autochip = SendDlgItemMessage( IDC_CHIP, BM_GETCHECK );
+	t = GetDlgItemInt( IDC_CHIP_FORCE, NULL, FALSE );
+	int scan = GetDlgItemInt( IDC_CHIP_SCAN, NULL, FALSE );
+	if ( t < 1 ) t = 1;
+	if ( t > scan ) t = scan;
+	if ( t > 10000 ) t = 10000;
+	SetDlgItemInt( IDC_CHIP_FORCE, t, FALSE );
+	cfg_autochip_size_force = t;
+	if ( scan < 1 ) scan = 1;
+	if ( scan <= t ) scan = t + 1;
+	if ( scan > 20000 ) scan = 20000;
+	SetDlgItemInt( IDC_CHIP_SCAN, scan, FALSE );
+	cfg_autochip_size_scan = scan;
+	t = GetDlgItemInt( IDC_CHIP_SCAN_THRESHOLD, NULL, FALSE );
+	if ( t < 1 ) t = 1;
+	else if ( t > 100 ) t = 100;
+	SetDlgItemInt( IDC_CHIP_SCAN_THRESHOLD, t, FALSE );
+	cfg_autochip_scan_threshold = t;
+	
+	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
+}
+
+bool CMyPreferences::HasChanged() {
+	//returns whether our dialog content is different from the current configuration (whether the apply button should be enabled or not)
+	bool changed = false;
+	if ( !changed && GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE ) != cfg_samplerate ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_INTERPOLATION, CB_GETCURSEL ) != cfg_interp ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_LOOPS, CB_GETCURSEL ) != cfg_loop ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_FADE, BM_GETCHECK ) != cfg_fade ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_VOLRAMP, CB_GETCURSEL ) != cfg_volramp ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_TAG, BM_GETCHECK ) != cfg_tag ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_TRIM, BM_GETCHECK ) != cfg_trim ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_DYNAMIC_INFO, BM_GETCHECK ) != cfg_dynamic_info ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_MULTI_VALUE_TAGS, BM_GETCHECK ) != cfg_multi_value_tags ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_CHIP, BM_GETCHECK ) != cfg_autochip ) changed = true;
+	if ( !changed && GetDlgItemInt( IDC_CHIP_FORCE, NULL, FALSE ) != cfg_autochip_size_force ) changed = true;
+	if ( !changed && GetDlgItemInt( IDC_CHIP_SCAN, NULL, FALSE ) != cfg_autochip_size_scan ) changed = true;
+	if ( !changed && GetDlgItemInt( IDC_CHIP_SCAN_THRESHOLD, NULL, FALSE ) != cfg_autochip_scan_threshold ) changed = true;
+	if ( !changed )
+	{
+		int t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_FADE_TIME ) ) );
+		if ( t != BORK_TIME && t != cfg_fade_time ) changed = true;
+	}
+	return changed;
+}
+void CMyPreferences::OnChanged() {
+	//tell the host that our state has changed to enable/disable the apply button appropriately.
+	m_callback->on_state_changed();
+}
+
+class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
+	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
+public:
+	const char * get_name() {return "DUMB module decoder";}
+	GUID get_guid() {
 		// {2FB4FC78-D302-46ce-9F19-47368EE8ED08}
-		static const GUID guid = 
-		{ 0x2fb4fc78, 0xd302, 0x46ce, { 0x9f, 0x19, 0x47, 0x36, 0x8e, 0xe8, 0xed, 0x8 } };
+		static const GUID guid = { 0x2fb4fc78, 0xd302, 0x46ce, { 0x9f, 0x19, 0x47, 0x36, 0x8e, 0xe8, 0xed, 0x8 } };
 		return guid;
 	}
-	virtual const char * get_name() {return "DUMB module decoder";}
 	GUID get_parent_guid() {return guid_input;}
-
-	bool reset_query() {return true;}
-	void reset()
-	{
-		cfg_samplerate = 44100;
-		cfg_interp = 2;
-		cfg_fade = 0;
-		cfg_fade_time = 10000;
-		cfg_volramp = 0;
-
-		cfg_autochip = 0;
-		cfg_autochip_size_force = 100;
-		cfg_autochip_size_scan = 500;
-		cfg_autochip_scan_threshold = 12;
-
-		cfg_loop = 0;
-
-		cfg_tag = 0;
-
-		cfg_trim = 0;
-
-		/*cfg_scan_subsongs = 0;*/
-
-		cfg_dynamic_info = 0;
-
-		cfg_multi_value_tags = 0;
-	}
 };
 
 class mod_file_types : public input_file_type
@@ -4104,9 +4134,11 @@ public:
 };
 #endif
 
-static input_factory_t           <input_mod>                      g_input_mod_factory;
-static preferences_page_factory_t<preferences_page_mod>           g_config_mod_factory;
-static service_factory_single_t  <mod_file_types> g_input_file_type_mod_factory;
-//static menu_item_factory_t       <context_mod>                    g_menu_item_mod_factory;
+static input_factory_t           <input_mod>               g_input_mod_factory;
+static preferences_page_factory_t<preferences_page_myimpl> g_config_mod_factory;
+static service_factory_single_t  <mod_file_types>          g_input_file_type_mod_factory;
+//static menu_item_factory_t       <context_mod>             g_menu_item_mod_factory;
 
 DECLARE_COMPONENT_VERSION( "DUMB module decoder", MYVERSION, "Using DUMB v" DUMB_VERSION_STR ",\nwith several modifications.\n\nhttp://dumb.sourceforge.net/");
+
+VALIDATE_COMPONENT_FILENAME("foo_dumb.dll");

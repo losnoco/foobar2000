@@ -1,7 +1,11 @@
-#define MY_VERSION "1.1"
+#define MY_VERSION "1.2"
 
 /*
 	changelog
+
+2010-01-14 01:47 UTC - kode54
+- Fixed componentversion about message declaration
+- Version is now 1.2
 
 2009-10-31 12:39 UTC - kode54
 - Updated to File_Extractor v1.0.0
@@ -137,4 +141,4 @@ public:
 static archive_factory_t< archive_gz >   g_archive_gz_factory;
 static unpacker_factory_t< unpacker_gz > g_unpacker_gz_factory;
 
-DECLARE_COMPONENT_VERSION( "GZIP reader", MY_VERSION, (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "GZIP reader", MY_VERSION, "" );

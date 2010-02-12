@@ -21,6 +21,10 @@
 	2004-02-24 21:44 UTC - kode54
 	- Disable function is now a little saner
 	- Version is now 0.4
+
+	2010-01-11 20:17 UTC - kode54
+	- Added filename validator
+	- Version is now 0.5
 */
 
 #define _WIN32_WINNT 0x501
@@ -38,11 +42,13 @@
 
 DECLARE_COMPONENT_VERSION(
 	"Pause on Lock",
-	"0.4",
+	"0.5",
 	"Pause/Resume when Workstation is Locked/Unlocked\n\n"
 	"for foobar2000 v0.9\n\n"
 	"(c) Kreisquadratur 2004\n"
-	"(c) Chris Moeller 2009");
+	"(c) Chris Moeller 2010");
+
+VALIDATE_COMPONENT_FILENAME("foo_lock.dll");
 
 // {79FC6DE5-0291-47ab-A806-B4764B1C2279}
 static const GUID guid_cfg_enabled = 

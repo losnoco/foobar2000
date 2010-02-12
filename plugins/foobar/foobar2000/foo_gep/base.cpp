@@ -136,7 +136,7 @@ void input_gep::setup_effects( bool echo )
 {
 	if ( effects_enable )
 	{
-		Music_Emu::equalizer_t eq;
+		gme_t::equalizer_t eq;
 		// bass - logarithmic, 2 to 8194 Hz
 		double bass = double( 255 - effects_bass ) / 255;
 		eq.bass = std::pow( 2.0, bass * 13 ) + 2.0;
@@ -149,7 +149,7 @@ void input_gep::setup_effects( bool echo )
 
 		if ( echo && effects_echo_depth > 0 )
 		{
-			if ( ! buffer ) buffer = new Effects_Buffer;
+			if ( ! buffer ) buffer = new Simple_Effects_Buffer;
 			emu->set_buffer( buffer );
 		}
 	}
@@ -160,12 +160,12 @@ void input_gep::setup_effects_2()
 	if ( effects_enable && effects_echo_depth > 0 )
 	{
 		double depth = double( effects_echo_depth ) / 255;
-		Effects_Buffer::config_t & cfg = buffer->config();
+		Simple_Effects_Buffer::config_t & cfg = buffer->config();
 
-		cfg.simple.stereo = 0.6 * depth;
-		cfg.simple.echo = 0.30 * depth;
-		cfg.simple.enabled = true;
+		cfg.stereo = 0.6 * depth;
+		cfg.echo = 0.30 * depth;
 		cfg.enabled = true;
+		cfg.surround = true;
 
 		buffer->apply_config();
 	}

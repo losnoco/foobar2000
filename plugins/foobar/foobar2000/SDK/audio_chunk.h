@@ -1,9 +1,14 @@
-#ifndef _AUDIO_CHUNK_H_
-#define _AUDIO_CHUNK_H_
+//! Thrown when audio_chunk sample rate or channel mapping changes in mid-stream and the code receiving audio_chunks can't deal with that scenario.
+PFC_DECLARE_EXCEPTION(exception_unexpected_audio_format_change, exception_io_data, "Unexpected audio format change" );
 
 //! Interface to container of a chunk of audio data. See audio_chunk_impl for an implementation.
 class NOVTABLE audio_chunk {
 public:
+
+	enum {
+		sample_rate_min = 1000, sample_rate_max = 2822400
+	};
+	static bool g_is_valid_sample_rate(t_uint32 p_val) {return p_val >= sample_rate_min && p_val <= sample_rate_max;}
 	
 	//! Channel map flag declarations. Note that order of interleaved channel data in the stream is same as order of these flags.
 	enum
@@ -30,12 +35,15 @@ public:
 		channel_config_mono = channel_front_center,
 		channel_config_stereo = channel_front_left | channel_front_right,
 		channel_config_5point1 = channel_front_left | channel_front_right | channel_back_left | channel_back_right | channel_front_center | channel_lfe,
+		channel_config_7point1 = channel_config_5point1 | channel_side_left | channel_side_right,
 
 		defined_channel_count = 18,
 	};
 
-	//! Helper function; guesses default channel map for specified channel count.
+	//! Helper function; guesses default channel map for the specified channel count. Returns 0 on failure.
 	static unsigned g_guess_channel_config(unsigned count);
+	//! Helper function; determines channel map for the specified channel count according to Xiph specs. Throws exception_io_data on failure.
+	static unsigned g_guess_channel_config_xiph(unsigned count);
 
 #ifdef _WIN32
 	//! Helper function; translates audio_chunk channel map to WAVEFORMATEXTENSIBLE channel map.
@@ -70,6 +78,8 @@ public:
 	virtual void set_srate(unsigned val) = 0;
 	//! Retrieves channel count of contained audio data.
 	virtual unsigned get_channels() const = 0;
+	//! Helper - for consistency - same as get_channels().
+	inline unsigned get_channel_count() const {return get_channels();}
 	//! Retrieves channel map of contained audio data. Conditions where number of channels specified by channel map don't match get_channels() return value should not be possible.
 	virtual unsigned get_channel_config() const = 0;
 	//! Sets channel count / channel map.
@@ -91,7 +101,7 @@ public:
 	//! Helper; sets channel count to specified value and uses default channel map for this channel count.
 	void set_channels(unsigned val) {set_channels(val,g_guess_channel_config(val));}
 
-
+	
 	//! Helper; resizes audio data buffer when it's current size is smaller than requested.
 	inline void grow_data_size(t_size p_requested) {if (p_requested > get_data_size()) set_data_size(p_requested);}
 
@@ -163,10 +173,16 @@ public:
 	void pad_with_silence(t_size samples);
 	void insert_silence_fromstart(t_size samples);
 	t_size skip_first_samples(t_size samples);
+	void set_silence(t_size samples);
+
+	//! Simple function to get original PCM stream back. Assumes host's endianness, integers are signed - including the 8bit mode; 32bit mode assumed to be float.
+	//! @returns false when the conversion could not be performed because of unsupported bit depth etc.
+	bool to_raw_data(class mem_block_container & out, t_uint32 bps) const;
 
 
 	//! Helper, calculates peak value of data in the chunk. The optional parameter specifies initial peak value, to simplify calling code.
-	audio_sample get_peak(audio_sample p_peak = 0) const;
+	audio_sample get_peak(audio_sample p_peak) const;
+	audio_sample get_peak() const;
 
 	//! Helper function; scales entire chunk content by specified value.
 	void scale(audio_sample p_value);
@@ -219,6 +235,7 @@ public:
 };
 
 typedef audio_chunk_impl_t<> audio_chunk_impl;
+typedef audio_chunk_impl_t<pfc::alloc_fast_aggressive> audio_chunk_impl_temporary;
 typedef audio_chunk_impl audio_chunk_i;//for compatibility
 
 //! Implements const methods of audio_chunk only, referring to an external buffer. For temporary use only (does not maintain own storage), e.g.: somefunc( audio_chunk_temp_impl(mybuffer,....) );
@@ -251,4 +268,79 @@ private:
 	const audio_sample * m_data;
 };
 
-#endif //_AUDIO_CHUNK_H_
+
+
+//! Duration counter class - accumulates duration using sample values, without any kind of rounding error accumulation.
+class duration_counter {
+public:
+	duration_counter() : m_offset() {
+	}
+	void set(double v) {
+		m_sampleCounts.remove_all();
+		m_offset = v;
+	}
+	void reset() {
+		set(0);
+	}
+
+	void add(double v) {m_offset += v;}
+	void subtract(double v) {m_offset -= v;}
+
+	double query() const {
+		double acc = m_offset;
+		for(t_map::const_iterator walk = m_sampleCounts.first(); walk.is_valid(); ++walk) {
+			acc += audio_math::samples_to_time(walk->m_value, walk->m_key);
+		}
+		return acc;
+	}
+	void add(const audio_chunk & c) {
+		add(c.get_sample_count(), c.get_sample_rate());
+	}
+	void add(t_uint64 sampleCount, t_uint32 sampleRate) {
+		PFC_ASSERT( sampleRate > 0 );
+		if (sampleRate > 0 && sampleCount > 0) {
+			m_sampleCounts.find_or_add(sampleRate) += sampleCount;
+		}
+	}
+	void add(const duration_counter & other) {
+		add(other.m_offset);
+		for(t_map::const_iterator walk = other.m_sampleCounts.first(); walk.is_valid(); ++walk) {
+			add(walk->m_value, walk->m_key);
+		}
+	}
+	void subtract(const duration_counter & other) {
+		subtract(other.m_offset);
+		for(t_map::const_iterator walk = other.m_sampleCounts.first(); walk.is_valid(); ++walk) {
+			subtract(walk->m_value, walk->m_key);
+		}
+	}
+	void subtract(t_uint64 sampleCount, t_uint32 sampleRate) {
+		PFC_ASSERT( sampleRate > 0 );
+		if (sampleRate > 0 && sampleCount > 0) {
+			t_uint64 * val = m_sampleCounts.query_ptr(sampleRate);
+			if (val == NULL) throw pfc::exception_invalid_params();
+			if (*val < sampleCount) throw pfc::exception_invalid_params();
+			else if (*val == sampleCount) {
+				m_sampleCounts.remove(sampleRate);
+			} else {
+				*val -= sampleCount;
+			}
+			
+		}
+	}
+	void subtract(const audio_chunk & c) {
+		subtract(c.get_sample_count(), c.get_sample_rate());
+	}
+	template<typename t_source> duration_counter & operator+=(const t_source & source) {add(source); return *this;}
+	template<typename t_source> duration_counter & operator-=(const t_source & source) {subtract(source); return *this;}
+	template<typename t_source> duration_counter & operator=(const t_source & source) {reset(); add(source); return *this;}
+private:
+	double m_offset;
+	typedef pfc::map_t<t_uint32, t_uint64> t_map;
+	t_map m_sampleCounts;
+};
+
+class audio_chunk_partial_ref : public audio_chunk_temp_impl {
+public:
+	audio_chunk_partial_ref(const audio_chunk & chunk, t_size base, t_size count) : audio_chunk_temp_impl(chunk.get_data() + base * chunk.get_channels(), count, chunk.get_sample_rate(), chunk.get_channels(), chunk.get_channel_config()) {}
+};

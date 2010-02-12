@@ -1,14 +1,11 @@
-#ifndef _FOOBAR2000_SDK_REPLAYGAIN_H_
-#define _FOOBAR2000_SDK_REPLAYGAIN_H_
-
 //! Structure storing ReplayGain configuration: album/track source data modes, gain/peak processing modes and preamp values.
 struct t_replaygain_config
 {
-	enum t_source_mode {source_mode_none,source_mode_track,source_mode_album};
-	enum t_processing_mode {processing_mode_none,processing_mode_gain,processing_mode_gain_and_peak,processing_mode_peak};
+	enum /*t_source_mode*/ {source_mode_none,source_mode_track,source_mode_album};
+	enum /*t_processing_mode*/ {processing_mode_none,processing_mode_gain,processing_mode_gain_and_peak,processing_mode_peak};
+	typedef t_uint32 t_source_mode; typedef t_uint32 t_processing_mode;
 
 	t_replaygain_config() {reset();}
-	t_replaygain_config(const t_replaygain_config & p_source) {*this = p_source;}
 	t_replaygain_config(t_source_mode p_source_mode,t_processing_mode p_processing_mode,float p_preamp_without_rg, float p_preamp_with_rg)
 		: m_source_mode(p_source_mode), m_processing_mode(p_processing_mode), m_preamp_without_rg(p_preamp_without_rg), m_preamp_with_rg(p_preamp_with_rg) {}
 
@@ -23,7 +20,20 @@ struct t_replaygain_config
 
 	void format_name(pfc::string_base & p_out) const;
 	bool is_active() const;
+
+	static bool equals(const t_replaygain_config & v1, const t_replaygain_config & v2) {
+		return v1.m_source_mode == v2.m_source_mode && v1.m_processing_mode == v2.m_processing_mode && v1.m_preamp_without_rg == v2.m_preamp_without_rg && v1.m_preamp_with_rg == v2.m_preamp_with_rg;
+	}
+	bool operator==(const t_replaygain_config & other) const {return equals(*this, other);}
+	bool operator!=(const t_replaygain_config & other) const {return !equals(*this, other);}
 };
+
+FB2K_STREAM_READER_OVERLOAD(t_replaygain_config) {
+	return stream >> value.m_source_mode >> value.m_processing_mode >> value.m_preamp_with_rg >> value.m_preamp_with_rg;
+}
+FB2K_STREAM_WRITER_OVERLOAD(t_replaygain_config) {
+	return stream << value.m_source_mode << value.m_processing_mode << value.m_preamp_with_rg << value.m_preamp_with_rg;
+}
 
 //! Core service providing methods to retrieve/alter playback ReplayGain settings, as well as use ReplayGain configuration dialog.
 class NOVTABLE replaygain_manager : public service_base {
@@ -42,6 +52,11 @@ public:
 	//! Alters playback ReplayGain settings.
 	virtual void set_core_settings(const t_replaygain_config & p_config) = 0;
 
+	//! New in 1.0
+	virtual void configure_embedded_set(HWND wnd, t_replaygain_config const & p_data) = 0;
+	//! New in 1.0
+	virtual void get_core_defaults(t_replaygain_config & out) = 0;
+
 	//! Helper; queries scale value for specified item according to core playback settings.
 	audio_sample core_settings_query_scale(const file_info & p_info);
 	//! Helper; queries scale value for specified item according to core playback settings.
@@ -49,5 +64,3 @@ public:
 
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(replaygain_manager);
 };
-
-#endif //_FOOBAR2000_SDK_REPLAYGAIN_H_

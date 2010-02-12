@@ -203,8 +203,7 @@ bool audio_chunk::is_valid() const
 {
 	unsigned nch = get_channels();
 	if (nch==0 || nch>256) return false;
-	unsigned srate = get_srate();
-	if (srate<1000 || srate>1000000) return false;
+	if (!g_is_valid_sample_rate(get_srate())) return false;
 	t_size samples = get_sample_count();
 	if (samples==0 || samples >= 0x80000000 / (sizeof(audio_sample) * nch) ) return false;
 	t_size size = get_data_size();
@@ -239,13 +238,19 @@ void audio_chunk::pad_with_silence(t_size samples) {
 	if (samples > get_sample_count())
 	{
 		t_size old_size = get_sample_count() * get_channels();
-		t_size new_size = samples * get_channels();
+		t_size new_size = pfc::multiply_guarded(samples,get_channels());
 		set_data_size(new_size);
 		pfc::memset_t(get_data() + old_size,(audio_sample)0,new_size - old_size);
 		set_sample_count(samples);
 	}
 }
 
+void audio_chunk::set_silence(t_size samples) {
+	t_size items = samples * get_channels();
+	set_data_size(items);
+	pfc::memset_null_t(get_data(), items);
+	set_sample_count(samples);
+}
 void audio_chunk::insert_silence_fromstart(t_size samples) {
 	t_size old_size = get_sample_count() * get_channels();
 	t_size delta = samples * get_channels();
@@ -278,13 +283,59 @@ t_size audio_chunk::skip_first_samples(t_size samples_delta)
 	}
 }
 
-audio_sample audio_chunk::get_peak(audio_sample peak) const
-{
-	return pfc::max_t<audio_sample>(peak,audio_math::calculate_peak(get_data(),get_sample_count() * get_channels() ));
+audio_sample audio_chunk::get_peak(audio_sample p_peak) const {
+	return pfc::max_t(p_peak, get_peak());
+}
+
+audio_sample audio_chunk::get_peak() const {
+	return audio_math::calculate_peak(get_data(),get_sample_count() * get_channels());
 }
 
 void audio_chunk::scale(audio_sample p_value)
 {
 	audio_sample * ptr = get_data();
 	audio_math::scale(ptr,get_sample_count() * get_channels(),ptr,p_value);
+}
+
+
+static void render_8bit(const audio_sample * in, t_size inLen, void * out) {
+	t_int8 * outWalk = reinterpret_cast<t_int8*>(out);
+	for(t_size walk = 0; walk < inLen; ++walk) {
+		*outWalk++ = (t_int8)pfc::clip_t<t_int32>(audio_math::rint32( in[walk] * 0x80 ), -128, 127);
+	}
+}
+static void render_24bit(const audio_sample * in, t_size inLen, void * out) {
+	t_uint8 * outWalk = reinterpret_cast<t_uint8*>(out);
+	for(t_size walk = 0; walk < inLen; ++walk) {
+		const t_int32 v = pfc::clip_t<t_int32>(audio_math::rint32( in[walk] * 0x800000 ), -128 * 256 * 256, 128 * 256 * 256 - 1);
+		*(outWalk ++) = (t_uint8) (v & 0xFF);
+		*(outWalk ++) = (t_uint8) ((v >> 8) & 0xFF);
+		*(outWalk ++) = (t_uint8) ((v >> 16) & 0xFF);
+	}
+}
+
+bool audio_chunk::to_raw_data(mem_block_container & out, t_uint32 bps) const {
+	const t_size samples = get_sample_count();
+	const t_size dataLen = pfc::multiply_guarded(samples, (t_size)get_channel_count());
+	switch(bps) {
+		case 8:
+			out.set_size(dataLen);
+			render_8bit(get_data(), dataLen, out.get_ptr());
+			break;
+		case 16:
+			out.set_size(dataLen * 2);
+			audio_math::convert_to_int16(get_data(), dataLen, reinterpret_cast<t_int16*>(out.get_ptr()), 1.0);
+			break;
+		case 24:
+			out.set_size(dataLen * 3);
+			render_24bit(get_data(), dataLen, out.get_ptr());
+			break;
+		case 32:
+			PFC_STATIC_ASSERT( sizeof(audio_sample) == 4 );
+			out.set(get_data(), dataLen * sizeof(audio_sample));
+			break;
+		default:
+			return false;
+	}
+	return true;
 }

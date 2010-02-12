@@ -2,7 +2,7 @@
 
 int playable_location::g_compare(const playable_location & p_item1,const playable_location & p_item2) {
 	int ret = metadb::path_compare(p_item1.get_path(),p_item2.get_path());
-	if (ret != 0) return 0;
+	if (ret != 0) return ret;
 	return pfc::compare_t(p_item1.get_subsong(),p_item2.get_subsong());
 }
 

@@ -8,7 +8,7 @@
 
 #define PFC_DLL_EXPORT
 
-#if defined(_WIN32) || defined(_WIN32_WCE)
+#ifdef _WINDOWS
 
 #ifndef STRICT
 #define STRICT
@@ -86,16 +86,25 @@ inline bool operator!=(const GUID & p_item1,const GUID & p_item2) {
 #include <math.h>
 #include <float.h>
 
+#define _PFC_WIDESTRING(_String) L ## _String
+#define PFC_WIDESTRING(_String) _PFC_WIDESTRING(_String)
 
 #ifndef _DEBUG
 #define PFC_ASSERT(_Expression)     ((void)0)
+#define PFC_ASSERT_SUCCESS(_Expression) (void)( (_Expression), 0)
+#define PFC_ASSERT_NO_EXCEPTION(_Expression) { _Expression; }
 #else
+
 #ifdef _WIN32
 namespace pfc { void myassert(const wchar_t * _Message, const wchar_t *_File, unsigned _Line); }
-#define PFC_ASSERT(_Expression) (void)( (!!(_Expression)) || (pfc::myassert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0) )
+#define PFC_ASSERT(_Expression) (void)( (!!(_Expression)) || (pfc::myassert(PFC_WIDESTRING(#_Expression), PFC_WIDESTRING(__FILE__), __LINE__), 0) )
+#define PFC_ASSERT_SUCCESS(_Expression) PFC_ASSERT(_Expression)
 #else
 #define PFC_ASSERT(_Expression) assert(_Expression)
+#define PFC_ASSERT_SUCCESS(_Expression) (void)( (_Expression), 0) //FIXME
 #endif
+
+#define PFC_ASSERT_NO_EXCEPTION(_Expression) { try { _Expression; } catch(...) { PFC_ASSERT(!"Should not get here - unexpected exception"); } }
 #endif
 
 #ifdef _MSC_VER
@@ -113,11 +122,15 @@ namespace pfc { void myassert(const wchar_t * _Message, const wchar_t *_File, un
 #endif
 
 #define PFC_DEPRECATE(X) __declspec(deprecated(X))
+#define PFC_NORETURN __declspec(noreturn)
+#define PFC_NOINLINE __declspec(noinline)
 #else
 
 #define NOVTABLE
-#define ASSUME(X) assert(X)
+#define ASSUME(X) PFC_ASSERT(X)
 #define PFC_DEPRECATE(X)
+#define PFC_NORETURN
+#define PFC_NOINLINE
 
 #endif
 
@@ -128,6 +141,7 @@ namespace pfc { void myassert(const wchar_t * _Message, const wchar_t *_File, un
 #include "alloc.h"
 #include "array.h"
 #include "bit_array_impl.h"
+#include "binary_search.h"
 #include "bsearch_inline.h"
 #include "bsearch.h"
 #include "sort.h"
@@ -136,16 +150,23 @@ namespace pfc { void myassert(const wchar_t * _Message, const wchar_t *_File, un
 #include "ptr_list.h"
 #include "string.h"
 #include "string_list.h"
+#include "ref_counter.h"
+#include "iterators.h"
 #include "avltree.h"
 #include "map.h"
+#include "bit_array_impl_part2.h"
 #include "profiler.h"
 #include "guid.h"
 #include "byte_order_helper.h"
 #include "other.h"
-#include "chainlist.h"
-#include "ref_counter.h"
+#include "chain_list_v2.h"
 #include "rcptr.h"
 #include "com_ptr_t.h"
 #include "string_conv.h"
+#include "stringNew.h"
+#include "pathUtils.h"
 #include "instance_tracker.h"
+#include "threads.h"
+#include "base64.h"
+
 #endif //___PFC_H___

@@ -7,6 +7,7 @@ template<typename T>
 class NOVTABLE list_base_const_t {
 private: typedef list_base_const_t<T> t_self;
 public:
+	typedef T t_item;
 	virtual t_size get_count() const = 0;
 	virtual void get_item_ex(T& p_out, t_size n) const = 0;
 
@@ -46,7 +47,7 @@ public:
 	}
 
 	template<typename t_compare,typename t_param,typename t_permutation>
-	bool bsearch_permutation_t(t_compare p_compare,t_param const & p_param,const t_permutation & p_permutation,t_size & p_index) {
+	bool bsearch_permutation_t(t_compare p_compare,t_param const & p_param,const t_permutation & p_permutation,t_size & p_index) const {
 		return pfc::bsearch_permutation_t(get_count(),*this,p_compare,p_param,p_permutation,p_index);
 	}
 
@@ -66,6 +67,15 @@ public:
 			p_callback( (*this)[n] );
 		}
 	}
+
+	static bool g_equals(const t_self & item1, const t_self & item2) {
+		const t_size count = item1.get_count();
+		if (count != item2.get_count()) return false;
+		for(t_size walk = 0; walk < count; ++walk) if (item1[walk] != item2[walk]) return false;
+		return true;
+	}
+	bool operator==(const t_self & item2) const {return g_equals(*this,item2);}
+	bool operator!=(const t_self & item2) const {return !g_equals(*this,item2);}
 	
 protected:
 	list_base_const_t() {}
@@ -116,6 +126,15 @@ private:
 	A m_data;
 	t_size m_count;
 };
+template<typename t_array>
+class list_const_array_ref_t : public list_base_const_t<typename t_array::t_item> {
+public:
+	list_const_array_ref_t(const t_array & data) : m_data(data) {}
+	t_size get_count() const {return m_data.get_size();}
+	void get_item_ex(typename t_array::t_item & out, t_size n) const {out = m_data[n];}
+private:
+	const t_array & m_data;
+};
 
 template<typename to,typename from>
 class list_const_cast_t : public list_base_const_t<to>
@@ -160,6 +179,7 @@ template<typename T>
 class NOVTABLE list_base_t : public list_base_const_t<T> {
 private:
 	typedef list_base_t<T> t_self;
+	typedef const list_base_const_t<T> t_self_const;
 public:
 	class NOVTABLE sort_callback
 	{
@@ -180,12 +200,12 @@ public:
 
 	inline t_size insert_item(const T & item,t_size base) {return insert_items(list_single_ref_t<T>(item),base);}
 	t_size insert_items_repeat(const T & item,t_size num,t_size base) {return insert_items(list_single_ref_t<T>(item,num),base);}
-	inline t_size add_items_repeat(T item,t_size num) {return insert_items_repeat(item,num,this->get_count());}
+	inline t_size add_items_repeat(T item,t_size num) {return insert_items_repeat(item,num,~0);}
 	t_size insert_items_fromptr(const T* source,t_size num,t_size base) {return insert_items(list_const_ptr_t<T>(source,num),base);}
-	inline t_size add_items_fromptr(const T* source,t_size num) {return insert_items_fromptr(source,num,this->get_count());}
+	inline t_size add_items_fromptr(const T* source,t_size num) {return insert_items_fromptr(source,num,~0);}
 
-	inline t_size add_items(const list_base_const_t<T> & items) {return insert_items(items,this->get_count());}
-	inline t_size add_item(const T& item) {return insert_item(item,this->get_count());}
+	inline t_size add_items(const list_base_const_t<T> & items) {return insert_items(items,~0);}
+	inline t_size add_item(const T& item) {return insert_item(item,~0);}
 
 	inline void remove_mask(const bit_array & mask) {filter_mask(bit_array_not(mask));}
 	inline void remove_all() {filter_mask(bit_array_false());}
@@ -267,7 +287,10 @@ public:
 		remove_all();
 	}
 
-	const t_self & operator=(const t_self & p_source) {remove_all(); add_items(p_source);return *this;}
+	template<typename t_in> t_self & operator=(t_in const & source) {remove_all(); add_items(source); return *this;}
+	template<typename t_in> t_self & operator+=(t_in const & p_source) {add_item(p_source); return *this;}
+	template<typename t_in> t_self & operator|=(t_in const & p_source) {add_items(p_source); return *this;}
+
 protected:
 	list_base_t() {}
 	~list_base_t() {}
@@ -286,17 +309,17 @@ public:
 	void set_count(t_size p_count) {m_buffer.set_size(p_count);}
 	void set_size(t_size p_count) {m_buffer.set_size(p_count);}
 
-	t_size insert_item(const T& item,t_size idx)
-	{
-		t_size max = m_buffer.get_size();
-		if (idx > max) idx = max;
-		max++;
-		m_buffer.set_size(max);
-		t_size n;
-		for(n=max-1;n>idx;n--)
-			m_buffer[n]=m_buffer[n-1];
-		m_buffer[idx]=item;
-		return idx;
+	template<typename t_in> 
+	t_size _insert_item_t(const t_in & item, t_size idx) {
+		return pfc::insert_t(m_buffer, item, idx);
+	}
+	template<typename t_in> 
+	t_size insert_item(const t_in & item, t_size idx) {
+		return _insert_item_t(item, idx);
+	}
+
+	t_size insert_item(const T& item,t_size idx) {
+		return _insert_item_t(item, idx);
 	}
 
 	T remove_by_idx(t_size idx)
@@ -304,9 +327,8 @@ public:
 		T ret = m_buffer[idx];
 		t_size n;
 		t_size max = m_buffer.get_size();
-		for(n=idx+1;n<max;n++)
-		{
-			pfc::swap_t(m_buffer[n-1],m_buffer[n]);
+		for(n=idx+1;n<max;n++) {
+			pfc::move_t(m_buffer[n-1],m_buffer[n]);
 		}
 		m_buffer.set_size(max-1);
 		return ret;
@@ -316,31 +338,31 @@ public:
 	inline void get_item_ex(T& p_out,t_size n) const
 	{
 		PFC_ASSERT(n>=0);
-		PFC_ASSERT(n<get_count());
+		PFC_ASSERT(n<get_size());
 		p_out = m_buffer[n];
 	}
 
 	inline const T& get_item_ref(t_size n) const
 	{
 		PFC_ASSERT(n>=0);
-		PFC_ASSERT(n<get_count());
+		PFC_ASSERT(n<get_size());
 		return m_buffer[n];
 	}
 
 	inline T get_item(t_size n) const
 	{
 		PFC_ASSERT(n >= 0);
-		PFC_ASSERT(n < get_count() );
+		PFC_ASSERT(n < get_size() );
 		return m_buffer[n];
 	};
 
 	inline t_size get_count() const {return m_buffer.get_size();}
-	inline t_size get_size() const {return get_count();}
+	inline t_size get_size() const {return m_buffer.get_size();}
 
 	inline const T & operator[](t_size n) const
 	{
 		PFC_ASSERT(n>=0);
-		PFC_ASSERT(n<get_count());
+		PFC_ASSERT(n<get_size());
 		return m_buffer[n];
 	}
 
@@ -354,49 +376,63 @@ public:
 		remove_mask(bit_array_range(idx,num));
 	}
 
-	t_size insert_items(const list_base_const_t<T> & source,t_size base)
-	{
-		t_size count = get_count();
+	t_size _insert_items_v(const list_base_const_t<T> & source,t_size base) { //workaround for inefficient operator[] on virtual-interface-accessed lists
+		t_size count = get_size();
 		if (base>count) base = count;
 		t_size num = source.get_count();
 		m_buffer.set_size(count+num);
-		if (count > base)
-		{
-			t_size n;
-			for(n=count-1;(int)n>=(int)base;n--)
-			{
-				pfc::swap_t(m_buffer[n+num],m_buffer[n]);
+		if (count > base) {
+			for(t_size n=count-1;(int)n>=(int)base;n--) {
+				pfc::move_t(m_buffer[n+num],m_buffer[n]);
 			}
 		}
 
-		{
-			t_size n;
-			for(n=0;n<num;n++)
-			{
-				source.get_item_ex(m_buffer[n+base],n);
-			}
+		for(t_size n=0;n<num;n++) {
+			source.get_item_ex(m_buffer[n+base],n);
 		}
 		return base;
-
 	}
+	// use _insert_items_v where it's more efficient
+	t_size insert_items(const list_base_const_t<T> & source,t_size base) {return _insert_items_v(source, base);}
+	t_size insert_items(const list_base_t<T> & source,t_size base) {return _insert_items_v(source, base);}
+
+	template<typename t_in>
+	t_size insert_items(const t_in & source,t_size base) {
+		t_size count = get_size();
+		if (base>count) base = count;
+		t_size num = array_size_t(source);
+		m_buffer.set_size(count+num);
+		if (count > base) {
+			for(t_size n=count-1;(int)n>=(int)base;n--) {
+				pfc::move_t(m_buffer[n+num],m_buffer[n]);
+			}
+		}
+
+		for(t_size n=0;n<num;n++) {
+			m_buffer[n+base] = source[n];
+		}
+		return base;
+	}
+
+	template<typename t_in>
+	void add_items(const t_in & in) {insert_items(in, ~0);}
 
 	void get_items_mask(list_impl_t<T,t_storage> & out,const bit_array & mask)
 	{
-		t_size n,count = get_count();
+		t_size n,count = get_size();
 		for_each_bit_array(n,mask,true,0,count)
 			out.add_item(m_buffer[n]);
 	}
 
 	void filter_mask(const bit_array & mask)
 	{
-		t_size n,count = get_count(), total = 0;
+		t_size n,count = get_size(), total = 0;
 
 		n = total = mask.find(false,0,count);
 
-		if (n<count)
-		{
+		if (n<count) {
 			for(n=mask.find(true,n+1,count-n-1);n<count;n=mask.find(true,n+1,count-n-1))
-				pfc::swap_t(m_buffer[total++],m_buffer[n]);
+				pfc::move_t(m_buffer[total++],m_buffer[n]);
 
 			m_buffer.set_size(total);
 		}
@@ -405,45 +441,45 @@ public:
 	void replace_item(t_size idx,const T& item)
 	{
 		PFC_ASSERT(idx>=0);
-		PFC_ASSERT(idx<get_count());
+		PFC_ASSERT(idx<get_size());
 		m_buffer[idx] = item;
 	}
 
 	void sort()
 	{
 		pfc::sort_callback_impl_auto_wrap_t<t_storage> wrapper(m_buffer);
-		pfc::sort(wrapper,get_count());
+		pfc::sort(wrapper,get_size());
 	}
 
 	template<typename t_compare>
 	void sort_t(t_compare p_compare)
 	{
 		pfc::sort_callback_impl_simple_wrap_t<t_storage,t_compare> wrapper(m_buffer,p_compare);
-		pfc::sort(wrapper,get_count());
+		pfc::sort(wrapper,get_size());
 	}
 
 	template<typename t_compare>
 	void sort_stable_t(t_compare p_compare)
 	{
 		pfc::sort_callback_impl_simple_wrap_t<t_storage,t_compare> wrapper(m_buffer,p_compare);
-		pfc::sort_stable(wrapper,get_count());
+		pfc::sort_stable(wrapper,get_size());
 	}
 	inline void reorder_partial(t_size p_base,const t_size * p_order,t_size p_count)
 	{
-		PFC_ASSERT(p_base+p_count<=get_count());
+		PFC_ASSERT(p_base+p_count<=get_size());
 		pfc::reorder_partial_t(m_buffer,p_base,p_order,p_count);
 	}
 
 	template<typename t_compare>
 	t_size find_duplicates_sorted_t(t_compare p_compare,bit_array_var & p_out) const
 	{
-		return pfc::find_duplicates_sorted_t<list_impl_t<T,t_storage> const &,t_compare>(*this,get_count(),p_compare,p_out);
+		return pfc::find_duplicates_sorted_t<list_impl_t<T,t_storage> const &,t_compare>(*this,get_size(),p_compare,p_out);
 	}
 
 	template<typename t_compare,typename t_permutation>
 	t_size find_duplicates_sorted_permutation_t(t_compare p_compare,t_permutation p_permutation,bit_array_var & p_out)
 	{
-		return pfc::find_duplicates_sorted_permutation_t<list_impl_t<T,t_storage> const &,t_compare,t_permutation>(*this,get_count(),p_compare,p_permutation,p_out);
+		return pfc::find_duplicates_sorted_permutation_t<list_impl_t<T,t_storage> const &,t_compare,t_permutation>(*this,get_size(),p_compare,p_permutation,p_out);
 	}
 
 
@@ -469,21 +505,22 @@ public:
 
 	void remove_mask(const bit_array & mask) {filter_mask(bit_array_not(mask));}
 
-	void remove_mask(const bool * mask) {remove_mask(bit_array_table(mask,get_count()));}
-	void filter_mask(const bool * mask) {filter_mask(bit_array_table(mask,get_count()));}
+	void remove_mask(const bool * mask) {remove_mask(bit_array_table(mask,get_size()));}
+	void filter_mask(const bool * mask) {filter_mask(bit_array_table(mask,get_size()));}
 
-	t_size add_item(const T& item)
-	{
-		t_size idx = get_count();
-		insert_item(item,idx);
-		return idx;
+	t_size add_item(const T& item) {
+		return insert_item(item, ~0);
+	}
+
+	template<typename t_in> t_size add_item(const t_in & item) {
+		return insert_item(item, ~0);
 	}
 
 	void remove_all() {remove_mask(bit_array_true());}
 
 	void remove_item(const T& item)
 	{
-		t_size n,max = get_count();
+		t_size n,max = get_size();
 		bit_array_bittable mask(max);
 		for(n=0;n<max;n++)
 			mask.set(n,get_item(n)==item);
@@ -492,14 +529,14 @@ public:
 
 	void swap_item_with(t_size p_index,T & p_item)
 	{
-		PFC_ASSERT(p_index < get_count());
+		PFC_ASSERT(p_index < get_size());
 		pfc::swap_t(m_buffer[p_index],p_item);
 	}
 
 	void swap_items(t_size p_index1,t_size p_index2) 
 	{
-		PFC_ASSERT(p_index1 < get_count());
-		PFC_ASSERT(p_index1 < get_count());
+		PFC_ASSERT(p_index1 < get_size());
+		PFC_ASSERT(p_index2 < get_size());
 		pfc::swap_t(m_buffer[p_index1],m_buffer[p_index2]);
 	}
 
@@ -511,7 +548,7 @@ public:
 	template<typename t_search>
 	t_size find_item(const t_search & p_item) const//returns index of first occurance, infinite if not found
 	{
-		t_size n,max = get_count();
+		t_size n,max = get_size();
 		for(n=0;n<max;n++)
 			if (m_buffer[n]==p_item) return n;
 		return ~0;
@@ -520,15 +557,28 @@ public:
 	template<typename t_search>
 	inline bool have_item(const t_search & p_item) const {return this->template find_item<t_search>(p_item)!=~0;}
 
+	template<typename t_in> t_self & operator=(t_in const & source) {remove_all(); add_items(source); return *this;}
+	template<typename t_in> t_self & operator+=(t_in const & p_source) {add_item(p_source); return *this;}
+	template<typename t_in> t_self & operator|=(t_in const & p_source) {add_items(p_source); return *this;}
 protected:
 	t_storage m_buffer;
 };
 
 template<typename t_item, template<typename> class t_alloc = pfc::alloc_fast >
-class list_t : public list_impl_t<t_item,pfc::array_t<t_item,t_alloc> > { };
+class list_t : public list_impl_t<t_item,pfc::array_t<t_item,t_alloc> > { 
+public:
+	template<typename t_in> t_self & operator=(t_in const & source) {remove_all(); add_items(source); return *this;}
+	template<typename t_in> t_self & operator+=(t_in const & p_source) {add_item(p_source); return *this;}
+	template<typename t_in> t_self & operator|=(t_in const & p_source) {add_items(p_source); return *this;}
+};
 
 template<typename t_item, t_size p_fixed_count, template<typename> class t_alloc = pfc::alloc_fast >
-class list_hybrid_t : public list_impl_t<t_item,pfc::array_hybrid_t<t_item,p_fixed_count,t_alloc> > {};
+class list_hybrid_t : public list_impl_t<t_item,pfc::array_hybrid_t<t_item,p_fixed_count,t_alloc> > {
+public:
+	template<typename t_in> t_self & operator=(t_in const & source) {remove_all(); add_items(source); return *this;}
+	template<typename t_in> t_self & operator+=(t_in const & p_source) {add_item(p_source); return *this;}
+	template<typename t_in> t_self & operator|=(t_in const & p_source) {add_items(p_source); return *this;}
+};
 
 template<typename T>
 class ptr_list_const_cast_t : public list_base_const_t<const T *>
@@ -572,6 +622,8 @@ private:
 	const t_size * m_order;
 	t_size m_count;
 };
+
+template<typename item, template<typename> class alloc> class traits_t<list_t<item, alloc> > : public traits_combined<alloc<item>, traits_vtable> {};
 
 }
 #endif //_PFC_LIST_H_

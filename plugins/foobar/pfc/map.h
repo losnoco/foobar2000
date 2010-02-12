@@ -2,92 +2,107 @@
 #define _MAP_T_H_INCLUDED_
 
 namespace pfc {
+	PFC_DECLARE_EXCEPTION(exception_map_entry_not_found,exception,"Map entry not found");
 
 	template<typename t_destination> class __map_overwrite_wrapper {
 	public:
 		__map_overwrite_wrapper(t_destination & p_destination) : m_destination(p_destination) {}
-		template<typename t_from,typename t_to> void operator() (const t_from & p_from,const t_to & p_to) {m_destination.set(p_from,p_to);}
+		template<typename t_key,typename t_value> void operator() (const t_key & p_key,const t_value & p_value) {m_destination.set(p_key,p_value);}
 	private:
 		t_destination & m_destination;
 	};
 
-	template<typename t_storage_from, typename t_storage_to, typename t_comparator = comparator_default>
+	template<typename t_storage_key, typename t_storage_value, typename t_comparator = comparator_default>
 	class map_t {
 	private:
-		typedef map_t<t_storage_from,t_storage_to,t_comparator> t_self;
+		typedef map_t<t_storage_key,t_storage_value,t_comparator> t_self;
 	public:
-		template<typename t_from,typename t_to>
-		void set(const t_from & p_from, const t_to & p_to) {
+		typedef t_storage_key t_key; typedef t_storage_value t_value;
+		template<typename _t_key,typename _t_value>
+		void set(const _t_key & p_key, const _t_value & p_value) {
 			bool isnew;
-			t_storage & storage = m_data.add_ex(t_search_set<t_from,t_to>(p_from,p_to), isnew);
-			if (!isnew) storage.m_to = p_to;
+			t_storage & storage = m_data.add_ex(t_search_set<_t_key,_t_value>(p_key,p_value), isnew);
+			if (!isnew) storage.m_value = p_value;
 		}
 
-		template<typename t_from>
-		t_storage_to & find_or_add(t_from const & p_from) {
-			return m_data.add(t_search_query<t_from>(p_from)).m_to;
+		template<typename _t_key>
+		t_storage_value & find_or_add(_t_key const & p_key) {
+			return m_data.add(t_search_query<_t_key>(p_key)).m_value;
 		}
 
-		template<typename t_from>
-		t_storage_to & find_or_add_ex(t_from const & p_from,bool & p_isnew) {
-			return m_data.add_ex(t_search_query<t_from>(p_from),p_isnew).m_to;
+		template<typename _t_key>
+		t_storage_value & find_or_add_ex(_t_key const & p_key,bool & p_isnew) {
+			return m_data.add_ex(t_search_query<_t_key>(p_key),p_isnew).m_value;
 		}
 
-		template<typename t_from>
-		bool have_item(const t_from & p_from) const {
-			return m_data.have_item(t_search_query<t_from>(p_from));
+		template<typename _t_key>
+		bool have_item(const _t_key & p_key) const {
+			return m_data.have_item(t_search_query<_t_key>(p_key));
 		}
 
-		template<typename t_from,typename t_to>
-		bool query(const t_from & p_from,t_to & p_to) const {
-			const t_storage * storage = m_data.find_ptr(t_search_query<t_from>(p_from));
+		template<typename _t_key,typename _t_value>
+		bool query(const _t_key & p_key,_t_value & p_value) const {
+			const t_storage * storage = m_data.find_ptr(t_search_query<_t_key>(p_key));
 			if (storage == NULL) return false;
-			p_to = storage->m_to;
+			p_value = storage->m_value;
 			return true;
 		}
 
-		template<typename t_from>
-		const t_storage_to * query_ptr(const t_from & p_from) const {
-			const t_storage * storage = m_data.find_ptr(t_search_query<t_from>(p_from));
-			if (storage == NULL) return NULL;
-			return &storage->m_to;
+		template<typename _t_key>
+		const t_storage_value & operator[] (const _t_key & p_key) const {
+			const t_storage_value * ptr = query_ptr(p_key);
+			if (ptr == NULL) throw exception_map_entry_not_found();
+			return *ptr;
 		}
 
-		template<typename t_from>
-		t_storage_to * query_ptr(const t_from & p_from) {
-			t_storage * storage = m_data.find_ptr(t_search_query<t_from>(p_from));
-			if (storage == NULL) return NULL;
-			return &storage->m_to;
+		template<typename _t_key>
+		t_storage_value & operator[] (const _t_key & p_key) {
+			return find_or_add(p_key);
 		}
 
-		template<bool inclusive,bool above,typename t_from>
-		const t_storage_to * query_nearest_ptr(t_from & p_from) const {
-			const t_storage * storage = m_data.find_nearest_item<inclusive,above>(t_search_query<t_from>(p_from));
+		template<typename _t_key>
+		const t_storage_value * query_ptr(const _t_key & p_key) const {
+			const t_storage * storage = m_data.find_ptr(t_search_query<_t_key>(p_key));
 			if (storage == NULL) return NULL;
-			p_from = storage->m_from;
-			return &storage->m_to;
+			return &storage->m_value;
 		}
 
-		template<bool inclusive,bool above,typename t_from>
-		t_storage_to * query_nearest_ptr(t_from & p_from) {
-			t_storage * storage = m_data.find_nearest_item<inclusive,above>(t_search_query<t_from>(p_from));
+		template<typename _t_key>
+		t_storage_value * query_ptr(const _t_key & p_key) {
+			t_storage * storage = m_data.find_ptr(t_search_query<_t_key>(p_key));
 			if (storage == NULL) return NULL;
-			p_from = storage->m_from;
-			return &storage->m_to;
+			return &storage->m_value;
 		}
 
-		template<bool inclusive,bool above,typename t_from,typename t_to>
-		bool query_nearest(t_from & p_from,t_to & p_to) const {
-			const t_storage * storage = m_data.find_nearest_item<inclusive,above>(t_search_query<t_from>(p_from));
+		template<bool inclusive,bool above,typename _t_key>
+		const t_storage_value * query_nearest_ptr(_t_key & p_key) const {
+			const t_storage * storage = m_data.find_nearest_item<inclusive,above>(t_search_query<_t_key>(p_key));
+			if (storage == NULL) return NULL;
+			p_key = storage->m_key;
+			return &storage->m_value;
+		}
+
+		template<bool inclusive,bool above,typename _t_key>
+		t_storage_value * query_nearest_ptr(_t_key & p_key) {
+			t_storage * storage = m_data.find_nearest_item<inclusive,above>(t_search_query<_t_key>(p_key));
+			if (storage == NULL) return NULL;
+			p_key = storage->m_key;
+			return &storage->m_value;
+		}
+
+		template<bool inclusive,bool above,typename _t_key,typename _t_value>
+		bool query_nearest(_t_key & p_key,_t_value & p_value) const {
+			const t_storage * storage = m_data.find_nearest_item<inclusive,above>(t_search_query<_t_key>(p_key));
 			if (storage == NULL) return false;
-			p_from = storage->m_from;
-			p_to = storage->m_to;
+			p_key = storage->m_key;
+			p_value = storage->m_value;
 			return true;
 		}
 
-		template<typename t_from>
-		void remove(const t_from & p_from) {
-			m_data.remove_item(t_search_query<t_from>(p_from));
+		
+		template<typename _t_key>
+		bool remove(const _t_key & p_key) {
+			return m_data.remove_item(t_search_query<_t_key>(p_key));
 		}
 
 		template<typename t_callback>
@@ -97,13 +112,13 @@ namespace pfc {
 
 		template<typename t_callback>
 		void enumerate(t_callback & p_callback) {
-			m_data.__enumerate(enumeration_wrapper_var<t_callback>(p_callback));
+			m_data._enumerate_var(enumeration_wrapper_var<t_callback>(p_callback));
 		}
 
 
-		t_size get_count() const {return m_data.get_count();}
+		t_size get_count() const throw() {return m_data.get_count();}
 
-		void remove_all() {m_data.remove_all();}
+		void remove_all() throw() {m_data.remove_all();}
 
 		template<typename t_source>
 		void overwrite(const t_source & p_source) {
@@ -112,40 +127,58 @@ namespace pfc {
 		}
 
 		//backwards compatibility method wrappers
-		template<typename t_from> bool exists(const t_from & p_from) const {return have_item(p_from);}
+		template<typename _t_key> bool exists(const _t_key & p_key) const {return have_item(p_key);}
+
+
+		template<typename _t_key> bool get_first(_t_key & p_out) const {
+			return m_data.get_first(t_retrieve_key<_t_key>(p_out));
+		}
+
+		template<typename _t_key> bool get_last(_t_key & p_out) const {
+			return m_data.get_last(t_retrieve_key<_t_key>(p_out));
+		}
 
 	private:
-		template<typename t_from>
-		struct t_search_query {
-			t_search_query(const t_from & p_from) : m_from(p_from) {}
-			t_from const & m_from;
+		template<typename _t_key>
+		struct t_retrieve_key {
+			typedef t_retrieve_key<_t_key> t_self;
+			t_retrieve_key(_t_key & p_key) : m_key(p_key) {}
+			template<typename t_what> const t_self & operator=(const t_what & p_what) {m_key = p_what.m_key; return *this;}
+			_t_key & m_key;
 		};
-		template<typename t_from,typename t_to>
+		template<typename _t_key>
+		struct t_search_query {
+			t_search_query(const _t_key & p_key) : m_key(p_key) {}
+			_t_key const & m_key;
+		};
+		template<typename _t_key,typename _t_value>
 		struct t_search_set {
-			t_search_set(const t_from & p_from, const t_to & p_to) : m_from(p_from), m_to(p_to) {}
+			t_search_set(const _t_key & p_key, const _t_value & p_value) : m_key(p_key), m_value(p_value) {}
 
-			t_from const & m_from;
-			t_to const & m_to;
+			_t_key const & m_key;
+			_t_value const & m_value;
 		};
 
 		struct t_storage {
-			t_storage_from m_from;
-			t_storage_to m_to;
-
-
+			const t_storage_key m_key;
+			t_storage_value m_value;
 			
-			template<typename t_from>
-			t_storage(t_search_query<t_from> const & p_source) : m_from(p_source.m_from), m_to() {}
+			template<typename _t_key>
+			t_storage(t_search_query<_t_key> const & p_source) : m_key(p_source.m_key), m_value() {}
 
-			template<typename t_from,typename t_to>
-			t_storage(t_search_set<t_from,t_to> const & p_source) : m_from(p_source.m_from), m_to(p_source.m_to) {}
+			template<typename _t_key,typename _t_value>
+			t_storage(t_search_set<_t_key,_t_value> const & p_source) : m_key(p_source.m_key), m_value(p_source.m_value) {}
+
+			static bool equals(const t_storage & v1, const t_storage & v2) {return v1.m_key == v2.m_key && v1.m_value == v2.m_value;}
+			bool operator==(const t_storage & other) const {return equals(*this,other);}
+			bool operator!=(const t_storage & other) const {return !equals(*this,other);}
 		};
 
 		class comparator_wrapper {
 		public:
-			template<typename t_other>
-			inline static int compare(const t_storage & p_item1,const t_other & p_item2) {
-				return t_comparator::compare(p_item1.m_from,p_item2.m_from);
+			template<typename t1,typename t2>
+			inline static int compare(const t1 & p_item1,const t2 & p_item2) {
+				return t_comparator::compare(p_item1.m_key,p_item2.m_key);
 			}
 		};
 
@@ -153,7 +186,7 @@ namespace pfc {
 		class enumeration_wrapper {
 		public:
 			enumeration_wrapper(t_callback & p_callback) : m_callback(p_callback) {}
-			void operator()(const t_storage & p_item) {m_callback(p_item.m_from,p_item.m_to);}
+			void operator()(const t_storage & p_item) {m_callback(p_item.m_key,p_item.m_value);}
 		private:
 			t_callback & m_callback;
 		};
@@ -162,7 +195,7 @@ namespace pfc {
 		class enumeration_wrapper_var {
 		public:
 			enumeration_wrapper_var(t_callback & p_callback) : m_callback(p_callback) {}
-			void operator()(t_storage & p_item) {m_callback(safe_cast<t_storage_from const&>(p_item.m_from),p_item.m_to);}
+			void operator()(t_storage & p_item) {m_callback(implicit_cast<t_storage_key const&>(p_item.m_key),p_item.m_value);}
 		private:
 			t_callback & m_callback;
 		};
@@ -172,12 +205,34 @@ namespace pfc {
 		t_content m_data;
 	public:
 		typedef traits_t<t_content> traits;
+		typedef typename t_content::const_iterator const_iterator;
+		typedef typename t_content::iterator iterator;
+
+		iterator first() throw() {return m_data._first_var();}
+		iterator last() throw() {return m_data._last_var();}
+		const_iterator first() const throw() {return m_data.first();}
+		const_iterator last() const throw() {return m_data.last();}
+
+		template<typename _t_key> iterator find(const _t_key & key) {return m_data.find(t_search_query<_t_key>(key));}
+		template<typename _t_key> const_iterator find(const _t_key & key) const {return m_data.find(t_search_query<_t_key>(key));}
+
+		static bool equals(const t_self & v1, const t_self & v2) {
+			return t_content::equals(v1.m_data,v2.m_data);
+		}
+		bool operator==(const t_self & other) const {return equals(*this,other);}
+		bool operator!=(const t_self & other) const {return !equals(*this,other);}
+		
+		bool remove(iterator const& iter) {
+			PFC_ASSERT(iter.is_valid());
+			return m_data.remove(iter);
+			//should never return false unless there's a bug in calling code
+		}
+		bool remove(const_iterator const& iter) {
+			PFC_ASSERT(iter.is_valid());
+			return m_data.remove(iter);
+			//should never return false unless there's a bug in calling code
+		}
 	};
-
-	template<typename t_storage_from, typename t_storage_to, typename t_comparator>
-	class traits_t<map_t<t_storage_from,t_storage_to,t_comparator> > : public map_t<t_storage_from,t_storage_to,t_comparator>::traits {};
-
-
 }
 
 #endif //_MAP_T_H_INCLUDED_

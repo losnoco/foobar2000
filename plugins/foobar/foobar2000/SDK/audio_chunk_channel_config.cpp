@@ -52,7 +52,7 @@ DWORD audio_chunk::g_channel_config_to_wfx(unsigned p_config)
 {
 	DWORD ret = 0;
 	unsigned n;
-	for(n=0;n<tabsize(g_translation_table);n++)
+	for(n=0;n<PFC_TABSIZE(g_translation_table);n++)
 	{
 		if (p_config & g_translation_table[n].m_native) ret |= g_translation_table[n].m_wfx;
 	}
@@ -63,7 +63,7 @@ unsigned audio_chunk::g_channel_config_from_wfx(DWORD p_wfx)
 {
 	unsigned ret = 0;
 	unsigned n;
-	for(n=0;n<tabsize(g_translation_table);n++)
+	for(n=0;n<PFC_TABSIZE(g_translation_table);n++)
 	{
 		if (p_wfx & g_translation_table[n].m_wfx) ret |= g_translation_table[n].m_native;
 	}
@@ -73,7 +73,7 @@ unsigned audio_chunk::g_channel_config_from_wfx(DWORD p_wfx)
 #endif
 
 
-static unsigned g_audio_channel_config_table[] = 
+static const unsigned g_audio_channel_config_table[] = 
 {
 	0,
 	audio_chunk::channel_config_mono,
@@ -86,13 +86,26 @@ static unsigned g_audio_channel_config_table[] =
 	audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_back_left | audio_chunk::channel_back_right | audio_chunk::channel_front_center | audio_chunk::channel_lfe | audio_chunk::channel_front_center_right | audio_chunk::channel_front_center_left,
 };
 
+static const unsigned g_audio_channel_config_table_xiph[] = 
+{
+	0,
+	audio_chunk::channel_config_mono,
+	audio_chunk::channel_config_stereo,
+	audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_front_center,
+	audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_back_left | audio_chunk::channel_back_right,
+	audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_back_left | audio_chunk::channel_back_right | audio_chunk::channel_front_center,
+	audio_chunk::channel_config_5point1,
+};
 
 unsigned audio_chunk::g_guess_channel_config(unsigned count)
 {
-	if (count >= tabsize(g_audio_channel_config_table)) return 0;
+	if (count >= PFC_TABSIZE(g_audio_channel_config_table)) return 0;
 	return g_audio_channel_config_table[count];
 }
-
+unsigned audio_chunk::g_guess_channel_config_xiph(unsigned count) {
+	if (count == 0 || count >= PFC_TABSIZE(g_audio_channel_config_table_xiph)) throw exception_io_data();
+	return g_audio_channel_config_table_xiph[count];
+}
 
 unsigned audio_chunk::g_channel_index_from_flag(unsigned p_config,unsigned p_flag) {
 	unsigned index = 0;
@@ -101,7 +114,7 @@ unsigned audio_chunk::g_channel_index_from_flag(unsigned p_config,unsigned p_fla
 		if (p_flag & query) return index;
 		if (p_config & query) index++;
 	}
-	return infinite;
+	return ~0;
 }
 
 unsigned audio_chunk::g_extract_channel_flag(unsigned p_config,unsigned p_index)

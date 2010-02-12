@@ -1,3 +1,5 @@
+PFC_DECLARE_EXCEPTION(exception_tagging_unsupported, exception_io_data, "Tagging of this file format is not supported")
+
 enum {
 	input_flag_no_seeking					= 1 << 0,
 	input_flag_no_looping					= 1 << 1,
@@ -12,7 +14,7 @@ enum {
 //! Instantiating: see input_entry.\n
 //! Implementing: see input_impl.
 
-class input_info_reader : public service_base
+class NOVTABLE input_info_reader : public service_base
 {
 public:
 	//! Retrieves count of subsongs in the file. 1 for non-multisubsong-enabled inputs.
@@ -39,7 +41,7 @@ public:
 //! Instantiating: see input_entry.\n
 //! Implementing: see input_impl.
 
-class input_decoder : public input_info_reader
+class NOVTABLE input_decoder : public input_info_reader
 {
 public:
 	//! Prepares to decode specified subsong; resets playback position to the beginning of specified subsong. This must be called first, before any other input_decoder methods (other than those inherited from input_info_reader). \n
@@ -88,11 +90,36 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE(input_decoder,input_info_reader);
 };
 
+
+class NOVTABLE input_decoder_v2 : public input_decoder {
+	FB2K_MAKE_SERVICE_INTERFACE(input_decoder_v2, input_decoder)
+public:
+
+	//! OPTIONAL, throws pfc::exception_not_implemented() when not supported by this implementation.
+	//! Special version of run(). Returns an audio_chunk object as well as a raw data block containing original PCM stream. This is mainly used for MD5 checks on lossless formats. \n
+	//! If you set a "MD5" tech info entry in get_info(), you should make sure that run_raw() returns data stream that can be used to verify it. \n
+	//! Returned raw data should be possible to cut into individual samples; size in bytes should be divisible by audio_chunk's sample count for splitting in case partial output is needed (with cuesheets etc).
+	virtual bool run_raw(audio_chunk & out, mem_block_container & outRaw, abort_callback & abort) = 0;
+
+	//! OPTIONAL, the call is ignored if this implementation doesn't support status logging. \n
+	//! Mainly used to generate logs when ripping CDs etc.
+	virtual void set_logger(event_logger::ptr ptr) = 0;
+};
+
+class NOVTABLE input_decoder_v3 : public input_decoder_v2 {
+	FB2K_MAKE_SERVICE_INTERFACE(input_decoder_v3, input_decoder_v2);
+public:
+	//! OPTIONAL, in case your input cares about paused/unpaused state, handle this to do any necessary additional processing. Valid only after initialize() with input_flag_playback.
+	virtual void set_pause(bool paused) = 0;
+	//! OPTIONAL, should return false in most cases; return true to force playback buffer flush on unpause. Valid only after initialize() with input_flag_playback.
+	virtual bool flush_on_pause() = 0;
+};
+
 //! Class providing interface for writing metadata and replaygain info to files. Also see: file_info. \n
 //! Instantiating: see input_entry.\n
 //! Implementing: see input_impl.
 
-class input_info_writer : public input_info_reader
+class NOVTABLE input_info_writer : public input_info_reader
 {
 public:
 	//! Tells the service to update file tags with new info for specified subsong.
@@ -108,7 +135,7 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE(input_info_writer,input_info_reader);
 };
 
-class input_entry : public service_base
+class NOVTABLE input_entry : public service_base
 {
 public:
 	//! Determines whether specified content type can be handled by this input.
@@ -171,4 +198,3 @@ public:
 
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(input_entry);
 };
-

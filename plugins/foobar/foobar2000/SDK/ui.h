@@ -1,8 +1,3 @@
-#ifndef _FOOBAR2000_UI_H_
-#define _FOOBAR2000_UI_H_
-
-#include "service.h"
-
 #ifndef _WINDOWS
 #error PORTME
 #endif
@@ -107,4 +102,127 @@ public:
 template<class T>
 class ui_drop_item_callback_factory_t : public service_factory_single_t<T> {};
 
-#endif
+
+class ui_selection_callback;
+
+//! Write interface and reference counter for the shared selection.
+//! The ui_selection_manager stores the selected items as a list.
+//! The ui_selection_holder service allows components to modify this list.
+//! It also serves as a reference count: the ui_selection_manager clears the stored
+//! selection when no component holds a reference to a ui_selection_holder.
+//! 
+//! When a window that uses the shared selection gets the focus, it should acquire
+//! a ui_selection_holder from the ui_selection_manager. If it contains selectable items,
+//! it should use the appropriate method to store its selected items as the shared selection.
+//! If it just wants to preserve the selection - for example so it can display it - it should
+//! merely store the acquired ui_selection_holder.
+//!
+//! When the window loses the focus, it should release its ui_selection_holder.
+//! It should not use a set method to clear the selection
+class NOVTABLE ui_selection_holder : public service_base {
+public:
+	//! Sets selected items.
+	virtual void set_selection(metadb_handle_list_cref data) = 0;
+	//! Sets selected items to playlist selection and enables tracking.
+	//! When the playlist selection changes, the stored selection is automatically updated.
+	//! Tracking ends when a set method is called on any ui_selection_holder or when
+	//! the last reference to this ui_selection_holder is released.
+	virtual void set_playlist_selection_tracking() = 0;
+	//! Sets selected items to the contents of the active playlist and enables tracking.
+	//! When the active playlist or its contents changes, the stored selection is automatically updated.
+	//! Tracking ends when a set method is called on any ui_selection_holder or when
+	//! the last reference to this ui_selection_holder is released.
+	virtual void set_playlist_tracking() = 0;
+
+	//! Sets selected items and type of selection holder.
+	//! @param type Specifies type of selection. Values same as contextmenu_item caller IDs.
+	virtual void set_selection_ex(metadb_handle_list_cref data, const GUID & type) = 0;
+
+	FB2K_MAKE_SERVICE_INTERFACE(ui_selection_holder,service_base);
+};
+
+class NOVTABLE ui_selection_manager : public service_base {
+public:
+	//! Retrieves the current selection.
+	virtual void get_selection(metadb_handle_list_ref p_selection) = 0;
+	//! Registers a callback. It is recommended to use ui_selection_callback_impl_base class instead of calling this directly.
+	virtual void register_callback(ui_selection_callback * p_callback) = 0;
+	//! Unregisters a callback. It is recommended to use ui_selection_callback_impl_base class instead of calling this directly.
+	virtual void unregister_callback(ui_selection_callback * p_callback) = 0;
+
+	virtual ui_selection_holder::ptr acquire() = 0;
+
+	//! Retrieves type of the active selection holder. Values same as contextmenu_item caller IDs.
+	virtual GUID get_selection_type() = 0;
+	
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(ui_selection_manager);
+};
+
+//! \since 1.0
+class NOVTABLE ui_selection_manager_v2 : public ui_selection_manager {
+	FB2K_MAKE_SERVICE_INTERFACE(ui_selection_manager_v2, ui_selection_manager)
+public:
+	enum { flag_no_now_playing = 1 };
+	virtual void get_selection(metadb_handle_list_ref out, t_uint32 flags) = 0;
+	virtual GUID get_selection_type(t_uint32 flags) = 0;
+	virtual void register_callback(ui_selection_callback * callback, t_uint32 flags) = 0;
+};
+
+class ui_selection_callback {
+public:
+	virtual void on_selection_changed(metadb_handle_list_cref p_selection) = 0;
+protected:
+	ui_selection_callback() {}
+	~ui_selection_callback() {}
+};
+
+//! ui_selection_callback implementation helper with autoregistration - do not instantiate statically
+class ui_selection_callback_impl_base : public ui_selection_callback {
+protected:
+	ui_selection_callback_impl_base(bool activate = true) : m_active() {ui_selection_callback_activate(activate);}
+	~ui_selection_callback_impl_base() {ui_selection_callback_activate(false);}
+
+	void ui_selection_callback_activate(bool state = true) {
+		if (state != m_active) {
+			m_active = state;
+			static_api_ptr_t<ui_selection_manager> api;
+			if (state) api->register_callback(this);
+			else api->unregister_callback(this);
+		}
+	}
+
+	//avoid pure virtual function calls in rare cases - provide a dummy implementation
+	void on_selection_changed(metadb_handle_list_cref p_selection) {}
+
+	PFC_CLASS_NOT_COPYABLE_EX(ui_selection_callback_impl_base);
+private:
+	bool m_active;
+};
+
+//! \since 1.0
+//! ui_selection_callback implementation helper with autoregistration - do not instantiate statically
+template<unsigned flags>
+class ui_selection_callback_impl_base_ex : public ui_selection_callback {
+protected:
+	enum {
+		ui_selection_flags = flags
+	};
+	ui_selection_callback_impl_base_ex(bool activate = true) : m_active() {ui_selection_callback_activate(activate);}
+	~ui_selection_callback_impl_base_ex() {ui_selection_callback_activate(false);}
+
+	void ui_selection_callback_activate(bool state = true) {
+		if (state != m_active) {
+			m_active = state;
+			static_api_ptr_t<ui_selection_manager_v2> api;
+			if (state) api->register_callback(this, flags);
+			else api->unregister_callback(this);
+		}
+	}
+
+	//avoid pure virtual function calls in rare cases - provide a dummy implementation
+	void on_selection_changed(metadb_handle_list_cref p_selection) {}
+
+	PFC_CLASS_NOT_COPYABLE(ui_selection_callback_impl_base_ex, ui_selection_callback_impl_base_ex<flags>);
+private:
+	bool m_active;
+};

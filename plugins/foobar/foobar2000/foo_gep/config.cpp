@@ -1,7 +1,96 @@
-#define MYVERSION "1.68"
+#define MYVERSION "1.94"
 
 /*
 	change log
+
+2010-02-10 07:22 UTC - kode54
+- Commented out DAC panning offset changing since it caused popping sounds sometimes
+- Version is now 1.94
+
+2010-02-09 10:06 UTC - kode54
+- Implemented DAC panning support for GYM and VGM
+- Version is now 1.93
+
+2010-02-09 03:16 UTC - kode54
+- Fixed YM2612 LFO and internal timer handling
+- Version is now 1.92
+
+2010-02-07 20:14 UTC - kode54
+- Implemented HES ADPCM support
+- Version is now 1.91
+
+2010-02-05 07:58 UTC - kode54
+- Updated RSN archive callback to replace the file extension with the original extension instead of
+  an all-lowercase rsn
+- Version is now 1.9
+
+2010-01-28 09:43 UTC - kode54
+- Updated YM2612 emulator again, this time to latest from Genesis Plus
+- Version is now 1.89
+
+2010-01-21 06:29 UTC - kode54
+- Updated YM2612 emulator to latest from MAME
+- Version is now 1.88
+
+2010-01-14 00:44 UTC - kode54
+- Fixed a crash in the HES emulator
+- Version is now 1.87
+
+2010-01-13 00:40 UTC - kode54
+- Updated NSF and SPC context menu handlers
+- Version is now 1.86
+
+2010-01-11 10:47 UTC - kode54
+- Updated preferences page to 1.0 API
+- Version is now 1.85
+
+2010-01-05 04:29 UTC - kode54
+- Fixed a bug with playing Coleco SGC files after Sega FM files
+- Version is now 1.84
+
+2010-01-05 03:59 UTC - kode54
+- Added configuration to enable or disable the SGC format support
+- Version is now 1.83
+
+2010-01-05 03:11 UTC - kode54
+- Added file type mask and association for SGC files
+- Version is now 1.82
+
+2010-01-05 01:14 UTC - kode54
+- Small update to KSS emulator
+- Version is now 1.81
+
+2010-01-04 02:49 UTC - kode54
+- Updated Game_Music_Emu to support SGC
+- Bundled Coleco BIOS for Coleco SGC files
+- Version is now 1.8
+
+2009-12-17 06:47 UTC - kode54
+- Fixed NSF->NSFE conversion to only occur when configured
+- Removed NSF<->NSFE renaming for now
+- Changed context menu to allow NSFE writing only for NSFE files even when NSFE writing is disabled
+- Version is now 1.78
+
+2009-11-28 08:30 UTC - kode54
+- Fixed M3U fade time reporting
+- Version is now 1.77
+
+2009-11-22 08:10 UTC - kode54
+- Fixed indefinite playback again
+- Version is now 1.76
+
+2009-11-19 10:16 UTC - kode54
+- Implemented SPC sinc interpolation
+- Version is now 1.75
+
+2009-10-13 01:38 UTC - kode54
+- Fixed VGM Gd3 tag reading
+- Version is now 1.71
+
+2009-10-10 17:31 UTC - kode54
+- Updated to blargg's latest unreleased rewrite of Game_Music_Emu
+- Fixed SPC cubic interpolation and anti-surround settings
+- Version is now 1.7
 
 2009-08-05 04:13 UTC - kode54
 - Implemented VGM YM2413 support based on MAME's YM2413 emulator
@@ -102,6 +191,7 @@
 
 #include "config.h"
 #include "../helpers/dropdown_helper.h"
+#include "../ATLHelpers/ATLHelpers.h"
 
 #include "logo.h"
 
@@ -130,6 +220,27 @@ static const GUID guid_cfg_effects_bass = { 0x6bad04a5, 0xb579, 0x400e, { 0x8c, 
 static const GUID guid_cfg_effects_treble = { 0x908aec30, 0x66b8, 0x4ab1, { 0x90, 0xa5, 0x77, 0xb9, 0xea, 0x98, 0xe, 0xd8 } };
 static const GUID guid_cfg_effects_echo_depth = { 0x4c04e4ce, 0xeab9, 0x4046, { 0xb8, 0x33, 0xf1, 0x68, 0x44, 0xa3, 0x50, 0x19 } };
 
+enum
+{
+	default_cfg_sample_rate = 44100,
+	default_cfg_indefinite = 0,
+	default_cfg_default_length = 170000,
+	default_cfg_default_fade = 10000,
+	default_cfg_write = 0,
+	default_cfg_write_nsfe = 0,
+	default_cfg_nsfe_ignore_playlists = 0,
+	default_cfg_spc_anti_surround = 0,
+	default_cfg_spc_interpolation = 0,
+	default_cfg_vgm_loop_count = 1,
+	default_cfg_vgm_gd3_prefers_japanese = 0,
+	default_cfg_format_enable = ~0,
+	default_cfg_control_override = 0,
+	default_cfg_control_tempo = 10000,
+	default_cfg_effects_enable = 0,
+	default_cfg_effects_bass = 128,
+	default_cfg_effects_treble = 128,
+	default_cfg_effects_echo_depth = 31
+};
 
 cfg_int cfg_sample_rate(guid_cfg_sample_rate, 44100);
 
@@ -257,240 +368,304 @@ void print_time_crap(int ms, char *out)
 	else sprintf(out, "%d%s",s,frac);
 }
 
-static void enable_vgm_loop_count(HWND wnd, BOOL status)
-{
-	EnableWindow( GetDlgItem( wnd, IDC_VGMLOOPCOUNT_TEXT ), status );
-	EnableWindow( GetDlgItem( wnd, IDC_VGMLOOPCOUNT ), status );
-}
-
-static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
-{
-	switch(msg)
-	{
-	case WM_INITDIALOG:
-		{
-			char temp[16];
-			uSendDlgItemMessage(wnd, IDC_INDEFINITE, BM_SETCHECK, cfg_indefinite, 0);
-			uSendDlgItemMessage(wnd, IDC_WRITE, BM_SETCHECK, cfg_write, 0);
-			uSendDlgItemMessage(wnd, IDC_WNSFE, BM_SETCHECK, cfg_write_nsfe, 0);
-			uSendDlgItemMessage(wnd, IDC_NSFEPL, BM_SETCHECK, cfg_nsfe_ignore_playlists, 0);
-			uSendDlgItemMessage(wnd, IDC_ANTISURROUND, BM_SETCHECK, cfg_spc_anti_surround, 0);
-			uSendDlgItemMessage(wnd, IDC_GD3JAPANESE, BM_SETCHECK, cfg_vgm_gd3_prefers_japanese, 0);
-			uSendDlgItemMessage(wnd, IDC_EFFECTS, BM_SETCHECK, cfg_effects_enable, 0);
-			print_time_crap(cfg_default_length, (char *)&temp);
-			uSetDlgItemText(wnd, IDC_DLENGTH, (char *)&temp);
-			print_time_crap(cfg_default_fade, (char *)&temp);
-			uSetDlgItemText(wnd, IDC_DFADE, (char *)&temp);
-
-			HWND w;
-
-			w = GetDlgItem(wnd, IDC_SLIDER_BASS);
-			SendMessage( w, TBM_SETRANGE, 0, MAKELONG( 0, 255 ) );
-			SendMessage( w, TBM_SETPOS, 1, cfg_effects_bass );
-
-			w = GetDlgItem( wnd, IDC_SLIDER_TREBLE );
-			SendMessage( w, TBM_SETRANGE, 0, MAKELONG( 0, 255 ) );
-			SendMessage( w, TBM_SETPOS, 1, cfg_effects_treble );
-
-			w = GetDlgItem( wnd, IDC_SLIDER_ECHO_DEPTH );
-			SendMessage( w, TBM_SETRANGE, 0, MAKELONG( 0, 255 ) );
-			SendMessage( w, TBM_SETPOS, 1, cfg_effects_echo_depth );
-
-			int n,o;
-			for(n=IDC_FORMAT_NSF,o=0;n<=IDC_FORMAT_SAP;n++,o++)
-			{
-				uSendDlgItemMessage(wnd, n, BM_SETCHECK, cfg_format_enable & ( 1 << o ), 0);
-			}
-			for(n=tabsize(srate_tab);n--;)
-			{
-				if (srate_tab[n] != cfg_sample_rate)
-				{
-					itoa(srate_tab[n], temp, 10);
-					cfg_history_rate.add_item(temp);
-				}
-			}
-			itoa(cfg_sample_rate, temp, 10);
-			cfg_history_rate.add_item(temp);
-			cfg_history_rate.setup_dropdown(w = GetDlgItem(wnd,IDC_SAMPLERATE));
-			uSendMessage(w, CB_SETCURSEL, 0, 0);
-
-			w = GetDlgItem(wnd, IDC_VGMLOOPCOUNT);
-			uSendMessageText(w, CB_ADDSTRING, 0, "none");
-			for (n = 1; n <= 10; n++)
-			{
-				itoa( n, temp, 10 );
-				uSendMessageText(w, CB_ADDSTRING, 0, temp);
-			}
-			uSendMessage(w, CB_SETCURSEL, cfg_vgm_loop_count, 0);
-
-			enable_vgm_loop_count( wnd, !cfg_indefinite );
-
-			w = GetDlgItem(wnd, IDC_INTERPOLATION);
-			uSendMessageText(w, CB_ADDSTRING, 0, "Gaussian");
-			uSendMessageText(w, CB_ADDSTRING, 0, "Cubic");
-			uSendMessage(w, CB_SETCURSEL, cfg_spc_interpolation, 0);
-
-			union
-			{
-				RECT r;
-				POINT p [2];
-			};
-
-			w = GetDlgItem( wnd, IDC_GROUPBOX );
-			GetClientRect( w, &r );
-			MapWindowPoints( w, wnd, &p [1], 1 );
-
-			CreateLogo( wnd, p [1].x + 2, p [1].y - 181 );
-		}
-		return 1;
-	case WM_COMMAND:
-		switch(wp)
-		{
-		case IDC_INDEFINITE:
-			cfg_indefinite = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			enable_vgm_loop_count( wnd, !cfg_indefinite );
-			break;
-		case IDC_WRITE:
-			cfg_write = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		case IDC_WNSFE:
-			cfg_write_nsfe = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		case IDC_NSFEPL:
-			cfg_nsfe_ignore_playlists = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		case IDC_ANTISURROUND:
-			cfg_spc_anti_surround = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		case IDC_GD3JAPANESE:
-			cfg_vgm_gd3_prefers_japanese = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		case IDC_EFFECTS:
-			cfg_effects_enable = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		default:
-			if (wp >= IDC_FORMAT_NSF && wp <= IDC_FORMAT_SAP)
-			{
-				unsigned bit = 1 << ( wp - IDC_FORMAT_NSF );
-				unsigned mask = ~0 ^ bit;
-				cfg_format_enable = ( cfg_format_enable & mask ) | ( bit * uSendMessage((HWND)lp, BM_GETCHECK, 0, 0) );
-			}
-			break;
-		case (EN_CHANGE<<16)|IDC_DLENGTH:
-			{
-				int meh = parse_time_crap(string_utf8_from_window((HWND)lp));
-				if (meh != BORK_TIME) cfg_default_length = meh;
-			}
-			break;
-		case (EN_KILLFOCUS<<16)|IDC_DLENGTH:
-			{
-				char temp[16];
-				print_time_crap(cfg_default_length, (char *)&temp);
-				uSetWindowText((HWND)lp, temp);
-			}
-			break;
-		case (EN_CHANGE<<16)|IDC_DFADE:
-			{
-				int meh = parse_time_crap(string_utf8_from_window((HWND)lp));
-				if (meh != BORK_TIME) cfg_default_fade = meh;
-			}
-			break;
-		case (EN_KILLFOCUS<<16)|IDC_DFADE:
-			{
-				char temp[16];
-				print_time_crap(cfg_default_fade, (char *)&temp);
-				uSetWindowText((HWND)lp, temp);
-			}
-			break;
-		case (CBN_SELCHANGE<<16)|IDC_VGMLOOPCOUNT:
-			cfg_vgm_loop_count = uSendMessage((HWND)lp,CB_GETCURSEL,0,0);
-			break;
-		case (CBN_KILLFOCUS<<16)|IDC_SAMPLERATE:
-			{
-				int t = GetDlgItemInt(wnd,IDC_SAMPLERATE,0,0);
-				if (t<6000) t=6000;
-				else if (t>96000) t=96000;
-				cfg_sample_rate = t;
-			}
-		case (CBN_SELCHANGE<<16)|IDC_INTERPOLATION:
-			cfg_spc_interpolation = uSendMessage((HWND)lp,CB_GETCURSEL,0,0);
-			break;
-		}
-		break;
-	case WM_HSCROLL:
-		{
-			int t = uSendMessage((HWND)lp, TBM_GETPOS, 0, 0);
-			switch ((LPARAM)GetMenu((HWND)lp))
-			{
-			case IDC_SLIDER_BASS:
-				cfg_effects_bass = t;
-				break;
-			case IDC_SLIDER_TREBLE:
-				cfg_effects_treble = t;
-				break;
-			case IDC_SLIDER_ECHO_DEPTH:
-				cfg_effects_echo_depth = t;
-				break;
-			}
-		}
-		break;
-	case WM_DESTROY:
-		char temp[16];
-		itoa(cfg_sample_rate, temp, 10);
-		cfg_history_rate.add_item(temp);
-
-		break;
-	}
-	return 0;
-}
-
-class preferences_page_gep : public preferences_page
-{
+class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
 public:
-	virtual HWND create(HWND parent)
-	{
-		return uCreateDialog(IDD_CONFIG, parent, ConfigProc);
-	}
-	GUID get_guid()
-	{
-		// {00C3BD9B-CA1D-477d-B381-434EE9FB993B}
-		static const GUID guid = 
-		{ 0xc3bd9b, 0xca1d, 0x477d, { 0xb3, 0x81, 0x43, 0x4e, 0xe9, 0xfb, 0x99, 0x3b } };
-		return guid;
-	}
-	virtual const char * get_name() {return "Game Emu Player";}
-	GUID get_parent_guid() {return guid_input;}
+	//Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us
+	CMyPreferences(preferences_page_callback::ptr callback) : m_callback(callback) {}
 
-	bool reset_query() {return true;}
-	void reset()
-	{
-		cfg_sample_rate = 44100;
+	//Note that we don't bother doing anything regarding destruction of our class.
+	//The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
 
-		cfg_indefinite = 0;
-		cfg_default_length = 170000;
-		cfg_default_fade = 10000;
 
-		cfg_write = 0;
-		cfg_write_nsfe = 0;
-		cfg_nsfe_ignore_playlists = 0;
+	//dialog resource ID
+	enum {IDD = IDD_CONFIG};
+	// preferences_page_instance methods (not all of them - get_wnd() is supplied by preferences_page_impl helpers)
+	t_uint32 get_state();
+	void apply();
+	void reset();
 
-		cfg_spc_anti_surround = 0;
-		cfg_spc_interpolation = 0;
+	//WTL message map
+	BEGIN_MSG_MAP(CMyPreferences)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		COMMAND_HANDLER_EX(IDC_INDEFINITE, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_WRITE, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_WNSFE, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_NSFEPL, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_ANTISURROUND, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_GD3JAPANESE, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_EFFECTS, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FORMAT_NSF, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FORMAT_SPC, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FORMAT_VGM, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FORMAT_AY, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FORMAT_GBS, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FORMAT_GYM, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FORMAT_HES, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FORMAT_KSS, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FORMAT_SAP, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FORMAT_SGC, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_DLENGTH, EN_CHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_DFADE, EN_CHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_VGMLOOPCOUNT, CBN_SELCHANGE, OnSelectionChange)
+		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_EDITCHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_SELCHANGE, OnSelectionChange)
+		DROPDOWN_HISTORY_HANDLER(IDC_SAMPLERATE, cfg_history_rate)
+		COMMAND_HANDLER_EX(IDC_INTERPOLATION, CBN_SELCHANGE, OnSelectionChange)
+		MSG_WM_HSCROLL(OnHScroll)
+	END_MSG_MAP()
+private:
+	BOOL OnInitDialog(CWindow, LPARAM);
+	void OnEditChange(UINT, int, CWindow);
+	void OnSelectionChange(UINT, int, CWindow);
+	void OnButtonClick(UINT, int, CWindow);
+	void OnHScroll(UINT, UINT, CScrollBar);
+	bool HasChanged();
+	void OnChanged();
 
-		cfg_vgm_gd3_prefers_japanese = 0;
-		cfg_vgm_loop_count = 1;
+	void enable_vgm_loop_count(BOOL);
 
-		cfg_control_override = 0;
-		cfg_control_tempo = 10000;
-
-		cfg_format_enable = ~0;
-
-		cfg_effects_enable = 0;
-		cfg_effects_bass = 128;
-		cfg_effects_treble = 128;
-		cfg_effects_echo_depth = 31;
-	}
+	const preferences_page_callback::ptr m_callback;
 };
 
-static preferences_page_factory_t<preferences_page_gep> foo1;
-DECLARE_COMPONENT_VERSION("Game Emu Player", MYVERSION, "Based on Game_Music_Emu v0.5.2 by Shay Green\n\nhttp://www.slack.net/~ant/")
+void CMyPreferences::enable_vgm_loop_count(BOOL status)
+{
+	GetDlgItem( IDC_VGMLOOPCOUNT_TEXT ).EnableWindow( status );
+	GetDlgItem( IDC_VGMLOOPCOUNT ).EnableWindow( status );
+}
+
+BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
+	char temp[16];
+	SendDlgItemMessage( IDC_INDEFINITE, BM_SETCHECK, cfg_indefinite );
+	SendDlgItemMessage( IDC_WRITE, BM_SETCHECK, cfg_write );
+	SendDlgItemMessage( IDC_WNSFE, BM_SETCHECK, cfg_write_nsfe );
+	SendDlgItemMessage( IDC_NSFEPL, BM_SETCHECK, cfg_nsfe_ignore_playlists );
+	SendDlgItemMessage( IDC_ANTISURROUND, BM_SETCHECK, cfg_spc_anti_surround );
+	SendDlgItemMessage( IDC_GD3JAPANESE, BM_SETCHECK, cfg_vgm_gd3_prefers_japanese );
+	SendDlgItemMessage( IDC_EFFECTS, BM_SETCHECK, cfg_effects_enable );
+	print_time_crap( cfg_default_length, (char *)&temp );
+	uSetDlgItemText( m_hWnd, IDC_DLENGTH, (char *)&temp );
+	print_time_crap( cfg_default_fade, (char *)&temp );
+	uSetDlgItemText( m_hWnd, IDC_DFADE, (char *)&temp );
+
+	CWindow w;
+
+	w = GetDlgItem( IDC_SLIDER_BASS );
+	::SendMessage( w, TBM_SETRANGE, 0, MAKELONG( 0, 255 ) );
+	::SendMessage( w, TBM_SETPOS, 1, cfg_effects_bass );
+
+	w = GetDlgItem( IDC_SLIDER_TREBLE );
+	::SendMessage( w, TBM_SETRANGE, 0, MAKELONG( 0, 255 ) );
+	::SendMessage( w, TBM_SETPOS, 1, cfg_effects_treble );
+
+	w = GetDlgItem( IDC_SLIDER_ECHO_DEPTH );
+	::SendMessage( w, TBM_SETRANGE, 0, MAKELONG( 0, 255 ) );
+	::SendMessage( w, TBM_SETPOS, 1, cfg_effects_echo_depth );
+
+	int n,o;
+	for(n=IDC_FORMAT_NSF,o=0;n<=IDC_FORMAT_SGC;n++,o++)
+	{
+		SendDlgItemMessage( n, BM_SETCHECK, cfg_format_enable & ( 1 << o ) );
+	}
+	for(n=tabsize(srate_tab);n--;)
+	{
+		if (srate_tab[n] != cfg_sample_rate)
+		{
+			itoa(srate_tab[n], temp, 10);
+			cfg_history_rate.add_item(temp);
+		}
+	}
+	itoa( cfg_sample_rate, temp, 10 );
+	cfg_history_rate.add_item(temp);
+	w = GetDlgItem( IDC_SAMPLERATE );
+	cfg_history_rate.setup_dropdown( w );
+	::SendMessage( w, CB_SETCURSEL, 0, 0 );
+
+	w = GetDlgItem( IDC_VGMLOOPCOUNT );
+	uSendMessageText( w, CB_ADDSTRING, 0, "none" );
+	for (n = 1; n <= 10; n++)
+	{
+		itoa( n, temp, 10 );
+		uSendMessageText( w, CB_ADDSTRING, 0, temp );
+	}
+	::SendMessage( w, CB_SETCURSEL, cfg_vgm_loop_count, 0 );
+
+	enable_vgm_loop_count( !cfg_indefinite );
+
+	w = GetDlgItem( IDC_INTERPOLATION );
+	uSendMessageText( w, CB_ADDSTRING, 0, "Gaussian" );
+	uSendMessageText( w, CB_ADDSTRING, 0, "Cubic" );
+	uSendMessageText( w, CB_ADDSTRING, 0, "Sinc" );
+	::SendMessage( w, CB_SETCURSEL, cfg_spc_interpolation, 0 );
+
+	union
+	{
+		RECT r;
+		POINT p [2];
+	};
+
+	w = GetDlgItem( IDC_GROUPBOX );
+	w.GetClientRect( &r );
+	w.MapWindowPoints( m_hWnd, &p [1], 1 );
+
+	CreateLogo( m_hWnd, p [1].x + 2, p [1].y - 181 );
+
+	return TRUE;
+}
+
+void CMyPreferences::OnEditChange(UINT, int, CWindow) {
+	OnChanged();
+}
+
+void CMyPreferences::OnSelectionChange(UINT, int, CWindow) {
+	OnChanged();
+}
+
+void CMyPreferences::OnButtonClick(UINT, int, CWindow) {
+	enable_vgm_loop_count( ! SendDlgItemMessage( IDC_INDEFINITE, BM_GETCHECK ) );
+	OnChanged();
+}
+
+void CMyPreferences::OnHScroll(UINT, UINT, CScrollBar) {
+	OnChanged();
+}
+
+t_uint32 CMyPreferences::get_state() {
+	t_uint32 state = preferences_state::resettable;
+	if (HasChanged()) state |= preferences_state::changed;
+	return state;
+}
+
+void CMyPreferences::reset() {
+	int n, o;
+	char temp[16];
+	SendDlgItemMessage( IDC_INDEFINITE, BM_SETCHECK, default_cfg_indefinite );
+	SendDlgItemMessage( IDC_WRITE, BM_SETCHECK, default_cfg_write );
+	SendDlgItemMessage( IDC_WNSFE, BM_SETCHECK, default_cfg_write_nsfe );
+	SendDlgItemMessage( IDC_NSFEPL, BM_SETCHECK, default_cfg_nsfe_ignore_playlists );
+	SendDlgItemMessage( IDC_ANTISURROUND, BM_SETCHECK, default_cfg_spc_anti_surround );
+	SendDlgItemMessage( IDC_GD3JAPANESE, BM_SETCHECK, default_cfg_vgm_gd3_prefers_japanese );
+	SendDlgItemMessage( IDC_EFFECTS, BM_SETCHECK, default_cfg_effects_enable );
+	for(n=IDC_FORMAT_NSF,o=0;n<=IDC_FORMAT_SGC;n++,o++)
+	{
+		SendDlgItemMessage( n, BM_SETCHECK, !! ( default_cfg_format_enable & ( 1 << o ) ) );
+	}
+	print_time_crap( default_cfg_default_length, (char *)&temp );
+	uSetDlgItemText( m_hWnd, IDC_DLENGTH, (char *)&temp );
+	print_time_crap( default_cfg_default_fade, (char *)&temp );
+	uSetDlgItemText( m_hWnd, IDC_DFADE, (char *)&temp );
+	SendDlgItemMessage( IDC_SLIDER_BASS, TBM_SETPOS, 1, default_cfg_effects_bass );
+	SendDlgItemMessage( IDC_SLIDER_TREBLE, TBM_SETPOS, 1, default_cfg_effects_treble );
+	SendDlgItemMessage( IDC_SLIDER_ECHO_DEPTH, TBM_SETPOS, 1, default_cfg_effects_echo_depth );
+	SetDlgItemInt( IDC_SAMPLERATE, default_cfg_sample_rate, FALSE );
+	SendDlgItemMessage( IDC_VGMLOOPCOUNT, CB_SETCURSEL, default_cfg_vgm_loop_count );
+	enable_vgm_loop_count( !default_cfg_indefinite );
+	SendDlgItemMessage( IDC_INTERPOLATION, CB_SETCURSEL, default_cfg_spc_interpolation );
+
+	OnChanged();
+}
+
+void CMyPreferences::apply() {
+	char temp[16];
+	int t = GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE );
+	if ( t < 6000 ) t = 6000;
+	else if ( t > 96000 ) t = 96000;
+	SetDlgItemInt( IDC_SAMPLERATE, t, FALSE );
+	itoa( t, temp, 10 );
+	cfg_history_rate.add_item(temp);
+	cfg_sample_rate = t;
+	cfg_vgm_loop_count = SendDlgItemMessage( IDC_VGMLOOPCOUNT, CB_GETCURSEL );
+	cfg_spc_interpolation = SendDlgItemMessage( IDC_INTERPOLATION, CB_GETCURSEL );
+	t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_DLENGTH ) ) );
+	if ( t != BORK_TIME ) cfg_default_length = t;
+	else
+	{
+		print_time_crap( cfg_default_length, (char *)&temp );
+		uSetDlgItemText( m_hWnd, IDC_DLENGTH, (char *)&temp );
+	}
+	t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_DFADE ) ) );
+	if ( t != BORK_TIME ) cfg_default_fade = t;
+	else
+	{
+		print_time_crap( cfg_default_fade, (char *)&temp );
+		uSetDlgItemText( m_hWnd, IDC_DFADE, (char *)&temp );
+	}
+	cfg_indefinite = SendDlgItemMessage( IDC_INDEFINITE, BM_GETCHECK );
+	cfg_write = SendDlgItemMessage( IDC_WRITE, BM_GETCHECK );
+	cfg_write_nsfe = SendDlgItemMessage( IDC_WNSFE, BM_GETCHECK );
+	cfg_nsfe_ignore_playlists = SendDlgItemMessage( IDC_NSFEPL, BM_GETCHECK );
+	cfg_spc_anti_surround = SendDlgItemMessage( IDC_ANTISURROUND, BM_GETCHECK );
+	cfg_vgm_gd3_prefers_japanese = SendDlgItemMessage( IDC_GD3JAPANESE, BM_GETCHECK );
+	cfg_effects_enable = SendDlgItemMessage( IDC_EFFECTS, BM_GETCHECK );
+	cfg_format_enable = ~0;
+	for (unsigned wp = IDC_FORMAT_NSF; wp <= IDC_FORMAT_SGC; wp++)
+	{
+		unsigned bit = 1 << ( wp - IDC_FORMAT_NSF );
+		unsigned mask = ~0 ^ bit;
+		cfg_format_enable = ( cfg_format_enable & mask ) | ( bit * SendDlgItemMessage( wp, BM_GETCHECK ) );
+	}
+	cfg_effects_bass = SendDlgItemMessage( IDC_SLIDER_BASS, TBM_GETPOS );
+	cfg_effects_treble = SendDlgItemMessage( IDC_SLIDER_TREBLE, TBM_GETPOS );
+	cfg_effects_echo_depth = SendDlgItemMessage( IDC_SLIDER_ECHO_DEPTH, TBM_GETPOS );
+	
+	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
+}
+
+bool CMyPreferences::HasChanged() {
+	//returns whether our dialog content is different from the current configuration (whether the apply button should be enabled or not)
+	bool changed = false;
+	if ( !changed && GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE ) != cfg_sample_rate ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_INTERPOLATION, CB_GETCURSEL ) != cfg_spc_interpolation ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_VGMLOOPCOUNT, CB_GETCURSEL ) != cfg_vgm_loop_count ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_INDEFINITE, BM_GETCHECK ) != cfg_indefinite ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_WRITE, BM_GETCHECK ) != cfg_write ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_WNSFE, BM_GETCHECK ) != cfg_write_nsfe ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_NSFEPL, BM_GETCHECK ) != cfg_nsfe_ignore_playlists ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_ANTISURROUND, BM_GETCHECK ) != cfg_spc_anti_surround ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_GD3JAPANESE, BM_GETCHECK ) != cfg_vgm_gd3_prefers_japanese ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_EFFECTS, BM_GETCHECK ) != cfg_effects_enable ) changed = true;
+	if ( !changed )
+	{
+		unsigned format_enable = ~0;
+		for (unsigned wp = IDC_FORMAT_NSF; wp <= IDC_FORMAT_SGC; wp++)
+		{
+			unsigned bit = 1 << ( wp - IDC_FORMAT_NSF );
+			unsigned mask = ~0 ^ bit;
+			format_enable = ( format_enable & mask ) | ( bit * SendDlgItemMessage( wp, BM_GETCHECK ) );
+		}
+		if ( format_enable != cfg_format_enable ) changed = true;
+	}
+	if ( !changed && SendDlgItemMessage( IDC_SLIDER_BASS, TBM_GETPOS ) != cfg_effects_bass ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_SLIDER_TREBLE, TBM_GETPOS ) != cfg_effects_treble ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_SLIDER_ECHO_DEPTH, TBM_GETPOS ) != cfg_effects_echo_depth ) changed = true;
+	if ( !changed )
+	{
+		int t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_DLENGTH ) ) );
+		if ( t != BORK_TIME && t != cfg_default_length ) changed = true;
+	}
+	if ( !changed )
+	{
+		int t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_DFADE ) ) );
+		if ( t != BORK_TIME && t != cfg_default_fade ) changed = true;
+	}
+	return changed;
+}
+void CMyPreferences::OnChanged() {
+	//tell the host that our state has changed to enable/disable the apply button appropriately.
+	m_callback->on_state_changed();
+}
+
+class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
+	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
+public:
+	const char * get_name() {return "Game Emu Player";}
+	GUID get_guid() {
+		// {00C3BD9B-CA1D-477d-B381-434EE9FB993B}
+		static const GUID guid = { 0xc3bd9b, 0xca1d, 0x477d, { 0xb3, 0x81, 0x43, 0x4e, 0xe9, 0xfb, 0x99, 0x3b } };
+		return guid;
+	}
+	GUID get_parent_guid() {return guid_input;}
+};
+
+static preferences_page_factory_t<preferences_page_myimpl> foo1;
+DECLARE_COMPONENT_VERSION("Game Emu Player", MYVERSION, "Based on Game_Music_Emu vX.X.X by Shay Green\n\nhttp://www.slack.net/~ant/")
+VALIDATE_COMPONENT_FILENAME("foo_gep.dll");

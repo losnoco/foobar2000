@@ -128,7 +128,7 @@ print_guid::print_guid(const GUID & p_guid)
 }
 
 
-PFC_DLL_EXPORT void print_hex_raw(const void * buffer,unsigned bytes,char * p_out)
+void print_hex_raw(const void * buffer,unsigned bytes,char * p_out)
 {
 	char * out = p_out;
 	const unsigned char * in = (const unsigned char *) buffer;

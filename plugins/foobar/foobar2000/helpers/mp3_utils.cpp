@@ -180,11 +180,82 @@ unsigned mp3header::get_samples_per_frame()
 	return fr.m_duration;
 }
 
-
 bool mp3_utils::IsSameStream(TMPEGFrameInfo const & p_frame1,TMPEGFrameInfo const & p_frame2) {
 	return 
 		p_frame1.m_channel_mode == p_frame2.m_channel_mode && 
 		p_frame1.m_sample_rate == p_frame2.m_sample_rate &&
 		p_frame1.m_layer == p_frame2.m_layer &&
 		p_frame1.m_mpegversion == p_frame2.m_mpegversion;
+}
+
+
+
+bool mp3_utils::ValidateFrameCRC(const t_uint8 * frameData, t_size frameSize, TMPEGFrameInfo const & info) {
+	if (frameSize < info.m_bytes) return false; //FAIL, incomplete data
+	if (!info.m_crc) return true; //nothing to check, frame appears valid
+	return ExtractFrameCRC(frameData, frameSize, info) == CalculateFrameCRC(frameData, frameSize, info);
+}
+
+static t_uint32 CRC_update(unsigned value, t_uint32 crc)
+{
+	enum { CRC16_POLYNOMIAL = 0x8005 };
+    unsigned i;
+    value <<= 8;
+    for (i = 0; i < 8; i++) {
+		value <<= 1;
+		crc <<= 1;
+		if (((crc ^ value) & 0x10000)) crc ^= CRC16_POLYNOMIAL;
+    }
+    return crc;
+}
+
+
+void mp3_utils::RecalculateFrameCRC(t_uint8 * frameData, t_size frameSize, TMPEGFrameInfo const & info) {
+	PFC_ASSERT( frameSize >= info.m_bytes && info.m_crc );
+
+	const t_uint16 crc = ExtractFrameCRC(frameData, frameSize, info);
+	frameData[4] = (t_uint8)(crc >> 8);
+	frameData[5] = (t_uint8)(crc & 0xFF);
+}
+
+static t_uint16 grabFrameCRC(const t_uint8 * frameData, t_size sideInfoLen) {
+    t_uint32 crc = 0xffff;
+    crc = CRC_update(frameData[2], crc);
+    crc = CRC_update(frameData[3], crc);
+    for (t_size i = 6; i < sideInfoLen; i++) {
+		crc = CRC_update(frameData[i], crc);
+    }
+
+	return (t_uint32) (crc & 0xFFFF);
+}
+
+t_uint16 mp3_utils::ExtractFrameCRC(const t_uint8 * frameData, t_size frameSize, TMPEGFrameInfo const & info) {
+	PFC_ASSERT( frameSize >= info.m_bytes && info.m_crc );
+
+	return ((t_uint16)frameData[4] << 8) | (t_uint16)frameData[5];
+
+}
+t_uint16 mp3_utils::CalculateFrameCRC(const t_uint8 * frameData, t_size frameSize, TMPEGFrameInfo const & info) {
+	PFC_ASSERT( frameSize >= info.m_bytes && info.m_crc );
+
+	t_size sideInfoLen = 0;
+	if (info.m_mpegversion == MPEG_1)
+		sideInfoLen = (info.m_channels == 1) ? 4 + 17 : 4 + 32;
+	else
+		sideInfoLen = (info.m_channels == 1) ? 4 + 9 : 4 + 17;
+
+	//CRC
+	sideInfoLen += 2;
+
+	PFC_ASSERT( sideInfoLen  <= frameSize );
+
+	return grabFrameCRC(frameData, sideInfoLen);
+}
+
+
+bool mp3_utils::ValidateFrameCRC(const t_uint8 * frameData, t_size frameSize) {
+	if (frameSize < 4) return false; //FAIL, not a valid frame
+	TMPEGFrameInfo info;
+	if (!ParseMPEGFrameHeader(info, frameData)) return false; //FAIL, not a valid frame
+	return ValidateFrameCRC(frameData, frameSize, info);
 }

@@ -1,9 +1,13 @@
-#define MYVERSION "1.32"
+#define MYVERSION "1.33"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2010-01-11 11:25 UTC - kode54
+- Updated preferences page to 1.0 API
+- Version is now 1.33
 
 2009-11-08 23:08 UTC - kode54
 - Added extra debug logging so I can attempt to track down stupid crashes
@@ -42,6 +46,7 @@
 #include "fileprovider.h"
 
 #include "../helpers/dropdown_helper.h"
+#include "../ATLHelpers/ATLHelpers.h"
 
 #include "resource.h"
 
@@ -62,6 +67,13 @@ static const GUID guid_cfg_play_indefinitely =
 // {A526C7E1-3BC6-4ddb-BD6A-C5A0F5D725FE}
 static const GUID guid_cfg_adlib_core = 
 { 0xa526c7e1, 0x3bc6, 0x4ddb, { 0xbd, 0x6a, 0xc5, 0xa0, 0xf5, 0xd7, 0x25, 0xfe } };
+
+enum
+{
+	default_cfg_samplerate = 44100,
+	default_cfg_play_indefinitely = 0,
+	default_cfg_adlib_core = 0
+};
 
 static cfg_int cfg_samplerate( guid_cfg_samplerate, 44100 );
 static cfg_int cfg_play_indefinitely( guid_cfg_play_indefinitely, 0 );
@@ -430,93 +442,139 @@ static cfg_dropdown_history cfg_history_rate(guid_cfg_history_rate,16);
 
 static const int srate_tab[]={8000,11025,16000,22050,24000,32000,44100,48000,64000,88200,96000};
 
-class preferences_page_adplug : public preferences_page
-{
-	static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
-	{
-		switch(msg)
-		{
-		case WM_INITDIALOG:
-			{
-				HWND w;
-				char temp[16];
-				int n;
-				for(n=tabsize(srate_tab);n--;)
-				{
-					if (srate_tab[n] != cfg_samplerate)
-					{
-						itoa(srate_tab[n], temp, 10);
-						cfg_history_rate.add_item(temp);
-					}
-				}
-				itoa(cfg_samplerate, temp, 10);
-				cfg_history_rate.add_item(temp);
-				cfg_history_rate.setup_dropdown(w = GetDlgItem(wnd,IDC_SAMPLERATE));
-				uSendMessage(w, CB_SETCURSEL, 0, 0);
-
-				w = GetDlgItem(wnd, IDC_ADLIBCORE);
-				uSendMessageText(w, CB_ADDSTRING, 0, "Harekiet's");
-				uSendMessageText(w, CB_ADDSTRING, 0, "Ken Silverman's");
-				uSendMessageText(w, CB_ADDSTRING, 0, "Jarek Burczynski's");
-				uSendMessage(w, CB_SETCURSEL, cfg_adlib_core, 0);
-
-				uSendDlgItemMessage(wnd, IDC_PLAY_INDEFINITELY, BM_SETCHECK, cfg_play_indefinitely, 0);
-			}
-			return 1;
-		case WM_COMMAND:
-			switch(wp)
-			{
-			case IDC_PLAY_INDEFINITELY:
-				cfg_play_indefinitely = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-				break;
-			case (CBN_KILLFOCUS<<16)|IDC_SAMPLERATE:
-				{
-					int t = GetDlgItemInt(wnd,IDC_SAMPLERATE,0,0);
-					if (t<6000) t=6000;
-					else if (t>192000) t=192000;
-					cfg_samplerate = t;
-				}
-				break;
-			case (CBN_SELCHANGE<<16)|IDC_ADLIBCORE:
-				cfg_adlib_core = uSendMessage((HWND)lp, CB_GETCURSEL, 0, 0);
-				break;
-			}
-			break;
-		case WM_DESTROY:
-			char temp[16];
-			itoa(cfg_samplerate, temp, 10);
-			cfg_history_rate.add_item(temp);
-			break;
-		}
-		return 0;
-	}
-
+class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
 public:
-	virtual HWND create(HWND parent)
+	//Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us
+	CMyPreferences(preferences_page_callback::ptr callback) : m_callback(callback) {}
+
+	//Note that we don't bother doing anything regarding destruction of our class.
+	//The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
+
+
+	//dialog resource ID
+	enum {IDD = IDD_CONFIG};
+	// preferences_page_instance methods (not all of them - get_wnd() is supplied by preferences_page_impl helpers)
+	t_uint32 get_state();
+	void apply();
+	void reset();
+
+	//WTL message map
+	BEGIN_MSG_MAP(CMyPreferences)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		COMMAND_HANDLER_EX(IDC_PLAY_INDEFINITELY, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_EDITCHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_SELCHANGE, OnSelectionChange)
+		DROPDOWN_HISTORY_HANDLER(IDC_SAMPLERATE, cfg_history_rate)
+		COMMAND_HANDLER_EX(IDC_ADLIBCORE, CBN_SELCHANGE, OnSelectionChange)
+	END_MSG_MAP()
+private:
+	BOOL OnInitDialog(CWindow, LPARAM);
+	void OnEditChange(UINT, int, CWindow);
+	void OnSelectionChange(UINT, int, CWindow);
+	void OnButtonClick(UINT, int, CWindow);
+	bool HasChanged();
+	void OnChanged();
+
+	const preferences_page_callback::ptr m_callback;
+};
+
+BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
+	CWindow w;
+	char temp[16];
+	int n;
+	for(n=tabsize(srate_tab);n--;)
 	{
-		return uCreateDialog(IDD_CONFIG,parent,ConfigProc);
+		if (srate_tab[n] != cfg_samplerate)
+		{
+			itoa(srate_tab[n], temp, 10);
+			cfg_history_rate.add_item(temp);
+		}
 	}
-	GUID get_guid()
-	{
+	itoa(cfg_samplerate, temp, 10);
+	cfg_history_rate.add_item(temp);
+	w = GetDlgItem( IDC_SAMPLERATE );
+	cfg_history_rate.setup_dropdown( w );
+	::SendMessage( w, CB_SETCURSEL, 0, 0 );
+
+	w = GetDlgItem( IDC_ADLIBCORE );
+	uSendMessageText( w, CB_ADDSTRING, 0, "Harekiet's" );
+	uSendMessageText( w, CB_ADDSTRING, 0, "Ken Silverman's" );
+	uSendMessageText( w, CB_ADDSTRING, 0, "Jarek Burczynski's" );
+	::SendMessage( w, CB_SETCURSEL, cfg_adlib_core, 0 );
+
+	SendDlgItemMessage( IDC_PLAY_INDEFINITELY, BM_SETCHECK, cfg_play_indefinitely );
+
+	return TRUE;
+}
+
+void CMyPreferences::OnEditChange(UINT, int, CWindow) {
+	OnChanged();
+}
+
+void CMyPreferences::OnSelectionChange(UINT, int, CWindow) {
+	OnChanged();
+}
+
+void CMyPreferences::OnButtonClick(UINT, int, CWindow) {
+	OnChanged();
+}
+
+t_uint32 CMyPreferences::get_state() {
+	t_uint32 state = preferences_state::resettable;
+	if (HasChanged()) state |= preferences_state::changed;
+	return state;
+}
+
+void CMyPreferences::reset() {
+	SetDlgItemInt( IDC_SAMPLERATE, default_cfg_samplerate, FALSE );
+	SendDlgItemMessage( IDC_ADLIBCORE, CB_SETCURSEL, default_cfg_adlib_core );
+	SendDlgItemMessage( IDC_PLAY_INDEFINITELY, BM_SETCHECK, default_cfg_play_indefinitely );
+	
+	OnChanged();
+}
+
+void CMyPreferences::apply() {
+	char temp[16];
+	int t = GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE );
+	if ( t < 6000 ) t = 6000;
+	else if ( t > 192000 ) t = 192000;
+	SetDlgItemInt( IDC_SAMPLERATE, t, FALSE );
+	itoa( t, temp, 10 );
+	cfg_history_rate.add_item(temp);
+	cfg_samplerate = t;
+	cfg_adlib_core = SendDlgItemMessage( IDC_ADLIBCORE, CB_GETCURSEL );
+	cfg_play_indefinitely = SendDlgItemMessage( IDC_PLAY_INDEFINITELY, BM_GETCHECK );
+	
+	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
+}
+
+bool CMyPreferences::HasChanged() {
+	//returns whether our dialog content is different from the current configuration (whether the apply button should be enabled or not)
+	return GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE ) != cfg_samplerate ||
+		SendDlgItemMessage( IDC_ADLIBCORE, CB_GETCURSEL ) != cfg_adlib_core ||
+		SendDlgItemMessage( IDC_PLAY_INDEFINITELY, BM_GETCHECK ) != cfg_play_indefinitely;
+}
+void CMyPreferences::OnChanged() {
+	//tell the host that our state has changed to enable/disable the apply button appropriately.
+	m_callback->on_state_changed();
+}
+
+class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
+	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
+public:
+	const char * get_name() {return "AdPlug";}
+	GUID get_guid() {
 		// {61DC98D5-A3A3-42a8-B555-97C355FE21D3}
-		static const GUID guid = 
-		{ 0x61dc98d5, 0xa3a3, 0x42a8, { 0xb5, 0x55, 0x97, 0xc3, 0x55, 0xfe, 0x21, 0xd3 } };
+		static const GUID guid = { 0x61dc98d5, 0xa3a3, 0x42a8, { 0xb5, 0x55, 0x97, 0xc3, 0x55, 0xfe, 0x21, 0xd3 } };
 		return guid;
 	}
-	virtual const char * get_name() {return "AdPlug";}
 	GUID get_parent_guid() {return guid_input;}
-
-	bool reset_query() {return true;}
-	void reset()
-	{
-		cfg_samplerate = 44100;
-		cfg_play_indefinitely = 0;
-	}
 };
 
 static input_factory_t            <input_adplug>            g_input_adplug_factory;
 static initquit_factory_t         <initquit_adplug>         g_initquit_adplug_factory;
 static service_factory_single_t   <adplug_file_types>       g_input_file_type_adplug_factory;
-static preferences_page_factory_t <preferences_page_adplug> g_config_adplug_factory;
+static preferences_page_factory_t <preferences_page_myimpl> g_config_adplug_factory;
 
 DECLARE_COMPONENT_VERSION( "AdPlug", MYVERSION, "Input based on the AdPlug library.\n\nhttp://adplug.sourceforge.net/" );
+VALIDATE_COMPONENT_FILENAME("foo_input_adplug.dll");

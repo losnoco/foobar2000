@@ -15,9 +15,9 @@ namespace file_info_record_helper {
 	public:
 		__file_info_record__meta__enumerator(file_info & p_out) : m_out(p_out) {}
 		template<typename t_value> void operator() (const char * p_name,const t_value & p_value) {
-			t_size index = infinite;
+			t_size index = ~0;
 			for(typename t_value::const_iterator iter = p_value.first(); iter.is_valid(); ++iter) {
-				if (index == infinite) index = m_out.__meta_add_unsafe(p_name,*iter);
+				if (index == ~0) index = m_out.__meta_add_unsafe(p_name,*iter);
 				else m_out.meta_add_value(index,*iter);
 			}
 		}
@@ -27,7 +27,7 @@ namespace file_info_record_helper {
 
 	class file_info_record {
 	public:
-		typedef pfc::chain_list_t<pfc::string8> t_meta_value;
+		typedef pfc::chain_list_v2_t<pfc::string8> t_meta_value;
 		typedef pfc::map_t<pfc::string8,t_meta_value,file_info::field_name_comparator> t_meta_map;
 		typedef pfc::map_t<pfc::string8,pfc::string8,file_info::field_name_comparator> t_info_map;
 
@@ -56,7 +56,7 @@ namespace file_info_record_helper {
 					t_meta_value & entry = m_meta.find_or_add(p_info.meta_enum_name(metawalk));
 					entry.remove_all();
 					for(t_size valuewalk = 0; valuewalk < valuecount; ++valuewalk) {
-						entry.insert_last(p_info.meta_enum_value(metawalk,valuewalk));
+						entry.add_item(p_info.meta_enum_value(metawalk,valuewalk));
 					}
 				}
 			}
@@ -89,7 +89,7 @@ namespace file_info_record_helper {
 				t_meta_value & val = m_meta.find_or_add(p_name);
 				val.remove_all();
 				for(t_size walk = 0; walk < count; ++walk) {
-					val.insert_last(p_info.meta_enum_value(p_index,walk));
+					val.add_item(p_info.meta_enum_value(p_index,walk));
 				}
 			}
 		}
@@ -144,11 +144,13 @@ namespace cue_parser
 		t_cuesheet_index_list m_indexes;
 	};
 
+	typedef pfc::chain_list_v2_t<cue_entry> t_cue_entry_list;
+
 
 	PFC_DECLARE_EXCEPTION(exception_bad_cuesheet,exception_io_data,"Invalid cuesheet");
 
 	//! Throws exception_bad_cuesheet on failure.
-	void parse(const char *p_cuesheet,pfc::chain_list_t<cue_entry> & p_out);
+	void parse(const char *p_cuesheet,t_cue_entry_list & p_out);
 	//! Throws exception_bad_cuesheet on failure.
 	void parse_info(const char *p_cuesheet,file_info & p_info,unsigned p_index);
 	//! Throws exception_bad_cuesheet on failure.
@@ -184,18 +186,20 @@ namespace cue_parser
 
 
 
-	class __decoder_wrapper {
+	class _decoder_wrapper {
 	public:
 		virtual bool run(audio_chunk & p_chunk,abort_callback & p_abort) = 0;
 		virtual void seek(double p_seconds,abort_callback & p_abort) = 0;
 		virtual bool get_dynamic_info(file_info & p_out, double & p_timestamp_delta) = 0;
 		virtual bool get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta) = 0;
 		virtual void on_idle(abort_callback & p_abort) = 0;
-		virtual ~__decoder_wrapper() {}
+		virtual bool run_raw(audio_chunk & p_chunk, mem_block_container & p_raw, abort_callback & p_abort) = 0;
+		virtual void set_logger(event_logger::ptr ptr) = 0;
+		virtual ~_decoder_wrapper() {}
 	};
 
 	template<typename t_input>
-	class __decoder_wrapper_simple : public __decoder_wrapper {
+	class _decoder_wrapper_simple : public _decoder_wrapper {
 	public:
 		void initialize(service_ptr_t<file> p_filehint,const char * p_path,unsigned p_flags,abort_callback & p_abort) {
 			m_input.open(p_filehint,p_path,input_open_decode,p_abort);
@@ -206,11 +210,13 @@ namespace cue_parser
 		bool get_dynamic_info(file_info & p_out, double & p_timestamp_delta) {return m_input.decode_get_dynamic_info(p_out,p_timestamp_delta);}
 		bool get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta) {return m_input.decode_get_dynamic_info_track(p_out,p_timestamp_delta);}
 		void on_idle(abort_callback & p_abort) {m_input.decode_on_idle(p_abort);}
+		bool run_raw(audio_chunk & p_chunk, mem_block_container & p_raw, abort_callback & p_abort) {return m_input.decode_run_raw(p_chunk, p_raw, p_abort);}
+		void set_logger(event_logger::ptr ptr) {m_input.set_logger(ptr);}
 	private:
 		t_input m_input;
 	};
 
-	class __decoder_wrapper_cue : public __decoder_wrapper {
+	class _decoder_wrapper_cue : public _decoder_wrapper {
 	public:
 		void open(service_ptr_t<file> p_filehint,const playable_location & p_location,unsigned p_flags,abort_callback & p_abort,double p_start,double p_length) {
 			m_input.open(p_filehint,p_location,p_flags,p_abort,p_start,p_length);
@@ -220,7 +226,8 @@ namespace cue_parser
 		bool get_dynamic_info(file_info & p_out, double & p_timestamp_delta) {return m_input.get_dynamic_info(p_out,p_timestamp_delta);}
 		bool get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta) {return m_input.get_dynamic_info_track(p_out,p_timestamp_delta);}
 		void on_idle(abort_callback & p_abort) {m_input.on_idle(p_abort);}
-
+		bool run_raw(audio_chunk & p_chunk, mem_block_container & p_raw, abort_callback & p_abort) {return m_input.run_raw(p_chunk, p_raw, p_abort);}
+		void set_logger(event_logger::ptr ptr) {m_input.set_logger(ptr);}
 	private:
 		input_helper_cue m_input;
 	};
@@ -267,7 +274,7 @@ namespace cue_parser
 		void decode_initialize(t_uint32 p_subsong,unsigned p_flags,abort_callback & p_abort) {
 			m_decoder.release();
 			if (p_subsong == 0) {
-				pfc::rcptr_t<__decoder_wrapper_simple<t_base> > temp;
+				pfc::rcptr_t<_decoder_wrapper_simple<t_base> > temp;
 				temp.new_t();
 				m_file->reopen(p_abort);
 				temp->initialize(m_file,m_path,p_flags,p_abort);
@@ -276,12 +283,13 @@ namespace cue_parser
 				double start,length;
 				m_meta.query_track_offsets(p_subsong,start,length);
 
-				pfc::rcptr_t<__decoder_wrapper_cue> temp;
+				pfc::rcptr_t<_decoder_wrapper_cue> temp;
 				temp.new_t();
 				m_file->reopen(p_abort);
 				temp->open(m_file,make_playable_location(m_path,0),p_flags & ~input_flag_no_seeking,p_abort,start,length);
 				m_decoder = temp;
 			}
+			if (m_logger.is_valid()) m_decoder->set_logger(m_logger);
 		}
 
 		bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort) {
@@ -293,6 +301,14 @@ namespace cue_parser
 		}
 		
 		bool decode_can_seek() {return true;}
+		
+		bool decode_run_raw(audio_chunk & p_chunk, mem_block_container & p_raw, abort_callback & p_abort) {
+			return m_decoder->run_raw(p_chunk, p_raw, p_abort);
+		}
+		void set_logger(event_logger::ptr ptr) {
+			m_logger = ptr;
+			if (m_decoder.is_valid()) m_decoder->set_logger(ptr);
+		}
 
 		bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta) {
 			return m_decoder->get_dynamic_info(p_out,p_timestamp_delta);
@@ -325,7 +341,7 @@ namespace cue_parser
 				t_base instance;
 				m_file->reopen(p_abort);
 				instance.open(m_file,m_path,input_open_info_write,p_abort);
-				instance.retag(pfc::safe_cast<const file_info&>(info),p_abort);
+				instance.retag(pfc::implicit_cast<const file_info&>(info),p_abort);
 				info.reset();
 				instance.get_info(info,p_abort);
 				m_meta.set_tag(info);
@@ -336,27 +352,25 @@ namespace cue_parser
 		inline static bool g_is_our_path(const char * p_path,const char * p_extension) {return t_base::g_is_our_path(p_path,p_extension);}
 
 	private:
-		pfc::rcptr_t<__decoder_wrapper> m_decoder;
+		pfc::rcptr_t<_decoder_wrapper> m_decoder;
 
 		file_info_impl m_info;
 		pfc::string8 m_path;
 		service_ptr_t<file> m_file;
 
 		embeddedcue_metadata_manager m_meta;
+		event_logger::ptr m_logger;
 	};
 
 	template<typename I>
 	class chapterizer_impl_t : public chapterizer
 	{
 	public:
-		bool is_our_file(const char * p_path,abort_callback & p_abort) 
-		{
-			return I::g_is_our_path(p_path,pfc::string_extension(p_path));
+		bool is_our_path(const char * p_path) {
+			return I::g_is_our_path(p_path, pfc::string_extension(p_path));
 		}
 
 		void set_chapters(const char * p_path,chapter_list const & p_list,abort_callback & p_abort) {
-			
-			
 			input_wrapper_cue_t<I> instance;
 			instance.open(0,p_path,input_open_info_write,p_abort);
 
@@ -370,8 +384,8 @@ namespace cue_parser
 				{
 					cue_creator::t_entry_list entries;
 					t_size n, m = p_list.get_chapter_count();
-									
-					double offset_acc = 0;
+					const double pregap = p_list.get_pregap();
+					double offset_acc = pregap;
 					for(n=0;n<m;n++)
 					{
 						cue_creator::t_entry_list::iterator entry;
@@ -380,6 +394,7 @@ namespace cue_parser
 						entry->m_file = "CDImage.wav";
 						entry->m_track_number = (unsigned)(n+1);
 						entry->m_index_list.from_infos(entry->m_infos,offset_acc);
+						if (n == 0) entry->m_index_list.m_positions[0] = 0;
 						offset_acc += entry->m_infos.get_length();
 					}
 					cue_creator::create(cuesheet,entries);
@@ -400,10 +415,7 @@ namespace cue_parser
 		void get_chapters(const char * p_path,chapter_list & p_list,abort_callback & p_abort) {
 
 			input_wrapper_cue_t<I> instance;
-
-
 			instance.open(0,p_path,input_open_info_read,p_abort);
-
 			const t_uint32 total = instance.get_subsong_count();
 
 			p_list.set_chapter_count(total);
@@ -413,6 +425,10 @@ namespace cue_parser
 				p_list.set_info(walk,info);
 			}
 		}
+
+		bool supports_pregaps() {
+			return true;
+		}
 	};
 
 };
@@ -420,9 +436,9 @@ namespace cue_parser
 //! Wrapper template for generating embedded cuesheet enabled inputs.
 //! t_input_impl is a singletrack input implementation (see input_singletrack_impl for method declarations).
 //! To declare an embedded cuesheet enabled input, change your input declaration from input_singletrack_factory_t<myinput> to input_cuesheet_factory_t<myinput>.
-template<typename t_input_impl>
+template<typename t_input_impl, unsigned t_flags = 0>
 class input_cuesheet_factory_t {
 public:
-	input_factory_t<cue_parser::input_wrapper_cue_t<t_input_impl> > m_input_factory;
+	input_factory_ex_t<cue_parser::input_wrapper_cue_t<t_input_impl>,t_flags,input_decoder_v2> m_input_factory;
 	service_factory_single_t<cue_parser::chapterizer_impl_t<t_input_impl> > m_chapterizer_factory;	
 };

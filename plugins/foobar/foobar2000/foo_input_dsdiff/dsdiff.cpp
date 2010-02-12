@@ -1,22 +1,27 @@
-#define MYVERSION "1.1"
+#define MYVERSION "1.2"
 
 /*
 	changelog
 
-2009-11-11 21:00 - kode54
+2010-01-11 11:47 UTC - kode54
+- Updated preferences page to 1.0 API
+- Version is now 1.2
+
+2009-11-11 21:00 UTC - kode54
 - Whoops, forgot to uncomment foobar2000 resampler reset code on seek
 - Version is now 1.1
 
-2009-11-10 19:07 - kode54
+2009-11-10 19:07 UTC - kode54
 - Initial release.
 
-2009-11-10 03:42 - kode54
+2009-11-10 03:42 UTC - kode54
 - Began work.
 
 */
 
 #include <foobar2000.h>
 #include "../helpers/dropdown_helper.h"
+#include "../ATLHelpers/ATLHelpers.h"
 
 #include "DST/DSTDecoder.h"
 
@@ -29,7 +34,12 @@ static const GUID guid_cfg_max_sample_rate =
 static const GUID guid_cfg_history_rate = 
 { 0xcc7840a4, 0xd540, 0x4650, { 0x91, 0x3f, 0x5f, 0xd5, 0xc7, 0xa6, 0xa7, 0x37 } };
 
-static cfg_int cfg_max_sample_rate( guid_cfg_max_sample_rate, 88200 );
+enum
+{
+	default_cfg_max_sample_rate = 88200
+};
+
+static cfg_int cfg_max_sample_rate( guid_cfg_max_sample_rate, default_cfg_max_sample_rate );
 
 /**
  * DSD 2 PCM: Stage 1:
@@ -1157,80 +1167,122 @@ public:
 
 static cfg_dropdown_history cfg_history_rate(guid_cfg_history_rate,16);
 
-static const int srate_tab[]={8000,11025,16000,22050,24000,32000,44100,48000,64000,88200,96000};
+static const int srate_tab[]={8000,11025,16000,22050,24000,32000,44100,48000,64000,88200,96000,176400,192000};
 
-class preferences_page_dsdiff : public preferences_page
-{
-	static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
-	{
-		switch(msg)
-		{
-		case WM_INITDIALOG:
-			{
-				HWND w;
-				char temp[16];
-				int n;
-				for(n=tabsize(srate_tab);n--;)
-				{
-					if (srate_tab[n] != cfg_max_sample_rate)
-					{
-						itoa(srate_tab[n], temp, 10);
-						cfg_history_rate.add_item(temp);
-					}
-				}
-				itoa(cfg_max_sample_rate, temp, 10);
-				cfg_history_rate.add_item(temp);
-				cfg_history_rate.setup_dropdown(w = GetDlgItem(wnd,IDC_SAMPLERATE));
-				uSendMessage(w, CB_SETCURSEL, 0, 0);
-			}
-			return 1;
-		case WM_COMMAND:
-			switch(wp)
-			{
-			case (CBN_KILLFOCUS<<16)|IDC_SAMPLERATE:
-				{
-					int t = GetDlgItemInt(wnd,IDC_SAMPLERATE,0,0);
-					if (t<6000) t=6000;
-					else if (t>192000) t=192000;
-					cfg_max_sample_rate = t;
-				}
-				break;
-			}
-			break;
-		case WM_DESTROY:
-			char temp[16];
-			itoa(cfg_max_sample_rate, temp, 10);
-			cfg_history_rate.add_item(temp);
-			break;
-		}
-		return 0;
-	}
-
+class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
 public:
-	virtual HWND create(HWND parent)
-	{
-		return uCreateDialog(IDD_CONFIG,parent,ConfigProc);
-	}
-	GUID get_guid()
-	{
-		// {1A6A112A-DA07-46c8-A4FF-0FB7469D42E2}
-		static const GUID guid = 
-		{ 0x1a6a112a, 0xda07, 0x46c8, { 0xa4, 0xff, 0xf, 0xb7, 0x46, 0x9d, 0x42, 0xe2 } };
-		return guid;
-	}
-	virtual const char * get_name() {return "DSDIFF Decoder";}
-	GUID get_parent_guid() {return guid_input;}
+	//Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us
+	CMyPreferences(preferences_page_callback::ptr callback) : m_callback(callback) {}
 
-	bool reset_query() {return true;}
-	void reset()
-	{
-		cfg_max_sample_rate = 88200;
-	}
+	//Note that we don't bother doing anything regarding destruction of our class.
+	//The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
+
+
+	//dialog resource ID
+	enum {IDD = IDD_CONFIG};
+	// preferences_page_instance methods (not all of them - get_wnd() is supplied by preferences_page_impl helpers)
+	t_uint32 get_state();
+	void apply();
+	void reset();
+
+	//WTL message map
+	BEGIN_MSG_MAP(CMyPreferences)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_EDITCHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_SELCHANGE, OnSelectionChange)
+		DROPDOWN_HISTORY_HANDLER(IDC_SAMPLERATE, cfg_history_rate)
+	END_MSG_MAP()
+private:
+	BOOL OnInitDialog(CWindow, LPARAM);
+	void OnEditChange(UINT, int, CWindow);
+	void OnSelectionChange(UINT, int, CWindow);
+	bool HasChanged();
+	void OnChanged();
+
+	void enable_vgm_loop_count(BOOL);
+
+	const preferences_page_callback::ptr m_callback;
 };
 
-static input_singletrack_factory_t< input_dsdiff >           g_input_factory_dsdiff;
-static preferences_page_factory_t <preferences_page_dsdiff>  g_config_dsdiff_factory;
+BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
+	CWindow w;
+	char temp[16];
+	int n;
+	for(n=tabsize(srate_tab);n--;)
+	{
+		if (srate_tab[n] != cfg_max_sample_rate)
+		{
+			itoa(srate_tab[n], temp, 10);
+			cfg_history_rate.add_item(temp);
+		}
+	}
+	itoa(cfg_max_sample_rate, temp, 10);
+	cfg_history_rate.add_item(temp);
+	w = GetDlgItem( IDC_SAMPLERATE );
+	cfg_history_rate.setup_dropdown( w );
+	::SendMessage( w, CB_SETCURSEL, 0, 0 );
+	
+	return TRUE;
+}
+
+void CMyPreferences::OnEditChange(UINT, int, CWindow) {
+	OnChanged();
+}
+
+void CMyPreferences::OnSelectionChange(UINT, int, CWindow) {
+	OnChanged();
+}
+
+t_uint32 CMyPreferences::get_state() {
+	t_uint32 state = preferences_state::resettable;
+	if (HasChanged()) state |= preferences_state::changed;
+	return state;
+}
+
+void CMyPreferences::reset() {
+	SetDlgItemInt( IDC_SAMPLERATE, default_cfg_max_sample_rate );
+	
+	OnChanged();
+}
+
+void CMyPreferences::apply() {
+	char temp[16];
+	int t = GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE );
+	if ( t < 6000 ) t = 6000;
+	else if ( t > 192000 ) t = 192000;
+	SetDlgItemInt( IDC_SAMPLERATE, t, FALSE );
+	itoa( t, temp, 10 );
+	cfg_history_rate.add_item( temp );
+	cfg_max_sample_rate = t;
+	
+	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
+}
+
+bool CMyPreferences::HasChanged() {
+	return GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE ) != cfg_max_sample_rate;
+}
+void CMyPreferences::OnChanged() {
+	//tell the host that our state has changed to enable/disable the apply button appropriately.
+	m_callback->on_state_changed();
+}
+
+class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
+	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
+public:
+	const char * get_name() {return "DSDIFF Decoder";}
+	GUID get_guid() {
+		// {1A6A112A-DA07-46c8-A4FF-0FB7469D42E2}
+		static const GUID guid = { 0x1a6a112a, 0xda07, 0x46c8, { 0xa4, 0xff, 0xf, 0xb7, 0x46, 0x9d, 0x42, 0xe2 } };
+		return guid;
+	}
+	GUID get_parent_guid() {return guid_input;}
+};
+
+static input_singletrack_factory_t< input_dsdiff >          g_input_factory_dsdiff;
+static preferences_page_factory_t <preferences_page_myimpl> g_config_dsdiff_factory;
 
 DECLARE_FILE_TYPE("DSDIFF Files", "*.dff");
 
 DECLARE_COMPONENT_VERSION("DSDIFF Decoder", MYVERSION, "Decodes DSDIFF streams.");
+
+VALIDATE_COMPONENT_FILENAME("foo_input_dsdiff.dll");

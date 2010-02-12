@@ -53,7 +53,7 @@ public:
 	void write(const void * p_buffer,t_size p_bytes,abort_callback & p_abort) {
 		if (!p_writeable) throw exception_io_denied();
 
-		pfc::static_assert_t< (sizeof(t_size) >= sizeof(DWORD)) >();
+		PFC_STATIC_ASSERT(sizeof(t_size) >= sizeof(DWORD));
 
 		t_size bytes_written_total = 0;
 
@@ -80,7 +80,7 @@ public:
 	}
 	
 	t_size read(void * p_buffer,t_size p_bytes,abort_callback & p_abort) {
-		pfc::static_assert_t< (sizeof(t_size) >= sizeof(DWORD)) >();
+		PFC_STATIC_ASSERT(sizeof(t_size) >= sizeof(DWORD));
 		
 		t_size bytes_read_total = 0;
 		if (sizeof(t_size) == sizeof(DWORD)) {

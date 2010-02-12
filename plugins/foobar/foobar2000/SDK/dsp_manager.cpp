@@ -86,7 +86,7 @@ double dsp_manager::run(dsp_chunk_list * p_list,const metadb_handle_ptr & p_cur_
 
 			for(t_dsp_chain::iterator iter = newchain.first(); iter.is_valid(); ++iter) {
 				if (iter->m_dsp.is_empty()) {
-					if (!dsp_entry::g_instantiate(iter->m_dsp,iter->m_preset)) throw pfc::exception_bug_check();
+					if (!dsp_entry::g_instantiate(iter->m_dsp,iter->m_preset)) throw pfc::exception_bug_check_v2();
 				}
 			}
 
@@ -134,4 +134,55 @@ void dsp_manager::flush()
 }
 
 
-bool dsp_manager::is_active() {return m_config.get_count()>0;}
+bool dsp_manager::is_active() const {return m_config.get_count()>0;}
+
+void dsp_config_manager::core_enable_dsp(const dsp_preset & preset) {
+	dsp_chain_config_impl cfg;
+	get_core_settings(cfg);
+
+	bool found = false;
+	bool changed = false;
+	t_size n,m = cfg.get_count();
+	for(n=0;n<m;n++) {
+		if (cfg.get_item(n).get_owner() == preset.get_owner()) {
+			found = true;
+			if (cfg.get_item(n) != preset) {
+				cfg.replace_item(preset,n);
+				changed = true;
+			}
+			break;
+		}
+	}
+	if (!found) {cfg.insert_item(preset,0); changed = true;}
+
+	if (changed) set_core_settings(cfg);
+}
+void dsp_config_manager::core_disable_dsp(const GUID & id) {
+	dsp_chain_config_impl cfg;
+	get_core_settings(cfg);
+
+	t_size n,m = cfg.get_count();
+	bit_array_bittable mask(m);
+	bool changed = false;
+	for(n=0;n<m;n++) {
+		bool axe = (cfg.get_item(n).get_owner() == id) ? true : false;
+		if (axe) changed = true;
+		mask.set(n,axe);
+	}
+	if (changed) {
+		cfg.remove_mask(mask);
+		set_core_settings(cfg);
+	}
+}
+
+bool dsp_config_manager::core_query_dsp(const GUID & id, dsp_preset & out) {
+	dsp_chain_config_impl cfg;
+	get_core_settings(cfg);
+	for(t_size n=0;n<cfg.get_count();n++) {
+		const dsp_preset & entry = cfg.get_item(n);
+		if (entry.get_owner() == id) {
+			out = entry; return true;
+		}
+	}
+	return false;
+}

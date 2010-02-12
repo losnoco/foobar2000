@@ -1,4 +1,4 @@
-#define MY_VERSION "1.0"
+#define MY_VERSION "1.2"
 
 /* vi: set sw=4 ts=4: */
 /*	Small bzip2 deflate implementation, by Rob Landley (rob@landley.net).
@@ -705,4 +705,4 @@ public:
 static archive_factory_t < archive_bz2 >  g_archive_bz2_factory;
 static unpacker_factory_t< unpacker_bz2 > g_unpacker_bz2_factory;
 
-DECLARE_COMPONENT_VERSION( "BZIP2 reader", MY_VERSION, (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "BZIP2 reader", MY_VERSION, "" );

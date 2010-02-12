@@ -8,4 +8,6 @@ namespace wildcard_helper
 	bool has_wildcards(const char * str);
 };
 
+
+
 #endif //__FOOBAR2000_HELPER_WILDCARD_H__

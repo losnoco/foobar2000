@@ -1,6 +1,6 @@
 //! Provides interface to decode various audio data types to PCM. Use packet_decoder_factory_t template to register.
 
-class packet_decoder : public service_base {
+class NOVTABLE packet_decoder : public service_base {
 protected:
 	//! Prototype of function that must be implemented by packet_decoder implementation but is not accessible through packet_decoder interface itself.
 	//! Determines whether specific packet_decoder implementation supports specified decoder setup data.
@@ -75,7 +75,7 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE(packet_decoder,service_base);
 };
 
-class packet_decoder_streamparse : public packet_decoder
+class NOVTABLE packet_decoder_streamparse : public packet_decoder
 {
 public:
 	virtual void decode_ex(const void * p_buffer,t_size p_bytes,t_size & p_bytes_processed,audio_chunk & p_chunk,abort_callback & p_abort) = 0;
@@ -84,7 +84,7 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE(packet_decoder_streamparse,packet_decoder);
 };
 
-class packet_decoder_entry : public service_base
+class NOVTABLE packet_decoder_entry : public service_base
 {
 public:
 	virtual bool is_our_setup(const GUID & p_owner,t_size p_param1,const void * p_param2,t_size p_param2size) = 0;

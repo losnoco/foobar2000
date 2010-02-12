@@ -1,47 +1,25 @@
 #include "foobar2000.h"
 
 
-bool menu_helpers::context_get_description(const GUID& p_guid,pfc::string_base & out)
-{
-	service_enum_t<contextmenu_item> e;
-	service_ptr_t<contextmenu_item> ptr;
-	if (e.first(ptr)) do {
-		unsigned action,num_actions = ptr->get_num_items();
-		for(action=0;action<num_actions;action++)
-		{
-			if (p_guid == ptr->get_item_guid(action))
-			{
-				bool rv = ptr->get_item_description(action,out);
-				if (!rv) out.reset();
-				return rv;
-			}
-		}
-	} while(e.next(ptr));
-	return false;
+bool menu_helpers::context_get_description(const GUID& p_guid,pfc::string_base & out) {
+	service_ptr_t<contextmenu_item> ptr; t_uint32 index;
+	if (!menu_item_resolver::g_resolve_context_command(p_guid, ptr, index)) return false;
+	bool rv = ptr->get_item_description(index, out);
+	if (!rv) out.reset();
+	return rv;
 }
 
-static bool run_context_command_internal(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data,const GUID & caller)
-{
-	bool done = false;
-	if (data.get_count() > 0) {
-		service_enum_t<contextmenu_item> e;
-		service_ptr_t<contextmenu_item> ptr;
-		if (e.first(ptr)) do {
-			unsigned action,num_actions = ptr->get_num_items();
-			for(action=0;action<num_actions;action++)
-			{
-				if (p_command == ptr->get_item_guid(action))
-				{
-					TRACK_CALL_TEXT("menu_helpers::run_command(), by GUID");
-					ptr->item_execute_simple(action,p_subcommand,data,caller);
-					done = true;
-					break;
-				}
-			}
-			if (done) break;
-		} while(e.next(ptr));
+static bool run_context_command_internal(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data,const GUID & caller) {
+	if (data.get_count() == 0) return false;
+	service_ptr_t<contextmenu_item> ptr; t_uint32 index;
+	if (!menu_item_resolver::g_resolve_context_command(p_command, ptr, index)) return false;
+	
+	{
+		TRACK_CALL_TEXT("menu_helpers::run_command(), by GUID");
+		ptr->item_execute_simple(index, p_subcommand, data, caller);
 	}
-	return done;
+	
+	return true;
 }
 
 bool menu_helpers::run_command_context(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data)
@@ -56,48 +34,20 @@ bool menu_helpers::run_command_context_ex(const GUID & p_command,const GUID & p_
 
 bool menu_helpers::test_command_context(const GUID & p_guid)
 {
-	service_enum_t<contextmenu_item> e;
-	service_ptr_t<contextmenu_item> ptr;
-	bool done = false;
-	if (e.first(ptr)) do {
-		unsigned action,num_actions = ptr->get_num_items();
-		for(action=0;action<num_actions;action++)
-		{
-			if (ptr->get_item_guid(action) == p_guid)
-			{
-				done = true;
-				break;
-			}
-		}
-		if (done) break;
-	} while(e.next(ptr));
-	return done;
+	service_ptr_t<contextmenu_item> ptr; t_uint32 index;
+	return menu_item_resolver::g_resolve_context_command(p_guid, ptr, index);
 }
 
 static bool g_is_checked(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data,const GUID & caller)
 {
-	service_enum_t<contextmenu_item> e;
-	service_ptr_t<contextmenu_item> ptr;
-	bool done = false, rv = false;
-	pfc::string8_fastalloc dummystring;
-	if (e.first(ptr)) do {
-		unsigned action,num_actions = ptr->get_num_items();
-		for(action=0;action<num_actions;action++)
-		{
-			if (p_command == ptr->get_item_guid(action))
-			{
-				unsigned displayflags = 0;
-				if (ptr->item_get_display_data(dummystring,displayflags,action,p_subcommand,data,caller))
-				{
-					rv = !!(displayflags & contextmenu_item_node::FLAG_CHECKED);
-					done = true;
-					break;
-				}
-			}
-		}
-		if (done) break;
-	} while(e.next(ptr));
-	return rv;
+	service_ptr_t<contextmenu_item> ptr; t_uint32 index;
+	if (!menu_item_resolver::g_resolve_context_command(p_command, ptr, index)) return false;
+
+	unsigned displayflags = 0;
+	pfc::string_formatter dummystring;
+	if (!ptr->item_get_display_data(dummystring,displayflags,index,p_subcommand,data,caller)) return false;
+	return (displayflags & contextmenu_item_node::FLAG_CHECKED) != 0;
+
 }
 
 bool menu_helpers::is_command_checked_context(const GUID & p_command,const GUID & p_subcommand,const pfc::list_base_const_t<metadb_handle_ptr> & data)
@@ -146,7 +96,7 @@ bool menu_helpers::guid_from_name(const char * p_name,unsigned p_name_len,GUID &
 		for(n=0;n<m;n++)
 		{
 			ptr->get_item_name(n,nametemp);
-			if (!strcmp_ex(nametemp,infinite,p_name,p_name_len))
+			if (!strcmp_ex(nametemp,~0,p_name,p_name_len))
 			{
 				p_out = ptr->get_item_guid(n);
 				return true;
@@ -156,24 +106,11 @@ bool menu_helpers::guid_from_name(const char * p_name,unsigned p_name_len,GUID &
 	return false;
 }
 
-bool menu_helpers::name_from_guid(const GUID & p_guid,pfc::string_base & p_out)
-{
-	service_enum_t<contextmenu_item> e;
-	service_ptr_t<contextmenu_item> ptr;
-	pfc::string8_fastalloc nametemp;
-	while(e.next(ptr))
-	{
-		unsigned n, m = ptr->get_num_items();
-		for(n=0;n<m;n++)
-		{
-			if (p_guid == ptr->get_item_guid(n))
-			{
-				ptr->get_item_name(n,p_out);
-				return true;
-			}
-		}
-	}
-	return false;
+bool menu_helpers::name_from_guid(const GUID & p_guid,pfc::string_base & p_out) {
+	service_ptr_t<contextmenu_item> ptr; t_uint32 index;
+	if (!menu_item_resolver::g_resolve_context_command(p_guid, ptr, index)) return false;
+	ptr->get_item_name(index, p_out);
+	return true;
 }
 
 
@@ -206,7 +143,7 @@ const char * menu_helpers::guid_to_name_table::search(const GUID & p_guid)
 				assert(dataptr < m_data.get_size());
 
 				ptr->get_item_name(n,nametemp);
-				m_data[dataptr].m_name = strdup(nametemp);
+				m_data[dataptr].m_name = _strdup(nametemp);
 				m_data[dataptr].m_guid = ptr->get_item_guid(n);
 				dataptr++;
 			}
@@ -248,7 +185,7 @@ menu_helpers::guid_to_name_table::~guid_to_name_table()
 
 int menu_helpers::name_to_guid_table::entry_compare_search(const entry & entry1,const search_entry & entry2)
 {
-	return stricmp_utf8_ex(entry1.m_name,infinite,entry2.m_name,entry2.m_name_len);
+	return stricmp_utf8_ex(entry1.m_name,~0,entry2.m_name,entry2.m_name_len);
 }
 
 int menu_helpers::name_to_guid_table::entry_compare(const entry & entry1,const entry & entry2)
@@ -274,7 +211,7 @@ bool menu_helpers::name_to_guid_table::search(const char * p_name,unsigned p_nam
 				assert(dataptr < m_data.get_size());
 
 				ptr->get_item_name(n,nametemp);
-				m_data[dataptr].m_name = strdup(nametemp);
+				m_data[dataptr].m_name = _strdup(nametemp);
 				m_data[dataptr].m_guid = ptr->get_item_guid(n);
 				dataptr++;
 			}
@@ -345,16 +282,16 @@ bool menu_helpers::find_command_by_name(const char * p_name,GUID & p_command)
 
 
 bool standard_commands::run_main(const GUID & p_guid) {
-	service_enum_t<mainmenu_commands> e;
-	service_ptr_t<mainmenu_commands> ptr;
-	while(e.next(ptr)) {
-		const t_size count = ptr->get_command_count();
-		for(t_size n=0;n<count;n++) {
-			if (ptr->get_command(n) == p_guid) {
-				ptr->execute(n,service_ptr_t<service_base>());
-				return true;
-			}
-		}
-	}
-	return false;
+	t_uint32 index;
+	mainmenu_commands::ptr ptr;
+	if (!menu_item_resolver::g_resolve_main_command(p_guid, ptr, index)) return false;
+	ptr->execute(index,service_ptr_t<service_base>());
+	return true;
+}
+
+bool menu_item_resolver::g_resolve_context_command(const GUID & id, contextmenu_item::ptr & out, t_uint32 & out_index) {
+	return static_api_ptr_t<menu_item_resolver>()->resolve_context_command(id, out, out_index);
+}
+bool menu_item_resolver::g_resolve_main_command(const GUID & id, mainmenu_commands::ptr & out, t_uint32 & out_index) {
+	return static_api_ptr_t<menu_item_resolver>()->resolve_main_command(id, out, out_index);
 }

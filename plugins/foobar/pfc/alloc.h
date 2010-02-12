@@ -66,6 +66,9 @@ namespace pfc {
 
 		bool is_ptr_owned(const void * p_item) const {return false;}
 
+		//set to true when we prioritize speed over memory usage
+		enum { alloc_prioritizes_speed = false };
+
 		//not mandatory
 		const t_item * get_ptr() const {throw pfc::exception_not_implemented();}
 		t_item * get_ptr() {throw pfc::exception_not_implemented();}
@@ -106,6 +109,8 @@ namespace pfc {
 		const t_item & operator[](t_size p_index) const {PFC_ASSERT(p_index < m_size); return m_data[p_index];}
 		t_item & operator[](t_size p_index) {PFC_ASSERT(p_index < m_size); return m_data[p_index];}
 		bool is_ptr_owned(const void * p_item) const {return is_pointer_in_range(get_ptr(),get_size(),p_item);}
+
+		enum { alloc_prioritizes_speed = false };
 
 		t_item * get_ptr() {return m_data;}
 		const t_item * get_ptr() const {return m_data;}
@@ -221,6 +226,8 @@ namespace pfc {
 		bool is_ptr_owned(const void * p_item) const {return m_content.is_ptr_owned(p_item);}
 		void prealloc(t_size p_size) {}
 		void force_reset() {set_size(0);}
+		
+		enum { alloc_prioritizes_speed = false };
 	private:
 		alloc_standard(const t_self &) {throw pfc::exception_not_implemented();}
 		const t_self & operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -254,6 +261,8 @@ namespace pfc {
 		bool is_ptr_owned(const void * p_item) const {return m_data.is_ptr_owned(p_item);}
 		void prealloc(t_size) {}
 		void force_reset() {m_data.set_size(0,0);}
+		
+		enum { alloc_prioritizes_speed = true };
 	private:
 		alloc_fast(const t_self &) {throw pfc::exception_not_implemented();}
 		const t_self & operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -293,6 +302,8 @@ namespace pfc {
 		t_item * get_ptr() {return m_data.get_ptr();}
 		bool is_ptr_owned(const void * p_item) const {return m_data.is_ptr_owned(p_item);}
 		void force_reset() {m_data.set_size(0,0);}
+
+		enum { alloc_prioritizes_speed = true };
 	private:
 		alloc_fast_aggressive(const t_self &) {throw pfc::exception_not_implemented();}
 		const t_self & operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -333,6 +344,8 @@ namespace pfc {
 			bool is_ptr_owned(const void * p_item) const {return is_pointer_in_range(get_ptr(),p_width,p_item);}
 			void prealloc(t_size) {}
 			void force_reset() {set_size(0);}
+
+			enum { alloc_prioritizes_speed = false };
 		private:
 			alloc(const t_self&) {throw pfc::exception_not_implemented();}
 			const t_self& operator=(const t_self&) {throw pfc::exception_not_implemented();}
@@ -379,6 +392,7 @@ namespace pfc {
 			void force_reset() {
 				m_fixed.force_reset(); m_variable.force_reset();
 			}
+			enum { alloc_prioritizes_speed = t_alloc<t_item>::alloc_prioritizes_speed };
 		private:
 			alloc(const t_self&) {throw pfc::exception_not_implemented();}
 			const t_self& operator=(const t_self&) {throw pfc::exception_not_implemented();}

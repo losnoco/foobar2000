@@ -1,5 +1,7 @@
 namespace pfc {
 
+	//deprecated
+
 template<typename t_callback>
 inline bool bsearch_inline_t(t_size p_count, const t_callback & p_callback,t_size & p_result)
 {

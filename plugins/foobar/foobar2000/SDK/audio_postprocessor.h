@@ -1,6 +1,3 @@
-#ifndef _CVT_FLOAT_TO_LINEAR_H_
-#define _CVT_FLOAT_TO_LINEAR_H_
-
 //! This class handles conversion of audio data (audio_chunk) to various linear PCM types, with optional dithering.
 
 class NOVTABLE audio_postprocessor : public service_base
@@ -26,5 +23,3 @@ public:
 
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(audio_postprocessor);
 };
-
-#endif

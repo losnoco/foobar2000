@@ -8,7 +8,7 @@ namespace listview_helper
 
 	bool is_item_selected(HWND p_listview,unsigned p_index);
 
-	bool set_item_selection(HWND p_listview,unsigned p_index,bool p_state);
+	void set_item_selection(HWND p_listview,unsigned p_index,bool p_state);
 
 	bool select_single_item(HWND p_listview,unsigned p_index);
 
@@ -35,4 +35,6 @@ static bool ListView_IsItemSelected(HWND p_listview,int p_index) {
 	return ListView_GetItemState(p_listview,p_index,LVIS_SELECTED) != 0;
 }
 
-bool ListView_GetContextMenuPoint(HWND p_list,LPARAM p_coords,POINT & p_point,int & p_selection);
+void ListView_GetContextMenuPoint(HWND p_list,LPARAM p_coords,POINT & p_point,int & p_selection);
+
+int ListView_GetColumnCount(HWND listView);

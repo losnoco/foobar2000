@@ -6,8 +6,11 @@ class service_impl_t : public T
 public:
 	int FB2KAPI service_release() throw() {
 		int ret = --m_counter; 
-		if (ret == 0) try { delete this; } catch(...) {PFC_ASSERT(0);}
-		return ret;}
+		if (ret == 0) {
+			PFC_ASSERT_NO_EXCEPTION( delete this );
+		}
+		return ret;
+	}
 	int FB2KAPI service_add_ref() throw() {return ++m_counter;}
 
 	TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(service_impl_t,T)
@@ -26,3 +29,9 @@ public:
 
 	TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(service_impl_single_t,T)
 };
+
+
+namespace service_impl_helper {
+	void release_object_delayed(service_ptr obj);
+};
+

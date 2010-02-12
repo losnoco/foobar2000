@@ -11,7 +11,7 @@ static t_size merge_tags_calc_rating_by_index(const file_info & p_info,t_size p_
 static t_size merge_tags_calc_rating(const file_info & p_info,const char * p_field) {
 	t_size field_index = p_info.meta_find(p_field);
 	t_size ret = 0;
-	if (field_index != infinite) {
+	if (field_index != ~0) {
 		return merge_tags_calc_rating_by_index(p_info,field_index);
 	} else {
 		return 0;
@@ -126,5 +126,21 @@ void file_info::overwrite_info(const file_info & p_source) {
 	t_size count = p_source.info_get_count();
 	for(t_size n=0;n<count;n++) {
 		info_set(p_source.info_enum_name(n),p_source.info_enum_value(n));
+	}
+}
+
+
+void file_info::merge_fallback(const file_info & source) {
+	set_replaygain( replaygain_info::g_merge(get_replaygain(), source.get_replaygain() ) );
+	if (get_length() <= 0) set_length(source.get_length());
+	t_size count = source.info_get_count();
+	for(t_size infoWalk = 0; infoWalk < count; ++infoWalk) {
+		const char * name = source.info_enum_name(infoWalk);
+		if (!info_exists(name)) __info_add_unsafe(name, source.info_enum_value(infoWalk));
+	}
+	count = source.meta_get_count();
+	for(t_size metaWalk = 0; metaWalk < count; ++metaWalk) {
+		const char * name = source.meta_enum_name(metaWalk);
+		if (!meta_exists(name)) _copy_meta_single_nocheck(source, metaWalk);
 	}
 }

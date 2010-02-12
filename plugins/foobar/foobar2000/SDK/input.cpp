@@ -158,6 +158,7 @@ namespace {
 };
 
 void input_entry::g_open_for_decoding(service_ptr_t<input_decoder> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect) {
+	TRACK_CALL_TEXT("input_entry::g_open_for_decoding");
 #if 1
 	g_open_t(p_instance,p_filehint,p_path,p_abort,p_from_redirect);
 #else
@@ -172,6 +173,7 @@ void input_entry::g_open_for_decoding(service_ptr_t<input_decoder> & p_instance,
 }
 
 void input_entry::g_open_for_info_read(service_ptr_t<input_info_reader> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect) {
+	TRACK_CALL_TEXT("input_entry::g_open_for_info_read");
 #if 1
 	g_open_t(p_instance,p_filehint,p_path,p_abort,p_from_redirect);
 #else
@@ -185,6 +187,7 @@ void input_entry::g_open_for_info_read(service_ptr_t<input_info_reader> & p_inst
 }
 
 void input_entry::g_open_for_info_write(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort,bool p_from_redirect) {
+	TRACK_CALL_TEXT("input_entry::g_open_for_info_write");
 #if 1
 	g_open_t(p_instance,p_filehint,p_path,p_abort,p_from_redirect);
 #else
@@ -230,7 +233,7 @@ void input_open_file_helper(service_ptr_t<file> & p_file,const char * p_path,t_i
 	if (p_file.is_empty()) {
 		switch(p_reason) {
 		default:
-			throw pfc::exception_bug_check();
+			uBugCheck();
 		case input_open_info_read:
 		case input_open_decode:
 			filesystem::g_open(p_file,p_path,filesystem::open_mode_read,p_abort);

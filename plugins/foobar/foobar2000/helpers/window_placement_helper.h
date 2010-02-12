@@ -5,6 +5,7 @@ class cfg_window_placement : public cfg_var
 {
 public:
 	bool on_window_creation(HWND window);//returns true if window position has been changed, false if not
+	void on_window_creation_silent(HWND window);
 	void on_window_destruction(HWND window);
 	bool read_from_window(HWND window);
 	void get_data_raw(stream_writer * p_stream,abort_callback & p_abort);

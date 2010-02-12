@@ -74,20 +74,6 @@ public:
 #endif
 
 namespace pfc {
-	class refcounter {
-	public:
-		refcounter(long p_val = 0) : m_val(p_val) {}
-#ifdef _WINDOWS
-		long operator++() {return InterlockedIncrement(&m_val);}
-		long operator--() {return InterlockedDecrement(&m_val);}
-#else
-		long operator++() {return ++m_val;}
-		long operator--() {return --m_val;}
-#pragma message("PORTME")
-#endif
-	private:
-		long m_val;
-	};
 
 	class releaser_delete {
 	public:
@@ -165,6 +151,57 @@ namespace pfc {
 	};
 
 	void crash();
+
+	template<typename t_type,t_type p_initval>
+	class int_container_helper {
+	public:
+		int_container_helper() : m_val(p_initval) {}
+		t_type m_val;
+	};
+
+
+
+	//warning: not multi-thread-safe
+	template<typename t_base>
+	class instanceTracker : public t_base {
+	private:
+		typedef instanceTracker<t_base> t_self;
+	public:
+		TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD_WITH_INITIALIZER(instanceTracker,t_base,{g_list += this;});
+
+		instanceTracker(const t_self & p_other) : t_base( (const t_base &)p_other) {g_list += this;}
+		~instanceTracker() {g_list -= this;}
+
+		typedef pfc::avltree_t<t_self*> t_list;
+		static const t_list & instanceList() {return g_list;}
+		template<typename t_callback> static void forEach(t_callback & p_callback) {instanceList().enumerate(p_callback);}
+	private:
+		static t_list g_list;
+	};
+
+	template<typename t_base>
+	typename instanceTracker<t_base>::t_list instanceTracker<t_base>::g_list;
+
+
+	//warning: not multi-thread-safe
+	template<typename TClass>
+	class instanceTrackerV2 {
+	private:
+		typedef instanceTrackerV2<TClass> t_self;
+	public:
+		instanceTrackerV2(const t_self & p_other) {g_list += static_cast<TClass*>(this);}
+		instanceTrackerV2() {g_list += static_cast<TClass*>(this);}
+		~instanceTrackerV2() {g_list -= static_cast<TClass*>(this);}
+
+		typedef pfc::avltree_t<TClass*> t_instanceList;
+		static const t_instanceList & instanceList() {return g_list;}
+		template<typename t_callback> static void forEach(t_callback & p_callback) {instanceList().enumerate(p_callback);}
+	private:
+		static t_instanceList g_list;
+	};
+
+	template<typename TClass>
+	typename instanceTrackerV2<TClass>::t_instanceList instanceTrackerV2<TClass>::g_list;
 }
 
 #endif

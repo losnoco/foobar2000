@@ -1,7 +1,15 @@
-#define MY_VERSION "1.1"
+#define MY_VERSION "1.3"
 
 /*
 	changelog
+
+2010-01-14 01:45 UTC - kode54
+- Fixed componentversion about message declaration
+- Version is now 1.3
+
+2010-01-11 19:40 UTC - kode54
+- Added filename validator
+- Version is now 1.2
 
 2009-04-21 21:39 UTC - kode54
 - Attempts to query missing files now correctly throws exception_io_not_found
@@ -105,4 +113,6 @@ public:
 static archive_factory_t < archive_jma >  g_archive_jma_factory;
 static unpacker_factory_t< unpacker_jma > g_unpacker_jma_factory;
 
-DECLARE_COMPONENT_VERSION( "JMA reader", MY_VERSION, (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "JMA reader", MY_VERSION, "" );
+
+VALIDATE_COMPONENT_FILENAME("foo_unpack_jma.dll");

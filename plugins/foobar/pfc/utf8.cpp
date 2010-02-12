@@ -7,7 +7,7 @@ static const t_uint8 mask_tab[6]={0x80,0xE0,0xF0,0xF8,0xFC,0xFE};
 
 static const t_uint8 val_tab[6]={0,0xC0,0xE0,0xF0,0xF8,0xFC};
 
-t_size utf8_char_len_from_header(char p_c)
+t_size utf8_char_len_from_header(char p_c) throw()
 {
 	t_uint8 c = (t_uint8)p_c;
 
@@ -21,22 +21,15 @@ t_size utf8_char_len_from_header(char p_c)
 	return cnt + 1;
 
 }
-
-t_size utf8_decode_char(const char *p_utf8,unsigned * wide,t_size max)
-{
+t_size utf8_decode_char(const char *p_utf8,unsigned & wide) throw() {
 	const t_uint8 * utf8 = (const t_uint8*)p_utf8;
-	
-	if (wide) *wide = 0;
+	const t_size max = 6;
 
-	if (max==0)
-		return 0;
-	else if (max>6) max = 6;
-
-	if (utf8[0]<0x80)
-	{
-		if (wide) *wide = utf8[0];
+	if (utf8[0]<0x80) {
+		wide = utf8[0];
 		return utf8[0]>0 ? 1 : 0;
 	}
+	wide = 0;
 
 	unsigned res=0;
 	unsigned n;
@@ -65,14 +58,61 @@ t_size utf8_decode_char(const char *p_utf8,unsigned * wide,t_size max)
 		res=(res<<6)|(utf8[n]&0x3F);
 	}
 
-	if (wide)
-		*wide=res;
+	wide = res;
+
+	return cnt;
+}
+
+t_size utf8_decode_char(const char *p_utf8,unsigned & wide,t_size max) throw()
+{
+	const t_uint8 * utf8 = (const t_uint8*)p_utf8;
+	
+	if (max==0) {
+		wide = 0;
+		return 0;
+	}
+
+	if (utf8[0]<0x80) {
+		wide = utf8[0];
+		return utf8[0]>0 ? 1 : 0;
+	}
+	if (max>6) max = 6;
+	wide = 0;
+
+	unsigned res=0;
+	unsigned n;
+	unsigned cnt=0;
+	for(;;)
+	{
+		if ((*utf8&mask_tab[cnt])==val_tab[cnt]) break;
+		if (++cnt>=max) return 0;
+	}
+	cnt++;
+
+	if (cnt==2 && !(*utf8&0x1E)) return 0;
+
+	if (cnt==1)
+		res=*utf8;
+	else
+		res=(0xFF>>(cnt+1))&*utf8;
+
+	for (n=1;n<cnt;n++)
+	{
+		if ((utf8[n]&0xC0) != 0x80)
+			return 0;
+		if (!res && n==2 && !((utf8[n]&0x7F) >> (7 - cnt)))
+			return 0;
+
+		res=(res<<6)|(utf8[n]&0x3F);
+	}
+
+	wide = res;
 
 	return cnt;
 }
 
 
-t_size utf8_encode_char(unsigned wide,char * target)
+t_size utf8_encode_char(unsigned wide,char * target) throw()
 {
 	t_size count;
 
@@ -124,29 +164,23 @@ t_size utf8_encode_char(unsigned wide,char * target)
 	return count;
 }
 
-t_size utf16_encode_char(unsigned cur_wchar,wchar_t * out)
+t_size utf16_encode_char(unsigned cur_wchar,wchar_t * out) throw()
 {
-	if (cur_wchar>0 && cur_wchar<(1<<20))
-	{
-		if (sizeof(wchar_t) == 2 && cur_wchar>=0x10000)
-		{
-			unsigned c = cur_wchar - 0x10000;
-			//MSDN:
-			//The first (high) surrogate is a 16-bit code value in the range U+D800 to U+DBFF. The second (low) surrogate is a 16-bit code value in the range U+DC00 to U+DFFF. Using surrogates, Unicode can support over one million characters. For more details about surrogates, refer to The Unicode Standard, version 2.0.
-			out[0] = (wchar_t)(0xD800 | (0x3FF & (c>>10)) );
-			out[1] = (wchar_t)(0xDC00 | (0x3FF & c) ) ;
-			return 2;
-		}
-		else
-		{
-			*out = (wchar_t)cur_wchar;
-			return 1;
-		}
+	if (cur_wchar < 0x10000) {
+		*out = (wchar_t) cur_wchar; return 1;
+	} else if (cur_wchar < (1 << 20)) {
+		unsigned c = cur_wchar - 0x10000;
+		//MSDN:
+		//The first (high) surrogate is a 16-bit code value in the range U+D800 to U+DBFF. The second (low) surrogate is a 16-bit code value in the range U+DC00 to U+DFFF. Using surrogates, Unicode can support over one million characters. For more details about surrogates, refer to The Unicode Standard, version 2.0.
+		out[0] = (wchar_t)(0xD800 | (0x3FF & (c>>10)) );
+		out[1] = (wchar_t)(0xDC00 | (0x3FF & c) ) ;
+		return 2;
+	} else {
+		*out = '?'; return 1;
 	}
-	return 0;
 }
 
-t_size utf16_decode_char(const wchar_t * p_source,unsigned * p_out,t_size p_source_length) {
+t_size utf16_decode_char(const wchar_t * p_source,unsigned * p_out,t_size p_source_length) throw() {
 	if (p_source_length == 0) return 0;
 	else if (p_source_length == 1) {
 		*p_out = p_source[0];
@@ -173,20 +207,21 @@ t_size utf16_decode_char(const wchar_t * p_source,unsigned * p_out,t_size p_sour
 }
 
 
-UINT utf8_get_char(const char * src)
+unsigned utf8_get_char(const char * src)
 {
-	UINT rv = 0;
-	utf8_decode_char(src,&rv);
+	unsigned rv = 0;
+	utf8_decode_char(src,rv);
 	return rv;
 }
 
 
-t_size utf8_char_len(const char * s,t_size max)
+t_size utf8_char_len(const char * s,t_size max) throw()
 {
-	return utf8_decode_char(s,0,max);
+	unsigned dummy;
+	return utf8_decode_char(s,dummy,max);
 }
 
-t_size skip_utf8_chars(const char * ptr,t_size count)
+t_size skip_utf8_chars(const char * ptr,t_size count) throw()
 {
 	t_size num = 0;
 	for(;count && ptr[num];count--)
@@ -202,7 +237,8 @@ bool is_valid_utf8(const char * param,t_size max) {
 	t_size walk = 0;
 	while(walk < max && param[walk] != 0) {
 		t_size d;
-		d = utf8_decode_char(param + walk,NULL,max - walk);
+		unsigned dummy;
+		d = utf8_decode_char(param + walk,dummy,max - walk);
 		if (d==0) return false;
 		walk += d;
 		if (walk > max) {
@@ -254,14 +290,14 @@ unsigned strcpy_utf8_truncate(const char * src,char * out,unsigned maxbytes)
 	return rv;
 }
 
-t_size strlen_utf8(const char * p,t_size num)
+t_size strlen_utf8(const char * p,t_size num) throw()
 {
 	unsigned w;
 	t_size d;
 	t_size ret = 0;
 	for(;num;)
 	{
-		d = utf8_decode_char(p,&w);
+		d = utf8_decode_char(p,w);
 		if (w==0 || d<=0) break;
 		ret++;
 		p+=d;
@@ -270,12 +306,13 @@ t_size strlen_utf8(const char * p,t_size num)
 	return ret;
 }
 
-t_size utf8_chars_to_bytes(const char * string,t_size count)
+t_size utf8_chars_to_bytes(const char * string,t_size count) throw()
 {
 	t_size bytes = 0;
 	while(count)
 	{
-		t_size delta = utf8_decode_char(string+bytes,0);
+		unsigned dummy;
+		t_size delta = utf8_decode_char(string+bytes,dummy);
 		if (delta==0) break;
 		bytes += delta;
 		count--;

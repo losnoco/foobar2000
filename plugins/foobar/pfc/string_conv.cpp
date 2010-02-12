@@ -4,40 +4,63 @@
 #ifdef _WINDOWS
 
 namespace {
-	template<typename t_char> 
+	template<typename t_char, bool isChecked = true> 
 	class string_writer_t {
 	public:
 		string_writer_t(t_char * p_buffer,t_size p_size) : m_buffer(p_buffer), m_size(p_size), m_writeptr(0) {}
 		
 		void write(t_char p_char) {
-			if (m_writeptr < m_size) {
+			if (isChecked) {
+				if (m_writeptr < m_size) {
+					m_buffer[m_writeptr++] = p_char;
+				}
+			} else {
 				m_buffer[m_writeptr++] = p_char;
 			}
 		}
 		void write_multi(const t_char * p_buffer,t_size p_count) {
-			const t_size delta = pfc::min_t<t_size>(p_count,m_size-m_writeptr);
-			for(t_size n=0;n<delta;n++) {
-				m_buffer[m_writeptr++] = p_buffer[n];
+			if (isChecked) {
+				const t_size delta = pfc::min_t<t_size>(p_count,m_size-m_writeptr);
+				for(t_size n=0;n<delta;n++) {
+					m_buffer[m_writeptr++] = p_buffer[n];
+				}
+			} else {
+				for(t_size n = 0; n < p_count; ++n) {
+					m_buffer[m_writeptr++] = p_buffer[n];
+				}
 			}
 		}
 
 		void write_as_utf8(unsigned p_char) {
-			char temp[6];
-			t_size n = pfc::utf8_encode_char(p_char,temp);
-			write_multi(temp,n);
+			if (isChecked) {
+				char temp[6];
+				t_size n = pfc::utf8_encode_char(p_char,temp);
+				write_multi(temp,n);
+			} else {
+				m_writeptr += pfc::utf8_encode_char(p_char, m_buffer + m_writeptr);
+			}
 		}
 
 		void write_as_wide(unsigned p_char) {
-			wchar_t temp[2];
-			t_size n = pfc::utf16_encode_char(p_char,temp);
-			write_multi(temp,n);
+			if (isChecked) {
+				wchar_t temp[2];
+				t_size n = pfc::utf16_encode_char(p_char,temp);
+				write_multi(temp,n);
+			} else {
+				m_writeptr += pfc::utf16_encode_char(p_char, m_buffer + m_writeptr);
+			}
 		}
 
 		t_size finalize() {
-			if (m_size == 0) return 0;
-			t_size terminator = pfc::min_t<t_size>(m_writeptr,m_size-1);
-			m_buffer[terminator] = 0;
-			return terminator;
+			if (isChecked) {
+				if (m_size == 0) return 0;
+				t_size terminator = pfc::min_t<t_size>(m_writeptr,m_size-1);
+				m_buffer[terminator] = 0;
+				return terminator;
+			} else {
+				m_buffer[m_writeptr] = 0;
+				return m_writeptr;
+			}
 		}
 		bool is_overrun() const {
 			return m_writeptr >= m_size;
@@ -63,9 +86,24 @@ namespace pfc {
 
 			while(inptr < insize && !writer.is_overrun()) {
 				unsigned newchar = 0;
-				t_size delta = utf8_decode_char(p_in + inptr,&newchar,insize - inptr);
+				t_size delta = utf8_decode_char(p_in + inptr,newchar,insize - inptr);
 				if (delta == 0 || newchar == 0) break;
 				PFC_ASSERT(inptr + delta <= insize);
+				inptr += delta;
+				writer.write_as_wide(newchar);
+			}
+
+			return writer.finalize();
+		}
+
+		t_size convert_utf8_to_wide_unchecked(wchar_t * p_out,const char * p_in) {
+			t_size inptr = 0;
+			string_writer_t<wchar_t,false> writer(p_out,~0);
+
+			while(!writer.is_overrun()) {
+				unsigned newchar = 0;
+				t_size delta = utf8_decode_char(p_in + inptr,newchar);
+				if (delta == 0 || newchar == 0) break;
 				inptr += delta;
 				writer.write_as_wide(newchar);
 			}
@@ -90,22 +128,37 @@ namespace pfc {
 			return writer.finalize();
 		}
 
+		t_size estimate_utf8_to_wide(const char * p_in) {
+			t_size inptr = 0;
+			t_size retval = 1;//1 for null terminator
+			for(;;) {
+				unsigned newchar = 0;
+				t_size delta = utf8_decode_char(p_in + inptr,newchar);
+				if (delta == 0 || newchar == 0) break;
+				inptr += delta;
+				
+				{
+					wchar_t temp[2];
+					retval += utf16_encode_char(newchar,temp);
+				}
+			}
+			return retval;
+		}
+
 		t_size estimate_utf8_to_wide(const char * p_in,t_size p_in_size) {
 			const t_size insize = p_in_size;
 			t_size inptr = 0;
 			t_size retval = 1;//1 for null terminator
 			while(inptr < insize) {
 				unsigned newchar = 0;
-				t_size delta = utf8_decode_char(p_in + inptr,&newchar,insize - inptr);
+				t_size delta = utf8_decode_char(p_in + inptr,newchar,insize - inptr);
 				if (delta == 0 || newchar == 0) break;
 				PFC_ASSERT(inptr + delta <= insize);
 				inptr += delta;
 				
 				{
 					wchar_t temp[2];
-					delta = utf16_encode_char(newchar,temp);
-					if (delta == 0) break;
-					retval += delta;
+					retval += utf16_encode_char(newchar,temp);
 				}
 			}
 			return retval;

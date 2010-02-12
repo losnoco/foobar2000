@@ -202,6 +202,8 @@ public:
 		p_info.info_set_int("channels", 2);
 		p_info.info_set_int("bitspersample", 16);
 		p_info.info_set( "encoding", "synthesized" );
+
+		p_info.info_set( "codec", nsf.bIsExtended ? "NSFE" : "NSF" );
 	}
 
 	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
@@ -221,16 +223,13 @@ public:
 				m_file->seek(0, p_abort);
 
 				foobar_File_Reader rdr(m_file, p_abort);
-				Nsf_Emu::header_t header;
-
-				ERRCHK( rdr.read( &header, sizeof(header) ) );
 
 				this->emu = emu = new Nsf_Emu;
 
 				setup_effects();
 
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
-				ERRCHK( emu->load( header, rdr ) );
+				ERRCHK( emu->load( rdr ) );
 				handle_warning();
 
 				setup_effects_2();
@@ -280,17 +279,17 @@ public:
 					if ( ! nsf.szTrackLabels )
 					{
 						SAFE_NEW( nsf.szTrackLabels, char*, nsf.nTrackCount );
-						for ( unsigned i = 0; i < nsf.nTrackCount; ++i )
+						/*for ( unsigned i = 0; i < nsf.nTrackCount; ++i )
 						{
 							if ( i == p_subsong ) continue;
 							SAFE_NEW( nsf.szTrackLabels[i], char, 1 );
-						}
+						}*/
 					}
 
 					SAFE_DELETE( nsf.szTrackLabels[ p_subsong ] );
 					SAFE_NEW( nsf.szTrackLabels[ p_subsong ], char, len );
 					memcpy( nsf.szTrackLabels[ p_subsong ], foo.get_ptr(), len );
-					nsf.bIsExtended = true;
+					//nsf.bIsExtended = true;
 				}
 			}
 			else
@@ -298,13 +297,13 @@ public:
 				if (nsf.szTrackLabels)
 				{
 					SAFE_DELETE(nsf.szTrackLabels[p_subsong]);
-					unsigned i;
+					/*unsigned i;
 					for (i = 0; i < nsf.nTrackCount; i++)
 					{
 						if (!nsf.szTrackLabels[i]) continue;
 						if (strlen(nsf.szTrackLabels[i])) break;
 					}
-					if (i < nsf.nTrackCount) nsf.bIsExtended = true;
+					if (i < nsf.nTrackCount) nsf.bIsExtended = true;*/
 				}
 			}
 
@@ -325,13 +324,13 @@ public:
 			if (nsf.pTrackTime)
 			{
 				nsf.pTrackTime[p_subsong] = tag_song_ms;
-				unsigned i;
+				/*unsigned i;
 				for (i = 0; i < nsf.nTrackCount; i++)
 				{
 					if (nsf.pTrackTime[i] >= 0) break;
 				}
 				if (i < nsf.nTrackCount) nsf.bIsExtended = true;
-				else SAFE_DELETE(nsf.pTrackTime);
+				else SAFE_DELETE(nsf.pTrackTime);*/
 			}
 
 			if (!nsf.pTrackFade && tag_fade_ms >= 0)
@@ -342,13 +341,13 @@ public:
 			if (nsf.pTrackFade)
 			{
 				nsf.pTrackFade[p_subsong] = tag_fade_ms;
-				unsigned i;
+				/*unsigned i;
 				for (i = 0; i < nsf.nTrackCount; i++)
 				{
 					if (nsf.pTrackFade[i] >= 0) break;
 				}
 				if (i < nsf.nTrackCount) nsf.bIsExtended = true;
-				else SAFE_DELETE(nsf.pTrackFade);
+				else SAFE_DELETE(nsf.pTrackFade);*/
 			}
 
 			ptr = p_info.info_get(field_playlist);
@@ -374,8 +373,10 @@ public:
 
 	void retag_commit( abort_callback & p_abort )
 	{
-		if ( !nsf.bIsExtended && cfg_write_nsfe )
+		if ( cfg_write_nsfe )
 		{
+			nsf.bIsExtended = false;
+
 			if ( ! nsf.bIsExtended && nsf.szRipper && nsf.szRipper[0] ) nsf.bIsExtended = true;
 
 			if ( ! nsf.bIsExtended && nsf.pTrackTime )
@@ -422,7 +423,7 @@ public:
 
 			m_file.release();
 
-			pfc::string8_fastalloc path;
+			/*pfc::string8_fastalloc path;
 			path = m_path;
 			const char * ext = nsf.bIsExtended ? "nsfe" : "nsf";
 			if ( stricmp( pfc::string_extension( m_path ), ext ) )
@@ -430,7 +431,7 @@ public:
 				pfc::string8_fastalloc newname;
 				rename_file( m_path, ext, newname, p_abort );
 				m_path = newname;
-			}
+			}*/
 
 			if ( ! nsf.bIsExtended )
 			{
@@ -516,7 +517,7 @@ static bool context_time_dialog(int *song_ms, int *fade_ms)
 	i->song = *song_ms;
 	i->fade = *fade_ms;
 	HWND hwnd = core_api::get_main_window();
-	ret = uDialogBox(IDD_TIME, hwnd, TimeProc, (long)i) > 0;
+	ret = DialogBoxParam(core_api::get_my_instance(), MAKEINTRESOURCE(IDD_TIME), hwnd, TimeProc, (LPARAM)i) > 0;
 	if (ret)
 	{
 		*song_ms = i->song;
@@ -635,19 +636,28 @@ public:
 
 	virtual void get_item_name( unsigned n, pfc::string_base & out )
 	{
-		if (!n) out = "Edit length";
-		else out = "Edit playlist";
+		switch (n)
+		{
+		case 0: out = "Edit length"; break;
+		case 1: out = "Edit playlist"; break;
+		default: uBugCheck();
+		}
 	}
 
-	virtual void get_item_default_path( unsigned n, pfc::string_base & out )
+	/*virtual void get_item_default_path( unsigned n, pfc::string_base & out )
 	{
 		out = "NSFE";
-	}
+	}*/
+	GUID get_parent() {return contextmenu_groups::tagging;}
 
 	virtual bool get_item_description( unsigned n, pfc::string_base & out )
 	{
-		if (!n) out = "Edits the length for the selected track";
-		else out = "Edits the playlist(s) for the selected NSFE file(s)";
+		switch (n)
+		{
+		case 0: out = "Edits the length for the selected track"; break;
+		case 1: out = "Edits the playlist(s) for the selected NSFE file(s)"; break;
+		default: uBugCheck();
+		}
 		return true;
 	}
 
@@ -657,20 +667,36 @@ public:
 			{ 0x82059528, 0xcb8b, 0x4521, { 0xab, 0x45, 0x61, 0xc3, 0xf9, 0xc3, 0xb, 0x41 } },
 			{ 0x7c454678, 0xc87a, 0x47ae, { 0x8b, 0xd4, 0xe3, 0xbd, 0x78, 0xd2, 0xb5, 0xf0 } }
 		};
-		assert(n < tabsize(guids));
-		return guids[n];
+		switch (n)
+		{
+		case 0: return guids[0];
+		case 1: return guids[1];
+		default: uBugCheck();
+		}
 	}
 
 	virtual bool context_get_display( unsigned n, const pfc::list_base_const_t<metadb_handle_ptr> & data, pfc::string_base & out,unsigned & displayflags, const GUID & )
 	{
-		if (!cfg_write || !cfg_write_nsfe) return false; // No writing? File doesn't check database for lengths.
+		if (n > 1) uBugCheck();
+		if (!cfg_write /*|| !cfg_write_nsfe*/) return false; // No writing? File doesn't check database for lengths.
 		unsigned i, j;
 		i = data.get_count();
 		for (j = 0; j < i; j++)
 		{
-			const playable_location & foo = data.get_item(j)->get_location();
+			metadb_handle_ptr item = data.get_item(j);
+			const playable_location & foo = item->get_location();
 			pfc::string_extension ext(foo.get_path());
 			if (stricmp(ext, "nsf") && stricmp(ext, "nsfe")) return false;
+			bool is_nsfe = false;
+			const file_info * p_info;
+			item->metadb_lock();
+			if ( item->get_info_locked( p_info ) && p_info )
+			{
+				const char * ptr = p_info->info_get( "codec" );
+				if ( ptr && !stricmp_utf8( ptr, "NSFE" ) ) is_nsfe = true;
+			}
+			item->metadb_unlock();
+			if ( !cfg_write_nsfe && !is_nsfe ) return false;
 		}
 		if (n) out = "Edit playlist";
 		else
@@ -683,6 +709,7 @@ public:
 
 	virtual void context_command( unsigned n, const pfc::list_base_const_t<metadb_handle_ptr> & data, const GUID & )
 	{
+		if (n > 1) uBugCheck();
 		unsigned i = data.get_count();
 		abort_callback_impl m_abort;
 		if (!n)

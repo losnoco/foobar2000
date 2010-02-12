@@ -3,28 +3,21 @@ namespace pfc {
 template<template<typename> class t_alloc>
 void string8_t<t_alloc>::add_string(const char * ptr,t_size len)
 {
-	if (len > 0 && ptr >= m_data.get_ptr() && ptr <= m_data.get_ptr() + m_data.get_size()) {
+	if (m_data.is_owned(ptr)) {
 		add_string(string8(ptr,len));
 	} else {
 		len = strlen_max(ptr,len);
-		makespace(used+len+1);
-		pfc::memcpy_t(m_data.get_ptr() + used,ptr,len);
-		used+=len;
-		m_data[used]=0;
-		true;
+		add_string_nc(ptr, len);
 	}
 }
 
 template<template<typename> class t_alloc>
 void string8_t<t_alloc>::set_string(const char * ptr,t_size len) {
-	if (len > 0 && ptr >= m_data.get_ptr() && ptr < m_data.get_ptr() + m_data.get_size()) {
-		set_string(string8(ptr,len));
+	if (m_data.is_owned(ptr)) {
+		set_string_(string8(ptr,len));
 	} else {
 		len = strlen_max(ptr,len);
-		makespace(len+1);
-		pfc::memcpy_t(m_data.get_ptr(),ptr,len);
-		used=len;
-		m_data[used]=0;
+		set_string_nc(ptr, len);
 	}
 }
 
@@ -36,7 +29,7 @@ void string8_t<t_alloc>::set_char(unsigned offset,char c)
 }
 
 template<template<typename> class t_alloc>
-void string8_t<t_alloc>::fix_filename_chars(char def,char leave)//replace "bad" characters, leave can be used to keep eg. path separators
+void string8_t<t_alloc>::fix_filename_chars(char def,char leave)//replace "bad" characters, leave parameter can be used to keep eg. path separators
 {
 	t_size n;
 	for(n=0;n<used;n++)
@@ -76,46 +69,6 @@ void string8_t<t_alloc>::insert_chars(t_size first,const char * src, t_size coun
 template<template<typename> class t_alloc>
 void string8_t<t_alloc>::insert_chars(t_size first,const char * src) {insert_chars(first,src,strlen(src));}
 
-template<template<typename> class t_alloc>
-bool string8_t<t_alloc>::truncate_eol(t_size start)
-{
-	t_size n;
-	const char * ptr = m_data.get_ptr() + start;
-	for(n=start;n<used;n++)
-	{
-		if (*ptr==10 || *ptr==13)
-		{
-			truncate(n);
-			return true;
-		}
-		ptr++;
-	}
-	return false;
-}
-
-template<template<typename> class t_alloc>
-bool string8_t<t_alloc>::fix_eol(const char * append,t_size start)
-{
-	bool rv = truncate_eol(start);
-	if (rv) add_string(append);
-	return rv;
-}
-
-
-template<template<typename> class t_alloc>
-bool string8_t<t_alloc>::limit_length(t_size length_in_chars,const char * append)
-{
-	bool rv = false;
-	const char * base = get_ptr(), * ptr = base;
-	while(length_in_chars && utf8_advance(ptr)) length_in_chars--;
-	if (length_in_chars==0)
-	{
-		truncate(ptr-base);
-		add_string(append);
-		rv = true;
-	}
-	return rv;
-}
 
 template<template<typename> class t_alloc>
 t_size string8_t<t_alloc>::replace_nontext_chars(char p_replace)
@@ -152,7 +105,7 @@ t_size string8_t<t_alloc>::replace_char(unsigned c1,unsigned c2,t_size start)
 	while(*ptr)
 	{
 		unsigned test;
-		t_size delta = utf8_decode_char(ptr,&test);
+		t_size delta = utf8_decode_char(ptr,test);
 		if (delta==0 || test==0) break;
 		if (test == c1) {test = c2;rv++;}
 		add_char(test);

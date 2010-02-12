@@ -15,7 +15,7 @@ static bool test_recur(const char * fn,const char * rm,bool b_sep)
 			return false;
 		}
 		else if (*fn==0) return false;
-		else if (*rm!='?' && char_lower(pfc::utf8_get_char(fn))!=char_lower(pfc::utf8_get_char(rm))) return false;
+		else if (*rm!='?' && uCharLower(pfc::utf8_get_char(fn))!=uCharLower(pfc::utf8_get_char(rm))) return false;
 		
 		fn = pfc::utf8_char_next(fn); rm = pfc::utf8_char_next(rm);
 	}

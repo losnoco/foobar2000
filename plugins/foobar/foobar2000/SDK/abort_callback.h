@@ -11,21 +11,22 @@ typedef HANDLE abort_callback_event;
 #error PORTME
 #endif
 
-//! This class is used to signal underlying worker code whether user has decided to abort a potentially time-consuming operation. It is commonly required by all file related operations. Code that receives an abort_callback object should periodically check it and abort any operations being performed if it is signaled, typically giving io_result_aborted return code (see: t_io_result). \n
-//! See abort_callback_impl for implementation.
+//! This class is used to signal underlying worker code whether user has decided to abort a potentially time-consuming operation. It is commonly required by all file related operations. Code that receives an abort_callback object should periodically check it and abort any operations being performed if it is signaled, typically throwing exception_aborted. \n
+//! See abort_callback_impl for an implementation.
 class NOVTABLE abort_callback
 {
 public:
 	//! Returns whether user has requested the operation to be aborted.
 	virtual bool is_aborting() const = 0;
 
-	//! Retrieves event object that can be used with some OS calls. The even object becomes signaled when abort is triggered. On win32, this is equivalent to win32 event handle (see: CreateEvent).
+	//! Retrieves event object that can be used with some OS calls. The even object becomes signaled when abort is triggered. On win32, this is equivalent to win32 event handle (see: CreateEvent). \n
+	//! You must not close this handle or call any methods that change this handle's state (SetEvent() or ResetEvent()), you can only wait for it.
 	virtual abort_callback_event get_abort_event() const = 0;
 	
 	//! Checks if user has requested the operation to be aborted, and throws exception_aborted if so.
 	void check() const;
 
-	//! For compatibility with old code.
+	//! For compatibility with old code. Do not call.
 	inline void check_e() const {check();}
 
 	
@@ -65,6 +66,13 @@ private:
 #endif
 };
 
+//! Dummy abort_callback that never gets aborted. Slightly more efficient than the regular one especially when you need to regularly create temporary instances of it.
+class abort_callback_dummy : public abort_callback {
+public:
+	bool is_aborting() const { return false; }
+
+	abort_callback_event get_abort_event() const { return GetInfiniteWaitEvent();}
+};
 }
 
 using namespace foobar2000_io;

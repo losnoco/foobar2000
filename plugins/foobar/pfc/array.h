@@ -13,7 +13,7 @@ namespace pfc {
 	private: typedef array_staticsize_t<t_item> t_self;
 	public:
 		array_staticsize_t() : m_size(0), m_array(NULL) {}
-		array_staticsize_t(t_size p_size) : m_size(0), m_array(NULL) {set_size_discard(p_size);}
+		array_staticsize_t(t_size p_size) : m_array(new t_item[p_size]), m_size(p_size) {}
 		~array_staticsize_t() {__release();}
 
 		//! Copy constructor nonfunctional when data type is not copyable.
@@ -26,8 +26,8 @@ namespace pfc {
 			__release();
 			
 			//m_array = pfc::malloc_copy_t(p_source.get_size(),p_source.get_ptr());
-			const t_size newsize = p_source.get_size()
-			m_array = new t_item[newsize]
+			const t_size newsize = p_source.get_size();
+			m_array = new t_item[newsize];
 			m_size = newsize;
 			for(t_size n = 0; n < newsize; n++) m_array[n] = p_source[n];
 			return *this;
@@ -49,6 +49,8 @@ namespace pfc {
 		t_item & operator[](t_size p_index) {PFC_ASSERT(p_index < get_size());return m_array[p_index];}
 		
 		template<typename t_source> bool is_owned(const t_source & p_item) {return pfc::is_pointer_in_range(get_ptr(),get_size(),&p_item);}
+
+		template<typename t_out> void enumerate(t_out & out) const { for(t_size walk = 0; walk < m_size; ++walk) out(m_array[walk]); }
 	private:
 		void __release() {
 			m_size = 0;
@@ -117,6 +119,16 @@ namespace pfc {
 			}
 		}
 
+		template<typename t_insert>
+		void insert_multi(const t_insert & value, t_size base, t_size count) {
+			const t_size oldSize = get_size();
+			if (base > oldSize) base = oldSize;
+			increase_size(count);
+			pfc::memmove_t(get_ptr() + base + count, get_ptr() + base, oldSize - base);
+			pfc::fill_ptr_t(get_ptr() + base, count, value);
+		}
+		template<typename t_append> void append_multi(const t_append & value, t_size count) {insert_multi(value,~0,count);}
+
 		//! Warning: buffer pointer must not point to buffer allocated by this array (fixme).
 		template<typename t_append>
 		void append_fromptr(const t_append * p_buffer,t_size p_count) {
@@ -151,7 +163,7 @@ namespace pfc {
 		void fill_null() {
 			const t_size max = get_size();
 			for(t_size n=0;n<max;n++) m_alloc[n] = 0;
-}
+		}
 
 		void grow_size(t_size p_size) {
 			if (p_size > get_size()) set_size(p_size);
@@ -185,13 +197,7 @@ namespace pfc {
 			(*this)[0] = p_item;
 		}
 
-		template<typename t_callback>
-		void enumerate(t_callback & p_callback) const {
-			for(t_size n = 0; n < get_size(); n++ ) {
-				p_callback((*this)[n]);
-			}
-		}
-
+		template<typename t_callback> void enumerate(t_callback & p_callback) const { for(t_size n = 0; n < get_size(); n++ ) { p_callback((*this)[n]); } }
 	private:
 		t_alloc<t_item> m_alloc;
 	};
@@ -223,6 +229,52 @@ namespace pfc {
 			}
 		}
 	};
+
+	template<typename t_a1, typename t_a2>
+	static bool array_equals(const t_a1 & arr1, const t_a2 & arr2) {
+		const t_size s = array_size_t(arr1);
+		if (s != array_size_t(arr2)) return false;
+		for(t_size walk = 0; walk < s; ++walk) {
+			if (arr1[walk] != arr2[walk]) return false;
+		}
+		return true;
+	}
+
+
+
+	template<typename t_item, template<typename> class t_alloc = alloc_standard> class array_2d_t {
+	public:
+		array_2d_t() : m_d1(), m_d2() {}
+		void set_size(t_size d1, t_size d2) {
+			m_content.set_size(pfc::mul_safe_t<std::bad_alloc>(d1, d2));
+			m_d1 = d1; m_d2 = d2;
+		}
+		t_size get_dim1() const {return m_d1;}
+		t_size get_dim2() const {return m_d2;}
+
+		t_item & at(t_size i1, t_size i2) {
+			return * _transformPtr(m_content.get_ptr(), i1, i2);
+		}
+		const t_item & at(t_size i1, t_size i2) const {
+			return * _transformPtr(m_content.get_ptr(), i1, i2);
+		}
+		template<typename t_filler> void fill(const t_filler & p_filler) {m_content.fill(p_filler);}
+		void fill_null() {m_content.fill_null();}
+
+		t_item * rowPtr(t_size i1) {return _transformPtr(m_content.get_ptr(), i1, 0);}
+		const t_item * rowPtr(t_size i1) const {return _transformPtr(m_content.get_ptr(), i1, 0);}
+
+		const t_item * operator[](t_size i1) const {return rowPtr(i1);}
+		t_item * operator[](t_size i1) {return rowPtr(i1);}
+	private:
+		template<typename t_ptr> t_ptr _transformPtr(t_ptr ptr, t_size i1, t_size i2) const {
+			PFC_ASSERT( i1 < m_d1 ); PFC_ASSERT( i2 < m_d2 );
+			return ptr + i1 * m_d2 + i2;
+		}
+		pfc::array_t<t_item, t_alloc> m_content;
+		t_size m_d1, m_d2;
+	};
+
 }
 
 

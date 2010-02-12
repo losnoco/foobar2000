@@ -1,7 +1,3 @@
-#ifndef _TAG_PROCESSOR_H_
-#define _TAG_PROCESSOR_H_
-
-
 PFC_DECLARE_EXCEPTION(exception_tag_not_found,exception_io_data,"Tag not found");
 
 //! Callback interface for write-tags-to-temp-file-and-swap scheme, used for ID3v2 tag updates and such where entire file needs to be rewritten. 
@@ -25,6 +21,7 @@ public:
 	bool open_temp_file(service_ptr_t<file> & p_out,abort_callback & p_abort) {return false;}
 };
 
+//! For internal use - call tag_processor namespace methods instead.
 class NOVTABLE tag_processor_id3v2 : public service_base
 {
 public:
@@ -34,12 +31,15 @@ public:
 
 	static bool g_get(service_ptr_t<tag_processor_id3v2> & p_out);
 	static void g_skip(const service_ptr_t<file> & p_file,t_filesize & p_size_skipped,abort_callback & p_abort);
+	static void g_skip_at(const service_ptr_t<file> & p_file,t_filesize p_base, t_filesize & p_size_skipped,abort_callback & p_abort);
+	static t_size g_multiskip(const service_ptr_t<file> & p_file,t_filesize & p_size_skipped,abort_callback & p_abort);
 	static void g_remove(const service_ptr_t<file> & p_file,t_filesize & p_size_removed,abort_callback & p_abort);
 	static void g_remove_ex(tag_write_callback & p_callback,const service_ptr_t<file> & p_file,t_filesize & p_size_removed,abort_callback & p_abort);
 
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(tag_processor_id3v2);
 };
 
+//! For internal use - call tag_processor namespace methods instead.
 class NOVTABLE tag_processor_trailing : public service_base
 {
 public:
@@ -80,8 +80,8 @@ namespace tag_processor {
 	void write_multi_ex(tag_write_callback & p_callback,const service_ptr_t<file> & p_file,const file_info & p_info,abort_callback & p_abort,bool p_write_id3v1,bool p_write_id3v2,bool p_write_apev2);
 	//! Removes trailing tags from the file.
 	void remove_trailing(const service_ptr_t<file> & p_file,abort_callback & p_abort);
-	//! Removes ID3v2 tags from the file.
-	void remove_id3v2(const service_ptr_t<file> & p_file,abort_callback & p_abort);
+	//! Removes ID3v2 tags from the file. Returns true when a tag was removed, false when the file was not altered.
+	bool remove_id3v2(const service_ptr_t<file> & p_file,abort_callback & p_abort);
 	//! Removes ID3v2 and trailing tags from specified file (not to be confused with trailing ID3v2 which are not yet supported).
 	void remove_id3v2_trailing(const service_ptr_t<file> & p_file,abort_callback & p_abort);
 	//! Reads trailing tags from the file.
@@ -99,5 +99,3 @@ namespace tag_processor {
 	void truncate_to_id3v1(file_info & p_info);
 
 };
-
-#endif //_TAG_PROCESSOR_H_

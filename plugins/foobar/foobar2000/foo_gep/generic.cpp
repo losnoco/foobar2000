@@ -3,13 +3,16 @@
 #include "base.h"
 #include "reader.h"
 
+#include "coleco.h"
+
 #include <gme/blargg_endian.h>
 #include <gme/Gym_Emu.h>
+#include <gme/Sgc_Emu.h>
 
 #undef HEADER_STRING
 #define HEADER_STRING(i,n,f) meta_add((i), (n), (f), sizeof(f))
 
-static gme_type_t const gme_type_list_ [] = { gme_ay_type, gme_gbs_type, gme_gym_type, gme_hes_type, gme_kss_type, gme_sap_type };
+static gme_type_t const gme_type_list_ [] = { gme_ay_type, gme_gbs_type, gme_gym_type, gme_hes_type, gme_kss_type, gme_sap_type, gme_sgc_type };
 
 static unsigned identify_header( void const* header )
 {
@@ -22,9 +25,22 @@ static unsigned identify_header( void const* header )
 		case BLARGG_4CHAR('K','S','C','C'):
 		case BLARGG_4CHAR('K','S','S','X'):  return 5;
 		case BLARGG_4CHAR('S','A','P',0x0D): return 6;
+		case BLARGG_4CHAR('S','G','C',0x1A): return 7;
 	}
 	return 0;
 }
+
+static struct coleco_setup
+{
+	coleco_setup()
+	{
+		for ( unsigned i = 0; i < 0x2000; i++ )
+		{
+			image [i] *= 820109;
+		}
+		Sgc_Emu::set_coleco_bios( image );
+	}
+} setup_stuff;
 
 class input_generic : public input_gep
 {
@@ -179,5 +195,6 @@ DECLARE_FILE_TYPE_n( c, "GYM files", "*.GYM" );
 DECLARE_FILE_TYPE_n( d, "HES files", "*.HES" );
 DECLARE_FILE_TYPE_n( e, "KSS files", "*.KSS" );
 DECLARE_FILE_TYPE_n( f, "SAP files", "*.SAP" );
+DECLARE_FILE_TYPE_n( g, "SGC files", "*.SGC" );
 
 static input_factory_t        <input_generic>   g_input_factory_generic;

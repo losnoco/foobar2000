@@ -10,7 +10,7 @@
 		if (err) \
 		{ \
 			console::info(err); \
-			throw exception_io_data(); \
+			throw exception_io_data(err); \
 		} \
 	}
 
@@ -20,9 +20,9 @@ class input_gep
 {
 protected:
 
-	Music_Emu                 * emu;
+	gme_t                 * emu;
 
-	Effects_Buffer            * buffer;
+	Simple_Effects_Buffer     * buffer;
 
 	unsigned                    sample_rate;
 

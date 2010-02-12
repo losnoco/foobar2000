@@ -1,5 +1,11 @@
+#define MY_VERSION "0.6"
+
 /*
 	changelog
+
+2010-01-11 19:31 UTC - kode54
+- Added filename validation service
+- Version is now 0.6
 
 2005-10-08 21:10 UTC - kode54
 - Updated to 0.9 beta 7 + input API
@@ -717,4 +723,6 @@ DECLARE_FILE_TYPE("Lunar 2: EB PCM files", "RP???.PCM");
 
 static input_singletrack_factory_t<input_lunar2> g_input_lunar2_factory;
 
-DECLARE_COMPONENT_VERSION("Lunar 2 PCM decoder", "0.5", "Plays the RP*.PCM files found on\nthe original Lunar: Eternal Blue CD.");
+DECLARE_COMPONENT_VERSION("Lunar 2 PCM decoder", MY_VERSION, "Plays the RP*.PCM files found on\nthe original Lunar: Eternal Blue CD.");
+
+VALIDATE_COMPONENT_FILENAME("foo_lunar2.dll");

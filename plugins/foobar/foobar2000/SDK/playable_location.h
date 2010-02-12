@@ -1,8 +1,6 @@
 #ifndef _FOOBAR2000_PLAYABLE_LOCATION_H_
 #define _FOOBAR2000_PLAYABLE_LOCATION_H_
 
-#include "service.h"
-
 //playable_location stores location of a playable resource, currently implemented as file path and integer for indicating multiple playable "subsongs" per file
 //also see: file_info.h
 //for getting more info about resource referenced by a playable_location, see metadb.h
@@ -33,6 +31,11 @@ public:
 	inline void reset() {set_path("");set_subsong(0);}
 	inline t_uint32 get_subsong_index() const {return get_subsong();}
 	inline void set_subsong_index(t_uint32 v) {set_subsong(v);}
+
+	class comparator {
+	public:
+		static int compare(const playable_location & v1, const playable_location & v2) {return g_compare(v1,v2);}
+	};
 
 protected:
 	playable_location() {}

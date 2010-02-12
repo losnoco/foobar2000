@@ -1,7 +1,11 @@
-#define MY_VERSION "0.2"
+#define MY_VERSION "0.3"
 
 /*
 	changelog
+
+2010-01-11 20:10 UTC - kode54
+- Added filename validator
+- Version is now 0.3
 
 2009-07-31 00:43 UTC - kode54
 - Changed AviSynth handling to read the scripts from ANSI path using Import function to fix relative paths
@@ -131,7 +135,7 @@ public:
 
 		m_path = p_path;
 		m_local_path = pfc::stringcvt::string_ansi_from_utf8( p_path + 7 );
-		if ( m_local_path.find_first( '?' ) != infinite )
+		if ( m_local_path.find_first( '?' ) != ~0 )
 			throw exception_io_unsupported_format( "Only supports ANSI paths" );
 
 		//if (p_reason == input_open_info_write) throw exception_io_unsupported_format();//our input does not support retagging.
@@ -231,3 +235,4 @@ static input_singletrack_factory_t<input_avs> g_input_avs_factory;
 
 DECLARE_COMPONENT_VERSION("AVS input",MY_VERSION,"written by Dmitry Alexandrov aka dimzon\ndimzon541@gmail.com");
 DECLARE_FILE_TYPE("AviSynth files","*.AVS");
+VALIDATE_COMPONENT_FILENAME("foo_input_avs.dll");

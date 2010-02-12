@@ -2,9 +2,10 @@
 #include "dropdown_helper.h"
 
 
-void cfg_dropdown_history::build_list(pfc::ptr_list_t<char> & out)
+void _cfg_dropdown_history_base::build_list(pfc::ptr_list_t<char> & out)
 {
-	const char * src = data;
+	pfc::string8 temp; get_state(temp);
+	const char * src = temp;
 	while(*src)
 	{
 		int ptr = 0;
@@ -18,7 +19,7 @@ void cfg_dropdown_history::build_list(pfc::ptr_list_t<char> & out)
 	}
 }
 
-void cfg_dropdown_history::parse_list(const pfc::ptr_list_t<char> & src)
+void _cfg_dropdown_history_base::parse_list(const pfc::ptr_list_t<char> & src)
 {
 	t_size n;
 	pfc::string8_fastalloc temp;
@@ -27,7 +28,7 @@ void cfg_dropdown_history::parse_list(const pfc::ptr_list_t<char> & src)
 		temp.add_string(src[n]);
 		temp.add_char(separator);		
 	}
-	data = temp;
+	set_state(temp);
 }
 
 static void g_setup_dropdown_fromlist(HWND wnd,const pfc::ptr_list_t<char> & list)
@@ -39,7 +40,7 @@ static void g_setup_dropdown_fromlist(HWND wnd,const pfc::ptr_list_t<char> & lis
 	}
 }
 
-void cfg_dropdown_history::setup_dropdown(HWND wnd)
+void _cfg_dropdown_history_base::setup_dropdown(HWND wnd)
 {
 	pfc::ptr_list_t<char> list;
 	build_list(list);
@@ -47,9 +48,9 @@ void cfg_dropdown_history::setup_dropdown(HWND wnd)
 	list.free_all();
 }
 
-void cfg_dropdown_history::add_item(const char * item)
+bool _cfg_dropdown_history_base::add_item(const char * item)
 {
-	if (!item || !*item) return;
+	if (!item || !*item) return false;
 	pfc::string8 meh;
 	if (strchr(item,separator))
 	{
@@ -72,16 +73,24 @@ void cfg_dropdown_history::add_item(const char * item)
 
 	if (!found)
 	{
-		while(list.get_count() > max) list.delete_by_idx(list.get_count()-1);
-		list.insert_item(strdup(item),0);
+		while(list.get_count() > m_max) list.delete_by_idx(list.get_count()-1);
+		list.insert_item(_strdup(item),0);
 	}
 	parse_list(list);
 	list.free_all();
+	return found;
 }
 
-bool cfg_dropdown_history::is_empty()
+bool _cfg_dropdown_history_base::add_item(const char *item, HWND combobox) {
+	const bool state = add_item(item);
+	if (state) uSendMessageText(combobox, CB_ADDSTRING, 0, item);
+	return state;
+}
+
+bool _cfg_dropdown_history_base::is_empty()
 {
-	const char * src = data;
+	pfc::string8 temp; get_state(temp);
+	const char * src = temp;
 	while(*src)
 	{
 		if (*src!=separator) return false;
@@ -90,63 +99,62 @@ bool cfg_dropdown_history::is_empty()
 	return true;
 }
 
-void cfg_dropdown_history::on_context(HWND wnd,LPARAM coords)
-{
-	int coords_x = (short)LOWORD(coords), coords_y = (short)HIWORD(coords);
-	if (coords_x == -1 && coords_y == -1)
-	{
-		RECT asdf;
-		GetWindowRect(wnd,&asdf);
-		coords_x = (asdf.left + asdf.right) / 2;
-		coords_y = (asdf.top + asdf.bottom) / 2;
-	}
-	enum {ID_ERASE_ALL = 1, ID_ERASE_ONE };
-	HMENU menu = CreatePopupMenu();
-	uAppendMenu(menu,MF_STRING,ID_ERASE_ALL,"Wipe history");
-	{
-		pfc::string8 tempvalue;
-		uGetWindowText(wnd,tempvalue);
-		if (!tempvalue.is_empty())
-			uAppendMenu(menu,MF_STRING,ID_ERASE_ONE,"Remove this history item");
-	}
-	int cmd = TrackPopupMenu(menu,TPM_RIGHTBUTTON|TPM_NONOTIFY|TPM_RETURNCMD,coords_x,coords_y,0,wnd,0);
-	DestroyMenu(menu);
-	switch(cmd)
-	{
-	case ID_ERASE_ALL:
+bool _cfg_dropdown_history_base::on_context(HWND wnd,LPARAM coords) {
+	try {
+		int coords_x = (short)LOWORD(coords), coords_y = (short)HIWORD(coords);
+		if (coords_x == -1 && coords_y == -1)
 		{
-			data = "";
-			pfc::string8 value;//preserve old value while wiping dropdown list
-			uGetWindowText(wnd,value);
-			uSendMessage(wnd,CB_RESETCONTENT,0,0);
-			uSetWindowText(wnd,value);
+			RECT asdf;
+			GetWindowRect(wnd,&asdf);
+			coords_x = (asdf.left + asdf.right) / 2;
+			coords_y = (asdf.top + asdf.bottom) / 2;
 		}
-		break;
-	case ID_ERASE_ONE:
+		enum {ID_ERASE_ALL = 1, ID_ERASE_ONE };
+		HMENU menu = CreatePopupMenu();
+		uAppendMenu(menu,MF_STRING,ID_ERASE_ALL,"Wipe history");
 		{
-			pfc::string8 value;
-			uGetWindowText(wnd,value);
-
-			pfc::ptr_list_t<char> list;
-			t_size n,m;
-			bool found;
-			build_list(list);
-			m = list.get_count();
-			found = false;
-			for(n=0;n<m;n++)
+			pfc::string8 tempvalue;
+			uGetWindowText(wnd,tempvalue);
+			if (!tempvalue.is_empty())
+				uAppendMenu(menu,MF_STRING,ID_ERASE_ONE,"Remove this history item");
+		}
+		int cmd = TrackPopupMenu(menu,TPM_RIGHTBUTTON|TPM_NONOTIFY|TPM_RETURNCMD,coords_x,coords_y,0,wnd,0);
+		DestroyMenu(menu);
+		switch(cmd)
+		{
+		case ID_ERASE_ALL:
 			{
-				if (!strcmp(value,list[n]))
-				{
-					free(list[n]);
-					list.remove_by_idx(n);
-					found = true;
-					break;
-				}
+				set_state("");
+				pfc::string8 value;//preserve old value while wiping dropdown list
+				uGetWindowText(wnd,value);
+				uSendMessage(wnd,CB_RESETCONTENT,0,0);
+				uSetWindowText(wnd,value);
+				return true;
 			}
-			if (found) parse_list(list);
-			g_setup_dropdown_fromlist(wnd,list);
-			list.free_all();
+		case ID_ERASE_ONE:
+			{
+				pfc::string8 value;
+				uGetWindowText(wnd,value);
+
+				pfc::ptr_list_t<char> list;
+				build_list(list);
+				bool found = false;
+				for(t_size n=0;n<list.get_size();n++)
+				{
+					if (!strcmp(value,list[n]))
+					{
+						free(list[n]);
+						list.remove_by_idx(n);
+						found = true;
+						break;
+					}
+				}
+				if (found) parse_list(list);
+				g_setup_dropdown_fromlist(wnd,list);
+				list.free_all();
+				return found;
+			}
 		}
-		break;
-	}
+	} catch(...) {}
+	return false;
 }

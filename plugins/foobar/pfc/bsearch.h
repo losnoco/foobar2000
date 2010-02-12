@@ -1,12 +1,14 @@
 namespace pfc {
 
+	//deprecated
+
 	class NOVTABLE bsearch_callback
 	{
 	public:
 		virtual int test(t_size n) const = 0;
 	};
 
-	PFC_DLL_EXPORT bool bsearch(t_size p_count, bsearch_callback const & p_callback,t_size & p_result);
+	bool bsearch(t_size p_count, bsearch_callback const & p_callback,t_size & p_result);
 
 	template<typename t_container,typename t_compare, typename t_param>
 	class bsearch_callback_impl_simple_t : public bsearch_callback {

@@ -1,9 +1,11 @@
 #ifndef _FOOBAR2000_HELPERS_WIN32_DIALOG_H_
 #define _FOOBAR2000_HELPERS_WIN32_DIALOG_H_
 
+//DEPRECATED dialog helpers - kept only for compatibility with old code - do not use in new code, use WTL instead.
 
 namespace dialog_helper
 {
+	
 	class dialog
 	{
 	protected:
@@ -18,9 +20,9 @@ namespace dialog_helper
 	public:
 		inline HWND get_wnd() {return wnd;}
 
-		int run_modal(unsigned id,HWND parent);
+		__declspec(deprecated) int run_modal(unsigned id,HWND parent);
 
-		HWND run_modeless(unsigned id,HWND parent);
+		__declspec(deprecated) HWND run_modeless(unsigned id,HWND parent);
 	private:
 		HWND wnd;
 		static INT_PTR CALLBACK DlgProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
@@ -30,12 +32,11 @@ namespace dialog_helper
 		modal_dialog_scope m_modal_scope;
 	};
 
-
 	//! This class is meant to be instantiated on-stack, as a local variable. Using new/delete operators instead or even making this a member of another object works, but does not make much sense because of the way this works (single run() call).
 	class dialog_modal
 	{
 	public:
-		int run(unsigned p_id,HWND p_parent,HINSTANCE p_instance = core_api::get_my_instance());
+		__declspec(deprecated) int run(unsigned p_id,HWND p_parent,HINSTANCE p_instance = core_api::get_my_instance());
 	protected:
 		virtual BOOL on_message(UINT msg,WPARAM wp,LPARAM lp)=0;
 
@@ -48,7 +49,6 @@ namespace dialog_helper
 		HWND m_wnd;
 		modal_dialog_scope m_modal_scope;
 	};
-
 
 	//! This class is meant to be used with new/delete operators only. Destroying the window - outside create() / WM_INITDIALOG - will result in object calling delete this. If object is deleted directly using delete operator, WM_DESTROY handler may not be called so it should not be used (use destructor of derived class instead).
 	//! Classes derived from dialog_modeless must not be instantiated in any other way than operator new().
@@ -69,7 +69,7 @@ namespace dialog_helper
 	public:
 		//! Creates the dialog window. This will call on_message with WM_INITDIALOG. To abort creation, you can call DestroyWindow() on our window; it will not delete the object but make create() return false instead. You should not delete the object from inside WM_INITDIALOG handler or anything else possibly called from create().
 		//! @returns true on success, false on failure.
-		bool create(unsigned p_id,HWND p_parent,HINSTANCE p_instance = core_api::get_my_instance());
+		__declspec(deprecated) bool create(unsigned p_id,HWND p_parent,HINSTANCE p_instance = core_api::get_my_instance());
 	protected:
 		//! Standard windows message handler (DialogProc-style). Use get_wnd() to retrieve our dialog window handle.
 		virtual BOOL on_message(UINT msg,WPARAM wp,LPARAM lp)=0;
@@ -88,14 +88,11 @@ namespace dialog_helper
 		bool m_is_in_create;
 	};
 
-#pragma deprecated(dialog_modeless)
-
-
 
 	class dialog_modeless_v2
 	{
 	protected:
-		explicit dialog_modeless_v2(unsigned p_id,HWND p_parent,HINSTANCE p_instance = core_api::get_my_instance(),bool p_stealfocus = true);
+		__declspec(deprecated) explicit dialog_modeless_v2(unsigned p_id,HWND p_parent,HINSTANCE p_instance = core_api::get_my_instance(),bool p_stealfocus = true);
 		virtual ~dialog_modeless_v2();
 		HWND get_wnd() const {return m_wnd;}
 		virtual BOOL on_message(UINT msg,WPARAM wp,LPARAM lp) {return FALSE;}
@@ -113,9 +110,12 @@ namespace dialog_helper
 		dialog_modeless_v2(const dialog_modeless_v2 &);
 	};
 
-
 };
 
+//! Wrapper (provided mainly for old code), simplifies parameters compared to standard CreateDialog() by using core_api::get_my_instance().
+HWND uCreateDialog(UINT id,HWND parent,DLGPROC proc,LPARAM param = 0);
+//! Wrapper (provided mainly for old code), simplifies parameters compared to standard DialogBox() by using core_api::get_my_instance().
+int uDialogBox(UINT id,HWND parent,DLGPROC proc,LPARAM param = 0);
 
 
 #endif

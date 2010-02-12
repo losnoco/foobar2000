@@ -1,8 +1,3 @@
-#ifndef _FOOBAR2000_SDK_COMMANDLINE_H_
-#define _FOOBAR2000_SDK_COMMANDLINE_H_
-
-#include "service.h"
-
 class NOVTABLE commandline_handler : public service_base
 {
 public:
@@ -20,7 +15,7 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(commandline_handler);
 };
 
-class commandline_handler_metadb_handle : public commandline_handler//helper
+class commandline_handler_metadb_handle : public commandline_handler//helper 
 {
 protected:
 	virtual void on_file(const char * url);
@@ -44,7 +39,3 @@ how commandline_handler is used:
 
 template<typename T>
 class commandline_handler_factory_t : public service_factory_t<T> {};
-
-
-
-#endif //_FOOBAR2000_SDK_COMMANDLINE_H_

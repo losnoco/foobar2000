@@ -1,7 +1,15 @@
-#define MY_VERSION "1.2"
+#define MY_VERSION "1.4"
 
 /*
 	changelog
+
+2010-01-14 01:45 UTC - kode54
+- Fixed componentversion about message declaration
+- Version is now 1.4
+
+2010-01-11 19:39 UTC - kode54
+- Added filename validator
+- Version is now 1.3
 
 2009-10-31 12:39 UTC - kode54
 - Updated to File_Extractor v1.0.0
@@ -164,4 +172,6 @@ public:
 static archive_factory_t < archive_7z >  g_archive_7z_factory;
 static unpacker_factory_t< unpacker_7z > g_unpacker_7z_factory;
 
-DECLARE_COMPONENT_VERSION( "7-Zip reader", MY_VERSION, (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "7-Zip reader", MY_VERSION, "" );
+
+VALIDATE_COMPONENT_FILENAME("foo_unpack_7z.dll");

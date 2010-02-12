@@ -1,6 +1,3 @@
-#ifndef _PLAYLIST_H_
-#define _PLAYLIST_H_
-
 //! This interface allows filtering of playlist modification operations.\n
 //! Implemented by components "locking" playlists; use playlist_manager::playlist_lock_install() etc to takeover specific playlist with your instance of playlist_lock.
 class NOVTABLE playlist_lock : public service_base {
@@ -103,7 +100,7 @@ public:
 	//! @param p_index Index at which to insert new playlist; set to infinite to put it at the end of playlist list.
 	//! @returns Actual index of newly inserted playlist, infinite on failure (call from invalid context).
 	virtual t_size create_playlist(const char * p_name,t_size p_name_length,t_size p_index) = 0;
-	//! Reorders playlist list according to specified permutation.
+	//! Reorders the playlist list according to specified permutation.
 	//! @returns True on success, false on failure (call from invalid context).
 	virtual bool reorder(const t_size * p_order,t_size p_count) = 0;
 	
@@ -114,7 +111,7 @@ public:
 	virtual void playlist_enum_items(t_size p_playlist,enum_items_callback & p_callback,const bit_array & p_mask) = 0;
 	//! Retrieves index of focus item on specified playlist; returns infinite when no item has focus.
 	virtual t_size playlist_get_focus_item(t_size p_playlist) = 0;
-	//! Retrieves name of specified playlist.
+	//! Retrieves name of specified playlist. Should never fail unless the parameters are invalid.
 	virtual bool playlist_get_name(t_size p_playlist,pfc::string_base & p_out) = 0;
 	
 	//! Reorders items in specified playlist according to specified permutation.
@@ -248,8 +245,10 @@ public:
 
 	//! Helper; returns whether specified item on specified playlist is selected or not.
 	bool playlist_is_item_selected(t_size p_playlist,t_size p_item);
-	//! Helper; retrieves metadb_handle of specified playlist item. Returns true on success, false on failure (invalid parameters).
+	//! Helper; retrieves metadb_handle of the specified playlist item. Returns true on success, false on failure (invalid parameters).
 	bool playlist_get_item_handle(metadb_handle_ptr & p_out,t_size p_playlist,t_size p_item);
+	//! Helper; retrieves metadb_handle of the specified playlist item; throws pfc::exception_invalid_params() on failure.
+	metadb_handle_ptr playlist_get_item_handle(t_size playlist, t_size item);
 
 	//! Moves selected items up/down in the playlist by specified offset.
 	//! @param p_playlist Index of playlist to alter.
@@ -268,6 +267,10 @@ public:
 	void playlist_clear_selection(t_size p_playlist);
 	void playlist_remove_selection(t_size p_playlist,bool p_crop = false);
 	
+
+	//! Changes contents of the specified playlist to the specified items, trying to reuse existing playlist content as much as possible (preserving selection/focus/etc). Order of items in playlist not guaranteed to be the same as in the specified item list.
+	//! @returns true if the playlist has been altered, false if there was nothing to update.
+	bool playlist_update_content(t_size playlist, metadb_handle_list_cref content, bool bUndoBackup);
 	
 	//retrieving status
 	t_size activeplaylist_get_item_count();
@@ -291,6 +294,7 @@ public:
 
 	bool activeplaylist_is_item_selected(t_size p_item);
 	bool activeplaylist_get_item_handle(metadb_handle_ptr & item,t_size p_item);
+	metadb_handle_ptr activeplaylist_get_item_handle(t_size p_item);
 	void activeplaylist_move_selection(int p_delta);
 	void activeplaylist_get_selection_mask(bit_array_var & out);
 	void activeplaylist_get_items(pfc::list_base_t<metadb_handle_ptr> & out,const bit_array & p_mask);
@@ -303,9 +307,9 @@ public:
 	bool playlist_insert_items_filter(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
 	bool activeplaylist_insert_items_filter(t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
 
-	//! DEPRECATED (0.9.3) - use playlist_incoming_item_filter_v2::process_locations_async whenever possible
+	//! \deprecated (since 0.9.3) Use playlist_incoming_item_filter_v2::process_locations_async whenever possible
 	bool playlist_insert_locations(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
-	//! DEPRECATED (0.9.3) - use playlist_incoming_item_filter_v2::process_locations_async whenever possible
+	//! \deprecated (since 0.9.3) Use playlist_incoming_item_filter_v2::process_locations_async whenever possible
 	bool activeplaylist_insert_locations(t_size p_base,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd);
 
 	bool playlist_add_items_filter(t_size p_playlist,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select);
@@ -330,10 +334,11 @@ public:
 	bool playlist_get_focus_item_handle(metadb_handle_ptr & p_item,t_size p_playlist);
 	bool activeplaylist_get_focus_item_handle(metadb_handle_ptr & item);
 
-	t_size find_playlist(const char * p_name,t_size p_name_length);
-	t_size find_or_create_playlist(const char * p_name,t_size p_name_length);
+	t_size find_playlist(const char * p_name,t_size p_name_length = ~0);
+	t_size find_or_create_playlist(const char * p_name,t_size p_name_length = ~0);
+	t_size find_or_create_playlist_unlocked(const char * p_name,t_size p_name_length = ~0);
 
-	t_size create_playlist_autoname(t_size p_index = infinite);
+	t_size create_playlist_autoname(t_size p_index = ~0);
 
 	bool activeplaylist_sort_by_format(const char * spec,bool p_sel_only);
 
@@ -349,21 +354,172 @@ public:
 
 	bool get_all_items(pfc::list_base_t<metadb_handle_ptr> & out);
 
+	void playlist_activate_delta(int p_delta);
+	void playlist_activate_next() {playlist_activate_delta(1);}
+	void playlist_activate_previous() {playlist_activate_delta(-1);}
+
+
+	t_size playlist_get_selected_count(t_size p_playlist,bit_array const & p_mask);
+	t_size activeplaylist_get_selected_count(bit_array const & p_mask) {return playlist_get_selected_count(get_active_playlist(),p_mask);}
+
+	bool playlist_find_item(t_size p_playlist,metadb_handle_ptr p_item,t_size & p_result);//inefficient, walks entire playlist
+	bool playlist_find_item_selected(t_size p_playlist,metadb_handle_ptr p_item,t_size & p_result);//inefficient, walks entire playlist
+	t_size playlist_set_focus_by_handle(t_size p_playlist,metadb_handle_ptr p_item);
+	bool activeplaylist_find_item(metadb_handle_ptr p_item,t_size & p_result);//inefficient, walks entire playlist
+	t_size activeplaylist_set_focus_by_handle(metadb_handle_ptr p_item);
+
+	static void g_make_selection_move_permutation(t_size * p_output,t_size p_count,const bit_array & p_selection,int p_delta);
+
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playlist_manager);
+};
+
+//! Extension of the playlist_manager service that manages playlist properties.
+//! Playlist properties come in two flavors: persistent and runtime.
+//! Persistent properties are blocks of binary that that will be preserved when the application is exited and restarted.
+//! Runtime properties are service pointers that will be lost when the application exits.
+//! \since 0.9.5
+class NOVTABLE playlist_manager_v2 : public playlist_manager {
+public:
+	//! Write a persistent playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \param p_stream stream that contains the data that will be associated with the property
+	//! \param p_abort abort_callback that will be used when reading from p_stream
+	virtual void playlist_set_property(t_size p_playlist,const GUID & p_property,stream_reader * p_stream,t_size p_size_hint,abort_callback & p_abort) = 0;
+	//! Read a persistent playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \param p_stream stream that will receive the stored data
+	//! \param p_abort abort_callback that will be used when writing to p_stream
+	//! \return true if the property exists, false otherwise
+	virtual bool playlist_get_property(t_size p_playlist,const GUID & p_property,stream_writer * p_stream,abort_callback & p_abort) = 0;
+	//! Test existence of a persistent playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \return true if the property exists, false otherwise
+	virtual bool playlist_have_property(t_size p_playlist,const GUID & p_property) = 0;
+	//! Remove a persistent playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \return true if the property existed, false otherwise
+	virtual bool playlist_remove_property(t_size p_playlist,const GUID & p_property) = 0;
+
+	//! Write a runtime playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \param p_data service pointer that will be associated with the property
+	virtual void playlist_set_runtime_property(t_size p_playlist,const GUID & p_property,service_ptr_t<service_base> p_data) = 0;
+	//! Read a runtime playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \param p_data base service pointer reference that will receive the stored servive pointer
+	//! \return true if the property exists, false otherwise
+	virtual bool playlist_get_runtime_property(t_size p_playlist,const GUID & p_property,service_ptr_t<service_base> & p_data) = 0;
+	//! Test existence of a runtime playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \return true if the property exists, false otherwise
+	virtual bool playlist_have_runtime_property(t_size p_playlist,const GUID & p_property) = 0;
+	//! Remove a runtime playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \return true if the property existed, false otherwise
+	virtual bool playlist_remove_runtime_property(t_size p_playlist,const GUID & p_property) = 0;
+
+	//! Write a persistent playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \param p_data array that contains the data that will be associated with the property
+	template<typename t_array> void playlist_set_property(t_size p_playlist,const GUID & p_property,const t_array & p_data) {
+		PFC_STATIC_ASSERT( sizeof(p_data[0]) == 1 );
+		playlist_set_property(p_playlist,p_property,&stream_reader_memblock_ref(p_data),p_data.get_size(),abort_callback_dummy());
+	}
+	//! Read a persistent playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \param p_data array that will receive the stored data
+	//! \return true if the property exists, false otherwise
+	template<typename t_array> bool playlist_get_property(t_size p_playlist,const GUID & p_property,t_array & p_data) {
+		PFC_STATIC_ASSERT( sizeof(p_data[0]) == 1 );
+		typedef pfc::array_t<t_uint8,pfc::alloc_fast_aggressive> t_temp;
+		t_temp temp;
+		if (!playlist_get_property(p_playlist,p_property,&stream_writer_buffer_append_ref_t<t_temp>(temp),abort_callback_dummy())) return false;
+		p_data = temp;
+		return true;
+	}
+	//! Read a runtime playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \param p_data specific service pointer reference that will receive the stored servive pointer
+	//! \return true if the property exists and can be converted to the type of p_data, false otherwise
+	template<typename _t_interface> bool playlist_get_runtime_property(t_size p_playlist,const GUID & p_property,service_ptr_t<_t_interface> & p_data) {
+		service_ptr_t<service_base> ptr;
+		if (!playlist_get_runtime_property(p_playlist,p_property,ptr)) return false;
+		return ptr->service_query_t(p_data);
+	}
+	
+	//! Write a persistent playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \param p_value integer that will be associated with the property
+	template<typename _t_int>
+	void playlist_set_property_int(t_size p_playlist,const GUID & p_property,_t_int p_value) {
+		pfc::array_t<t_uint8> temp; temp.set_size(sizeof(_t_int));
+		pfc::encode_little_endian(temp.get_ptr(),p_value);
+		playlist_set_property(p_playlist,p_property,temp);
+	}
+	//! Read a persistent playlist property.
+	//! \param p_playlist Index of the playlist
+	//! \param p_property GUID that identifies the property
+	//! \param p_value integer reference that will receive the stored data
+	//! \return true if the property exists and if the data is compatible with p_value, false otherwise
+	template<typename _t_int>
+	bool playlist_get_property_int(t_size p_playlist,const GUID & p_property,_t_int & p_value) {
+		pfc::array_t<t_uint8> temp;
+		if (!playlist_get_property(p_playlist,p_property,temp)) return false;
+		if (temp.get_size() != sizeof(_t_int)) return false;
+		pfc::decode_little_endian(p_value,temp.get_ptr());
+		return true;
+	}
+
+	FB2K_MAKE_SERVICE_INTERFACE(playlist_manager_v2,playlist_manager)
+};
+
+//! \since 0.9.5
+class NOVTABLE playlist_manager_v3 : public playlist_manager_v2 {
+	FB2K_MAKE_SERVICE_INTERFACE(playlist_manager_v3,playlist_manager_v2)
+public:
+	virtual t_size recycler_get_count() = 0;
+	virtual void recycler_get_content(t_size which, metadb_handle_list_ref out) = 0;
+	virtual void recycler_get_name(t_size which, pfc::string_base & out) = 0;
+	virtual t_uint32 recycler_get_id(t_size which) = 0;
+	virtual void recycler_purge(const bit_array & mask) = 0;
+	virtual void recycler_restore(t_size which) = 0;
+
+	void recycler_restore_by_id(t_uint32 id);
+	t_size recycler_find_by_id(t_uint32 id);
+};
+
+//! \since 0.9.5.4
+class NOVTABLE playlist_manager_v4 : public playlist_manager_v3 {
+	FB2K_MAKE_SERVICE_INTERFACE(playlist_manager_v4, playlist_manager_v3)
+public:
+	virtual void playlist_get_sideinfo(t_size which, stream_writer * stream, abort_callback & abort) = 0;
+	virtual t_size create_playlist_ex(const char * p_name,t_size p_name_length,t_size p_index, metadb_handle_list_cref content, stream_reader * sideInfo, abort_callback & abort) = 0;
 };
 
 class NOVTABLE playlist_callback
 {
 public:
-	virtual void FB2KAPI on_items_added(t_size p_playlist,t_size p_start, const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call playlist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
-	virtual void FB2KAPI on_items_reordered(t_size p_playlist,const t_size * p_order,t_size p_count)=0;//changes selection too; doesnt actually change set of items that are selected or item having focus, just changes their order
-	virtual void FB2KAPI on_items_removing(t_size p_playlist,const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;//called before actually removing them
-	virtual void FB2KAPI on_items_removed(t_size p_playlist,const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;
-	virtual void FB2KAPI on_items_selection_change(t_size p_playlist,const bit_array & p_affected,const bit_array & p_state) = 0;
-	virtual void FB2KAPI on_item_focus_change(t_size p_playlist,t_size p_from,t_size p_to)=0;//focus may be -1 when no item has focus; reminder: focus may also change on other callbacks
+	virtual void on_items_added(t_size p_playlist,t_size p_start, const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call playlist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
+	virtual void on_items_reordered(t_size p_playlist,const t_size * p_order,t_size p_count)=0;//changes selection too; doesnt actually change set of items that are selected or item having focus, just changes their order
+	virtual void on_items_removing(t_size p_playlist,const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;//called before actually removing them
+	virtual void on_items_removed(t_size p_playlist,const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;
+	virtual void on_items_selection_change(t_size p_playlist,const bit_array & p_affected,const bit_array & p_state) = 0;
+	virtual void on_item_focus_change(t_size p_playlist,t_size p_from,t_size p_to)=0;//focus may be -1 when no item has focus; reminder: focus may also change on other callbacks
 	
-	virtual void FB2KAPI on_items_modified(t_size p_playlist,const bit_array & p_mask)=0;
-	virtual void FB2KAPI on_items_modified_fromplayback(t_size p_playlist,const bit_array & p_mask,play_control::t_display_level p_level)=0;
+	virtual void on_items_modified(t_size p_playlist,const bit_array & p_mask)=0;
+	virtual void on_items_modified_fromplayback(t_size p_playlist,const bit_array & p_mask,play_control::t_display_level p_level)=0;
 
 	struct t_on_items_replaced_entry
 	{
@@ -371,20 +527,20 @@ public:
 		metadb_handle_ptr m_old,m_new;
 	};
 
-	virtual void FB2KAPI on_items_replaced(t_size p_playlist,const bit_array & p_mask,const pfc::list_base_const_t<t_on_items_replaced_entry> & p_data)=0;
+	virtual void on_items_replaced(t_size p_playlist,const bit_array & p_mask,const pfc::list_base_const_t<t_on_items_replaced_entry> & p_data)=0;
 
-	virtual void FB2KAPI on_item_ensure_visible(t_size p_playlist,t_size p_idx)=0;
+	virtual void on_item_ensure_visible(t_size p_playlist,t_size p_idx)=0;
 
-	virtual void FB2KAPI on_playlist_activate(t_size p_old,t_size p_new) = 0;
-	virtual void FB2KAPI on_playlist_created(t_size p_index,const char * p_name,t_size p_name_len) = 0;
-	virtual void FB2KAPI on_playlists_reorder(const t_size * p_order,t_size p_count) = 0;
-	virtual void FB2KAPI on_playlists_removing(const bit_array & p_mask,t_size p_old_count,t_size p_new_count) = 0;
-	virtual void FB2KAPI on_playlists_removed(const bit_array & p_mask,t_size p_old_count,t_size p_new_count) = 0;
-	virtual void FB2KAPI on_playlist_renamed(t_size p_index,const char * p_new_name,t_size p_new_name_len) = 0;
+	virtual void on_playlist_activate(t_size p_old,t_size p_new) = 0;
+	virtual void on_playlist_created(t_size p_index,const char * p_name,t_size p_name_len) = 0;
+	virtual void on_playlists_reorder(const t_size * p_order,t_size p_count) = 0;
+	virtual void on_playlists_removing(const bit_array & p_mask,t_size p_old_count,t_size p_new_count) = 0;
+	virtual void on_playlists_removed(const bit_array & p_mask,t_size p_old_count,t_size p_new_count) = 0;
+	virtual void on_playlist_renamed(t_size p_index,const char * p_new_name,t_size p_new_name_len) = 0;
 
-	virtual void FB2KAPI on_default_format_changed() = 0;
-	virtual void FB2KAPI on_playback_order_changed(t_size p_new_index) = 0;
-	virtual void FB2KAPI on_playlist_locked(t_size p_playlist,bool p_locked) = 0;
+	virtual void on_default_format_changed() = 0;
+	virtual void on_playback_order_changed(t_size p_new_index) = 0;
+	virtual void on_playlist_locked(t_size p_playlist,bool p_locked) = 0;
 
 	enum {
 		flag_on_items_added					= 1 << 0,
@@ -408,6 +564,8 @@ public:
 		flag_on_playlist_locked				= 1 << 18,
 
 		flag_all							= ~0,
+		flag_item_ops						= flag_on_items_added | flag_on_items_reordered | flag_on_items_removing | flag_on_items_removed | flag_on_items_selection_change | flag_on_item_focus_change | flag_on_items_modified | flag_on_items_modified_fromplayback | flag_on_items_replaced | flag_on_item_ensure_visible,
+		flag_playlist_ops					= flag_on_playlist_activate | flag_on_playlist_created | flag_on_playlists_reorder | flag_on_playlists_removing | flag_on_playlists_removed | flag_on_playlist_renamed | flag_on_playlist_locked,
 	};
 protected:
 	playlist_callback() {}
@@ -425,23 +583,23 @@ public:
 class NOVTABLE playlist_callback_single
 {
 public:
-	virtual void FB2KAPI on_items_added(t_size start, const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call playlist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
-	virtual void FB2KAPI on_items_reordered(const t_size * order,t_size count)=0;//changes selection too; doesnt actually change set of items that are selected or item having focus, just changes their order
-	virtual void FB2KAPI on_items_removing(const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;//called before actually removing them
-	virtual void FB2KAPI on_items_removed(const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;
-	virtual void FB2KAPI on_items_selection_change(const bit_array & p_affected,const bit_array & p_state) = 0;
-	virtual void FB2KAPI on_item_focus_change(t_size p_from,t_size p_to)=0;//focus may be -1 when no item has focus; reminder: focus may also change on other callbacks
-	virtual void FB2KAPI on_items_modified(const bit_array & p_mask)=0;
-	virtual void FB2KAPI on_items_modified_fromplayback(const bit_array & p_mask,play_control::t_display_level p_level)=0;
-	virtual void FB2KAPI on_items_replaced(const bit_array & p_mask,const pfc::list_base_const_t<playlist_callback::t_on_items_replaced_entry> & p_data)=0;
-	virtual void FB2KAPI on_item_ensure_visible(t_size p_idx)=0;
+	virtual void on_items_added(t_size p_base, const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection)=0;//inside any of these methods, you can call playlist APIs to get exact info about what happened (but only methods that read playlist state, not those that modify it)
+	virtual void on_items_reordered(const t_size * p_order,t_size p_count)=0;//changes selection too; doesnt actually change set of items that are selected or item having focus, just changes their order
+	virtual void on_items_removing(const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;//called before actually removing them
+	virtual void on_items_removed(const bit_array & p_mask,t_size p_old_count,t_size p_new_count)=0;
+	virtual void on_items_selection_change(const bit_array & p_affected,const bit_array & p_state) = 0;
+	virtual void on_item_focus_change(t_size p_from,t_size p_to)=0;//focus may be -1 when no item has focus; reminder: focus may also change on other callbacks
+	virtual void on_items_modified(const bit_array & p_mask)=0;
+	virtual void on_items_modified_fromplayback(const bit_array & p_mask,play_control::t_display_level p_level)=0;
+	virtual void on_items_replaced(const bit_array & p_mask,const pfc::list_base_const_t<playlist_callback::t_on_items_replaced_entry> & p_data)=0;
+	virtual void on_item_ensure_visible(t_size p_idx)=0;
 
-	virtual void FB2KAPI on_playlist_switch() = 0;
-	virtual void FB2KAPI on_playlist_renamed(const char * p_new_name,t_size p_new_name_len) = 0;
-	virtual void FB2KAPI on_playlist_locked(bool p_locked) = 0;
+	virtual void on_playlist_switch() = 0;
+	virtual void on_playlist_renamed(const char * p_new_name,t_size p_new_name_len) = 0;
+	virtual void on_playlist_locked(bool p_locked) = 0;
 
-	virtual void FB2KAPI on_default_format_changed() = 0;
-	virtual void FB2KAPI on_playback_order_changed(t_size p_new_index) = 0;
+	virtual void on_default_format_changed() = 0;
+	virtual void on_playback_order_changed(t_size p_new_index) = 0;
 
 	enum {
 		flag_on_items_added					= 1 << 0,
@@ -466,6 +624,80 @@ protected:
 	~playlist_callback_single() {}
 };
 
+//! playlist_callback implementation helper - registers itself on creation / unregisters on destruction. Must not be instantiated statically!
+class playlist_callback_impl_base : public playlist_callback {
+public:
+	playlist_callback_impl_base(t_uint32 p_flags = 0) {
+		static_api_ptr_t<playlist_manager>()->register_callback(this,p_flags);
+	}
+	~playlist_callback_impl_base() {
+		static_api_ptr_t<playlist_manager>()->unregister_callback(this);
+	}
+	void set_callback_flags(t_uint32 p_flags) {
+		static_api_ptr_t<playlist_manager>()->modify_callback(this,p_flags);
+	}
+	//dummy implementations - avoid possible pure virtual function calls!
+	void on_items_added(t_size p_playlist,t_size p_start, const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection) {}
+	void on_items_reordered(t_size p_playlist,const t_size * p_order,t_size p_count) {}
+	void on_items_removing(t_size p_playlist,const bit_array & p_mask,t_size p_old_count,t_size p_new_count) {}
+	void on_items_removed(t_size p_playlist,const bit_array & p_mask,t_size p_old_count,t_size p_new_count) {}
+	void on_items_selection_change(t_size p_playlist,const bit_array & p_affected,const bit_array & p_state) {}
+	void on_item_focus_change(t_size p_playlist,t_size p_from,t_size p_to) {}
+	
+	void on_items_modified(t_size p_playlist,const bit_array & p_mask) {}
+	void on_items_modified_fromplayback(t_size p_playlist,const bit_array & p_mask,play_control::t_display_level p_level) {}
+
+	void on_items_replaced(t_size p_playlist,const bit_array & p_mask,const pfc::list_base_const_t<t_on_items_replaced_entry> & p_data) {}
+
+	void on_item_ensure_visible(t_size p_playlist,t_size p_idx) {}
+
+	void on_playlist_activate(t_size p_old,t_size p_new) {}
+	void on_playlist_created(t_size p_index,const char * p_name,t_size p_name_len) {}
+	void on_playlists_reorder(const t_size * p_order,t_size p_count) {}
+	void on_playlists_removing(const bit_array & p_mask,t_size p_old_count,t_size p_new_count) {}
+	void on_playlists_removed(const bit_array & p_mask,t_size p_old_count,t_size p_new_count) {}
+	void on_playlist_renamed(t_size p_index,const char * p_new_name,t_size p_new_name_len) {}
+
+	void on_default_format_changed() {}
+	void on_playback_order_changed(t_size p_new_index) {}
+	void on_playlist_locked(t_size p_playlist,bool p_locked) {}
+};
+
+//! playlist_callback_single implementation helper - registers itself on creation / unregisters on destruction. Must not be instantiated statically!
+class playlist_callback_single_impl_base : public playlist_callback_single {
+protected:
+	playlist_callback_single_impl_base(t_uint32 p_flags = 0) {
+		static_api_ptr_t<playlist_manager>()->register_callback(this,p_flags);
+	}
+	void set_callback_flags(t_uint32 p_flags) {
+		static_api_ptr_t<playlist_manager>()->modify_callback(this,p_flags);
+	}
+	~playlist_callback_single_impl_base() {
+		static_api_ptr_t<playlist_manager>()->unregister_callback(this);
+	}
+
+	//dummy implementations - avoid possible pure virtual function calls!
+	void on_items_added(t_size p_base, const pfc::list_base_const_t<metadb_handle_ptr> & p_data,const bit_array & p_selection) {}
+	void on_items_reordered(const t_size * p_order,t_size p_count) {}
+	void on_items_removing(const bit_array & p_mask,t_size p_old_count,t_size p_new_count) {}
+	void on_items_removed(const bit_array & p_mask,t_size p_old_count,t_size p_new_count) {}
+	void on_items_selection_change(const bit_array & p_affected,const bit_array & p_state) {}
+	void on_item_focus_change(t_size p_from,t_size p_to) {}
+	void on_items_modified(const bit_array & p_mask) {}
+	void on_items_modified_fromplayback(const bit_array & p_mask,play_control::t_display_level p_level) {}
+	void on_items_replaced(const bit_array & p_mask,const pfc::list_base_const_t<playlist_callback::t_on_items_replaced_entry> & p_data) {}
+	void on_item_ensure_visible(t_size p_idx) {}
+
+	void on_playlist_switch() {}
+	void on_playlist_renamed(const char * p_new_name,t_size p_new_name_len) {}
+	void on_playlist_locked(bool p_locked) {}
+
+	void on_default_format_changed() {}
+	void on_playback_order_changed(t_size p_new_index) {}
+
+	PFC_CLASS_NOT_COPYABLE(playlist_callback_single_impl_base,playlist_callback_single_impl_base);
+};
+
 class playlist_callback_single_static : public service_base, public playlist_callback_single
 {
 public:
@@ -476,7 +708,7 @@ public:
 
 
 //! Class used for async processing of IDataObject. Content of IDataObject can be dumped into dropped_files_data without any time-consuming operations - won't block calling app when used inside drag&drop handler - and actual time-consuming processing (listing directories and reading infos) can be done later.\n
-//! In 0.9.3 and up, instead of going thru dropped_files_data, you can use playlist_incoming_item_filter_v2::process_dropped_files_async().
+//! \deprecated In 0.9.3 and up, instead of going thru dropped_files_data, you can use playlist_incoming_item_filter_v2::process_dropped_files_async().
 class NOVTABLE dropped_files_data {
 public:
 	virtual void set_paths(pfc::string_list_const const & p_paths) = 0;
@@ -487,21 +719,25 @@ protected:
 };
 
 
-class NOVTABLE playlist_incoming_item_filter : public service_base
-{
+class NOVTABLE playlist_incoming_item_filter : public service_base {
 public:
-	virtual bool filter_items(const pfc::list_base_const_t<metadb_handle_ptr> & in,pfc::list_base_t<metadb_handle_ptr> & out) = 0;//sort / remove duplicates
+	//! Pre-sorts incoming items according to user-configured settings, removes duplicates. \n
+	//! @param in Items to process.
+	//! @param out Receives processed item list. \n
+	//! NOTE: because of an implementation bug in pre-0.9.5, the output list should be emptied before calling filter_items(), otherwise the results will be inconsistent/unpredictable.
+	//! @returns True when there's one or more item in the output list, false when the output list is empty.
+	virtual bool filter_items(metadb_handle_list_cref in,metadb_handle_list_ref out) = 0;
 	
-	//! Deprecated; use playlist_incoming_item_filter_v2::process_locations_async() when possible.\n
 	//! Converts one or more paths to a list of metadb_handles; displays a progress dialog.\n
 	//! Note that this function creates modal dialog and does not return until the operation has completed.
 	//! @returns True on success, false on user abort.
+	//! \deprecated Use playlist_incoming_item_filter_v2::process_locations_async() when possible.
 	virtual bool process_locations(const pfc::list_base_const_t<const char*> & p_urls,pfc::list_base_t<metadb_handle_ptr> & p_out,bool p_filter,const char * p_restrict_mask_override, const char * p_exclude_mask_override,HWND p_parentwnd) = 0;
 	
-	//! Deprecated; use playlist_incoming_item_filter_v2::process_dropped_files_async() when possible.\n
 	//! Converts an IDataObject to a list of metadb_handles.
 	//! Using this function is strongly disrecommended as it implies blocking the drag&drop source app (as well as our app).\n
 	//! @returns True on success, false on user abort or unknown data format.
+	//! \deprecated Use playlist_incoming_item_filter_v2::process_dropped_files_async() when possible.
 	virtual bool process_dropped_files(interface IDataObject * pDataObject,pfc::list_base_t<metadb_handle_ptr> & p_out,bool p_filter,HWND p_parentwnd) = 0;
 
 	//! Checks whether IDataObject contains one of known data formats that can be translated to a list of metadb_handles.
@@ -510,7 +746,7 @@ public:
 	//! Checks whether IDataObject contains our own private data format (drag&drop within the app etc).
 	virtual bool process_dropped_files_check_if_native(interface IDataObject * pDataObject) = 0;
 	
-	//! Creates an IDataObject from specified metadb_handle list.
+	//! Creates an IDataObject from specified metadb_handle list. The caller is responsible for releasing the returned object. It is recommended that you use create_dataobject_ex() to get an autopointer that ensures proper deletion.
 	virtual interface IDataObject * create_dataobject(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) = 0;
 
 	//! Checks whether IDataObject contains one of known data formats that can be translated to a list of metadb_handles.\n
@@ -523,13 +759,16 @@ public:
 	//! @returns True on success, false when IDataObject does not contain any of known data formats.
 	virtual bool process_dropped_files_delayed(dropped_files_data & p_out,interface IDataObject * pDataObject) = 0;
 
-	//helper
+	//! Helper - calls process_locations() with a single URL. See process_locations() for more info.
 	bool process_location(const char * url,pfc::list_base_t<metadb_handle_ptr> & out,bool filter,const char * p_mask,const char * p_exclude,HWND p_parentwnd);
+	//! Helper - returns a pfc::com_ptr_t<> rather than a raw pointer.
+	pfc::com_ptr_t<interface IDataObject> create_dataobject_ex(metadb_handle_list_cref data);
 
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playlist_incoming_item_filter);
 };
 
 //! For use with playlist_incoming_item_filter_v2::process_locations_async().
+//! \since 0.9.3
 class NOVTABLE process_locations_notify : public service_base {
 public:
 	virtual void on_completion(const pfc::list_base_const_t<metadb_handle_ptr> & p_items) = 0;
@@ -540,7 +779,7 @@ public:
 
 typedef service_ptr_t<process_locations_notify> process_locations_notify_ptr;
 
-//! New (0.9.3)
+//! \since 0.9.3
 class NOVTABLE playlist_incoming_item_filter_v2 : public playlist_incoming_item_filter {
 public:
 	enum {
@@ -569,6 +808,14 @@ public:
 	virtual void process_dropped_files_async(interface IDataObject * p_dataobject,t_uint32 p_op_flags,HWND p_parentwnd,process_locations_notify_ptr p_notify) = 0;
 
 	FB2K_MAKE_SERVICE_INTERFACE(playlist_incoming_item_filter_v2,playlist_incoming_item_filter);
+};
+
+//! \since 0.9.5
+class playlist_incoming_item_filter_v3 : public playlist_incoming_item_filter_v2 {
+public:
+	virtual bool auto_playlist_name(metadb_handle_list_cref data,pfc::string_base & out) = 0;
+
+	FB2K_MAKE_SERVICE_INTERFACE(playlist_incoming_item_filter_v3,playlist_incoming_item_filter_v2)
 };
 
 //! Implementation of dropped_files_data.
@@ -608,4 +855,19 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playback_queue_callback);
 };
 
-#endif
+
+class playlist_lock_change_notify : private playlist_callback_single_impl_base {
+public:
+	playlist_lock_change_notify() : playlist_callback_single_impl_base(flag_on_playlist_switch|flag_on_playlist_locked) {}
+protected:
+	virtual void on_lock_state_change() {}
+	bool is_playlist_command_available(t_uint32 what) const {
+		static_api_ptr_t<playlist_manager> api;
+		const t_size active = api->get_active_playlist();
+		if (active == ~0) return false;
+		return (api->playlist_lock_get_filter_mask(active) & what) == 0;
+	}
+private:
+	void on_playlist_switch() {on_lock_state_change();}
+	void on_playlist_locked(bool p_locked) {on_lock_state_change();}
+};

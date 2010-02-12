@@ -32,7 +32,7 @@
 
  */
 
-#define VERSION "1.52"
+#define VERSION "1.6"
 
 /*
 #define GDIPLUS
@@ -41,6 +41,10 @@
 
 /*
 	change log
+
+2010-01-11 19:34 UTC - kode54
+- Updated preferences page to 1.0 API
+- Version is now 1.6
 
 2005-11-28 12:40 UTC - kode54
 - Fixed stupid typo in menu_osd_control::item_execute_simple guid from guid mess
@@ -437,3 +441,5 @@ static initquit_factory_t<initquit_osd> g_initquit_osd_factory;
 #endif
 
 DECLARE_COMPONENT_VERSION(NSTRING,VSTRING,"Displays a brief pop-up notice whenever a song starts to play.");
+
+VALIDATE_COMPONENT_FILENAME("foo_osd.dll");

@@ -44,32 +44,32 @@ static const char meta_album_gain[] = "replaygain_album_gain", meta_album_peak[]
 bool replaygain_info::g_is_meta_replaygain(const char * p_name,t_size p_name_len)
 {
 	return 
-		stricmp_utf8_ex(p_name,p_name_len,meta_album_gain,infinite) == 0 ||
-		stricmp_utf8_ex(p_name,p_name_len,meta_album_peak,infinite) == 0 ||
-		stricmp_utf8_ex(p_name,p_name_len,meta_track_gain,infinite) == 0 ||
-		stricmp_utf8_ex(p_name,p_name_len,meta_track_peak,infinite) == 0;
+		stricmp_utf8_ex(p_name,p_name_len,meta_album_gain,~0) == 0 ||
+		stricmp_utf8_ex(p_name,p_name_len,meta_album_peak,~0) == 0 ||
+		stricmp_utf8_ex(p_name,p_name_len,meta_track_gain,~0) == 0 ||
+		stricmp_utf8_ex(p_name,p_name_len,meta_track_peak,~0) == 0;
 }
 
 bool replaygain_info::set_from_meta_ex(const char * p_name,t_size p_name_len,const char * p_value,t_size p_value_len)
 {
 	fpu_control_roundnearest bah;
-	if (stricmp_utf8_ex(p_name,p_name_len,meta_album_gain,infinite) == 0)
+	if (stricmp_utf8_ex(p_name,p_name_len,meta_album_gain,~0) == 0)
 	{
 		m_album_gain = (float)pfc::string_to_float(p_value,p_value_len);
 		return true;
 	}
-	else if (stricmp_utf8_ex(p_name,p_name_len,meta_album_peak,infinite) == 0)
+	else if (stricmp_utf8_ex(p_name,p_name_len,meta_album_peak,~0) == 0)
 	{
 		m_album_peak = (float)pfc::string_to_float(p_value,p_value_len);
 		if (m_album_peak < 0) m_album_peak = 0;
 		return true;
 	}
-	else if (stricmp_utf8_ex(p_name,p_name_len,meta_track_gain,infinite) == 0)
+	else if (stricmp_utf8_ex(p_name,p_name_len,meta_track_gain,~0) == 0)
 	{
 		m_track_gain = (float)pfc::string_to_float(p_value,p_value_len);
 		return true;
 	}
-	else if (stricmp_utf8_ex(p_name,p_name_len,meta_track_peak,infinite) == 0)
+	else if (stricmp_utf8_ex(p_name,p_name_len,meta_track_peak,~0) == 0)
 	{
 		m_track_peak = (float)pfc::string_to_float(p_value,p_value_len);
 		if (m_track_peak < 0) m_track_peak = 0;

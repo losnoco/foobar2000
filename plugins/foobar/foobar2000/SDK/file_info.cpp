@@ -5,20 +5,20 @@ t_size file_info::meta_find_ex(const char * p_name,t_size p_name_length) const
 	t_size n, m = meta_get_count();
 	for(n=0;n<m;n++)
 	{
-		if (pfc::stricmp_ascii_ex(meta_enum_name(n),infinite,p_name,p_name_length) == 0) return n;
+		if (pfc::stricmp_ascii_ex(meta_enum_name(n),pfc_infinite,p_name,p_name_length) == 0) return n;
 	}
-	return infinite;
+	return pfc_infinite;
 }
 
 bool file_info::meta_exists_ex(const char * p_name,t_size p_name_length) const
 {
-	return meta_find_ex(p_name,p_name_length) != infinite;
+	return meta_find_ex(p_name,p_name_length) != pfc_infinite;
 }
 
 void file_info::meta_remove_field_ex(const char * p_name,t_size p_name_length)
 {
 	t_size index = meta_find_ex(p_name,p_name_length);
-	if (index!=infinite) meta_remove_index(index);
+	if (index!=pfc_infinite) meta_remove_index(index);
 }
 
 
@@ -40,7 +40,7 @@ void file_info::meta_remove_value(t_size p_index,t_size p_value)
 t_size file_info::meta_get_count_by_name_ex(const char * p_name,t_size p_name_length) const
 {
 	t_size index = meta_find_ex(p_name,p_name_length);
-	if (index == infinite) return 0;
+	if (index == pfc_infinite) return 0;
 	return meta_enum_value_count(index);
 }
 
@@ -48,14 +48,14 @@ t_size file_info::info_find_ex(const char * p_name,t_size p_name_length) const
 {
 	t_size n, m = info_get_count();
 	for(n=0;n<m;n++) {
-		if (pfc::stricmp_ascii_ex(info_enum_name(n),infinite,p_name,p_name_length) == 0) return n;
+		if (pfc::stricmp_ascii_ex(info_enum_name(n),pfc_infinite,p_name,p_name_length) == 0) return n;
 	}
-	return infinite;
+	return pfc_infinite;
 }
 
 bool file_info::info_exists_ex(const char * p_name,t_size p_name_length) const
 {
-	return info_find_ex(p_name,p_name_length) != infinite;
+	return info_find_ex(p_name,p_name_length) != pfc_infinite;
 }
 
 void file_info::info_remove_index(t_size p_index)
@@ -71,7 +71,7 @@ void file_info::info_remove_all()
 bool file_info::info_remove_ex(const char * p_name,t_size p_name_length)
 {
 	t_size index = info_find_ex(p_name,p_name_length);
-	if (index != infinite)
+	if (index != pfc_infinite)
 	{
 		info_remove_index(index);
 		return true;
@@ -88,7 +88,7 @@ void file_info::copy_meta_single_nocheck(const file_info & p_source,t_size p_ind
 {
 	const char * name = p_source.meta_enum_name(p_index);
 	t_size n, m = p_source.meta_enum_value_count(p_index);
-	t_size new_index = infinite;
+	t_size new_index = pfc_infinite;
 	for(n=0;n<m;n++)
 	{
 		const char * value = p_source.meta_enum_value(p_index,n);
@@ -100,25 +100,25 @@ void file_info::copy_meta_single_nocheck(const file_info & p_source,t_size p_ind
 void file_info::copy_meta_single_by_name_ex(const file_info & p_source,const char * p_name,t_size p_name_length)
 {
 	t_size index = p_source.meta_find_ex(p_name,p_name_length);
-	if (index != infinite) copy_meta_single(p_source,index);
+	if (index != pfc_infinite) copy_meta_single(p_source,index);
 }
 
 void file_info::copy_info_single_by_name_ex(const file_info & p_source,const char * p_name,t_size p_name_length)
 {
 	t_size index = p_source.info_find_ex(p_name,p_name_length);
-	if (index != infinite) copy_info_single(p_source,index);
+	if (index != pfc_infinite) copy_info_single(p_source,index);
 }
 
 void file_info::copy_meta_single_by_name_nocheck_ex(const file_info & p_source,const char * p_name,t_size p_name_length)
 {
 	t_size index = p_source.meta_find_ex(p_name,p_name_length);
-	if (index != infinite) copy_meta_single_nocheck(p_source,index);
+	if (index != pfc_infinite) copy_meta_single_nocheck(p_source,index);
 }
 
 void file_info::copy_info_single_by_name_nocheck_ex(const file_info & p_source,const char * p_name,t_size p_name_length)
 {
 	t_size index = p_source.info_find_ex(p_name,p_name_length);
-	if (index != infinite) copy_info_single_nocheck(p_source,index);
+	if (index != pfc_infinite) copy_info_single_nocheck(p_source,index);
 }
 
 void file_info::copy_info_single(const file_info & p_source,t_size p_index)
@@ -165,7 +165,7 @@ void file_info::copy(const file_info & p_source)
 const char * file_info::meta_get_ex(const char * p_name,t_size p_name_length,t_size p_index) const
 {
 	t_size index = meta_find_ex(p_name,p_name_length);
-	if (index == infinite) return 0;
+	if (index == pfc_infinite) return 0;
 	t_size max = meta_enum_value_count(index);
 	if (p_index >= max) return 0;
 	return meta_enum_value(index,p_index);
@@ -174,7 +174,7 @@ const char * file_info::meta_get_ex(const char * p_name,t_size p_name_length,t_s
 const char * file_info::info_get_ex(const char * p_name,t_size p_name_length) const
 {
 	t_size index = info_find_ex(p_name,p_name_length);
-	if (index == infinite) return 0;
+	if (index == pfc_infinite) return 0;
 	return info_enum_value(index);
 }
 
@@ -290,11 +290,11 @@ void file_info::reset_replaygain()
 void file_info::copy_meta_single_rename_ex(const file_info & p_source,t_size p_index,const char * p_new_name,t_size p_new_name_length)
 {
 	t_size n, m = p_source.meta_enum_value_count(p_index);
-	t_size new_index = infinite;
+	t_size new_index = pfc_infinite;
 	for(n=0;n<m;n++)
 	{
 		const char * value = p_source.meta_enum_value(p_index,n);
-		if (n == 0) new_index = meta_set_ex(p_new_name,p_new_name_length,value,infinite);
+		if (n == 0) new_index = meta_set_ex(p_new_name,p_new_name_length,value,pfc_infinite);
 		else meta_add_value(new_index,value);
 	}
 }
@@ -302,7 +302,7 @@ void file_info::copy_meta_single_rename_ex(const file_info & p_source,t_size p_i
 t_size file_info::meta_add_ex(const char * p_name,t_size p_name_length,const char * p_value,t_size p_value_length)
 {
 	t_size index = meta_find_ex(p_name,p_name_length);
-	if (index == infinite) return meta_set_nocheck_ex(p_name,p_name_length,p_value,p_value_length);
+	if (index == pfc_infinite) return meta_set_nocheck_ex(p_name,p_name_length,p_value,p_value_length);
 	else
 	{
 		meta_add_value_ex(index,p_value,p_value_length);
@@ -361,18 +361,22 @@ bool file_info::are_meta_fields_identical(t_size p_index1,t_size p_index2) const
 }
 
 
-bool file_info::meta_format(const char * p_name,pfc::string_base & p_out) const
-{
-	p_out.reset();
-	t_size index = meta_find(p_name);
-	if (index == infinite) return false;
+void file_info::meta_format_entry(t_size index, pfc::string_base & out, const char * separator) const {
+	out.reset();
 	t_size val, count = meta_enum_value_count(index);
-	if (count == 0) return false;
+	PFC_ASSERT( count > 0);
 	for(val=0;val<count;val++)
 	{
-		if (val > 0) p_out += ", ";
-		p_out += meta_enum_value(index,val);
+		if (val > 0) out += separator;
+		out += meta_enum_value(index,val);
 	}
+}
+
+bool file_info::meta_format(const char * p_name,pfc::string_base & p_out, const char * separator) const {
+	p_out.reset();
+	t_size index = meta_find(p_name);
+	if (index == pfc_infinite) return false;
+	meta_format_entry(index, p_out, separator);
 	return true;
 }
 
@@ -387,7 +391,8 @@ bool file_info::is_encoding_lossy() const {
 		if (pfc::stricmp_ascii(encoding,"lossy") == 0 /*|| pfc::stricmp_ascii(encoding,"hybrid") == 0*/) return true;
 	} else {
 		//the old way
-		if (info_get("bitspersample") == NULL) return true;
+		//disabled: don't whine if we're not sure what we're dealing with - might be a file with info not-yet-loaded in oddball cases or a mod file
+		//if (info_get("bitspersample") == NULL) return true;
 	}
 	return false;
 }
@@ -425,11 +430,20 @@ bool file_info::g_is_meta_equal(const file_info & p_item1,const file_info & p_it
 
 bool file_info::g_is_info_equal(const file_info & p_item1,const file_info & p_item2) {
 	t_size count = p_item1.info_get_count();
-	if (count != p_item2.info_get_count()) return false;
+	if (count != p_item2.info_get_count()) {
+		//uDebugLog() << "info count mismatch";
+		return false;
+	}
 	for(t_size n1=0; n1<count; n1++) {
 		t_size n2 = p_item2.info_find(p_item1.info_enum_name(n1));
-		if (n2 == infinite) return false;
-		if (strcmp(p_item1.info_enum_value(n1),p_item2.info_enum_value(n2)) != 0) return false;
+		if (n2 == pfc_infinite) {
+			//uDebugLog() << "item2 does not have " << p_item1.info_enum_name(n1);
+			return false;
+		}
+		if (strcmp(p_item1.info_enum_value(n1),p_item2.info_enum_value(n2)) != 0) {
+			//uDebugLog() << "value mismatch: " << p_item1.info_enum_name(n1);
+			return false;
+		}
 	}
 	return true;
 }
@@ -444,4 +458,17 @@ bool file_info::g_is_valid_field_name(const char * p_name,t_size p_length) {
 		if (!is_valid_field_name_char(p_name[walk])) return false;
 	}
 	return walk > 0;
+}
+
+void file_info::to_console() const {
+	console::formatter() << "File info dump:";
+	if (get_length() > 0) console::formatter() << "Duration: " << pfc::format_time_ex(get_length(), 6);
+	pfc::string_formatter temp;
+	for(t_size metaWalk = 0; metaWalk < meta_get_count(); ++metaWalk) {
+		meta_format_entry(metaWalk, temp);
+		console::formatter() << "Meta: " << meta_enum_name(metaWalk) << " = " << temp;
+	}
+	for(t_size infoWalk = 0; infoWalk < info_get_count(); ++infoWalk) {
+		console::formatter() << "Info: " << info_enum_name(infoWalk) << " = " << info_enum_value(infoWalk);
+	}
 }

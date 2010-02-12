@@ -1,7 +1,11 @@
-#define MY_VERSION "1.0"
+#define MY_VERSION "1.2"
 
 /*
 	changelog
+
+2010-01-14 01:47 UTC - kode54
+- Fixed componentversion about message declaration
+- Version is now 1.2
 
 2009-08-14 00:17 UTC - kode54
 - Disabled pointless unpacker service
@@ -352,4 +356,6 @@ public:
 static archive_factory_t < archive_tar >  g_archive_tar_factory;
 //static unpacker_factory_t< unpacker_tar > g_unpacker_tar_factory;
 
-DECLARE_COMPONENT_VERSION( "TAR reader", MY_VERSION, (const char*)NULL );
+DECLARE_COMPONENT_VERSION( "TAR reader", MY_VERSION, "" );
+
+VALIDATE_COMPONENT_FILENAME("foo_unpack_unix.dll");

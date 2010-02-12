@@ -1,13 +1,10 @@
-#ifndef _FOOBAR2000_METADB_HANDLE_H_
-#define _FOOBAR2000_METADB_HANDLE_H_
-
 class titleformat_hook;
 class titleformat_text_filter;
 
-//! metadb_handle object represents interface to reference-counted file_info cache entry for specified location.\n
-//! To obtain a metadb_handle to specific location, use metadb::handle_create(). To obtain a list of metadb_handle objects corresponding to specific path (directory, playlist, multitrack file, etc), use relevant playlist_loader static helper methods.\n
-//! metadb_handle is also the most efficient way of passing playable object locations around because it provides fast access to both location and infos, and is reference counted so duplicating it is as fast as possible.\n
-//! To retrieve a path of a file from a metadb_handle, use metadb_handle::get_path() function. Note that metadb_handle is NOT just file path, some formats support multiple subsongs per physical file, which are signaled using subsong indexes.\n
+//! A metadb_handle object represents interface to reference-counted file_info cache entry for the specified location.\n
+//! To obtain a metadb_handle to specific location, use metadb::handle_create(). To obtain a list of metadb_handle objects corresponding to specific path (directory, playlist, multitrack file, etc), use relevant playlist_incoming_item_filter methods (recommended), or call playlist_loader methods directly.\n
+//! A metadb_handle is also the most efficient way of passing playable object locations around because it provides fast access to both location and infos, and is reference counted so duplicating it is as fast as possible.\n
+//! To retrieve a path of a file from a metadb_handle, use metadb_handle::get_path() function. Note that metadb_handle is NOT just file path, some formats support multiple subsongs per physical file, which are signaled using subsong indexes.
 
 class NOVTABLE metadb_handle : public service_base
 {
@@ -34,10 +31,10 @@ public:
 	//! Returns last seen file stats, filestats_invalid if unknown.
 	virtual t_filestats get_filestats() const = 0;
 
-	//! Queries whether cached info about item referenced by this metadb_handle object is already available.\n
+	//! Queries whether cached info about item referenced by this metadb_handle object is already available. Note that this function causes the metadb to be temporarily locked; you can not use it in context that where locking is forbidden.\n
 	//! Note that state of cached info changes only inside main thread, so you can safely assume that it doesn't change while some block of your code inside main thread is being executed.
 	virtual bool is_info_loaded() const = 0;
-	//! Queries cached info about item referenced by this metadb_handle object. Returns true on success, false when info is not yet known.\n
+	//! Queries cached info about item referenced by this metadb_handle object. Returns true on success, false when info is not yet known. Note that this function causes the metadb to be temporarily locked; you can not use it in context that where locking is forbidden. \n
 	//! Note that state of cached info changes only inside main thread, so you can safely assume that it doesn't change while some block of your code inside main thread is being executed.
 	virtual bool get_info(file_info & p_info) const = 0;
 	//! Queries cached info about item referenced by this metadb_handle object. Returns true on success, false when info is not yet known. This is more efficient than get_info() since no data is copied.\n
@@ -49,7 +46,7 @@ public:
 	//! Queries whether cached info about item referenced by this metadb_handle object is already available.\n
 	//! This is intended for use in special cases when you need to immediately retrieve info sent by metadb_io hint from another thread; state of returned data can be altered by any thread, as opposed to non-async methods.
 	virtual bool is_info_loaded_async() const = 0;	
-	//! Queries cached info about item referenced by this metadb_handle object. Returns true on success, false when info is not yet known.\n
+	//! Queries cached info about item referenced by this metadb_handle object. Returns true on success, false when info is not yet known. Note that this function causes the metadb to be temporarily locked; you can not use it in context that where locking is forbidden.\n
 	//! This is intended for use in special cases when you need to immediately retrieve info sent by metadb_io hint from another thread; state of returned data can be altered by any thread, as opposed to non-async methods.
 	virtual bool get_info_async(file_info & p_info) const = 0;	
 	//! Queries cached info about item referenced by this metadb_handle object. Returns true on success, false when info is not yet known. This is more efficient than get_info() since no data is copied.\n
@@ -60,8 +57,23 @@ public:
 
 
 	//! Renders information about item referenced by this metadb_handle object, using external file_info data.
-	virtual void format_title_from_external_info(const file_info & p_info,titleformat_hook * p_hook,pfc::string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter)=0;
+	virtual void format_title_from_external_info(const file_info & p_info,titleformat_hook * p_hook,pfc::string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter) = 0;
+
+
+	//! New in 0.9.5.
+	virtual bool format_title_nonlocking(titleformat_hook * p_hook,pfc::string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter) = 0;
+
+	//! New in 0.9.5.
+	virtual void format_title_from_external_info_nonlocking(const file_info & p_info,titleformat_hook * p_hook,pfc::string_base & p_out,const service_ptr_t<class titleformat_object> & p_script,titleformat_text_filter * p_filter) = 0;
 	
+#if FOOBAR2000_TARGET_VERSION >= 76
+	//! New in 1.0
+	virtual bool get_browse_info(file_info & info, t_filetimestamp & ts) const = 0;
+
+	//! New in 1.0
+	virtual bool get_browse_info_locked(const file_info * & p_info, t_filetimestamp & ts) const = 0;
+#endif
+
 	static bool g_should_reload(const t_filestats & p_old_stats,const t_filestats & p_new_stats,bool p_fresh);
 	bool should_reload(const t_filestats & p_new_stats,bool p_fresh) const;
 	
@@ -86,14 +98,17 @@ public:
 
 typedef service_ptr_t<metadb_handle> metadb_handle_ptr;
 
-namespace metadb_handle_list_helper {
-	void sort_by_format_partial(pfc::list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const char * spec,titleformat_hook * p_hook);
-	void sort_by_format_get_order_partial(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const char * spec,titleformat_hook * p_hook);
-	void sort_by_format_partial(pfc::list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook);
-	void sort_by_format_get_order_partial(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook);
+typedef pfc::list_base_t<metadb_handle_ptr> & metadb_handle_list_ref;
+typedef pfc::list_base_const_t<metadb_handle_ptr> const & metadb_handle_list_cref;
 
-	void sort_by_relative_path_partial(pfc::list_base_t<metadb_handle_ptr> & p_list,t_size base,t_size count);
-	void sort_by_relative_path_get_order_partial(const pfc::list_base_const_t<metadb_handle_ptr> & p_list,t_size base,t_size count,t_size* order);
+namespace metadb_handle_list_helper {
+	void sort_by_format(metadb_handle_list_ref p_list,const char * spec,titleformat_hook * p_hook);
+	void sort_by_format_get_order(metadb_handle_list_cref p_list,t_size* order,const char * spec,titleformat_hook * p_hook);
+	void sort_by_format(metadb_handle_list_ref p_list,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook, int direction = 1);
+	void sort_by_format_get_order(metadb_handle_list_cref p_list,t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook,int p_direction = 1);
+
+	void sort_by_relative_path(metadb_handle_list_ref p_list);
+	void sort_by_relative_path_get_order(metadb_handle_list_cref p_list,t_size* order);
 	
 	void remove_duplicates(pfc::list_base_t<metadb_handle_ptr> & p_list);
 	void sort_by_pointer_remove_duplicates(pfc::list_base_t<metadb_handle_ptr> & p_list);
@@ -105,6 +120,11 @@ namespace metadb_handle_list_helper {
 	double calc_total_duration(const pfc::list_base_const_t<metadb_handle_ptr> & p_list);
 
 	void sort_by_path(pfc::list_base_t<metadb_handle_ptr> & p_list);
+
+	t_filesize calc_total_size(metadb_handle_list_cref list, bool skipUnknown = false);
+	t_filesize calc_total_size_ex(metadb_handle_list_cref list, bool & foundUnknown);
+
+	bool extract_single_path(metadb_handle_list_cref list, const char * &path);
 };
 
 template<template<typename> class t_alloc = pfc::alloc_fast >
@@ -113,20 +133,26 @@ private:
 	typedef metadb_handle_list_t<t_alloc> t_self;
 	typedef list_base_const_t<metadb_handle_ptr> t_interface;
 public:
-	inline void sort_by_format(const char * spec,titleformat_hook * p_hook) {return sort_by_format_partial(0,get_count(),spec,p_hook);}
-	inline void sort_by_format_partial(t_size base,t_size count,const char * spec,titleformat_hook * p_hook) {metadb_handle_list_helper::sort_by_format_partial(*this,base,count,spec,p_hook);}
-	inline void sort_by_format_get_order(t_size* order,const char * spec,titleformat_hook * p_hook) const {sort_by_format_get_order_partial(0,get_count(),order,spec,p_hook);}
-	inline void sort_by_format_get_order_partial(t_size base,t_size count,t_size* order,const char * spec,titleformat_hook * p_hook) const {metadb_handle_list_helper::sort_by_format_get_order_partial(*this,base,count,order,spec,p_hook);}
+	inline void sort_by_format(const char * spec,titleformat_hook * p_hook) {
+		return metadb_handle_list_helper::sort_by_format(*this, spec, p_hook);
+	}
+	inline void sort_by_format_get_order(t_size* order,const char * spec,titleformat_hook * p_hook) const {
+		metadb_handle_list_helper::sort_by_format_get_order(*this, order, spec, p_hook);
+	}
 
-	inline void sort_by_format(const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) {return sort_by_format_partial(0,get_count(),p_script,p_hook);}
-	inline void sort_by_format_partial(t_size base,t_size count,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) {metadb_handle_list_helper::sort_by_format_partial(*this,base,count,p_script,p_hook);}
-	inline void sort_by_format_get_order(t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) const {sort_by_format_get_order_partial(0,get_count(),order,p_script,p_hook);}
-	inline void sort_by_format_get_order_partial(t_size base,t_size count,t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) const {metadb_handle_list_helper::sort_by_format_get_order_partial(*this,base,count,order,p_script,p_hook);}
+	inline void sort_by_format(const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook, int direction = 1) {
+		metadb_handle_list_helper::sort_by_format(*this, p_script, p_hook, direction);
+	}
+	inline void sort_by_format_get_order(t_size* order,const service_ptr_t<titleformat_object> & p_script,titleformat_hook * p_hook) const {
+		metadb_handle_list_helper::sort_by_format_get_order(*this, order, p_script, p_hook);
+	}
 	
-	inline void sort_by_relative_path() {sort_by_relative_path_partial(0,get_count());}
-	inline void sort_by_relative_path_partial(t_size base,t_size count) {metadb_handle_list_helper::sort_by_relative_path_partial(*this,base,count);}
-	inline void sort_by_relative_path_get_order(t_size* order) const {sort_by_relative_path_get_order_partial(0,get_count(),order);}
-	inline void sort_by_relative_path_get_order_partial(t_size base,t_size count,t_size* order) const {metadb_handle_list_helper::sort_by_relative_path_get_order_partial(*this,base,count,order);}
+	inline void sort_by_relative_path() {
+		metadb_handle_list_helper::sort_by_relative_path(*this);
+	}
+	inline void sort_by_relative_path_get_order(t_size* order) const {
+		metadb_handle_list_helper::sort_by_relative_path_get_order(*this,order);
+	}
 	
 	inline void remove_duplicates() {metadb_handle_list_helper::remove_duplicates(*this);}
 	inline void sort_by_pointer_remove_duplicates() {metadb_handle_list_helper::sort_by_pointer_remove_duplicates(*this);}
@@ -145,6 +171,10 @@ public:
 	metadb_handle_list_t(const t_interface & p_source) {add_items(p_source);}
 	metadb_handle_list_t() {}
 
+	t_self & operator+=(const t_interface & source) {add_items(source); return *this;}
+	t_self & operator+=(const metadb_handle_ptr & source) {add_item(source); return *this;}
+
+	bool extract_single_path(const char * &path) const {return metadb_handle_list_helper::extract_single_path(*this, path);}
 };
 
 typedef metadb_handle_list_t<> metadb_handle_list;
@@ -187,5 +217,3 @@ public:
 private:
 	pfc::string8_fastalloc m_data;
 };
-
-#endif //_FOOBAR2000_METADB_HANDLE_H_

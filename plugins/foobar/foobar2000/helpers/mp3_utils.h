@@ -26,6 +26,16 @@ namespace mp3_utils
 
 
 	bool ParseMPEGFrameHeader(TMPEGFrameInfo & p_info,const t_uint8 p_header[4]);
+	bool ValidateFrameCRC(const t_uint8 * frameData, t_size frameSize);
+	bool ValidateFrameCRC(const t_uint8 * frameData, t_size frameSize, TMPEGFrameInfo const & frameInfo);
+	
+	//! Assumes valid frame with CRC (frameInfo.m_crc set, frameInfo.m_bytes <= frameSize).
+	t_uint16 ExtractFrameCRC(const t_uint8 * frameData, t_size frameSize, TMPEGFrameInfo const & frameInfo);
+	//! Assumes valid frame with CRC (frameInfo.m_crc set, frameInfo.m_bytes <= frameSize).
+	t_uint16 CalculateFrameCRC(const t_uint8 * frameData, t_size frameSize, TMPEGFrameInfo const & frameInfo);
+	//! Assumes valid frame with CRC (frameInfo.m_crc set, frameInfo.m_bytes <= frameSize).
+	void RecalculateFrameCRC(t_uint8 * frameData, t_size frameSize, TMPEGFrameInfo const & frameInfo);
+
 	unsigned QueryMPEGFrameSize(const t_uint8 p_header[4]);
 	bool IsSameStream(TMPEGFrameInfo const & p_frame1,TMPEGFrameInfo const & p_frame2);
 };

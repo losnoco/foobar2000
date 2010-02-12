@@ -1,7 +1,11 @@
-#define MY_VERSION "0.9.3"
+#define MY_VERSION "0.9.4"
 
 /*
 	changelog
+
+2010-01-11 04:40 UTC - kode54
+- Updated preferences page to 1.0 API
+- Version is now 0.9.4
 
 2009-04-09 01:43 UTC - kode54
 - Fixed AC3 parser and caller to handle EOF when there's extra data after the last packet.
@@ -71,6 +75,8 @@
 
 #include <foobar2000.h>
 
+#include "../ATLHelpers/ATLHelpers.h"
+
 #include <inttypes.h>
 #include <a52.h>
 #include <mm_accel.h>
@@ -79,11 +85,16 @@
 
 #include "resource.h"
 
+enum
+{
+	default_cfg_dynrng = 0
+};
+
 // {49A08985-F4FF-4610-85DC-E084731AD7E8}
 static const GUID guid_cfg_dynrng = 
 { 0x49a08985, 0xf4ff, 0x4610, { 0x85, 0xdc, 0xe0, 0x84, 0x73, 0x1a, 0xd7, 0xe8 } };
 
-static cfg_int cfg_dynrng(guid_cfg_dynrng, 0);
+static cfg_int cfg_dynrng(guid_cfg_dynrng, default_cfg_dynrng);
 
 /*#define DBG(a) \
 	OutputDebugString( # a); \
@@ -665,55 +676,90 @@ public:
 	virtual void analyze_first_frame_ex( const void * p_buffer, t_size p_bytes, t_size & p_bytes_processed, abort_callback & p_abort ) {}
 };
 
-static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
-{
-	switch(msg)
-	{
-	case WM_INITDIALOG:
-		{
-			uSendDlgItemMessage(wnd, IDC_DYNRNG, BM_SETCHECK, cfg_dynrng, 0);
-		}
-		return 1;
-	case WM_COMMAND:
-		switch(wp)
-		{
-		case IDC_DYNRNG:
-			cfg_dynrng = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		}
-		break;
-	}
-	return 0;
+class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
+public:
+	//Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us
+	CMyPreferences(preferences_page_callback::ptr callback) : m_callback(callback) {}
+
+	//Note that we don't bother doing anything regarding destruction of our class.
+	//The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
+
+
+	//dialog resource ID
+	enum {IDD = IDD_CONFIG};
+	// preferences_page_instance methods (not all of them - get_wnd() is supplied by preferences_page_impl helpers)
+	t_uint32 get_state();
+	void apply();
+	void reset();
+
+	//WTL message map
+	BEGIN_MSG_MAP(CMyPreferences)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		COMMAND_HANDLER_EX(IDC_DYNRNG, BN_CLICKED, OnButtonClick)
+	END_MSG_MAP()
+private:
+	BOOL OnInitDialog(CWindow, LPARAM);
+	void OnButtonClick(UINT, int, CWindow);
+	bool HasChanged();
+	void OnChanged();
+
+	const preferences_page_callback::ptr m_callback;
+};
+
+BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
+	SendDlgItemMessage( IDC_DYNRNG, BM_SETCHECK, cfg_dynrng, FALSE );
+	return TRUE;
 }
 
-class preferences_page_ac3 : public preferences_page
-{
+void CMyPreferences::OnButtonClick(UINT, int, CWindow) {
+	// not much to do here
+	OnChanged();
+}
+
+t_uint32 CMyPreferences::get_state() {
+	t_uint32 state = preferences_state::resettable;
+	if (HasChanged()) state |= preferences_state::changed;
+	return state;
+}
+
+void CMyPreferences::reset() {
+	SendDlgItemMessage( IDC_DYNRNG, BM_SETCHECK, default_cfg_dynrng, FALSE );
+	OnChanged();
+}
+
+void CMyPreferences::apply() {
+	cfg_dynrng = SendDlgItemMessage( IDC_DYNRNG, BM_GETCHECK, FALSE, FALSE );
+	
+	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
+}
+
+bool CMyPreferences::HasChanged() {
+	//returns whether our dialog content is different from the current configuration (whether the apply button should be enabled or not)
+	return SendDlgItemMessage( IDC_DYNRNG, BM_GETCHECK, FALSE, FALSE ) != cfg_dynrng;
+}
+void CMyPreferences::OnChanged() {
+	//tell the host that our state has changed to enable/disable the apply button appropriately.
+	m_callback->on_state_changed();
+}
+
+class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
+	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
 public:
-	virtual HWND create(HWND parent)
-	{
-		return uCreateDialog(IDD_CONFIG,parent,ConfigProc);
-	}
-	GUID get_guid()
-	{
+	const char * get_name() {return "AC3 decoder";}
+	GUID get_guid() {
 		// {69C304F0-B305-40d8-9CF6-191E9210A74C}
-		static const GUID guid = 
-		{ 0x69c304f0, 0xb305, 0x40d8, { 0x9c, 0xf6, 0x19, 0x1e, 0x92, 0x10, 0xa7, 0x4c } };
+		static const GUID guid = { 0x69c304f0, 0xb305, 0x40d8, { 0x9c, 0xf6, 0x19, 0x1e, 0x92, 0x10, 0xa7, 0x4c } };
 		return guid;
 	}
-	virtual const char * get_name() {return "AC3 decoder";}
 	GUID get_parent_guid() {return guid_input;}
-
-	bool reset_query() {return true;}
-	void reset()
-	{
-		cfg_dynrng = 0;
-	}
 };
 
 DECLARE_FILE_TYPE("AC3 files", "*.AC3");
 
-static input_singletrack_factory_t< input_ac3 >           g_input_factory_ac3;
-static packet_decoder_factory_t< packet_decoder_ac3 >     g_packet_decoder_factory_ac3;
-static preferences_page_factory_t< preferences_page_ac3 > g_preferences_page_factory_ac3;
+static input_singletrack_factory_t< input_ac3 >              g_input_factory_ac3;
+static packet_decoder_factory_t< packet_decoder_ac3 >        g_packet_decoder_factory_ac3;
+static preferences_page_factory_t< preferences_page_myimpl > g_preferences_page_factory_ac3;
 
 DECLARE_COMPONENT_VERSION("AC3 decoder", MY_VERSION, "Based on liba52 v0.7.4");
+
+VALIDATE_COMPONENT_FILENAME("foo_ac3.dll");

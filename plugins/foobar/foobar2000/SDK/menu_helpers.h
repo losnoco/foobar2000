@@ -70,7 +70,7 @@ public:
 	static const GUID
 		guid_context_file_properties,	guid_context_file_open_directory,	guid_context_copy_names,
 		guid_context_send_to_playlist,	guid_context_reload_info,			guid_context_reload_info_if_changed,
-		guid_context_rewrite_info,		guid_context_remove_tags,			guid_context_remove_from_database,
+		guid_context_rewrite_info,		guid_context_remove_tags,
 		guid_context_convert_run,		guid_context_convert_run_singlefile,guid_context_convert_run_withcue,
 		guid_context_write_cd,
 		guid_context_rg_scan_track,		guid_context_rg_scan_album,			guid_context_rg_scan_album_multi,
@@ -116,7 +116,6 @@ public:
 	static inline bool context_reload_info_if_changed(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_reload_info_if_changed,data,caller);}
 	static inline bool context_rewrite_info(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_rewrite_info,data,caller);}
 	static inline bool context_remove_tags(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_remove_tags,data,caller);}
-	static inline bool context_remove_from_database(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_remove_from_database,data,caller);}
 	static inline bool context_convert_run(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_convert_run,data,caller);}
 	static inline bool context_convert_run_singlefile(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_convert_run_singlefile,data,caller);}
 	static inline bool context_write_cd(const pfc::list_base_const_t<metadb_handle_ptr> &data,const GUID& caller = contextmenu_item::caller_undefined) {return run_context(guid_context_write_cd,data,caller);}

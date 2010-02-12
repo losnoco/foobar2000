@@ -4,6 +4,7 @@
 
 static void fix_ampersand(const char * src,pfc::string_base & out)
 {
+	out.reset();
 	unsigned ptr = 0;
 	while(src[ptr])
 	{
@@ -24,7 +25,8 @@ static void fix_ampersand(const char * src,pfc::string_base & out)
 static unsigned flags_to_win32(unsigned flags)
 {
 	unsigned ret = 0;
-	if (flags & contextmenu_item_node::FLAG_CHECKED) ret |= MF_CHECKED;
+	if (flags & contextmenu_item_node::FLAG_RADIOCHECKED) {/* dealt with elsewhere */}
+	else if (flags & contextmenu_item_node::FLAG_CHECKED) ret |= MF_CHECKED;
 	if (flags & contextmenu_item_node::FLAG_DISABLED) ret |= MF_DISABLED;
 	if (flags & contextmenu_item_node::FLAG_GRAYED) ret |= MF_GRAYED;
 	return ret;
@@ -59,7 +61,10 @@ void contextmenu_manager::win32_build_menu(HMENU menu,contextmenu_node * parent,
 					int id = child->get_id();
 					if (id>=0 && (max_id<0 || id<max_id))
 					{
-						uAppendMenu(menu,MF_STRING | flags_to_win32(child->get_display_flags()),base_id+id,name);
+						const unsigned flags = child->get_display_flags();
+						const UINT ID = base_id+id;
+						uAppendMenu(menu,MF_STRING | flags_to_win32(flags),ID,name);
+						if (flags & contextmenu_item_node::FLAG_RADIOCHECKED) CheckMenuRadioItem(menu,ID,ID,ID,MF_BYCOMMAND);
 					}
 				}
 			}
@@ -69,12 +74,16 @@ void contextmenu_manager::win32_build_menu(HMENU menu,contextmenu_node * parent,
 
 #endif
 
-bool contextmenu_manager::execute_by_id(unsigned id)
-{
-	bool rv = false;
+bool contextmenu_manager::get_description_by_id(unsigned id,pfc::string_base & out) {
 	contextmenu_node * ptr = find_by_id(id);
-	if (ptr) {rv=true;ptr->execute();}
-	return rv;
+	if (ptr == NULL) return false;
+	return ptr->get_description(out);
+}
+bool contextmenu_manager::execute_by_id(unsigned id) {
+	contextmenu_node * ptr = find_by_id(id);
+	if (ptr == NULL) return false;
+	ptr->execute();
+	return true;
 }
 
 #ifdef WIN32
@@ -135,7 +144,7 @@ namespace {
 		bool is_used(unsigned c)
 		{
 			char temp[8];
-			temp[pfc::utf8_encode_char(char_lower(c),temp)]=0;
+			temp[pfc::utf8_encode_char(uCharLower(c),temp)]=0;
 			return !!strstr(used,temp);
 		}
 
@@ -153,7 +162,7 @@ namespace {
 			out.add_string(src,idx);
 			out.add_string("&");
 			out.add_string(src+idx);
-			used.add_char(char_lower(src[idx]));
+			used.add_char(uCharLower(src[idx]));
 		}
 	public:
 		bool check_string(const char * src)
@@ -165,9 +174,9 @@ namespace {
 				else
 				{
 					unsigned c = 0;
-					if (pfc::utf8_decode_char(ptr+1,&c)>0)
+					if (pfc::utf8_decode_char(ptr+1,c)>0)
 					{
-						if (!is_used(c)) used.add_char(char_lower(c));
+						if (!is_used(c)) used.add_char(uCharLower(c));
 					}
 					return true;
 				}
@@ -260,13 +269,21 @@ static bool test_key(unsigned k)
 #define F_ALT (HOTKEYF_ALT<<8)
 #define F_WIN (HOTKEYF_EXT<<8)
 
-static unsigned get_key_code(WPARAM wp)
-{
-	unsigned code = (unsigned)(wp & 0xFF);
+static t_uint32 get_key_code(WPARAM wp) {
+	t_uint32 code = (t_uint32)(wp & 0xFF);
 	if (test_key(VK_CONTROL)) code|=F_CTRL;
 	if (test_key(VK_SHIFT)) code|=F_SHIFT;
 	if (test_key(VK_MENU)) code|=F_ALT;
 	if (test_key(VK_LWIN) || test_key(VK_RWIN)) code|=F_WIN;
+	return code;
+}
+
+static t_uint32 get_key_code(WPARAM wp, t_uint32 mods) {
+	t_uint32 code = (t_uint32)(wp & 0xFF);
+	if (mods & MOD_CONTROL) code|=F_CTRL;
+	if (mods & MOD_SHIFT) code|=F_SHIFT;
+	if (mods & MOD_ALT) code|=F_ALT;
+	if (mods & MOD_WIN) code|=F_WIN;
 	return code;
 }
 
@@ -305,3 +322,89 @@ bool keyboard_shortcut_manager::on_keydown_auto_context(const pfc::list_base_con
 	else return on_keydown_auto(wp);
 }
 
+static bool should_relay_key_restricted(UINT p_key) {
+	switch(p_key) {
+	case VK_LEFT:
+	case VK_RIGHT:
+	case VK_UP:
+	case VK_DOWN:
+		return false;
+	default:
+		return (p_key >= VK_F1 && p_key <= VK_F24) || IsKeyPressed(VK_CONTROL) || IsKeyPressed(VK_LWIN) || IsKeyPressed(VK_RWIN);
+	}
+}
+
+bool keyboard_shortcut_manager::on_keydown_restricted_auto(WPARAM wp) {
+	if (!should_relay_key_restricted(wp)) return false;
+	return on_keydown_auto(wp);
+}
+bool keyboard_shortcut_manager::on_keydown_restricted_auto_playlist(WPARAM wp) {
+	if (!should_relay_key_restricted(wp)) return false;
+	return on_keydown_auto_playlist(wp);
+}
+bool keyboard_shortcut_manager::on_keydown_restricted_auto_context(const pfc::list_base_const_t<metadb_handle_ptr> & data,WPARAM wp,const GUID & caller) {
+	if (!should_relay_key_restricted(wp)) return false;
+	return on_keydown_auto_context(data,wp,caller);
+}
+
+static bool filterTypableWindowMessage(const MSG * msg, t_uint32 modifiers) {
+	if (keyboard_shortcut_manager::is_typing_key_combo((t_uint32)msg->wParam, modifiers)) {
+		try {
+			if (static_api_ptr_t<ui_element_typable_window_manager>()->is_registered(msg->hwnd)) return false;
+		} catch(exception_service_not_found) {}
+	}
+	return true;
+}
+
+bool keyboard_shortcut_manager_v2::pretranslate_message(const MSG * msg, HWND thisPopupWnd) {
+	switch(msg->message) {
+		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
+			if (thisPopupWnd != NULL && FindOwningPopup(msg->hwnd) == thisPopupWnd) {
+				const t_uint32 modifiers = GetHotkeyModifierFlags();
+				if (filterTypableWindowMessage(msg, modifiers)) {
+					if (process_keydown_simple(get_key_code(msg->wParam,modifiers))) return true;
+				}
+			}
+			return false;
+		default:
+			return false;
+	}
+}
+
+bool keyboard_shortcut_manager::is_text_key(t_uint32 vkCode) {
+	return vkCode == VK_SPACE
+		|| (vkCode >= '0' && vkCode < 0x40)
+		|| (vkCode > 0x40 && vkCode < VK_LWIN)
+		|| (vkCode >= VK_NUMPAD0 && vkCode <= VK_DIVIDE)
+		|| (vkCode >= VK_OEM_1 && vkCode <= VK_OEM_3)
+		|| (vkCode >= VK_OEM_4 && vkCode <= VK_OEM_8)
+		;
+}
+
+bool keyboard_shortcut_manager::is_typing_key(t_uint32 vkCode) {
+	return is_text_key(vkCode)
+		|| vkCode == VK_BACK
+		|| vkCode == VK_RETURN
+		|| vkCode == VK_INSERT
+		|| (vkCode > VK_SPACE && vkCode < '0');
+}
+
+bool keyboard_shortcut_manager::is_typing_key_combo(t_uint32 vkCode, t_uint32 modifiers) {
+	if (!is_typing_modifier(modifiers)) return false;
+	return is_typing_key(vkCode);
+}
+
+bool keyboard_shortcut_manager::is_typing_modifier(t_uint32 flags) {
+	flags &= ~MOD_SHIFT;
+	return flags == 0 || flags == (MOD_ALT | MOD_CONTROL);
+}
+
+bool keyboard_shortcut_manager::is_typing_message(HWND editbox, const MSG * msg) {
+	if (msg->hwnd != editbox) return false;
+	return is_typing_message(msg);
+}
+bool keyboard_shortcut_manager::is_typing_message(const MSG * msg) {
+	if (msg->message != WM_KEYDOWN && msg->message != WM_SYSKEYDOWN) return false;
+	return is_typing_key_combo(msg->wParam, GetHotkeyModifierFlags());
+}

@@ -1,8 +1,8 @@
 namespace pfc {
 
-	PFC_DLL_EXPORT void swap_void(void * item1,void * item2,t_size width);
+	void swap_void(void * item1,void * item2,t_size width);
 
-	PFC_DLL_EXPORT void reorder_void(void * data,t_size width,const t_size * order,t_size num,void (*swapfunc)(void * item1,void * item2,t_size width) = swap_void);
+	void reorder_void(void * data,t_size width,const t_size * order,t_size num,void (*swapfunc)(void * item1,void * item2,t_size width) = swap_void);
 
 	class NOVTABLE reorder_callback
 	{
@@ -10,7 +10,7 @@ namespace pfc {
 		virtual void swap(t_size p_index1,t_size p_index2) = 0;
 	};
 
-	PFC_DLL_EXPORT void reorder(reorder_callback & p_callback,const t_size * p_order,t_size p_count);
+	void reorder(reorder_callback & p_callback,const t_size * p_order,t_size p_count);
 
 	template<typename t_container>
 	class reorder_callback_impl_t : public reorder_callback
@@ -91,11 +91,11 @@ namespace pfc {
 		array_t<t_size> m_order;
 	};
 
-	PFC_DLL_EXPORT void sort(sort_callback & p_callback,t_size p_count);
-	PFC_DLL_EXPORT void sort_stable(sort_callback & p_callback,t_size p_count);
+	void sort(sort_callback & p_callback,t_size p_count);
+	void sort_stable(sort_callback & p_callback,t_size p_count);
 
-	PFC_DLL_EXPORT void sort_void_ex(void *base,t_size num,t_size width, int (*comp)(const void *, const void *),void (*swap)(void *, void *, t_size) );
-	PFC_DLL_EXPORT void sort_void(void * base,t_size num,t_size width,int (*comp)(const void *, const void *) );
+	void sort_void_ex(void *base,t_size num,t_size width, int (*comp)(const void *, const void *),void (*swap)(void *, void *, t_size) );
+	void sort_void(void * base,t_size num,t_size width,int (*comp)(const void *, const void *) );
 
 	template<typename t_container,typename t_compare>
 	class sort_callback_impl_simple_wrap_t : public sort_callback

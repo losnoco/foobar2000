@@ -200,10 +200,9 @@ public:
 			{
 				m_file->seek( 0, p_abort );
 				foobar_File_Reader rdr( m_file, p_abort );
-				rdr.skip( sizeof( m_header ) );
 
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
-				ERRCHK( emu->load( m_header, rdr ) );
+				ERRCHK( emu->load( rdr ) );
 				handle_warning();
 				emu->start_track( 0 );
 				handle_warning();
@@ -231,7 +230,8 @@ public:
 		}
 
 		int size = 0;
-		const unsigned char * gd3_tag = emu->gd3_data( & size );
+		const unsigned char * gd3_tag;
+		ERRCHK( emu->gd3_data( &gd3_tag, & size ) );
 		if ( gd3_tag && size )
 		{
 			process_gd3_tag( gd3_tag, size, p_info );
@@ -251,10 +251,9 @@ public:
 			{
 				m_file->seek( 0, p_abort );
 				foobar_File_Reader rdr( m_file, p_abort );
-				rdr.skip( sizeof( m_header ) );
 
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
-				ERRCHK( emu->load( m_header, rdr ) );
+				ERRCHK( emu->load( rdr ) );
 				handle_warning();
 			}
 			catch(...)

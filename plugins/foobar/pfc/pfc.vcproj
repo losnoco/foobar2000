@@ -3,11 +3,8 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="pfc"
-	ProjectGUID="{4997D303-C9A0-4044-B0B8-494B8C950921}"
+	ProjectGUID="{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}"
 	RootNamespace="pfc"
-	SccProjectName="&quot;$/foobar2000/plugins.root/plugins&quot;, CEAAAAAA"
-	SccLocalPath="..\.."
-	SccProvider="MSSCCI:Microsoft Visual SourceSafe"
 	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
@@ -184,14 +181,17 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="2"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;PFC_DLL_EXPORTS"
 				StringPooling="true"
+				BufferSecurityCheck="false"
 				FloatingPointModel="2"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="pfc.h"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -309,11 +309,27 @@
 			>
 		</File>
 		<File
+			RelativePath=".\base64.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\base64.h"
+			>
+		</File>
+		<File
+			RelativePath=".\binary_search.h"
+			>
+		</File>
+		<File
 			RelativePath="bit_array.h"
 			>
 		</File>
 		<File
 			RelativePath=".\bit_array_impl.h"
+			>
+		</File>
+		<File
+			RelativePath=".\bit_array_impl_part2.h"
 			>
 		</File>
 		<File
@@ -371,7 +387,7 @@
 			>
 		</File>
 		<File
-			RelativePath="chainlist.h"
+			RelativePath=".\chain_list_v2.h"
 			>
 		</File>
 		<File
@@ -433,6 +449,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\iterators.h"
+			>
+		</File>
+		<File
 			RelativePath="list.h"
 			>
 		</File>
@@ -488,6 +508,14 @@
 		</File>
 		<File
 			RelativePath="other.h"
+			>
+		</File>
+		<File
+			RelativePath=".\pathUtils.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\pathUtils.h"
 			>
 		</File>
 		<File
@@ -716,6 +744,22 @@
 		</File>
 		<File
 			RelativePath=".\string_list.h"
+			>
+		</File>
+		<File
+			RelativePath=".\stringNew.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\stringNew.h"
+			>
+		</File>
+		<File
+			RelativePath=".\threads.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\threads.h"
 			>
 		</File>
 		<File

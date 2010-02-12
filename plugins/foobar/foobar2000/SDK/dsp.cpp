@@ -349,6 +349,14 @@ bool resampler_entry::g_create(service_ptr_t<dsp> & p_out,unsigned p_srate_from,
 }
 
 
+bool dsp_chain_config::equals(dsp_chain_config const & v1, dsp_chain_config const & v2) {
+	const t_size count = v1.get_count();
+	if (count != v2.get_count()) return false;
+	for(t_size walk = 0; walk < count; ++walk) {
+		if (v1.get_item(walk) != v2.get_item(walk)) return false;
+	}
+	return true;
+}
 void dsp_chain_config::get_name_list(pfc::string_base & p_out) const
 {
 	const t_size count = get_count();

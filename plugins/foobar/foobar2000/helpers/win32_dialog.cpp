@@ -199,9 +199,7 @@ namespace dialog_helper {
 
 	dialog_modeless_v2::dialog_modeless_v2(unsigned p_id,HWND p_parent,HINSTANCE p_instance,bool p_stealfocus) : m_wnd(0), m_status(status_construction), m_stealfocus(p_stealfocus)
 	{
-		SetLastError(NO_ERROR);
-		HWND result = CreateDialogParam(p_instance,MAKEINTRESOURCE(p_id),p_parent,DlgProc,reinterpret_cast<LPARAM>(this));
-		if (result == 0 || m_wnd == 0) throw exception_win32(GetLastError());
+		WIN32_OP( CreateDialogParam(p_instance,MAKEINTRESOURCE(p_id),p_parent,DlgProc,reinterpret_cast<LPARAM>(this)) != NULL );
 		m_status = status_lifetime;
 	}
 
@@ -229,7 +227,9 @@ namespace dialog_helper {
 			assert(thisptr->m_status == status_construction);
 			thisptr->m_wnd = wnd;
 			SetWindowLongPtr(wnd,DWLP_USER,lp);
-			modeless_dialog_manager::g_add(wnd);
+			if (GetWindowLong(wnd,GWL_STYLE) & WS_POPUP) {
+				modeless_dialog_manager::g_add(wnd);
+			}
 		}
 		else thisptr = reinterpret_cast<dialog_modeless_v2*>(GetWindowLongPtr(wnd,DWLP_USER));
 
@@ -275,4 +275,14 @@ namespace dialog_helper {
 		}
 		else return FALSE;
 	}
+}
+
+HWND uCreateDialog(UINT id,HWND parent,DLGPROC proc,LPARAM param)
+{
+	return CreateDialogParam(core_api::get_my_instance(),MAKEINTRESOURCE(id),parent,proc,param);
+}
+
+int uDialogBox(UINT id,HWND parent,DLGPROC proc,LPARAM param)
+{
+	return (int)DialogBoxParam(core_api::get_my_instance(),MAKEINTRESOURCE(id),parent,proc,param);
 }

@@ -3,11 +3,8 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="foobar2000_sdk_helpers"
-	ProjectGUID="{6958D7C2-5871-4B1D-A04D-CAF4235FEED4}"
+	ProjectGUID="{EE47764E-A202-4F85-A767-ABDAB4AFF35F}"
 	RootNamespace="foobar2000_sdk_helpers"
-	SccProjectName="&quot;$/foobar2000/plugins.root/plugins&quot;, CEAAAAAA"
-	SccLocalPath="..\..\.."
-	SccProvider="MSSCCI:Microsoft Visual SourceSafe"
 	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
@@ -48,14 +45,17 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				Optimization="1"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_WIN32_WINNT=0x501"
 				StringPooling="true"
+				BufferSecurityCheck="false"
 				FloatingPointModel="2"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="stdafx.h"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -183,7 +183,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_WIN32_WINNT=0x500"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_WIN32_WINNT=0x501"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -300,6 +300,10 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
+			<File
+				RelativePath=".\clipboard.cpp"
+				>
+			</File>
 			<File
 				RelativePath="create_directory_helper.cpp"
 				>
@@ -493,11 +497,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\format_title_group.cpp"
+				RelativePath=".\filetimetools.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\inplace_edit.cpp"
+				RelativePath=".\IDataObjectUtils.cpp"
 				>
 			</File>
 			<File
@@ -533,50 +537,6 @@
 			<File
 				RelativePath=".\mp3_utils.cpp"
 				>
-			</File>
-			<File
-				RelativePath="preload_info_helper.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="search_filter.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\seekabilizer.cpp"
@@ -667,6 +627,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\VisUtils.cpp"
+				>
+			</File>
+			<File
 				RelativePath="wildcard.cpp"
 				>
 				<FileConfiguration
@@ -742,7 +706,15 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
+				RelativePath=".\album_art_helpers.h"
+				>
+			</File>
+			<File
 				RelativePath=".\bitreader_helper.h"
+				>
+			</File>
+			<File
+				RelativePath=".\CallForwarder.h"
 				>
 			</File>
 			<File
@@ -750,7 +722,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\cfg_structlist.h"
+				RelativePath=".\clipboard.h"
+				>
+			</File>
+			<File
+				RelativePath=".\COM_utils.h"
 				>
 			</File>
 			<File
@@ -806,7 +782,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\format_title_group.h"
+				RelativePath=".\filetimetools.h"
 				>
 			</File>
 			<File
@@ -814,7 +790,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\inplace_edit.h"
+				RelativePath=".\icon_remapping_wildcard.h"
+				>
+			</File>
+			<File
+				RelativePath=".\IDataObjectUtils.h"
 				>
 			</File>
 			<File
@@ -838,11 +818,11 @@
 				>
 			</File>
 			<File
-				RelativePath="preload_info_helper.h"
+				RelativePath=".\playlist_position_reference_tracker.h"
 				>
 			</File>
 			<File
-				RelativePath="search_filter.h"
+				RelativePath=".\ProfileCache.h"
 				>
 			</File>
 			<File
@@ -863,6 +843,14 @@
 			</File>
 			<File
 				RelativePath="text_file_loader.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ThreadUtils.h"
+				>
+			</File>
+			<File
+				RelativePath=".\VisUtils.h"
 				>
 			</File>
 			<File

@@ -1,7 +1,3 @@
-#ifndef _FOOBAR2000_SDK_FILESYSTEM_H_
-#define _FOOBAR2000_SDK_FILESYSTEM_H_
-
-class playlist_loader_callback;
 class file_info;
 
 //! Contains various I/O related structures and interfaces.
@@ -17,7 +13,9 @@ namespace foobar2000_io
 	//! Invalid/unknown file timestamp constant. Also see: t_filetimestamp.
 	const t_filetimestamp filetimestamp_invalid = 0;
 	//! Invalid/unknown file size constant. Also see: t_filesize.
-	const t_filesize filesize_invalid = (t_filesize)(~0);
+	static const t_filesize filesize_invalid = (t_filesize)(~0);
+	
+	static const t_filetimestamp filetimestamp_1second_increment = 10000000;
 
 	//! Generic I/O error. Root class for I/O failure exception. See relevant default message for description of each derived exception class.
 	PFC_DECLARE_EXCEPTION(exception_io,						pfc::exception,"I/O error");
@@ -57,6 +55,8 @@ namespace foobar2000_io
 	PFC_DECLARE_EXCEPTION(exception_io_file_corrupted,		exception_io,"The file is corrupted");
 	//! The disc required for requested operation is not available.
 	PFC_DECLARE_EXCEPTION(exception_io_disk_change,			exception_io,"Disc not available");
+	//! The directory is not empty.
+	PFC_DECLARE_EXCEPTION(exception_io_directory_not_empty,	exception_io,"Directory not empty");
 
 	//! Stores file stats (size and timestamp).
 	struct t_filestats {
@@ -73,7 +73,8 @@ namespace foobar2000_io
 	static const t_filestats filestats_invalid = {filesize_invalid,filetimestamp_invalid};
 
 #ifdef _WIN32
-	void exception_io_from_win32(DWORD p_code);
+	PFC_NORETURN void exception_io_from_win32(DWORD p_code);
+#define WIN32_IO_OP(X) {SetLastError(NO_ERROR); if (!(X)) exception_io_from_win32(GetLastError());}
 #endif
 
 	//! Generic interface to read data from a nonseekable stream. Also see: stream_writer, file.	\n
@@ -114,13 +115,17 @@ namespace foobar2000_io
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		template<typename T> inline void read_bendian_t(T& p_object,abort_callback & p_abort) {read_object_t(p_object,p_abort); byte_order::order_be_to_native_t(p_object);}
 
-		//! Helper function; reads string (with 32-bit header indicating length in bytes followed by UTF-8 encoded data without null terminator).
+		//! Helper function; reads a string (with a 32-bit header indicating length in bytes followed by UTF-8 encoded data without a null terminator).
 		void read_string(pfc::string_base & p_out,abort_callback & p_abort);
 		//! Helper function; alternate way of storing strings; assumes string takes space up to end of stream.
 		void read_string_raw(pfc::string_base & p_out,abort_callback & p_abort);
+		//! Helper function; reads a string (with a 32-bit header indicating length in bytes followed by UTF-8 encoded data without a null terminator).
+		pfc::string read_string(abort_callback & p_abort);
 
-		//! Helper function; reads string of specified length from the stream.
+		//! Helper function; reads a string of specified length from the stream.
 		void read_string_ex(pfc::string_base & p_out,t_size p_bytes,abort_callback & p_abort);
+		//! Helper function; reads a string of specified length from the stream.
+		pfc::string read_string_ex(t_size p_len,abort_callback & p_abort);
 	protected:
 		stream_reader() {}
 		~stream_reader() {}
@@ -155,6 +160,10 @@ namespace foobar2000_io
 
 		//! Helper function; writes string (with 32-bit header indicating length in bytes followed by UTF-8 encoded data without null terminator).
 		void write_string(const char * p_string,abort_callback & p_abort);
+		void write_string(const char * p_string,t_size p_len,abort_callback & p_abort);
+
+		template<typename T>
+		void write_string(const T& val,abort_callback & p_abort) {write_string(pfc::stringToPtr(val),p_abort);}
 
 		//! Helper function; writes raw string to the stream, with no length info or null terminators.
 		void write_string_raw(const char * p_string,abort_callback & p_abort);
@@ -189,17 +198,17 @@ namespace foobar2000_io
 		//! @returns Read/write cursor position
 		virtual t_filesize get_position(abort_callback & p_abort) = 0;
 
-		//! Resizes file to specified size in bytes.
+		//! Resizes file to the specified size in bytes.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		virtual void resize(t_filesize p_size,abort_callback & p_abort) = 0;
 
-		//! Sets read/write cursor position to specific offset.
+		//! Sets read/write cursor position to the specified offset.
 		//! @param p_position position to seek to.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
 		virtual void seek(t_filesize p_position,abort_callback & p_abort) = 0;
 
 		
-		//! Sets read/write cursor position to specific offset; extended form allowing seeking relative to current position or to end of file.
+		//! Sets read/write cursor position to the specified offset; extended form allowing seeking relative to current position or to end of file.
 		//! @param p_position Position to seek to; interpretation of this value depends on p_mode parameter.
 		//! @param p_mode Seeking mode; see t_seek_mode enum values for further description.
 		//! @param p_abort abort_callback object signaling user aborting the operation.
@@ -269,8 +278,13 @@ namespace foobar2000_io
 		//! Helper; improved performance over g_transfer_file on streams (avoids disk fragmentation when transferring large blocks).
 		static void g_transfer_object(service_ptr_t<file> p_src,service_ptr_t<file> p_dst,t_filesize p_bytes,abort_callback & p_abort);
 
+
+		t_filesize skip(t_filesize p_bytes,abort_callback & p_abort);
+
 		FB2K_MAKE_SERVICE_INTERFACE(file,service_base);
 	};
+
+	typedef service_ptr_t<file> file_ptr;
 
 	//! Special hack for shoutcast metadata nonsense handling. Documentme.
 	class file_dynamicinfo : public file {
@@ -292,6 +306,18 @@ namespace foobar2000_io
 		void write(const void * p_buffer,t_size p_bytes,abort_callback & p_abort) {throw exception_io_denied();}
 	};
 	typedef file_readonly_t<file> file_readonly;
+
+	class file_streamstub : public file_readonly {
+	public:
+		t_size read(void * p_buffer,t_size p_bytes,abort_callback & p_abort) {return 0;}
+		t_filesize get_size(abort_callback & p_abort) {return filesize_invalid;}
+		t_filesize get_position(abort_callback & p_abort) {return 0;}
+		bool get_content_type(pfc::string_base & p_out) {return false;}
+		bool is_remote() {return true;}
+		void reopen(abort_callback&) {}
+		void seek(t_filesize p_position,abort_callback & p_abort) {throw exception_io_object_not_seekable();}
+		bool can_seek() {return false;}
+	};
 
 	class filesystem;
 
@@ -338,7 +364,8 @@ namespace foobar2000_io
 
 		virtual void list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort)=0;
 
-		//! Hint; returns whether this filesystem supports mime types.
+		//! Hint; returns whether this filesystem supports mime types. \n 
+		//! When this returns false, all file::get_content_type() calls on files opened thru this filesystem implementation will return false; otherwise, file::get_content_type() calls may return true depending on the file.
 		virtual bool supports_content_types() = 0;
 
 		static void g_get_canonical_path(const char * path,pfc::string_base & out);
@@ -346,7 +373,8 @@ namespace foobar2000_io
 
 		static bool g_get_interface(service_ptr_t<filesystem> & p_out,const char * path);//path is AFTER get_canonical_path
 		static bool g_is_remote(const char * p_path);//path is AFTER get_canonical_path
-		static bool g_is_remote_safe(const char * p_path);//path is AFTER get_canonical_path
+		static bool g_is_recognized_and_remote(const char * p_path);//path is AFTER get_canonical_path
+		static bool g_is_remote_safe(const char * p_path) {return g_is_recognized_and_remote(p_path);}
 		static bool g_is_remote_or_unrecognized(const char * p_path);
 		static bool g_is_recognized_path(const char * p_path);
 		
@@ -404,7 +432,7 @@ namespace foobar2000_io
 		pfc::list_t<pfc::rcptr_t<t_entry> > m_data;
 		bool m_recur;
 
-		static int sortfunc(const pfc::rcptr_const_t<t_entry> & p1, const pfc::rcptr_const_t<t_entry> & p2) {return stricmp_utf8(p1->m_path,p2->m_path);}
+		static int sortfunc(const pfc::rcptr_t<const t_entry> & p1, const pfc::rcptr_t<const t_entry> & p2) {return stricmp_utf8(p1->m_path,p2->m_path);}
 	public:
 		bool on_entry(filesystem * owner,abort_callback & p_abort,const char * url,bool is_subdirectory,const t_filestats & p_stats);
 
@@ -454,13 +482,13 @@ namespace foobar2000_io
 		virtual void open_archive(service_ptr_t<file> & p_out,const char * archive,const char * file, abort_callback & p_abort)=0;//opens for reading
 	public:
 		//override these
-		
 		virtual void archive_list(const char * path,const service_ptr_t<file> & p_reader,archive_callback & p_out,bool p_want_readers)=0;
-		//playlist_loader_callback ONLY for on_progress calls
 
-
-		static bool g_parse_unpack_path(const char * path,pfc::string8 & archive,pfc::string8 & file);
-		static void g_make_unpack_path(pfc::string_base & path,const char * archive,const char * file,const char * name);
+		
+		static bool g_is_unpack_path(const char * path);
+		static bool g_parse_unpack_path(const char * path,pfc::string_base & archive,pfc::string_base & file);
+		static bool g_parse_unpack_path_ex(const char * path,pfc::string_base & archive,pfc::string_base & file, pfc::string_base & type);
+		static void g_make_unpack_path(pfc::string_base & path,const char * archive,const char * file,const char * type);
 		void make_unpack_path(pfc::string_base & path,const char * archive,const char * file);
 
 		
@@ -472,23 +500,136 @@ namespace foobar2000_io
 
 	t_filetimestamp filetimestamp_from_system_timer();
 
-	//! Warning: this formats according to system timezone settings, created strings should be used for display only, never for storage.
-	class format_filetimestamp {
-	public:
-		format_filetimestamp(t_filetimestamp p_timestamp);
-		operator const char*() const {return m_buffer;}
-		const char * get_ptr() const {return m_buffer;}
-	private:
-		pfc::string_fixed_t<32> m_buffer;
-	};
+#ifdef _WIN32
+	inline t_filetimestamp import_filetimestamp(FILETIME ft) {
+		return *reinterpret_cast<t_filetimestamp*>(&ft);
+	}
+#endif
 
 	void generate_temp_location_for_file(pfc::string_base & p_out, const char * p_origpath,const char * p_extension,const char * p_magic);
+
+
+	static file_ptr fileOpen(const char * p_path,filesystem::t_open_mode p_mode,abort_callback & p_abort,double p_timeout) {
+		file_ptr temp; filesystem::g_open_timeout(temp,p_path,p_mode,p_timeout,p_abort); PFC_ASSERT(temp.is_valid()); return temp;
+	}
+
+	static file_ptr fileOpenReadExisting(const char * p_path,abort_callback & p_abort,double p_timeout = 0) {
+		return fileOpen(p_path,filesystem::open_mode_read,p_abort,p_timeout);
+	}
+	static file_ptr fileOpenWriteExisting(const char * p_path,abort_callback & p_abort,double p_timeout = 0) {
+		return fileOpen(p_path,filesystem::open_mode_write_existing,p_abort,p_timeout);
+	}
+	static file_ptr fileOpenWriteNew(const char * p_path,abort_callback & p_abort,double p_timeout = 0) {
+		return fileOpen(p_path,filesystem::open_mode_write_new,p_abort,p_timeout);
+	}
+	
+	template<typename t_list>
+	class directory_callback_retrieveList : public directory_callback {
+	public:
+		directory_callback_retrieveList(t_list & p_list,bool p_getFiles,bool p_getSubDirectories) : m_list(p_list), m_getFiles(p_getFiles), m_getSubDirectories(p_getSubDirectories) {}
+		bool on_entry(filesystem * p_owner,abort_callback & p_abort,const char * p_url,bool p_is_subdirectory,const t_filestats & p_stats) {
+			p_abort.check();
+			if (p_is_subdirectory ? m_getSubDirectories : m_getFiles) {
+				m_list.add_item(p_url);
+			}
+			return true;
+		}
+	private:
+		const bool m_getSubDirectories;
+		const bool m_getFiles;
+		t_list & m_list;
+	};
+	template<typename t_list>
+	class directory_callback_retrieveListEx : public directory_callback {
+	public:
+		directory_callback_retrieveListEx(t_list & p_files, t_list & p_directories) : m_files(p_files), m_directories(p_directories) {}
+		bool on_entry(filesystem * p_owner,abort_callback & p_abort,const char * p_url,bool p_is_subdirectory,const t_filestats & p_stats) {
+			p_abort.check();
+			if (p_is_subdirectory) m_directories += p_url;
+			else m_files += p_url;
+			return true;
+		}
+	private:
+		t_list & m_files;
+		t_list & m_directories;
+	};
+	template<typename t_list> class directory_callback_retrieveListRecur : public directory_callback {
+	public:
+		directory_callback_retrieveListRecur(t_list & p_list) : m_list(p_list) {}
+		bool on_entry(filesystem * owner,abort_callback & p_abort,const char * path, bool isSubdir, const t_filestats&) {
+			if (isSubdir) {
+				try { owner->list_directory(path,*this,p_abort); } catch(exception_io) {}
+			} else {
+				m_list.add_item(path);
+			}
+			return true;
+		}
+	private:
+		t_list & m_list;
+	};
+
+	template<typename t_list>
+	static void listFiles(const char * p_path,t_list & p_out,abort_callback & p_abort) {
+		directory_callback_retrieveList<t_list> callback(p_out,true,false);
+		filesystem::g_list_directory(p_path,callback,p_abort);
+	}
+	template<typename t_list>
+	static void listDirectories(const char * p_path,t_list & p_out,abort_callback & p_abort) {
+		directory_callback_retrieveList<t_list> callback(p_out,false,true);
+		filesystem::g_list_directory(p_path,callback,p_abort);
+	}
+	template<typename t_list>
+	static void listFilesAndDirectories(const char * p_path,t_list & p_files,t_list & p_directories,abort_callback & p_abort) {
+		directory_callback_retrieveListEx<t_list> callback(p_files,p_directories);
+		filesystem::g_list_directory(p_path,callback,p_abort);
+	}
+	template<typename t_list>
+	static void listFilesRecur(const char * p_path,t_list & p_out,abort_callback & p_abort) {
+		directory_callback_retrieveListRecur<t_list> callback(p_out);
+		filesystem::g_list_directory(p_path,callback,p_abort);
+	}
+
+	bool extract_native_path(const char * p_fspath,pfc::string_base & p_native);
+	bool _extract_native_path_ptr(const char * & p_fspath);
+	bool extract_native_path_ex(const char * p_fspath, pfc::string_base & p_native);//prepends \\?\ where needed
+
+	template<typename T>
+	pfc::string getPathDisplay(const T& source) {
+		pfc::string_formatter temp;
+		filesystem::g_get_display_path(pfc::stringToPtr(source),temp);
+		return temp.toString();
+	}
+	template<typename T>
+	pfc::string getPathCanonical(const T& source) {
+		pfc::string_formatter temp;
+		filesystem::g_get_canonical_path(pfc::stringToPtr(source),temp);
+		return temp.toString();
+	}
+
+
+	static bool matchContentType(const char * fullString, const char * ourType) {
+		t_size lim = pfc::string_find_first(fullString, ';');
+		if (lim != ~0) {
+			while(lim > 0 && fullString[lim-1] == ' ') --lim;
+		}
+		return pfc::stricmp_ascii_ex(fullString,lim, ourType, ~0) == 0;
+	}
+	static bool matchProtocol(const char * fullString, const char * protocolName) {
+		const t_size len = strlen(protocolName);
+		if (pfc::stricmp_ascii_ex(fullString, len, protocolName, len) != 0) return false;
+		return fullString[len] == ':' && fullString[len+1] == '/' && fullString[len+2] == '/';
+	}
+	static void substituteProtocol(pfc::string_base & out, const char * fullString, const char * protocolName) {
+		const char * base = strstr(fullString, "://");
+		if (base) {
+			out = protocolName; out << base;
+		} else {
+			PFC_ASSERT(!"Should not get here");
+			out = fullString;
+		}
+	}
 }
 
 using namespace foobar2000_io;
 
 #include "filesystem_helper.h"
-
-#endif//_FOOBAR2000_SDK_FILESYSTEM_H_
-
-

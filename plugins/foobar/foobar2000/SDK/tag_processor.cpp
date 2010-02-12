@@ -108,9 +108,10 @@ void tag_processor::remove_trailing(const service_ptr_t<file> & p_file,abort_cal
 	return static_api_ptr_t<tag_processor_trailing>()->remove(p_file,p_abort);
 }
 
-void tag_processor::remove_id3v2(const service_ptr_t<file> & p_file,abort_callback & p_abort) {
-	t_uint64 dummy;
+bool tag_processor::remove_id3v2(const service_ptr_t<file> & p_file,abort_callback & p_abort) {
+	t_uint64 dummy = 0;
 	tag_processor_id3v2::g_remove(p_file,dummy,p_abort);
+	return dummy > 0;
 }
 
 void tag_processor::remove_id3v2_trailing(const service_ptr_t<file> & p_file,abort_callback & p_abort) {
@@ -132,7 +133,7 @@ void tag_processor::read_id3v2(const service_ptr_t<file> & p_file,file_info & p_
 
 void tag_processor::read_id3v2_trailing(const service_ptr_t<file> & p_file,file_info & p_info,abort_callback & p_abort)
 {
-	file_info_i temp_infos[2];
+	file_info_impl temp_infos[2];
 	bool have_id3v2 = true, have_trailing = true;
 	try {
 		read_id3v2(p_file,temp_infos[0],p_abort);

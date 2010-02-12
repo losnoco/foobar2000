@@ -1,7 +1,15 @@
-#define MYVERSION "2.0.9"
+#define MYVERSION "2.0.12"
 
 /*
 	changelog
+
+2010-01-13 00:43 UTC - kode54
+- Updated context menu handler
+- Version is now 2.0.12
+
+2010-01-11 13:14 UTC - kode54
+- Updated preferences page to 1.0 API
+- Version is now 2.0.11
 
 2009-08-08 23:50 UTC - kode54
 - Implemented more ScrubFormat features into PSX EXE loader
@@ -149,6 +157,7 @@
 
 #include "../SDK/foobar2000.h"
 #include "../helpers/window_placement_helper.h"
+#include "../ATLHelpers/ATLHelpers.h"
 
 #include "resource.h"
 
@@ -241,6 +250,20 @@ static const GUID guid_cfg_compat =
 // {BC3A4F79-54EF-4202-9B86-D81297DAC217}
 static const GUID guid_cfg_placement = 
 { 0xbc3a4f79, 0x54ef, 0x4202, { 0x9b, 0x86, 0xd8, 0x12, 0x97, 0xda, 0xc2, 0x17 } };
+
+enum
+{
+	default_cfg_infinite = 0,
+	default_cfg_info = 0,
+	default_cfg_deflength = 170000,
+	default_cfg_deffade = 10000,
+	default_cfg_suppressopeningsilence = 1,
+	default_cfg_suppressendsilence = 1,
+	default_cfg_endsilenceseconds = 5,
+	default_cfg_reverb = 1,
+	default_cfg_freq = 1,
+	default_cfg_compat = IOP_COMPAT_FRIENDLY
+};
 
 static cfg_int cfg_infinite(guid_cfg_infinite,0);
 static cfg_int cfg_info(guid_cfg_info, 0);
@@ -530,11 +553,11 @@ static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, i
 			DBG("scanning for name/value");
 
 			t_size line_end = whole_tag.find_first( '\n', pos );
-			if ( line_end == infinite ) line_end = len;
+			if ( line_end == ~0 ) line_end = len;
 			tag.set_string( whole_tag.get_ptr() + pos, line_end - pos );
 			pos = line_end;
 			line_end = tag.find_first( '=' );
-			if ( line_end == infinite ) continue;
+			if ( line_end == ~0 ) continue;
 			value.set_string( tag.get_ptr() + line_end + 1 );
 			tag.truncate( line_end );
 			trim_whitespace( tag );
@@ -1628,236 +1651,223 @@ int input_psf::load_psf(service_ptr_t<file> & r, const char * p_path, file_info 
 	return 0;
 }
 
-static BOOL CALLBACK ConfigProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
-{
-	struct config_data
+class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
+public:
+	//Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us
+	CMyPreferences(preferences_page_callback::ptr callback) : m_callback(callback) {}
+
+	//Note that we don't bother doing anything regarding destruction of our class.
+	//The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
+
+
+	//dialog resource ID
+	enum {IDD = IDD_PSF_CONFIG};
+	// preferences_page_instance methods (not all of them - get_wnd() is supplied by preferences_page_impl helpers)
+	t_uint32 get_state();
+	void apply();
+	void reset();
+
+	//WTL message map
+	BEGIN_MSG_MAP(CMyPreferences)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		COMMAND_HANDLER_EX(IDC_INDEFINITE, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_SOS, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_SES, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_REVERB, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FREQ, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_INFO, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_HARSH, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_FRIENDLY, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_SILENCE, EN_CHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_DLENGTH, EN_CHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_DFADE, EN_CHANGE, OnEditChange)
+	END_MSG_MAP()
+private:
+	BOOL OnInitDialog(CWindow, LPARAM);
+	void OnEditChange(UINT, int, CWindow);
+	void OnButtonClick(UINT, int, CWindow);
+	bool HasChanged();
+	void OnChanged();
+
+	const preferences_page_callback::ptr m_callback;
+
+	CHyperLink m_link_neill;
+	CHyperLink m_link_kode54;
+};
+
+BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
+	int n;
+	SendDlgItemMessage( IDC_INDEFINITE, BM_SETCHECK, cfg_infinite );
+	SendDlgItemMessage( IDC_SOS, BM_SETCHECK, cfg_suppressopeningsilence );
+	SendDlgItemMessage( IDC_SES, BM_SETCHECK, cfg_suppressendsilence );
+	SendDlgItemMessage( IDC_REVERB, BM_SETCHECK, cfg_reverb );
+	SendDlgItemMessage( IDC_FREQ, BM_SETCHECK, cfg_freq );
+	SendDlgItemMessage( IDC_INFO, BM_SETCHECK, cfg_info );
+	n = IDC_FRIENDLY;
+	if (cfg_compat == IOP_COMPAT_HARSH) n = IDC_HARSH;
+	CheckRadioButton( IDC_HARSH, IDC_FRIENDLY, n );
+	
+	SetDlgItemInt( IDC_SILENCE, cfg_endsilenceseconds, FALSE );
+	
 	{
-		CHyperLink m_link_neill;
-		CHyperLink m_link_kode54;
-	};
-
-	switch(msg)
-	{
-	case WM_INITDIALOG:
-		{
-			int n;
-			uSendDlgItemMessage(wnd, IDC_INDEFINITE, BM_SETCHECK, cfg_infinite, 0);
-			uSendDlgItemMessage(wnd, IDC_SOS, BM_SETCHECK, cfg_suppressopeningsilence, 0);
-			uSendDlgItemMessage(wnd, IDC_SES, BM_SETCHECK, cfg_suppressendsilence, 0);
-			uSendDlgItemMessage(wnd, IDC_REVERB, BM_SETCHECK, cfg_reverb, 0);
-			uSendDlgItemMessage(wnd, IDC_FREQ, BM_SETCHECK, cfg_freq, 0);
-			uSendDlgItemMessage(wnd, IDC_INFO, BM_SETCHECK, cfg_info, 0);
-			n = IDC_FRIENDLY;
-			if (cfg_compat == IOP_COMPAT_HARSH) n = IDC_HARSH;
-			CheckRadioButton(wnd, IDC_HARSH, IDC_FRIENDLY, n);
-
-			SetDlgItemInt(wnd,IDC_SILENCE,cfg_endsilenceseconds,0);
-			// SetDlgItemInt(wnd,IDC_DIVIDER,cfg_divider,0);
-
-			{
-				char temp[16];
-				// wsprintf((char *)&temp, "= %d Hz", 33868800 / cfg_divider);
-				// SetDlgItemText(wnd, IDC_HZ, (char *)&temp);
-
-				print_time_crap(cfg_deflength, (char *)&temp);
-				uSetDlgItemText(wnd, IDC_DLENGTH, (char *)&temp);
-
-				print_time_crap(cfg_deffade, (char *)&temp);
-				uSetDlgItemText(wnd, IDC_DFADE, (char *)&temp);
-			}
-
-			config_data * data = new config_data;
-
-			data->m_link_neill.SetLabel( _T( "Neill Corlett's Home Page" ) );
-			data->m_link_neill.SetHyperLink( _T( "http://www.neillcorlett.com/" ) );
-			data->m_link_neill.SubclassWindow( GetDlgItem( wnd, IDC_URL ) );
-
-			data->m_link_kode54.SetLabel( _T( "kode's foobar2000 plug-ins" ) );
-			data->m_link_kode54.SetHyperLink( _T( "http://kode54.foobar2000.org/" ) );
-			data->m_link_kode54.SubclassWindow( GetDlgItem( wnd, IDC_K54 ) );
-
-			{
-				OSVERSIONINFO ovi = { 0 };
-				ovi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-				BOOL bRet = ::GetVersionEx(&ovi);
-				if ( bRet && ( ovi.dwMajorVersion >= 5 ) )
-				{
-					DWORD color = GetSysColor( 26 /* COLOR_HOTLIGHT */ );
-					data->m_link_neill.m_clrLink = color;
-					data->m_link_neill.m_clrVisited = color;
-					data->m_link_kode54.m_clrLink = color;
-					data->m_link_kode54.m_clrVisited = color;
-				}
-			}
-
-			SetWindowLong( wnd, DWL_USER, (LONG) data );
-
-			unsigned long psfc = psf_count;
-			unsigned long psf2c = psf2_count;
-
-			if (psf2c)
-			{
-				__int64 total = ((__int64)psfc + (__int64)psf2c) - 1;
-				__int64 meh = ((__int64)rand() * total) / RAND_MAX;
-				if (meh >= (__int64)psfc)
-				{
-					uSendMessage(GetDlgItem(wnd, IDC_LOGO), STM_SETIMAGE, IMAGE_BITMAP, (long) uLoadImage(core_api::get_my_instance(), MAKEINTRESOURCEA(IDB_LOGOBMP2), IMAGE_BITMAP, 0, 0, 0));
-				}
-			}
-		}
-		return 1;
-
-	case WM_DESTROY:
-		{
-			config_data * data = reinterpret_cast< config_data * > ( GetWindowLong( wnd, DWL_USER ) );
-			if ( data )
-			{
-				data->m_link_neill.DestroyWindow();
-				data->m_link_kode54.DestroyWindow();
-				delete data;
-			}
-		}
-		break;
-
-	case WM_COMMAND:
-		switch(wp)
-		{
-		case IDC_INDEFINITE:
-			cfg_infinite = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		case IDC_INFO:
-			cfg_info = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		case IDC_SOS:
-			cfg_suppressopeningsilence = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			if (cfg_suppressopeningsilence && !cfg_endsilenceseconds)
-			{
-				cfg_endsilenceseconds = 1;
-				SetDlgItemInt(wnd, IDC_SILENCE, cfg_endsilenceseconds, 0);
-			}
-			break;
-		case IDC_SES:
-			cfg_suppressendsilence = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			if (cfg_suppressendsilence && !cfg_endsilenceseconds)
-			{
-				cfg_endsilenceseconds = 1;
-				SetDlgItemInt(wnd, IDC_SILENCE, cfg_endsilenceseconds, 0);
-			}
-			break;
-		case IDC_REVERB:
-			cfg_reverb = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		case IDC_FREQ:
-			cfg_freq = uSendMessage((HWND)lp,BM_GETCHECK,0,0);
-			break;
-		case IDC_HARSH:
-			if (uSendMessage((HWND)lp,BM_GETCHECK,0,0))
-				cfg_compat = IOP_COMPAT_HARSH;
-			break;
-		case IDC_FRIENDLY:
-			if (uSendMessage((HWND)lp,BM_GETCHECK,0,0))
-				cfg_compat = IOP_COMPAT_FRIENDLY;
-			break;
-		case (EN_CHANGE<<16)|IDC_SILENCE:
-			{
-				int res;
-				int temp = GetDlgItemInt(wnd, IDC_SILENCE, &res, 0);
-				if (res && temp)
-					cfg_endsilenceseconds = temp;
-			}
-			break;
-		case (EN_KILLFOCUS<<16)|IDC_SILENCE:
-			{
-				int res;
-				int temp = GetDlgItemInt(wnd, IDC_SILENCE, &res, 0);
-				if (res && !temp)
-					SetDlgItemInt(wnd, IDC_SILENCE, cfg_endsilenceseconds, 0);
-			}
-			break;
-		case (EN_CHANGE<<16)|IDC_DLENGTH:
-			{
-				int meh = parse_time_crap(string_utf8_from_window((HWND)lp));
-				if (meh != BORK_TIME) cfg_deflength = meh;
-			}
-			break;
-		case (EN_KILLFOCUS<<16)|IDC_DLENGTH:
-			{
-				char temp[16];
-				print_time_crap(cfg_deflength, (char *)&temp);
-				uSetWindowText((HWND)lp, temp);
-			}
-			break;
-		case (EN_CHANGE<<16)|IDC_DFADE:
-			{
-				int meh = parse_time_crap(string_utf8_from_window((HWND)lp));
-				if (meh != BORK_TIME) cfg_deffade = meh;
-			}
-			break;
-		case (EN_KILLFOCUS<<16)|IDC_DFADE:
-			{
-				char temp[16];
-				print_time_crap(cfg_deffade, (char *)&temp);
-				uSetWindowText((HWND)lp, temp);
-			}
-			break;
-		/*case (EN_CHANGE<<16)|IDC_DIVIDER:
-			{
-				int res;
-				int temp = GetDlgItemInt(wnd, IDC_DIVIDER, &res, 0);
-				if (res && temp)
-				{
-					char blah[16];
-					cfg_divider = temp;
-					wsprintf((char *)&blah, "= %d Hz", 33868800 / temp);
-					SetDlgItemText(wnd, IDC_HZ, (char *)&blah);
-				}
-			}
-			break;
-		case (EN_KILLFOCUS<<16)|IDC_DIVIDER:
-			{
-				int res;
-				int temp = GetDlgItemInt(wnd, IDC_DIVIDER, &res, 0);
-				if (res && !temp)
-					SetDlgItemInt(wnd, IDC_DIVIDER, cfg_divider, 0);
-			}
-			break;*/
-		}
-		break;
+		char temp[16];
+		// wsprintf((char *)&temp, "= %d Hz", 33868800 / cfg_divider);
+		// SetDlgItemText(wnd, IDC_HZ, (char *)&temp);
+		
+		print_time_crap( cfg_deflength, (char *)&temp );
+		uSetDlgItemText( m_hWnd, IDC_DLENGTH, (char *)&temp );
+		
+		print_time_crap( cfg_deffade, (char *)&temp );
+		uSetDlgItemText( m_hWnd, IDC_DFADE, (char *)&temp );
 	}
-	return 0;
+	
+	m_link_neill.SetLabel( _T( "Neill Corlett's Home Page" ) );
+	m_link_neill.SetHyperLink( _T( "http://www.neillcorlett.com/" ) );
+	m_link_neill.SubclassWindow( GetDlgItem( IDC_URL ) );
+	
+	m_link_kode54.SetLabel( _T( "kode's foobar2000 plug-ins" ) );
+	m_link_kode54.SetHyperLink( _T( "http://kode54.foobar2000.org/" ) );
+	m_link_kode54.SubclassWindow( GetDlgItem( IDC_K54 ) );
+	
+	{
+		/*OSVERSIONINFO ovi = { 0 };
+		ovi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+		BOOL bRet = ::GetVersionEx(&ovi);
+		if ( bRet && ( ovi.dwMajorVersion >= 5 ) )*/
+		{
+			DWORD color = GetSysColor( 26 /* COLOR_HOTLIGHT */ );
+			m_link_neill.m_clrLink = color;
+			m_link_neill.m_clrVisited = color;
+			m_link_kode54.m_clrLink = color;
+			m_link_kode54.m_clrVisited = color;
+		}
+	}
+	
+	unsigned long psfc = psf_count;
+	unsigned long psf2c = psf2_count;
+
+	if (psf2c)
+	{
+		__int64 total = ((__int64)psfc + (__int64)psf2c) - 1;
+		__int64 meh = ((__int64)rand() * total) / RAND_MAX;
+		if (meh >= (__int64)psfc)
+		{
+			SendDlgItemMessage( IDC_LOGO, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM) LoadImage( core_api::get_my_instance(), MAKEINTRESOURCE(IDB_LOGOBMP2), IMAGE_BITMAP, 0, 0, 0 ) );
+		}
+	}
+	
+	return TRUE;
 }
 
-class preferences_page_psf : public preferences_page
-{
-public:
-	virtual HWND create(HWND parent)
+void CMyPreferences::OnEditChange(UINT, int, CWindow) {
+	OnChanged();
+}
+
+void CMyPreferences::OnButtonClick(UINT, int, CWindow) {
+	OnChanged();
+}
+
+t_uint32 CMyPreferences::get_state() {
+	t_uint32 state = preferences_state::resettable;
+	if (HasChanged()) state |= preferences_state::changed;
+	return state;
+}
+
+void CMyPreferences::reset() {
+	int n;
+	char temp[16];
+	SendDlgItemMessage( IDC_INDEFINITE, BM_SETCHECK, default_cfg_infinite );
+	SendDlgItemMessage( IDC_SOS, BM_SETCHECK, default_cfg_suppressopeningsilence );
+	SendDlgItemMessage( IDC_SES, BM_SETCHECK, default_cfg_suppressendsilence );
+	SendDlgItemMessage( IDC_REVERB, BM_SETCHECK, default_cfg_reverb );
+	SendDlgItemMessage( IDC_FREQ, BM_SETCHECK, default_cfg_freq );
+	SendDlgItemMessage( IDC_INFO, BM_SETCHECK, default_cfg_info );
+	n = IDC_FRIENDLY;
+	if (default_cfg_compat == IOP_COMPAT_HARSH) n = IDC_HARSH;
+	CheckRadioButton( IDC_HARSH, IDC_FRIENDLY, n );
+	SetDlgItemInt( IDC_SILENCE, default_cfg_endsilenceseconds, FALSE );
+	print_time_crap( default_cfg_deflength, (char *)&temp );
+	uSetDlgItemText( m_hWnd, IDC_DLENGTH, (char *)&temp );
+	print_time_crap( default_cfg_deffade, (char *)&temp );
+	uSetDlgItemText( m_hWnd, IDC_DFADE, (char *)&temp );
+	
+	OnChanged();
+}
+
+void CMyPreferences::apply() {
+	int t;
+	char temp[16];
+	cfg_infinite = SendDlgItemMessage( IDC_INDEFINITE, BM_GETCHECK );
+	cfg_suppressopeningsilence = SendDlgItemMessage( IDC_SOS, BM_GETCHECK );
+	cfg_suppressendsilence = SendDlgItemMessage( IDC_SES, BM_GETCHECK );
+	cfg_reverb = SendDlgItemMessage( IDC_REVERB, BM_GETCHECK );
+	cfg_freq = SendDlgItemMessage( IDC_FREQ, BM_GETCHECK );
+	cfg_info = SendDlgItemMessage( IDC_INFO, BM_GETCHECK );
+	cfg_compat = SendDlgItemMessage( IDC_FRIENDLY, BM_GETCHECK ) ? IOP_COMPAT_FRIENDLY : IOP_COMPAT_HARSH;
+	t = GetDlgItemInt( IDC_SILENCE, NULL, FALSE );
+	if ( t > 0 ) cfg_endsilenceseconds = t;
+	SetDlgItemInt( IDC_SILENCE, cfg_endsilenceseconds, FALSE );
+	t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_DLENGTH ) ) );
+	if ( t != BORK_TIME ) cfg_deflength = t;
+	else
 	{
-		return uCreateDialog(IDD_PSF_CONFIG,parent,ConfigProc);
+		print_time_crap( cfg_deflength, (char *)&temp );
+		uSetDlgItemText( m_hWnd, IDC_DLENGTH, (char *)&temp );
 	}
-	GUID get_guid()
+	t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_DFADE ) ) );
+	if ( t != BORK_TIME ) cfg_deffade = t;
+	else
 	{
+		print_time_crap( cfg_deffade, (char *)&temp );
+		uSetDlgItemText( m_hWnd, IDC_DFADE, (char *)&temp );
+	}
+	
+	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
+}
+
+bool CMyPreferences::HasChanged() {
+	//returns whether our dialog content is different from the current configuration (whether the apply button should be enabled or not)
+	bool changed = false;
+	if ( !changed && SendDlgItemMessage( IDC_INDEFINITE, BM_GETCHECK ) != cfg_infinite ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_SOS, BM_GETCHECK ) != cfg_suppressopeningsilence ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_SES, BM_GETCHECK ) != cfg_suppressendsilence ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_REVERB, BM_GETCHECK ) != cfg_reverb ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_FREQ, BM_GETCHECK ) != cfg_freq ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_INFO, BM_GETCHECK ) != cfg_info ) changed = true;
+	if ( !changed )
+	{
+		int n = IDC_FRIENDLY;
+		if (cfg_compat == IOP_COMPAT_HARSH) n = IDC_HARSH;
+		if ( !SendDlgItemMessage( n, BM_GETCHECK ) ) changed = true;
+	}
+	if ( !changed && GetDlgItemInt( IDC_SILENCE, NULL, FALSE ) != cfg_endsilenceseconds ) changed = true;
+	if ( !changed )
+	{
+		int t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_DLENGTH ) ) );
+		if ( t != BORK_TIME && t != cfg_deflength ) changed = true;
+	}
+	if ( !changed )
+	{
+		int t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_DFADE ) ) );
+		if ( t != BORK_TIME && t != cfg_deffade ) changed = true;
+	}
+	return changed;
+}
+void CMyPreferences::OnChanged() {
+	//tell the host that our state has changed to enable/disable the apply button appropriately.
+	m_callback->on_state_changed();
+}
+
+class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
+	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
+public:
+	const char * get_name() {return "PSF Decoder";}
+	GUID get_guid() {
 		// {E4A73418-437F-4fad-849F-7F25DCFF1AE3}
-		static const GUID guid = 
-		{ 0xe4a73418, 0x437f, 0x4fad, { 0x84, 0x9f, 0x7f, 0x25, 0xdc, 0xff, 0x1a, 0xe3 } };
+		static const GUID guid = { 0xe4a73418, 0x437f, 0x4fad, { 0x84, 0x9f, 0x7f, 0x25, 0xdc, 0xff, 0x1a, 0xe3 } };
 		return guid;
 	}
-	virtual const char * get_name() {return "PSF Decoder";}
 	GUID get_parent_guid() {return guid_input;}
-
-	bool reset_query() {return true;}
-	void reset()
-	{
-		cfg_infinite = 0;
-		cfg_info = 0;
-		cfg_deflength = 170000;
-		cfg_deffade = 10000;
-		cfg_suppressopeningsilence = 1;
-		cfg_suppressendsilence = 1;
-		cfg_endsilenceseconds = 5;
-		cfg_reverb = 1;
-		cfg_freq = 1;
-		cfg_compat = IOP_COMPAT_FRIENDLY;
-	}
 };
 
 typedef struct
@@ -2002,33 +2012,33 @@ public:
 
 	virtual void get_item_name(unsigned n, pfc::string_base & out)
 	{
+		if (n) uBugCheck();
 		out = "Edit length";
 	}
 
-	virtual void get_item_default_path(unsigned n, pfc::string_base & out)
+	/*virtual void get_item_default_path(unsigned n, pfc::string_base & out)
 	{
 		out.reset();
-	}
+	}*/
+	GUID get_parent() {return contextmenu_groups::tagging;}
 
 	virtual bool get_item_description(unsigned n, pfc::string_base & out)
 	{
+		if (n) uBugCheck();
 		out = "Edits the length of the selected PSF file, or sets the length of all selected PSF files.";
 		return true;
 	}
 
 	virtual GUID get_item_guid(unsigned p_index)
 	{
-		static const GUID guids[] =
-		{
-			{ 0x37c4555, 0xabd6, 0x4524, { 0x97, 0xa9, 0xe4, 0x46, 0x50, 0x71, 0x20, 0xab } },
-			{ 0xb26a5602, 0xa095, 0x4d2a, { 0x80, 0x81, 0xdb, 0x36, 0xd6, 0xfc, 0xa3, 0x0 } }
-		};
-		assert(p_index < tabsize(guids));
-		return guids[p_index];
+		if (p_index) uBugCheck();
+		static const GUID guid = { 0x37c4555, 0xabd6, 0x4524, { 0x97, 0xa9, 0xe4, 0x46, 0x50, 0x71, 0x20, 0xab } };
+		return guid;
 	}
 
 	virtual bool context_get_display(unsigned n,const pfc::list_base_const_t<metadb_handle_ptr> & data,pfc::string_base & out,unsigned & displayflags,const GUID &)
 	{
+		if (n) uBugCheck();
 		unsigned i, j;
 		i = data.get_count();
 		for (j = 0; j < i; j++)
@@ -2047,6 +2057,7 @@ public:
 
 	virtual void context_command(unsigned n,const pfc::list_base_const_t<metadb_handle_ptr> & data,const GUID& caller)
 	{
+		if (n) uBugCheck();
 		unsigned tag_song_ms = ~0, tag_fade_ms = ~0;
 		unsigned i = data.get_count();
 		file_info_impl info;
@@ -2120,8 +2131,10 @@ public:
 	}
 };
 
-static input_singletrack_factory_t<input_psf>                      g_input_psf_factory;
-static preferences_page_factory_t <preferences_page_psf>           g_config_psf_factory;
-static contextmenu_item_factory_t <context_psf>                    g_contextmenu_item_psf_factory;
-static service_factory_single_t   <psf_file_types> g_input_file_type_psf_factory;
-static service_factory_single_t   <version_psf>   g_componentversion_psf_factory;
+static input_singletrack_factory_t<input_psf>               g_input_psf_factory;
+static preferences_page_factory_t <preferences_page_myimpl> g_config_psf_factory;
+static contextmenu_item_factory_t <context_psf>             g_contextmenu_item_psf_factory;
+static service_factory_single_t   <psf_file_types>          g_input_file_type_psf_factory;
+static service_factory_single_t   <version_psf>             g_componentversion_psf_factory;
+
+VALIDATE_COMPONENT_FILENAME("foo_psf.dll");

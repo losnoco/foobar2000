@@ -117,35 +117,8 @@ protected:
 };
 
 
-//! Misc helper, documentme.
-class input_singletrack_file_impl
-{
-public:
-	void open(service_ptr_t<file> p_file,t_input_open_reason p_reason,abort_callback & p_abort);
-
-	void get_info(file_info & p_info,abort_callback & p_abort);
-	t_filestats get_file_stats(abort_callback & p_abort);
-
-	void decode_initialize(unsigned p_flags,abort_callback & p_abort);
-	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort);
-	void decode_seek(double p_seconds,abort_callback & p_abort);
-	bool decode_can_seek();
-	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta);
-	bool decode_get_dynamic_info_track(file_info & p_out, double & p_timestamp_delta);
-	void decode_on_idle(abort_callback & p_abort);
-
-	void retag(file_info & p_info,abort_callback & p_abort);
-	
-	static bool g_is_our_content_type(const char * p_content_type);
-	static bool g_is_our_path(const char * p_path,const char * p_extension);
-
-protected:
-	input_singletrack_file_impl() {}
-	~input_singletrack_file_impl() {}
-};
-
 //! Used internally by standard input_entry implementation; do not use directly. Translates input_decoder / input_info_reader / input_info_writer calls to input_impl calls.
-template<class I, class t_base>
+template<typename I, typename t_base>
 class input_impl_interface_wrapper_t : public t_base
 {
 public:
@@ -182,6 +155,10 @@ public:
 		return m_instance.decode_run(p_chunk,p_abort);
 	}
 
+	bool run_raw(audio_chunk & p_chunk, mem_block_container & p_raw, abort_callback & p_abort) {
+		return m_instance.decode_run_raw(p_chunk, p_raw, p_abort);
+	}
+
 	void seek(double p_seconds,abort_callback & p_abort) {
 		m_instance.decode_seek(p_seconds,p_abort);
 	}
@@ -202,6 +179,18 @@ public:
 		m_instance.decode_on_idle(p_abort);
 	}
 
+	void set_logger(event_logger::ptr ptr) {
+		m_instance.set_logger(ptr);
+	}
+
+	void set_pause(bool paused) {
+		m_instance.set_pause(paused);
+	}
+	bool flush_on_pause() {
+		return m_instance.flush_on_pause();
+	}
+
+
 	// input_info_writer methods
 
 	void set_info(t_uint32 p_subsong,const file_info & p_info,abort_callback & p_abort) {
@@ -217,7 +206,7 @@ private:
 };
 
 //! Helper used by input_singletrack_factory_t, do not use directly. Translates input_impl calls to input_singletrack_impl calls. 
-template<class I>
+template<typename I>
 class input_wrapper_singletrack_t
 {
 public:
@@ -262,6 +251,19 @@ public:
 		m_instance.retag(p_info,p_abort);
 	}
 	
+	bool decode_run_raw(audio_chunk & p_chunk, mem_block_container & p_raw, abort_callback & p_abort) {
+		return m_instance.decode_run_raw(p_chunk, p_raw, p_abort);
+	}
+
+	void set_logger(event_logger::ptr ptr) {m_instance.set_logger(ptr);}
+
+	void set_pause(bool paused) {
+		m_instance.set_pause(paused);
+	}
+	bool flush_on_pause() {
+		return m_instance.flush_on_pause();
+	}
+
 	void retag_commit(abort_callback & p_abort) {}
 
 	static bool g_is_our_content_type(const char * p_content_type) {return I::g_is_our_content_type(p_content_type);}
@@ -273,13 +275,13 @@ private:
 };
 
 //! Helper; standard input_entry implementation. Do not instantiate this directly, use input_factory_t or one of other input_*_factory_t helpers instead.
-template<class I,unsigned t_flags>
+template<typename I,unsigned t_flags, typename t_decoder = input_decoder, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
 class input_entry_impl_t : public input_entry
 {
 private:
 	
-	template<class T>
-	void instantiate_t(service_ptr_t<T> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort)
+	template<typename T, typename out>
+	void instantiate_t(service_ptr_t<out> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort)
 	{
 		service_ptr_t< service_impl_t<input_impl_interface_wrapper_t<I,T> > > temp;
 		temp = new service_impl_t<input_impl_interface_wrapper_t<I,T> >();
@@ -291,15 +293,15 @@ public:
 	bool is_our_path(const char * p_full_path,const char * p_extension) {return I::g_is_our_path(p_full_path,p_extension);}
 	
 	void open_for_decoding(service_ptr_t<input_decoder> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort) {
-		instantiate_t(p_instance,p_filehint,p_path,input_open_decode,p_abort);
+		instantiate_t<t_decoder>(p_instance,p_filehint,p_path,input_open_decode,p_abort);
 	}
 
 	void open_for_info_read(service_ptr_t<input_info_reader> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort) {
-		instantiate_t(p_instance,p_filehint,p_path,input_open_info_read,p_abort);
+		instantiate_t<t_inforeader>(p_instance,p_filehint,p_path,input_open_info_read,p_abort);
 	}
 
 	void open_for_info_write(service_ptr_t<input_info_writer> & p_instance,service_ptr_t<file> p_filehint,const char * p_path,abort_callback & p_abort) {
-		instantiate_t(p_instance,p_filehint,p_path,input_open_info_write,p_abort);
+		instantiate_t<t_infowriter>(p_instance,p_filehint,p_path,input_open_info_write,p_abort);
 	}
 
 	void get_extended_data(service_ptr_t<file> p_filehint,const playable_location & p_location,const GUID & p_guid,mem_block_container & p_out,abort_callback & p_abort) {
@@ -311,17 +313,17 @@ public:
 
 
 //! Stardard input factory. For reference of functions that must be supported by registered class, see input_impl.\n Usage: static input_factory_t<myinputclass> g_myinputclass_factory;\n Note that input classes can't be registered through service_factory_t template directly.
-template<class T>
+template<typename T>
 class input_factory_t : public service_factory_single_t<input_entry_impl_t<T,0> > {};
 
 //! Non-multitrack-enabled input factory (helper) - hides multitrack management functions from input implementation; use this for inputs that handle file types where each physical file can contain only one user-visible playable track. For reference of functions that must be supported by registered class, see input_singletrack_impl.\n Usage: static input_singletrack_factory_t<myinputclass> g_myinputclass_factory;\n Note that input classes can't be registered through service_factory_t template directly.template<class T>
-template<class T>
+template<typename T>
 class input_singletrack_factory_t : public service_factory_single_t<input_entry_impl_t<input_wrapper_singletrack_t<T>,0> > {};
 
-//! Extended version of input_factory_t, with non-default flags. See: input_factory_t, input_entry::get_flags().
-template<class T,unsigned t_flags>
-class input_factory_ex_t : public service_factory_single_t<input_entry_impl_t<T,t_flags> > {};
+//! Extended version of input_factory_t, with non-default flags and supported interfaces. See: input_factory_t, input_entry::get_flags().
+template<typename T,unsigned t_flags = 0, typename t_decoder = input_decoder, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
+class input_factory_ex_t : public service_factory_single_t<input_entry_impl_t<T,t_flags, t_decoder, t_inforeader, t_infowriter> > {};
 
-//! Extended version of input_singletrack_factory_t, with non-default flags. See: input_singletrack_factory_t, input_entry::get_flags().
-template<class T,unsigned t_flags>
-class input_singletrack_factory_ex_t : public service_factory_single_t<input_entry_impl_t<input_wrapper_singletrack_t<T>,t_flags> > {};
+//! Extended version of input_singletrack_factory_t, with non-default flags and supported interfaces. See: input_singletrack_factory_t, input_entry::get_flags().
+template<typename T,unsigned t_flags = 0, typename t_decoder = input_decoder, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
+class input_singletrack_factory_ex_t : public service_factory_single_t<input_entry_impl_t<input_wrapper_singletrack_t<T>,t_flags, t_decoder, t_inforeader, t_infowriter> > {};

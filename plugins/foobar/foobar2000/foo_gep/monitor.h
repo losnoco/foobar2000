@@ -1,10 +1,10 @@
 #ifndef MONITOR_H
 #define MONITOR_H
 
-struct Music_Emu;
+struct gme_t;
 
-void monitor_start( Music_Emu *, const char * );
-void monitor_update( Music_Emu * );
-void monitor_stop( const Music_Emu * );
+void monitor_start( gme_t *, const char * );
+void monitor_update( gme_t * );
+void monitor_stop( const gme_t * );
 
 #endif
