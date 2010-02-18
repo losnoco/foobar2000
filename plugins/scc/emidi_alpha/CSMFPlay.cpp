@@ -99,6 +99,7 @@ void CSMFPlay::Start(bool reset) {
     m_end_flag.push_back(false);
     try {
       m_event.push_back(m_smf.ReadNextEvent(trk));
+	  m_delta[trk] = m_event[trk].m_delta;
     } catch (CSMF_Exception) {
       m_end_flag[trk] = true;
     }
