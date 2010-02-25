@@ -177,6 +177,7 @@ copy ..\..\..\glibconfig.h.win32 ..\..\..\glibconfig.h
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
       <ForcedIncludeFiles>msvc_recommended_pragmas.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Lib>
       <AdditionalDependencies>intl.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
