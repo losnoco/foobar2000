@@ -51,7 +51,6 @@ fluid_audio_driver_t* new_fluid_file_audio_driver(fluid_settings_t* settings,
 						  fluid_synth_t* synth);
 
 int delete_fluid_file_audio_driver(fluid_audio_driver_t* p);
-void fluid_file_audio_driver_settings(fluid_settings_t* settings);
 static int fluid_file_audio_run_s16(void* d, unsigned int msec);
 
 /**************************************************************
@@ -60,19 +59,11 @@ static int fluid_file_audio_run_s16(void* d, unsigned int msec);
  * 
  */
 
-void fluid_file_audio_driver_settings(fluid_settings_t* settings)
-{
-	fluid_settings_register_str(settings, "audio.file.name", "fluidsynth.raw", 0, NULL, NULL);
-}
-
-
 fluid_audio_driver_t*
 new_fluid_file_audio_driver(fluid_settings_t* settings,
 			    fluid_synth_t* synth)
 {
 	fluid_file_audio_driver_t* dev;
-	int err;
-	char* filename;
 	int msec;
 
 	dev = FLUID_NEW(fluid_file_audio_driver_t);
@@ -89,19 +80,13 @@ new_fluid_file_audio_driver(fluid_settings_t* settings,
 	dev->callback = (fluid_audio_func_t) fluid_synth_process;
 	dev->samples = 0;
 
-	if (fluid_settings_getstr(settings, "audio.file.name", &filename) == 0) {
-		FLUID_LOG(FLUID_ERR, "No file name specified");
-		goto error_recovery;
-	}
+	dev->renderer = new_fluid_file_renderer(synth);
 
-	dev->renderer = new_fluid_file_renderer(synth, filename, dev->period_size);
-	if (dev->renderer == NULL) {
+	if (dev->renderer == NULL)
 		goto error_recovery;
-	}
-
 
 	msec = (int) (0.5 + dev->period_size / dev->sample_rate * 1000.0);
-	dev->timer = new_fluid_timer(msec, fluid_file_audio_run_s16, (void*) dev, 1, 0);
+	dev->timer = new_fluid_timer(msec, fluid_file_audio_run_s16, (void*) dev, TRUE, FALSE, TRUE);
 	if (dev->timer == NULL) {
 		FLUID_LOG(FLUID_PANIC, "Couldn't create the audio thread.");
 		goto error_recovery;

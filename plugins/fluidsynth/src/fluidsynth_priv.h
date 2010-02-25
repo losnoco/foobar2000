@@ -113,6 +113,8 @@
 #endif
 
 #if HAVE_WINDOWS_H
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <windows.h>
 #endif
 
@@ -128,7 +130,6 @@
 #define STDIN_FILENO 0
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
-#define WITHOUT_SERVER 1
 
 #endif
 
@@ -153,12 +154,6 @@ typedef float fluid_real_t;
 #else
 typedef double fluid_real_t;
 #endif
-
-
-typedef enum {
-  FLUID_OK = 0,
-  FLUID_FAILED = -1
-} fluid_status;
 
 
 #if defined(WIN32)
@@ -198,7 +193,12 @@ typedef struct _fluid_sample_timer_t fluid_sample_timer_t;
  *                      CONSTANTS
  */
 
-#define FLUID_BUFSIZE                64
+#define FLUID_BUFSIZE                64         /**< FluidSynth internal buffer size (in samples) */
+#define FLUID_MAX_EVENTS_PER_BUFSIZE 1024       /**< Maximum queued MIDI events per #FLUID_BUFSIZE */
+#define FLUID_MAX_RETURN_EVENTS      1024       /**< Maximum queued synthesis thread return events */
+#define FLUID_MAX_EVENT_QUEUES       16         /**< Maximum number of unique threads queuing events */
+#define FLUID_DEFAULT_AUDIO_RT_PRIO  60         /**< Default setting for audio.realtime-prio */
+#define FLUID_DEFAULT_MIDI_RT_PRIO   50         /**< Default setting for midi.realtime-prio */
 
 #ifndef PI
 #define PI                          3.141592654
@@ -225,7 +225,9 @@ typedef FILE*  fluid_file;
 #define FLUID_STRCMP(_s,_t)          strcmp(_s,_t)
 #define FLUID_STRNCMP(_s,_t,_n)      strncmp(_s,_t,_n)
 #define FLUID_STRCPY(_dst,_src)      strcpy(_dst,_src)
+#define FLUID_STRNCPY(_dst,_src,_n)  strncpy(_dst,_src,_n)
 #define FLUID_STRCHR(_s,_c)          strchr(_s,_c)
+#define FLUID_STRRCHR(_s,_c)         strrchr(_s,_c)
 #ifdef strdup
 #define FLUID_STRDUP(s)              strdup(s)
 #else

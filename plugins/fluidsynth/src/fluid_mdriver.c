@@ -67,8 +67,8 @@ void fluid_winmidi_midi_driver_settings(fluid_settings_t* settings);
 /* definitions for the MidiShare driver */
 #if MIDISHARE_SUPPORT
 fluid_midi_driver_t* new_fluid_midishare_midi_driver(fluid_settings_t* settings,
-						   void* event_handler_data,
-						   handle_midi_event_func_t handler);
+                                                     handle_midi_event_func_t handler,
+                                                     void* event_handler_data);
 int delete_fluid_midishare_midi_driver(fluid_midi_driver_t* p);
 #endif
 
@@ -145,6 +145,9 @@ void fluid_midi_driver_settings(fluid_settings_t* settings)
 {
   int i;
 
+  fluid_settings_register_int (settings, "midi.realtime-prio",
+                               FLUID_DEFAULT_MIDI_RT_PRIO, 0, 99, 0, NULL, NULL);
+
   /* Set the default driver */
 #if ALSA_SUPPORT
   fluid_settings_register_str(settings, "midi.driver", "alsa_seq", 0, NULL, NULL);
@@ -190,36 +193,6 @@ void fluid_midi_driver_settings(fluid_settings_t* settings)
   }
 }
 
-
-/**
- * Write a list of midi driver names into a buffer.
- * (A buffer length of 256 characters should be more than enough.)
- * @param buf buffert to write names into
- * @param buflen maximum amount of characters in buf.
- * @param separator separator string, written between names.
- * @since 1.1.0
- */
-void
-fluid_midi_driver_get_names(char* buf, size_t buflen, const char* separator)
-{
-  int i;
-
-  if (buflen <= 0) {
-    return;
-  }
-  buf[0] = '\0';
-  buflen--;
-
-  for (i = 0; fluid_midi_drivers[i].name != NULL; i++) {
-    if (i > 0) {
-      strncat(buf, separator, buflen - strlen(buf));
-    }
-    strncat(buf, fluid_midi_drivers[i].name, buflen - strlen(buf));
-  }
-  buf[buflen] = '\0';
-}
-
-
 /**
  * Create a new MIDI driver instance.
  * @param settings Settings used to configure new MIDI driver.
@@ -230,9 +203,10 @@ fluid_midi_driver_get_names(char* buf, size_t buflen, const char* separator)
  */
 fluid_midi_driver_t* new_fluid_midi_driver(fluid_settings_t* settings, handle_midi_event_func_t handler, void* event_handler_data)
 {
-  int i;
-  char allnames[256];
   fluid_midi_driver_t* driver = NULL;
+  char *allnames;
+  int i;
+
   for (i = 0; fluid_midi_drivers[i].name != NULL; i++) {
     if (fluid_settings_str_equal(settings, "midi.driver", fluid_midi_drivers[i].name)) {
       FLUID_LOG(FLUID_DBG, "Using '%s' midi driver", fluid_midi_drivers[i].name);
@@ -244,8 +218,11 @@ fluid_midi_driver_t* new_fluid_midi_driver(fluid_settings_t* settings, handle_mi
     }
   }
 
-  fluid_midi_driver_get_names(allnames, sizeof(allnames), ", ");
-  FLUID_LOG(FLUID_ERR, "Couldn't find the requested midi driver. Valid drivers are: %s.", allnames);
+  allnames = fluid_settings_option_concat (settings, "midi.driver", NULL);
+  FLUID_LOG(FLUID_ERR, "Couldn't find the requested midi driver. Valid drivers are: %s.",
+            allnames ? allnames : "ERROR");
+  if (allnames) FLUID_FREE (allnames);
+
   return NULL;
 }
 

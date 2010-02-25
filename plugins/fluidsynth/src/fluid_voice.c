@@ -48,11 +48,7 @@
 static int fluid_voice_calculate_runtime_synthesis_parameters(fluid_voice_t* voice);
 static int calculate_hold_decay_buffers(fluid_voice_t* voice, int gen_base,
                                         int gen_key2base, int is_decay);
-static inline void fluid_voice_effects (fluid_voice_t *voice, int count,
-				        fluid_real_t* dsp_left_buf,
-				        fluid_real_t* dsp_right_buf,
-				        fluid_real_t* dsp_reverb_buf,
-				        fluid_real_t* dsp_chorus_buf);
+static inline void fluid_voice_filter (fluid_voice_t *voice);
 static fluid_real_t
 fluid_voice_get_lower_boundary_for_attenuation(fluid_voice_t* voice);
 static void fluid_voice_check_sample_sanity(fluid_voice_t* voice);
@@ -146,6 +142,7 @@ fluid_voice_init(fluid_voice_t* voice, fluid_sample_t* sample,
   voice->sample = sample;
   voice->start_time = start_time;
   voice->ticks = 0;
+  voice->noteoff_ticks = 0;
   voice->debug = 0;
   voice->has_looped = 0; /* Will be set during voice_write when the 2nd loop point is reached */
   voice->last_fres = -1; /* The filter coefficients have to be calculated later in the DSP loop. */
@@ -206,19 +203,40 @@ fluid_voice_init(fluid_voice_t* voice, fluid_sample_t* sample,
   return FLUID_OK;
 }
 
-void fluid_voice_gen_set(fluid_voice_t* voice, int i, float val)
+/**
+ * Set the value of a generator.
+ * @param voice Voice instance
+ * @param i Generator ID (#fluid_gen_type)
+ * @param val Generator value
+ */
+void
+fluid_voice_gen_set(fluid_voice_t* voice, int i, float val)
 {
   voice->gen[i].val = val;
   voice->gen[i].flags = GEN_SET;
 }
 
-void fluid_voice_gen_incr(fluid_voice_t* voice, int i, float val)
+/**
+ * Offset the value of a generator.
+ * @param voice Voice instance
+ * @param i Generator ID (#fluid_gen_type)
+ * @param val Value to add to the existing value
+ */
+void
+fluid_voice_gen_incr(fluid_voice_t* voice, int i, float val)
 {
   voice->gen[i].val += val;
   voice->gen[i].flags = GEN_SET;
 }
 
-float fluid_voice_gen_get(fluid_voice_t* voice, int gen)
+/**
+ * Get the value of a generator.
+ * @param voice Voice instance
+ * @param gen Generator ID (#fluid_gen_type)
+ * @return Current generator value
+ */
+float
+fluid_voice_gen_get(fluid_voice_t* voice, int gen)
 {
   return voice->gen[gen].val;
 }
@@ -236,44 +254,40 @@ fluid_real_t fluid_voice_gen_value(fluid_voice_t* voice, int num)
 }
 
 
-/*
- * fluid_voice_write
+/**
+ * Synthesize a voice to a buffer.
  *
- * This is where it all happens. This function is called by the
- * synthesizer to generate the sound samples. The synthesizer passes
- * four audio buffers: left, right, reverb out, and chorus out.
+ * @param voice Voice to synthesize
+ * @param dsp_buf Audio buffer to synthesize to (#FLUID_BUFSIZE in length)
+ * @return Count of samples written to dsp_buf (can be 0)
  *
- * The biggest part of this function sets the correct values for all
- * the dsp parameters (all the control data boil down to only a few
- * dsp parameters). The dsp routine is #included in several places (fluid_dsp_core.c).
+ * Panning, reverb and chorus are processed separately. The dsp interpolation
+ * routine is in (fluid_dsp_float.c).
  */
 int
-fluid_voice_write(fluid_voice_t* voice,
-		 fluid_real_t* dsp_left_buf, fluid_real_t* dsp_right_buf,
-		 fluid_real_t* dsp_reverb_buf, fluid_real_t* dsp_chorus_buf)
+fluid_voice_write (fluid_voice_t* voice, fluid_real_t *dsp_buf)
 {
-  unsigned int i;
-  fluid_real_t incr;
   fluid_real_t fres;
   fluid_real_t target_amp;	/* target amplitude */
-  int count;
-
-  int dsp_interp_method = voice->interp_method;
-
-  fluid_real_t dsp_buf[FLUID_BUFSIZE];
   fluid_env_data_t* env_data;
   fluid_real_t x;
+  int count = 0;
 
-
-  /* make sure we're playing and that we have sample data */
-  if (!_PLAYING(voice)) return FLUID_OK;
+  /* Other routines (such as fluid_voice_effects) use the last dsp_buf assigned */
+  voice->dsp_buf = dsp_buf;
+  voice->dsp_buf_count = 0;
 
   /******************* sample **********************/
 
   if (voice->sample == NULL)
   {
     fluid_voice_off(voice);
-    return FLUID_OK;
+    return 0;
+  }
+
+  if (voice->noteoff_ticks != 0 && voice->ticks >= voice->noteoff_ticks) 
+  {
+    fluid_voice_noteoff(voice);
   }
 
   fluid_check_fpe ("voice_write startup");
@@ -319,7 +333,7 @@ fluid_voice_write(fluid_voice_t* voice,
   {
     fluid_profile (FLUID_PROF_VOICE_RELEASE, voice->ref);
     fluid_voice_off (voice);
-    return FLUID_OK;
+    return 0;
   }
 
   fluid_check_fpe ("voice_write vol env");
@@ -593,8 +607,6 @@ fluid_voice_write(fluid_voice_t* voice,
    * Depending on the position in the loop and the loop size, this
    * may require several runs. */
 
-  voice->dsp_buf = dsp_buf;
-
   switch (voice->interp_method)
   {
     case FLUID_INTERP_NONE:
@@ -614,9 +626,10 @@ fluid_voice_write(fluid_voice_t* voice,
 
   fluid_check_fpe ("voice_write interpolation");
 
-  if (count > 0)
-    fluid_voice_effects (voice, count, dsp_left_buf, dsp_right_buf,
-			 dsp_reverb_buf, dsp_chorus_buf);
+  voice->dsp_buf_count = count;
+
+  /* Apply filter */
+  if (count > 0) fluid_voice_filter (voice);
 
   /* turn off voice if short count (sample ended and not looping) */
   if (count < FLUID_BUFSIZE)
@@ -628,27 +641,19 @@ fluid_voice_write(fluid_voice_t* voice,
  post_process:
   voice->ticks += FLUID_BUFSIZE;
   fluid_check_fpe ("voice_write postprocess");
-  return FLUID_OK;
+  return count;
 }
 
 
-/* Purpose:
- *
- * - filters (applies a lowpass filter with variable cutoff frequency and quality factor)
- * - mixes the processed sample to left and right output using the pan setting
- * - sends the processed sample to chorus and reverb
- *
+/**
+ * Applies a lowpass filter with variable cutoff frequency and quality factor.
+ * @param voice Voice to apply filter to
+ * @param count Count of samples in voice->dsp_buf
+ */
+/*
  * Variable description:
- * - dsp_data: Pointer to the original waveform data
- * - dsp_left_buf: The generated signal goes here, left channel
- * - dsp_right_buf: right channel
- * - dsp_reverb_buf: Send to reverb unit
- * - dsp_chorus_buf: Send to chorus unit
- * - dsp_a1: Coefficient for the filter
- * - dsp_a2: same
- * - dsp_b0: same
- * - dsp_b1: same
- * - dsp_b2: same
+ * - dsp_buf: Pointer to the synthesized audio data
+ * - dsp_a1, dsp_a2, dsp_b0, dsp_b1, dsp_b2: Filter coefficients
  * - voice holds the voice structure
  *
  * A couple of variables are used internally, their results are discarded:
@@ -660,12 +665,9 @@ fluid_voice_write(fluid_voice_t* voice,
  * - dsp_centernode: delay line for the IIR filter
  * - dsp_hist1: same
  * - dsp_hist2: same
- *
  */
 static inline void
-fluid_voice_effects (fluid_voice_t *voice, int count,
-		     fluid_real_t* dsp_left_buf, fluid_real_t* dsp_right_buf,
-		     fluid_real_t* dsp_reverb_buf, fluid_real_t* dsp_chorus_buf)
+fluid_voice_filter (fluid_voice_t *voice)
 {
   /* IIR filter sample history */
   fluid_real_t dsp_hist1 = voice->hist1;
@@ -685,8 +687,8 @@ fluid_voice_effects (fluid_voice_t *voice, int count,
   fluid_real_t *dsp_buf = voice->dsp_buf;
 
   fluid_real_t dsp_centernode;
+  int count = voice->dsp_buf_count;
   int dsp_i;
-  float v;
 
   /* filter (implement the voice filter according to SoundFont standard) */
 
@@ -729,50 +731,6 @@ fluid_voice_effects (fluid_voice_t *voice, int count,
     }
   }
 
-  /* pan (Copy the signal to the left and right output buffer) The voice
-  * panning generator has a range of -500 .. 500.  If it is centered,
-  * it's close to 0.  voice->amp_left and voice->amp_right are then the
-  * same, and we can save one multiplication per voice and sample.
-  */
-  if ((-0.5 < voice->pan) && (voice->pan < 0.5))
-  {
-    /* The voice is centered. Use voice->amp_left twice. */
-    for (dsp_i = 0; dsp_i < count; dsp_i++)
-    {
-      v = voice->amp_left * dsp_buf[dsp_i];
-      dsp_left_buf[dsp_i] += v;
-      dsp_right_buf[dsp_i] += v;
-    }
-  }
-  else	/* The voice is not centered. Stereo samples have one side zero. */
-  {
-    if (voice->amp_left != 0.0)
-    {
-      for (dsp_i = 0; dsp_i < count; dsp_i++)
-	dsp_left_buf[dsp_i] += voice->amp_left * dsp_buf[dsp_i];
-    }
-
-    if (voice->amp_right != 0.0)
-    {
-      for (dsp_i = 0; dsp_i < count; dsp_i++)
-	dsp_right_buf[dsp_i] += voice->amp_right * dsp_buf[dsp_i];
-    }
-  }
-
-  /* reverb send. Buffer may be NULL. */
-  if ((dsp_reverb_buf != NULL) && (voice->amp_reverb != 0.0))
-  {
-    for (dsp_i = 0; dsp_i < count; dsp_i++)
-      dsp_reverb_buf[dsp_i] += voice->amp_reverb * dsp_buf[dsp_i];
-  }
-
-  /* chorus send. Buffer may be NULL. */
-  if ((dsp_chorus_buf != NULL) && (voice->amp_chorus != 0))
-  {
-    for (dsp_i = 0; dsp_i < count; dsp_i++)
-      dsp_chorus_buf[dsp_i] += voice->amp_chorus * dsp_buf[dsp_i];
-  }
-
   voice->hist1 = dsp_hist1;
   voice->hist2 = dsp_hist2;
   voice->a1 = dsp_a1;
@@ -781,16 +739,76 @@ fluid_voice_effects (fluid_voice_t *voice, int count,
   voice->b1 = dsp_b1;
   voice->filter_coeff_incr_count = dsp_filter_coeff_incr_count;
 
-  fluid_check_fpe ("voice_effects");
+  fluid_check_fpe ("voice_filter");
 }
 
-/*
- * fluid_voice_get_channel
+/**
+ * Mix voice data to left/right (panning), reverb and chorus buffers.
+ * @param voice Voice to mix
+ * @param left_buf Left audio buffer
+ * @param right_buf Right audio buffer
+ * @param reverb_buf Reverb buffer
+ * @param chorus_buf Chorus buffer
+ *
+ * NOTE: Uses voice->dsp_buf and voice->dsp_buf_count which were assigned
+ * by fluid_voice_write().  This is therefore meant to be called only after
+ * that function.
  */
-fluid_channel_t*
-fluid_voice_get_channel(fluid_voice_t* voice)
+void
+fluid_voice_mix (fluid_voice_t *voice,
+		 fluid_real_t* left_buf, fluid_real_t* right_buf,
+		 fluid_real_t* reverb_buf, fluid_real_t* chorus_buf)
 {
-  return voice->channel;
+  fluid_real_t *dsp_buf = voice->dsp_buf;
+  int count = voice->dsp_buf_count;
+  int dsp_i;
+  float v;
+
+  /* pan (Copy the signal to the left and right output buffer) The voice
+   * panning generator has a range of -500 .. 500.  If it is centered,
+   * it's close to 0.  voice->amp_left and voice->amp_right are then the
+   * same, and we can save one multiplication per voice and sample.
+   */
+  if ((-0.5 < voice->pan) && (voice->pan < 0.5))
+  {
+    /* The voice is centered. Use voice->amp_left twice. */
+    for (dsp_i = 0; dsp_i < count; dsp_i++)
+    {
+      v = voice->amp_left * dsp_buf[dsp_i];
+      left_buf[dsp_i] += v;
+      right_buf[dsp_i] += v;
+    }
+  }
+  else	/* The voice is not centered. Stereo samples have one side zero. */
+  {
+    if (voice->amp_left != 0.0)
+    {
+      for (dsp_i = 0; dsp_i < count; dsp_i++)
+	left_buf[dsp_i] += voice->amp_left * dsp_buf[dsp_i];
+    }
+
+    if (voice->amp_right != 0.0)
+    {
+      for (dsp_i = 0; dsp_i < count; dsp_i++)
+	right_buf[dsp_i] += voice->amp_right * dsp_buf[dsp_i];
+    }
+  }
+
+  /* reverb send. Buffer may be NULL. */
+  if ((reverb_buf != NULL) && (voice->amp_reverb != 0.0))
+  {
+    for (dsp_i = 0; dsp_i < count; dsp_i++)
+      reverb_buf[dsp_i] += voice->amp_reverb * dsp_buf[dsp_i];
+  }
+
+  /* chorus send. Buffer may be NULL. */
+  if ((chorus_buf != NULL) && (voice->amp_chorus != 0))
+  {
+    for (dsp_i = 0; dsp_i < count; dsp_i++)
+      chorus_buf[dsp_i] += voice->amp_chorus * dsp_buf[dsp_i];
+  }
+
+  fluid_check_fpe ("voice_mix");
 }
 
 /*
@@ -811,11 +829,15 @@ void fluid_voice_start(fluid_voice_t* voice)
   voice->ref = fluid_profile_ref();
 
   voice->status = FLUID_VOICE_ON;
+
+  /* Increment voice count atomically, for non-synth thread read access */
+  fluid_atomic_int_add (&voice->channel->synth->active_voice_count, 1);
 }
 
-static void 
+void 
 fluid_voice_calculate_gen_pitch(fluid_voice_t* voice)
 {
+  fluid_tuning_t* tuning;
   fluid_real_t x;
 
   /* The GEN_PITCH is a hack to fit the pitch bend controller into the
@@ -826,17 +848,14 @@ fluid_voice_calculate_gen_pitch(fluid_voice_t* voice)
    * one key remains fixed. Here C3 (MIDI number 60) is used.
    */
   if (fluid_channel_has_tuning(voice->channel)) {
-    /* pitch(scalekey) + scale * (pitch(key) - pitch(scalekey)) */
-    #define __pitch(_k) fluid_tuning_get_pitch(tuning, _k)
-    fluid_tuning_t* tuning = fluid_channel_get_tuning(voice->channel);
-    x = __pitch((int) (voice->root_pitch / 100.0f));
-    voice->gen[GEN_PITCH].val = (x + (voice->gen[GEN_SCALETUNE].val / 100.0f *
-					   (__pitch(voice->key) - x)));
+    tuning = fluid_channel_get_tuning (voice->channel);
+    x = fluid_tuning_get_pitch (tuning, (int)(voice->root_pitch / 100.0f));
+    voice->gen[GEN_PITCH].val = voice->gen[GEN_SCALETUNE].val / 100.0f *
+      (fluid_tuning_get_pitch (tuning, voice->key) - x) + x;
   } else {
-    voice->gen[GEN_PITCH].val = (voice->gen[GEN_SCALETUNE].val * (voice->key - voice->root_pitch / 100.0f)
-				 + voice->root_pitch);
+    voice->gen[GEN_PITCH].val = voice->gen[GEN_SCALETUNE].val
+      * (voice->key - voice->root_pitch / 100.0f) + voice->root_pitch;
   }
-
 }
 
 /*
@@ -852,8 +871,6 @@ fluid_voice_calculate_gen_pitch(fluid_voice_t* voice)
 static int
 fluid_voice_calculate_runtime_synthesis_parameters(fluid_voice_t* voice)
 {
-  fluid_real_t x;
-  fluid_real_t q_db;
   int i;
 
   int list_of_generators_to_initialize[35] = {
@@ -1025,10 +1042,6 @@ calculate_hold_decay_buffers(fluid_voice_t* voice, int gen_base,
 }
 
 /*
- * fluid_voice_update_param
- *
- * Purpose:
- *
  * The value of a generator (gen) has changed.  (The different
  * generators are listed in fluidsynth.h, or in SF2.01 page 48-49)
  * Now the dependent 'voice' parameters are calculated.
@@ -1042,6 +1055,14 @@ calculate_hold_decay_buffers(fluid_voice_t* voice, int gen_base,
  * offset caused by modulators .mod, and an offset caused by the
  * NRPN system. _GEN(voice, generator_enumerator) returns the sum
  * of all three.
+ */
+/**
+ * Update all the synthesis parameters, which depend on generator \a gen.
+ * @param voice Voice instance
+ * @param gen Generator id (#fluid_gen_type)
+ *
+ * This is only necessary after changing a generator of an already operating voice.
+ * Most applications will not need this function.
  */
 void
 fluid_voice_update_param(fluid_voice_t* voice, int gen)
@@ -1451,7 +1472,10 @@ fluid_voice_update_param(fluid_voice_t* voice, int gen)
 }
 
 /**
- * fluid_voice_modulate
+ * Recalculate voice parameters for a given control.
+ * @param voice the synthesis voice
+ * @param cc flag to distinguish between a continous control and a channel control (pitch bend, ...)
+ * @param ctrl the control number
  *
  * In this implementation, I want to make sure that all controllers
  * are event based: the parameter values of the DSP algorithm should
@@ -1471,12 +1495,7 @@ fluid_voice_update_param(fluid_voice_t* voice, int gen)
  *
  * - For every changed generator, convert its value to the correct
  * unit of the corresponding DSP parameter
- *
- * @fn int fluid_voice_modulate(fluid_voice_t* voice, int cc, int ctrl, int val)
- * @param voice the synthesis voice
- * @param cc flag to distinguish between a continous control and a channel control (pitch bend, ...)
- * @param ctrl the control number
- * */
+ */
 int fluid_voice_modulate(fluid_voice_t* voice, int cc, int ctrl)
 {
   int i, k;
@@ -1517,8 +1536,6 @@ int fluid_voice_modulate(fluid_voice_t* voice, int cc, int ctrl)
 }
 
 /**
- * fluid_voice_modulate_all
- *
  * Update all the modulators. This function is called after a
  * ALL_CTRL_OFF MIDI message has been received (CC 121).
  *
@@ -1568,7 +1585,18 @@ int fluid_voice_modulate_all(fluid_voice_t* voice)
 int
 fluid_voice_noteoff(fluid_voice_t* voice)
 {
+  unsigned int at_tick;
+
   fluid_profile(FLUID_PROF_VOICE_NOTE, voice->ref);
+
+  at_tick = fluid_channel_get_min_note_length_ticks (voice->channel);
+
+  if (at_tick > voice->ticks) {
+    /* Delay noteoff */
+    voice->noteoff_ticks = at_tick;
+    return FLUID_OK;
+  }
+  voice->noteoff_ticks = 0;
 
   if (voice->channel && fluid_channel_sustained(voice->channel)) {
     voice->status = FLUID_VOICE_SUSTAINED;
@@ -1665,19 +1693,21 @@ fluid_voice_off(fluid_voice_t* voice)
     voice->sample = NULL;
   }
 
+  /* Decrement voice count atomically, for non-synth thread read access */
+  fluid_atomic_int_add (&voice->channel->synth->active_voice_count, -1);
+
   return FLUID_OK;
 }
 
-/*
- * fluid_voice_add_mod
- *
- * Adds a modulator to the voice.  "mode" indicates, what to do, if
- * an identical modulator exists already.
- *
- * mode == FLUID_VOICE_ADD: Identical modulators on preset level are added
- * mode == FLUID_VOICE_OVERWRITE: Identical modulators on instrument level are overwritten
- * mode == FLUID_VOICE_DEFAULT: This is a default modulator, there can be no identical modulator.
- *                             Don't check.
+/**
+ * Adds a modulator to the voice.
+ * @param voice Voice instance
+ * @param mod Modulator info (copied)
+ * @param mode Determines how to handle an existing identical modulator
+ *   #FLUID_VOICE_ADD to add (offset) the modulator amounts,
+ *   #FLUID_VOICE_OVERWRITE to replace the modulator,
+ *   #FLUID_VOICE_DEFAULT when adding a default modulator - no duplicate should
+ *   exist so don't check.
  */
 void
 fluid_voice_add_mod(fluid_voice_t* voice, fluid_mod_t* mod, int mode)
@@ -1733,11 +1763,32 @@ fluid_voice_add_mod(fluid_voice_t* voice, fluid_mod_t* mod, int mode)
   }
 }
 
+/**
+ * Get the unique ID of the noteon-event.
+ * @param voice Voice instance
+ * @return Note on unique ID
+ *
+ * A SoundFont loader may store the voice processes it has created for
+ * real-time control during the operation of a voice (for example: parameter
+ * changes in SoundFont editor). The synth uses a pool of voices, which are
+ * 'recycled' and never deallocated.
+ *
+ * Before modifying an existing voice, check
+ * - that its state is still 'playing'
+ * - that the ID is still the same
+ *
+ * Otherwise the voice has finished playing.
+ */
 unsigned int fluid_voice_get_id(fluid_voice_t* voice)
 {
   return voice->id;
 }
 
+/**
+ * Check if a voice is still playing.
+ * @param voice Voice instance
+ * @return TRUE if playing, FALSE otherwise
+ */
 int fluid_voice_is_playing(fluid_voice_t* voice)
 {
   return _PLAYING(voice);
@@ -1980,7 +2031,19 @@ int fluid_voice_set_gain(fluid_voice_t* voice, fluid_real_t gain)
  * - Calculate, what factor will make the loop inaudible
  * - Store in sample
  */
-int fluid_voice_optimize_sample(fluid_sample_t* s)
+/**
+ * Calculate the peak volume of a sample for voice off optimization.
+ * @param s Sample to optimize
+ * @return #FLUID_OK on success, #FLUID_FAILED otherwise
+ *
+ * If the peak volume during the loop is known, then the voice can
+ * be released earlier during the release phase. Otherwise, the
+ * voice will operate (inaudibly), until the envelope is at the
+ * nominal turnoff point.  So it's a good idea to call
+ * fluid_voice_optimize_sample() on each sample once.
+ */
+int
+fluid_voice_optimize_sample(fluid_sample_t* s)
 {
   signed short peak_max = 0;
   signed short peak_min = 0;

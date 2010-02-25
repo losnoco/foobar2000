@@ -112,12 +112,10 @@ int delete_fluid_dart_audio_driver(fluid_audio_driver_t* p);
 void fluid_dart_audio_driver_settings(fluid_settings_t* settings);
 #endif
 
-#define AUFILE_SUPPORT 1
 #if AUFILE_SUPPORT
 fluid_audio_driver_t* new_fluid_file_audio_driver(fluid_settings_t* settings,
 						  fluid_synth_t* synth);
 int delete_fluid_file_audio_driver(fluid_audio_driver_t* p);
-void fluid_file_audio_driver_settings(fluid_settings_t* settings);
 #endif
 
 /* Available audio drivers, listed in order of preference */
@@ -190,7 +188,7 @@ fluid_audriver_definition_t fluid_audio_drivers[] = {
     new_fluid_file_audio_driver,
     NULL,
     delete_fluid_file_audio_driver,
-    fluid_file_audio_driver_settings },
+    NULL },
 #endif
   { NULL, NULL, NULL, NULL, NULL }
 };
@@ -220,6 +218,9 @@ void fluid_audio_driver_settings(fluid_settings_t* settings)
   fluid_settings_register_int(settings, "audio.period-size", 64, 64, 8192, 0, NULL, NULL);
   fluid_settings_register_int(settings, "audio.periods", 16, 2, 64, 0, NULL, NULL);
 #endif
+
+  fluid_settings_register_int (settings, "audio.realtime-prio",
+                               FLUID_DEFAULT_AUDIO_RT_PRIO, 0, 99, 0, NULL, NULL);
 
   /* Set the default driver */
 #if JACK_SUPPORT
@@ -286,35 +287,6 @@ void fluid_audio_driver_settings(fluid_settings_t* settings)
 }
 
 /**
- * Write a list of audio driver names into a buffer.
- * (A buffer length of 256 characters should be more than enough.)
- * @param buf buffert to write names into
- * @param buflen maximum amount of characters in buf.
- * @param separator separator string, written between names.
- * @since 1.1.0
- */
-void
-fluid_audio_driver_get_names(char* buf, size_t buflen, const char* separator)
-{
-  int i;
-
-  if (buflen <= 0) {
-    return;
-  }
-  buf[0] = '\0';
-  buflen--;
-
-  for (i = 0; fluid_audio_drivers[i].name != NULL; i++) {
-    if (i > 0) {
-      strncat(buf, separator, buflen - strlen(buf));
-    }
-    strncat(buf, fluid_audio_drivers[i].name, buflen - strlen(buf));
-  }
-  buf[buflen] = '\0';
-}
-
-
-/**
  * Create a new audio driver.
  * @param settings Configuration settings used to select and create the audio
  *   driver.
@@ -330,9 +302,7 @@ new_fluid_audio_driver(fluid_settings_t* settings, fluid_synth_t* synth)
   int i;
   fluid_audio_driver_t* driver = NULL;
   char* name;
-  char allnames[256];
-
-  fluid_settings_getstr(settings, "audio.driver", &name);
+  char *allnames;
 
   for (i = 0; fluid_audio_drivers[i].name != NULL; i++) {
     if (fluid_settings_str_equal(settings, "audio.driver", fluid_audio_drivers[i].name)) {
@@ -345,8 +315,12 @@ new_fluid_audio_driver(fluid_settings_t* settings, fluid_synth_t* synth)
     }
   }
 
-  fluid_audio_driver_get_names(allnames, sizeof(allnames), ", ");
-  FLUID_LOG(FLUID_ERR, "Couldn't find the requested audio driver %s. Valid drivers are: %s.", name, allnames);
+  allnames = fluid_settings_option_concat (settings, "audio.driver", NULL);
+  fluid_settings_dupstr (settings, "audio.driver", &name);       /* ++ alloc name */
+  FLUID_LOG(FLUID_ERR, "Couldn't find the requested audio driver %s. Valid drivers are: %s.",
+            name ? name : "NULL", allnames ? allnames : "ERROR");
+  if (name) FLUID_FREE (name);
+  if (allnames) FLUID_FREE (allnames);
   return NULL;
 }
 
@@ -361,6 +335,7 @@ new_fluid_audio_driver(fluid_settings_t* settings, fluid_synth_t* synth)
  * Like new_fluid_audio_driver() but allows for custom audio processing before
  * audio is sent to audio driver.  It is the responsibility of the callback
  * 'func' to render the audio into the buffers.
+ *
  * NOTE: Not as efficient as new_fluid_audio_driver().
  */
 fluid_audio_driver_t*
@@ -369,8 +344,6 @@ new_fluid_audio_driver2(fluid_settings_t* settings, fluid_audio_func_t func, voi
   int i;
   fluid_audio_driver_t* driver = NULL;
   char* name;
-
-  fluid_settings_getstr(settings, "audio.driver", &name);
 
   for (i = 0; fluid_audio_drivers[i].name != NULL; i++) {
     if (fluid_settings_str_equal(settings, "audio.driver", fluid_audio_drivers[i].name) &&
@@ -384,7 +357,10 @@ new_fluid_audio_driver2(fluid_settings_t* settings, fluid_audio_func_t func, voi
     }
   }
 
-  FLUID_LOG(FLUID_ERR, "Couldn't find the requested audio driver: %s", name);
+  fluid_settings_dupstr(settings, "audio.driver", &name);       /* ++ alloc name */
+  FLUID_LOG(FLUID_ERR, "Couldn't find the requested audio driver: %s",
+            name ? name : "NULL");
+  if (name) FLUID_FREE (name);
   return NULL;
 }
 

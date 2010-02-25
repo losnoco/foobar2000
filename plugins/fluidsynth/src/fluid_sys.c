@@ -36,6 +36,30 @@
 #include <readline/history.h>
 #endif
 
+/* WIN32 HACK - Flag used to differentiate between a file descriptor and a socket.
+ * Should work, so long as no SOCKET or file descriptor ends up with this bit set. - JG */
+#define WIN32_SOCKET_FLAG       0x40000000
+
+/* SCHED_FIFO priority for high priority timer threads */
+#define FLUID_SYS_TIMER_HIGH_PRIO_LEVEL         10
+
+
+typedef struct
+{
+  fluid_thread_func_t func;
+  void *data;
+  int prio_level;
+} fluid_thread_info_t;
+
+struct _fluid_timer_t
+{
+  long msec;
+  fluid_timer_callback_t callback;
+  void *data;
+  fluid_thread_t *thread;
+  int cont;
+  int auto_destroy;
+};
 
 struct _fluid_server_socket_t
 {
@@ -193,10 +217,10 @@ fluid_log_config(void)
  * @param level Log level (#fluid_log_level).
  * @param fmt Printf style format string for log message
  * @param ... Arguments for printf 'fmt' message string
- * @return Always returns -1
+ * @return Always returns #FLUID_FAILED
  */
 int
-fluid_log(int level, char* fmt, ...)
+fluid_log(int level, const char* fmt, ...)
 {
   fluid_log_function_t fun = NULL;
 
@@ -293,13 +317,16 @@ fluid_error()
   return fluid_errbuf;
 }
 
-
-/*
+/**
+ * Check if a file is a MIDI file.
+ * @param filename Path to the file to check
+ * @return TRUE if it could be a MIDI file, FALSE otherwise
  *
- *  fluid_is_midifile
+ * The current implementation only checks for the "MThd" header in the file.
+ * It is useful only to distinguish between SoundFont and MIDI files.
  */
 int
-fluid_is_midifile(char* filename)
+fluid_is_midifile(const char *filename)
 {
   FILE* fp = fopen(filename, "rb");
   char id[4];
@@ -316,12 +343,16 @@ fluid_is_midifile(char* filename)
   return strncmp(id, "MThd", 4) == 0;
 }
 
-/*
- *  fluid_is_soundfont
+/**
+ * Check if a file is a SoundFont file.
+ * @param filename Path to the file to check
+ * @return TRUE if it could be a SoundFont, FALSE otherwise
  *
+ * The current implementation only checks for the "RIFF" header in the file.
+ * It is useful only to distinguish between SoundFont and MIDI files.
  */
 int
-fluid_is_soundfont(char* filename)
+fluid_is_soundfont(const char *filename)
 {
   FILE* fp = fopen(filename, "rb");
   char id[4];
@@ -366,400 +397,40 @@ fluid_utime (void)
 }
 
 
-#if defined(WIN32)
-
-/*=============================================================*/
-/*                                                             */
-/*                           Win32                             */
-/*                                                             */
-/*=============================================================*/
-
-/***************************************************************
- *
- *               Timer
- *
- */
-
-struct _fluid_timer_t
-{
-  long msec;
-  fluid_timer_callback_t callback;
-  void* data;
-  HANDLE thread;
-  DWORD thread_id;
-  int cont;
-  int auto_destroy;
-};
-
-static int fluid_timer_count = 0;
-DWORD WINAPI fluid_timer_run(LPVOID data);
-
-fluid_timer_t*
-new_fluid_timer(int msec, fluid_timer_callback_t callback, void* data,
-	       int new_thread, int auto_destroy)
-{
-  fluid_timer_t* timer = FLUID_NEW(fluid_timer_t);
-  if (timer == NULL) {
-    FLUID_LOG(FLUID_ERR, "Out of memory");
-    return NULL;
-  }
-
-  timer->cont = 1;
-  timer->msec = msec;
-  timer->callback = callback;
-  timer->data = data;
-  timer->thread = 0;
-  timer->auto_destroy = auto_destroy;
-
-  if (new_thread) {
-    timer->thread = CreateThread(NULL, 0, fluid_timer_run, (LPVOID) timer, 0, &timer->thread_id);
-    if (timer->thread == NULL) {
-      FLUID_LOG(FLUID_ERR, "Couldn't create timer thread");
-      FLUID_FREE(timer);
-      return NULL;
-    }
-    SetThreadPriority(timer->thread, THREAD_PRIORITY_TIME_CRITICAL);
-  } else {
-    fluid_timer_run((LPVOID) timer);
-  }
-  return timer;
-}
-
-DWORD WINAPI
-fluid_timer_run(LPVOID data)
-{
-  int count = 0;
-  int cont = 1;
-  long start;
-  long delay;
-  fluid_timer_t* timer;
-  timer = (fluid_timer_t*) data;
-
-  if ((timer == NULL) || (timer->callback == NULL)) {
-    return 0;
-  }
-
-  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
-
-  /* keep track of the start time for absolute positioning */
-  start = fluid_curtime();
-
-  while (cont) {
-
-    /* do whatever we have to do */
-    cont = (*timer->callback)(timer->data, fluid_curtime() - start);
-
-    count++;
-
-    /* to avoid incremental time errors, I calculate the delay between
-       two callbacks bringing in the "absolute" time (count *
-       timer->msec) */
-    delay = (count * timer->msec) - (fluid_curtime() - start);
-    if (delay > 0) {
-      Sleep(delay);
-    }
-
-    cont &= timer->cont;
-  }
-
-  FLUID_LOG(FLUID_DBG, "Timer thread finished");
-
-  if (timer->auto_destroy) {
-    FLUID_FREE(timer);
-  }
-
-  ExitThread(0);
-  return 0;
-}
-
-int
-delete_fluid_timer(fluid_timer_t* timer)
-{
-  timer->cont = 0;
-  fluid_timer_join(timer);
-  FLUID_FREE(timer);
-  return FLUID_OK;
-}
-
-int
-fluid_timer_join(fluid_timer_t* timer)
-{
-  DWORD wait_result;
-  if (timer->thread == 0) {
-    return FLUID_OK;
-  }
-  wait_result = WaitForSingleObject(timer->thread, INFINITE);
-  return (wait_result == WAIT_OBJECT_0)? FLUID_OK : FLUID_FAILED;
-}
-
-
-#elif defined(__OS2__)
-/*=============================================================*/
-/*                                                             */
-/*                           OS2                               */
-/*                                                             */
-/*=============================================================*/
-
-/***************************************************************
- *
- *               Timer
- *
- */
-
-struct _fluid_timer_t
-{
-  long msec;
-  fluid_timer_callback_t callback;
-  void* data;
-  int thread_id;
-  int cont;
-  int auto_destroy;
-};
-
-static int fluid_timer_count = 0;
-void fluid_timer_run(void *data);
-
-fluid_timer_t*
-new_fluid_timer(int msec, fluid_timer_callback_t callback, void* data,
-           int new_thread, int auto_destroy)
-{
-  fluid_timer_t* timer = FLUID_NEW(fluid_timer_t);
-  if (timer == NULL) {
-    FLUID_LOG(FLUID_ERR, "Out of memory");
-    return NULL;
-  }
-
-  timer->cont = 1;
-  timer->msec = msec;
-  timer->callback = callback;
-  timer->data = data;
-  timer->thread_id =-1;
-  timer->auto_destroy = auto_destroy;
-
-  if (new_thread) {
-    timer->thread_id = _beginthread( fluid_timer_run, NULL, 256 * 1024, ( void * )timer );
-    if (timer->thread_id == -1) {
-      FLUID_LOG(FLUID_ERR, "Couldn't create timer thread");
-      FLUID_FREE(timer);
-      return NULL;
-    }
-    DosSetPriority(PRTYS_THREAD, PRTYC_TIMECRITICAL, PRTYD_MAXIMUM, timer->thread_id);
-  } else {
-    fluid_timer_run(( void * )timer);
-  }
-  return timer;
-}
+#if defined(WIN32)      /* Windoze specific stuff */
 
 void
-fluid_timer_run(void *data)
+fluid_thread_self_set_prio (int prio_level)
 {
-  int count = 0;
-  int cont = 1;
-  long start;
-  long delay;
-  fluid_timer_t* timer;
-  timer = (fluid_timer_t*) data;
-
-  if ((timer == NULL) || (timer->callback == NULL)) {
-    return;
-  }
-
-  DosSetPriority( PRTYS_THREAD, PRTYC_REGULAR, PRTYD_MAXIMUM, 0 );
-
-  /* keep track of the start time for absolute positioning */
-  start = fluid_curtime();
-
-  while (cont) {
-
-    /* do whatever we have to do */
-    cont = (*timer->callback)(timer->data, fluid_curtime() - start);
-
-    count++;
-
-    /* to avoid incremental time errors, I calculate the delay between
-       two callbacks bringing in the "absolute" time (count *
-       timer->msec) */
-    delay = (count * timer->msec) - (fluid_curtime() - start);
-    if (delay > 0) {
-      DosSleep(delay);
-    }
-
-    cont &= timer->cont;
-  }
-
-  FLUID_LOG(FLUID_DBG, "Timer thread finished");
-
-  if (timer->auto_destroy) {
-    FLUID_FREE(timer);
-  }
-
-  return;
+  if (prio_level > 0)
+    SetThreadPriority (GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 }
 
-int
-delete_fluid_timer(fluid_timer_t* timer)
+
+#elif defined(__OS2__)  /* OS/2 specific stuff */
+
+void
+fluid_thread_self_set_prio (int prio_level)
 {
-  timer->cont = 0;
-  fluid_timer_join(timer);
-  FLUID_FREE(timer);
-  return FLUID_OK;
+  if (prio_level > 0)
+    DosSetPriority (PRTYS_THREAD, PRTYC_REGULAR, PRTYD_MAXIMUM, 0);
 }
 
-int
-fluid_timer_join(fluid_timer_t* timer)
+#else   /* POSIX stuff..  Nice POSIX..  Good POSIX. */
+
+void
+fluid_thread_self_set_prio (int prio_level)
 {
-  ULONG wait_result;
-  if (timer->thread_id == -1) {
-    return FLUID_OK;
-  }
-  wait_result = DosWaitThread(&timer->thread_id, DCWW_WAIT);
-  return (wait_result == 0)? FLUID_OK : FLUID_FAILED;
-}
-
-#else
-
-/*=============================================================*/
-/*                                                             */
-/*                           POSIX                             */
-/*                                                             */
-/*=============================================================*/
-
-
-/***************************************************************
- *
- *               Timer
- */
-
-struct _fluid_timer_t
-{
-  long msec;
-  fluid_timer_callback_t callback;
-  void* data;
-  pthread_t thread;
-  int cont;
-  int auto_destroy;
-};
-
-void*
-fluid_timer_start(void *data)
-{
-  int count = 0;
-  int cont = 1;
-  long start;
-  long delay;
-  fluid_timer_t* timer;
-  timer = (fluid_timer_t*) data;
-
-  /* keep track of the start time for absolute positioning */
-  start = fluid_curtime();
-
-  while (cont) {
-
-    /* do whatever we have to do */
-    cont = (*timer->callback)(timer->data, fluid_curtime() - start);
-
-    count++;
-
-    /* to avoid incremental time errors, calculate the delay between
-       two callbacks bringing in the "absolute" time (count *
-       timer->msec) */
-    delay = (count * timer->msec) - (fluid_curtime() - start);
-    if (delay > 0) {
-      usleep(delay * 1000);
-    }
-
-    cont &= timer->cont;
-  }
-
-  FLUID_LOG(FLUID_DBG, "Timer thread finished");
-  if (timer->thread != 0) {
-    pthread_exit(NULL);
-  }
-
-  if (timer->auto_destroy) {
-    FLUID_FREE(timer);
-  }
-
-  return NULL;
-}
-
-fluid_timer_t*
-new_fluid_timer(int msec, fluid_timer_callback_t callback, void* data,
-	       int new_thread, int auto_destroy)
-{
-  pthread_attr_t *attr = NULL;
-  pthread_attr_t rt_attr;
-  int sched = SCHED_FIFO;
   struct sched_param priority;
-  int err;
 
-  fluid_timer_t* timer = FLUID_NEW(fluid_timer_t);
-  if (timer == NULL) {
-    FLUID_LOG(FLUID_ERR, "Out of memory");
-    return NULL;
-  }
-  timer->msec = msec;
-  timer->callback = callback;
-  timer->data = data;
-  timer->cont = 1;
-  timer->thread = 0;
-  timer->auto_destroy = auto_destroy;
+  if (prio_level > 0)
+  {
+    priority.sched_priority = prio_level;
 
-  err = pthread_attr_init(&rt_attr);
-  if (err == 0) {
-	  err = pthread_attr_setschedpolicy(&rt_attr, SCHED_FIFO);
-	  if (err == 0) {
-		  priority.sched_priority = 10;
-		  err = pthread_attr_setschedparam(&rt_attr, &priority);
-		  if (err == 0) {
-			  attr = &rt_attr;
-		  }
-	  }
+    if (pthread_setschedparam (pthread_self (), SCHED_FIFO, &priority) != 0)
+      FLUID_LOG(FLUID_WARN, "Failed to set thread to high priority");
   }
-
-  if (new_thread) {
-	  err = pthread_create(&timer->thread, attr, fluid_timer_start, (void*) timer);
-	  if (err == 0) {
-		  FLUID_LOG(FLUID_DBG, "The timer thread was created with real-time priority");
-	  } else {
-		  /* Create the thread with default attributes */
-		  err = pthread_create(&timer->thread, NULL, fluid_timer_start, (void*) timer);
-		  if (err != 0) {
-			  FLUID_LOG(FLUID_ERR, "Failed to create the timer thread");
-			  FLUID_FREE(timer);
-			  return NULL;
-		  } else {
-			  FLUID_LOG(FLUID_DBG, "The timer thread does not have real-time priority");
-		  }
-	  }
-  } else {
-    fluid_timer_start((void*) timer);
-  }
-  return timer;
 }
-
-int
-delete_fluid_timer(fluid_timer_t* timer)
-{
-  timer->cont = 0;
-  fluid_timer_join(timer);
-  FLUID_LOG(FLUID_DBG, "Joined player thread");
-  FLUID_FREE(timer);
-  return FLUID_OK;
-}
-
-int
-fluid_timer_join(fluid_timer_t* timer)
-{
-  int err = 0;
-
-  if (timer->thread != 0) {
-    err = pthread_join(timer->thread, NULL);
-  }
-  FLUID_LOG(FLUID_DBG, "Joined player thread");
-  return (err == 0)? FLUID_OK : FLUID_FAILED;
-}
-
 
 #ifdef FPE_CHECK
 
@@ -863,7 +534,6 @@ void fluid_profiling_print(void)
 
   printf("fluid_profiling_print\n");
 
-  FLUID_LOG(FLUID_INFO, "Estimated CPU frequency: %.0f MHz", fluid_cpu_frequency);
   FLUID_LOG(FLUID_INFO, "Estimated times: min/avg/max (micro seconds)");
 
   for (i = 0; i < FLUID_PROF_LAST; i++) {
@@ -890,16 +560,67 @@ void fluid_profiling_print(void)
  *
  */
 
+/* Rather than inline this one, we just declare it as a function, to prevent
+ * GCC warning about inline failure. */
+fluid_cond_t *
+new_fluid_cond (void)
+{
+  if (!g_thread_supported ()) g_thread_init (NULL);
+  return g_cond_new ();
+}
 
+static gpointer
+fluid_thread_high_prio (gpointer data)
+{
+  fluid_thread_info_t *info = data;
+
+  fluid_thread_self_set_prio (info->prio_level);
+
+  info->func (info->data);
+  FLUID_FREE (info);
+
+  return NULL;
+}
+
+/**
+ * Create a new thread.
+ * @param func Function to execute in new thread context
+ * @param data User defined data to pass to func
+ * @param prio_level Priority level.  If greater than 0 then high priority scheduling will
+ *   be used, with the given priority level (used by pthreads only).  0 uses normal scheduling.
+ * @param detach If TRUE, 'join' does not work and the thread destroys itself when finished.
+ * @return New thread pointer or NULL on error
+ */
 fluid_thread_t *
-new_fluid_thread (fluid_thread_func_t func, void *data, int detach)
+new_fluid_thread (fluid_thread_func_t func, void *data, int prio_level, int detach)
 {
   GThread *thread;
+  fluid_thread_info_t *info;
   GError *err = NULL;
 
   g_return_val_if_fail (func != NULL, NULL);
 
-  thread = g_thread_create ((GThreadFunc)func, data, detach == FALSE, &err);
+  /* Make sure g_thread_init has been called.
+   * FIXME - Probably not a good idea in a shared library,
+   * but what can we do *and* remain backwards compatible? */
+  if (!g_thread_supported ()) g_thread_init (NULL);
+
+  if (prio_level > 0)
+  {
+    info = FLUID_NEW (fluid_thread_info_t);
+
+    if (!info)
+    {
+      FLUID_LOG(FLUID_ERR, "Out of memory");
+      return NULL;
+    }
+
+    info->func = func;
+    info->data = data;
+    info->prio_level = prio_level;
+    thread = g_thread_create (fluid_thread_high_prio, info, detach == FALSE, &err);
+  }
+  else thread = g_thread_create ((GThreadFunc)func, data, detach == FALSE, &err);
 
   if (!thread)
   {
@@ -911,14 +632,129 @@ new_fluid_thread (fluid_thread_func_t func, void *data, int detach)
   return thread;
 }
 
-int delete_fluid_thread(fluid_thread_t* thread)
+/**
+ * Frees data associated with a thread (does not actually stop thread).
+ * @param thread Thread to free
+ */
+void
+delete_fluid_thread(fluid_thread_t* thread)
 {
+  /* Threads free themselves when they quit, nothing to do */
+}
+
+/**
+ * Join a thread (wait for it to terminate).
+ * @param thread Thread to join
+ * @return FLUID_OK
+ */
+int
+fluid_thread_join(fluid_thread_t* thread)
+{
+  g_thread_join (thread);
+
   return FLUID_OK;
 }
 
-int fluid_thread_join(fluid_thread_t* thread)
+
+void
+fluid_timer_run (void *data)
 {
-  g_thread_join (thread);
+  fluid_timer_t *timer;
+  int count = 0;
+  int cont;
+  long start;
+  long delay;
+
+  timer = (fluid_timer_t *)data;
+
+  /* keep track of the start time for absolute positioning */
+  start = fluid_curtime ();
+
+  while (timer->cont)
+  {
+    cont = (*timer->callback)(timer->data, fluid_curtime() - start);
+
+    count++;
+    if (!cont) break;
+
+    /* to avoid incremental time errors, calculate the delay between
+       two callbacks bringing in the "absolute" time (count *
+       timer->msec) */
+    delay = (count * timer->msec) - (fluid_curtime() - start);
+    if (delay > 0) g_usleep (delay * 1000);
+  }
+
+  FLUID_LOG (FLUID_DBG, "Timer thread finished");
+
+  if (timer->auto_destroy)
+    FLUID_FREE (timer);
+
+  return;
+}
+
+fluid_timer_t*
+new_fluid_timer (int msec, fluid_timer_callback_t callback, void* data,
+                 int new_thread, int auto_destroy, int high_priority)
+{
+  fluid_timer_t *timer;
+
+  timer = FLUID_NEW (fluid_timer_t);
+
+  if (timer == NULL)
+  {
+    FLUID_LOG (FLUID_ERR, "Out of memory");
+    return NULL;
+  }
+
+  timer->msec = msec;
+  timer->callback = callback;
+  timer->data = data;
+  timer->cont = TRUE ;
+  timer->thread = NULL;
+  timer->auto_destroy = auto_destroy;
+
+  if (new_thread)
+  {
+    timer->thread = new_fluid_thread (fluid_timer_run, timer, high_priority
+                                      ? FLUID_SYS_TIMER_HIGH_PRIO_LEVEL : 0, FALSE);
+    if (!timer->thread)
+    {
+      FLUID_FREE (timer);
+      return NULL;
+    }
+  }
+  else fluid_timer_run (timer);  /* Run directly, instead of as a separate thread */
+
+  return timer;
+}
+
+int
+delete_fluid_timer (fluid_timer_t *timer)
+{
+  int auto_destroy = timer->auto_destroy;
+
+  timer->cont = 0;
+  fluid_timer_join (timer);
+
+  /* Shouldn't access timer now if auto_destroy enabled, since it has been destroyed */
+
+  if (!auto_destroy) FLUID_FREE (timer);
+
+  return FLUID_OK;
+}
+
+int
+fluid_timer_join (fluid_timer_t *timer)
+{
+  int auto_destroy;
+
+  if (timer->thread)
+  {
+    auto_destroy = timer->auto_destroy;
+    fluid_thread_join (timer->thread);
+
+    if (!auto_destroy) timer->thread = NULL;
+  }
 
   return FLUID_OK;
 }
@@ -930,12 +766,20 @@ int fluid_thread_join(fluid_thread_t* thread)
  *
  */
 
+/**
+ * Get standard in stream handle.
+ * @return Standard in stream.
+ */
 fluid_istream_t
 fluid_get_stdin (void)
 {
   return STDIN_FILENO;
 }
 
+/**
+ * Get standard output stream handle.
+ * @return Standard out stream.
+ */
 fluid_ostream_t
 fluid_get_stdout (void)
 {
@@ -947,7 +791,8 @@ fluid_get_stdout (void)
  * @return 0 if end-of-stream, -1 if error, non zero otherwise
  */
 int
-fluid_istream_readline(fluid_istream_t in, char* prompt, char* buf, int len)
+fluid_istream_readline (fluid_istream_t in, fluid_ostream_t out, char* prompt,
+                        char* buf, int len)
 {
 #if WITH_READLINE
   if (in == fluid_get_stdin ())
@@ -966,10 +811,11 @@ fluid_istream_readline(fluid_istream_t in, char* prompt, char* buf, int len)
     return 1;
   }
   else
-    return fluid_istream_gets(in, buf, len);
-#else
-  return fluid_istream_gets(in, buf, len);
 #endif
+  {
+    fluid_ostream_printf (out, "%s", prompt);
+    return fluid_istream_gets (in, buf, len);
+  }
 }
 
 /**
@@ -989,8 +835,22 @@ fluid_istream_gets (fluid_istream_t in, char* buf, int len)
 
   while (--len > 0)
   {
+#ifndef WIN32
     n = read(in, &c, 1);
     if (n == -1) return -1;
+#else
+    /* Handle read differently depending on if its a socket or file descriptor */
+    if (!(in & WIN32_SOCKET_FLAG))
+    {
+      n = read(in, &c, 1);
+      if (n == -1) return -1;
+    }
+    else
+    {
+      n = recv(in & ~WIN32_SOCKET_FLAG, &c, 1, 0);
+      if (n == SOCKET_ERROR) return -1;
+    }
+#endif
 
     if (n == 0)
     {
@@ -998,13 +858,14 @@ fluid_istream_gets (fluid_istream_t in, char* buf, int len)
       return 0;
     }
 
-    if ((c == '\n') || (c == '\r'))
+    if ((c == '\n'))
     {
       *buf++ = 0;
       return 1;
     }
 
-    *buf++ = c;
+    /* Store all characters excluding CR */
+    if (c != '\r') *buf++ = c;
   }
 
   return -1;
@@ -1042,21 +903,16 @@ fluid_ostream_printf (fluid_ostream_t out, char* format, ...)
   {
     int retval;
 
-    retval = send (out, buf, strlen (buf), 0);
+    /* Handle write differently depending on if its a socket or file descriptor */
+    if (!(out & WIN32_SOCKET_FLAG))
+      return write(out, buf, strlen (buf));
+
+    /* Socket */
+    retval = send (out & ~WIN32_SOCKET_FLAG, buf, strlen (buf), 0);
 
     return retval != SOCKET_ERROR ? retval : -1;
   }
 #endif
-}
-
-fluid_istream_t fluid_socket_get_istream (fluid_socket_t sock)
-{
-  return sock;
-}
-
-fluid_ostream_t fluid_socket_get_ostream (fluid_socket_t sock)
-{
-  return sock;
 }
 
 int fluid_server_socket_join(fluid_server_socket_t *server_socket)
@@ -1068,6 +924,16 @@ int fluid_server_socket_join(fluid_server_socket_t *server_socket)
 #ifndef WIN32           // Not win32?
 
 #define SOCKET_ERROR -1
+
+fluid_istream_t fluid_socket_get_istream (fluid_socket_t sock)
+{
+  return sock;
+}
+
+fluid_ostream_t fluid_socket_get_ostream (fluid_socket_t sock)
+{
+  return sock;
+}
 
 void fluid_socket_close(fluid_socket_t sock)
 {
@@ -1155,7 +1021,8 @@ new_fluid_server_socket(int port, fluid_server_func_t func, void* data)
   server_socket->data = data;
   server_socket->cont = 1;
 
-  server_socket->thread = new_fluid_thread(fluid_server_socket_run, server_socket, 0);
+  server_socket->thread = new_fluid_thread(fluid_server_socket_run, server_socket,
+                                           0, FALSE);
   if (server_socket->thread == NULL) {
     FLUID_FREE(server_socket);
     fluid_socket_close(sock);
@@ -1182,6 +1049,20 @@ int delete_fluid_server_socket(fluid_server_socket_t* server_socket)
 #else           // Win32 is "special"
 
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+fluid_istream_t fluid_socket_get_istream (fluid_socket_t sock)
+{
+  return sock | WIN32_SOCKET_FLAG;
+}
+
+fluid_ostream_t fluid_socket_get_ostream (fluid_socket_t sock)
+{
+  return sock | WIN32_SOCKET_FLAG;
+}
+
 void fluid_socket_close (fluid_socket_t sock)
 {
   if (sock != INVALID_SOCKET)
@@ -1200,7 +1081,7 @@ static void fluid_server_socket_run (void *data)
 
   while (server_socket->cont)
   {
-    client_socket = accept (server_socket->socket, &addr, &addrlen);
+    client_socket = accept (server_socket->socket, (struct sockaddr *)&addr, &addrlen);
 
     FLUID_LOG (FLUID_DBG, "New client connection");
 
@@ -1231,7 +1112,6 @@ new_fluid_server_socket(int port, fluid_server_func_t func, void* data)
   struct sockaddr_in addr;
   fluid_socket_t sock;
   WSADATA wsaData;
-  struct addrinfo *result = NULL, *ptr = NULL, hints;
   int retval;
 
   g_return_val_if_fail (func != NULL, NULL);
@@ -1245,44 +1125,28 @@ new_fluid_server_socket(int port, fluid_server_func_t func, void* data)
     return NULL;
   }
 
-  ZeroMemory (&hints, sizeof (hints));
-  hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_protocol = IPPROTO_TCP;
-  hints.ai_flags = AI_PASSIVE;
-
-  // Resolve the local address and port to be used by the server
-  retval = getaddrinfo (NULL, port, &hints, &result);   // ++ alloc 'result'
-
-  if (retval != 0)
-  {
-    FLUID_LOG(FLUID_ERR, "Server socket creation error: getaddrinfo failed: %d", retval);
-    WSACleanup ();
-    return NULL;
-  }
-
-  sock = socket (result->ai_family, result->ai_socktype, result->ai_protocol);
+  sock = socket (AF_INET, SOCK_STREAM, 0);
 
   if (sock == INVALID_SOCKET)
   {
     FLUID_LOG (FLUID_ERR, "Failed to create server socket: %ld", WSAGetLastError ());
-    freeaddrinfo (result);    // -- free result
     WSACleanup ();
     return NULL;
   }
 
-  retval = bind (sock, result->ai_addr, (int)result->ai_addrlen);
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons (port);
+  addr.sin_addr.s_addr = htonl (INADDR_ANY);
+
+  retval = bind (sock, (struct sockaddr *)&addr, sizeof (addr));
 
   if (retval == SOCKET_ERROR)
   {
     FLUID_LOG (FLUID_ERR, "Failed to bind server socket: %ld", WSAGetLastError ());
-    freeaddrinfo (result);    // -- free result
     fluid_socket_close (sock);
     WSACleanup ();
     return NULL;
   }
-
-  freeaddrinfo (result);    // -- free result
 
   if (listen (sock, SOMAXCONN) == SOCKET_ERROR)
   {
@@ -1307,8 +1171,8 @@ new_fluid_server_socket(int port, fluid_server_func_t func, void* data)
   server_socket->data = data;
   server_socket->cont = 1;
 
-  server_socket->thread = new_fluid_thread (fluid_server_socket_run, server_socket, FALSE);
-
+  server_socket->thread = new_fluid_thread(fluid_server_socket_run, server_socket,
+                                           0, FALSE);
   if (server_socket->thread == NULL)
   {
     FLUID_FREE (server_socket);

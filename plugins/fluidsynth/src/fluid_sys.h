@@ -54,6 +54,19 @@ void fluid_log_config(void);
 void fluid_time_config(void);
 
 
+/* Misc */
+
+#define fluid_return_val_if_fail  g_return_val_if_fail
+#define fluid_return_if_fail      g_return_if_fail
+#define FLUID_INLINE              inline
+#define FLUID_POINTER_TO_UINT     GPOINTER_TO_UINT
+#define FLUID_UINT_TO_POINTER     GUINT_TO_POINTER
+#define FLUID_POINTER_TO_INT      GPOINTER_TO_INT
+#define FLUID_INT_TO_POINTER      GINT_TO_POINTER
+#define FLUID_N_ELEMENTS(struct)  (sizeof (struct) / sizeof (struct[0]))
+
+#define FLUID_IS_BIG_ENDIAN       (G_BYTE_ORDER == G_BIG_ENDIAN)
+
 /*
  * Utility functions
  */
@@ -64,7 +77,6 @@ char *fluid_strtok (char **str, char *delim);
 
   Additional debugging system, separate from the log system. This
   allows to print selected debug messages of a specific subsystem.
-
  */
 
 extern unsigned int fluid_debug_flags;
@@ -105,52 +117,135 @@ typedef int (*fluid_timer_callback_t)(void* data, unsigned int msec);
 typedef struct _fluid_timer_t fluid_timer_t;
 
 fluid_timer_t* new_fluid_timer(int msec, fluid_timer_callback_t callback,
-                               void* data, int new_thread, int auto_destroy);
+                               void* data, int new_thread, int auto_destroy,
+                               int high_priority);
 
 int delete_fluid_timer(fluid_timer_t* timer);
 int fluid_timer_join(fluid_timer_t* timer);
 int fluid_timer_stop(fluid_timer_t* timer);
 
-/**
+/* Muteces */
 
-    Muteces
-
-*/
-
+/* Regular mutex */
 typedef GStaticMutex fluid_mutex_t;
-#define fluid_mutex_init(_m)      g_static_mutex_init(&(_m))
+#define FLUID_MUTEX_INIT          G_STATIC_MUTEX_INIT
 #define fluid_mutex_destroy(_m)   g_static_mutex_free(&(_m))
 #define fluid_mutex_lock(_m)      g_static_mutex_lock(&(_m))
 #define fluid_mutex_unlock(_m)    g_static_mutex_unlock(&(_m))
 
+#define fluid_mutex_init(_m)      G_STMT_START { \
+  if (!g_thread_supported ()) g_thread_init (NULL); \
+  g_static_mutex_init (&(_m)); \
+} G_STMT_END;
 
-/**
-     Threads
+/* Recursive lock capable mutex */
+typedef GStaticRecMutex fluid_rec_mutex_t;
+#define fluid_rec_mutex_destroy(_m)   g_static_rec_mutex_free(&(_m))
+#define fluid_rec_mutex_lock(_m)      g_static_rec_mutex_lock(&(_m))
+#define fluid_rec_mutex_unlock(_m)    g_static_rec_mutex_unlock(&(_m))
 
-*/
+#define fluid_rec_mutex_init(_m)      G_STMT_START { \
+  if (!g_thread_supported ()) g_thread_init (NULL); \
+  g_static_rec_mutex_init (&(_m)); \
+} G_STMT_END;
+
+/* Dynamically allocated mutex suitable for fluid_cond_t use */
+typedef GMutex    fluid_cond_mutex_t;
+#define delete_fluid_cond_mutex(m)      g_mutex_free(m)
+#define fluid_cond_mutex_lock(m)        g_mutex_lock(m)
+#define fluid_cond_mutex_unlock(m)      g_mutex_unlock(m)
+
+static FLUID_INLINE fluid_cond_mutex_t *
+new_fluid_cond_mutex (void)
+{
+  if (!g_thread_supported ()) g_thread_init (NULL);
+  return g_mutex_new ();
+}
+
+
+/* Thread condition signaling */
+
+typedef GCond fluid_cond_t;
+fluid_cond_t *new_fluid_cond (void);
+#define delete_fluid_cond(cond)         g_cond_free(cond)
+#define fluid_cond_signal(cond)         g_cond_signal(cond)
+#define fluid_cond_broadcast(cond)      g_cond_broadcast(cond)
+#define fluid_cond_wait(cond, mutex)    g_cond_wait(cond, mutex)
+
+
+/* Atomic operations */
+
+#define fluid_atomic_int_inc(_pi) g_atomic_int_inc(_pi)
+#define fluid_atomic_int_add(_pi, _val) g_atomic_int_add(_pi, _val)
+#define fluid_atomic_int_get(_pi) g_atomic_int_get(_pi)
+#define fluid_atomic_int_set(_pi, _val) g_atomic_int_set(_pi, _val)
+#define fluid_atomic_int_dec_and_test(_pi) g_atomic_int_dec_and_test(_pi)
+#define fluid_atomic_int_compare_and_exchange(_pi, _old, _new) \
+  g_atomic_int_compare_and_exchange(_pi, _old, _new)
+#define fluid_atomic_int_exchange_and_add(_pi, _add) \
+  g_atomic_int_exchange_and_add(_pi, _add)
+
+#define fluid_atomic_pointer_get(_pp)           g_atomic_pointer_get(_pp)
+#define fluid_atomic_pointer_set(_pp, val)      g_atomic_pointer_set(_pp, val)
+#define fluid_atomic_pointer_compare_and_exchange(_pp, _old, _new) \
+  g_atomic_pointer_compare_and_exchange(_pp, _old, _new)
+
+static FLUID_INLINE void
+fluid_atomic_float_set(volatile float *fptr, float val)
+{
+  sint32 ival;
+  memcpy (&ival, &val, 4);
+  fluid_atomic_int_set ((volatile int *)fptr, ival);
+}
+
+static FLUID_INLINE float
+fluid_atomic_float_get(volatile float *fptr)
+{
+  sint32 ival;
+  float fval;
+  ival = fluid_atomic_int_get ((volatile int *)fptr);
+  memcpy (&fval, &ival, 4);
+  return fval;
+}
+
+
+/* Thread private data */
+
+typedef GStaticPrivate fluid_private_t;
+#define fluid_private_get(_priv)                   g_static_private_get(&(_priv))
+#define fluid_private_set(_priv, _data, _notify)   g_static_private_set(&(_priv), _data, _notify)
+#define fluid_private_free(_priv)                  g_static_private_free(&(_priv))
+
+#define fluid_private_init(_priv)                  G_STMT_START { \
+  if (!g_thread_supported ()) g_thread_init (NULL); \
+  g_static_private_init (&(_priv)); \
+} G_STMT_END;
+
+/* Threads */
 
 typedef GThread fluid_thread_t;
 typedef void (*fluid_thread_func_t)(void* data);
 
-/** When detached, 'join' does not work and the thread destroys itself
-    when finished. */
-fluid_thread_t* new_fluid_thread(fluid_thread_func_t func, void* data, int detach);
-int delete_fluid_thread(fluid_thread_t* thread);
+#define FLUID_THREAD_ID_NULL            NULL                    /* A NULL "ID" value */
+#define fluid_thread_id_t               GThread *               /* Data type for a thread ID */
+#define fluid_thread_get_id()           g_thread_self()         /* Get unique "ID" for current thread */
+
+fluid_thread_t* new_fluid_thread(fluid_thread_func_t func, void *data,
+                                 int prio_level, int detach);
+void delete_fluid_thread(fluid_thread_t* thread);
+void fluid_thread_self_set_prio (int prio_level);
 int fluid_thread_join(fluid_thread_t* thread);
 
-/**
-     Sockets and I/O
-
-*/
+/* Sockets and I/O */
 
 fluid_istream_t fluid_get_stdin (void);
 fluid_ostream_t fluid_get_stdout (void);
-int fluid_istream_readline(fluid_istream_t in, char* prompt, char* buf, int len);
+int fluid_istream_readline(fluid_istream_t in, fluid_ostream_t out, char* prompt, char* buf, int len);
 int fluid_ostream_printf (fluid_ostream_t out, char* format, ...);
 
-/** The function should return 0 if no error occured, non-zero
-    otherwise. If the function return non-zero, the socket will be
-    closed by the server. */
+/* The function should return 0 if no error occured, non-zero
+   otherwise. If the function return non-zero, the socket will be
+   closed by the server. */
 typedef int (*fluid_server_func_t)(void* data, fluid_socket_t client_socket, char* addr);
 
 fluid_server_socket_t* new_fluid_server_socket(int port, fluid_server_func_t func, void* data);
@@ -162,17 +257,14 @@ fluid_ostream_t fluid_socket_get_ostream(fluid_socket_t sock);
 
 
 
-/**
+/* Profiling */
 
-    Profiling
+
+/**
+ * Profile numbers. List all the pieces of code you want to profile
+ * here. Be sure to add an entry in the fluid_profile_data table in
+ * fluid_sys.c
  */
-
-
-/**
-    Profile numbers. List all the pieces of code you want to profile
-    here. Be sure to add an entry in the fluid_profile_data table in
-    fluid_sys.c
-*/
 enum {
   FLUID_PROF_WRITE_S16,
   FLUID_PROF_ONE_BLOCK,
@@ -206,6 +298,10 @@ extern fluid_profile_data_t fluid_profile_data[];
 /** Macro to obtain a time refence used for the profiling */
 #define fluid_profile_ref() fluid_utime()
 
+/** Macro to create a variable and assign the current reference time for profiling.
+ * So we don't get unused variable warnings when profiling is disabled. */
+#define fluid_profile_ref_var(name)     double name = fluid_utime()
+
 /** Macro to calculate the min/avg/max. Needs a time refence and a
     profile number. */
 #define fluid_profile(_num,_ref) { \
@@ -224,6 +320,7 @@ extern fluid_profile_data_t fluid_profile_data[];
 /* No profiling */
 #define fluid_profiling_print()
 #define fluid_profile_ref()  0
+#define fluid_profile_ref_var(name)
 #define fluid_profile(_num,_ref)
 
 #endif

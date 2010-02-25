@@ -26,7 +26,6 @@
 #include "fluid_sys.h"
 #include "fluid_adriver.h"
 #include "fluid_settings.h"
-#include <windows.h>
 #include <mmsystem.h>
 #include <dsound.h>
 
@@ -67,7 +66,7 @@ BOOL CALLBACK
 fluid_dsound_enum_callback(LPGUID guid, LPCTSTR description, LPCTSTR module, LPVOID context)
 {
   fluid_settings_t* settings = (fluid_settings_t*) context;
-  fluid_settings_add_option(settings, "audio.dsound.device", (char *)description);
+  fluid_settings_add_option(settings, "audio.dsound.device", (const char *)description);
 
   return TRUE;
 }
@@ -94,6 +93,8 @@ void fluid_dsound_audio_driver_settings(fluid_settings_t* settings)
   DirectSoundEnumerate((LPDSENUMCALLBACK) fluid_dsound_enum_callback, settings);
 }
 
+extern HWND fluid_wnd;
+extern int fluid_win32_create_window();
 
 /*
  * new_fluid_dsound_audio_driver
@@ -117,14 +118,13 @@ new_fluid_dsound_audio_driver(fluid_settings_t* settings, fluid_synth_t* synth)
     return NULL;
   }
 
-/*
   if (fluid_wnd == NULL) {
     if (fluid_win32_create_window() != 0) {
       FLUID_LOG(FLUID_ERR, "Couldn't create window needed for DirectSound");
       return NULL;
     }
   }
-*/
+
   /* create and clear the driver data */
   dev = FLUID_NEW(fluid_dsound_audio_driver_t);
   if (dev == NULL) {
@@ -169,11 +169,14 @@ new_fluid_dsound_audio_driver(fluid_settings_t* settings, fluid_synth_t* synth)
 
   devsel.devGUID = NULL;
   /* get the selected device name. if none is specified, use NULL for the default device. */
-  if(fluid_settings_getstr(settings, "audio.dsound.device", &devsel.devname)) {
+  if(fluid_settings_dupstr(settings, "audio.dsound.device", &devsel.devname)    /* ++ alloc device name */
+     && devsel.devname && strlen (devsel.devname) > 0) {
     /* look for the GUID of the selected device */
-    DirectSoundEnumerate((LPDSENUMCALLBACK) fluid_dsound_enum_callback2, (void *)&devsel);  
+    DirectSoundEnumerate((LPDSENUMCALLBACK) fluid_dsound_enum_callback2, (void *)&devsel);
   }
-  
+
+  if (devsel.devname) FLUID_FREE (devsel.devname);      /* -- free device name */
+
   /* open DirectSound */
   hr = DirectSoundCreate(devsel.devGUID, &dev->direct_sound, NULL);
   if (hr != DS_OK) {
@@ -317,7 +320,6 @@ DWORD WINAPI fluid_dsound_audio_run(LPVOID lpParameter)
   fluid_dsound_audio_driver_t* dev = (fluid_dsound_audio_driver_t*) lpParameter;
   short *buf1, *buf2;
   DWORD bytes1, bytes2;
-  DWORD offset = 0;
   DWORD cur_position, frames, play_position, write_position, bytes;
   HRESULT res;
 

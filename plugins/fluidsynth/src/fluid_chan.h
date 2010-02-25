@@ -27,36 +27,62 @@
 
 /*
  * fluid_channel_t
+ *
+ * Mutual exclusion notes:
+ *
+ * Set once on init:
+ * channum
+ * synth
+ *
+ * Synthesis thread context only:
+ * preset
+ * tuning
+ * nrpn_select
+ * nrpn_active
+ * gen[]
+ * gen_abs[]
+ *
+ * Uses atomic operations:
+ * sfont_bank_prog
+ * shadow_preset
+ * key_pressure
+ * channel_pressure
+ * pitch_bend
+ * pitch_wheel_sensitivity
+ * cc[]
+ * interp_method
  */
 struct _fluid_channel_t
 {
-  int channum;
-  unsigned int sfontnum;
-  unsigned int banknum;
-  unsigned int prognum;
-  fluid_preset_t* preset;
-  fluid_synth_t* synth;
-  short key_pressure;
-  short channel_pressure;
-  short pitch_bend;
-  short pitch_wheel_sensitivity;
+  fluid_mutex_t mutex;                  /* Lock for thread sensitive parameters */
 
-  /* controller values */
-  short cc[128];
+  fluid_synth_t* synth;                 /**< Parent synthesizer instance */
+  int channum;                          /**< MIDI channel number */
 
-  int interp_method;
+  int sfont_bank_prog;                  /**< SoundFont ID (bit 21-31), bank (bit 7-20), program (bit 0-6) */
+  fluid_preset_t* preset;               /**< Selected preset */
+  fluid_preset_t* shadow_preset;        /**< Most recently assigned preset */
 
-  /* the micro-tuning */
-  fluid_tuning_t* tuning;
+  int key_pressure;                     /**< MIDI key pressure */
+  int channel_pressure;                 /**< MIDI channel pressure */
+  int pitch_bend;                       /**< Current pitch bend value */
+  int pitch_wheel_sensitivity;          /**< Current pitch wheel sensitivity */
+
+  int cc[128];                          /**< MIDI controller values */
+
+  int interp_method;                    /**< Interpolation method (enum fluid_interp) */
+  fluid_tuning_t* tuning;               /**< Micro tuning */
+  int tuning_bank;                      /**< Current tuning bank number */
+  int tuning_prog;                      /**< Current tuning program number */
 
   /* NRPN system */
-  short nrpn_select;
-  short nrpn_active;    /* 1 if data entry CCs are for NRPN, 0 if RPN */
+  int nrpn_select;      /* Generator ID of SoundFont NRPN message */
+  int nrpn_active;      /* 1 if data entry CCs are for NRPN, 0 if RPN */
 
   /* The values of the generators, set by NRPN messages, or by
    * fluid_synth_set_gen(), are cached in the channel so they can be
    * applied to future notes. They are copied to a voice's generators
-   * in fluid_voice_init(), wihich calls fluid_gen_init().  */
+   * in fluid_voice_init(), which calls fluid_gen_init().  */
   fluid_real_t gen[GEN_LAST];
 
   /* By default, the NRPN values are relative to the values of the
@@ -65,7 +91,7 @@ struct _fluid_channel_t
    * combined attack time of the sound font and the modulators.
    *
    * However, it is useful to be able to specify the generator value
-   * absolutely, completely ignoring the generators of the sound font
+   * absolutely, completely ignoring the generators of the SoundFont
    * and the values of modulators. The gen_abs field, is a boolean
    * flag indicating whether the NRPN value is absolute or not.
    */
@@ -73,33 +99,62 @@ struct _fluid_channel_t
 };
 
 fluid_channel_t* new_fluid_channel(fluid_synth_t* synth, int num);
-int delete_fluid_channel(fluid_channel_t* chan);
-void fluid_channel_init(fluid_channel_t* chan);
 void fluid_channel_init_ctrl(fluid_channel_t* chan, int is_all_ctrl_off);
+int delete_fluid_channel(fluid_channel_t* chan);
 void fluid_channel_reset(fluid_channel_t* chan);
 int fluid_channel_set_preset(fluid_channel_t* chan, fluid_preset_t* preset);
 fluid_preset_t* fluid_channel_get_preset(fluid_channel_t* chan);
-unsigned int fluid_channel_get_sfontnum(fluid_channel_t* chan);
-int fluid_channel_set_sfontnum(fluid_channel_t* chan, unsigned int sfont);
-unsigned int fluid_channel_get_banknum(fluid_channel_t* chan);
-int fluid_channel_set_banknum(fluid_channel_t* chan, unsigned int bank);
-int fluid_channel_set_prognum(fluid_channel_t* chan, int prognum);
-int fluid_channel_get_prognum(fluid_channel_t* chan);
-int fluid_channel_cc(fluid_channel_t* chan, int ctrl, int val);
-int fluid_channel_pressure(fluid_channel_t* chan, int val);
-int fluid_channel_pitch_bend(fluid_channel_t* chan, int val);
-int fluid_channel_pitch_wheel_sens(fluid_channel_t* chan, int val);
-int fluid_channel_get_cc(fluid_channel_t* chan, int num);
+void fluid_channel_set_sfont_bank_prog(fluid_channel_t* chan, int sfont,
+                                       int bank, int prog);
+void fluid_channel_set_bank_lsb(fluid_channel_t* chan, int banklsb);
+void fluid_channel_set_bank_msb(fluid_channel_t* chan, int bankmsb);
+void fluid_channel_get_sfont_bank_prog(fluid_channel_t* chan, int *sfont,
+                                       int *bank, int *prog);
 int fluid_channel_get_num(fluid_channel_t* chan);
 void fluid_channel_set_interp_method(fluid_channel_t* chan, int new_method);
 int fluid_channel_get_interp_method(fluid_channel_t* chan);
 
+#define fluid_channel_get_preset(chan)          ((chan)->preset)
+#define fluid_channel_set_cc(chan, num, val) \
+  fluid_atomic_int_set (&(chan)->cc[num], val)
+#define fluid_channel_get_cc(chan, num)   fluid_atomic_int_get (&(chan)->cc[num])
+#define fluid_channel_get_key_pressure(chan) \
+  fluid_atomic_int_get (&(chan)->key_pressure)
+#define fluid_channel_set_key_pressure(chan, val) \
+  fluid_atomic_int_set (&(chan)->key_pressure, val)
+#define fluid_channel_get_channel_pressure(chan) \
+  fluid_atomic_int_get (&(chan)->channel_pressure)
+#define fluid_channel_set_channel_pressure(chan, val) \
+  fluid_atomic_int_set (&(chan)->channel_pressure, val)
+#define fluid_channel_get_pitch_bend(chan) \
+  fluid_atomic_int_get (&(chan)->pitch_bend)
+#define fluid_channel_set_pitch_bend(chan, val) \
+  fluid_atomic_int_set (&(chan)->pitch_bend, val)
+#define fluid_channel_get_pitch_wheel_sensitivity(chan) \
+  fluid_atomic_int_get (&(chan)->pitch_wheel_sensitivity)
+#define fluid_channel_set_pitch_wheel_sensitivity(chan, val) \
+  fluid_atomic_int_set (&(chan)->pitch_wheel_sensitivity, val)
+#define fluid_channel_get_num(chan)             ((chan)->channum)
+#define fluid_channel_set_interp_method(chan, new_method) \
+  fluid_atomic_int_set (&(chan)->interp_method, new_method)
+#define fluid_channel_get_interp_method(chan) \
+  fluid_atomic_int_get (&(chan)->interp_method);
 #define fluid_channel_set_tuning(_c, _t)        { (_c)->tuning = _t; }
 #define fluid_channel_has_tuning(_c)            ((_c)->tuning != NULL)
 #define fluid_channel_get_tuning(_c)            ((_c)->tuning)
+#define fluid_channel_get_tuning_bank(chan)     \
+  fluid_atomic_int_get (&(chan)->tuning_bank)
+#define fluid_channel_set_tuning_bank(chan, bank) \
+  fluid_atomic_int_set (&(chan)->tuning_bank, bank)
+#define fluid_channel_get_tuning_prog(chan)     \
+  fluid_atomic_int_get (&(chan)->tuning_prog)
+#define fluid_channel_set_tuning_prog(chan, prog) \
+  fluid_atomic_int_set (&(chan)->tuning_prog, prog)
 #define fluid_channel_sustained(_c)             ((_c)->cc[SUSTAIN_SWITCH] >= 64)
 #define fluid_channel_set_gen(_c, _n, _v, _a)   { (_c)->gen[_n] = _v; (_c)->gen_abs[_n] = _a; }
 #define fluid_channel_get_gen(_c, _n)           ((_c)->gen[_n])
 #define fluid_channel_get_gen_abs(_c, _n)       ((_c)->gen_abs[_n])
+#define fluid_channel_get_min_note_length_ticks(chan) \
+  ((chan)->synth->min_note_length_ticks)
 
 #endif /* _FLUID_CHAN_H */

@@ -19,12 +19,11 @@
  */
 
 #ifdef WIN32
-#include <windows.h>
 #include "fluidsynth_priv.h"
 #include "fluid_sys.h"
 
 static HINSTANCE fluid_hinstance = NULL;
-static HWND fluid_wnd = NULL;
+HWND fluid_wnd = NULL;
 
 int fluid_win32_create_window(void);
 
@@ -38,6 +37,12 @@ BOOL WINAPI DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 }
 #endif
 
+/**
+ * Set the handle to the instance of the application on the Windows platform.
+ * @param Application instance pointer
+ *
+ * The handle is needed to open DirectSound.
+ */
 void fluid_set_hinstance(void* hinstance)
 {
   if (fluid_hinstance == NULL) {
@@ -46,6 +51,10 @@ void fluid_set_hinstance(void* hinstance)
   }
 }
 
+/**
+ * Get the handle to the instance of the application on the Windows platform.
+ * @return Application instance pointer or NULL if not set
+ */
 void* fluid_get_hinstance(void)
 {
   return (void*) fluid_hinstance;

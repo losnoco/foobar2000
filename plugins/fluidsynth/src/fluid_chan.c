@@ -23,11 +23,22 @@
 #include "fluid_synth.h"
 #include "fluid_sfont.h"
 
-#define SETCC(_c,_n,_v)  _c->cc[_n] = _v
+/* Field shift amounts for sfont_bank_prog bit field integer */
+#define PROG_SHIFTVAL   0
+#define BANK_SHIFTVAL   8
+#define SFONT_SHIFTVAL  22
 
-/*
- * new_fluid_channel
- */
+/* Field mask values for sfont_bank_prog bit field integer */
+#define PROG_MASKVAL    0x000000FF      /* Bit 7 is used to indicate unset state */
+#define BANK_MASKVAL    0x003FFF00
+#define BANKLSB_MASKVAL 0x00007F00
+#define BANKMSB_MASKVAL 0x003F8000
+#define SFONT_MASKVAL   0xFFC00000
+
+
+static void fluid_channel_init(fluid_channel_t* chan);
+
+
 fluid_channel_t*
 new_fluid_channel(fluid_synth_t* synth, int num)
 {
@@ -42,6 +53,8 @@ new_fluid_channel(fluid_synth_t* synth, int num)
   chan->synth = synth;
   chan->channum = num;
   chan->preset = NULL;
+  chan->shadow_preset = NULL;
+  chan->tuning = NULL;
 
   fluid_channel_init(chan);
   fluid_channel_init_ctrl(chan, 0);
@@ -49,20 +62,48 @@ new_fluid_channel(fluid_synth_t* synth, int num)
   return chan;
 }
 
-void
+static void
 fluid_channel_init(fluid_channel_t* chan)
 {
-  chan->prognum = 0;
-  chan->banknum = (chan->channum == 9)? 128 : 0; /* ?? */
-  chan->sfontnum = 0;
+  fluid_event_queue_elem_t *event;
+  fluid_preset_t *newpreset;
+  int prognum, banknum;
 
-  if (chan->preset) delete_fluid_preset (chan->preset);
-  chan->preset = fluid_synth_find_preset(chan->synth, chan->banknum, chan->prognum);
+  prognum = 0;
+  banknum = (chan->channum == 9)? 128 : 0; /* ?? */
+
+  chan->sfont_bank_prog = 0 << SFONT_SHIFTVAL | banknum << BANK_SHIFTVAL
+    | prognum << PROG_SHIFTVAL;
+
+  /* FIXME - fluid_synth_find_preset not real-time safe */
+  newpreset = fluid_synth_find_preset(chan->synth, banknum, prognum);
+  fluid_channel_set_preset(chan, newpreset);
 
   chan->interp_method = FLUID_INTERP_DEFAULT;
-  chan->tuning = NULL;
+  chan->tuning_bank = 0;
+  chan->tuning_prog = 0;
   chan->nrpn_select = 0;
   chan->nrpn_active = 0;
+
+  if (chan->tuning)
+  {
+    event = fluid_event_queue_get_inptr (chan->synth->return_queue);
+
+    if (event)
+    {
+      event->type = FLUID_EVENT_QUEUE_ELEM_UNREF_TUNING;
+      event->unref_tuning.tuning = chan->tuning;
+      event->unref_tuning.count = 1;
+      fluid_event_queue_next_inptr (chan->synth->return_queue);
+    }
+    else
+    { /* Just unref it in synthesis thread if queue is full */
+      fluid_tuning_unref (chan->tuning, 1);
+      FLUID_LOG (FLUID_ERR, "Synth return event queue full");
+    }
+
+    chan->tuning = NULL;
+  }
 }
 
 /*
@@ -96,26 +137,26 @@ fluid_channel_init_ctrl(fluid_channel_t* chan, int is_all_ctrl_off)
         continue;
       }
 
-      SETCC(chan, i, 0);
+      fluid_channel_set_cc (chan, i, 0);
     }
   }
   else {
     for (i = 0; i < 128; i++) {
-      SETCC(chan, i, 0);
+      fluid_channel_set_cc (chan, i, 0);
     }
   }
 
   /* Set RPN controllers to NULL state */
-  SETCC(chan, RPN_LSB, 127);
-  SETCC(chan, RPN_MSB, 127);
+  fluid_channel_set_cc (chan, RPN_LSB, 127);
+  fluid_channel_set_cc (chan, RPN_MSB, 127);
 
   /* Set NRPN controllers to NULL state */
-  SETCC(chan, NRPN_LSB, 127);
-  SETCC(chan, NRPN_MSB, 127);
+  fluid_channel_set_cc (chan, NRPN_LSB, 127);
+  fluid_channel_set_cc (chan, NRPN_MSB, 127);
 
   /* Expression (MSB & LSB) */
-  SETCC(chan, EXPRESSION_MSB, 127);
-  SETCC(chan, EXPRESSION_LSB, 127);
+  fluid_channel_set_cc (chan, EXPRESSION_MSB, 127);
+  fluid_channel_set_cc (chan, EXPRESSION_LSB, 127);
 
   if (!is_all_ctrl_off) {
 
@@ -123,35 +164,26 @@ fluid_channel_init_ctrl(fluid_channel_t* chan, int is_all_ctrl_off)
 
     /* Just like panning, a value of 64 indicates no change for sound ctrls */
     for (i = SOUND_CTRL1; i <= SOUND_CTRL10; i++) {
-      SETCC(chan, i, 64);
+      fluid_channel_set_cc (chan, i, 64);
     }
 
     /* Volume / initial attenuation (MSB & LSB) */
-    SETCC(chan, VOLUME_MSB, 100);
-    SETCC(chan, VOLUME_LSB, 0);
+    fluid_channel_set_cc (chan, VOLUME_MSB, 100);
+    fluid_channel_set_cc (chan, VOLUME_LSB, 0);
 
     /* Pan (MSB & LSB) */
-    SETCC(chan, PAN_MSB, 64);
-    SETCC(chan, PAN_LSB, 0);
+    fluid_channel_set_cc (chan, PAN_MSB, 64);
+    fluid_channel_set_cc (chan, PAN_LSB, 0);
 
     /* Reverb */
-    /* SETCC(chan, EFFECTS_DEPTH1, 40); */
+    /* fluid_channel_set_cc (chan, EFFECTS_DEPTH1, 40); */
     /* Note: although XG standard specifies the default amount of reverb to 
        be 40, most people preferred having it at zero.
        See http://lists.gnu.org/archive/html/fluid-dev/2009-07/msg00016.html */
   }
 }
 
-void
-fluid_channel_reset(fluid_channel_t* chan)
-{
-  fluid_channel_init(chan);
-  fluid_channel_init_ctrl(chan, 0);
-}
-
-/*
- * delete_fluid_channel
- */
+/* Only called by delete_fluid_synth(), so no need to queue a preset free event */
 int
 delete_fluid_channel(fluid_channel_t* chan)
 {
@@ -160,274 +192,116 @@ delete_fluid_channel(fluid_channel_t* chan)
   return FLUID_OK;
 }
 
-/*
- * fluid_channel_set_preset
- */
+/* FIXME - Calls fluid_channel_init() potentially in synthesis context */
+void
+fluid_channel_reset(fluid_channel_t* chan)
+{
+  fluid_channel_init(chan);
+  fluid_channel_init_ctrl(chan, 0);
+}
+
+/* Should only be called from synthesis context */
 int
 fluid_channel_set_preset(fluid_channel_t* chan, fluid_preset_t* preset)
 {
-  fluid_preset_notify(chan->preset, FLUID_PRESET_UNSELECTED, chan->channum);
-  fluid_preset_notify(preset, FLUID_PRESET_SELECTED, chan->channum);
+  fluid_event_queue_elem_t *event;
 
-  if (chan->preset) delete_fluid_preset (chan->preset);
-  chan->preset = preset;
-  return FLUID_OK;
-}
+  fluid_preset_notify (chan->preset, FLUID_PRESET_UNSELECTED, chan->channum);
 
-/*
- * fluid_channel_get_preset
- */
-fluid_preset_t*
-fluid_channel_get_preset(fluid_channel_t* chan)
-{
-  return chan->preset;
-}
+  /* Set shadow preset again, so it contains the actual latest assigned value */
+  fluid_atomic_pointer_set (&chan->shadow_preset, preset);
 
-/*
- * fluid_channel_get_banknum
- */
-unsigned int
-fluid_channel_get_banknum(fluid_channel_t* chan)
-{
-  return chan->banknum;
-}
-
-/*
- * fluid_channel_set_prognum
- */
-int
-fluid_channel_set_prognum(fluid_channel_t* chan, int prognum)
-{
-  chan->prognum = prognum;
-  return FLUID_OK;
-}
-
-/*
- * fluid_channel_get_prognum
- */
-int
-fluid_channel_get_prognum(fluid_channel_t* chan)
-{
-  return chan->prognum;
-}
-
-/*
- * fluid_channel_set_banknum
- */
-int
-fluid_channel_set_banknum(fluid_channel_t* chan, unsigned int banknum)
-{
-  chan->banknum = banknum;
-  return FLUID_OK;
-}
-
-/*
- * fluid_channel_cc
- */
-int
-fluid_channel_cc(fluid_channel_t* chan, int num, int value)
-{
-  chan->cc[num] = value;
-
-  switch (num) {
-
-  case SUSTAIN_SWITCH:
+  if (chan->preset)     /* Queue preset free (shouldn't free() in synth context) */
+  {
+    event = fluid_event_queue_get_inptr (chan->synth->return_queue);
+    if (!event)
     {
-      if (value < 64) {
-/*  	printf("** sustain off\n"); */
-	fluid_synth_damp_voices(chan->synth, chan->channum);
-      } else {
-/*  	printf("** sustain on\n"); */
-      }
-    }
-    break;
-
-  case BANK_SELECT_MSB:
-    {
-      fluid_channel_set_banknum(chan, (((unsigned int) value & 0x7F) << 7) +
-				(chan->banknum & 0x7F));  
-    }
-    break;
-
-  case BANK_SELECT_LSB:
-    {
-      /* FIXME: according to the Downloadable Sounds II specification,
-         bit 31 should be set when we receive the message on channel
-         10 (drum channel) */
-	fluid_channel_set_banknum(chan, ((unsigned int) value & 0x7F)
-					+ (chan->banknum & ~0x7F));
-    }
-    break;
-
-  case ALL_NOTES_OFF:
-    fluid_synth_all_notes_off(chan->synth, chan->channum);
-    break;
-
-  case ALL_SOUND_OFF:
-    fluid_synth_all_sounds_off(chan->synth, chan->channum);
-    break;
-
-  case ALL_CTRL_OFF:
-    fluid_channel_init_ctrl(chan, 1);
-    fluid_synth_modulate_voices_all(chan->synth, chan->channum);
-    break;
-
-  case DATA_ENTRY_MSB:
-    {
-      int data = (value << 7) + chan->cc[DATA_ENTRY_LSB];
-
-      if (chan->nrpn_active)  /* NRPN is active? */
-      {
-	/* SontFont 2.01 NRPN Message (Sect. 9.6, p. 74)  */
-	if ((chan->cc[NRPN_MSB] == 120) && (chan->cc[NRPN_LSB] < 100))
-	{
-	  if (chan->nrpn_select < GEN_LAST)
-	  {
-	    float val = fluid_gen_scale_nrpn(chan->nrpn_select, data);
-	    fluid_synth_set_gen(chan->synth, chan->channum, chan->nrpn_select, val);
-	  }
-
-	  chan->nrpn_select = 0;  /* Reset to 0 */
-	}
-      }
-      else if (chan->cc[RPN_MSB] == 0)    /* RPN is active: MSB = 0? */
-      {
-	switch (chan->cc[RPN_LSB])
-	{
-	  case RPN_PITCH_BEND_RANGE:
-	    fluid_channel_pitch_wheel_sens (chan, data);   /* Set bend range in semitones */
-	    break;
-	  case RPN_CHANNEL_FINE_TUNE:   /* Fine tune is 14 bit over 1 semitone (+/- 50 cents, 8192 = center) */
-	    fluid_synth_set_gen(chan->synth, chan->channum, GEN_FINETUNE,
-				(data - 8192) / 8192.0 * 50.0);
-	    break;
-	  case RPN_CHANNEL_COARSE_TUNE: /* Coarse tune is 7 bit and in semitones (64 is center) */
-	    fluid_synth_set_gen(chan->synth, chan->channum, GEN_COARSETUNE,
-				value - 64);
-	    break;
-	  case RPN_TUNING_PROGRAM_CHANGE:
-	    break;
-	  case RPN_TUNING_BANK_SELECT:
-	    break;
-	  case RPN_MODULATION_DEPTH_RANGE:
-	    break;
-	}
-      }
-
-      break;
+      FLUID_LOG (FLUID_ERR, "Synth return event queue full");
+      return FLUID_FAILED;
     }
 
-  case NRPN_MSB:
-    chan->cc[NRPN_LSB] = 0;
-    chan->nrpn_select = 0;
-    chan->nrpn_active = 1;
-    break;
-
-  case NRPN_LSB:
-    /* SontFont 2.01 NRPN Message (Sect. 9.6, p. 74)  */
-    if (chan->cc[NRPN_MSB] == 120) {
-      if (value == 100) {
-	chan->nrpn_select += 100;
-      } else if (value == 101) {
-	chan->nrpn_select += 1000;
-      } else if (value == 102) {
-	chan->nrpn_select += 10000;
-      } else if (value < 100) {
-	chan->nrpn_select += value;
-      }
-    }
-
-    chan->nrpn_active = 1;
-    break;
-
-  case RPN_MSB:
-  case RPN_LSB:
-    chan->nrpn_active = 0;
-    break;
-
-  default:
-    fluid_synth_modulate_voices(chan->synth, chan->channum, 1, num);
+    event->type = FLUID_EVENT_QUEUE_ELEM_FREE_PRESET;
+    event->pval = chan->preset;
+    fluid_event_queue_next_inptr (chan->synth->return_queue);
   }
 
+  chan->preset = preset;
+
+  fluid_preset_notify (preset, FLUID_PRESET_SELECTED, chan->channum);
+
   return FLUID_OK;
 }
 
-/*
- * fluid_channel_get_cc
- */
-int
-fluid_channel_get_cc(fluid_channel_t* chan, int num)
+/* Set SoundFont ID, MIDI bank and/or program.  Use -1 to use current value. */
+void
+fluid_channel_set_sfont_bank_prog(fluid_channel_t* chan, int sfontnum,
+                                  int banknum, int prognum)
 {
-  return ((num >= 0) && (num < 128))? chan->cc[num] : 0;
+  int oldval, newval, oldmask;
+
+  newval = ((sfontnum != -1) ? sfontnum << SFONT_SHIFTVAL : 0)
+    | ((banknum != -1) ? banknum << BANK_SHIFTVAL : 0)
+    | ((prognum != -1) ? prognum << PROG_SHIFTVAL : 0);
+
+  oldmask = ((sfontnum != -1) ? 0 : SFONT_MASKVAL)
+    | ((banknum != -1) ? 0 : BANK_MASKVAL)
+    | ((prognum != -1) ? 0 : PROG_MASKVAL);
+
+  /* Loop until SoundFont, bank and program integer is atomically assigned */
+  do
+  {
+    oldval = fluid_atomic_int_get (&chan->sfont_bank_prog);
+    newval = (newval & ~oldmask) | (oldval & oldmask);
+  }
+  while (newval != oldval
+         && !fluid_atomic_int_compare_and_exchange (&chan->sfont_bank_prog,
+                                                    oldval, newval));
 }
 
-/*
- * fluid_channel_pressure
- */
-int
-fluid_channel_pressure(fluid_channel_t* chan, int val)
+/* Set bank LSB 7 bits */
+void
+fluid_channel_set_bank_lsb(fluid_channel_t* chan, int banklsb)
 {
-  chan->channel_pressure = val;
-  fluid_synth_modulate_voices(chan->synth, chan->channum, 0, FLUID_MOD_CHANNELPRESSURE);
-  return FLUID_OK;
+  int oldval, newval;
+
+  /* Loop until bank LSB is atomically assigned */
+  do
+  {
+    oldval = fluid_atomic_int_get (&chan->sfont_bank_prog);
+    newval = (oldval & ~BANKLSB_MASKVAL) | (banklsb << BANK_SHIFTVAL);
+  }
+  while (newval != oldval
+         && !fluid_atomic_int_compare_and_exchange (&chan->sfont_bank_prog,
+                                                    oldval, newval));
 }
 
-/*
- * fluid_channel_pitch_bend
- */
-int
-fluid_channel_pitch_bend(fluid_channel_t* chan, int val)
+/* Set bank MSB 7 bits */
+void
+fluid_channel_set_bank_msb(fluid_channel_t* chan, int bankmsb)
 {
-  chan->pitch_bend = val;
-  fluid_synth_modulate_voices(chan->synth, chan->channum, 0, FLUID_MOD_PITCHWHEEL);
-  return FLUID_OK;
+  int oldval, newval;
+
+  /* Loop until bank MSB is atomically assigned */
+  do
+  {
+    oldval = fluid_atomic_int_get (&chan->sfont_bank_prog);
+    newval = (oldval & ~BANKMSB_MASKVAL) | (bankmsb << (BANK_SHIFTVAL + 7));
+  }
+  while (newval != oldval
+         && !fluid_atomic_int_compare_and_exchange (&chan->sfont_bank_prog,
+                                                    oldval, newval));
 }
 
-/*
- * fluid_channel_pitch_wheel_sens
- */
-int
-fluid_channel_pitch_wheel_sens(fluid_channel_t* chan, int val)
+/* Get SoundFont ID, MIDI bank and/or program.  Use NULL to ignore a value. */
+void
+fluid_channel_get_sfont_bank_prog(fluid_channel_t* chan, int *sfont,
+                                  int *bank, int *prog)
 {
-  chan->pitch_wheel_sensitivity = val;
-  fluid_synth_modulate_voices(chan->synth, chan->channum, 0, FLUID_MOD_PITCHWHEELSENS);
-  return FLUID_OK;
-}
+  int sfont_bank_prog;
 
-/*
- * fluid_channel_get_num
- */
-int
-fluid_channel_get_num(fluid_channel_t* chan)
-{
-  return chan->channum;
-}
+  sfont_bank_prog = fluid_atomic_int_get (&chan->sfont_bank_prog);
 
-/* Purpose:
- * Sets the index of the interpolation method used on this channel,
- * as in fluid_interp in fluidsynth.h
- */
-void fluid_channel_set_interp_method(fluid_channel_t* chan, int new_method)
-{
-  chan->interp_method = new_method;
-}
-
-/* Purpose:
- * Returns the index of the interpolation method used on this channel,
- * as in fluid_interp in fluidsynth.h
- */
-int fluid_channel_get_interp_method(fluid_channel_t* chan)
-{
-  return chan->interp_method;
-}
-
-unsigned int fluid_channel_get_sfontnum(fluid_channel_t* chan)
-{
-  return chan->sfontnum;
-}
-
-int fluid_channel_set_sfontnum(fluid_channel_t* chan, unsigned int sfontnum)
-{
-  chan->sfontnum = sfontnum;
-  return FLUID_OK;
+  if (sfont) *sfont = (sfont_bank_prog & SFONT_MASKVAL) >> SFONT_SHIFTVAL;
+  if (bank) *bank = (sfont_bank_prog & BANK_MASKVAL) >> BANK_SHIFTVAL;
+  if (prog) *prog = (sfont_bank_prog & PROG_MASKVAL) >> PROG_SHIFTVAL;
 }

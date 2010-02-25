@@ -31,8 +31,6 @@ fluid_midi_parser_t* new_fluid_midi_parser(void);
 int delete_fluid_midi_parser(fluid_midi_parser_t* parser);
 fluid_midi_event_t* fluid_midi_parser_parse(fluid_midi_parser_t* parser, unsigned char c);
 
-int fluid_midi_send_event(fluid_synth_t* synth, fluid_player_t* player, fluid_midi_event_t* evt);
-
 
 /***************************************************************
  *
@@ -171,6 +169,39 @@ enum midi_meta_event {
   MIDI_SEQUENCER_EVENT = 0x7f
 };
 
+/* MIDI SYSEX useful manufacturer values */
+enum midi_sysex_manuf {
+  MIDI_SYSEX_MANUF_ROLAND       = 0x41,         /**< Roland manufacturer ID */
+  MIDI_SYSEX_UNIV_NON_REALTIME  = 0x7E,         /**< Universal non realtime message */
+  MIDI_SYSEX_UNIV_REALTIME      = 0x7F          /**< Universal realtime message */
+};
+
+#define MIDI_SYSEX_DEVICE_ID_ALL        0x7F    /**< Device ID used in SYSEX messages to indicate all devices */
+
+/* SYSEX sub-ID #1 which follows device ID */
+#define MIDI_SYSEX_MIDI_TUNING_ID       0x08    /**< Sysex sub-ID #1 for MIDI tuning messages */
+#define MIDI_SYSEX_GM_ID                0x09    /**< Sysex sub-ID #1 for General MIDI messages */
+
+/**
+ * SYSEX tuning message IDs.
+ */
+enum midi_sysex_tuning_msg_id {
+  MIDI_SYSEX_TUNING_BULK_DUMP_REQ       = 0x00, /**< Bulk tuning dump request (non-realtime) */
+  MIDI_SYSEX_TUNING_BULK_DUMP           = 0x01, /**< Bulk tuning dump response (non-realtime) */
+  MIDI_SYSEX_TUNING_NOTE_TUNE           = 0x02, /**< Tuning note change message (realtime) */
+  MIDI_SYSEX_TUNING_BULK_DUMP_REQ_BANK  = 0x03, /**< Bulk tuning dump request (with bank, non-realtime) */
+  MIDI_SYSEX_TUNING_BULK_DUMP_BANK      = 0x04, /**< Bulk tuning dump resonse (with bank, non-realtime) */
+  MIDI_SYSEX_TUNING_OCTAVE_DUMP_1BYTE   = 0x05, /**< Octave tuning dump using 1 byte values (non-realtime) */
+  MIDI_SYSEX_TUNING_OCTAVE_DUMP_2BYTE   = 0x06, /**< Octave tuning dump using 2 byte values (non-realtime) */ 
+  MIDI_SYSEX_TUNING_NOTE_TUNE_BANK      = 0x07, /**< Tuning note change message (with bank, realtime/non-realtime) */
+  MIDI_SYSEX_TUNING_OCTAVE_TUNE_1BYTE   = 0x08, /**< Octave tuning message using 1 byte values (realtime/non-realtime) */
+  MIDI_SYSEX_TUNING_OCTAVE_TUNE_2BYTE   = 0x09  /**< Octave tuning message using 2 byte values (realtime/non-realtime) */
+};
+
+/* General MIDI sub-ID #2 */
+#define MIDI_SYSEX_GM_ON                0x01    /**< Enable GM mode */
+#define MIDI_SYSEX_GM_OFF               0x02    /**< Disable GM mode */
+
 enum fluid_driver_status
 {
   FLUID_MIDI_READY,
@@ -192,12 +223,13 @@ enum fluid_driver_status
  * fluid_midi_event_t
  */
 struct _fluid_midi_event_t {
-  fluid_midi_event_t* next;  /* Don't use it, it will dissappear. Used in midi tracks.  */
+  fluid_midi_event_t* next; /* Link to next event */
+  void *paramptr;           /* Pointer parameter (for SYSEX data), size is stored to param1, param2 indicates if pointer should be freed (dynamic if TRUE) */
   unsigned int dtime;       /* Delay (ticks) between this and previous event. midi tracks. */
-  unsigned char type;       /* MIDI event type */
-  unsigned char channel;    /* MIDI channel */
   unsigned int param1;      /* First parameter */
   unsigned int param2;      /* Second parameter */
+  unsigned char type;       /* MIDI event type */
+  unsigned char channel;    /* MIDI channel */
 };
 
 
@@ -307,10 +339,9 @@ int fluid_midi_file_skip(fluid_midi_file* mf, int len);
 int fluid_midi_file_read_tracklen(fluid_midi_file* mf);
 int fluid_midi_file_eot(fluid_midi_file* mf);
 int fluid_midi_file_get_division(fluid_midi_file* midifile);
-int fluid_midi_event_length(unsigned char status);
 
-/* How many parameters may a MIDI event have? */
-#define FLUID_MIDI_PARSER_MAX_PAR 3
+
+#define FLUID_MIDI_PARSER_MAX_DATA_SIZE 1024    /**< Maximum size of MIDI parameters/data (largest is SYSEX data) */
 
 /*
  * fluid_midi_parser_t
@@ -320,16 +351,12 @@ struct _fluid_midi_parser_t {
   unsigned char channel;          /* The channel of the event that is received (in case of a channel event) */
   unsigned int nr_bytes;          /* How many bytes have been read for the current event? */
   unsigned int nr_bytes_total;    /* How many bytes does the current event type include? */
-  unsigned short p[FLUID_MIDI_PARSER_MAX_PAR]; /* The parameters */
+  unsigned char data[FLUID_MIDI_PARSER_MAX_DATA_SIZE]; /* The parameters or SYSEX data */
   fluid_midi_event_t event;        /* The event, that is returned to the MIDI driver. */
 };
 
 int fluid_isasciistring(char* s);
 long fluid_getlength(unsigned char *s);
-
-
-
-int fluid_midi_router_send_event(fluid_midi_router_t* router, fluid_midi_event_t* event);
 
 
 #endif /* _FLUID_MIDI_H */
