@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.12"
+#define MYVERSION "2.0.13"
 
 /*
 	changelog
+
+2010-03-07 05:22 UTC - kode54
+- Fixed to abort loading properly if file is neither PSF nor PSF2
+- Version is now 2.0.13
 
 2010-01-13 00:43 UTC - kode54
 - Updated context menu handler
@@ -1648,7 +1652,7 @@ int input_psf::load_psf(service_ptr_t<file> & r, const char * p_path, file_info 
 		return 2;
 	}
 
-	return 0;
+	throw exception_io_data();
 }
 
 class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
