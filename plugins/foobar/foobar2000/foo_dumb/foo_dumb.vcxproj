@@ -33,6 +33,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>PGInstrument</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -133,7 +134,7 @@
       <AdditionalIncludeDirectories>../SDK;../../../dumb/dumb/include;c:\programming\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_DUMB_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName).pch</PrecompiledHeaderOutputFile>
@@ -155,7 +156,6 @@
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ProgramDatabaseFile>.\../Release/foo_dumb.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
-      <LinkTimeCodeGeneration>PGOptimization</LinkTimeCodeGeneration>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -266,6 +266,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\..\zlib\win32\zlib\zlib.vcxproj">
       <Project>{fbf00162-1b31-4cd0-9f78-3ada304e325f}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\pfc\pfc.vcxproj">
+      <Project>{ebfffb4e-261d-44d3-b89c-957b31a0bf9c}</Project>
     </ProjectReference>
     <ProjectReference Include="..\ATLHelpers\foobar2000_ATL_helpers.vcxproj">
       <Project>{622e8b19-8109-4717-bd4d-9657aa78363e}</Project>

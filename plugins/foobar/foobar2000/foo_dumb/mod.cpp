@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.12"
+#define MYVERSION "0.9.9.13"
 
 /*
 	changelog
+
+2010-03-12 00:02 UTC - kode54
+- Fixed two bugs with pattern loops causing songs to loop forever
+- Version is now 0.9.9.13
 
 2010-01-16 15:00 UTC - kode54
 - Fixed track termination when loops are set to none
