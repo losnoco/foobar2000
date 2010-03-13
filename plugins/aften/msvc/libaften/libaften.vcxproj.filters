@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Assembly Files">
+      <UniqueIdentifier>{65ddcadb-2559-47ef-bff2-c96323bcac42}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\libaften\a52.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\a52enc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\a52tab.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\bitalloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\bitio.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\convert.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\crc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\dynrng.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\exponent.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\filter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\mdct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\window.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\x86\cpu_caps.c">
+      <Filter>Assembly Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\x86\exponent_mmx.c">
+      <Filter>Assembly Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\x86\exponent_sse2.c">
+      <Filter>Assembly Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\x86\mdct_common_sse.c">
+      <Filter>Assembly Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\x86\mdct_sse.c">
+      <Filter>Assembly Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\x86\mdct_sse3.c">
+      <Filter>Assembly Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libaften\x86\window_sse.c">
+      <Filter>Assembly Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\libaften\a52.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\a52dec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\a52enc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\a52tab.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\aften.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\aften-types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\bitalloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\bitio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\convert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\cpu_caps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\crc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\dynrng.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\exponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\filter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\mdct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\mem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\threading.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\window.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\x86\asm_common.h">
+      <Filter>Assembly Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\x86\asm_support.h">
+      <Filter>Assembly Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\x86\cpu_caps.h">
+      <Filter>Assembly Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\x86\exponent.h">
+      <Filter>Assembly Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\x86\gas_support.h">
+      <Filter>Assembly Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\x86\intelas_support.h">
+      <Filter>Assembly Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\x86\mdct.h">
+      <Filter>Assembly Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\x86\mdct_common_sse.h">
+      <Filter>Assembly Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\x86\simd_support.h">
+      <Filter>Assembly Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libaften\x86\window.h">
+      <Filter>Assembly Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
