@@ -1,4 +1,4 @@
-#define MYVERSION "1.0"
+#define MYVERSION "1.2"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -35,6 +35,15 @@
 /*
 
 	change log
+
+2010-03-14 14:50 UTC - kode54
+- Changed the HDCD decoder peak extension condition to a single if statement
+- Version is now 1.2
+
+2010-03-14 14:16 UTC - kode54
+- Cleaned up a few things.
+- Added HDCD detection indicator to console
+- Version is now 1.1
 
 2010-03-14 13:40 UTC - kode54
 - Initial release
@@ -122,6 +131,8 @@ class hdcd_dsp : public dsp_impl_base {
 
 	unsigned srate, nch, channel_config;
 
+	bool info_emitted;
+
 	bool init()
 	{
 		decoders.set_size( nch );
@@ -147,6 +158,7 @@ class hdcd_dsp : public dsp_impl_base {
 		srate = 0;
 		nch = 0;
 		channel_config = 0;
+		info_emitted = false;
 	}
 
 	void flush_chunk()
@@ -176,6 +188,7 @@ class hdcd_dsp : public dsp_impl_base {
 				sample_buffer.reset();
 			}
 		}
+		cleanup();
 	}
 
 	void process_chunk( audio_chunk * chunk )
@@ -278,7 +291,11 @@ public:
 
 		if ( enabled )
 		{
-			bool buffered = false;
+			if ( !info_emitted )
+			{
+				console::print( "HDCD detected." );
+				info_emitted = true;
+			}
 
 			if ( sample_buffer.data_available() )
 			{
@@ -289,7 +306,6 @@ public:
 				temp->set_channels( nch, channel_config );
 				sample_buffer.read( temp->get_data(), sample_buffer.data_available() );
 				unmodified_sample_buffer.reset();
-				buffered = true;
 			}
 
 			process_chunk( chunk );

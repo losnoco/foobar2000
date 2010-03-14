@@ -146,26 +146,19 @@ int hdcd_decode::decode_sample( int sample )
 		}
 	}
 
-	if ( abs( sample ) > 0x5980 )
+	if ( ( status & 16 ) && ( abs( sample ) > 0x5980 ) )
 	{
-		if ( status & 16 )
+		if ( sample >= 0 )
 		{
-			if ( sample >= 0 )
-			{
-				unsigned index = sample - 0x5981;
-				sample = peak_extend_table [index];
-				sample = sample >> 4;
-			}
-			else
-			{
-				unsigned index = -sample - 0x5981;
-				sample = peak_extend_table [index];
-				sample = -sample >> 4;
-			}
+			unsigned index = sample - 0x5981;
+			sample = peak_extend_table [index];
+			sample = sample >> 4;
 		}
 		else
 		{
-			sample <<= 3;
+			unsigned index = -sample - 0x5981;
+			sample = peak_extend_table [index];
+			sample = -sample >> 4;
 		}
 	}
 	else
