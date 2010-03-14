@@ -115,9 +115,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foobar2000_SDK", "SDK\fooba
 		{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C} = {EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_aften", "foo_dsp_aften\foo_dsp_aften.vcxproj", "{E24D1AF6-AB44-4152-8D77-2472ADAA9D7C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libaften", "..\..\aften\msvc\libaften\libaften.vcxproj", "{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_hdcd", "foo_dsp_hdcd\foo_dsp_hdcd.vcxproj", "{32E9B780-8555-4010-B5C1-19544EEEF26F}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 51
+		SccNumberOfProjects = 54
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = http://sabin:8080/tfs/defaultcollection
 		SccLocalPath0 = .
@@ -271,6 +277,15 @@ Global
 		SccProjectUniqueName50 = ATLHelpers\\foobar2000_ATL_helpers.vcxproj
 		SccProjectName50 = ATLHelpers
 		SccLocalPath50 = ATLHelpers
+		SccProjectUniqueName51 = foo_dsp_aften\\foo_dsp_aften.vcxproj
+		SccProjectName51 = foo_dsp_aften
+		SccLocalPath51 = foo_dsp_aften
+		SccProjectUniqueName52 = ..\\..\\aften\\msvc\\libaften\\libaften.vcxproj
+		SccProjectName52 = ../../aften/msvc/libaften
+		SccLocalPath52 = ..\\..\\aften\\msvc\\libaften
+		SccProjectUniqueName53 = foo_dsp_hdcd\\foo_dsp_hdcd.vcxproj
+		SccProjectName53 = foo_dsp_hdcd
+		SccLocalPath53 = foo_dsp_hdcd
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -752,6 +767,33 @@ Global
 		{E8091321-D79D-4575-86EF-064EA1A4A20D}.Release|Win32.Build.0 = Release|Win32
 		{E8091321-D79D-4575-86EF-064EA1A4A20D}.Release|x64.ActiveCfg = Release|x64
 		{E8091321-D79D-4575-86EF-064EA1A4A20D}.Release|x64.Build.0 = Release|x64
+		{E24D1AF6-AB44-4152-8D77-2472ADAA9D7C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E24D1AF6-AB44-4152-8D77-2472ADAA9D7C}.Debug|Win32.Build.0 = Debug|Win32
+		{E24D1AF6-AB44-4152-8D77-2472ADAA9D7C}.Debug|x64.ActiveCfg = Debug|Win32
+		{E24D1AF6-AB44-4152-8D77-2472ADAA9D7C}.Release staticlink|Win32.ActiveCfg = Release|Win32
+		{E24D1AF6-AB44-4152-8D77-2472ADAA9D7C}.Release staticlink|Win32.Build.0 = Release|Win32
+		{E24D1AF6-AB44-4152-8D77-2472ADAA9D7C}.Release staticlink|x64.ActiveCfg = Release|Win32
+		{E24D1AF6-AB44-4152-8D77-2472ADAA9D7C}.Release|Win32.ActiveCfg = Release|Win32
+		{E24D1AF6-AB44-4152-8D77-2472ADAA9D7C}.Release|Win32.Build.0 = Release|Win32
+		{E24D1AF6-AB44-4152-8D77-2472ADAA9D7C}.Release|x64.ActiveCfg = Release|Win32
+		{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}.Debug|Win32.Build.0 = Debug|Win32
+		{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}.Debug|x64.ActiveCfg = Debug|Win32
+		{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}.Release staticlink|Win32.ActiveCfg = Release|Win32
+		{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}.Release staticlink|Win32.Build.0 = Release|Win32
+		{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}.Release staticlink|x64.ActiveCfg = Release|Win32
+		{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}.Release|Win32.ActiveCfg = Release|Win32
+		{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}.Release|Win32.Build.0 = Release|Win32
+		{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}.Release|x64.ActiveCfg = Release|Win32
+		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Debug|Win32.Build.0 = Debug|Win32
+		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Debug|x64.ActiveCfg = Debug|Win32
+		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Release staticlink|Win32.ActiveCfg = Release|Win32
+		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Release staticlink|Win32.Build.0 = Release|Win32
+		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Release staticlink|x64.ActiveCfg = Release|Win32
+		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Release|Win32.ActiveCfg = Release|Win32
+		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Release|Win32.Build.0 = Release|Win32
+		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
