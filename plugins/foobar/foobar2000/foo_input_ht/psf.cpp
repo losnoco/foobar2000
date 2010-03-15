@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.12"
+#define MYVERSION "2.0.14"
 
 /*
 	changelog
+
+2010-03-15 12:11 UTC - kode54
+- Fixed Unicode tag reading
+- Version is now 2.0.14
 
 2010-01-13 00:47 UTC - kode54
 - Updated context menu handler
@@ -501,9 +505,9 @@ static void trim_whitespace( pfc::string_base & val )
 {
 	const char * start = val.get_ptr();
 	const char * end = start + strlen( start ) - 1;
-	while ( *start && *start < 0x20 ) ++start;
-	while ( end >= start && *end < 0x20 ) --end;
-	memcpy( (void *) val.get_ptr(), start, end - start + 2 );
+	while ( *start > 0 && *start < 0x20 ) ++start;
+	while ( end >= start && *end >= 0 && *end < 0x20 ) --end;
+	memcpy( (void *) val.get_ptr(), start, end - start + 1 );
 	val.truncate( end - start + 1 );
 }
 
