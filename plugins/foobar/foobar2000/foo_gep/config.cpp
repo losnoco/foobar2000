@@ -1,7 +1,11 @@
-#define MYVERSION "1.94"
+#define MYVERSION "1.95"
 
 /*
 	change log
+
+2010-03-17 13:48 UTC - kode54
+- Implemented SPC700 visualization based on Super Jukebox
+- Version is now 1.95
 
 2010-02-10 07:22 UTC - kode54
 - Commented out DAC panning offset changing since it caused popping sounds sometimes

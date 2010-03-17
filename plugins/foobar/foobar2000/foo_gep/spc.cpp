@@ -17,6 +17,9 @@
 static const char field_length[]="spc_length";
 static const char field_fade[]="spc_fade";
 
+static const char spc_vis_field_registers[]="spc_dsp_registers";
+static const char spc_vis_field_env_modes[]="spc_dsp_env_modes";
+
 // {65753F0B-DADE-4341-BDE7-89564C7B5596}
 static const GUID guid_cfg_placement = 
 { 0x65753f0b, 0xdade, 0x4341, { 0xbd, 0xe7, 0x89, 0x56, 0x4c, 0x7b, 0x55, 0x96 } };
@@ -552,10 +555,26 @@ protected:
 	}
 };*/
 
+static char get_hex_nibble( unsigned char val )
+{
+	if ( val < 10 ) return '0' + val;
+	else return 'A' + val - 10;
+}
+
+static void add_hex( pfc::string_base & p_out, unsigned char val )
+{
+	p_out.add_byte( get_hex_nibble( val >> 4 ) );
+	p_out.add_byte( get_hex_nibble( val & 15 ) );
+}
+
 class input_spc : public input_gep
 {
 	file_info_impl    m_info;
 	bool              retagging;
+
+	bool vis_info;
+	unsigned char old_regs[Spc_Dsp::register_count];
+	Spc_Dsp::env_mode_t old_env_modes[Spc_Dsp::voice_count];
 
 public:
 	input_spc()
@@ -778,6 +797,70 @@ public:
 		input_gep::decode_initialize( 0, p_flags, p_abort );
 
 		first_block = false;
+
+		vis_info = !! ( p_flags & input_flag_playback );
+
+		if ( vis_info )
+		{
+			memset( old_regs, 0, sizeof( old_regs ) );
+			memset( old_env_modes, 0xFF, sizeof( old_env_modes) );
+		}
+	}
+
+	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta )
+	{
+		if ( emu && vis_info )
+		{
+			bool ret = false;
+
+			unsigned char regs[Spc_Dsp::register_count];
+			Spc_Dsp::env_mode_t env_modes[Spc_Dsp::voice_count];
+
+			const Spc_Dsp * dsp = (( Spc_Emu * )emu)->get_apu()->get_dsp();
+
+			for ( unsigned i = 0; i < Spc_Dsp::register_count; i++ ) regs[ i ] = dsp->read( i );
+			for ( unsigned i = 0; i < Spc_Dsp::voice_count; i++ ) env_modes[ i ] = dsp->get_voice( i )->env_mode;
+
+			pfc::string8 temp;
+
+			if ( memcmp( old_regs, regs, sizeof( old_regs ) ) )
+			{
+				temp.reset();
+
+				memcpy( old_regs, regs, sizeof( old_regs ) );
+
+				for ( unsigned i = 0; i < Spc_Dsp::register_count; i++ )
+				{
+					add_hex( temp, regs[ i ] );
+				}
+
+				p_out.info_set( spc_vis_field_registers, temp );
+
+				ret = true;
+			}
+
+			if ( memcmp( old_env_modes, env_modes, sizeof( old_env_modes ) ) )
+			{
+				temp.reset();
+
+				memcpy( old_env_modes, env_modes, sizeof( old_env_modes ) );
+
+				for ( unsigned i = 0; i < Spc_Dsp::voice_count; i++ )
+				{
+					temp.add_byte( '0' + (int) env_modes[ i ] );
+				}
+
+				p_out.info_set( spc_vis_field_env_modes, temp );
+
+				ret = true;
+			}
+
+			if ( ret ) p_timestamp_delta = 512 / Spc_Emu::native_sample_rate;
+
+			return ret;
+		}
+
+		return false;
 	}
 
 	void retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )

@@ -241,6 +241,7 @@
     <ClCompile Include="loadpic.cpp" />
     <ClCompile Include="logo.cpp" />
     <ClCompile Include="reader.cpp" />
+    <ClCompile Include="vis_spc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NSF_File.h" />
