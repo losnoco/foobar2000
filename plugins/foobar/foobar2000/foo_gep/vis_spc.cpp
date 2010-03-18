@@ -17,6 +17,7 @@ COLORREF ColorPreset[4][22] =
 	{RGB(64,69,77),RGB(192,192,192),RGB(128,128,128),RGB(255,255,255),RGB(128,128,128),RGB(255,255,255),RGB(128,128,128),RGB(255,255,255),RGB(128,128,128),RGB(255,255,255),RGB(128,128,128),RGB(255,255,255),RGB(128,128,128),RGB(255,255,255),RGB(128,128,128),RGB(255,255,255),RGB(128,128,128),RGB(255,255,255),RGB(128,128,128),RGB(255,255,255),RGB(128,128,128),RGB(255,255,255)}
 };
 
+// configuration for the popup window
 static const GUID guid_cfg_labels = { 0x2fdb3f5e, 0x2df9, 0x4efe, { 0xb0, 0xa8, 0x7e, 0x29, 0x73, 0x79, 0xbf, 0xbc } };
 static const GUID guid_cfg_style = { 0x45e05961, 0x6584, 0x4286, { 0x9a, 0x7f, 0x7c, 0x40, 0xa0, 0xa, 0x58, 0x95 } };
 static const GUID guid_cfg_placement = { 0x600fba47, 0xea03, 0x40b1, { 0x9e, 0xb7, 0x34, 0xf2, 0xa1, 0x68, 0x9d, 0x6e } };
@@ -25,8 +26,9 @@ static cfg_bool cfg_labels( guid_cfg_labels, true );
 static cfg_int cfg_style( guid_cfg_style, 0 );
 static cfg_window_placement cfg_placement(guid_cfg_placement);
 
-class CVisWindow : public CFrameWindowImpl<CVisWindow>, play_callback
+class CVisWindow : public CWindowImpl<CVisWindow>, play_callback
 {
+protected:
 	enum EnvMode { Release = 0, Attack, Decay, Sustain, Dec, Exp, Inc, Bent, Direct };
 
 	struct EnvM
@@ -56,6 +58,9 @@ class CVisWindow : public CFrameWindowImpl<CVisWindow>, play_callback
 	};
 
 	bool m_bVisRunning;
+
+	bool m_bVisShowLabels;
+	unsigned m_bVisColorStyle;
 
 	unsigned char regs[Spc_Dsp::register_count];
 	EnvM env_modes[Spc_Dsp::voice_count];
@@ -108,15 +113,12 @@ public:
 		}
 	}
 
-	DECLARE_FRAME_WND_CLASS_EX( _T("D087F204-63D3-4B24-AA7F-8E7C364616A2"), 0, 0, -1 )
+	DECLARE_WND_CLASS_EX( _T("D087F204-63D3-4B24-AA7F-8E7C364616A2"), 0, -1 )
 
 	BEGIN_MSG_MAP(CVisWindow)
 		MSG_WM_CREATE(OnCreate)
 		MSG_WM_PAINT(OnPaint)
-		//MSG_WM_RBUTTONUP(OnRButtonUp)
-		MSG_WM_CONTEXTMENU(OnContextMenu)
 		MSG_WM_DESTROY(OnDestroy)
-		CHAIN_MSG_MAP(CFrameWindowImpl<CVisWindow>)
 	END_MSG_MAP()
 
 	// play_callback interface
@@ -210,17 +212,6 @@ public:
 		}
 	}
 
-	void UpdateLayout(BOOL bResizeBars = TRUE)
-	{
-		Refresh();
-
-		RECT rcw = { 0, 0, m_Columns[11].x, Spc_Dsp::voice_count * 14 + 2 + ( cfg_labels ? 14 : 0 ) };
-
-		::AdjustWindowRectEx( &rcw, GetStyle(), FALSE, GetExStyle() );
-
-		SetWindowPos( NULL, &rcw, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE );
-	}
-
 protected:
 	int OnCreate(LPCREATESTRUCT)
 	{
@@ -300,7 +291,7 @@ protected:
 		RECT rc;
 		GetClientRect(&rc);
 		FillRect(m_hDC,&rc,m_BackBrush);
-		if(cfg_labels)
+		if(m_bVisShowLabels)
 		{
 			SetTextColor(m_hDC,m_Colors[1]);
 			for(INT i=0;i<tabsize(m_Columns);i++)
@@ -309,35 +300,6 @@ protected:
 		m_bDrawAll = TRUE;
 		Render();
 		ValidateRect(NULL);
-	}
-
-	void OnContextMenu(CWindow wnd, CPoint point)
-	{
-		HMENU hMenu=CreatePopupMenu();
-		if(!hMenu) return;
-		AppendMenu(hMenu,MF_STRING|(cfg_labels?MF_CHECKED:0),1,_T("Column &Labels"));
-		AppendMenu(hMenu,MF_SEPARATOR,0,0);
-		AppendMenu(hMenu,MF_STRING,2,_T("Color style &1"));
-		AppendMenu(hMenu,MF_STRING,3,_T("Color style &2"));
-		AppendMenu(hMenu,MF_STRING,4,_T("Color style &3"));
-		AppendMenu(hMenu,MF_STRING,5,_T("Color style &4"));
-		INT nSelection=TrackPopupMenu(hMenu,TPM_LEFTALIGN|TPM_TOPALIGN|TPM_NONOTIFY|TPM_RETURNCMD|TPM_RIGHTBUTTON,point.x,point.y,0,wnd,NULL);
-		DestroyMenu(hMenu);
-
-		switch(nSelection)
-		{
-		case 1:
-			cfg_labels = !cfg_labels;
-			UpdateLayout();
-			break;
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-			cfg_style = nSelection - 2;
-			Refresh();
-			break;
-		}
 	}
 
 private:
@@ -375,9 +337,10 @@ private:
 		}
 	}
 
+protected:
 	BOOL Refresh()
 	{
-		memcpy(&m_Colors,&ColorPreset[cfg_style],sizeof(m_Colors));
+		memcpy(&m_Colors,&ColorPreset[m_bVisColorStyle],sizeof(m_Colors));
 
 		SIZE sz;
 		for(UINT i=0;i<tabsize(m_Columns);i++)
@@ -391,7 +354,7 @@ private:
 			}
 			m_Columns[i].y=0;
 		}
-		if(!cfg_labels)
+		if(!m_bVisShowLabels)
 		{
 			GetTextExtentPoint32(m_hDC,_T("0"),_tcslen(_T("0")),&sz);
 			m_Columns[1].x=m_Columns[0].x+sz.cx+5;
@@ -472,10 +435,11 @@ private:
 		return TRUE;
 	}
 
+private:
 	BOOL Render()
 	{
 		RECT rc;
-		INT nYPos=cfg_labels?14:0;
+		INT nYPos=m_bVisShowLabels?15:1;
 		for(INT i=0;i<8;i++)
 		{
 			if(m_bDrawAll)
@@ -495,7 +459,7 @@ private:
 				SetRect(&rc,m_Columns[1].x,i*14+nYPos,m_Columns[2].x-1,i*14+nYPos+13);
 				FillRect(m_hDC,&rc,m_BackBrush);
 				TCHAR szBuf[20];
-				_stprintf(szBuf,_T("%u"),bWave);
+				_stprintf(szBuf,_T("%u"),m_bVisRunning?bWave:0);
 				SetTextColor(m_hDC,m_Colors[m_bVisRunning?5:4]);
 				TextOut(m_hDC,m_Columns[1].x,i*14+nYPos,szBuf,_tcslen(szBuf));
 			}
@@ -608,7 +572,272 @@ private:
 	}
 };
 
-CVisWindow g_VisWindow;
+class CVisWindowPopup : public CVisWindow
+{
+public:
+	BEGIN_MSG_MAP(CVisWindow)
+		MSG_WM_CREATE(OnCreate)
+		MSG_WM_PAINT(CVisWindow::OnPaint)
+		MSG_WM_CONTEXTMENU(OnContextMenu)
+		MSG_WM_DESTROY(OnDestroy)
+	END_MSG_MAP()
+
+	CVisWindowPopup() : CVisWindow() {}
+
+	void UpdateLayout(BOOL bResizeBars = TRUE)
+	{
+		Refresh();
+
+		RECT rcw = { 0, 0, m_Columns[11].x, Spc_Dsp::voice_count * 14 + 2 + ( m_bVisShowLabels ? 14 : 0 ) };
+
+		m_nWidth = rcw.right;
+		m_nHeight = rcw.bottom;
+
+		::AdjustWindowRectEx( &rcw, GetStyle(), FALSE, GetExStyle() );
+
+		SetWindowPos( NULL, &rcw, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE );
+	}
+
+	int OnCreate(LPCREATESTRUCT lpcs)
+	{
+		m_bVisShowLabels = cfg_labels;
+		m_bVisColorStyle = cfg_style;
+
+		return CVisWindow::OnCreate(lpcs);
+	}
+
+	void OnDestroy()
+	{
+		CVisWindow::OnDestroy();
+
+		cfg_labels = m_bVisShowLabels;
+		cfg_style = m_bVisColorStyle;
+	}
+
+	void OnContextMenu(CWindow wnd, CPoint point)
+	{
+		HMENU hMenu=CreatePopupMenu();
+		if(!hMenu) return;
+		AppendMenu(hMenu,MF_STRING|(m_bVisShowLabels?MF_CHECKED:0),1,_T("Column &Labels"));
+		AppendMenu(hMenu,MF_SEPARATOR,0,0);
+		AppendMenu(hMenu,MF_STRING,2,_T("Color style &1"));
+		AppendMenu(hMenu,MF_STRING,3,_T("Color style &2"));
+		AppendMenu(hMenu,MF_STRING,4,_T("Color style &3"));
+		AppendMenu(hMenu,MF_STRING,5,_T("Color style &4"));
+		if (point.x == 0xFFFF && point.y == 0xFFFF)
+		{
+			point.x = 0; point.y = 0;
+			wnd.ClientToScreen(&point);
+		}
+		INT nSelection=TrackPopupMenu(hMenu,TPM_LEFTALIGN|TPM_TOPALIGN|TPM_NONOTIFY|TPM_RETURNCMD|TPM_RIGHTBUTTON,point.x,point.y,0,wnd,NULL);
+		DestroyMenu(hMenu);
+
+		switch(nSelection)
+		{
+		case 1:
+			m_bVisShowLabels = !m_bVisShowLabels;
+			UpdateLayout();
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			m_bVisColorStyle = nSelection - 2;
+			UpdateLayout();
+			break;
+		}
+	}
+};
+
+// {B08E684B-94EB-4AE6-84E1-EB40AF3BE4F2}
+static const GUID guid_ui_element = 
+{ 0xb08e684b, 0x94eb, 0x4ae6, { 0x84, 0xe1, 0xeb, 0x40, 0xaf, 0x3b, 0xe4, 0xf2 } };
+
+class CVisWindowElementConfig : public ui_element_config
+{
+public:
+	struct data
+	{
+		bool show_labels;
+		unsigned char color_style;
+		data() : show_labels(true), color_style(0) {}
+	} the_data;
+
+	virtual GUID get_guid() const { return guid_ui_element; }
+	virtual const void * get_data() const { return &the_data; }
+	virtual t_size get_data_size() const { return sizeof(the_data); }
+};
+
+class CVisWindowElementInstance : public CVisWindow, public ui_element_instance
+{
+	ui_element_instance_callback_ptr m_callback;
+
+public:
+	BEGIN_MSG_MAP(CVisWindow)
+		MSG_WM_CONTEXTMENU(OnContextMenu)
+		CHAIN_MSG_MAP(CVisWindow)
+	END_MSG_MAP()
+
+	CVisWindowElementInstance(HWND hwndParent, ui_element_config::ptr cfg, ui_element_instance_callback_ptr p_callback) : CVisWindow()
+	{
+		m_callback = p_callback;
+		m_bVisShowLabels = true;
+		m_bVisColorStyle = 0;
+		if ( cfg->get_guid() == get_guid() && cfg->get_data_size() == sizeof(CVisWindowElementConfig::data) )
+		{
+			const CVisWindowElementConfig::data * data = (const CVisWindowElementConfig::data *) cfg->get_data();
+			m_bVisShowLabels = data->show_labels;
+			m_bVisColorStyle = data->color_style;
+		}
+		Create( hwndParent, 0, 0, 0, 0, 0U, 0 );
+	}
+
+	~CVisWindowElementInstance()
+	{
+		DestroyWindow();
+	}
+
+	void UpdateLayout()
+	{
+		Refresh();
+
+		RECT rcw = { 0, 0, m_Columns[11].x, Spc_Dsp::voice_count * 14 + 2 + ( m_bVisShowLabels ? 14 : 0 ) };
+
+		::AdjustWindowRectEx( &rcw, GetStyle(), FALSE, GetExStyle() );
+
+		SetWindowPos( NULL, &rcw, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE );
+
+		m_callback->on_min_max_info_change();
+	}
+
+	virtual HWND get_wnd() { return m_hWnd; }
+
+	virtual void set_configuration(ui_element_config::ptr data)
+	{
+		if ( data->get_guid() == get_guid() && data->get_data_size() == sizeof(CVisWindowElementConfig::data) )
+		{
+			const CVisWindowElementConfig::data * _data = (const CVisWindowElementConfig::data *) data->get_data();
+			m_bVisShowLabels = _data->show_labels;
+			m_bVisColorStyle = _data->color_style;
+			UpdateLayout();
+		}
+	}
+
+	virtual ui_element_config::ptr get_configuration()
+	{
+		CVisWindowElementConfig * config = new service_impl_t<CVisWindowElementConfig>;
+		config->the_data.show_labels = m_bVisShowLabels;
+		config->the_data.color_style = m_bVisColorStyle;
+		return config;
+	}
+
+	virtual GUID get_guid() { return guid_ui_element; }
+	virtual GUID get_subclass() { return guid_ui_element; }
+
+	virtual ui_element_min_max_info get_min_max_info()
+	{
+		Refresh();
+		ui_element_min_max_info ret;
+		ret.m_min_width = m_Columns[11].x;
+		ret.m_max_width = 1024 * 1024;
+		ret.m_min_height = Spc_Dsp::voice_count * 14 + 2 + 14 * m_bVisShowLabels;
+		ret.m_max_height = Spc_Dsp::voice_count * 14 + 2 + 14 * m_bVisShowLabels;
+		return ret;
+	}
+
+	virtual bool edit_mode_context_menu_test(const POINT & p_point,bool p_fromkeyboard) {return true;}
+	virtual void edit_mode_context_menu_build(const POINT & p_point,bool p_fromkeyboard,HMENU p_menu,unsigned p_id_base)
+	{
+		AppendMenu(p_menu,MF_STRING|(m_bVisShowLabels?MF_CHECKED:0),p_id_base+1,_T("Column &Labels"));
+		AppendMenu(p_menu,MF_SEPARATOR,0,0);
+		AppendMenu(p_menu,MF_STRING,p_id_base+2,_T("Color style &1"));
+		AppendMenu(p_menu,MF_STRING,p_id_base+3,_T("Color style &2"));
+		AppendMenu(p_menu,MF_STRING,p_id_base+4,_T("Color style &3"));
+		AppendMenu(p_menu,MF_STRING,p_id_base+5,_T("Color style &4"));
+	}
+	virtual void edit_mode_context_menu_command(const POINT & p_point,bool p_fromkeyboard,unsigned p_id,unsigned p_id_base)
+	{
+		switch (p_id - p_id_base)
+		{
+		case 1:
+			m_bVisShowLabels = !m_bVisShowLabels;
+			UpdateLayout();
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			m_bVisColorStyle = p_id - p_id_base - 2;
+			UpdateLayout();
+			break;
+		}
+	}
+	virtual bool edit_mode_context_menu_get_focus_point(POINT & p_point)
+	{
+		p_point.x = 0;
+		p_point.y = 0;
+		ClientToScreen(&p_point);
+		return true;
+	}
+	virtual bool edit_mode_context_menu_get_description(unsigned p_id,unsigned p_id_base,pfc::string_base & p_out)
+	{
+		switch (p_id - p_id_base)
+		{
+		case 1:
+			p_out = "Toggles the display of the column labels.";
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			p_out = "Changes the current color style.";
+			break;
+		default:
+			return false;
+		}
+		return true;
+	}
+
+	void OnContextMenu(CWindow wnd, CPoint point)
+	{
+		if ( !m_callback->is_edit_mode_enabled() )
+		{
+			HMENU hMenu=CreatePopupMenu();
+			if(!hMenu) return;
+			edit_mode_context_menu_build( point, false, hMenu, 0 );
+			if (point.x == 0xFFFF && point.y == 0xFFFF)
+			{
+				point.x = 0; point.y = 0;
+				wnd.ClientToScreen(&point);
+			}
+			INT nSelection=TrackPopupMenu(hMenu,TPM_NONOTIFY|TPM_RETURNCMD|TPM_RIGHTBUTTON,point.x,point.y,0,wnd,NULL);
+			DestroyMenu(hMenu);
+			edit_mode_context_menu_command( point, false, nSelection, 0 );
+		}
+		else
+		{
+			SetMsgHandled(FALSE);
+		}
+	}
+};
+
+class CVisWindowElement : public ui_element_v2
+{
+	virtual GUID get_guid() { return guid_ui_element; }
+	virtual GUID get_subclass() { return ui_element_subclass_playback_visualisation; }
+	virtual void get_name(pfc::string_base & p_out) { p_out = "SPC700 status"; }
+	virtual ui_element_instance_ptr instantiate(HWND p_parent,ui_element_config::ptr cfg,ui_element_instance_callback_ptr p_callback)
+	{
+		return new service_impl_t<CVisWindowElementInstance>( p_parent, cfg, p_callback );
+	}
+	virtual ui_element_config::ptr get_default_configuration() { return new service_impl_t<CVisWindowElementConfig>; }
+	virtual ui_element_children_enumerator_ptr enumerate_children(ui_element_config::ptr cfg) { return NULL; }
+	virtual bool get_description(pfc::string_base & p_out) { p_out = "Displays the status of the emulated SPC700 while a SPC file is playing."; return true; }
+	virtual t_uint32 get_flags() { return KFlagHavePopupCommand; }
+	virtual bool bump() { return false; }
+};
+
+/*CVisWindowPopup g_VisWindow;
 
 class spc_vis_menu : public mainmenu_commands
 {
@@ -667,4 +896,6 @@ class spc_vis_menu : public mainmenu_commands
 	}
 };
 
-static mainmenu_commands_factory_t <spc_vis_menu> g_mainmenu_commands_spc_vis_factory;
+static mainmenu_commands_factory_t <spc_vis_menu> g_mainmenu_commands_spc_vis_factory;*/
+
+static service_factory_single_t<CVisWindowElement> g_element_spc_vis_factory;

@@ -1,7 +1,11 @@
-#define MYVERSION "1.95"
+#define MYVERSION "1.96"
 
 /*
 	change log
+
+2010-03-18 19:51 UTC - kode54
+- Implemented SPC700 visualization as a UI Element
+- Version is now 1.96
 
 2010-03-17 13:48 UTC - kode54
 - Implemented SPC700 visualization based on Super Jukebox
