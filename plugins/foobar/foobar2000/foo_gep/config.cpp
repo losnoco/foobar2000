@@ -1,7 +1,11 @@
-#define MYVERSION "1.96"
+#define MYVERSION "1.97"
 
 /*
 	change log
+
+2010-03-19 16:30 UTC - kode54
+- Fixed flickering on window move with SPC700 UI Element
+- Version is now 1.97
 
 2010-03-18 19:51 UTC - kode54
 - Implemented SPC700 visualization as a UI Element

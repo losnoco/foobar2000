@@ -18,13 +18,13 @@ COLORREF ColorPreset[4][22] =
 };
 
 // configuration for the popup window
-static const GUID guid_cfg_labels = { 0x2fdb3f5e, 0x2df9, 0x4efe, { 0xb0, 0xa8, 0x7e, 0x29, 0x73, 0x79, 0xbf, 0xbc } };
+/*static const GUID guid_cfg_labels = { 0x2fdb3f5e, 0x2df9, 0x4efe, { 0xb0, 0xa8, 0x7e, 0x29, 0x73, 0x79, 0xbf, 0xbc } };
 static const GUID guid_cfg_style = { 0x45e05961, 0x6584, 0x4286, { 0x9a, 0x7f, 0x7c, 0x40, 0xa0, 0xa, 0x58, 0x95 } };
 static const GUID guid_cfg_placement = { 0x600fba47, 0xea03, 0x40b1, { 0x9e, 0xb7, 0x34, 0xf2, 0xa1, 0x68, 0x9d, 0x6e } };
 
 static cfg_bool cfg_labels( guid_cfg_labels, true );
 static cfg_int cfg_style( guid_cfg_style, 0 );
-static cfg_window_placement cfg_placement(guid_cfg_placement);
+static cfg_window_placement cfg_placement(guid_cfg_placement);*/
 
 class CVisWindow : public CWindowImpl<CVisWindow>, play_callback
 {
@@ -255,7 +255,7 @@ protected:
 
 		CenterWindow();
 
-		cfg_placement.on_window_creation( m_hWnd );
+		//cfg_placement.on_window_creation( m_hWnd );
 
 		return TRUE;
 	}
@@ -266,7 +266,7 @@ protected:
 		m_bDrawAll = TRUE;
 		Render();
 
-		cfg_placement.on_window_destruction( m_hWnd );
+		//cfg_placement.on_window_destruction( m_hWnd );
 
 		static_api_ptr_t<play_callback_manager>()->unregister_callback( this );
 
@@ -572,7 +572,7 @@ private:
 	}
 };
 
-class CVisWindowPopup : public CVisWindow
+/*class CVisWindowPopup : public CVisWindow
 {
 public:
 	BEGIN_MSG_MAP(CVisWindow)
@@ -647,7 +647,7 @@ public:
 			break;
 		}
 	}
-};
+};*/
 
 // {B08E684B-94EB-4AE6-84E1-EB40AF3BE4F2}
 static const GUID guid_ui_element = 
@@ -736,7 +736,6 @@ public:
 
 	virtual ui_element_min_max_info get_min_max_info()
 	{
-		Refresh();
 		ui_element_min_max_info ret;
 		ret.m_min_width = m_Columns[11].x;
 		ret.m_max_width = 1024 * 1024;
