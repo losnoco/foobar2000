@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.13"
+#define MYVERSION "0.9.9.14"
 
 /*
 	changelog
+
+2010-03-19 16:58 UTC - kode54
+- Updated zlib to version 1.2.4
+- Version is now 0.9.9.14
 
 2010-03-12 00:02 UTC - kode54
 - Fixed two bugs with pattern loops causing songs to loop forever

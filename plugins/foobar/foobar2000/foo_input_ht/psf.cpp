@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.14"
+#define MYVERSION "2.0.15"
 
 /*
 	changelog
+
+2010-03-19 16:59 UTC - kode54
+- Updated zlib to version 1.2.4
+- Version is now 2.0.15
 
 2010-03-15 12:11 UTC - kode54
 - Fixed Unicode tag reading

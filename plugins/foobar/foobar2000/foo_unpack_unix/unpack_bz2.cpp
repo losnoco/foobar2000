@@ -1,4 +1,4 @@
-#define MY_VERSION "1.2"
+#define MY_VERSION "1.3"
 
 /* vi: set sw=4 ts=4: */
 /*	Small bzip2 deflate implementation, by Rob Landley (rob@landley.net).
