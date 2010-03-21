@@ -1,7 +1,12 @@
-#define MYVERSION "1.97"
+#define MYVERSION "1.98"
 
 /*
 	change log
+
+2010-03-20 23:55 UTC - kode54
+- Improved SPC700 UI Element behavior by adding bump/activate support
+- Fixed UI Element context menu handler to correctly position the menu when triggered by keyboard
+- Version is now 1.98
 
 2010-03-19 16:30 UTC - kode54
 - Fixed flickering on window move with SPC700 UI Element

@@ -70,7 +70,6 @@ protected:
 
 	HDC m_hDC;
 	BOOL m_bDrawAll;
-	int m_nWidth,m_nHeight;
 	struct{TCHAR szName[20];EnvM mode;COLORREF cr;}m_EnvTypes[9];
 	struct{TCHAR szName[20];int x,y;}m_Columns[12];
 	HPEN m_Pens[26];
@@ -553,7 +552,7 @@ private:
 			if(m_bDrawAll||playingchanged||regs[i*0x10+Spc_Dsp::v_outx]!=old_regs[i*0x10+Spc_Dsp::v_outx])
 			{
 				INT out=(signed char)regs[i*0x10+Spc_Dsp::v_outx];
-				float db=log(fabs((float)out))/log(2.0);
+				float db=log(fabs((float)out))/log(2.0f);
 				INT w=(INT)(db*50.0/7.0);
 				if(w<0)w=0;
 				BitBlt(m_hDCGroup[6],0,0,50,13,m_hDCGroup[4],0,0,SRCCOPY);
@@ -589,9 +588,6 @@ public:
 		Refresh();
 
 		RECT rcw = { 0, 0, m_Columns[11].x, Spc_Dsp::voice_count * 14 + 2 + ( m_bVisShowLabels ? 14 : 0 ) };
-
-		m_nWidth = rcw.right;
-		m_nHeight = rcw.bottom;
 
 		::AdjustWindowRectEx( &rcw, GetStyle(), FALSE, GetExStyle() );
 
@@ -668,6 +664,11 @@ public:
 	virtual t_size get_data_size() const { return sizeof(the_data); }
 };
 
+class CVisWindowElementInstance;
+
+critical_section g_VisWindows_sync;
+pfc::ptr_list_t<CVisWindowElementInstance> g_VisWindows;
+
 class CVisWindowElementInstance : public CVisWindow, public ui_element_instance
 {
 	ui_element_instance_callback_ptr m_callback;
@@ -690,11 +691,20 @@ public:
 			m_bVisColorStyle = data->color_style;
 		}
 		Create( hwndParent, 0, 0, 0, 0, 0U, 0 );
+
+		{
+			insync(g_VisWindows_sync);
+			g_VisWindows.add_item(this);
+		}
 	}
 
 	~CVisWindowElementInstance()
 	{
-		DestroyWindow();
+		if (m_hWnd) DestroyWindow();
+		{
+			insync(g_VisWindows_sync);
+			g_VisWindows.remove_item(this);
+		}
 	}
 
 	void UpdateLayout()
@@ -804,7 +814,7 @@ public:
 			HMENU hMenu=CreatePopupMenu();
 			if(!hMenu) return;
 			edit_mode_context_menu_build( point, false, hMenu, 0 );
-			if (point.x == 0xFFFF && point.y == 0xFFFF)
+			if (point.x == -1 && point.y == -1)
 			{
 				point.x = 0; point.y = 0;
 				wnd.ClientToScreen(&point);
@@ -817,6 +827,11 @@ public:
 		{
 			SetMsgHandled(FALSE);
 		}
+	}
+
+	void Activate()
+	{
+		m_callback->request_activation( this );
 	}
 };
 
@@ -832,8 +847,18 @@ class CVisWindowElement : public ui_element_v2
 	virtual ui_element_config::ptr get_default_configuration() { return new service_impl_t<CVisWindowElementConfig>; }
 	virtual ui_element_children_enumerator_ptr enumerate_children(ui_element_config::ptr cfg) { return NULL; }
 	virtual bool get_description(pfc::string_base & p_out) { p_out = "Displays the status of the emulated SPC700 while a SPC file is playing."; return true; }
-	virtual t_uint32 get_flags() { return KFlagHavePopupCommand; }
-	virtual bool bump() { return false; }
+	virtual t_uint32 get_flags() { return KFlagSupportsBump | KFlagHavePopupCommand; }
+	virtual bool bump()
+	{
+		insync(g_VisWindows_sync);
+		if (g_VisWindows.get_count())
+		{
+			for ( unsigned i = 0, j = g_VisWindows.get_count(); i < j; i++ )
+				g_VisWindows[ i ]->Activate();
+			return true;
+		}
+		else return false;
+	}
 };
 
 /*CVisWindowPopup g_VisWindow;
