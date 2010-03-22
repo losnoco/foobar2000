@@ -1,0 +1,204 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_TIME DIALOGEX 31, 26, 140, 44
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+FONT 8, "Tahoma", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,83,6,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,83,23,50,14
+    LTEXT           "Length:",-1,7,9,25,10,0,WS_EX_RIGHT
+    EDITTEXT        IDC_LENGTH,37,7,37,12,ES_AUTOHSCROLL
+    LTEXT           "Fade:",-1,7,26,25,10,0,WS_EX_RIGHT
+    EDITTEXT        IDC_FADE,37,24,37,12,ES_AUTOHSCROLL
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_TIME, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 133
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 37
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (Australia) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENA)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_AUS
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PREFERENCES DIALOGEX 0, 0, 254, 153
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "Cpu",IDC_STATIC,7,6,86,43
+    CONTROL         "Recompiler",IDC_RECOMPILERCPU,"Button",BS_AUTORADIOBUTTON | WS_GROUP,15,19,60,10
+    CONTROL         "Interpreter",IDC_INTERPRETERCPU,"Button",BS_AUTORADIOBUTTON,15,33,52,10
+    GROUPBOX        "Rsp",IDC_STATIC,7,54,86,53
+    CONTROL         "Recompiler",IDC_RSPRECOMPILER,"Button",BS_AUTORADIOBUTTON | WS_GROUP,16,64,53,10
+    CONTROL         "Interpreter",IDC_RSPINTERPRETER,"Button",BS_AUTORADIOBUTTON,16,78,52,10
+    GROUPBOX        "Play Time",IDC_STATIC,104,6,142,135
+    CONTROL         "Audio HLE",IDC_AUDIOHLE,"Button",BS_AUTORADIOBUTTON,16,92,55,10
+    CONTROL         "Play Indefinitely",IDC_PLAYFOREVER,"Button",BS_AUTORADIOBUTTON | WS_GROUP,112,17,67,10
+    CONTROL         "Play using Default Length",IDC_PLAYDEFAULT,"Button",BS_AUTORADIOBUTTON,112,29,97,10
+    CONTROL         "Normal Play Time",IDC_PLAYNORMAL,"Button",BS_AUTORADIOBUTTON,112,41,70,10
+    LTEXT           "Default Length is:",IDC_STATIC,113,64,57,8
+    GROUPBOX        "",IDC_STATIC,104,51,142,64,BS_FLAT
+    EDITTEXT        IDC_DEFLENGTH,173,61,53,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_FADELENGTH,173,79,53,14,ES_AUTOHSCROLL
+    LTEXT           "m:s",IDC_STATIC,229,63,13,14
+    LTEXT           "m:s",IDC_STATIC,229,81,13,14
+    LTEXT           "Fade out for:",IDC_STATIC,127,81,44,8
+    CONTROL         "Detect Silence",IDC_DETECTSILENCE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,112,124,61,10
+    EDITTEXT        IDC_SILLENGTH,174,121,52,14,ES_AUTOHSCROLL
+    LTEXT           "m:s",IDC_STATIC,229,123,13,14
+    GROUPBOX        "Seeking",IDC_STATIC,7,112,86,29
+    CONTROL         "Fast Seek",IDC_FASTSEEK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,124,47,10
+    LTEXT           "Fade Method:",IDC_STATIC,126,99,46,8
+    COMBOBOX        IDC_FADETYPE,174,97,52,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_PREFERENCES, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 246
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 146
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2,0,0,0
+ PRODUCTVERSION 2,0,0,0
+ FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "0c0904b0"
+        BEGIN
+            VALUE "Comments", "LazyUSF USF Decoder for Foobar2000"
+            VALUE "FileDescription", "LazyUSF USF Decoder for Foobar2000"
+            VALUE "FileVersion", "2, 0, 0, 0"
+            VALUE "InternalName", "foo_input_usf"
+            VALUE "LegalCopyright", "Copyright (C) 2010"
+            VALUE "OriginalFilename", "foo_input_usf.dll"
+            VALUE "ProductName", "foo_input_usf"
+            VALUE "ProductVersion", "2, 0, 0, 0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0xc09, 1200
+    END
+END
+
+#endif    // English (Australia) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

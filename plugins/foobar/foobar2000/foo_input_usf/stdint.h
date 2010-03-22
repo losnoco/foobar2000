@@ -1,0 +1,18 @@
+#ifndef _STDINT_H_
+#define _STDINT_H_
+
+#include <vadefs.h>
+
+typedef unsigned char   uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned long uint32_t;
+typedef unsigned _int64 uint64_t;
+
+typedef signed char int8_t;
+typedef signed short int16_t;
+typedef signed long int32_t;
+typedef signed _int64 int64_t;
+
+//typedef unsigned long uintptr_t;
+
+#endif

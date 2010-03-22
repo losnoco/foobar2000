@@ -121,9 +121,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libaften", "..\..\aften\msv
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_hdcd", "foo_dsp_hdcd\foo_dsp_hdcd.vcxproj", "{32E9B780-8555-4010-B5C1-19544EEEF26F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_usf", "foo_input_usf\usf.vcxproj", "{852F6566-124D-453C-B45B-5BD1C3D9BE3B}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 54
+		SccNumberOfProjects = 55
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = http://sabin:8080/tfs/defaultcollection
 		SccLocalPath0 = .
@@ -286,6 +288,9 @@ Global
 		SccProjectUniqueName53 = foo_dsp_hdcd\\foo_dsp_hdcd.vcxproj
 		SccProjectName53 = foo_dsp_hdcd
 		SccLocalPath53 = foo_dsp_hdcd
+		SccProjectUniqueName54 = foo_input_usf\\usf.vcxproj
+		SccProjectName54 = foo_input_usf
+		SccLocalPath54 = foo_input_usf
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -794,6 +799,18 @@ Global
 		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Release|Win32.ActiveCfg = Release|Win32
 		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Release|Win32.Build.0 = Release|Win32
 		{32E9B780-8555-4010-B5C1-19544EEEF26F}.Release|x64.ActiveCfg = Release|Win32
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Debug|Win32.Build.0 = Debug|Win32
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Debug|x64.ActiveCfg = Debug|x64
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Debug|x64.Build.0 = Debug|x64
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Release staticlink|Win32.ActiveCfg = Release Good|Win32
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Release staticlink|Win32.Build.0 = Release Good|Win32
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Release staticlink|x64.ActiveCfg = Release Good|x64
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Release staticlink|x64.Build.0 = Release Good|x64
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Release|Win32.ActiveCfg = Release|Win32
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Release|Win32.Build.0 = Release|Win32
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Release|x64.ActiveCfg = Release|x64
+		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
