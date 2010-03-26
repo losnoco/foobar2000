@@ -1,7 +1,11 @@
-#define MYVERSION "1.98"
+#define MYVERSION "1.99"
 
 /*
 	change log
+
+2010-03-26 04:36 UTC - kode54
+- Implemented Enhanced SCC support
+- Version is now 1.99
 
 2010-03-20 23:55 UTC - kode54
 - Improved SPC700 UI Element behavior by adding bump/activate support
