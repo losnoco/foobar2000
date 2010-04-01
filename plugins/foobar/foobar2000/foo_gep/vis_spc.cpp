@@ -8,6 +8,7 @@
 
 static const char spc_vis_field_registers[]="spc_dsp_registers";
 static const char spc_vis_field_env_modes[]="spc_dsp_env_modes";
+static const char spc_vis_field_out_levels[]="spc_dsp_out_levels";
 
 COLORREF ColorPreset[4][22] = 
 {
@@ -64,9 +65,11 @@ protected:
 
 	unsigned char regs[Spc_Dsp::register_count];
 	EnvM env_modes[Spc_Dsp::voice_count];
+	int out_levels[Spc_Dsp::voice_count * 2];
 
 	unsigned char old_regs[Spc_Dsp::register_count];
 	EnvM old_env_modes[Spc_Dsp::voice_count];
+	int old_out_levels[Spc_Dsp::voice_count * 2];
 
 	HDC m_hDC;
 	BOOL m_bDrawAll;
@@ -86,6 +89,7 @@ public:
 
 		memset( old_regs, 0, sizeof(old_regs) );
 		memset( old_env_modes, 0xFF, sizeof(old_env_modes) );
+		memset( old_out_levels, 0, sizeof(old_out_levels) );
 
 		LPCTSTR lpszColNames[]={_T("Channel"),_T("Voice"),_T("Key On"),_T("Echo"),_T("Pitch Mod."),_T("Noise"),_T("Surround"),_T("Env. Type"),_T("Envelope"),_T("Pitch"),_T("Volume"),_T("")};
 		for(int i=0;i<tabsize(m_Columns);i++)
@@ -198,6 +202,18 @@ public:
 					Spc_Dsp::env_mode_t env_modes[] = { Spc_Dsp::env_release, Spc_Dsp::env_attack, Spc_Dsp::env_decay, Spc_Dsp::env_sustain };
 					if ( val < 4 ) env_mode = env_modes[ val ];
 					this->env_modes[ i ].set( env_mode, regs[ 0x10 * i + Spc_Dsp::v_adsr0 ], regs[ 0x10 * i + Spc_Dsp::v_gain ] );
+				}
+			}
+
+			const char * p_out_levels = p_info.info_get( spc_vis_field_out_levels );
+			if ( p_out_levels )
+			{
+				for ( unsigned i = 0, j = min( Spc_Dsp::voice_count * 2, strlen( p_out_levels ) / 4 ); i < j; i++ )
+				{
+					pfc::string8 str( p_out_levels + i * 4, 4 );
+					char * end;
+					int val = strtol( str, &end, 16 );
+					if ( *end == 0 ) out_levels[ i ] = val;
 				}
 			}
 
@@ -549,11 +565,11 @@ private:
 				BitBlt(m_hDC,m_Columns[9].x,i*14+nYPos,50,13,m_hDCGroup[6],0,0,SRCCOPY);
 			}
 
-			if(m_bDrawAll||playingchanged||regs[i*0x10+Spc_Dsp::v_outx]!=old_regs[i*0x10+Spc_Dsp::v_outx])
+			if(m_bDrawAll||playingchanged||out_levels[i*2+0]!=old_out_levels[i*2+0]||out_levels[i*2+1]!=old_out_levels[i*2+1])
 			{
-				INT out=(signed char)regs[i*0x10+Spc_Dsp::v_outx];
-				float db=log(fabs((float)out))/log(2.0f);
-				INT w=(INT)(db*50.0/7.0);
+				INT out=max(out_levels[i*2+0],out_levels[i*2+1]);
+				float db=log((float)out)/log(2.0f);
+				INT w=(INT)(((db*6.0f+6.0f)-48.0f)*50.0f/48.0f);
 				if(w<0)w=0;
 				BitBlt(m_hDCGroup[6],0,0,50,13,m_hDCGroup[4],0,0,SRCCOPY);
 				if(m_bVisRunning&&w&&active)

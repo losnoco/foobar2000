@@ -1,7 +1,11 @@
-#define MYVERSION "1.99"
+#define MYVERSION "1.100"
 
 /*
 	change log
+
+2010-04-01 03:25 UTC - kode54
+- Made SPC700 visualization volume display nicer like Super Jukebox
+- Version is now 1.100
 
 2010-03-26 04:36 UTC - kode54
 - Implemented Enhanced SCC support

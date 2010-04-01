@@ -19,6 +19,7 @@ static const char field_fade[]="spc_fade";
 
 static const char spc_vis_field_registers[]="spc_dsp_registers";
 static const char spc_vis_field_env_modes[]="spc_dsp_env_modes";
+static const char spc_vis_field_out_levels[]="spc_dsp_out_levels";
 
 // {65753F0B-DADE-4341-BDE7-89564C7B5596}
 static const GUID guid_cfg_placement = 
@@ -575,6 +576,7 @@ class input_spc : public input_gep
 	bool vis_info;
 	unsigned char old_regs[Spc_Dsp::register_count];
 	Spc_Dsp::env_mode_t old_env_modes[Spc_Dsp::voice_count];
+	int old_out_levels[Spc_Dsp::voice_count * 2];
 
 public:
 	input_spc()
@@ -803,7 +805,8 @@ public:
 		if ( vis_info )
 		{
 			memset( old_regs, 0, sizeof( old_regs ) );
-			memset( old_env_modes, 0xFF, sizeof( old_env_modes) );
+			memset( old_env_modes, 0xFF, sizeof( old_env_modes ) );
+			memset( old_out_levels, 0, sizeof( old_out_levels ) );
 		}
 	}
 
@@ -815,11 +818,17 @@ public:
 
 			unsigned char regs[Spc_Dsp::register_count];
 			Spc_Dsp::env_mode_t env_modes[Spc_Dsp::voice_count];
+			int out_levels[Spc_Dsp::voice_count * 2];
 
 			const Spc_Dsp * dsp = (( Spc_Emu * )emu)->get_apu()->get_dsp();
 
 			for ( unsigned i = 0; i < Spc_Dsp::register_count; i++ ) regs[ i ] = dsp->read( i );
 			for ( unsigned i = 0; i < Spc_Dsp::voice_count; i++ ) env_modes[ i ] = dsp->get_voice( i )->env_mode;
+			for ( unsigned i = 0; i < Spc_Dsp::voice_count; i++ )
+			{
+				out_levels[ i * 2 + 0 ] = dsp->get_max_level( i, 0 );
+				out_levels[ i * 2 + 1 ] = dsp->get_max_level( i, 1 );
+			}
 
 			pfc::string8 temp;
 
@@ -851,6 +860,22 @@ public:
 				}
 
 				p_out.info_set( spc_vis_field_env_modes, temp );
+
+				ret = true;
+			}
+
+			if ( memcmp( old_out_levels, out_levels, sizeof( old_out_levels ) ) )
+			{
+				temp.reset();
+
+				memcpy( old_out_levels, out_levels, sizeof( old_out_levels ) );
+
+				for ( unsigned i = 0; i < Spc_Dsp::voice_count * 2; i++ )
+				{
+					temp << pfc::format_int( out_levels[ i ], 4, 16 );
+				}
+
+				p_out.info_set( spc_vis_field_out_levels, temp );
 
 				ret = true;
 			}
