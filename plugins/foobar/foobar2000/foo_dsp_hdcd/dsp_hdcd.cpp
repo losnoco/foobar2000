@@ -1,4 +1,4 @@
-#define MYVERSION "1.2"
+#define MYVERSION "1.3"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -36,6 +36,10 @@
 
 	change log
 
+2010-04-09 09:44 UTC - kode54
+- Changed DSP to buffer whole audio_chunks, at least one second or one chunk worth
+- Version is now 1.3
+
 2010-03-14 14:50 UTC - kode54
 - Changed the HDCD decoder peak extension condition to a single if statement
 - Version is now 1.2
@@ -54,79 +58,11 @@
 
 #include "hdcd_decode.h"
 
-template <typename T>
-class circular_buffer
-{
-	pfc::array_t<T> buffer;
-	unsigned readptr,writeptr,used,size;
-public:
-	circular_buffer() : readptr(0), writeptr(0), size(0), used(0) { }
-	circular_buffer(unsigned p_size) : readptr(0), writeptr(0), size(p_size), used(0) { buffer.set_size(p_size); }
-	void set_size(unsigned p_size) { readptr = 0; writeptr = 0; size = p_size; used = 0; buffer.set_size(p_size); }
-	unsigned data_available() {return used;}
-	unsigned free_space() {return size-used;}
-	bool write(const T * src,unsigned count)
-	{
-		if (count>free_space()) return false;
-		while(count)
-		{
-			unsigned delta = size - writeptr;
-			if (delta>count) delta = count;
-			memcpy(buffer.get_ptr() + writeptr, src, delta * sizeof(T));
-			used += delta;
-			writeptr = (writeptr + delta) % size;
-			src += delta;
-			count -= delta;
-		}
-		return true;
-	}
-	unsigned read(T * dst,unsigned count)
-	{
-		unsigned done = 0;
-		for(;;)
-		{
-			unsigned delta = size - readptr;
-			if (delta>used) delta=used;
-			if (delta>count) delta=count;
-			if (delta==0) break;
-
-			memcpy(dst,buffer.get_ptr() + readptr, delta * sizeof(T));
-			dst += delta;
-			done += delta;
-			readptr = (readptr + delta) % size;
-			count -= delta;
-			used -= delta;
-		}
-		return done;
-	}
-	unsigned remove(unsigned count)
-	{
-		unsigned done = 0;
-		for(;;)
-		{
-			unsigned delta = size - readptr;
-			if (delta>used) delta=used;
-			if (delta>count) delta=count;
-			if (delta==0) break;
-
-			done += delta;
-			readptr = (readptr + delta) % size;
-			count -= delta;
-			used -= delta;
-		}
-		return done;
-	}
-	void reset()
-	{
-		readptr=writeptr=used=0;
-	}
-};
-
 class hdcd_dsp : public dsp_impl_base {
 	pfc::array_t<hdcd_decode> decoders;
 
-	circular_buffer<audio_sample> unmodified_sample_buffer;
-	circular_buffer<audio_sample> sample_buffer;
+	dsp_chunk_list_impl original_chunks;
+	dsp_chunk_list_impl output_chunks;
 	pfc::array_t<t_int32> buffer;
 
 	unsigned srate, nch, channel_config;
@@ -143,17 +79,14 @@ class hdcd_dsp : public dsp_impl_base {
 			decoders[ i ].set_sample_rate( srate );
 		}
 
-		unmodified_sample_buffer.set_size( srate * nch );
-		sample_buffer.set_size( srate * nch );
-
 		return true;
 	}
 
 	void cleanup()
 	{
 		decoders.set_size( 0 );
-		unmodified_sample_buffer.set_size( 0 );
-		sample_buffer.set_size( 0 );
+		original_chunks.remove_all();
+		output_chunks.remove_all();
 		buffer.set_size( 0 );
 		srate = 0;
 		nch = 0;
@@ -163,7 +96,7 @@ class hdcd_dsp : public dsp_impl_base {
 
 	void flush_chunk()
 	{
-		if ( sample_buffer.data_available() )
+		if ( output_chunks.get_count() )
 		{
 			unsigned enabled = 0;
 			for ( unsigned i = 0; i < nch; i++ )
@@ -171,21 +104,13 @@ class hdcd_dsp : public dsp_impl_base {
 				enabled |= decoders[ i ].get_sample_counter();
 			}
 
-			audio_chunk * chunk = insert_chunk( sample_buffer.data_available() );
-			chunk->set_data_size( sample_buffer.data_available() );
-			chunk->set_sample_count( sample_buffer.data_available() / nch );
-			chunk->set_srate( srate );
-			chunk->set_channels( nch, channel_config );
+			dsp_chunk_list * list = enabled ? &output_chunks : &original_chunks;
 
-			if ( enabled )
+			for ( unsigned i = 0; i < list->get_count(); i++ )
 			{
-				sample_buffer.read( chunk->get_data(), sample_buffer.data_available() );
-				unmodified_sample_buffer.reset();
-			}
-			else
-			{
-				unmodified_sample_buffer.read( chunk->get_data(), unmodified_sample_buffer.data_available() );
-				sample_buffer.reset();
+				audio_chunk * in_chunk = list->get_item( i );
+				audio_chunk * out_chunk = insert_chunk( in_chunk->get_data_length() );
+				out_chunk->copy( *in_chunk );
 			}
 		}
 		cleanup();
@@ -297,15 +222,16 @@ public:
 				info_emitted = true;
 			}
 
-			if ( sample_buffer.data_available() )
+			if ( output_chunks.get_count() )
 			{
-				audio_chunk * temp = insert_chunk( sample_buffer.data_available() );
-				temp->set_data_size( sample_buffer.data_available() );
-				temp->set_sample_count( sample_buffer.data_available() / nch );
-				temp->set_srate( srate );
-				temp->set_channels( nch, channel_config );
-				sample_buffer.read( temp->get_data(), sample_buffer.data_available() );
-				unmodified_sample_buffer.reset();
+				for ( unsigned i = 0; i < output_chunks.get_count(); i++ )
+				{
+					audio_chunk * in_chunk = output_chunks.get_item( i );
+					audio_chunk * out_chunk = insert_chunk( in_chunk->get_data_length() );
+					out_chunk->copy( *in_chunk );
+				}
+				original_chunks.remove_all();
+				output_chunks.remove_all();
 			}
 
 			process_chunk( chunk );
@@ -313,25 +239,20 @@ public:
 			return true;
 		}
 
-		int data = chunk->get_sample_count() * nch;
-
-		if ( unmodified_sample_buffer.free_space() < data )
-		{
-			int data_to_emit = data - unmodified_sample_buffer.free_space();
-			audio_chunk * temp = insert_chunk( data_to_emit );
-			temp->set_data_size( data_to_emit );
-			temp->set_sample_count( data_to_emit / nch );
-			temp->set_srate( srate );
-			temp->set_channels( nch, channel_config );
-			unmodified_sample_buffer.read( temp->get_data(), data_to_emit );
-			sample_buffer.remove( data_to_emit );
-		}
-
-		unmodified_sample_buffer.write( chunk->get_data(), data );
+		original_chunks.add_chunk( chunk );
 
 		process_chunk( chunk );
 
-		sample_buffer.write( chunk->get_data(), data );
+		output_chunks.add_chunk( chunk );
+
+		while ( original_chunks.get_duration() >= 1.0 && original_chunks.get_count() > 1 )
+		{
+			audio_chunk * in_chunk = original_chunks.get_item( 0 );
+			audio_chunk * out_chunk = insert_chunk( in_chunk->get_data_length() );
+			out_chunk->copy( *in_chunk );
+			original_chunks.remove_by_idx( 0 );
+			output_chunks.remove_by_idx( 0 );
+		}
 
 		return false;
 	}
@@ -344,9 +265,9 @@ public:
 	virtual double get_latency()
 	{
 		double latency = 0;
-		if ( srate && nch && sample_buffer.data_available() )
+		if ( original_chunks.get_count() )
 		{
-			latency += (double)(sample_buffer.data_available() / nch) / (double)srate;
+			latency += original_chunks.get_duration();
 		}
 		return latency;
 	}
