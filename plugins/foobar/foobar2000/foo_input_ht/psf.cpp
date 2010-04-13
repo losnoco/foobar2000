@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.15"
+#define MYVERSION "2.0.16"
 
 /*
 	changelog
+
+2010-04-13 14:55 UTC - kode54
+- Amended preferences WM_INITDIALOG handler
+- Version is now 2.0.16
 
 2010-03-19 16:59 UTC - kode54
 - Updated zlib to version 1.2.4
@@ -1584,7 +1588,7 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 		}
 	}
 	
-	return TRUE;
+	return FALSE;
 }
 
 void CMyPreferences::OnEditChange(UINT, int, CWindow) {

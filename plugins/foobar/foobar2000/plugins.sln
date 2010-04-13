@@ -123,9 +123,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_hdcd", "foo_dsp_hdc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_usf", "foo_input_usf\usf.vcxproj", "{852F6566-124D-453C-B45B-5BD1C3D9BE3B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gthread", "..\..\glib-2.20.4\build\win32\vs9\gthread-static.vcxproj", "{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 55
+		SccNumberOfProjects = 56
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = http://sabin:8080/tfs/defaultcollection
 		SccLocalPath0 = .
@@ -291,6 +293,9 @@ Global
 		SccProjectUniqueName54 = foo_input_usf\\usf.vcxproj
 		SccProjectName54 = foo_input_usf
 		SccLocalPath54 = foo_input_usf
+		SccProjectUniqueName55 = ..\\..\\glib-2.20.4\\build\\win32\\vs9\\gthread-static.vcxproj
+		SccProjectName55 = ../../glib-2.20.4/build/win32/vs9
+		SccLocalPath55 = ..\\..\\glib-2.20.4\\build\\win32\\vs9
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -811,6 +816,17 @@ Global
 		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Release|Win32.Build.0 = Release|Win32
 		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Release|x64.ActiveCfg = Release|x64
 		{852F6566-124D-453C-B45B-5BD1C3D9BE3B}.Release|x64.Build.0 = Release|x64
+		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Debug|Win32.Build.0 = Debug|Win32
+		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Debug|x64.ActiveCfg = Debug|x64
+		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Debug|x64.Build.0 = Debug|x64
+		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Release staticlink|Win32.ActiveCfg = Release|Win32
+		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Release staticlink|x64.ActiveCfg = Release|x64
+		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Release staticlink|x64.Build.0 = Release|x64
+		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Release|Win32.ActiveCfg = Release|Win32
+		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Release|Win32.Build.0 = Release|Win32
+		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Release|x64.ActiveCfg = Release|x64
+		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,7 +1,11 @@
-#define MYVERSION "1.100"
+#define MYVERSION "1.101"
 
 /*
 	change log
+
+2010-04-13 14:53 UTC - kode54
+- Amended preferences WM_INITDIALOG handler
+- Version is now 1.101
 
 2010-04-01 03:25 UTC - kode54
 - Made SPC700 visualization volume display nicer like Super Jukebox
@@ -534,7 +538,7 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 
 	CreateLogo( m_hWnd, p [1].x + 2, p [1].y - 181 );
 
-	return TRUE;
+	return FALSE;
 }
 
 void CMyPreferences::OnEditChange(UINT, int, CWindow) {

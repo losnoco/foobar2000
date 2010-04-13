@@ -1,7 +1,11 @@
-#define MYVERSION "1.2"
+#define MYVERSION "1.3"
 
 /*
 	changelog
+
+2010-04-13 14:54 UTC - kode54
+- Amended preferences WM_INITDIALOG handler
+- Version is now 1.3
 
 2010-01-11 11:47 UTC - kode54
 - Updated preferences page to 1.0 API
@@ -1222,7 +1226,7 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 	cfg_history_rate.setup_dropdown( w );
 	::SendMessage( w, CB_SETCURSEL, 0, 0 );
 	
-	return TRUE;
+	return FALSE;
 }
 
 void CMyPreferences::OnEditChange(UINT, int, CWindow) {

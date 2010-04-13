@@ -455,7 +455,7 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 
 	enabled = !!cfg_enable;
 
-	return TRUE;
+	return FALSE;
 }
 
 LRESULT CMyPreferences::OnNotify(int idCtrl, LPNMHDR pnmh)

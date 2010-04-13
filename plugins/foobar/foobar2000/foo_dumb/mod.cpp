@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.14"
+#define MYVERSION "0.9.9.15"
 
 /*
 	changelog
+
+2010-04-13 14:52 UTC - kode54
+- Amended preferences WM_INITDIALOG handler
+- Version is now 0.9.9.15
 
 2010-03-19 16:58 UTC - kode54
 - Updated zlib to version 1.2.4
@@ -3616,7 +3620,7 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 
 	SetWindowLong( DWL_USER, 1 );
 
-	return TRUE;
+	return FALSE;
 }
 
 void CMyPreferences::OnEditChange(UINT, int, CWindow) {

@@ -32,7 +32,7 @@
 
  */
 
-#define VERSION "1.6"
+#define VERSION "1.61"
 
 /*
 #define GDIPLUS
@@ -41,6 +41,10 @@
 
 /*
 	change log
+
+2010-04-13 14:58 UTC - kode54
+- Amended preferences WM_INITDIALOG handler
+- Version is now 1.61
 
 2010-01-11 19:34 UTC - kode54
 - Updated preferences page to 1.0 API

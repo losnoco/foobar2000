@@ -1,7 +1,11 @@
-#define MY_VERSION "1.4"
+#define MY_VERSION "1.5"
 
 /*
 	change log
+
+2010-04-13 14:52 UTC - kode54
+- Amended preferences WM_INITDIALOG handler
+- Version is now 1.5
 
 2010-01-11 05:13 UTC - kode54
 - Updated preferences page to 1.0 API
@@ -71,7 +75,7 @@ private:
 
 BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 	SendDlgItemMessage( IDC_LOOP, BM_SETCHECK, cfg_loop, FALSE );
-	return TRUE;
+	return FALSE;
 }
 
 void CMyPreferences::OnButtonClick(UINT, int, CWindow) {

@@ -1,9 +1,13 @@
-#define MYVERSION "1.33"
+#define MYVERSION "1.34"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2010-04-13 14:53 UTC - kode54
+- Amended preferences WM_INITDIALOG handler
+- Version is now 1.34
 
 2010-01-11 11:25 UTC - kode54
 - Updated preferences page to 1.0 API
@@ -504,7 +508,7 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 
 	SendDlgItemMessage( IDC_PLAY_INDEFINITELY, BM_SETCHECK, cfg_play_indefinitely );
 
-	return TRUE;
+	return FALSE;
 }
 
 void CMyPreferences::OnEditChange(UINT, int, CWindow) {
