@@ -1,7 +1,11 @@
-#define MY_VERSION "1.3"
+#define MY_VERSION "1.4"
 
 /*
 	changelog
+
+2010-04-16 10:19 UTC - kode54
+- Removed component version spam
+- Version is now 1.4
 
 2010-03-19 16:59 UTC - kode54
 - Updated zlib to version 1.2.4
@@ -360,6 +364,8 @@ public:
 static archive_factory_t < archive_tar >  g_archive_tar_factory;
 //static unpacker_factory_t< unpacker_tar > g_unpacker_tar_factory;
 
-DECLARE_COMPONENT_VERSION( "TAR reader", MY_VERSION, "" );
+//DECLARE_COMPONENT_VERSION( "TAR reader", MY_VERSION, "" );
+
+DECLARE_COMPONENT_VERSION( "Unix archive reader", MY_VERSION, "Reads Unix tape archives, (.TAR) gzip archives, (.GZ)\nand bzip2 archives. (.BZ2)" );
 
 VALIDATE_COMPONENT_FILENAME("foo_unpack_unix.dll");

@@ -705,4 +705,4 @@ public:
 static archive_factory_t < archive_bz2 >  g_archive_bz2_factory;
 static unpacker_factory_t< unpacker_bz2 > g_unpacker_bz2_factory;
 
-DECLARE_COMPONENT_VERSION( "BZIP2 reader", MY_VERSION, "" );
+//DECLARE_COMPONENT_VERSION( "BZIP2 reader", MY_VERSION, "" );

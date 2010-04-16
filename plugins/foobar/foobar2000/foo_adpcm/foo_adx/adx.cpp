@@ -781,4 +781,4 @@ static input_singletrack_factory_t<input_adx> g_input_adx_factory;
 static config_factory<config_adx> g_config_adx_factory;
 #endif
 
-DECLARE_COMPONENT_VERSION("ADX decoder", MY_VERSION, "Decodes CRI ADX files.");
+//DECLARE_COMPONENT_VERSION("ADX decoder", MY_VERSION, "Decodes CRI ADX files.");

@@ -145,4 +145,4 @@ public:
 static archive_factory_t< archive_gz >   g_archive_gz_factory;
 static unpacker_factory_t< unpacker_gz > g_unpacker_gz_factory;
 
-DECLARE_COMPONENT_VERSION( "GZIP reader", MY_VERSION, "" );
+//DECLARE_COMPONENT_VERSION( "GZIP reader", MY_VERSION, "" );

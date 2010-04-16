@@ -207,4 +207,4 @@ DECLARE_FILE_TYPE("Interplay ACM files", "*.ACM");
 
 static input_singletrack_factory_t<input_acm> g_input_acm_factory;
 
-DECLARE_COMPONENT_VERSION("Interplay ACM decoder", MY_VERSION, "Plays Interplay ACM files from such titles as Fallout, Baldur's Gate, and MDK 2.");
+//DECLARE_COMPONENT_VERSION("Interplay ACM decoder", MY_VERSION, "Plays Interplay ACM files from such titles as Fallout, Baldur's Gate, and MDK 2.");

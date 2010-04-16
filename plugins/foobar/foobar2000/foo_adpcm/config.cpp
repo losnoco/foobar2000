@@ -1,7 +1,11 @@
-#define MY_VERSION "1.5"
+#define MY_VERSION "1.6"
 
 /*
 	change log
+
+2010-04-16 10:14 UTC - kode54
+- Removed component version spam
+- Version is now 1.6
 
 2010-04-13 14:52 UTC - kode54
 - Amended preferences WM_INITDIALOG handler

@@ -563,4 +563,4 @@ static input_singletrack_factory_t<input_rac> g_input_rac_factory;
 static input_file_type_factory<rac_file_types> g_config_rac_factory;
 #endif
 
-DECLARE_COMPONENT_VERSION("RAC decoder", MY_VERSION, "Decodes all of the RAC files found in STTNG.ZIP on\nthe Star Trek: The Next Generation - A Final Unity CD.");
+//DECLARE_COMPONENT_VERSION("RAC decoder", MY_VERSION, "Decodes all of the RAC files found in STTNG.ZIP on\nthe Star Trek: The Next Generation - A Final Unity CD.");

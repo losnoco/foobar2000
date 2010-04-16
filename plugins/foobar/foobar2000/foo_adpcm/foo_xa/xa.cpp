@@ -2288,4 +2288,4 @@ static mainmenu_commands_factory_t< mainmenu_command_xa<true> >  g_menu_item_mai
 static config_factory<config_xa> g_config_xa_factory;
 #endif
 
-DECLARE_COMPONENT_VERSION("XA ADPCM decoder", MY_VERSION, "Reads XA ADPCM files from Playstation and\nSaturn CDs.");
+//DECLARE_COMPONENT_VERSION("XA ADPCM decoder", MY_VERSION, "Reads XA ADPCM files from Playstation and\nSaturn CDs.");

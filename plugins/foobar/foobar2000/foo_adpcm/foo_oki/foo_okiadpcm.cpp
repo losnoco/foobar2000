@@ -200,4 +200,4 @@ class okiadpcm_file_types : public input_file_type
 static input_singletrack_factory_t<input_okiadpcm>                      g_okiadpcm_factory;
 static service_factory_single_t   <okiadpcm_file_types> g_input_file_type_okiadpcm_factory;
 
-DECLARE_COMPONENT_VERSION(FOOBAR2000COMPONENT_NAME,FOOBAR2000COMPONENT_VERSION,"");
+//DECLARE_COMPONENT_VERSION(FOOBAR2000COMPONENT_NAME,FOOBAR2000COMPONENT_VERSION,"");

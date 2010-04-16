@@ -514,4 +514,4 @@ class dsp_file_types : public input_file_type
 static input_singletrack_factory_t<input_dsp>      g_input_acm_factory;
 static service_factory_single_t   <dsp_file_types> g_input_file_type_dsp_factory;
 
-DECLARE_COMPONENT_VERSION("GCN DSP decoder", MY_VERSION, "Decodes DSP, GCM, and HPS files ripped from various GameCube and Wii discs.");
+//DECLARE_COMPONENT_VERSION("GCN DSP decoder", MY_VERSION, "Decodes DSP, GCM, and HPS files ripped from various GameCube and Wii discs.");
