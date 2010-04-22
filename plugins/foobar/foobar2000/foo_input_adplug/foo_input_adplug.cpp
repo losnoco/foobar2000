@@ -1,9 +1,14 @@
-#define MYVERSION "1.34"
+#define MYVERSION "1.35"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2010-04-22 16:41 UTC - kode54
+- Updated to latest AdPlug CVS
+- Fixed a crash bug in the HSC player
+- Version is now 1.35
 
 2010-04-13 14:53 UTC - kode54
 - Amended preferences WM_INITDIALOG handler

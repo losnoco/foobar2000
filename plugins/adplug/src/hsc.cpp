@@ -87,6 +87,10 @@ bool ChscPlayer::update()
       songend = 1;
     }
 
+  if (pattnr > 49) {
+    pattnr = 0;
+  }
+
   pattoff = pattpos*9;
   for (chan=0;chan<9;chan++) {			// handle all channels
     note = patterns[pattnr][pattoff].note;

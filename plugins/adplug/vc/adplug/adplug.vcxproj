@@ -92,6 +92,7 @@
     <ClCompile Include="..\..\src\bam.cpp" />
     <ClCompile Include="..\..\src\bmf.cpp" />
     <ClCompile Include="..\..\src\cff.cpp" />
+    <ClCompile Include="..\..\src\cmf.cpp" />
     <ClCompile Include="..\..\src\d00.cpp" />
     <ClCompile Include="..\..\src\database.cpp" />
     <ClCompile Include="..\..\src\debug.c" />
@@ -99,6 +100,7 @@
     <ClCompile Include="..\..\src\diskopl.cpp" />
     <ClCompile Include="..\..\src\dmo.cpp" />
     <ClCompile Include="..\..\src\dro.cpp" />
+    <ClCompile Include="..\..\src\dro2.cpp" />
     <ClCompile Include="..\..\src\dtm.cpp" />
     <ClCompile Include="..\..\src\emuopl.cpp" />
     <ClCompile Include="..\..\src\flash.cpp" />
@@ -131,6 +133,7 @@
     <ClCompile Include="..\..\src\s3m.cpp" />
     <ClCompile Include="..\..\src\sa2.cpp" />
     <ClCompile Include="..\..\src\sng.cpp" />
+    <ClCompile Include="..\..\src\surroundopl.cpp" />
     <ClCompile Include="..\..\src\temuopl.cpp" />
     <ClCompile Include="..\..\src\u6m.cpp" />
     <ClCompile Include="..\..\src\xad.cpp" />
@@ -148,6 +151,7 @@
     <ClInclude Include="..\..\src\bam.h" />
     <ClInclude Include="..\..\src\bmf.h" />
     <ClInclude Include="..\..\src\cff.h" />
+    <ClInclude Include="..\..\src\cmf.h" />
     <ClInclude Include="..\..\src\d00.h" />
     <ClInclude Include="..\..\src\database.h" />
     <ClInclude Include="..\..\src\debug.h" />
@@ -155,6 +159,7 @@
     <ClInclude Include="..\..\src\diskopl.h" />
     <ClInclude Include="..\..\src\dmo.h" />
     <ClInclude Include="..\..\src\dro.h" />
+    <ClInclude Include="..\..\src\dro2.h" />
     <ClInclude Include="..\..\src\dtm.h" />
     <ClInclude Include="..\..\src\emuopl.h" />
     <ClInclude Include="..\..\src\flash.h" />
@@ -191,6 +196,7 @@
     <ClInclude Include="..\..\src\sa2.h" />
     <ClInclude Include="..\..\src\silentopl.h" />
     <ClInclude Include="..\..\src\sng.h" />
+    <ClInclude Include="..\..\src\surroundopl.h" />
     <ClInclude Include="..\..\src\temuopl.h" />
     <ClInclude Include="..\..\src\u6m.h" />
     <ClInclude Include="..\..\src\xad.h" />
