@@ -222,7 +222,7 @@ public:
 			{
 				m_file->seek(0, p_abort);
 
-				foobar_File_Reader rdr(m_file, p_abort);
+				foobar_Data_Reader rdr(m_file, p_abort);
 
 				this->emu = emu = new Nsf_Emu;
 

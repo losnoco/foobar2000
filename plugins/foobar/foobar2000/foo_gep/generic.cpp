@@ -76,7 +76,7 @@ public:
 
 		m_file->seek( 0, p_abort );
 
-		foobar_File_Reader rdr( m_file, p_abort );
+		foobar_Data_Reader rdr( m_file, p_abort );
 
 		if ( p_reason == input_open_info_read )
 			emu = gtype->new_info();
@@ -110,7 +110,7 @@ public:
 			if ( filesystem::g_exists( list, p_abort ) )
 			{
 				filesystem::g_open( p_filehint, list, filesystem::open_mode_read, p_abort );
-				foobar_File_Reader rdr( p_filehint, p_abort );
+				foobar_Data_Reader rdr( p_filehint, p_abort );
 				ERRCHK( emu->load_m3u( rdr ) );
 				handle_warning();
 			}

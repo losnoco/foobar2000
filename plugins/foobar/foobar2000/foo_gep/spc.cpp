@@ -643,7 +643,7 @@ public:
 			if ( ! valid_tag )
 			{
 				m_file->seek( 0, p_abort );
-				foobar_File_Reader rdr( m_file, p_abort );
+				foobar_Data_Reader rdr( m_file, p_abort );
 
 				delete emu;
 				if ( p_reason != input_open_decode )
@@ -772,7 +772,7 @@ public:
 			try
 			{
 				m_file->seek( 0, p_abort );
-				foobar_File_Reader rdr( m_file, p_abort );
+				foobar_Data_Reader rdr( m_file, p_abort );
 
 				ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
 				ERRCHK( emu->load( rdr ) );

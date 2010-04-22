@@ -1,7 +1,11 @@
-#define MYVERSION "1.101"
+#define MYVERSION "1.102"
 
 /*
 	change log
+
+2010-04-22 07:03 UTC - kode54
+- Implemented native gzip reader for VGM input in case an appropriate unpacker service is not installed
+- Version is now 1.102
 
 2010-04-13 14:53 UTC - kode54
 - Amended preferences WM_INITDIALOG handler

@@ -4,6 +4,8 @@
 
 #include <gme/Vgm_Emu.h>
 
+#include <fex/Gzip_Reader.h>
+
 static const char tag_track_name[]    = "title";
 static const char tag_track_name_e[]  = "title_e";
 static const char tag_track_name_j[]  = "title_j";
@@ -19,6 +21,30 @@ static const char tag_artist_j[]      = "artist_j";
 static const char tag_date[]          = "date";
 static const char tag_ripper[]        = "ripper";
 static const char tag_notes[]         = "comment";
+
+static void handle_error( const char * str )
+{
+	if ( str ) throw exception_io_data( str );
+}
+
+static void uncompressStream( const service_ptr_t< file > & src_fd, service_ptr_t< file > & dst_fd, abort_callback & p_abort )
+{
+	foobar_File_Reader in( src_fd, p_abort );
+	Gzip_Reader ingz;
+	handle_error( ingz.open( &in ) );
+
+	if ( ! ingz.deflated() ) throw exception_io_data( "Not GZIP data" );
+
+	while ( ingz.remain() )
+	{
+		unsigned char buffer[1024];
+
+		BOOST::uint64_t to_read = ingz.remain();
+		if ( to_read > 1024 ) to_read = 1024;
+		handle_error( ingz.read( buffer, (long)to_read ) );
+		dst_fd->write( buffer, (t_size)to_read, p_abort );
+	}
+}
 
 class input_vgm : public input_gep
 {
@@ -155,10 +181,23 @@ public:
 		}
 		catch ( const exception_io_data & )
 		{
-			m_file->seek( 0, p_abort );
+			try
+			{
+				m_file->reopen( p_abort );
+
+				service_ptr_t<file> p_unpackfile;
+				filesystem::g_open_tempmem( p_unpackfile, p_abort );
+				uncompressStream( m_file, p_unpackfile, p_abort );
+				p_unpackfile->reopen( p_abort );
+				m_file = p_unpackfile;
+			}
+			catch ( const exception_io_data & )
+			{
+				m_file->reopen( p_abort );
+			}
 		}
 
-		foobar_File_Reader rdr(m_file, p_abort);
+		foobar_Data_Reader rdr(m_file, p_abort);
 
 		{
 			ERRCHK( rdr.read( &m_header, sizeof(m_header) ) );
@@ -199,7 +238,7 @@ public:
 			try
 			{
 				m_file->seek( 0, p_abort );
-				foobar_File_Reader rdr( m_file, p_abort );
+				foobar_Data_Reader rdr( m_file, p_abort );
 
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( rdr ) );
@@ -250,7 +289,7 @@ public:
 			try
 			{
 				m_file->seek( 0, p_abort );
-				foobar_File_Reader rdr( m_file, p_abort );
+				foobar_Data_Reader rdr( m_file, p_abort );
 
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( rdr ) );
