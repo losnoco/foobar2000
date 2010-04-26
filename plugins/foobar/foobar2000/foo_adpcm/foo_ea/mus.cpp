@@ -2,7 +2,7 @@
 
 #include "../ima_adpcm.h"
 
-extern cfg_int cfg_loop;
+extern advconfig_checkbox_factory cfg_loop;
 
 static const char sig_header[] = {'S', 'C', 'H', 'l'};
 static const char sig_header_pt[] = {'P', 'T', 0, 0};

@@ -6,7 +6,7 @@
 
 #include "reader_foo.h"
 
-extern cfg_int cfg_loop;
+extern advconfig_checkbox_factory cfg_loop;
 
 FOOBAR2000COMPONENT_EXTS(foobar2000_extlist);
 

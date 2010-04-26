@@ -238,10 +238,6 @@
     <ClInclude Include="acm\acmstrm.h" />
     <ClInclude Include="foo_dsp\cube.h" />
     <ClInclude Include="foo_oki\reader_foo.h" />
-    <ClInclude Include="resource.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="foo_adpcm.rc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\libisofs\win32\libisofs.vcxproj">

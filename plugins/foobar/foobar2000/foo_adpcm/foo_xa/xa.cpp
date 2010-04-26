@@ -113,7 +113,7 @@ extern "C" {
 #ifdef FOO_ADPCM_EXPORTS
 
 #include "../resource.h"
-extern cfg_int cfg_loop /*, cfg_scanloops*/;
+extern advconfig_checkbox_factory cfg_loop /*, cfg_scanloops*/;
 
 #else
 

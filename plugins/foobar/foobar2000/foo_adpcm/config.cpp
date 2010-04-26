@@ -1,7 +1,12 @@
-#define MY_VERSION "1.6"
+#define MY_VERSION "1.7"
 
 /*
 	change log
+
+2010-04-26 01:36 UTC - kode54
+- Moved loop configuration setting to advanced preferences
+- DSP/ADP input now observes loop configuration setting
+- Version is now 1.7
 
 2010-04-16 10:14 UTC - kode54
 - Removed component version spam
@@ -36,96 +41,11 @@
 
 #include "resource.h"
 
-enum
-{
-	default_cfg_loop = 0
-};
-
 // {CCB20BBE-8C08-4337-B4EE-77778AF499E3}
 static const GUID guid_cfg_loop = 
 { 0xccb20bbe, 0x8c08, 0x4337, { 0xb4, 0xee, 0x77, 0x77, 0x8a, 0xf4, 0x99, 0xe3 } };
 
-cfg_int cfg_loop(guid_cfg_loop, default_cfg_loop);
-
-class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
-public:
-	//Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us
-	CMyPreferences(preferences_page_callback::ptr callback) : m_callback(callback) {}
-
-	//Note that we don't bother doing anything regarding destruction of our class.
-	//The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
-
-
-	//dialog resource ID
-	enum {IDD = IDD_CONFIG};
-	// preferences_page_instance methods (not all of them - get_wnd() is supplied by preferences_page_impl helpers)
-	t_uint32 get_state();
-	void apply();
-	void reset();
-
-	//WTL message map
-	BEGIN_MSG_MAP(CMyPreferences)
-		MSG_WM_INITDIALOG(OnInitDialog)
-		COMMAND_HANDLER_EX(IDC_LOOP, BN_CLICKED, OnButtonClick)
-	END_MSG_MAP()
-private:
-	BOOL OnInitDialog(CWindow, LPARAM);
-	void OnButtonClick(UINT, int, CWindow);
-	bool HasChanged();
-	void OnChanged();
-
-	const preferences_page_callback::ptr m_callback;
-};
-
-BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
-	SendDlgItemMessage( IDC_LOOP, BM_SETCHECK, cfg_loop, FALSE );
-	return FALSE;
-}
-
-void CMyPreferences::OnButtonClick(UINT, int, CWindow) {
-	// not much to do here
-	OnChanged();
-}
-
-t_uint32 CMyPreferences::get_state() {
-	t_uint32 state = preferences_state::resettable;
-	if (HasChanged()) state |= preferences_state::changed;
-	return state;
-}
-
-void CMyPreferences::reset() {
-	SendDlgItemMessage( IDC_LOOP, BM_SETCHECK, default_cfg_loop, FALSE );
-	OnChanged();
-}
-
-void CMyPreferences::apply() {
-	cfg_loop = SendDlgItemMessage( IDC_LOOP, BM_GETCHECK, FALSE, FALSE );
-	
-	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
-}
-
-bool CMyPreferences::HasChanged() {
-	//returns whether our dialog content is different from the current configuration (whether the apply button should be enabled or not)
-	return SendDlgItemMessage( IDC_LOOP, BM_GETCHECK, FALSE, FALSE ) != cfg_loop;
-}
-void CMyPreferences::OnChanged() {
-	//tell the host that our state has changed to enable/disable the apply button appropriately.
-	m_callback->on_state_changed();
-}
-
-class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
-	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
-public:
-	const char * get_name() {return "kode's ADPCM decoders";}
-	GUID get_guid() {
-		// {F459F00D-3AF8-4157-AD4A-D4F1187E1EA9}
-		static const GUID guid = { 0xf459f00d, 0x3af8, 0x4157, { 0xad, 0x4a, 0xd4, 0xf1, 0x18, 0x7e, 0x1e, 0xa9 } };
-		return guid;
-	}
-	GUID get_parent_guid() {return guid_input;}
-};
-
-static preferences_page_factory_t<preferences_page_myimpl> foo;
+advconfig_checkbox_factory cfg_loop("ADPCM - Loop indefinitely", guid_cfg_loop, advconfig_branch::guid_branch_playback, 0, false);
 
 DECLARE_COMPONENT_VERSION("kode's ADPCM decoders", MY_VERSION, "Contains ACM, ADX, BRR, EA MUS, Game Cube DSP/ADP, OKI ADPCM, RAC, and XA decoders.");
 

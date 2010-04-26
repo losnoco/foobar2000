@@ -30,6 +30,8 @@
 
 #include "cube.h"
 
+extern advconfig_checkbox_factory cfg_loop;
+
 static const char * exts[] =
 {
 	"DSP", "GCM", "HPS", "IDSP", "SPT", "SPD", "MSS", "MPDSP", "ISH", "YMF", "WAM", "WAC", "WAD", "WAA", "WVS", "THP",
@@ -316,7 +318,7 @@ public:
 			if ( dsp.ch[0].header.loop_flag ) looped = true;
 		}
 
-		if ( p_flags & input_flag_no_looping )
+		if ( p_flags & input_flag_no_looping || !cfg_loop )
 		{
 			dsp.ch[0].header.loop_flag = 0;
 			dsp.ch[1].header.loop_flag = 0;
