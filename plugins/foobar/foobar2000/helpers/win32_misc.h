@@ -404,3 +404,7 @@ private:
 
 void GetOSVersionString(pfc::string_base & out);
 void GetOSVersionStringAppend(pfc::string_base & out);
+
+
+
+void SetDefaultMenuItem(HMENU p_menu,unsigned p_id);

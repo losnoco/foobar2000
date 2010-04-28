@@ -46,6 +46,22 @@ private:
 	t_size m_offset;
 };
 
+class reader_membuffer_simple : public reader_membuffer_base {
+public:
+	reader_membuffer_simple(const void * ptr, t_size size, t_filetimestamp ts = filetimestamp_invalid, bool is_remote = false) {
+		m_data.set_size_discard(size);
+		memcpy(m_data.get_ptr(), ptr, size);
+	}
+	const void * get_buffer() {return m_data.get_ptr();}
+	t_size get_buffer_size() {return m_data.get_size();}
+	t_filetimestamp get_timestamp(abort_callback & p_abort) {return m_ts;}
+	bool is_remote() {return m_isRemote;}
+private:
+	pfc::array_staticsize_t<t_uint8> m_data;
+	t_filetimestamp m_ts;
+	bool m_isRemote;
+};
+
 class reader_membuffer_mirror : public reader_membuffer_base
 {
 public:

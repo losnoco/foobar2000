@@ -332,6 +332,7 @@ namespace foobar2000_io
 	//! Implementation: standard implementations for local filesystem etc are provided by core.\n
 	//! Instantiation: use static helper functions rather than calling filesystem interface methods directly, e.g. filesystem::g_open() to open a file.
 	class NOVTABLE filesystem : public service_base {
+		FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(filesystem);
 	public:
 		//! Enumeration specifying how to open a file. See: filesystem::open(), filesystem::g_open().
 		enum t_open_mode {
@@ -372,6 +373,7 @@ namespace foobar2000_io
 		static void g_get_display_path(const char * path,pfc::string_base & out);
 
 		static bool g_get_interface(service_ptr_t<filesystem> & p_out,const char * path);//path is AFTER get_canonical_path
+		static filesystem::ptr g_get_interface(const char * path);// throws exception_io_no_handler_for_path on failure
 		static bool g_is_remote(const char * p_path);//path is AFTER get_canonical_path
 		static bool g_is_recognized_and_remote(const char * p_path);//path is AFTER get_canonical_path
 		static bool g_is_remote_safe(const char * p_path) {return g_is_recognized_and_remote(p_path);}
@@ -416,7 +418,9 @@ namespace foobar2000_io
 		static bool g_is_valid_directory(const char * path,abort_callback & p_abort);
 		static bool g_is_empty_directory(const char * path,abort_callback & p_abort);
 
-		FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(filesystem);
+		void remove_object_recur(const char * path, abort_callback & abort);
+		void remove_directory_content(const char * path, abort_callback & abort);
+		static void g_remove_object_recur(const char * path, abort_callback & abort);
 	};
 
 	class directory_callback_impl : public directory_callback

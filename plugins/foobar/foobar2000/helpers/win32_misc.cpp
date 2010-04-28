@@ -123,3 +123,12 @@ void GetOSVersionStringAppend(pfc::string_base & out) {
 			out << " x86"; break;
 	}
 }
+
+
+void SetDefaultMenuItem(HMENU p_menu,unsigned p_id) {
+	MENUITEMINFO info = {sizeof(info)};
+	info.fMask = MIIM_STATE;
+	GetMenuItemInfo(p_menu,p_id,FALSE,&info);
+	info.fState |= MFS_DEFAULT;
+	SetMenuItemInfo(p_menu,p_id,FALSE,&info);
+}

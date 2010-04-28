@@ -43,8 +43,8 @@ HRESULT IDataObjectUtils::DataBlockToSTGMEDIUM(const void * blockPtr, t_size blo
 						return state;
 					}
 				}
-				medium->pstm = stream.get_ptr();
-				medium->pUnkForRelease = stream.detach();
+				medium->pstm = stream.detach();
+				medium->pUnkForRelease = NULL;
 				return S_OK;
 			}
 			return DV_E_TYMED;

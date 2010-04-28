@@ -364,6 +364,17 @@ private:
 			return TRUE; \
 	}
 
+// void OnSysCommandHelp()
+#define MSG_WM_SYSCOMMAND_HELP(func) \
+	if (uMsg == WM_SYSCOMMAND && wParam == SC_CONTEXTHELP) \
+	{ \
+		SetMsgHandled(TRUE); \
+		func(); \
+		lResult = 0; \
+		if(IsMsgHandled()) \
+			return TRUE; \
+	}
+
 
 template<typename TBase> class CContainedWindowSimpleT : public CContainedWindowT<TBase>, public CMessageMap {
 public:
@@ -508,6 +519,10 @@ public:
 	void ShowTipF(UINT id, const TCHAR * label) {
 		m_tip.ShowFocus(label, GetDlgItem(id));
 	}
+	void ShowTipF(HWND child, const TCHAR * label) {
+		m_tip.ShowFocus(label, child);
+	}
+	void HideTip() {m_tip.Hide();}
 private:
 	void OnDestroy() {m_tip.ShutDown(); SetMsgHandled(FALSE); }
 	CPopupTooltipMessage m_tip;
@@ -581,4 +596,214 @@ public:
 	preferences_page_instance::ptr instantiate(HWND parent, preferences_page_callback::ptr callback) {
 		return new service_impl_t<preferences_page_instance_impl<TDialog> >(parent, callback);
 	}
+};
+
+class CCheckBox : public CButton {
+public:
+	void ToggleCheck(bool state) {SetCheck(state ? BST_CHECKED : BST_UNCHECKED);}
+	bool IsChecked() const {return GetCheck() == BST_CHECKED;}
+
+	CCheckBox(HWND hWnd = NULL) : CButton(hWnd) { }
+	CCheckBox & operator=(HWND wnd) {m_hWnd = wnd; return *this; }
+};
+
+
+class CEmbeddedDialog : public CDialogImpl<CEmbeddedDialog> {
+public:
+	CEmbeddedDialog(CMessageMap * owner, DWORD msgMapID, UINT dialogID) : m_owner(*owner), IDD(dialogID), m_msgMapID(msgMapID) {}
+	
+	BEGIN_MSG_MAP(CEmbeddedDialog)
+		CHAIN_MSG_MAP_ALT_MEMBER(m_owner, m_msgMapID)
+	END_MSG_MAP()
+
+	const DWORD m_msgMapID;
+	const UINT IDD;
+	CMessageMap & m_owner;
+};
+
+
+class CEditNoEscSteal : public CContainedWindowT<CEdit>, private CMessageMap {
+public:
+	CEditNoEscSteal() : CContainedWindowT<CEdit>(this, 0) {}
+	BEGIN_MSG_MAP_EX(CEditNoEscSteal)
+		MSG_WM_GETDLGCODE(OnEditGetDlgCode)
+	END_MSG_MAP()
+private:
+	UINT OnEditGetDlgCode(LPMSG lpMsg) {
+		if (lpMsg == NULL) {
+			SetMsgHandled(FALSE); return 0;
+		} else {
+			switch(lpMsg->message) {
+				case WM_KEYDOWN:
+				case WM_SYSKEYDOWN:
+					switch(lpMsg->wParam) {
+						case VK_ESCAPE:
+							return 0;
+						default:
+							SetMsgHandled(FALSE); return 0;
+					}
+				default:
+					SetMsgHandled(FALSE); return 0;
+
+			}
+		}
+	}
+};
+
+class CEditNoEnterEscSteal : public CContainedWindowT<CEdit>, private CMessageMap {
+public:
+	CEditNoEnterEscSteal() : CContainedWindowT<CEdit>(this, 0) {}
+	BEGIN_MSG_MAP_EX(CEditNoEscSteal)
+		MSG_WM_GETDLGCODE(OnEditGetDlgCode)
+	END_MSG_MAP()
+private:
+	UINT OnEditGetDlgCode(LPMSG lpMsg) {
+		if (lpMsg == NULL) {
+			SetMsgHandled(FALSE); return 0;
+		} else {
+			switch(lpMsg->message) {
+				case WM_KEYDOWN:
+				case WM_SYSKEYDOWN:
+					switch(lpMsg->wParam) {
+						case VK_ESCAPE:
+						case VK_RETURN:
+							return 0;
+						default:
+							SetMsgHandled(FALSE); return 0;
+					}
+				default:
+					SetMsgHandled(FALSE); return 0;
+
+			}
+		}
+	}
+};
+
+
+class CSeparator : public CContainedWindowT<CStatic>, private CMessageMap {
+public:
+	CSeparator() : CContainedWindowT<CStatic>(this, 0) {}
+	BEGIN_MSG_MAP_EX(CSeparator)
+		MSG_WM_PAINT(OnPaint)
+	END_MSG_MAP()
+private:
+	void OnPaint(CDCHandle) {
+		CPaintDC dc(*this);
+		TCHAR buffer[512] = {};
+		GetWindowText(buffer, _countof(buffer));
+		const int txLen = pfc::strlen_max_t(buffer, _countof(buffer));
+		CRect contentRect;
+		WIN32_OP_D( GetClientRect(contentRect) );
+		SelectObjectScope scopeFont(dc, GetFont());
+		dc.SetTextColor(GetSysColor(COLOR_WINDOWTEXT));
+		dc.SetBkMode(TRANSPARENT);
+		
+		if (txLen > 0) {
+			CRect rcText(contentRect);
+			WIN32_OP_D( dc.DrawText(buffer,txLen,rcText,DT_NOPREFIX | DT_END_ELLIPSIS | DT_SINGLELINE | DT_VCENTER | DT_LEFT ) > 0);
+		}
+
+		SIZE txSize, probeSize;
+		const TCHAR probe[] = _T("#");
+		if (dc.GetTextExtent(buffer,txLen,&txSize) && dc.GetTextExtent(probe, _countof(probe), &probeSize)) {
+			int spacing = txSize.cx > 0 ? (probeSize.cx / 4) : 0;
+			if (txSize.cx + spacing < contentRect.Width()) {
+				const CPoint center = contentRect.CenterPoint();
+				CRect rcEdge(contentRect.left + txSize.cx + spacing, center.y, contentRect.right, contentRect.bottom);
+				WIN32_OP_D( dc.DrawEdge(rcEdge, EDGE_ETCHED, BF_TOP) );
+			}
+		}
+		
+	}
+};
+
+
+
+
+#ifndef VSCLASS_TEXTSTYLE
+//
+//  TEXTSTYLE class parts and states 
+//
+#define VSCLASS_TEXTSTYLE	L"TEXTSTYLE"
+
+enum TEXTSTYLEPARTS {
+	TEXT_MAININSTRUCTION = 1,
+	TEXT_INSTRUCTION = 2,
+	TEXT_BODYTITLE = 3,
+	TEXT_BODYTEXT = 4,
+	TEXT_SECONDARYTEXT = 5,
+	TEXT_HYPERLINKTEXT = 6,
+	TEXT_EXPANDED = 7,
+	TEXT_LABEL = 8,
+	TEXT_CONTROLLABEL = 9,
+};
+
+enum HYPERLINKTEXTSTATES {
+	TS_HYPERLINK_NORMAL = 1,
+	TS_HYPERLINK_HOT = 2,
+	TS_HYPERLINK_PRESSED = 3,
+	TS_HYPERLINK_DISABLED = 4,
+};
+
+enum CONTROLLABELSTATES {
+	TS_CONTROLLABEL_NORMAL = 1,
+	TS_CONTROLLABEL_DISABLED = 2,
+};
+
+#endif
+
+class CStaticThemed : public CContainedWindowT<CStatic>, private CMessageMap {
+public:
+	CStaticThemed() : CContainedWindowT<CStatic>(this, 0), m_id(), m_fallback() {}
+	BEGIN_MSG_MAP_EX(CStaticThemed)
+		MSG_WM_PAINT(OnPaint)
+		MSG_WM_THEMECHANGED(OnThemeChanged)
+	END_MSG_MAP()
+
+	void SetThemePart(int id) {m_id = id; if (m_hWnd != NULL) Invalidate();}
+private:
+	void OnThemeChanged() {
+		m_theme.Release();
+		m_fallback = false;
+	}
+	void OnPaint(CDCHandle) {
+		if (m_fallback) {
+			SetMsgHandled(FALSE); return;
+		}
+		if (m_theme == NULL) {
+			m_theme.OpenThemeData(*this, L"TextStyle");
+			if (m_theme == NULL) {
+				m_fallback = true; SetMsgHandled(FALSE); return;
+			}
+		}
+		CPaintDC dc(*this);
+		TCHAR buffer[512] = {};
+		GetWindowText(buffer, _countof(buffer));
+		const int txLen = pfc::strlen_max_t(buffer, _countof(buffer));
+		CRect contentRect;
+		WIN32_OP_D( GetClientRect(contentRect) );
+		SelectObjectScope scopeFont(dc, GetFont());
+		dc.SetTextColor(GetSysColor(COLOR_WINDOWTEXT));
+		dc.SetBkMode(TRANSPARENT);
+		
+		if (txLen > 0) {
+			CRect rcText(contentRect);
+			DWORD flags = 0;
+			DWORD style = GetStyle();
+			if (style & SS_LEFT) flags |= DT_LEFT;
+			else if (style & SS_RIGHT) flags |= DT_RIGHT;
+			else if (style & SS_CENTER) flags |= DT_CENTER;
+			if (style & SS_ENDELLIPSIS) flags |= DT_END_ELLIPSIS;
+
+			HRESULT retval = DrawThemeText(m_theme, dc, m_id, 0, buffer, txLen, flags, 0, rcText);
+			PFC_ASSERT( SUCCEEDED( retval ) );
+		}		
+	}
+	int m_id;
+	CTheme m_theme;
+	bool m_fallback;
+};
+class CStaticMainInstruction : public CStaticThemed {
+public:
+	CStaticMainInstruction() { SetThemePart(TEXT_MAININSTRUCTION); }
 };

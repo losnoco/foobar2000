@@ -50,10 +50,7 @@ namespace IDataObjectUtils {
 
 	class CDataObjectBase : public IDataObject {
 	public:
-		COM_QI_BEGIN()
-			COM_QI_ENTRY(IUnknown)
-			COM_QI_ENTRY(IDataObject)
-		COM_QI_END()
+		COM_QI_SIMPLE(IDataObject)
 
 		HRESULT STDMETHODCALLTYPE GetData(FORMATETC * formatetc, STGMEDIUM * medium) {
 			return GetData_internal(formatetc,medium,false);

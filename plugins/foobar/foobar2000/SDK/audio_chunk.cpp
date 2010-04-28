@@ -112,8 +112,8 @@ namespace {
 
 void audio_chunk::set_data_fixedpoint_ex(const void * source,t_size size,unsigned srate,unsigned nch,unsigned bps,unsigned flags,unsigned p_channel_config)
 {
-	assert( check_exclusive(flags,FLAG_SIGNED|FLAG_UNSIGNED) );
-	assert( check_exclusive(flags,FLAG_LITTLE_ENDIAN|FLAG_BIG_ENDIAN) );
+	PFC_ASSERT( check_exclusive(flags,FLAG_SIGNED|FLAG_UNSIGNED) );
+	PFC_ASSERT( check_exclusive(flags,FLAG_LITTLE_ENDIAN|FLAG_BIG_ENDIAN) );
 
 	bool need_swap = !!(flags & FLAG_BIG_ENDIAN);
 	if (pfc::byte_order_is_big_endian) need_swap = !need_swap;
@@ -168,9 +168,9 @@ static void process_float_multi_swap(audio_sample * p_out,const t_float * p_in,c
 
 void audio_chunk::set_data_floatingpoint_ex(const void * ptr,t_size size,unsigned srate,unsigned nch,unsigned bps,unsigned flags,unsigned p_channel_config)
 {
-	assert(bps==32 || bps==64);
-	assert( check_exclusive(flags,FLAG_LITTLE_ENDIAN|FLAG_BIG_ENDIAN) );
-	assert( ! (flags & (FLAG_SIGNED|FLAG_UNSIGNED) ) );
+	PFC_ASSERT(bps==32 || bps==64);
+	PFC_ASSERT( check_exclusive(flags,FLAG_LITTLE_ENDIAN|FLAG_BIG_ENDIAN) );
+	PFC_ASSERT( ! (flags & (FLAG_SIGNED|FLAG_UNSIGNED) ) );
 
 	bool use_swap = pfc::byte_order_is_big_endian ? !!(flags & FLAG_LITTLE_ENDIAN) : !!(flags & FLAG_BIG_ENDIAN);
 

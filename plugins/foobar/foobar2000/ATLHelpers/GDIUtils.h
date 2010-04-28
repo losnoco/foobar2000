@@ -43,16 +43,36 @@ static HBITMAP CreateDIB8(CSize size, const COLORREF palette[256]) {
 	return CreateDIBSection(NULL, reinterpret_cast<const BITMAPINFO*>(&bi), DIB_RGB_COLORS,&bitsPtr,0,0);
 }
 
+static void CreateScaledFont(CFont & out, CFontHandle in, double scale) {
+	LOGFONT lf;
+	WIN32_OP_D( in.GetLogFont(lf) );
+	int temp = pfc::rint32(scale * lf.lfHeight);
+	if (temp == 0) temp = pfc::sgn_t(lf.lfHeight);
+	lf.lfHeight = temp;
+	WIN32_OP_D( out.CreateFontIndirect(&lf) != NULL );
+}
+
+static void CreateScaledFontEx(CFont & out, CFontHandle in, double scale, int weight) {
+	LOGFONT lf;
+	WIN32_OP_D( in.GetLogFont(lf) );
+	int temp = pfc::rint32(scale * lf.lfHeight);
+	if (temp == 0) temp = pfc::sgn_t(lf.lfHeight);
+	lf.lfHeight = temp;
+	lf.lfWeight = weight;
+	WIN32_OP_D( out.CreateFontIndirect(&lf) != NULL );
+}
+
+static void CreatePreferencesHeaderFont(CFont & out, CWindow dialog) {
+	CreateScaledFontEx(out, dialog.GetFont(), 1.3, FW_BOLD);
+}
+
+static void CreatePreferencesHeaderFont2(CFont & out, CWindow dialog) {
+	CreateScaledFontEx(out, dialog.GetFont(), 1.1, FW_BOLD);
+}
 class CFontScaled : public CFont {
 public:
 	CFontScaled(HFONT _in, double scale) {
-		CFontHandle in(_in);
-		LOGFONT lf;
-		WIN32_OP_D( in.GetLogFont(lf) );
-		int temp = pfc::rint32(scale * lf.lfHeight);
-		if (temp == 0) temp = pfc::sgn_t(lf.lfHeight);
-		lf.lfHeight = temp;
-		WIN32_OP_D( CreateFontIndirect(&lf) != NULL );
+		CreateScaledFont(*this, _in, scale);
 	}
 };
 

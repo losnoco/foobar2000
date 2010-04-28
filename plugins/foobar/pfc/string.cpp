@@ -664,7 +664,11 @@ bool string_is_numeric(const char * p_string,t_size p_length) throw() {
 
 void string_base::fix_dir_separator(char p_char) {
 	t_size length = get_length();
-	if (length == 0 || get_ptr()[length-1] != p_char) add_byte(p_char);
+	if (!ends_with(p_char)) add_byte(p_char);
+}
+bool string_base::ends_with(char c) {
+	t_size length = get_length();
+	return length > 0 && get_ptr()[length-1] == c;
 }
 
 bool is_multiline(const char * p_string,t_size p_len) {

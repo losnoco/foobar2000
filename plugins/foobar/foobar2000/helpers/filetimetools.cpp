@@ -82,3 +82,12 @@ format_filetimestamp::format_filetimestamp(t_filetimestamp p_timestamp) {
 		} else m_buffer << "<invalid timestamp>";
 	} else m_buffer << "<invalid timestamp>";
 }
+
+format_filetimestamp_utc::format_filetimestamp_utc(t_filetimestamp p_timestamp) {
+	SYSTEMTIME st;
+	if (FileTimeToSystemTime((const FILETIME*)&p_timestamp,&st)) {
+		m_buffer 
+			<< pfc::format_uint(st.wYear,4) << "-" << pfc::format_uint(st.wMonth,2) << "-" << pfc::format_uint(st.wDay,2) << " " 
+			<< pfc::format_uint(st.wHour,2) << ":" << pfc::format_uint(st.wMinute,2) << ":" << pfc::format_uint(st.wSecond,2);
+	} else m_buffer << "<invalid timestamp>";
+}

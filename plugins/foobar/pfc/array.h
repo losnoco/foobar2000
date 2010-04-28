@@ -92,6 +92,7 @@ namespace pfc {
 		template<typename t_source> const t_self & operator=(const t_source & p_source) {copy_array_t(*this,p_source); return *this;}
 		
 		void set_size(t_size p_size) {m_alloc.set_size(p_size);}
+		void set_size_discard(t_size p_size) {m_alloc.set_size(p_size);}
 		void set_count(t_size p_count) {m_alloc.set_size(p_count);}
 		t_size get_size() const {return m_alloc.get_size();}
 		t_size get_count() const {return m_alloc.get_size();}

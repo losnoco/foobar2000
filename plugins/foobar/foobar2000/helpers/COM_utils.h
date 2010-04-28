@@ -2,6 +2,8 @@
 
 #define COM_QI_BEGIN() HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid,void ** ppvObject) { if (ppvObject == NULL) return E_INVALIDARG;
 #define COM_QI_ENTRY(IWhat) { if (iid == IID_##IWhat) {IWhat * temp = this; temp->AddRef(); * ppvObject = temp; return S_OK;} }
-#define COM_QI_END() return E_NOINTERFACE; }
+#define COM_QI_END() * ppvObject = NULL; return E_NOINTERFACE; }
 
 #define COM_QI_CHAIN(Parent) { HRESULT status = Parent::QueryInterface(iid, ppvObject); if (SUCCEEDED(status)) return status; }
+
+#define COM_QI_SIMPLE(IWhat) COM_QI_BEGIN() COM_QI_ENTRY(IUnknown) COM_QI_ENTRY(IWhat) COM_QI_END()

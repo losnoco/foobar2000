@@ -102,7 +102,7 @@ public:
 	void set_channels(unsigned val) {set_channels(val,g_guess_channel_config(val));}
 
 	
-	//! Helper; resizes audio data buffer when it's current size is smaller than requested.
+	//! Helper; resizes audio data buffer when its current size is smaller than requested.
 	inline void grow_data_size(t_size p_requested) {if (p_requested > get_data_size()) set_data_size(p_requested);}
 
 

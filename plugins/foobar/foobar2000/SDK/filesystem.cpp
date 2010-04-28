@@ -85,6 +85,12 @@ void filesystem::g_get_display_path(const char * path,pfc::string_base & out)
 	}
 }
 
+filesystem::ptr filesystem::g_get_interface(const char * path) {
+	filesystem::ptr rv;
+	if (!g_get_interface(rv, path)) throw exception_io_no_handler_for_path();
+	return rv;
+
+}
 bool filesystem::g_get_interface(service_ptr_t<filesystem> & p_out,const char * path)
 {
 	service_enum_t<filesystem> e;
@@ -103,9 +109,7 @@ bool filesystem::g_get_interface(service_ptr_t<filesystem> & p_out,const char * 
 void filesystem::g_open(service_ptr_t<file> & p_out,const char * path,t_open_mode mode,abort_callback & p_abort)
 {
 	TRACK_CALL_TEXT("filesystem::g_open");
-	service_ptr_t<filesystem> fs;
-	if (!g_get_interface(fs,path)) throw exception_io_no_handler_for_path();
-	fs->open(p_out,path,mode,p_abort);
+	g_get_interface(path)->open(p_out,path,mode,p_abort);
 }
 
 
@@ -134,9 +138,7 @@ bool filesystem::g_exists_writeable(const char * p_path,abort_callback & p_abort
 }
 
 void filesystem::g_remove(const char * p_path,abort_callback & p_abort) {
-	service_ptr_t<filesystem> fs;
-	if (!g_get_interface(fs,p_path)) throw exception_io_no_handler_for_path();
-	fs->remove(p_path,p_abort);
+	g_get_interface(p_path)->remove(p_path,p_abort);
 }
 
 void filesystem::g_remove_timeout(const char * p_path,double p_timeout,abort_callback & p_abort) {
@@ -153,9 +155,7 @@ void filesystem::g_copy_timeout(const char * p_src,const char * p_dst,double p_t
 
 void filesystem::g_create_directory(const char * p_path,abort_callback & p_abort)
 {
-	service_ptr_t<filesystem> fs;
-	if (!g_get_interface(fs,p_path)) throw exception_io_no_handler_for_path();
-	fs->create_directory(p_path,p_abort);
+	g_get_interface(p_path)->create_directory(p_path,p_abort);
 }
 
 void filesystem::g_move(const char * src,const char * dst,abort_callback & p_abort) {
@@ -173,9 +173,7 @@ void filesystem::g_move(const char * src,const char * dst,abort_callback & p_abo
 void filesystem::g_list_directory(const char * p_path,directory_callback & p_out,abort_callback & p_abort)
 {
 	TRACK_CALL_TEXT("filesystem::g_list_directory");
-	service_ptr_t<filesystem> ptr;
-	if (!g_get_interface(ptr,p_path)) throw exception_io_no_handler_for_path();
-	ptr->list_directory(p_path,p_out,p_abort);
+	g_get_interface(p_path)->list_directory(p_path,p_out,p_abort);
 }
 
 
@@ -211,16 +209,13 @@ static int path_unpack_string(pfc::string_base & out,const char * src)
 
 
 void filesystem::g_open_precache(service_ptr_t<file> & p_out,const char * p_path,abort_callback & p_abort) {
-	service_ptr_t<filesystem> fs;
-	if (!g_get_interface(fs,p_path)) throw exception_io_no_handler_for_path();
+	service_ptr_t<filesystem> fs = g_get_interface(p_path);
 	if (fs->is_remote(p_path)) throw exception_io_object_is_remote();
 	fs->open(p_out,p_path,open_mode_read,p_abort);
 }
 
 bool filesystem::g_is_remote(const char * p_path) {
-	service_ptr_t<filesystem> fs;
-	if (g_get_interface(fs,p_path)) return fs->is_remote(p_path);
-	else throw exception_io_no_handler_for_path();
+	return g_get_interface(p_path)->is_remote(p_path);
 }
 
 bool filesystem::g_is_recognized_and_remote(const char * p_path) {
@@ -584,9 +579,7 @@ void archive_impl::create_directory(const char * path,abort_callback &) {
 
 void filesystem::g_get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort) {
 	TRACK_CALL_TEXT("filesystem::g_get_stats");
-	service_ptr_t<filesystem> fs;
-	if (!g_get_interface(fs,p_path)) throw exception_io_no_handler_for_path();
-	return fs->get_stats(p_path,p_stats,p_is_writeable,p_abort);
+	return g_get_interface(p_path)->get_stats(p_path,p_stats,p_is_writeable,p_abort);
 }
 
 void archive_impl::get_stats(const char * p_path,t_filestats & p_stats,bool & p_is_writeable,abort_callback & p_abort) {
@@ -852,4 +845,30 @@ pfc::string stream_reader::read_string_ex(t_size p_len,abort_callback & p_abort)
 	read_object(temp->lock_buffer(p_len),p_len,p_abort);
 	temp->unlock_buffer();
 	return pfc::string::t_data(temp);
+}
+
+
+void filesystem::remove_directory_content(const char * path, abort_callback & abort) {
+	class myCallback : public directory_callback {
+	public:
+		bool on_entry(filesystem * p_owner,abort_callback & p_abort,const char * p_url,bool p_is_subdirectory,const t_filestats & p_stats) {
+			if (p_is_subdirectory) p_owner->list_directory(p_url, *this, p_abort);
+			try {
+				p_owner->remove(p_url, p_abort);
+			} catch(exception_io_not_found) {}
+			return true;
+		}
+	};
+	myCallback cb;
+	list_directory(path, cb, abort);
+}
+void filesystem::remove_object_recur(const char * path, abort_callback & abort) {
+	try {
+		remove_directory_content(path, abort);
+	} catch(exception_io_not_found) {}
+	remove(path, abort);
+}
+
+void filesystem::g_remove_object_recur(const char * path, abort_callback & abort) {
+	g_get_interface(path)->remove_object_recur(path, abort);
 }

@@ -71,7 +71,7 @@ namespace pfc {
 	
 	template<typename t_char>
 	t_size strlen_max_t(const t_char * ptr,t_size max) {
-		PFC_ASSERT( ptr != NULL );
+		PFC_ASSERT( ptr != NULL || max == 0 );
 		t_size n = 0;
 		while(n<max && ptr[n] != 0) n++;
 		return n;
@@ -211,6 +211,7 @@ namespace pfc {
 		t_size find_last(const char * p_string,t_size p_start = ~0) const {return pfc::string_find_last(get_ptr(),p_string,p_start);}
 
 		void fix_dir_separator(char p_char);
+		bool ends_with(char c);
 
 		bool truncate_eol(t_size start = 0);
 		bool fix_eol(const char * append = " (...)",t_size start = 0);
@@ -882,6 +883,16 @@ namespace pfc {
 			const char * walk = next;
 			while(walk > str && walk[-1] == '\r') --walk;
 			out += string_part(str, walk - str);
+			str = next + 1;
+		}
+	}
+	template<typename t_out> void splitStringByChar(t_out & out, const char * str, char c) {
+		for(;;) {
+			const char * next = strchr(str, c);
+			if (next == NULL) {
+				out += string_part(str, strlen(str)); break;
+			}
+			out += string_part(str, next - str);
 			str = next + 1;
 		}
 	}
