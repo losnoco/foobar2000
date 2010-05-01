@@ -24,7 +24,7 @@ class IReSIDBuilder: public ISidBuilder
 {
 public:
     static const Iid &iid () {
-        return SIDIID<0x90a0aa02, 0xf272, 0x435d, 0x8f6b, 0x71b4, 0x5ac2f99f>();
+        SIDIID(0x90a0aa02, 0xf272, 0x435d, 0x8f6b, 0x71b4, 0x5ac2f99f);
     }
 
     virtual uint create   (uint sids) = 0;

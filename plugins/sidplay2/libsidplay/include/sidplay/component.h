@@ -24,7 +24,7 @@ class ISidComponent : public ISidUnknown
 {
 public:
     static const Iid &iid () {
-        return SIDIID<0xa9f9bf8b, 0xd0c2, 0x4dfa, 0x8b8a, 0xf0dd, 0xd7c8b05b>();
+        SIDIID(0xa9f9bf8b, 0xd0c2, 0x4dfa, 0x8b8a, 0xf0dd, 0xd7c8b05b);
     }
 
     virtual const   char *credits (void) = 0;

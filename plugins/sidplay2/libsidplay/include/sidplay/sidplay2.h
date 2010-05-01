@@ -28,7 +28,7 @@ class ISidplay2: public ISidUnknown
 {
 public:
     static const Iid &iid () {
-        return SIDIID<0x25ef79eb, 0x8de6, 0x4076, 0x9c6b, 0xa9f9, 0x570f3a4b>();
+        SIDIID(0x25ef79eb, 0x8de6, 0x4076, 0x9c6b, 0xa9f9, 0x570f3a4b);
     }
 
     static SID_EXTERN ISidUnknown *create ();
@@ -51,7 +51,7 @@ class ISidTimer: public ISidUnknown
 {
 public:
     static const Iid &iid () {
-        return SIDIID<0xba2f0dd8, 0xdafb, 0x4aea, 0xb09a, 0x8aa9, 0xd335b36b>();
+        SIDIID(0xba2f0dd8, 0xdafb, 0x4aea, 0xb09a, 0x8aa9, 0xd335b36b);
     }
 
     // Timer functions with respect to resolution returned by timebase

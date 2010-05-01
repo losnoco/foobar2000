@@ -26,7 +26,7 @@ class ISidEmulation: public ISidComponent
 {
 public:
     static const Iid &iid () {
-        return SIDIID<0x82c01032, 0x5d8c, 0x447a, 0x89fa, 0x0599, 0x0990b766>();
+        SIDIID(0x82c01032, 0x5d8c, 0x447a, 0x89fa, 0x0599, 0x0990b766);
     }
 
     virtual ISidUnknown *builder      (void) const = 0;
@@ -42,7 +42,7 @@ class ISidMixer: public ISidUnknown
 {
 public:
     static const Iid &iid () {
-        return SIDIID<0xc4438750, 0x06ec, 0x11db, 0x9cd8, 0x0800, 0x200c9a66>();
+        SIDIID(0xc4438750, 0x06ec, 0x11db, 0x9cd8, 0x0800, 0x200c9a66);
     }
 
     virtual void mute   (uint_least8_t num, bool enable) = 0;
@@ -54,7 +54,7 @@ class ISidBuilder: public ISidUnknown
 {
 public:
     static const Iid &iid () {
-        return SIDIID<0x1c9ea475, 0xac10, 0x4345, 0x8b88, 0x3e48, 0x04e0ea38>();
+        SIDIID(0x1c9ea475, 0xac10, 0x4345, 0x8b88, 0x3e48, 0x04e0ea38);
     }
 
     virtual operator     bool    () const = 0;
