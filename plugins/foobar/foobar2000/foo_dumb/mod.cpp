@@ -1,7 +1,12 @@
-#define MYVERSION "0.9.9.15"
+#define MYVERSION "0.9.9.16"
 
 /*
 	changelog
+
+2010-05-01 08:07 UTC - kode54
+- Fixed tracks terminating when caller requests no looping and configuration is set to infinite looping
+- Optimized opening modules to only open files once
+- Version is now 0.9.9.16
 
 2010-04-13 14:52 UTC - kode54
 - Amended preferences WM_INITDIALOG handler
@@ -762,6 +767,8 @@
 - Version is now 0.65
 
 */
+
+#define _WIN32_WINNT 0x0501
 
 #ifndef NDEBUG
 #include <crtdbg.h>
@@ -2309,7 +2316,7 @@ public:
 		if ( duh ) unload_duh( duh );
 	}
 
-	void run( const t_uint8 * ptr, unsigned size, const char * ext, abort_callback & p_abort )
+	void run( const t_uint8 * ptr, unsigned size, DUH * p_duh, const char * ext, abort_callback & p_abort )
 	{
 		dumbfile_mem_status memdata;
 
@@ -2351,14 +2358,15 @@ public:
 		}
 		else
 		{
-			start_order = 0;
-			duh = g_open_module(ptr, size, ext, start_order, is_it, is_dos);
+			//start_order = 0;
+			//duh = g_open_module(ptr, size, ext, start_order, is_it, is_dos);
+			duh = p_duh;
 
 			callback_info cdata = { m_info, p_abort };
 
 			start_order = dumb_it_scan_for_playable_orders( duh_get_it_sigdata( duh ), scan_callback, & cdata );
 
-			unload_duh( duh );
+			//unload_duh( duh );
 			duh = 0;
 
 			if ( start_order ) throw exception_io_data();
@@ -2403,7 +2411,7 @@ public:
 		m_cache.delete_all();
 	}
 
-	void run( const t_uint8 * ptr, unsigned size, const char * p_path, t_filetimestamp p_timestamp, pfc::ptr_list_t< dumb_subsong_info > & p_out, abort_callback & p_abort )
+	void run( const t_uint8 * ptr, unsigned size, DUH * duh, const char * p_path, t_filetimestamp p_timestamp, pfc::ptr_list_t< dumb_subsong_info > & p_out, abort_callback & p_abort )
 	{
 		insync( sync );
 
@@ -2431,7 +2439,7 @@ public:
 		dumb_info_scanner scanner;
 		try
 		{
-			scanner.run( ptr, size, pfc::string_extension( p_path ), p_abort );
+			scanner.run( ptr, size, duh, pfc::string_extension( p_path ), p_abort );
 		}
 		catch (...)
 		{
@@ -2989,7 +2997,7 @@ public:
 		else ReadDUH(duh, *m_info, !read_tag, is_dos);
 
 		// subsong magic time
-		g_cache.run( ptr, size, p_path, m_file->get_timestamp( p_abort ), m_subsong_info, p_abort );
+		g_cache.run( ptr, size, duh, p_path, m_file->get_timestamp( p_abort ), m_subsong_info, p_abort );
 
 		if ( p_reason == input_open_info_write ) this->m_file = m_file;
 	}
@@ -3070,11 +3078,11 @@ public:
 			sr = NULL;
 		}
 
-		if ( duh )
+		/*if ( duh )
 		{
 			unload_duh( duh );
 			duh = NULL;
-		}
+		}*/
 
 		interp = cfg_interp;
 		volramp = cfg_volramp;
@@ -3086,7 +3094,18 @@ public:
 		no_loop = ( p_flags & input_flag_no_looping ) || ( limit_info.loop_count < 0 );
 		start_order = p_subsong;
 
+		/*{
+			const t_uint8 * ptr = buffer.get_ptr();
+			unsigned size = buffer.get_size();
+			duh = g_open_module( ptr, size, extension, start_order, is_it, is_dos );
+		}*/
+		const char * fmt = duh_get_tag(duh, "FORMAT");
+		bool is_psm = fmt && !strcmp( fmt, "PSM" );
+
+		if ( is_psm )
 		{
+			unload_duh( duh );
+			duh = NULL;
 			const t_uint8 * ptr = buffer.get_ptr();
 			unsigned size = buffer.get_size();
 			duh = g_open_module( ptr, size, extension, start_order, is_it, is_dos );
@@ -3118,7 +3137,7 @@ private:
 		DUMB_IT_SIGRENDERER * itsr = duh_get_it_sigrenderer( sr );
 		dumb_it_set_resampling_quality( itsr, interp );
 		dumb_it_set_ramp_style( itsr, volramp );
-		if ( no_loop && ! limit_info.fade && loop_count < 0 )
+		if ( no_loop && ! limit_info.fade && loop_count <= 0 )
 			dumb_it_set_loop_callback( itsr, & dumb_it_callback_terminate, NULL );
 		else if ( loop_count != 0 )
 			dumb_it_set_loop_callback( itsr, & dumb_it_callback_limit_int, & limit_info );
