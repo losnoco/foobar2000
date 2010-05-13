@@ -404,11 +404,14 @@ int CSysexMap::BuildTrack(grow_buf & out)
 
 const char* CSysexMap::GetType()
 {
-	int ret=0;
+	int ret=0; int ret2=0;
 	int n;
 	for(n=0;n<pos;n++)
 	{
-		ret=data[events[n].ofs+1];
+		int len = events[n].len;
+		int ofs = events[n].ofs;
+		if (len>1) ret=data[ofs+1];
+		if (len>3) ret2=data[ofs+3];
 		if (ret!=0x7E) break;
 	}
 
@@ -421,7 +424,10 @@ const char* CSysexMap::GetType()
 	case 0x42:
 		return "X5";
 	case 0x41:
-		return "GS";
+		if ( ret2 == 0x42 ) return "GS";
+		else if ( ret2 == 0x16 ) return "MT-32";
+		else if ( ret2 == 0x14 ) return "D-50";
+		break;
 	}
 	return 0;
 }
