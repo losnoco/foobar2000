@@ -375,7 +375,7 @@ public:
 	{
 		bool modified = false;
 
-		for ( unsigned i = 0; i < p_chunk_list.get_count(); i++ )
+		for ( unsigned i = 0; i < p_chunk_list.get_count(); )
 		{
 			audio_chunk * chunk = p_chunk_list.get_item( i );
 
@@ -399,6 +399,7 @@ public:
 				i += flush_chunks( p_chunk_list, i );
 				process_chunk( chunk );
 				modified = true;
+				i++;
 				continue;
 			}
 
