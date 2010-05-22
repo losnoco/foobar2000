@@ -445,7 +445,7 @@ public:
 				info_emitted = true;
 				p_out.info_set_int( "bitspersample", 24 );
 				p_out.info_set_int( "decoded_bitspersample", 20 );
-				p_out.info_set_int( "hdcd_detected", 1 );
+				p_out.info_set( "hdcd", "yes" );
 				return true;
 			}
 		}
