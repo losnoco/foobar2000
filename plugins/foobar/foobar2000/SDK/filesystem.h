@@ -632,6 +632,8 @@ namespace foobar2000_io
 			out = fullString;
 		}
 	}
+
+	void purgeOldFiles(const char * directory, t_filetimestamp period, abort_callback & abort);
 }
 
 using namespace foobar2000_io;

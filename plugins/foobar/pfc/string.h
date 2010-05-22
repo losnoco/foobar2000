@@ -68,6 +68,11 @@ namespace pfc {
 	t_size string_find_first_ex(const char * p_string,t_size p_string_length,const char * p_tofind,t_size p_tofind_length,t_size p_start = 0);	//returns infinite if not found
 	t_size string_find_last_ex(const char * p_string,t_size p_string_length,const char * p_tofind,t_size p_tofind_length,t_size p_start = ~0);	//returns infinite if not found
 
+
+	t_size string_find_first_nc(const char * p_string,t_size p_string_length,char c,t_size p_start = 0); // lengths MUST be valid, no checks are performed (faster than the other flavour)
+	t_size string_find_first_nc(const char * p_string,t_size p_string_length,const char * p_tofind,t_size p_tofind_length,t_size p_start = 0); // lengths MUST be valid, no checks are performed (faster than the other falvour);
+
+
 	
 	template<typename t_char>
 	t_size strlen_max_t(const t_char * ptr,t_size max) {

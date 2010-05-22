@@ -29,6 +29,9 @@ namespace core_api {
 	//! Returns whether foobar2000 has been installed in "portable" mode.
 	bool is_portable_mode_enabled();
 
+	//! Returns whether foobar2000 is currently running in quiet mode. \n
+	//! Quiet mode bypasses all GUI features, disables Media Library and does not save any changes to app configuration. \n
+	//! Your component should not display any forms of user interface when running in quiet mode, as well as avoid saving configuration on its own (no need to worry if you only rely on cfg_vars or config_io_callback, they will simply be ignored on shutdown).
 	bool is_quiet_mode_enabled();
 };
 

@@ -54,13 +54,19 @@ static const replaygain_info replaygain_info_invalid = {replaygain_info::gain_in
 //! Main interface class for information about some playable object.
 class NOVTABLE file_info {
 public:
-	//! Retrieves length, in seconds.
+	//! Retrieves audio duration, in seconds. \n
+	//! Note that the reported duration should not be assumed to be the exact length of the track -\n
+	//! with many popular audio formats, exact duration is impossible to determine without performing a full decode pass;\n
+	//! with other formats, the decoded data may be shorter than reported due to truncation other damage.
 	virtual double		get_length() const = 0;
-	//! Sets length, in seconds.
+	//! Sets audio duration, in seconds. \n
+	//! Note that the reported duration should not be assumed to be the exact length of the track -\n
+	//! with many popular audio formats, exact duration is impossible to determine without performing a full decode pass;\n
+	//! with other formats, the decoded data may be shorter than reported due to truncation other damage.
 	virtual void		set_length(double p_length) = 0;
 
 	//! Sets ReplayGain information.
-	virtual void			set_replaygain(const replaygain_info & p_info) = 0;
+	virtual void		set_replaygain(const replaygain_info & p_info) = 0;
 	//! Retrieves ReplayGain information.
 	virtual replaygain_info	get_replaygain() const = 0;
 

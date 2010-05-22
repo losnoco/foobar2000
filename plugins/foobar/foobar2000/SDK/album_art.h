@@ -281,7 +281,7 @@ private:
 
 class album_art_path_list_dummy : public album_art_path_list {
 public:
-	const char * get_path(t_size index) const {pfc::crash();}
+	const char * get_path(t_size index) const {uBugCheck();}
 	t_size get_count() const {return 0;}
 };
 

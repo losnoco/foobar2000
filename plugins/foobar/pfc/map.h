@@ -74,6 +74,22 @@ namespace pfc {
 			return &storage->m_value;
 		}
 
+		template<typename _t_key>
+		bool query_ptr(const _t_key & p_key, const t_storage_value * & out) const {
+			const t_storage * storage = m_data.find_ptr(t_search_query<_t_key>(p_key));
+			if (storage == NULL) return false;
+			out = &storage->m_value;
+			return true;
+		}
+
+		template<typename _t_key>
+		bool query_ptr(const _t_key & p_key, t_storage_value * & out) {
+			t_storage * storage = m_data.find_ptr(t_search_query<_t_key>(p_key));
+			if (storage == NULL) return false;
+			out = &storage->m_value;
+			return true;
+		}
+
 		template<bool inclusive,bool above,typename _t_key>
 		const t_storage_value * query_nearest_ptr(_t_key & p_key) const {
 			const t_storage * storage = m_data.find_nearest_item<inclusive,above>(t_search_query<_t_key>(p_key));

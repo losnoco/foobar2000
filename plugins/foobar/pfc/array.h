@@ -40,6 +40,13 @@ namespace pfc {
 				m_size = p_size;
 			}
 		}
+		//! Warning: buffer pointer must not point to buffer allocated by this array (fixme).
+		template<typename t_source>
+		void set_data_fromptr(const t_source * p_buffer,t_size p_count) {
+			set_size_discard(p_count);
+			pfc::copy_array_loop_t(*this,p_buffer,p_count);
+		}
+
 		
 		t_size get_size() const {return m_size;}
 		const t_item * get_ptr() const {return m_array;}
@@ -104,7 +111,6 @@ namespace pfc {
 		//! Warning: buffer pointer must not point to buffer allocated by this array (fixme).
 		template<typename t_source>
 		void set_data_fromptr(const t_source * p_buffer,t_size p_count) {
-			
 			set_size(p_count);
 			pfc::copy_array_loop_t(*this,p_buffer,p_count);
 		}

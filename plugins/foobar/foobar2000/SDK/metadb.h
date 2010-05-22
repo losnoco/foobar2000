@@ -317,4 +317,3 @@ private:
 	metadb_handle_list m_handles;
 	pfc::array_t<file_info_impl> m_infos;
 };
-

@@ -872,3 +872,24 @@ void filesystem::remove_object_recur(const char * path, abort_callback & abort) 
 void filesystem::g_remove_object_recur(const char * path, abort_callback & abort) {
 	g_get_interface(path)->remove_object_recur(path, abort);
 }
+
+void foobar2000_io::purgeOldFiles(const char * directory, t_filetimestamp period, abort_callback & abort) {
+
+	class myCallback : public directory_callback {
+	public:
+		myCallback(t_filetimestamp period) : m_base(filetimestamp_from_system_timer() - period) {}
+		bool on_entry(filesystem * p_owner,abort_callback & p_abort,const char * p_url,bool p_is_subdirectory,const t_filestats & p_stats) {
+			if (!p_is_subdirectory && p_stats.m_timestamp < m_base) {
+				try {
+					filesystem::g_remove_timeout(p_url, 1, p_abort);
+				} catch(exception_io_not_found) {}
+			}
+			return true;
+		}
+	private:
+		const t_filetimestamp m_base;
+	};
+
+	myCallback cb(period);
+	filesystem::g_list_directory(directory, cb, abort);
+}

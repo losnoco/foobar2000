@@ -7,7 +7,7 @@ PFC_DECLARE_EXCEPTION(exception_messagebox,pfc::exception,"Internal Error");
 PFC_DECLARE_EXCEPTION(exception_shutdownrequest,pfc::exception,"Shutdown Request");
 
 
-PFC_DECLARE_EXCEPTION(exception_installdamaged, exception_messagebox, "Internal Error - please re-run the foobar2000 installer.");
+PFC_DECLARE_EXCEPTION(exception_installdamaged, exception_messagebox, "Internal error - one or more of the installed components have been damaged.");
 PFC_DECLARE_EXCEPTION(exception_out_of_resources, exception_messagebox, "Not enough system resources available.");
 
 #endif
