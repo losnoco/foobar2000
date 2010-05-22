@@ -18,6 +18,16 @@ enum {
 	FRAME_SAMPLES = 256
 };
 
+bool is_chunk_silent( audio_chunk * chunk )
+{
+	audio_sample * data = chunk->get_data();
+	for ( unsigned i = 0, j = chunk->get_data_length(); i < j; i++ )
+	{
+		if ( data[ i ] ) return false;
+	}
+	return true;
+}
+
 class dts_postprocessor_instance : public decode_postprocessor_instance
 {
 	dsp_chunk_list_impl original_chunks;
@@ -35,7 +45,7 @@ class dts_postprocessor_instance : public decode_postprocessor_instance
 	int dts_flags, nch, srate, bitrate, frame_length;
 	unsigned int channel_mask;
 
-	bool info_emitted;
+	bool info_emitted, gave_up;
 
 	bool init()
 	{
@@ -61,6 +71,7 @@ class dts_postprocessor_instance : public decode_postprocessor_instance
 			state = 0;
 		}
 
+		original_chunks.remove_all();
 		output_chunks.remove_all();
 
 		bufptr = buf;
@@ -68,6 +79,7 @@ class dts_postprocessor_instance : public decode_postprocessor_instance
 		dts_flags = nch = srate = bitrate = 0;
 		valid_scale_found = false;
 		info_emitted = false;
+		gave_up = false;
 	}
 
 	int get_channel_count( int flags )
@@ -340,7 +352,7 @@ public:
 
 	virtual bool run( dsp_chunk_list & p_chunk_list, t_uint32 p_flags, abort_callback & p_abort )
 	{
-		if ( p_flags & flag_altered ) return false;
+		if ( gave_up || p_flags & flag_altered ) return false;
 
 		bool modified = false;
 
@@ -350,7 +362,6 @@ public:
 
 			if ( chunk->get_channels() != 2 || chunk->get_srate() != 44100 ) {
 				i += flush_chunks( p_chunk_list, i, valid_scale_found ) + 1;
-				cleanup();
 				continue;
 			}
 
@@ -387,7 +398,7 @@ public:
 					else
 					{
 						p_chunk_list.remove_by_idx( i );
-						cleanup();
+						output_chunks.remove_all();
 					}
 				}
 				else
@@ -400,7 +411,6 @@ public:
 					else
 					{
 						p_chunk_list.remove_by_idx( i );
-						cleanup();
 					}
 				}
 			}
@@ -412,12 +422,19 @@ public:
 			}
 		}
 
-		while ( original_chunks.get_duration() > 1.0 && original_chunks.get_count() > 1 )
+		for ( unsigned i = 0; i < original_chunks.get_count(); )
 		{
-			audio_chunk * in = original_chunks.get_item( 0 );
+			audio_chunk * in = original_chunks.get_item( i );
+			if ( !is_chunk_silent( in ) ) break;
 			audio_chunk * out = p_chunk_list.insert_item( p_chunk_list.get_count(), in->get_data_length() );
 			out->copy( *in );
-			original_chunks.remove_by_idx( 0 );
+			original_chunks.remove_by_idx( i );
+		}
+
+		if ( original_chunks.get_duration() >= 1.0 )
+		{
+			flush_chunks( p_chunk_list, p_chunk_list.get_count() );
+			gave_up = true;
 		}
 
 		if ( p_flags & flag_eof )
@@ -463,7 +480,6 @@ public:
 
 	virtual void flush()
 	{
-		original_chunks.remove_all();
 		cleanup();
 	}
 
