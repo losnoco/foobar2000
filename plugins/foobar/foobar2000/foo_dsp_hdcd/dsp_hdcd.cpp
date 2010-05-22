@@ -1,4 +1,4 @@
-#define MYVERSION "1.3"
+#define MYVERSION "1.4"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -36,6 +36,10 @@
 
 	change log
 
+2010-05-22 04:57 UTC - kode54
+- Implemented new decode_postprocessor interface, rendering the DSP obsolete
+- Version is now 1.4
+
 2010-04-09 09:44 UTC - kode54
 - Changed DSP to buffer whole audio_chunks, at least one second or one chunk worth
 - Version is now 1.3
@@ -55,6 +59,7 @@
 */
 
 #include <foobar2000.h>
+#include <decode_postprocessor.h>
 
 #include "hdcd_decode.h"
 
@@ -69,7 +74,7 @@ class hdcd_dsp : public dsp_impl_base {
 
 	bool info_emitted;
 
-	bool init()
+	void init()
 	{
 		decoders.set_size( nch );
 
@@ -78,8 +83,6 @@ class hdcd_dsp : public dsp_impl_base {
 			decoders[ i ].reset();
 			decoders[ i ].set_sample_rate( srate );
 		}
-
-		return true;
 	}
 
 	void cleanup()
@@ -201,11 +204,7 @@ public:
 			srate = chunk->get_sample_rate();
 			nch = chunk->get_channels();
 			channel_config = chunk->get_channel_config();
-			if (!init())
-			{
-				flush();
-				return true;
-			}
+			init();
 		}
 
 		unsigned enabled = 0;
@@ -278,7 +277,205 @@ public:
 	}
 };
 
-static dsp_factory_nopreset_t   <hdcd_dsp>     g_hdcd_dsp_factory;
+class hdcd_postprocessor_instance : public decode_postprocessor_instance
+{
+	pfc::array_t<hdcd_decode> decoders;
+
+	dsp_chunk_list_impl original_chunks;
+	dsp_chunk_list_impl output_chunks;
+	pfc::array_t<t_int32> buffer;
+
+	unsigned srate, nch, channel_config;
+
+	bool info_emitted;
+
+	void init()
+	{
+		decoders.set_size( nch );
+
+		for ( unsigned i = 0; i < nch; i++ )
+		{
+			decoders[ i ].reset();
+			decoders[ i ].set_sample_rate( srate );
+		}
+	}
+
+	void cleanup()
+	{
+		decoders.set_size( 0 );
+		original_chunks.remove_all();
+		output_chunks.remove_all();
+		buffer.set_size( 0 );
+		srate = 0;
+		nch = 0;
+		channel_config = 0;
+		info_emitted = false;
+	}
+
+	unsigned flush_chunks( dsp_chunk_list & p_chunk_list, unsigned insert_point )
+	{
+		unsigned ret = 0;
+
+		if ( output_chunks.get_count() )
+		{
+			ret = output_chunks.get_count();
+
+			unsigned enabled = 0;
+			for ( unsigned i = 0; i < nch; i++ )
+			{
+				enabled |= decoders[ i ].get_sample_counter();
+			}
+
+			dsp_chunk_list * list = enabled ? &output_chunks : &original_chunks;
+
+			for ( unsigned i = 0; i < list->get_count(); i++ )
+			{
+				audio_chunk * in_chunk = list->get_item( i );
+				audio_chunk * out_chunk = p_chunk_list.insert_item( insert_point++, in_chunk->get_data_length() );
+				out_chunk->copy( *in_chunk );
+			}
+
+			original_chunks.remove_all();
+			output_chunks.remove_all();
+		}
+
+		return ret;
+	}
+
+	void process_chunk( audio_chunk * chunk )
+	{
+		int data = chunk->get_sample_count() * nch;
+		buffer.grow_size( data );
+		audio_math::convert_to_int32( chunk->get_data(), data, buffer.get_ptr(), 1. / 65536. );
+
+		for ( unsigned i = 0; i < nch; i++ )
+		{
+			for ( unsigned j = 0, k = chunk->get_sample_count(); j < k; j++ )
+			{
+				t_int32 * ptr = buffer.get_ptr() + j * nch + i;
+				*ptr = decoders[ i ].decode_sample( *ptr );
+			}
+		}
+
+		audio_math::convert_from_int32( buffer.get_ptr(), data, chunk->get_data(), 1 << ( 32 - 20 ) );
+	}
+
+public:
+	hdcd_postprocessor_instance()
+	{
+		cleanup();
+	}
+
+	virtual bool run( dsp_chunk_list & p_chunk_list, t_uint32 p_flags, abort_callback & p_abort )
+	{
+		bool modified = false;
+
+		for ( unsigned i = 0; i < p_chunk_list.get_count(); i++ )
+		{
+			audio_chunk * chunk = p_chunk_list.get_item( i );
+
+			if ( srate != chunk->get_sample_rate() || nch != chunk->get_channels() || channel_config != chunk->get_channel_config() )
+			{
+				i += flush_chunks( p_chunk_list, i );
+				srate = chunk->get_sample_rate();
+				nch = chunk->get_channels();
+				channel_config = chunk->get_channel_config();
+				init();
+			}
+
+			unsigned enabled = 0;
+			for ( unsigned j = 0; j < nch; j++ )
+			{
+				enabled |= decoders[ j ].get_sample_counter();
+			}
+
+			if ( enabled )
+			{
+				i += flush_chunks( p_chunk_list, i );
+				process_chunk( chunk );
+				modified = true;
+				continue;
+			}
+
+			original_chunks.add_chunk( chunk );
+
+			process_chunk( chunk );
+
+			output_chunks.add_chunk( chunk );
+
+			p_chunk_list.remove_by_idx( i );
+
+			while ( original_chunks.get_duration() >= 1.0 && original_chunks.get_count() > 1 )
+			{
+				audio_chunk * in_chunk = original_chunks.get_item( 0 );
+				audio_chunk * out_chunk = p_chunk_list.insert_item( i++, in_chunk->get_data_length() );
+				out_chunk->copy( *in_chunk );
+				original_chunks.remove_by_idx( 0 );
+				output_chunks.remove_by_idx( 0 );
+			}
+		}
+
+		if ( p_flags & flag_eof )
+		{
+			flush_chunks( p_chunk_list, p_chunk_list.get_count() );
+			cleanup();
+		}
+
+		return modified;
+	}
+
+	virtual bool get_dynamic_info( file_info & p_out )
+	{
+		if ( !info_emitted )
+		{
+			unsigned enabled = 0;
+			for ( unsigned i = 0; i < nch; i++ )
+			{
+				enabled |= decoders[ i ].get_sample_counter();
+			}
+
+			if ( enabled )
+			{
+				info_emitted = true;
+				p_out.info_set_int( "bitspersample", 24 );
+				p_out.info_set_int( "decoded_bitspersample", 20 );
+				p_out.info_set_int( "hdcd_detected", 1 );
+				return true;
+			}
+		}
+		return false;
+	}
+
+	virtual void flush()
+	{
+		cleanup();
+	}
+};
+
+class hdcd_postprocessor_entry : public decode_postprocessor_entry
+{
+public:
+	virtual bool instantiate( const file_info & info, decode_postprocessor_instance::ptr & out )
+	{
+        if ( info.info_get_decoded_bps() != 16 )
+		{
+            return false;
+        }
+
+		const char * encoding = info.info_get( "encoding" );
+		if ( !encoding || pfc::stricmp_ascii( encoding, "lossless" ) )
+		{
+			return false;
+		}
+
+		out = new service_impl_t< hdcd_postprocessor_instance >;
+
+		return true;
+	}
+};
+
+static dsp_factory_nopreset_t  <hdcd_dsp>                 g_hdcd_dsp_factory;
+static service_factory_single_t<hdcd_postprocessor_entry> g_hdcd_postprocessor_entry_factory;
 
 static const char about_string[] = "HDCD is a registered trademark of Microsoft Corporation.";
 
