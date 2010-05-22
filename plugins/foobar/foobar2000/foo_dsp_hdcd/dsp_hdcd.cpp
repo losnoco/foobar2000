@@ -366,6 +366,11 @@ public:
 		cleanup();
 	}
 
+	~hdcd_postprocessor_instance()
+	{
+		cleanup();
+	}
+
 	virtual bool run( dsp_chunk_list & p_chunk_list, t_uint32 p_flags, abort_callback & p_abort )
 	{
 		bool modified = false;
