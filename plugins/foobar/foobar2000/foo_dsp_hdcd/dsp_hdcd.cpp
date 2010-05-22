@@ -373,6 +373,8 @@ public:
 
 	virtual bool run( dsp_chunk_list & p_chunk_list, t_uint32 p_flags, abort_callback & p_abort )
 	{
+		if ( p_flags & flag_altered ) return false;
+
 		bool modified = false;
 
 		for ( unsigned i = 0; i < p_chunk_list.get_count(); )
@@ -456,6 +458,11 @@ public:
 	{
 		cleanup();
 	}
+
+	virtual double get_buffer_ahead()
+	{
+		return 0;
+	}
 };
 
 class hdcd_postprocessor_entry : public decode_postprocessor_entry
@@ -480,11 +487,11 @@ public:
 	}
 };
 
-static dsp_factory_nopreset_t  <hdcd_dsp>                 g_hdcd_dsp_factory;
+//static dsp_factory_nopreset_t  <hdcd_dsp>                 g_hdcd_dsp_factory;
 static service_factory_single_t<hdcd_postprocessor_entry> g_hdcd_postprocessor_entry_factory;
 
 static const char about_string[] = "HDCD is a registered trademark of Microsoft Corporation.";
 
 DECLARE_COMPONENT_VERSION("HDCD decoder", MYVERSION, about_string);
 
-VALIDATE_COMPONENT_FILENAME("foo_dsp_hdcd.dll");
+VALIDATE_COMPONENT_FILENAME("foo_hdcd.dll");
