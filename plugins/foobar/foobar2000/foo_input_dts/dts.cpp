@@ -5,6 +5,7 @@
 // foobar2000 component copyright (C) 2004-2006 Janne Hyvärinen
 //
 // Changes:
+//  0.2.9  (2010-05-22): Implemented decode_postprocessor interface, obsoletes DSP
 //  0.2.8  (2010-01-11): Updated to 1.0 SDK
 //  0.2.7  (2009-12-13): Found and fixed another false positive with the DSP
 //  0.2.6  (2009-12-13): Really fixed DTS decoder DSP this time
@@ -33,7 +34,7 @@
 //  0.0.4  (2004-10-15): Simplified packet decoder, added codec reporting, fixed typo in version number
 //  0.0.3  (2004-10-15): Added Matroska packet decoder support
 
-#define FD_VERSION  "0.2.8"
+#define FD_VERSION  "0.2.9"
 
 //#define DTS_DEBUG // print status info to console
 
