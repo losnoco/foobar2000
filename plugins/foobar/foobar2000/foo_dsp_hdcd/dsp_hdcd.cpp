@@ -36,9 +36,12 @@
 
 	change log
 
+2010-05-24 14:52 UTC - kode54
+- Changed HDCD processor to give up after 5 seconds of no HDCD signatures
+- Version is now 1.4
+
 2010-05-22 04:57 UTC - kode54
 - Implemented new decode_postprocessor interface, rendering the DSP obsolete
-- Version is now 1.4
 
 2010-04-09 09:44 UTC - kode54
 - Changed DSP to buffer whole audio_chunks, at least one second or one chunk worth
@@ -287,7 +290,7 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 
 	unsigned srate, nch, channel_config;
 
-	bool info_emitted;
+	bool info_emitted, gave_up;
 
 	void init()
 	{
@@ -310,6 +313,7 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 		nch = 0;
 		channel_config = 0;
 		info_emitted = false;
+		gave_up = false;
 	}
 
 	unsigned flush_chunks( dsp_chunk_list & p_chunk_list, unsigned insert_point )
@@ -373,7 +377,7 @@ public:
 
 	virtual bool run( dsp_chunk_list & p_chunk_list, t_uint32 p_flags, abort_callback & p_abort )
 	{
-		if ( p_flags & flag_altered ) return false;
+		if ( gave_up || p_flags & flag_altered ) return false;
 
 		bool modified = false;
 
@@ -413,13 +417,12 @@ public:
 
 			p_chunk_list.remove_by_idx( i );
 
-			while ( original_chunks.get_duration() >= 1.0 && original_chunks.get_count() > 1 )
+			if ( original_chunks.get_duration() >= 5.0 && original_chunks.get_count() > 1 )
 			{
-				audio_chunk * in_chunk = original_chunks.get_item( 0 );
-				audio_chunk * out_chunk = p_chunk_list.insert_item( i++, in_chunk->get_data_length() );
-				out_chunk->copy( *in_chunk );
-				original_chunks.remove_by_idx( 0 );
-				output_chunks.remove_by_idx( 0 );
+				flush_chunks( p_chunk_list, i );
+				cleanup();
+				gave_up = true;
+				break;
 			}
 		}
 
