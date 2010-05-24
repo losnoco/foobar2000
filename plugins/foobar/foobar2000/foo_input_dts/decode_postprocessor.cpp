@@ -39,8 +39,7 @@ class dts_postprocessor_instance : public decode_postprocessor_instance
 	pfc::array_t<uint8_t> buffer;
 	uint8_t buf[BUFFER_SIZE];
 	uint8_t *bufptr, *bufpos;
-	audio_sample scale;
-	bool valid_scale_found;
+	bool valid_stream_found;
 
 	int dts_flags, nch, srate, bitrate, frame_length;
 	unsigned int channel_mask;
@@ -77,7 +76,7 @@ class dts_postprocessor_instance : public decode_postprocessor_instance
 		bufptr = buf;
 		bufpos = buf + HEADER_SIZE;
 		dts_flags = nch = srate = bitrate = 0;
-		valid_scale_found = false;
+		valid_stream_found = false;
 		info_emitted = false;
 		gave_up = false;
 	}
@@ -244,82 +243,6 @@ error:
 		return false;
 	}
 
-	bool find_dts_header( const audio_sample *buf, unsigned int samples, audio_sample &scale )
-	{
-		if (samples < 4) return false;
-
-		audio_sample min_scale = 32768., min_scale_adjusted = 32767.;
-		audio_sample work_scale;
-
-		for ( unsigned int i = 0; i < samples-4; i++ )
-		{
-			if ( buf[ i + 0 ] == 0.0 ) continue;
-
-			if ( fabs( ( double ) buf[ i + 1 ] - ( double ) buf[ i + 0 ] * ( double ) 384 / ( double )( -385 ) ) < 0.00001 )
-			{
-				work_scale = ( double )( 384 / 32768.0 ) / ( double ) buf[ i + 0 ];
-				if ( fabs( work_scale - 1.0f ) < min_scale_adjusted )
-				{
-					min_scale = work_scale;
-					min_scale_adjusted = fabs( work_scale - 1.0f );
-				}
-			}
-
-			if ( fabs( ( double ) buf[ i + 1 ] - ( double ) buf[ i + 0 ] * ( double )( -32767 ) / ( double ) 32766 ) < 0.00001 )
-			{
-				work_scale = ( double )( 32766 / 32768.0 ) / ( double ) buf[ i + 0 ];
-				if ( fabs( work_scale - 1.0f ) < min_scale_adjusted )
-				{
-					min_scale = work_scale;
-					min_scale_adjusted = fabs( work_scale - 1.0f );
-				}
-			}
-
-			if ( fabs( ( double ) buf[ i + 1 ] - ( double ) buf[ i + 0 ] * ( double )( -6144 ) / ( double ) 8191 ) < 0.00001 )
-			{
-				work_scale = ( double )( 8191 / 32768.0 ) / ( double ) buf[ i + 0 ];
-				t_int16 tmp[ 1 ];
-				audio_math::convert_to_int16( buf + i + 2, 1, tmp, work_scale );
-				const unsigned char * b = ( const unsigned char * ) tmp;
-
-				if ( ( ( b[ 0 ] & 0xf0 ) == 0xf0 ) && ( b[ 1 ] == 0x07 ) )
-				{
-					if ( fabs( work_scale - 1.0f ) < min_scale_adjusted )
-					{
-						min_scale = work_scale;
-						min_scale_adjusted = fabs( work_scale - 1.0f );
-					}
-				}
-			}
-
-			if ( ( fabs( ( double ) buf[ i + 1 ] - ( double ) buf[ i + 0 ] * ( double ) 232 / ( double )( -225 ) ) < 0.00001 ) &&
-				( fabs( ( double ) buf[ i + 2 ] - ( double ) buf[ i + 0 ] * ( double ) 1792 / ( double )( -225 ) ) < 0.00001) )
-			{
-				work_scale = ( double )( 232 / 32768.0 ) / ( double ) buf[ i + 0 ];
-				t_int16 tmp[ 1 ];
-				audio_math::convert_to_int16( buf + i + 2, 1, tmp, work_scale );
-				const unsigned char * b = ( const unsigned char * ) tmp;
-
-				if ( ( b[ 0 ] == 0x07 ) && ( ( b[ 1 ] & 0xf0 ) == 0xf0 ) )
-				{
-					if ( fabs( work_scale - 1.0f ) < min_scale_adjusted )
-					{
-						min_scale = work_scale;
-						min_scale_adjusted = fabs( work_scale - 1.0f );
-					}
-				}
-			}
-		}
-
-		if ( min_scale_adjusted < 32767. )
-		{
-			scale = min_scale;
-			return true;
-		}
-
-		return false;
-	}
-
 	unsigned flush_chunks( dsp_chunk_list & p_chunk_list, unsigned insert_point, bool output = false )
 	{
 		dsp_chunk_list * list = output ? &output_chunks : &original_chunks;
@@ -361,64 +284,55 @@ public:
 			audio_chunk * chunk = p_chunk_list.get_item( i );
 
 			if ( chunk->get_channels() != 2 || chunk->get_srate() != 44100 ) {
-				i += flush_chunks( p_chunk_list, i, valid_scale_found ) + 1;
+				i += flush_chunks( p_chunk_list, i, valid_stream_found ) + 1;
 				continue;
 			}
 
-			if ( valid_scale_found || find_dts_header( chunk->get_data(), chunk->get_sample_count() * 2, scale ) )
+			if (!state)
 			{
-				if (!state)
-				{
-					if (!init()) break;
-				}
+				if (!init()) break;
+			}
 
-				int data = chunk->get_sample_count() * 4;
-				buffer.grow_size( data );
-				audio_math::convert_to_int16( chunk->get_data(), chunk->get_sample_count() * 2, (t_int16 *)buffer.get_ptr(), scale );
+			int data = chunk->get_sample_count() * 4;
+			buffer.grow_size( data );
+			audio_math::convert_to_int16( chunk->get_data(), chunk->get_sample_count() * 2, (t_int16 *)buffer.get_ptr(), 1.0 );
 
-				if ( !valid_scale_found )
+			if ( !valid_stream_found )
+			{
+				audio_chunk * out = original_chunks.insert_item( original_chunks.get_count(), chunk->get_data_length() );
+				out->copy( *chunk );
+				if ( decode( buffer.get_ptr(), data, *chunk, p_abort ) )
 				{
-					audio_chunk * out = original_chunks.insert_item( original_chunks.get_count(), chunk->get_data_length() );
-					out->copy( *chunk );
-					if ( decode( buffer.get_ptr(), data, *chunk, p_abort ) )
+					if ( output_chunks.get_count() )
 					{
-						if ( output_chunks.get_count() )
-						{
-							valid_scale_found = true;
-							i += flush_chunks( p_chunk_list, i, true ) + 1;
-							modified = true;
-						}
-						else
-						{
-							out = output_chunks.insert_item( output_chunks.get_count(), chunk->get_data_length() );
-							out->copy( *chunk );
-							p_chunk_list.remove_by_idx( i );
-						}
-					}
-					else
-					{
-						p_chunk_list.remove_by_idx( i );
-						output_chunks.remove_all();
-					}
-				}
-				else
-				{
-					if ( decode( buffer.get_ptr(), data, *chunk, p_abort ) )
-					{
-						i++;
+						valid_stream_found = true;
+						i += flush_chunks( p_chunk_list, i, true ) + 1;
 						modified = true;
 					}
 					else
 					{
+						out = output_chunks.insert_item( output_chunks.get_count(), chunk->get_data_length() );
+						out->copy( *chunk );
 						p_chunk_list.remove_by_idx( i );
 					}
+				}
+				else
+				{
+					p_chunk_list.remove_by_idx( i );
+					output_chunks.remove_all();
 				}
 			}
 			else
 			{
-				audio_chunk * out = original_chunks.insert_item( original_chunks.get_count(), chunk->get_data_length() );
-				out->copy( *chunk );
-				p_chunk_list.remove_by_idx( i );
+				if ( decode( buffer.get_ptr(), data, *chunk, p_abort ) )
+				{
+					i++;
+					modified = true;
+				}
+				else
+				{
+					p_chunk_list.remove_by_idx( i );
+				}
 			}
 		}
 
@@ -439,7 +353,7 @@ public:
 
 		if ( p_flags & flag_eof )
 		{
-			flush_chunks( p_chunk_list, p_chunk_list.get_count(), valid_scale_found );
+			flush_chunks( p_chunk_list, p_chunk_list.get_count(), valid_stream_found );
 			cleanup();
 		}
 
@@ -463,7 +377,7 @@ public:
 
 		if ( !info_emitted )
 		{
-			if ( valid_scale_found )
+			if ( valid_stream_found )
 			{
 				info_emitted = true;
 				p_out.info_set_int( "samplerate", srate );

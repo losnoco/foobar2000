@@ -5,7 +5,7 @@
 // foobar2000 component copyright (C) 2004-2006 Janne Hyv�rinen
 //
 // Changes:
-//  0.2.9  (2010-05-22): Implemented decode_postprocessor interface, obsoletes DSP
+//  0.2.9  (2010-05-23): Implemented decode_postprocessor interface, removed DSP
 //  0.2.8  (2010-01-11): Updated to 1.0 SDK
 //  0.2.7  (2009-12-13): Found and fixed another false positive with the DSP
 //  0.2.6  (2009-12-13): Really fixed DTS decoder DSP this time
@@ -741,7 +741,7 @@ DECLARE_COMPONENT_VERSION("DTS decoder", FD_VERSION,
   "DTS decoding powered by libdca v0.0.5 by Gildas Bazin.\n"
   "Homepage for libdca: http://developers.videolan.org/libdca.html\n"
   "\n"
-  "foobar2000 component by Janne Hyvärinen.\n"
+  "foobar2000 component by Janne Hyvärinen and Chris Moeller.\n"
   "Licensed under GNU GPL.\n");
 
 DECLARE_FILE_TYPE("DTS files", "*.DTS;*.DTSWAV");
