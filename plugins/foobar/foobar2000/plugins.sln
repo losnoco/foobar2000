@@ -119,7 +119,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_aften", "foo_dsp_af
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libaften", "..\..\aften\msvc\libaften\libaften.vcxproj", "{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_hdcd", "foo_dsp_hdcd\foo_dsp_hdcd.vcxproj", "{32E9B780-8555-4010-B5C1-19544EEEF26F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_hdcd", "foo_dsp_hdcd\foo_dsp_hdcd.vcxproj", "{32E9B780-8555-4010-B5C1-19544EEEF26F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_usf", "foo_input_usf\usf.vcxproj", "{852F6566-124D-453C-B45B-5BD1C3D9BE3B}"
 EndProject
@@ -127,9 +127,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gthread", "..\..\glib-2.20.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mt32emu", "..\..\munt\mt32emu\mt32emu_msvc7.vcxproj", "{063A149D-E48C-499B-B13F-7A70C140A662}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_echo", "foo_dsp_echo\foo_dsp_echo.vcxproj", "{68029F2E-F774-48FE-BC67-E0F493B1E9CD}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 57
+		SccNumberOfProjects = 58
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = http://sabin:8080/tfs/defaultcollection
 		SccLocalPath0 = .
@@ -301,6 +303,9 @@ Global
 		SccProjectUniqueName56 = ..\\..\\munt\\mt32emu\\mt32emu_msvc7.vcxproj
 		SccProjectName56 = ../../munt/mt32emu
 		SccLocalPath56 = ..\\..\\munt\\mt32emu
+		SccProjectUniqueName57 = foo_dsp_echo\\foo_dsp_echo.vcxproj
+		SccProjectName57 = foo_dsp_echo
+		SccLocalPath57 = foo_dsp_echo
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -841,6 +846,15 @@ Global
 		{063A149D-E48C-499B-B13F-7A70C140A662}.Release|Win32.ActiveCfg = Release|Win32
 		{063A149D-E48C-499B-B13F-7A70C140A662}.Release|Win32.Build.0 = Release|Win32
 		{063A149D-E48C-499B-B13F-7A70C140A662}.Release|x64.ActiveCfg = Release|Win32
+		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Debug|Win32.Build.0 = Debug|Win32
+		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Debug|x64.ActiveCfg = Debug|Win32
+		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Release staticlink|Win32.ActiveCfg = Release|Win32
+		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Release staticlink|Win32.Build.0 = Release|Win32
+		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Release staticlink|x64.ActiveCfg = Release|Win32
+		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Release|Win32.ActiveCfg = Release|Win32
+		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Release|Win32.Build.0 = Release|Win32
+		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
