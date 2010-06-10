@@ -855,6 +855,6 @@ static void RunDSPConfigPopup(const dsp_preset & p_data,HWND p_parent,dsp_preset
 static dsp_factory_t          <dsp_reverb>     g_dsp_reverb_factory;
 static dsp_factory_nopreset_t <dsp_stereo2x_2> g_dsp_stereo2x_2_factory;
 
-DECLARE_COMPONENT_VERSION("Programmable reverb", MYVERSION, "Programmable reverb, based on PSX reverb\ncode from the P.E.Op.S. project.\n\nhttp://www.sourceforge.net/projects/peops");
+DECLARE_COMPONENT_VERSION("Programmable reverb DSP", MYVERSION, "Programmable reverb, based on PSX reverb\ncode from the P.E.Op.S. project.\n\nhttp://www.sourceforge.net/projects/peops");
 
 VALIDATE_COMPONENT_FILENAME("foo_dsp_prvb.dll");
