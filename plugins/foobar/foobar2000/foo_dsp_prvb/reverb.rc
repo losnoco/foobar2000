@@ -1,4 +1,4 @@
-//Microsoft Developer Studio generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -27,18 +25,18 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE 
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
@@ -52,10 +50,126 @@ END
 // Dialog
 //
 
-IDD_CONFIG DIALOG DISCARDABLE  0, 0, 228, 160
-STYLE WS_CHILD
-FONT 8, "MS Sans Serif"
+IDD_DSP DIALOGEX 0, 0, 568, 229
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Reverb DSP Configuration"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,456,210,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,510,210,50,14
+    RTEXT           "Preset:",IDC_STATIC,21,212,71,8
+    COMBOBOX        IDC_COMBO,92,210,75,93,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    RTEXT           "Delay:",IDC_STATIC,7,12,85,8
+    CONTROL         "",IDC_SLIDER_DELAY,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,12,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_DELAY,224,12,44,8
+    RTEXT           "Dry volume left:",IDC_STATIC,7,22,85,8
+    CONTROL         "",IDC_SLIDER_MVOLLEFT,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,22,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_MVOLLEFT,224,22,44,8
+    RTEXT           "Dry volume right:",IDC_STATIC,7,32,85,8
+    CONTROL         "",IDC_SLIDER_MVOLRIGHT,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,32,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_MVOLRIGHT,224,32,44,8
+    RTEXT           "Wet volume left:",IDC_STATIC,7,42,85,8
+    CONTROL         "",IDC_SLIDER_VOLLEFT,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,42,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_VOLLEFT,224,42,44,8
+    RTEXT           "Wet volume right:",IDC_STATIC,7,52,85,8
+    CONTROL         "",IDC_SLIDER_VOLRIGHT,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,52,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_VOLRIGHT,224,52,44,8
+    RTEXT           "Feedback source A:",IDC_STATIC,7,62,85,8
+    CONTROL         "",IDC_SLIDER_FB_SRC_A,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,62,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_FB_SRC_A,224,62,44,8
+    RTEXT           "Feedback source B:",IDC_STATIC,7,72,85,8
+    CONTROL         "",IDC_SLIDER_FB_SRC_B,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,72,131,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_FB_SRC_B,223,72,44,8
+    RTEXT           "IIR alpha:",IDC_STATIC,7,82,85,8
+    CONTROL         "",IDC_SLIDER_IIR_ALPHA,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,82,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_IIR_ALPHA,224,82,44,8
+    RTEXT           "Accumulator coefficient A:",IDC_STATIC,7,92,85,8
+    CONTROL         "",IDC_SLIDER_ACC_COEF_A,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,92,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_ACC_COEF_A,224,92,44,8
+    RTEXT           "Accumulator coefficient B:",IDC_STATIC,7,102,85,8
+    CONTROL         "",IDC_SLIDER_ACC_COEF_B,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,102,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_ACC_COEF_B,224,102,44,8
+    RTEXT           "Accumulator coefficient C:",IDC_STATIC,7,112,85,8
+    CONTROL         "",IDC_SLIDER_ACC_COEF_C,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,112,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_ACC_COEF_C,224,112,44,8
+    RTEXT           "Accumulator coefficient D:",IDC_STATIC,7,122,85,8
+    CONTROL         "",IDC_SLIDER_ACC_COEF_D,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,122,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_ACC_COEF_D,224,122,44,8
+    RTEXT           "IIR coefficient:",IDC_STATIC,7,132,85,8
+    CONTROL         "",IDC_SLIDER_IIR_COEF,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,132,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_IIR_COEF,224,132,44,8
+    RTEXT           "Feedback alpha:",IDC_STATIC,7,142,85,8
+    CONTROL         "",IDC_SLIDER_FB_ALPHA,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,142,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_FB_ALPHA,224,142,44,8
+    RTEXT           "Feedback multiplier:",IDC_STATIC,7,152,85,8
+    CONTROL         "",IDC_SLIDER_FB_X,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,152,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_FB_X,224,152,44,8
+    RTEXT           "IIR target A0:",IDC_STATIC,7,162,85,8
+    CONTROL         "",IDC_SLIDER_IIR_DEST_A0,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,162,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_IIR_DEST_A0,224,162,44,8
+    RTEXT           "IIR target A1:",IDC_STATIC,7,172,85,8
+    CONTROL         "",IDC_SLIDER_IIR_DEST_A1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,172,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_IIR_DEST_A1,224,172,44,8
+    RTEXT           "Accumulator source A0:",IDC_STATIC,7,182,85,8
+    CONTROL         "",IDC_SLIDER_ACC_SRC_A0,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,182,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_ACC_SRC_A0,224,182,44,8
+    RTEXT           "Accumulator source A1:",IDC_STATIC,7,192,85,8
+    CONTROL         "",IDC_SLIDER_ACC_SRC_A1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,92,192,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_ACC_SRC_A1,224,192,44,8
+    RTEXT           "Accumulator source B0:",IDC_STATIC,291,22,85,8
+    CONTROL         "",IDC_SLIDER_ACC_SRC_B0,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,22,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_ACC_SRC_B0,508,22,44,8
+    RTEXT           "Accumulator source B1:",IDC_STATIC,291,32,85,8
+    CONTROL         "",IDC_SLIDER_ACC_SRC_B1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,32,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_ACC_SRC_B1,508,32,44,8
+    RTEXT           "IIR source A0:",IDC_STATIC,291,42,85,8
+    CONTROL         "",IDC_SLIDER_IIR_SRC_A0,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,42,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_IIR_SRC_A0,508,42,44,8
+    RTEXT           "IIR source A1:",IDC_STATIC,291,52,85,8
+    CONTROL         "",IDC_SLIDER_IIR_SRC_A1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,52,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_IIR_SRC_A1,508,52,44,8
+    RTEXT           "IIR target B0:",IDC_STATIC,291,62,85,8
+    CONTROL         "",IDC_SLIDER_IIR_DEST_B0,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,62,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_IIR_DEST_B0,508,62,44,8
+    RTEXT           "IIR target B1:",IDC_STATIC,291,72,85,8
+    CONTROL         "",IDC_SLIDER_IIR_DEST_B1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,72,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_IIR_DEST_B1,508,72,44,8
+    RTEXT           "Accumulator source C0:",IDC_STATIC,291,82,85,8
+    CONTROL         "",IDC_SLIDER_ACC_SRC_C0,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,82,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_ACC_SRC_C0,508,82,44,8
+    RTEXT           "Accumulator source C1:",IDC_STATIC,291,92,85,8
+    CONTROL         "",IDC_SLIDER_ACC_SRC_C1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,92,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_ACC_SRC_C1,508,92,44,8
+    RTEXT           "Accumulator source D0:",IDC_STATIC,291,102,85,8
+    CONTROL         "",IDC_SLIDER_ACC_SRC_D0,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,102,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_ACC_SRC_D0,508,102,44,8
+    RTEXT           "Accumulator source D1:",IDC_STATIC,291,112,85,8
+    CONTROL         "",IDC_SLIDER_ACC_SRC_D1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,112,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_ACC_SRC_D1,508,112,44,8
+    RTEXT           "IIR source B1:",IDC_STATIC,291,122,85,8
+    CONTROL         "",IDC_SLIDER_IIR_SRC_B1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,122,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_IIR_SRC_B1,508,122,44,8
+    RTEXT           "IIR source B0:",IDC_STATIC,291,132,85,8
+    CONTROL         "",IDC_SLIDER_IIR_SRC_B0,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,132,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_IIR_SRC_B0,508,132,44,8
+    RTEXT           "Mix target A0:",IDC_STATIC,291,142,85,8
+    CONTROL         "",IDC_SLIDER_MIX_DEST_A0,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,142,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_MIX_DEST_A0,508,142,44,8
+    RTEXT           "Mix target A1:",IDC_STATIC,291,152,85,8
+    CONTROL         "",IDC_SLIDER_MIX_DEST_A1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,152,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_MIX_DEST_A1,508,152,44,8
+    RTEXT           "Mix target B0:",IDC_STATIC,291,162,85,8
+    CONTROL         "",IDC_SLIDER_MIX_DEST_B0,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,162,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_MIX_DEST_B0,508,162,44,8
+    RTEXT           "Mix target B1:",IDC_STATIC,291,172,85,8
+    CONTROL         "",IDC_SLIDER_MIX_DEST_B1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,172,132,10
+    RTEXT           "N ms",IDC_SLIDER_LABEL_MIX_DEST_B1,508,172,44,8
+    RTEXT           "Input coefficient left:",IDC_STATIC,291,182,85,8
+    CONTROL         "",IDC_SLIDER_IN_COEF_L,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,182,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_IN_COEF_L,508,182,44,8
+    RTEXT           "Input coefficient right:",IDC_STATIC,291,192,85,8
+    CONTROL         "",IDC_SLIDER_IN_COEF_R,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,376,192,132,10
+    RTEXT           "N%",IDC_SLIDER_LABEL_IN_COEF_R,508,192,44,8
 END
 
 
@@ -64,7 +178,25 @@ END
 // DESIGNINFO
 //
 
-#endif    // English (U.S.) resources
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DSP, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 561
+        VERTGUIDE, 92
+        VERTGUIDE, 224
+        VERTGUIDE, 283
+        VERTGUIDE, 376
+        VERTGUIDE, 508
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 222
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
