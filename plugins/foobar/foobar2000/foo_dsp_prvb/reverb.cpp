@@ -1,28 +1,32 @@
-#define MYVERSION "1.1"
+#define MYVERSION "1.2"
 
 /*
 	changelog
 
--------------------- - kode54
-- Initial version for foobar2000 0.8 or maybe something even older, no configuration
-- Version is now 0.5
+2010-06-30 03:04 UTC - kode54
+- Fixed a minor typo that broke 4 channel support in the accurate/resampling DSP
+- Version is now 1.2
 
--------------------- - kode54
-- Updated for 0.9, I think
-
-2010-06-09 01:14 UTC - kode54
-- Updated for 1.0
-
-2010-06-10 00:11 UTC - kode54
-- Added full configuration
+2010-06-18 04:52 UTC - kode54
+- Implemented resampling version that is more accurate to the actual hardware
+- Version is now 1.1
 
 2010-06-10 06:20 UTC - kode54
 - And presets
 - Version is now 1.0
 
-2010-06-18 04:52 UTC - kode54
-- Implemented resampling version that is more accurate to the actual hardware
-- Version is now 1.1
+2010-06-10 00:11 UTC - kode54
+- Added full configuration
+
+2010-06-09 01:14 UTC - kode54
+- Updated for 1.0
+
+-------------------- - kode54
+- Updated for 0.9, I think
+
+-------------------- - kode54
+- Initial version for foobar2000 0.8 or maybe something even older, no configuration
+- Version is now 0.5
 
 */
 
@@ -588,7 +592,7 @@ bool dsp_reverb_accurate::on_chunk( audio_chunk * chunk, abort_callback & p_abor
 			out [i * 4 + 3] = .5f * ( omr - dr );
 		}
 		audio_chunk * out_chunk = insert_chunk( processed_todo * 4 );
-		out_chunk->set_data( out, processed_todo, 4, channel_config_4point0 );
+		out_chunk->set_data( out, processed_todo, 4, srate, channel_config_4point0 );
 	}
 
 	if ( samples > processed_todo )
