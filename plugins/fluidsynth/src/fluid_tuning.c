@@ -127,7 +127,7 @@ fluid_tuning_unref (fluid_tuning_t *tuning, int count)
   else return FALSE;
 }
 
-void fluid_tuning_set_name(fluid_tuning_t* tuning, char* name)
+void fluid_tuning_set_name(fluid_tuning_t* tuning, const char* name)
 {
   if (tuning->name != NULL) {
     FLUID_FREE(tuning->name);

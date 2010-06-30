@@ -1438,7 +1438,7 @@ fluid_synth_cc_LOCAL (fluid_synth_t* synth, int channum, int num)
         switch (fluid_channel_get_cc (chan, RPN_LSB))
         {
           case RPN_PITCH_BEND_RANGE:    /* Set bend range in semitones */
-            fluid_channel_set_pitch_wheel_sensitivity (synth->channel[channum], value);
+            fluid_channel_set_pitch_wheel_sensitivity (synth->channel[channum], data);
             fluid_synth_update_pitch_wheel_sens_LOCAL (synth, channum);   /* Update bend range */
             /* FIXME - Handle LSB? (Fine bend range in cents) */
             break;
