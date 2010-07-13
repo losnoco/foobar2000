@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.16"
+#define MYVERSION "2.0.17"
 
 /*
 	changelog
+
+2010-07-13 03:03 UTC - kode54
+- Implemented better end silence detection
+- Version is now 2.0.17
 
 2010-04-13 14:56 UTC - kode54
 - Amended preferences WM_INITDIALOG handler
@@ -168,6 +172,8 @@
 
 */
 
+#define _WIN32_WINNT 0x0501
+
 #include "../SDK/foobar2000.h"
 #include "../helpers/window_placement_helper.h"
 #include "../ATLHelpers/ATLHelpers.h"
@@ -178,6 +184,8 @@
 #include <zlib.h>
 
 #include "../../../ESP/QSound/Core/qsound.h"
+
+#include "circular_buffer.h"
 
 #include <atlbase.h>
 #include <atlapp.h>
@@ -1002,6 +1010,8 @@ class input_qsf
 	pfc::array_t<t_uint8> qsound_state;
 	pfc::array_t<t_int16> sample_buffer;
 
+	circular_buffer<t_int16> silence_test_buffer;
+
 	qsound_rom m_rom;
 
 	service_ptr_t<file> m_file;
@@ -1025,7 +1035,7 @@ class input_qsf
 	void load_qsf(service_ptr_t<file> & r, const char * p_path, file_info & info, bool full_open, abort_callback & p_abort);
 
 public:
-	input_qsf()
+	input_qsf() : silence_test_buffer( 0 )
 	{
 	}
 
@@ -1117,10 +1127,10 @@ public:
 
 		do_suppressendsilence = !! cfg_suppressendsilence;
 
+		unsigned skip_max = cfg_endsilenceseconds * 44100;
+
 		if ( cfg_suppressopeningsilence ) // ohcrap
 		{
-			unsigned skip_max = cfg_endsilenceseconds * 44100;
-
 			for (;;)
 			{
 				p_abort.check();
@@ -1154,13 +1164,14 @@ public:
 			startsilence += silence;
 			silence = 0;
 		}
+
+		if ( do_suppressendsilence ) silence_test_buffer.resize( skip_max * 2 );
 	}
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
-		if ( eof ) return false;
+		if ( ( eof || err < 0 ) && !silence_test_buffer.data_available() ) return false;
 
-		if ( err < 0 ) throw exception_io_data();
 		if ( no_loop && tag_song_ms && ( pos_delta + MulDiv( data_written, 1000, 44100 ) ) >= tag_song_ms + tag_fade_ms )
 			return false;
 
@@ -1178,40 +1189,66 @@ public:
 			samples = 1024;
 		}
 
-		sample_buffer.grow_size( samples * 2 );
-
-		if ( remainder )
+		if ( do_suppressendsilence )
 		{
-			written = remainder;
-			remainder = 0;
+			sample_buffer.grow_size( 1024 * 2 );
+
+			if ( !eof )
+			{
+				unsigned free_space = silence_test_buffer.free_space() / 2;
+				while ( free_space )
+				{
+					p_abort.check();
+
+					unsigned samples_to_render;
+					if ( remainder )
+					{
+						samples_to_render = remainder;
+						remainder = 0;
+					}
+					else
+					{
+						samples_to_render = free_space;
+						if ( samples_to_render > 1024 ) samples_to_render = 1024;
+						err = qsound_execute( qsound_state.get_ptr(), 0x7FFFFFFF, sample_buffer.get_ptr(), & samples_to_render );
+						if ( err < 0 ) console::print( "Execution halted with an error." );
+						if ( !samples_to_render ) throw exception_io_data();
+					}
+					silence_test_buffer.write( sample_buffer.get_ptr(), samples_to_render * 2 );
+					free_space -= samples_to_render;
+				}
+			}
+
+			if ( silence_test_buffer.test_silence() )
+			{
+				eof = true;
+				return false;
+			}
+
+			written = silence_test_buffer.data_available() / 2;
+			if ( written > samples ) written = samples;
+			silence_test_buffer.read( sample_buffer.get_ptr(), written * 2 );
 		}
 		else
 		{
-			written = samples;
-			//DBG("hw_execute()");
-			err = qsound_execute( qsound_state.get_ptr(), 0x7FFFFFFF, sample_buffer.get_ptr(), & written );
-			if ( err < 0 )
+			sample_buffer.grow_size( samples * 2 );
+
+			if ( remainder )
 			{
-				console::formatter() << "Execution halted with an error in " << filename;
+				written = remainder;
+				remainder = 0;
 			}
-			if ( ! written ) throw exception_io_data();
+			else
+			{
+				written = samples;
+				//DBG("hw_execute()");
+				err = qsound_execute( qsound_state.get_ptr(), 0x7FFFFFFF, sample_buffer.get_ptr(), & written );
+				if ( err < 0 ) console::print( "Execution halted with an error." );
+				if ( !written ) throw exception_io_data();
+			}
 		}
 
 		qsfemu_pos += double( written ) / 44100.;
-
-		if ( cfg_suppressendsilence )
-		{
-			uLong n;
-			short * foo = sample_buffer.get_ptr();
-			for ( n = 0; n < written; ++n )
-			{
-				if ( foo[ 0 ] == 0 && foo[ 1 ] == 0 ) ++silence;
-				else silence = 0;
-				foo += 2;
-			}
-			if ( silence >= 44100 * cfg_endsilenceseconds )
-				return false;
-		}
 
 		int d_start, d_end;
 		d_start = data_written;
@@ -1249,6 +1286,8 @@ public:
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		eof = false;
+
+		silence_test_buffer.reset();
 
 		void *pEmu = qsound_state.get_ptr();
 		if ( p_seconds < qsfemu_pos )
