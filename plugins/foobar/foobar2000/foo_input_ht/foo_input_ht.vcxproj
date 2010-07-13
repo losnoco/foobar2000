@@ -240,6 +240,7 @@
     <ResourceCompile Include="psf.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="circular_buffer.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
