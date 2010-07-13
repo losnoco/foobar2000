@@ -10,12 +10,6 @@ static char THIS_FILE[]=__FILE__;
 #define new DEBUG_NEW
 #endif
 
-//
-// this algorithm is scale-sensitive... hurr
-//
-#define COEF_16BIT_TO_FLOAT (0.000030517578125f)
-#define COEF_FLOAT_TO_16BIT (32768.0f)
-
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -110,8 +104,8 @@ void CPSXFilter::Process(float *stereobuffer, int nSamples)
   for (i = 0; i < nSamples; i++) {
     float in, out;
     float l, r;
-    l = stereobuffer[0] * COEF_FLOAT_TO_16BIT;
-    r = stereobuffer[1] * COEF_FLOAT_TO_16BIT;
+    l = stereobuffer[0];
+    r = stereobuffer[1];
 
     float mid  = l+r;
     float side = l-r;
@@ -142,9 +136,8 @@ void CPSXFilter::Process(float *stereobuffer, int nSamples)
     hy2[1] = hy1[1]; hy1[1] = out;
     r = out;
 
-    stereobuffer[0] = l * COEF_16BIT_TO_FLOAT;
-    stereobuffer[1] = r * COEF_16BIT_TO_FLOAT;
+    stereobuffer[0] = l;
+    stereobuffer[1] = r;
     stereobuffer += 2;
   }
-
 }

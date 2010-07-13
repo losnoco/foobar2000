@@ -1,7 +1,23 @@
-#define MYVERSION "2.0.16"
+#define MYVERSION "2.0.17"
 
 /*
 	changelog
+
+2010-07-13 03:03 UTC - kode54
+- Implemented better end silence detection
+- Version is now 2.0.17
+
+2010-07-11 03:49 UTC - kode54
+- Updated PSX response filter to use all float storage
+
+2010-07-08 23:05 UTC - kode54
+- Implemented live ADSR change support
+
+2010-07-05 07:24 UTC - kode54
+- Implemented SPU IRQ support
+
+2010-07-04 21:00 UTC - kode54
+- Implemented noise and frequency modulation support
 
 2010-04-13 14:58 UTC - kode54
 - Amended preferences WM_INITDIALOG handler
@@ -171,6 +187,7 @@
 
 */
 
+#define _WIN32_WINNT 0x0501
 #include "../SDK/foobar2000.h"
 #include "../helpers/window_placement_helper.h"
 #include "../ATLHelpers/ATLHelpers.h"
@@ -195,6 +212,8 @@
 #include "../../psfemucore/psf2fs.h"
 
 #include "PSXFilter.h"
+
+#include "circular_buffer.h"
 
 #include <atlbase.h>
 #include <atlapp.h>
@@ -1006,11 +1025,13 @@ class input_psf
 	pfc::array_t<t_uint8> psx_state;
 	pfc::array_t<t_int16> sample_buffer;
 
+	circular_buffer<t_int16> silence_test_buffer;
+
 	void * psf2fs;
 
 	service_ptr_t<file> m_file;
 
-	CPSXFilter * filter;
+	CPSXFilter filter;
 
 	pfc::string8 base_path;
 	pfc::string8 filename;
@@ -1035,15 +1056,13 @@ class input_psf
 	int load_psf(service_ptr_t<file> & r, const char * p_path, file_info & info, bool full_open, abort_callback & p_abort);
 
 public:
-	input_psf()
+	input_psf() : silence_test_buffer( 0 )
 	{
 		psf2fs = NULL;
-		filter = NULL;
 	}
 
 	~input_psf()
 	{
-		if (filter) delete filter;
 		if (psf2fs) psf2fs_delete(psf2fs);
 		if (errors.length()) console::info(errors);
 	}
@@ -1139,11 +1158,11 @@ public:
 		do_filter = !! cfg_freq;
 		do_suppressendsilence = !! cfg_suppressendsilence;
 
+		unsigned skip_max = cfg_endsilenceseconds * ( ( psf_version == 2 ) ? 48000 : 44100 );
+
 		if ( cfg_suppressopeningsilence ) // ohcrap
 		{
 			if ( psf2fs ) psf2fs_setabortcallback( psf2fs, p_abort );
-
-			unsigned skip_max = cfg_endsilenceseconds * ( ( psf_version == 2 ) ? 48000 : 44100 );
 
 			for (;;)
 			{
@@ -1178,17 +1197,20 @@ public:
 			startsilence += silence;
 			silence = 0;
 		}
+
+		if ( do_suppressendsilence ) silence_test_buffer.resize( skip_max * 2 );
+
+		if ( do_filter ) filter.Redesign( ( psf_version == 2 ) ? 48000 : 44100 );
 	}
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
 		int srate;
 
-		if ( eof ) return false;
+		if ( ( eof || err < 0 ) && !silence_test_buffer.data_available() ) return false;
 
 		srate = ( psf_version == 2 ) ? 48000 : 44100;
 
-		if ( err < 0 ) throw exception_io_data();
 		if ( no_loop && tag_song_ms && ( pos_delta + MulDiv( data_written, 1000, srate ) ) >= tag_song_ms + tag_fade_ms )
 			return false;
 
@@ -1208,41 +1230,72 @@ public:
 
 		if ( psf2fs ) psf2fs_setabortcallback( psf2fs, p_abort );
 
-		sample_buffer.grow_size( samples * 2 );
-
-		if ( remainder )
+		if ( do_suppressendsilence )
 		{
-			written = remainder;
-			remainder = 0;
+			sample_buffer.grow_size( 1024 * 2 );
+
+			if ( !eof )
+			{
+				unsigned free_space = silence_test_buffer.free_space() / 2;
+				while ( free_space )
+				{
+					p_abort.check();
+
+					unsigned samples_to_render;
+					if ( remainder )
+					{
+						samples_to_render = remainder;
+						remainder = 0;
+					}
+					else
+					{
+						samples_to_render = free_space;
+						if ( samples_to_render > 1024 ) samples_to_render = 1024;
+						err = psx_execute( psx_state.get_ptr(), 0x7FFFFFFF, sample_buffer.get_ptr(), & samples_to_render, 0 );
+						if ( err == -2 ) console::print( "Execution halted with an error." );
+						if ( !samples_to_render ) throw exception_io_data();
+					}
+					silence_test_buffer.write( sample_buffer.get_ptr(), samples_to_render * 2 );
+					free_space -= samples_to_render;
+					if ( err < 0 )
+					{
+						eof = true;
+						break;
+					}
+				}
+			}
+
+			if ( silence_test_buffer.test_silence() )
+			{
+				eof = true;
+				return false;
+			}
+
+			written = silence_test_buffer.data_available() / 2;
+			if ( written > samples ) written = samples;
+			silence_test_buffer.read( sample_buffer.get_ptr(), written * 2 );
 		}
 		else
 		{
-			written = samples;
-			//DBG("hw_execute()");
-			err = psx_execute( psx_state.get_ptr(), 0x7FFFFFFF, sample_buffer.get_ptr(), & written, 0 );
-			if ( err == -2 )
+			sample_buffer.grow_size( samples * 2 );
+
+			if ( remainder )
 			{
-				console::formatter() << "Execution halted with an error in " << filename;
+				written = remainder;
+				remainder = 0;
 			}
-			if ( ! written ) throw exception_io_data();
-			if ( err < 0 ) eof = true;
+			else
+			{
+				written = samples;
+				//DBG("hw_execute()");
+				err = psx_execute( psx_state.get_ptr(), 0x7FFFFFFF, sample_buffer.get_ptr(), & written, 0 );
+				if ( err == -2 ) console::print( "Execution halted with an error." );
+				if ( !written ) throw exception_io_data();
+				if ( err < 0 ) eof = true;
+			}
 		}
 
 		psfemu_pos += double( written ) / double( srate );
-
-		if ( cfg_suppressendsilence )
-		{
-			uLong n;
-			short * foo = sample_buffer.get_ptr();
-			for ( n = 0; n < written; ++n )
-			{
-				if ( foo[ 0 ] == 0 && foo[ 1 ] == 0 ) ++silence;
-				else silence = 0;
-				foo += 2;
-			}
-			if ( silence >= srate * cfg_endsilenceseconds )
-				return false;
-		}
 
 		int d_start, d_end;
 		d_start = data_written;
@@ -1274,23 +1327,7 @@ public:
 
 		p_chunk.set_data_fixedpoint( sample_buffer.get_ptr(), written * 4, srate, 2, 16, audio_chunk::channel_config_stereo );
 
-		if ( do_filter )
-		{
-			if ( ! filter )
-			{
-				filter = new CPSXFilter;
-				filter->Redesign( srate );
-			}
-			filter->Process( p_chunk.get_data(), p_chunk.get_sample_count() );
-		}
-		else
-		{
-			if ( filter )
-			{
-				delete filter;
-				filter = 0;
-			}
-		}
+		if ( do_filter ) filter.Process( p_chunk.get_data(), p_chunk.get_sample_count() );
 
 		return true;
 	}
@@ -1298,6 +1335,10 @@ public:
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		eof = false;
+
+		silence_test_buffer.reset();
+
+		if ( do_filter ) filter.Reset();
 
 		if ( psf2fs ) psf2fs_setabortcallback( psf2fs, p_abort );
 
