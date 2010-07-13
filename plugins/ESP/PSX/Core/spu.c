@@ -782,3 +782,31 @@ void EMU_CALL spu_render(void *state, sint16 *buf, uint32 samples) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+void EMU_CALL spu_render_ext(void *state, sint16 *buf, sint16 *ext, uint32 samples) {
+
+  uint8 mainout = SPUSTATE->global_main_on;
+  uint8 effectout = SPUSTATE->global_effect_on;
+//  mainout = 0;
+  if(SPUSTATE->version == 1) {
+    spucore_render(CORESTATE(0), SPURAM, buf, ext, samples, mainout, effectout);
+  } else {
+    spucore_render(CORESTATE(0), SPURAM, buf, ext, samples, mainout, effectout);
+    spucore_render(CORESTATE(1), SPURAM, buf, buf, samples, mainout, effectout);
+//    spucore_render(CORESTATE(1), SPURAM, buf, NULL, samples);
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint32 EMU_CALL spu_cycles_until_interrupt(void *state, uint32 samples) {
+  if(SPUSTATE->version == 1) {
+    return spucore_cycles_until_interrupt(CORESTATE(0), SPURAM, samples);
+  } else {
+    uint32 cycles1 = spucore_cycles_until_interrupt(CORESTATE(0), SPURAM, samples);
+    uint32 cycles2 = spucore_cycles_until_interrupt(CORESTATE(1), SPURAM, samples);
+    return cycles1 < cycles2 ? cycles1 : cycles2;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////

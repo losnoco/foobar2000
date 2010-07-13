@@ -28,6 +28,8 @@ void   EMU_CALL spucore_setreg_voice(void *state, uint32 voice, uint32 n, uint32
 int    EMU_CALL spucore_getflag     (void *state, uint32 n);
 void   EMU_CALL spucore_setflag     (void *state, uint32 n, int value);
 
+uint32 EMU_CALL spucore_cycles_until_interrupt(void *state, uint16 *ram, uint32 samples);
+
 /*
 ** Register definitions
 */

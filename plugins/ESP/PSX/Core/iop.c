@@ -113,6 +113,7 @@ struct IOP_STATE {
   sint16 *sound_buffer; // TEMPORARY pointer. safe.
   uint32  sound_buffer_samples_free;
   uint32  sound_cycles_pending;
+  uint32  sound_cycles_until_interrupt;
   struct IOP_EVENT     event[IOP_MAX_EVENTS];
   uint32              event_write_index;
   uint32              event_count;
@@ -830,6 +831,10 @@ static void EMU_CALL iop_advance(void *state, uint32 elapse) {
     }
   }
   /*
+  ** Check SPU IRQ
+  */
+  if(elapse >= IOPSTATE->sound_cycles_until_interrupt) intr_signal(IOPSTATE, 0x200);
+  /*
   ** Update pending sound cycles
   */
   IOPSTATE->sound_cycles_pending += elapse;
@@ -846,8 +851,7 @@ static void EMU_CALL iop_advance(void *state, uint32 elapse) {
 ** This is then used as an upper bound for how many cycles can be executed
 ** before checking for futher interrupts
 */
-static uint32 EMU_CALL cycles_until_next_interrupt(struct IOP_STATE *state) {
-  uint32 min = 0xFFFFFFFF;
+static uint32 EMU_CALL cycles_until_next_interrupt(struct IOP_STATE *state, uint32 min) {
   uint32 cyc;
   uint32 core, i; //, r;
   //
@@ -865,6 +869,11 @@ static uint32 EMU_CALL cycles_until_next_interrupt(struct IOP_STATE *state) {
       if(u < ((uint64)min)) { min = (uint32)u; }
     }
   }
+  //
+  // SPU
+  //
+  state->sound_cycles_until_interrupt = cyc = spu_cycles_until_interrupt(SPUSTATE, (min + 767) / 768);
+  if(cyc < min) min = cyc;
 
   if(min < 1) min = 1;
   return min;
@@ -1064,7 +1073,7 @@ sint32 EMU_CALL iop_execute(
     if(IOPSTATE->odometer >= target_odometer) break;
 
     diff = (uint32)((target_odometer) - (IOPSTATE->odometer));
-    ci = cycles_until_next_interrupt(IOPSTATE);
+    ci = cycles_until_next_interrupt(IOPSTATE, diff);
     if(diff > ci) diff = ci;
     r = r3000_execute(R3000STATE, diff);
     //

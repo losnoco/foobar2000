@@ -93,6 +93,11 @@ static const sint32 reverb_new_lowpass_coefs[3] = {
 };
 */
 
+static const sint32 bit_reverse_table[16] = {
+  0, 8, 4, 12, 2, 10, 6, 14,
+  1, 9, 5, 13, 3, 11, 7, 15
+};
+
 /*
 ** Static init
 */
@@ -139,7 +144,7 @@ struct SPUCORE_SAMPLE {
 
   uint32 block_addr;
   uint32 start_block_addr;
-  uint32 start_loop_block_addr;
+  //uint32 start_loop_block_addr;
   uint32 loop_block_addr;
 };
 
@@ -152,8 +157,6 @@ struct SPUCORE_SAMPLE {
 struct SPUCORE_ENVELOPE {
   uint32 reg_ad;
   uint32 reg_sr;
-  uint32 reg_ad_x;
-  uint32 reg_sr_x;
   sint32 level;
   sint32 delta;
   int    state;
@@ -271,6 +274,15 @@ struct SPUCORE_STATE {
   uint32 vmixe[2];
   uint32 irq_address;
   uint32 noiseclock;
+  uint32 noisecounter;
+  sint32 noiseval;
+  uint32 irq_decoder_clock;
+  uint32 irq_triggered_cycle;
+};
+
+struct SPUCORE_IRQ_STATE {
+  uint32 offset;
+  uint32 triggered_cycle;
 };
 
 uint32 EMU_CALL spucore_get_state_size(void) {
@@ -295,6 +307,10 @@ void EMU_CALL spucore_clear_state(void *state) {
   spucore_setflag(state, SPUREG_FLAG_MSNDR , 1);
   spucore_setflag(state, SPUREG_FLAG_MSNDEL, 1);
   spucore_setflag(state, SPUREG_FLAG_MSNDER, 1);
+  spucore_setflag(state, SPUREG_FLAG_SINL, 1);
+  spucore_setflag(state, SPUREG_FLAG_SINR, 1);
+  SPUCORESTATE->noiseval = 1;
+  SPUCORESTATE->irq_triggered_cycle = 0xFFFFFFFF;
 }
 
 void EMU_CALL spucore_set_mem_size(void *state, uint32 size) {
@@ -477,26 +493,37 @@ static uint32 EMU_CALL resampler(
   struct SPUCORE_SAMPLE *sample,
   sint32 *dest,
   uint32 n,
-  uint32 phase_inc
+  uint32 phase_inc,
+  struct SPUCORE_IRQ_STATE *irq_state
 ) {
+  uint32 irq_triggered_cycle = 0xFFFFFFFF;
   uint32 s;
   uint32 ph; //, phl;
   ph = sample->phase;
   if(!dest) {
     ph += phase_inc * n;
+    s = 0;
     while(ph >= 0x1C000) {
       if(sample->state == SAMPLE_STATE_OFF) break;
+      if(irq_state && irq_state->offset - sample->block_addr < 16 && irq_triggered_cycle == 0xFFFFFFFF) {
+        irq_triggered_cycle = s;
+      }
       decode_sample_block(ram, memmax, sample, 1);
+      s += phase_inc * 28;
       ph -= 0x1C000;
     }
     s = n;
   } else {
+    uint32 t = 0;
     for(s = 0; s < n; s++) {
       sint32 *source_signal;
       sint32 *mygauss;
       sint32 sum;
       if(ph >= 0x1C000) {
         if(sample->state == SAMPLE_STATE_OFF) break;
+        if(irq_state && irq_state->offset - sample->block_addr < 16 && irq_triggered_cycle == 0xFFFFFFFF) {
+          irq_triggered_cycle = t;
+        }
         decode_sample_block(ram, memmax, sample, 0);
         ph -= 0x1C000;
       }
@@ -513,7 +540,89 @@ static uint32 EMU_CALL resampler(
 
       *dest++ = sum;
       ph += phase_inc;
+      t += phase_inc;
     }
+  }
+
+  if(irq_state && irq_triggered_cycle != 0xFFFFFFFF) {
+    irq_triggered_cycle = (irq_triggered_cycle * 768) >> 12;
+    if(irq_triggered_cycle < irq_state->triggered_cycle) irq_state->triggered_cycle = irq_triggered_cycle;
+  }
+
+  sample->phase = ph;
+
+  return s;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+static uint32 EMU_CALL resampler_modulated(
+  uint16 *ram,
+  uint32 memmax,
+  struct SPUCORE_SAMPLE *sample,
+  sint32 *dest,
+  uint32 n,
+  uint32 phase_inc,
+  sint32 *fmbuf,
+  struct SPUCORE_IRQ_STATE *irq_state
+) {
+  uint32 irq_triggered_cycle = 0xFFFFFFFF;
+  uint32 s, t = 0;
+  uint32 ph; //, phl;
+  uint32 pimod;
+  ph = sample->phase;
+  if(!dest) {
+    for(s = 0; s < n; s++) {
+      pimod = ((*fmbuf++ + 32768) * phase_inc) / 32768;
+      if(pimod > 0x3FFF) pimod = 0x3FFF;
+      else if(pimod < 1) pimod = 1;
+      ph += pimod;
+      while(ph >= 0x1C000) {
+        if(sample->state == SAMPLE_STATE_OFF) break;
+        if(irq_state && irq_state->offset - sample->block_addr < 16 && irq_triggered_cycle == 0xFFFFFFFF) {
+          irq_triggered_cycle = t;
+        }
+        decode_sample_block(ram, memmax, sample, 1);
+        ph -= 0x1C000;
+      }
+      t += pimod;
+    }
+  } else {
+    for(s = 0; s < n; s++) {
+      sint32 *source_signal;
+      sint32 *mygauss;
+      sint32 sum;
+      if(ph >= 0x1C000) {
+        if(sample->state == SAMPLE_STATE_OFF) break;
+        if(irq_state && irq_state->offset - sample->block_addr < 16 && irq_triggered_cycle == 0xFFFFFFFF) {
+          irq_triggered_cycle = t;
+        }
+        decode_sample_block(ram, memmax, sample, 0);
+        ph -= 0x1C000;
+      }
+      source_signal = sample->array + (ph >> 12);
+      mygauss = (sint32*) (((uint8*)gauss_shuffled_reverse_table) + (ph & 0xFF0));
+
+      { sum =
+          (source_signal[0] * mygauss[0]) +
+          (source_signal[1] * mygauss[1]) +
+          (source_signal[2] * mygauss[2]) +
+          (source_signal[3] * mygauss[3]);
+      }
+      sum >>= 11;
+
+      *dest++ = sum;
+      pimod = ((*fmbuf++ + 32768) * phase_inc) / 32768;
+      if(pimod > 0x3FFF) pimod = 0x3FFF;
+      else if(pimod < 1) pimod = 1;
+      ph += pimod;
+      t += pimod;
+    }
+  }
+
+  if(irq_state && irq_triggered_cycle != 0xFFFFFFFF) {
+    irq_triggered_cycle = (irq_triggered_cycle * 768) >> 12;
+    if(irq_triggered_cycle < irq_state->triggered_cycle) irq_state->triggered_cycle = irq_triggered_cycle;
   }
 
   sample->phase = ph;
@@ -693,8 +802,6 @@ static void EMU_CALL envelope_prime(struct SPUCORE_ENVELOPE *env) {
 
 //EMUTRACE2("[eprime %04X %04X]",env->reg_ad_x,env->reg_sr_x);
 
-  env->reg_ad = env->reg_ad_x;
-  env->reg_sr = env->reg_sr_x;
   env->level = 1;
   env->state = ENVELOPE_STATE_ATTACK;
   env->delta = 1;
@@ -719,7 +826,7 @@ static void EMU_CALL sample_prime(struct SPUCORE_SAMPLE *sample) {
 //EMUTRACE2("[sprime %08X %08X]", sample->start_block_addr, sample->start_loop_block_addr);
 
   sample->block_addr = sample->start_block_addr;
-  sample->loop_block_addr = sample->start_loop_block_addr;
+  //sample->loop_block_addr = sample->start_loop_block_addr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -851,13 +958,21 @@ static int EMU_CALL render_channel_raw(
   uint32 memmax,
   struct SPUCORE_CHAN *c,
   sint32 *buf,
-  int samples
+  sint32 *fmbuf,
+  sint32 *nbuf,
+  int samples,
+  struct SPUCORE_IRQ_STATE *irq_state
 ) {
   int r = samples;
   /* If the envelope is dead, don't bother anyway */
   if((c->env.state) == ENVELOPE_STATE_OFF) return 0;
   /* Do resampling */
-  r = resampler(ram, memmax, &(c->sample), buf, r, c->voice_pitch);
+  if (fmbuf) r = resampler_modulated(ram, memmax, &(c->sample), buf, r, c->voice_pitch, fmbuf, irq_state);
+  else r = resampler(ram, memmax, &(c->sample), buf, r, c->voice_pitch, irq_state);
+  if(nbuf) {
+    r = samples;
+    if(buf) memcpy(buf, nbuf, 4 * r);
+  }
   /* Do enveloping */
   r = enveloper(&(c->env), buf, r);
   /* If we were cut short by _either_, then the envelope state must be set
@@ -878,17 +993,21 @@ static int EMU_CALL render_channel_mono(
   uint32 memmax,
   struct SPUCORE_CHAN *c,
   sint32 *buf,
-  sint32 samples
+  sint32 *fmbuf,
+  sint32 *nbuf,
+  sint32 samples,
+  struct SPUCORE_IRQ_STATE *irq_state
 ) {
   sint32 n;
   sint32 r, r2;
   sint32 defer_remaining;
+  struct SPUCORE_IRQ_STATE spare_state;
 
 //top:
   n = c->samples_until_pending_keyon;
 
   if(!n) {
-    return render_channel_raw(ram, memmax, c, buf, samples);
+    return render_channel_raw(ram, memmax, c, buf, fmbuf, nbuf, samples, irq_state);
   }
 
   //
@@ -905,7 +1024,7 @@ static int EMU_CALL render_channel_mono(
   /*
   ** r = how many samples we actually will process
   */
-  r = render_channel_raw(ram, memmax, c, buf, n);
+  r = render_channel_raw(ram, memmax, c, buf, fmbuf, nbuf, n, irq_state);
 
   defer_remaining = c->samples_until_pending_keyon;
   if(buf) {
@@ -918,6 +1037,8 @@ static int EMU_CALL render_channel_mono(
   } else {
     defer_remaining -= r;
   }
+  if(fmbuf) fmbuf += r;
+  if(nbuf) nbuf += r;
   /*
   ** if render_channel_raw got cut short, then we're done anyway.
   */
@@ -942,11 +1063,55 @@ static int EMU_CALL render_channel_mono(
   */
   r2 = 0;
   if(samples) {
-    r2 = render_channel_raw(ram, memmax, c, buf, samples);
+    struct SPUCORE_IRQ_STATE *s = NULL;
+    if(irq_state) {
+      s = &spare_state;
+      spare_state.offset = irq_state->offset;
+    }
+    r2 = render_channel_raw(ram, memmax, c, buf, fmbuf, nbuf, samples, s);
+	if(irq_state && irq_state->triggered_cycle == 0xFFFFFFFF && spare_state.triggered_cycle != 0xFFFFFFFF) irq_state->triggered_cycle = spare_state.triggered_cycle + r * 768;
   }
 
   return r + r2;
 
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Generates a buffer worth of noise data, ganked from Eternal SPU
+//
+
+static void EMU_CALL render_noise(
+  struct SPUCORE_STATE *state,
+  sint32 *buf,
+  sint32 samples
+) {
+  int n, o;
+  uint32 noiseclock = state->noiseclock;
+  uint32 noisecounter = state->noisecounter;
+  sint32 noiseval = state->noiseval;
+  uint32 noisetemp = (noiseclock & 3) + 4;
+  uint32 noiserev;
+  noiseclock = (noiseclock >> 2) + 2;
+  noiseclock = noisetemp << noiseclock;
+  for(n = 0; n < samples; n++) {
+    for(o = 0, noiserev = 0, noisetemp = noisecounter & 0xFFFFF; o < 5; o++) {
+      noiserev = (noiserev << 4) | bit_reverse_table[noisetemp & 0xF];
+      noisetemp >>= 4;
+    }
+    if(noiserev < noiseclock) {
+      noisetemp = 0;
+      if (noiseval & (1 << 31)) noisetemp = 1;
+      if (noiseval & (1 << 21)) noisetemp ^= 1;
+      if (noiseval & (1 <<  1)) noisetemp ^= 1;
+      if (noiseval & (1 <<  0)) noisetemp ^= 1;
+      noiseval = (noiseval << 1) | noisetemp;
+    }
+    noisecounter++;
+    if (buf) *buf++ = noiseval >> 16;
+  }
+  state->noisecounter = noisecounter;
+  state->noiseval = noiseval;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1346,16 +1511,40 @@ static void EMU_CALL render(struct SPUCORE_STATE *state, uint16 *ram, sint16 *bu
   uint32 maskmain_r;
   uint32 maskverb_l;
   uint32 maskverb_r;
+  uint32 masknoise;
+  uint32 maskfm;
   sint32 ibuf   [  RENDERMAX];
   sint32 ibufmix[2*RENDERMAX];
   sint32 ibufrvb[2*RENDERMAX];
+  sint32 ibufn  [  RENDERMAX];
+  sint32 ibuffm [  RENDERMAX];
   int ch, i;
   sint32 m_v_l;
   sint32 m_v_r;
   sint32 r_v_l;
   sint32 r_v_r;
+  struct SPUCORE_IRQ_STATE irq_state;
+  struct SPUCORE_IRQ_STATE *irq_state_ptr;
 
   //spucore_frq[samples]++;
+
+  irq_state_ptr = NULL;
+  irq_state.triggered_cycle = 0xFFFFFFFF;
+  if (state->flags & SPUREG_FLAG_IRQ_ENABLE) {
+    if (state->memsize == 0x80000 && state->irq_address < 0x1000) {
+      uint32 irq_address_masked = state->irq_address & 0x3FF;
+      uint32 irq_sample_offset = irq_address_masked - state->irq_decoder_clock;
+      if(irq_sample_offset > 0x3FF) irq_sample_offset += 0x400;
+      if (irq_sample_offset < (uint32)samples) {
+        irq_state.triggered_cycle = irq_sample_offset * 768;
+      }
+    } else {
+      irq_state_ptr = &irq_state;
+      irq_state.offset = state->irq_address;
+    }
+  }
+
+  state->irq_decoder_clock = (state->irq_decoder_clock + samples) & 0x3FF;
 
   memset(ibufmix, 0, 8 * samples);
   if(effectout) {
@@ -1372,6 +1561,9 @@ static void EMU_CALL render(struct SPUCORE_STATE *state, uint16 *ram, sint16 *bu
     if(state->flags & SPUREG_FLAG_MSNDEL) maskverb_l = state->vmixe[0] & 0xFFFFFF;
     if(state->flags & SPUREG_FLAG_MSNDER) maskverb_r = state->vmixe[1] & 0xFFFFFF;
   }
+  masknoise = state->noise;
+  render_noise(state, masknoise ? ibufn : NULL, samples);
+  maskfm = state->fm & 0xFFFFFE;
 
   if(!mainout) { maskmain_l = 0; maskmain_r = 0; }
 
@@ -1383,11 +1575,18 @@ static void EMU_CALL render(struct SPUCORE_STATE *state, uint16 *ram, sint16 *bu
     uint32 verb_l = chanbit & maskverb_l;
     uint32 verb_r = chanbit & maskverb_r;
     sint32 *b = buf ? ibuf : NULL;
+    sint32 *fm = (chanbit & maskfm) ? ibuffm : NULL;
+    sint32 *noise = (chanbit & masknoise) ? ibufn : NULL;
     if(!(main_l | main_r | verb_l | verb_r)) b = NULL;
     r = render_channel_mono(
-      ram, state->memsize, state->chan + ch, b, samples
+      ram, state->memsize, state->chan + ch, b, fm, noise, samples, irq_state_ptr
     );
-    if(!b) continue;
+    if(!b) {
+      memset(ibuffm, 0, 4 * samples);
+      continue;
+    }
+    memcpy(ibuffm, ibuf, 4 * r);
+    if(r < samples) memset(ibuffm + r, 0, 4 * (samples-r));
     v_l = volume_getlevel(state->chan[ch].vol+0);
     v_r = volume_getlevel(state->chan[ch].vol+1);
     for(i = 0; i < r; i++) {
@@ -1399,6 +1598,9 @@ static void EMU_CALL render(struct SPUCORE_STATE *state, uint16 *ram, sint16 *bu
       if(verb_r) ibufrvb[2*i+1] += q_r;
     }
   }
+
+  state->irq_triggered_cycle = irq_state.triggered_cycle;
+
   if(!buf) return;
 
   /*
@@ -1603,8 +1805,8 @@ void EMU_CALL spucore_setreg(void *state, uint32 n, uint32 value, uint32 mask) {
     SPUCORESTATE->fm |= value;
     break;
   case SPUREG_NOISE:
-    SPUCORESTATE->fm &= ~mask;
-    SPUCORESTATE->fm |= value;
+    SPUCORESTATE->noise &= ~mask;
+    SPUCORESTATE->noise |= value;
     break;
   case SPUREG_VMIXE:
     SPUCORESTATE->vmixe[0] &= ~mask;
@@ -1703,13 +1905,13 @@ uint32 EMU_CALL spucore_getreg_voice(void *state, uint32 voice, uint32 n) {
   case SPUREG_VOICE_VOLXL: return volume_getlevel(SPUCORESTATE->chan[voice].vol+0);
   case SPUREG_VOICE_VOLXR: return volume_getlevel(SPUCORESTATE->chan[voice].vol+1);
   case SPUREG_VOICE_PITCH: return SPUCORESTATE->chan[voice].voice_pitch;
-  case SPUREG_VOICE_ADSR1: return SPUCORESTATE->chan[voice].env.reg_ad_x;
-  case SPUREG_VOICE_ADSR2: return SPUCORESTATE->chan[voice].env.reg_sr_x;
+  case SPUREG_VOICE_ADSR1: return SPUCORESTATE->chan[voice].env.reg_ad;
+  case SPUREG_VOICE_ADSR2: return SPUCORESTATE->chan[voice].env.reg_sr;
   case SPUREG_VOICE_ENVX :
     if(SPUCORESTATE->chan[voice].env.state == ENVELOPE_STATE_OFF) return 0;
     return (SPUCORESTATE->chan[voice].env.level) >> 16;
   case SPUREG_VOICE_SSA  : return SPUCORESTATE->chan[voice].sample.start_block_addr;
-  case SPUREG_VOICE_LSAX : return SPUCORESTATE->chan[voice].sample.start_loop_block_addr;
+  case SPUREG_VOICE_LSAX : return SPUCORESTATE->chan[voice].sample.loop_block_addr;
   case SPUREG_VOICE_NAX  : return SPUCORESTATE->chan[voice].sample.block_addr;
   }
   return 0;
@@ -1722,18 +1924,46 @@ void EMU_CALL spucore_setreg_voice(void *state, uint32 voice, uint32 n, uint32 v
   case SPUREG_VOICE_VOLL : volume_setmode(SPUCORESTATE->chan[voice].vol+0, value); break;
   case SPUREG_VOICE_VOLR : volume_setmode(SPUCORESTATE->chan[voice].vol+1, value); break;
   case SPUREG_VOICE_PITCH: SPUCORESTATE->chan[voice].voice_pitch = value; break;
-  case SPUREG_VOICE_ADSR1: SPUCORESTATE->chan[voice].env.reg_ad_x = value; break;
-  case SPUREG_VOICE_ADSR2: SPUCORESTATE->chan[voice].env.reg_sr_x = value; break;
+  case SPUREG_VOICE_ADSR1: SPUCORESTATE->chan[voice].env.reg_ad = value; SPUCORESTATE->chan[voice].env.cachemax = envelope_do(&SPUCORESTATE->chan[voice].env); break;
+  case SPUREG_VOICE_ADSR2: SPUCORESTATE->chan[voice].env.reg_sr = value; SPUCORESTATE->chan[voice].env.cachemax = envelope_do(&SPUCORESTATE->chan[voice].env); break;
 
   case SPUREG_VOICE_SSA:
     SPUCORESTATE->chan[voice].sample.start_block_addr &= ~mask;
     SPUCORESTATE->chan[voice].sample.start_block_addr |= value;
     break;
   case SPUREG_VOICE_LSAX:
-    SPUCORESTATE->chan[voice].sample.start_loop_block_addr &= ~mask;
-    SPUCORESTATE->chan[voice].sample.start_loop_block_addr |= value;
+    SPUCORESTATE->chan[voice].sample.loop_block_addr &= ~mask;
+    SPUCORESTATE->chan[voice].sample.loop_block_addr |= value;
     break;
   }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/*
+** IRQ checking
+*/
+uint32 EMU_CALL spucore_cycles_until_interrupt(void *state, uint16 *ram, uint32 samples) {
+  uint32 r;
+  void *backup;
+
+  if (!(SPUCORESTATE->flags & SPUREG_FLAG_IRQ_ENABLE)) return 0xFFFFFFFF;
+
+  backup = malloc(spucore_get_state_size());
+  if (!backup) return 0xFFFFFFFF;
+  memcpy(backup, state, spucore_get_state_size());
+  state = backup;
+  SPUCORESTATE->irq_triggered_cycle = 0xFFFFFFFF;
+  r = 0;
+  while(samples > RENDERMAX) {
+    samples -= RENDERMAX;
+    render(SPUCORESTATE, ram, NULL, NULL, RENDERMAX, 0, 0);
+	if (SPUCORESTATE->irq_triggered_cycle != 0xFFFFFFFF) break;
+	r += RENDERMAX * 768;
+  }
+  if(samples && SPUCORESTATE->irq_triggered_cycle == 0xFFFFFFFF) render(SPUCORESTATE, ram, NULL, NULL, samples, 0, 0);
+  r = (SPUCORESTATE->irq_triggered_cycle == 0xFFFFFFFF) ? 0xFFFFFFFF : SPUCORESTATE->irq_triggered_cycle + r;
+  free(backup);
+  return r;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
