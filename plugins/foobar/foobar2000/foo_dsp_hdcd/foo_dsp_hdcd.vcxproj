@@ -158,6 +158,9 @@
     <ProjectReference Include="..\foobar2000_component_client\foobar2000_component_client.vcxproj">
       <Project>{71ad2674-065b-48f5-b8b0-e1f9d3892081}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\helpers\foobar2000_sdk_helpers.vcxproj">
+      <Project>{ee47764e-a202-4f85-a767-abdab4aff35f}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\SDK\foobar2000_SDK.vcxproj">
       <Project>{e8091321-d79d-4575-86ef-064ea1a4a20d}</Project>
     </ProjectReference>
@@ -165,9 +168,14 @@
   <ItemGroup>
     <ClCompile Include="dsp_hdcd.cpp" />
     <ClCompile Include="hdcd_decode.cpp" />
+    <ClCompile Include="test_hdcd.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="hdcd_decode.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="foo_hdcd.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
