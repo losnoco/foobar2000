@@ -211,7 +211,6 @@ fluid_defsfont_t* new_fluid_defsfont()
   sfont->samplepos = 0;
   sfont->samplesize = 0;
   sfont->sample = NULL;
-  sfont->sampledata = NULL;
   sfont->preset = NULL;
 
   return sfont;
@@ -246,17 +245,14 @@ int delete_fluid_defsfont(fluid_defsfont_t* sfont)
     delete_fluid_list(sfont->sample);
   }
 
-  if (sfont->sampledata != NULL) {
-    fluid_munlock(sfont->sampledata, sfont->samplesize);
-    FLUID_FREE(sfont->sampledata);
-  }
-
   preset = sfont->preset;
   while (preset != NULL) {
     sfont->preset = preset->next;
     delete_fluid_defpreset(preset);
     preset = sfont->preset;
   }
+
+  fclose(sfont->file_handle);
 
   FLUID_FREE(sfont);
   return FLUID_OK;
@@ -292,6 +288,8 @@ int fluid_defsfont_load(fluid_defsfont_t* sfont, const wchar_t* file)
   //FLUID_STRCPY(sfont->filename, file);
   wcscpy(sfont->filename, file);
 
+  sfont->file_handle = _wfopen(file, L"rb");
+
   /* The actual loading is done in the sfont and sffile files */
   sfdata = sfload_file(file);
   if (sfdata == NULL) {
@@ -305,8 +303,8 @@ int fluid_defsfont_load(fluid_defsfont_t* sfont, const wchar_t* file)
   sfont->samplesize = sfdata->samplesize;
 
   /* load sample data in one block */
-  if (fluid_defsfont_load_sampledata(sfont) != FLUID_OK)
-    goto err_exit;
+  /*if (fluid_defsfont_load_sampledata(sfont) != FLUID_OK)
+    goto err_exit;*/
 
   /* Create all the sample headers */
   p = sfdata->sample;
@@ -320,7 +318,7 @@ int fluid_defsfont_load(fluid_defsfont_t* sfont, const wchar_t* file)
       goto err_exit;
 
     fluid_defsfont_add_sample(sfont, sample);
-    fluid_voice_optimize_sample(sample);
+    //fluid_voice_optimize_sample(sample);
     p = fluid_list_next(p);
   }
 
@@ -391,6 +389,7 @@ int fluid_defsfont_add_preset(fluid_defsfont_t* sfont, fluid_defpreset_t* preset
   return FLUID_OK;
 }
 
+#if 0
 /*
  * fluid_defsfont_load_sampledata
  */
@@ -447,6 +446,7 @@ fluid_defsfont_load_sampledata(fluid_defsfont_t* sfont)
   }
   return FLUID_OK;
 }
+#endif
 
 /*
  * fluid_defsfont_get_sample
@@ -1600,6 +1600,7 @@ new_fluid_sample()
 int
 delete_fluid_sample(fluid_sample_t* sample)
 {
+  if (sample->data) FLUID_FREE(sample->data);
   FLUID_FREE(sample);
   return FLUID_OK;
 }
@@ -1620,15 +1621,17 @@ int
 fluid_sample_import_sfont(fluid_sample_t* sample, SFSample* sfsample, fluid_defsfont_t* sfont)
 {
   FLUID_STRCPY(sample->name, sfsample->name);
-  sample->data = sfont->sampledata;
-  sample->start = sfsample->start;
-  sample->end = sfsample->start + sfsample->end;
-  sample->loopstart = sfsample->start + sfsample->loopstart;
-  sample->loopend = sfsample->start + sfsample->loopend;
+  sample->data = NULL;
+  sample->start = sfsample->start * 2 + sfont->samplepos;
+  sample->end = sfsample->end;
+  sample->loopstart = sfsample->loopstart;
+  sample->loopend = sfsample->loopend;
   sample->samplerate = sfsample->samplerate;
   sample->origpitch = sfsample->origpitch;
   sample->pitchadj = sfsample->pitchadj;
   sample->sampletype = sfsample->sampletype;
+  sample->notify = fluid_sample_notify;
+  sample->userdata = sfont->file_handle;
 
   if (sample->sampletype & FLUID_SAMPLETYPE_ROM) {
     sample->valid = 0;
@@ -1646,6 +1649,39 @@ fluid_sample_import_sfont(fluid_sample_t* sample, SFSample* sfsample, fluid_defs
 /*        FLUID_LOG(FLUID_WARN, "Fixing sample %s: at least 8 data points required after loop end", sample->name);     */
 /*        sample->loopend = sample->end - 8; */
 /*      } */
+  }
+  return FLUID_OK;
+}
+
+int fluid_sample_notify(fluid_sample_t* sample, int reason)
+{
+  if (reason == FLUID_SAMPLE_LOAD && sample->valid && !sample->data && sample->start) {
+    unsigned short endian;
+    unsigned length = (sample->end + 1) * 2;
+    sample->data = (short *) FLUID_MALLOC(length);
+    FLUID_FSEEK((FILE *)sample->userdata, sample->start, SEEK_SET);
+    FLUID_FREAD(sample->data, 1, length, (FILE *)sample->userdata);
+    sample->start = 0;
+
+    /* I'm not sure this endian test is waterproof...  */
+    endian = 0x0100;
+
+    /* If this machine is big endian, the sample have to byte swapped  */
+    if (((char *) &endian)[0]) {
+      unsigned char* cbuf;
+      unsigned char hi, lo;
+      unsigned int i, j;
+      short s;
+      cbuf = (unsigned char*) sample->data;
+      for (i = 0, j = 0; j < length; i++) {
+        lo = cbuf[j++];
+        hi = cbuf[j++];
+        s = (hi << 8) | lo;
+        sample->data[i] = s;
+      }
+    }
+
+    fluid_voice_optimize_sample(sample);
   }
   return FLUID_OK;
 }

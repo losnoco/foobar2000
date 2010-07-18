@@ -149,6 +149,8 @@ fluid_voice_init(fluid_voice_t* voice, fluid_sample_t* sample,
   voice->filter_startup = 1; /* Set the filter immediately, don't fade between old and new settings */
   voice->interp_method = fluid_channel_get_interp_method(voice->channel);
 
+  if (sample) fluid_sample_notify(sample, FLUID_SAMPLE_LOAD);
+
   /* vol env initialization */
   voice->volenv_count = 0;
   voice->volenv_section = 0;

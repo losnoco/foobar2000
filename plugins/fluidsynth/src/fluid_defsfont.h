@@ -399,9 +399,9 @@ int fluid_defpreset_preset_noteon(fluid_preset_t* preset, fluid_synth_t* synth, 
 struct _fluid_defsfont_t
 {
   wchar_t* filename;           /* the filename of this soundfont */
+  FILE* file_handle;
   unsigned int samplepos;   /* the position in the file at which the sample data starts */
   unsigned int samplesize;  /* the size of the sample data */
-  short* sampledata;        /* the sample data, loaded in ram */
   fluid_list_t* sample;      /* the samples in this soundfont */
   fluid_defpreset_t* preset; /* the presets of this soundfont */
 
@@ -520,6 +520,8 @@ fluid_sample_t* new_fluid_sample(void);
 int delete_fluid_sample(fluid_sample_t* sample);
 int fluid_sample_import_sfont(fluid_sample_t* sample, SFSample* sfsample, fluid_defsfont_t* sfont);
 int fluid_sample_in_rom(fluid_sample_t* sample);
+
+int fluid_sample_notify(fluid_sample_t* sample, int reason);
 
 
 #endif  /* _FLUID_SFONT_H */
