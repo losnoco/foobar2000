@@ -1659,8 +1659,13 @@ int fluid_sample_notify(fluid_sample_t* sample, int reason)
     unsigned short endian;
     unsigned length = (sample->end + 1) * 2;
     sample->data = (short *) FLUID_MALLOC(length);
-    FLUID_FSEEK((FILE *)sample->userdata, sample->start, SEEK_SET);
-    FLUID_FREAD(sample->data, 1, length, (FILE *)sample->userdata);
+    if (!sample->data) return FLUID_FAILED;
+    if (FLUID_FSEEK((FILE *)sample->userdata, sample->start, SEEK_SET) ||
+        FLUID_FREAD(sample->data, 1, length, (FILE *)sample->userdata) < length) {
+      free(sample->data);
+      sample->data = NULL;
+      return FLUID_FAILED;
+    }
     sample->start = 0;
 
     /* I'm not sure this endian test is waterproof...  */
@@ -1674,10 +1679,10 @@ int fluid_sample_notify(fluid_sample_t* sample, int reason)
       short s;
       cbuf = (unsigned char*) sample->data;
       for (i = 0, j = 0; j < length; i++) {
-        lo = cbuf[j++];
-        hi = cbuf[j++];
-        s = (hi << 8) | lo;
-        sample->data[i] = s;
+	lo = cbuf[j++];
+	hi = cbuf[j++];
+	s = (hi << 8) | lo;
+	sample->data[i] = s;
       }
     }
 
