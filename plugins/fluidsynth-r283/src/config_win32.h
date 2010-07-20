@@ -1,3 +1,5 @@
+#define VERSION "1.1.0"
+
 #define HAVE_STRING_H 1
 #define HAVE_STDLIB_H 1
 #define HAVE_STDIO_H 1

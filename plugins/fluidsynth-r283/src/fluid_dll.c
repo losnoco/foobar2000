@@ -79,8 +79,8 @@ int fluid_win32_create_window(void)
   WNDCLASS myClass;
   myClass.hCursor = LoadCursor( NULL, IDC_ARROW );
   myClass.hIcon = NULL;
-  myClass.lpszMenuName = (LPTSTR) NULL;
-  myClass.lpszClassName = (LPTSTR) FLUID_TEXT("FluidSynth");
+  myClass.lpszMenuName = (LPSTR) NULL;
+  myClass.lpszClassName = (LPSTR) "FluidSynth";
   myClass.hbrBackground = (HBRUSH)(COLOR_WINDOW);
   myClass.hInstance = fluid_hinstance;
   myClass.style = CS_GLOBALCLASS;
@@ -90,7 +90,7 @@ int fluid_win32_create_window(void)
   if (!RegisterClass(&myClass)) {
     return -100;
   }
-  fluid_wnd = CreateWindow((LPTSTR) FLUID_TEXT("FluidSynth"), (LPTSTR) FLUID_TEXT("FluidSynth"), WS_OVERLAPPEDWINDOW,
+  fluid_wnd = CreateWindow((LPSTR) "FluidSynth", (LPSTR) "FluidSynth", WS_OVERLAPPEDWINDOW,
 			  CW_USEDEFAULT, CW_USEDEFAULT, 400, 300, (HWND) NULL, (HMENU) NULL,
 			  fluid_hinstance, (LPSTR) NULL);
   if (fluid_wnd == NULL) {

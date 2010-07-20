@@ -1,0 +1,237 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\src\fluid_dll.c" />
+    <ClCompile Include="..\..\src\drivers\fluid_adriver.c">
+      <Filter>drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\drivers\fluid_aufile.c">
+      <Filter>drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\synth\fluid_chan.c">
+      <Filter>synth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\synth\fluid_event.c">
+      <Filter>synth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\synth\fluid_gen.c">
+      <Filter>synth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\synth\fluid_mod.c">
+      <Filter>synth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\synth\fluid_synth.c">
+      <Filter>synth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\synth\fluid_tuning.c">
+      <Filter>synth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\synth\fluid_voice.c">
+      <Filter>synth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\bindings\fluid_filerenderer.c">
+      <Filter>bindings</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\rvoice\fluid_adsr_env.c">
+      <Filter>rvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\rvoice\fluid_chorus.c">
+      <Filter>rvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\rvoice\fluid_iir_filter.c">
+      <Filter>rvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\rvoice\fluid_rev.c">
+      <Filter>rvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\rvoice\fluid_rvoice.c">
+      <Filter>rvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\rvoice\fluid_rvoice_dsp.c">
+      <Filter>rvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\rvoice\fluid_rvoice_event.c">
+      <Filter>rvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\rvoice\fluid_rvoice_mixer.c">
+      <Filter>rvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\bindings\fluid_cmd.c">
+      <Filter>bindings</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utils\fluid_conv.c">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utils\fluid_hash.c">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utils\fluid_list.c">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utils\fluid_ringbuffer.c">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utils\fluid_settings.c">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utils\fluid_sys.c">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sfloader\fluid_defsfont.c">
+      <Filter>sfloader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\sfloader\fluid_ramsfont.c">
+      <Filter>sfloader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\drivers\fluid_dsound.c">
+      <Filter>drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\drivers\fluid_mdriver.c">
+      <Filter>drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\drivers\fluid_winmidi.c">
+      <Filter>drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\midi\fluid_midi.c">
+      <Filter>midi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\midi\fluid_midi_router.c">
+      <Filter>midi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\midi\fluid_seq.c">
+      <Filter>midi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\midi\fluid_seqbind.c">
+      <Filter>midi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\bindings\fluid_ladspa.c">
+      <Filter>bindings</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\config_win32.h" />
+    <ClInclude Include="..\..\include\fluidsynth.h" />
+    <ClInclude Include="..\..\src\drivers\fluid_adriver.h">
+      <Filter>drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\synth\fluid_chan.h">
+      <Filter>synth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\synth\fluid_event_priv.h">
+      <Filter>synth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\synth\fluid_event_queue.h">
+      <Filter>synth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\synth\fluid_gen.h">
+      <Filter>synth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\synth\fluid_mod.h">
+      <Filter>synth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\synth\fluid_synth.h">
+      <Filter>synth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\synth\fluid_tuning.h">
+      <Filter>synth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\synth\fluid_voice.h">
+      <Filter>synth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rvoice\fluid_adsr_env.h">
+      <Filter>rvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rvoice\fluid_chorus.h">
+      <Filter>rvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rvoice\fluid_iir_filter.h">
+      <Filter>rvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rvoice\fluid_lfo.h">
+      <Filter>rvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rvoice\fluid_phase.h">
+      <Filter>rvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rvoice\fluid_rev.h">
+      <Filter>rvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rvoice\fluid_rvoice.h">
+      <Filter>rvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rvoice\fluid_rvoice_event.h">
+      <Filter>rvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rvoice\fluid_rvoice_mixer.h">
+      <Filter>rvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\bindings\fluid_cmd.h">
+      <Filter>bindings</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utils\fluid_conv.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utils\fluid_hash.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utils\fluid_list.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utils\fluid_ringbuffer.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utils\fluid_settings.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utils\fluid_sys.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utils\fluidsynth_priv.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\sfloader\fluid_defsfont.h">
+      <Filter>sfloader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\sfloader\fluid_ramsfont.h">
+      <Filter>sfloader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\sfloader\fluid_sfont.h">
+      <Filter>sfloader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\drivers\fluid_mdriver.h">
+      <Filter>drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\midi\fluid_midi.h">
+      <Filter>midi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\midi\fluid_midi_router.h">
+      <Filter>midi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\bindings\fluid_ladspa.h">
+      <Filter>bindings</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="drivers">
+      <UniqueIdentifier>{7dd937f2-e50d-4f46-b2b8-81ea3a651d19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="synth">
+      <UniqueIdentifier>{c64a54b9-fc59-4bff-86c9-263b608489a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bindings">
+      <UniqueIdentifier>{56a2eabd-e5bb-470d-8f80-2dcd73784be2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rvoice">
+      <UniqueIdentifier>{fbab9e63-b4c5-433d-be88-4e903cb3baf3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{2e731c11-9b06-44bb-8235-3902fe75ac51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sfloader">
+      <UniqueIdentifier>{d3fad867-5875-4c54-b76a-8523cff6ba59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="midi">
+      <UniqueIdentifier>{f1545b81-1207-4464-be9b-c1d297d55a21}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

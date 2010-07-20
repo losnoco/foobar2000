@@ -76,7 +76,6 @@ extern "C" {
  * SoundFont(R) is a registered trademark of E-mu Systems, Inc.
  */
 
-#include "fluidsynth/unicode.h"
 #include "fluidsynth/types.h"
 #include "fluidsynth/settings.h"
 #include "fluidsynth/synth.h"
