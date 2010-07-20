@@ -726,11 +726,8 @@ static float convolve(const float *a, const float *b, int n)
     _mm_store_ss(&out_tmp, out4);
     out += out_tmp;
     }
-    else
-    {
     while (n --)
         out += (*(a ++)) * (*(b ++));
-    }
 
     return out;
 }
