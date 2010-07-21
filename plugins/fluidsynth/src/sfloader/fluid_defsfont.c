@@ -1757,8 +1757,6 @@ char idlist[] = {
     "ICOPICMTISFTsnamsmplphdrpbagpmodpgeninstibagimodigenshdr"
 };
 
-static unsigned int sdtachunk_size;
-
 /* sound font file load functions */
 static int
 chunkid (unsigned int id)
@@ -2014,7 +2012,6 @@ process_sdta (int size, SFData * sf, FILE * fd)
   sf->samplepos = ftell (fd);
 
   /* used in fixup_sample() to check validity of sample headers */
-  sdtachunk_size = chunk.size;
   sf->samplesize = chunk.size;
 
   FSKIP (chunk.size, fd);
@@ -2943,7 +2940,7 @@ fixup_sample (SFData * sf)
       /* if sample is not a ROM sample and end is over the sample data chunk
          or sam start is greater than 4 less than the end (at least 4 samples) */
       if ((!(sam->sampletype & FLUID_SAMPLETYPE_ROM)
-	  && sam->end > sdtachunk_size) || sam->start > (sam->end - 4))
+	  && sam->end > sf->samplesize) || sam->start > (sam->end - 4))
 	{
 	  FLUID_LOG (FLUID_WARN, _("Sample '%s' start/end file positions are invalid,"
 	      " disabling and will not be saved"), sam->name);
