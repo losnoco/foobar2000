@@ -68,7 +68,7 @@ fluid_sfont_t* fluid_defsfloader_load(fluid_sfloader_t* loader, const FLUID_TCHA
   }
 
   if (fluid_defsfont_load(defsfont, filename) == FLUID_FAILED) {
-    delete_fluid_defsfont(defsfont);
+    delete_fluid_defsfont(defsfont, 1);
     return NULL;
   }
 
@@ -95,9 +95,9 @@ fluid_sfont_t* fluid_defsfloader_load(fluid_sfloader_t* loader, const FLUID_TCHA
  *                           PUBLIC INTERFACE
  */
 
-int fluid_defsfont_sfont_delete(fluid_sfont_t* sfont)
+int fluid_defsfont_sfont_delete(fluid_sfont_t* sfont, int force)
 {
-  if (delete_fluid_defsfont(sfont->data) != 0) {
+  if (delete_fluid_defsfont(sfont->data, force) != 0) {
     return -1;
   }
   FLUID_FREE(sfont);
@@ -219,13 +219,14 @@ fluid_defsfont_t* new_fluid_defsfont()
 /*
  * delete_fluid_defsfont
  */
-int delete_fluid_defsfont(fluid_defsfont_t* sfont)
+int delete_fluid_defsfont(fluid_defsfont_t* sfont, int force)
 {
   fluid_list_t *list;
   fluid_defpreset_t* preset;
   fluid_sample_t* sample;
 
   /* Check that no samples are currently used */
+  if (!force)
   for (list = sfont->sample; list; list = fluid_list_next(list)) {
     sample = (fluid_sample_t*) fluid_list_get(list);
     if (fluid_sample_refcount(sample) != 0) {

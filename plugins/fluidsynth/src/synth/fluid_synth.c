@@ -978,7 +978,7 @@ delete_fluid_synth(fluid_synth_t* synth)
   /* delete all the SoundFonts */
   for (list = synth->sfont_info; list; list = fluid_list_next (list)) {
     sfont_info = (fluid_sfont_info_t *)fluid_list_get (list);
-    delete_fluid_sfont (sfont_info->sfont);
+    delete_fluid_sfont (sfont_info->sfont, 1);
     FLUID_FREE (sfont_info);
   }
 
@@ -3698,7 +3698,7 @@ fluid_synth_sfload(fluid_synth_t* synth, const FLUID_TCHAR* filename, int reset_
 
       if (!sfont_info)
       {
-        delete_fluid_sfont (sfont_info->sfont);         /* FIXME - Shouldn't fail right? - JG */
+        delete_fluid_sfont (sfont, 1);         /* FIXME - Shouldn't fail right? - JG */
         FLUID_API_RETURN(FLUID_FAILED);
       }
 
@@ -3813,7 +3813,7 @@ fluid_synth_sfont_unref (fluid_synth_t *synth, fluid_sfont_t *sfont)
 
   if (refcount == 0)                    /* No more references? - Attempt delete */
   {
-    if (delete_fluid_sfont (sfont_info->sfont) == 0)    /* SoundFont loader can block SoundFont unload */
+    if (delete_fluid_sfont (sfont_info->sfont, 0) == 0)    /* SoundFont loader can block SoundFont unload */
     {
       FLUID_FREE (sfont_info);
       FLUID_LOG (FLUID_DBG, "Unloaded SoundFont");
@@ -3829,7 +3829,7 @@ fluid_synth_sfunload_callback(void* data, unsigned int msec)
 {
   fluid_sfont_info_t *sfont_info = (fluid_sfont_info_t *)data;
 
-  if (delete_fluid_sfont (sfont_info->sfont) == 0)
+  if (delete_fluid_sfont (sfont_info->sfont, 0) == 0)
   {
     FLUID_FREE (sfont_info);
     FLUID_LOG (FLUID_DBG, "Unloaded SoundFont");
@@ -3893,7 +3893,7 @@ fluid_synth_sfreload(fluid_synth_t* synth, unsigned int id)
 
       if (!sfont_info)
       {
-        delete_fluid_sfont (sfont_info->sfont);         /* FIXME - Shouldn't fail right? - JG */
+        delete_fluid_sfont (sfont, 1);         /* FIXME - Shouldn't fail right? - JG */
         FLUID_API_RETURN(FLUID_FAILED);
       }
 

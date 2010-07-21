@@ -379,7 +379,7 @@ int delete_fluid_defsfloader(fluid_sfloader_t* loader);
 fluid_sfont_t* fluid_defsfloader_load(fluid_sfloader_t* loader, const FLUID_TCHAR* filename);
 
 
-int fluid_defsfont_sfont_delete(fluid_sfont_t* sfont);
+int fluid_defsfont_sfont_delete(fluid_sfont_t* sfont, int force);
 FLUID_TCHAR* fluid_defsfont_sfont_get_name(fluid_sfont_t* sfont);
 fluid_preset_t* fluid_defsfont_sfont_get_preset(fluid_sfont_t* sfont, unsigned int bank, unsigned int prenum);
 void fluid_defsfont_sfont_iteration_start(fluid_sfont_t* sfont);
@@ -411,7 +411,7 @@ struct _fluid_defsfont_t
 
 
 fluid_defsfont_t* new_fluid_defsfont(void);
-int delete_fluid_defsfont(fluid_defsfont_t* sfont);
+int delete_fluid_defsfont(fluid_defsfont_t* sfont, int force);
 int fluid_defsfont_load(fluid_defsfont_t* sfont, const FLUID_TCHAR* file);
 FLUID_TCHAR* fluid_defsfont_get_name(fluid_defsfont_t* sfont);
 fluid_defpreset_t* fluid_defsfont_get_preset(fluid_defsfont_t* sfont, unsigned int bank, unsigned int prenum);

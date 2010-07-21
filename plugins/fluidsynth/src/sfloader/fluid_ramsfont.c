@@ -26,7 +26,7 @@
 #define SAMPLE_LOOP_MARGIN 8
 
 /* Prototypes */
-static int fluid_ramsfont_sfont_delete(fluid_sfont_t* sfont);
+static int fluid_ramsfont_sfont_delete(fluid_sfont_t* sfont, int force);
 static FLUID_TCHAR *fluid_ramsfont_sfont_get_name(fluid_sfont_t* sfont);
 static fluid_preset_t *fluid_ramsfont_sfont_get_preset(fluid_sfont_t* sfont,
                                                        unsigned int bank,
@@ -42,7 +42,7 @@ static int fluid_rampreset_preset_noteon(fluid_preset_t* preset,
                                          fluid_synth_t* synth, int chan,
                                          int key, int vel);
 static fluid_ramsfont_t *new_fluid_ramsfont (void);
-static int delete_fluid_ramsfont (fluid_ramsfont_t* sfont);
+static int delete_fluid_ramsfont (fluid_ramsfont_t* sfont, int force);
 static FLUID_TCHAR *fluid_ramsfont_get_name(fluid_ramsfont_t* sfont);
 static int fluid_ramsfont_add_preset (fluid_ramsfont_t* sfont,
                                       fluid_rampreset_t* preset);
@@ -113,9 +113,9 @@ fluid_ramsfont_create_sfont()
 
 /* RAM SoundFont loader method to delete SoundFont */
 static int
-fluid_ramsfont_sfont_delete(fluid_sfont_t* sfont)
+fluid_ramsfont_sfont_delete(fluid_sfont_t* sfont, int force)
 {
-  if (delete_fluid_ramsfont(sfont->data) != 0)
+  if (delete_fluid_ramsfont(sfont->data, force) != 0)
     return -1;
   FLUID_FREE(sfont);
   return 0;
@@ -246,12 +246,13 @@ new_fluid_ramsfont (void)
 }
 
 static int
-delete_fluid_ramsfont (fluid_ramsfont_t* sfont)
+delete_fluid_ramsfont (fluid_ramsfont_t* sfont, int force)
 {
   fluid_list_t *list;
   fluid_rampreset_t* preset;
 
   /* Check that no samples are currently used */
+  if (!force)
   for (list = sfont->sample; list; list = fluid_list_next(list)) {
     fluid_sample_t* sam = (fluid_sample_t*) fluid_list_get(list);
     if (fluid_sample_refcount(sam) != 0) {
