@@ -1,4 +1,4 @@
-#define MYVERSION "1.4"
+#define MYVERSION "1.5"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -35,6 +35,10 @@
 /*
 
 	change log
+
+2010-07-31 01:00 UTC - kode54
+- Added real-time HDCD feature reporting
+- Version is now 1.5
 
 2010-05-24 14:52 UTC - kode54
 - Changed HDCD processor to give up after 5 seconds of no HDCD signatures
@@ -290,7 +294,7 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 
 	unsigned srate, nch, channel_config;
 
-	bool info_emitted, gave_up;
+	bool gave_up;
 
 	void init()
 	{
@@ -312,7 +316,6 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 		srate = 0;
 		nch = 0;
 		channel_config = 0;
-		info_emitted = false;
 		gave_up = false;
 	}
 
@@ -437,22 +440,33 @@ public:
 
 	virtual bool get_dynamic_info( file_info & p_out )
 	{
-		if ( !info_emitted )
+		unsigned enabled = 0;
+		for ( unsigned i = 0; i < nch; i++ )
 		{
-			unsigned enabled = 0;
-			for ( unsigned i = 0; i < nch; i++ )
-			{
-				enabled |= decoders[ i ].get_sample_counter();
-			}
+			enabled |= decoders[ i ].get_sample_counter();
+		}
 
-			if ( enabled )
-			{
-				info_emitted = true;
-				p_out.info_set_int( "bitspersample", 24 );
-				p_out.info_set_int( "decoded_bitspersample", 20 );
-				p_out.info_set( "hdcd", "yes" );
-				return true;
-			}
+		if ( enabled )
+		{
+			unsigned status = decoders[ 0 ].get_status();
+
+			p_out.info_set_int( "bitspersample", 24 );
+			p_out.info_set_int( "decoded_bitspersample", 20 );
+			p_out.info_set( "hdcd", "yes" );
+
+			p_out.info_set( "hdcd_peak_extend", ( status & 16 ) ? "yes" : "no" );
+			p_out.info_set( "hdcd_transient_filter", ( status & 32 ) ? "yes" : "no" );
+
+			unsigned gain = status & 15;
+			pfc::string8 temp;
+			if ( gain ) temp.add_byte( '-' );
+			temp.add_byte( '0' + ( gain / 2 ) );
+			temp.add_byte( '.' );
+			temp.add_byte( '0' + ( gain & 1 ) * 5 );
+			temp += " dB";
+			p_out.info_set( "hdcd_gain", temp );
+
+			return true;
 		}
 		return false;
 	}
