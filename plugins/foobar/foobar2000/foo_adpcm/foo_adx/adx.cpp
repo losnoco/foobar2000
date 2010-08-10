@@ -3,6 +3,9 @@
 /*
 	change log
 
+2010-08-10 20:15 UTC - kode54
+- Added more keys
+
 2009-04-07 03:56 UTC - kode54
 - Added another key
 
@@ -621,7 +624,7 @@ static struct {
 	/* this is estimated */
 	{0x5deb,0x5f27,0x673f},
 
-	/* G.dev (Senko no Ronde) */
+    /* G.rev 0 (Senko no Ronde) */
 	/* this is estimated */
 	{0x46d3,0x5ced,0x474d},
 
@@ -651,6 +654,44 @@ static struct {
     /* Yamasa (Yamasa Digi Portable: Matsuri no Tatsujin) */
     /* confirmed unique with guessadx */
     {0x4c01,0x549d,0x676f},
+
+    /* Kadokawa Shoten (Fragments Blue) */
+    /* confirmed unique with guessadx */
+    {0x5803,0x4555,0x47bf},
+
+    /* Namco (Soulcalibur IV) */
+    /* confirmed unique with guessadx */
+    {0x59ed,0x4679,0x46c9},
+
+    /* G.rev 1 (Senko no Ronde DUO) */
+    /* from guessadx */
+    {0x6157,0x6809,0x4045},
+
+    /* ASCII Media Works 0 (Nogizaka Haruka no Himitsu: Cosplay Hajimemashita) */
+    /* 2nd from guessadx, other was {0x45ad,0x5f27,0x10fd} */
+    {0x45af,0x5f27,0x52b1},
+
+    /* D3 Publisher 0 (Little Anchor) */
+    /* confirmed unique with guessadx */
+    {0x5f65,0x5b3d,0x5f65},
+
+    /* Marvelous 0 (Hanayoi Romanesque: Ai to Kanashimi) */
+    /* 2nd from guessadx, other was {0x5562,0x5047,0x1433} */
+    {0x5563,0x5047,0x43ed},
+
+	/* Capcom (Mobile Suit Gundam: Gundam vs. Gundam NEXT PLUS) */
+    /* confirmed unique with guessadx */
+    {0x4f7b,0x4fdb,0x5cbf},
+
+	/* Developer: Bridge NetShop
+	 * Publisher: Kadokawa Shoten (Shoukan Shoujo: Elemental Girl Calling) */
+    /* confirmed unique with guessadx */
+    {0x4f7b,0x5071,0x4c61},
+
+	/* Developer: Net Corporation
+	 * Publisher: Tecmo (Rakushou! Pachi-Slot Sengen 6: Rio 2 Cruising Vanadis) */
+    /* confirmed unique with guessadx */
+    {0x53e9,0x586d,0x4eaf},
 };
 
 static const int key_count = sizeof(keys)/sizeof(keys[0]);

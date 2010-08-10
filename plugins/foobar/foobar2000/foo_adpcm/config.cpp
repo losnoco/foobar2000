@@ -1,7 +1,12 @@
-#define MY_VERSION "1.7"
+#define MY_VERSION "1.8"
 
 /*
 	change log
+
+2010-08-10 20:24 UTC - kode54
+- Added more decryption keys to ADX input
+- Fixed EA MUS failing on wrong file type so other MUS inputs can handle it
+- Version is now 1.8
 
 2010-04-26 01:36 UTC - kode54
 - Moved loop configuration setting to advanced preferences
@@ -34,6 +39,8 @@
 - Version is now 1.0
 
 */
+
+#define _WIN32_WINNT 0x0501
 
 #include <foobar2000.h>
 

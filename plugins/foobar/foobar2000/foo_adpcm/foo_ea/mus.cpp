@@ -305,7 +305,7 @@ public:
 		data_buffer.set_size( 8 );
 
 		m_file->read_object( data_buffer.get_ptr(), 8, p_abort );
-		if ( memcmp( data_buffer.get_ptr(), sig_header, 4 ) ) throw exception_io_data();
+		if ( memcmp( data_buffer.get_ptr(), sig_header, 4 ) ) throw exception_io_unsupported_format();
 
 		service_impl_single_t<reader_limited> m_file2;
 		m_file2.init( m_file, 8, pfc::byteswap_if_be_t( * ( ( t_uint32 * ) ( data_buffer.get_ptr() + 4 ) ) ), p_abort );
@@ -808,7 +808,7 @@ public:
 		t_uint8 * ptr = buffer.get_ptr();
 
 		p_filehint->read_object( ptr, m_stats.m_size, p_abort );
-		if ( m_stats.m_size < 12 || memcmp( ptr, sig_map_header, 4 ) ) throw exception_io_data();
+		if ( m_stats.m_size < 12 || memcmp( ptr, sig_map_header, 4 ) ) throw exception_io_unsupported_format();
 
 		first_section = ptr[ 5 ];
 		unsigned num_sections = ptr[ 6 ];
