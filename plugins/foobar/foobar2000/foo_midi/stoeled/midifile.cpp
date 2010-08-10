@@ -176,6 +176,7 @@ static bool load_midi(MIDI_file* mf,const BYTE* buf,int sz)
 	}
 
 	BYTE * out = (BYTE*)malloc(sz);
+	if (!out) return 0;
 	memcpy(out,buf,sz);
 	mf->data=out;
 	mf->size=sz;

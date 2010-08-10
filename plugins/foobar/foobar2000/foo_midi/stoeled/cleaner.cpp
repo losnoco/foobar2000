@@ -428,6 +428,7 @@ int CCleaner::Run(MIDI_file* _mf,DWORD _md,void ** out_data,int * out_size)
 	ntrax = mhd.n;
 	n=0;
 	in_trax=(TRACK**)malloc(sizeof(void*)*ntrax);
+	if (!in_trax) return 0;
 	for(;n<ntrax && ptr<(UINT)mf->size;n++)
 	{
 		chd=*(CHD*)(mf->data+ptr);
@@ -442,6 +443,7 @@ int CCleaner::Run(MIDI_file* _mf,DWORD _md,void ** out_data,int * out_size)
 			chd.s=mf->size-ptr;
 			//goto fail;
 		in_trax[n]=(TRACK*)malloc(16+chd.s);
+		if (!in_trax[n]) return 0;
 		in_trax[n]->sz=chd.s;
 		in_trax[n]->tm=0;
 		in_trax[n]->le=0;
