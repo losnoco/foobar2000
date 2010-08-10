@@ -57,7 +57,7 @@ bool CksmPlayer::load(const std::string &filename, const CFileProvider &fp)
   // Load instruments from 'insts.dat'
   strcpy(fn, filename.c_str());
   for(i = strlen(fn) - 1; i >= 0; i--)
-    if(fn[i] == '/' || fn[i] == '\\')
+    if(fn[i] == '/' || fn[i] == '\\' || fn[i] == ':' || fn[i] == '|')
       break;
   strcpy(fn + i + 1, "insts.dat");
   AdPlug_LogWrite("Instruments file: \"%s\"\n", fn);

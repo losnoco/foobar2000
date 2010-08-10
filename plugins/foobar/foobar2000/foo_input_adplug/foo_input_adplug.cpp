@@ -1,9 +1,13 @@
-#define MYVERSION "1.35"
+#define MYVERSION "1.36"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2010-08-10 20:34 UTC - kode54
+- Added pipes to path separator splitting in AdPlug, for archives
+- Version is now 1.36
 
 2010-04-22 16:41 UTC - kode54
 - Updated to latest AdPlug CVS
@@ -51,6 +55,8 @@
 - Initial release.
 
 */
+
+#define _WIN32_WINNT 0x0501
 
 #include "fileprovider.h"
 
@@ -172,8 +178,6 @@ public:
 	{
 		if ( p_reason == input_open_info_write )
 			throw exception_io_data();
-
-		console::formatter() << "Opening file: " << ( p_path ? p_path : "(unknown)" );
 
 		if ( m_file.is_empty() )
 		{

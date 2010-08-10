@@ -189,7 +189,7 @@ bool CmidPlayer::load_sierra_ins(const std::string &fname, const CFileProvider &
     strcpy(pfilename,fname.c_str());
     j=0;
     for(i=strlen(pfilename)-1; i >= 0; i--)
-      if(pfilename[i] == '/' || pfilename[i] == '\\') {
+      if(pfilename[i] == '/' || pfilename[i] == '\\' || pfilename[i] == ':' || pfilename[i] == '|') {
 	j = i+1;
 	break;
       }

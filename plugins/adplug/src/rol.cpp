@@ -103,7 +103,7 @@ bool CrolPlayer::load(const std::string &filename, const CFileProvider &fp)
     AdPlug_LogWrite("*** CrolPlayer::load(f, \"%s\") ***\n", filename.c_str());
     strcpy(fn,filename.data());
     for (i=strlen(fn)-1; i>=0; i--)
-      if (fn[i] == '/' || fn[i] == '\\')
+      if (fn[i] == '/' || fn[i] == '\\' || fn[i] == ':' || fn[i] == '|')
 	break;
     strcpy(fn+i+1,"standard.bnk");
     bnk_filename = fn;
