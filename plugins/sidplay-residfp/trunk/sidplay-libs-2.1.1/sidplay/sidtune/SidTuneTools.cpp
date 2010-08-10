@@ -49,7 +49,7 @@ char* SidTuneTools::fileNameWithoutPath(char* s)
     {
 #if defined(SID_FS_IS_COLON_AND_BACKSLASH_AND_SLASH)
         if ( s[pos] == ':' || s[pos] == '\\' ||
-             s[pos] == '/' )
+             s[pos] == '/' || s[pos] == '|' )
 #elif defined(SID_FS_IS_COLON_AND_SLASH)
         if ( s[pos] == ':' || s[pos] == '/' )
 #elif defined(SID_FS_IS_SLASH)
