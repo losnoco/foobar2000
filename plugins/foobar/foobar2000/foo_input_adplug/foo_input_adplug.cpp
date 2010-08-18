@@ -1,9 +1,13 @@
-#define MYVERSION "1.36"
+#define MYVERSION "1.37"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2010-08-18 00:19 UTC - kode54
+- Implemented support for the Adlib Surround virtual emulator core
+- Version is now 1.37
 
 2010-08-10 20:34 UTC - kode54
 - Added pipes to path separator splitting in AdPlug, for archives
@@ -66,6 +70,7 @@
 #include "resource.h"
 
 #include <adplug.h>
+#include <surroundopl.h>
 #include <emuopl.h>
 #include <kemuopl.h>
 #include "opl/dbemuopl.h"
@@ -82,17 +87,22 @@ static const GUID guid_cfg_play_indefinitely =
 // {A526C7E1-3BC6-4ddb-BD6A-C5A0F5D725FE}
 static const GUID guid_cfg_adlib_core = 
 { 0xa526c7e1, 0x3bc6, 0x4ddb, { 0xbd, 0x6a, 0xc5, 0xa0, 0xf5, 0xd7, 0x25, 0xfe } };
+// {60CD2195-2C70-4BFF-BEE1-C4C09226A2B2}
+static const GUID guid_cfg_adlib_surround = 
+{ 0x60cd2195, 0x2c70, 0x4bff, { 0xbe, 0xe1, 0xc4, 0xc0, 0x92, 0x26, 0xa2, 0xb2 } };
 
 enum
 {
 	default_cfg_samplerate = 44100,
 	default_cfg_play_indefinitely = 0,
-	default_cfg_adlib_core = 0
+	default_cfg_adlib_core = 0,
+	default_cfg_adlib_surround = 0
 };
 
 static cfg_int cfg_samplerate( guid_cfg_samplerate, 44100 );
 static cfg_int cfg_play_indefinitely( guid_cfg_play_indefinitely, 0 );
 static cfg_int cfg_adlib_core( guid_cfg_adlib_core, 0 );
+static cfg_int cfg_adlib_surround( guid_cfg_adlib_surround, 0 );
 
 static critical_section  g_database_lock;
 static t_filestats       g_database_stats = {0};
@@ -142,6 +152,33 @@ public:
 	}
 };
 
+static Copl * create_adlib( unsigned core, unsigned srate, bool stereo = true )
+{
+	Copl * p_emu = NULL;
+
+	switch ( core )
+	{
+	case 2:
+		p_emu = new CEmuopl( srate, true, stereo );
+		break;
+	case 1:
+		p_emu = new CKemuopl( srate, true, stereo );
+		break;
+	case 0:
+		p_emu = new DBemuopl( srate, stereo );
+	}
+
+	return p_emu;
+}
+
+static Copl * create_adlib_surround( unsigned core, unsigned srate )
+{
+	Copl * a = create_adlib( core, srate, false );
+	Copl * b = create_adlib( core, srate, false );
+
+	return new CSurroundopl( a, b, true );
+}
+
 class input_adplug
 {
 	CPlayer * m_player;
@@ -188,17 +225,8 @@ public:
 
 		srate = cfg_samplerate;
 
-		switch (cfg_adlib_core)
-		{
-		case 2:
-			m_emu = new CEmuopl( srate, true, true );
-			break;
-		case 1:
-			m_emu = new CKemuopl( srate, true, true );
-			break;
-		case 0:
-			m_emu = new DBemuopl( srate, true );
-		}
+		if ( cfg_adlib_surround ) m_emu = create_adlib_surround( cfg_adlib_core, srate );
+		else m_emu = create_adlib( cfg_adlib_core, srate );
 
 		{
 			insync( g_database_lock );
@@ -475,6 +503,7 @@ public:
 	BEGIN_MSG_MAP(CMyPreferences)
 		MSG_WM_INITDIALOG(OnInitDialog)
 		COMMAND_HANDLER_EX(IDC_PLAY_INDEFINITELY, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_SURROUND, BN_CLICKED, OnButtonClick)
 		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_EDITCHANGE, OnEditChange)
 		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_SELCHANGE, OnSelectionChange)
 		DROPDOWN_HISTORY_HANDLER(IDC_SAMPLERATE, cfg_history_rate)
@@ -516,6 +545,7 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 	::SendMessage( w, CB_SETCURSEL, cfg_adlib_core, 0 );
 
 	SendDlgItemMessage( IDC_PLAY_INDEFINITELY, BM_SETCHECK, cfg_play_indefinitely );
+	SendDlgItemMessage( IDC_SURROUND, BM_SETCHECK, cfg_adlib_surround );
 
 	return FALSE;
 }
@@ -542,6 +572,7 @@ void CMyPreferences::reset() {
 	SetDlgItemInt( IDC_SAMPLERATE, default_cfg_samplerate, FALSE );
 	SendDlgItemMessage( IDC_ADLIBCORE, CB_SETCURSEL, default_cfg_adlib_core );
 	SendDlgItemMessage( IDC_PLAY_INDEFINITELY, BM_SETCHECK, default_cfg_play_indefinitely );
+	SendDlgItemMessage( IDC_SURROUND, BM_SETCHECK, default_cfg_adlib_surround );
 	
 	OnChanged();
 }
@@ -557,6 +588,7 @@ void CMyPreferences::apply() {
 	cfg_samplerate = t;
 	cfg_adlib_core = SendDlgItemMessage( IDC_ADLIBCORE, CB_GETCURSEL );
 	cfg_play_indefinitely = SendDlgItemMessage( IDC_PLAY_INDEFINITELY, BM_GETCHECK );
+	cfg_adlib_surround = SendDlgItemMessage( IDC_SURROUND, BM_GETCHECK );
 	
 	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
 }
@@ -565,7 +597,8 @@ bool CMyPreferences::HasChanged() {
 	//returns whether our dialog content is different from the current configuration (whether the apply button should be enabled or not)
 	return GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE ) != cfg_samplerate ||
 		SendDlgItemMessage( IDC_ADLIBCORE, CB_GETCURSEL ) != cfg_adlib_core ||
-		SendDlgItemMessage( IDC_PLAY_INDEFINITELY, BM_GETCHECK ) != cfg_play_indefinitely;
+		SendDlgItemMessage( IDC_PLAY_INDEFINITELY, BM_GETCHECK ) != cfg_play_indefinitely ||
+		SendDlgItemMessage( IDC_SURROUND, BM_GETCHECK ) != cfg_adlib_surround;
 }
 void CMyPreferences::OnChanged() {
 	//tell the host that our state has changed to enable/disable the apply button appropriately.

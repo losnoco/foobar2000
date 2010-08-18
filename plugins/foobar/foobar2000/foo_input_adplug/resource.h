@@ -8,6 +8,8 @@
 #define IDC_PLAY_INDEFINITELY           1002
 #define IDC_SAMPLERATE2                 1003
 #define IDC_ADLIBCORE                   1003
+#define IDC_PLAY_INDEFINITELY2          1004
+#define IDC_SURROUND                    1004
 
 // Next default values for new objects
 // 
