@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.16"
+#define MYVERSION "0.9.9.17"
 
 /*
 	changelog
+
+2010-08-19 04:20 UTC - kode54
+- Implemented monitor dialog with channel mute control
+- Version is now 0.9.9.17
 
 2010-05-01 08:07 UTC - kode54
 - Fixed tracks terminating when caller requests no looping and configuration is set to infinite looping
@@ -777,6 +781,8 @@
 #include "../SDK/foobar2000.h"
 #include "../helpers/dropdown_helper.h"
 #include "../ATLHelpers/ATLHelpers.h"
+
+#include "monitor.h"
 
 #include "resource.h"
 #include <stdio.h>
@@ -1645,13 +1651,13 @@ static bool ReadMTM(const BYTE * ptr, unsigned size, file_info * info, bool meta
 class umr_mem_reader : public umr::file_reader
 {
 	const t_uint8 * ptr;
-	unsigned offset, size;
+	long offset, size;
 public:
 	umr_mem_reader(const t_uint8 * buf, unsigned p_size) : ptr(buf), size(p_size), offset(0) {}
 
 	long read( void * buf, long howmany )
 	{
-		unsigned max = size - offset;
+		long max = size - offset;
 		if ( max > howmany ) max = howmany;
 		if ( max )
 		{
@@ -2864,6 +2870,7 @@ class input_mod
 
 	//pfc::array_t< sample_t > dbuf;
 
+	pfc::string_simple path;
 	pfc::string_simple extension;
 	service_ptr_t< file > m_file;
 	pfc::array_t< t_uint8 > buffer;
@@ -2890,7 +2897,11 @@ public:
 	~input_mod()
 	{
 		if (buf) destroy_sample_buffer(buf);
-		if (sr) duh_end_sigrenderer(sr);
+		if (sr)
+		{
+			monitor_stop( duh_get_it_sigrenderer( sr ) );
+			duh_end_sigrenderer(sr);
+		}
 		if (duh) unload_duh(duh);
 		if (m_info) delete m_info;
 
@@ -2903,6 +2914,8 @@ public:
 
 		t_uint8            * ptr;
 		unsigned             size;
+
+		path = p_path;
 
 		extension = pfc::string_extension( p_path );
 
@@ -3113,6 +3126,8 @@ public:
 
 		if ( ! open2() ) throw exception_io_data();
 
+		monitor_start( duh_get_it_sigdata( duh ), duh_get_it_sigrenderer( sr ), path );
+
 		eof = false;
 		dynamic_info = !!cfg_dynamic_info;
 		written = 0;
@@ -3151,6 +3166,8 @@ public:
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 	{
 		if (eof) return false;
+
+		monitor_update( duh_get_it_sigrenderer( sr ) );
 
 		if ( limit_info.fading && fade_time_left == 0 ) return false;
 

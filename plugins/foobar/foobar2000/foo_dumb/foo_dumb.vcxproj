@@ -224,6 +224,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_DUMB_EXPORTS;_UNICODE;UNICODE</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="monitor.cpp" />
     <ClCompile Include="resampler.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release staticlink|Win32'">true</ExcludedFromBuild>
@@ -258,6 +259,7 @@
     <ResourceCompile Include="mod.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="monitor.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

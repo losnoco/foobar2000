@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -87,6 +85,95 @@ BEGIN
     LTEXT           "Dynamic info fields: order, pattern, row, speed, tempo, channels, channels_max.\nIn scripts: %__mod_dyn_order%, %__mod_dyn_pattern%, etc.",IDC_STATIC,7,158,272,21
 END
 
+IDD_MONITOR DIALOGEX 0, 0, 149, 164
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "Enable playback override",IDC_OVERRIDE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,7,94,8
+    PUSHBUTTON      "Reset",IDC_RESET,112,4,30,12
+    LTEXT           "+",IDC_STATIC,7,22,10,15
+    LTEXT           "0",IDC_STATIC,22,22,15,15
+    LTEXT           "1",IDC_STATIC,37,22,15,15
+    LTEXT           "2",IDC_STATIC,52,22,15,15
+    LTEXT           "3",IDC_STATIC,67,22,15,15
+    LTEXT           "4",IDC_STATIC,82,22,15,15
+    LTEXT           "5",IDC_STATIC,97,22,15,15
+    LTEXT           "6",IDC_STATIC,112,22,15,15
+    LTEXT           "7",IDC_STATIC,127,22,15,15
+    LTEXT           "0",IDC_STATIC,7,38,15,15
+    LTEXT           "8",IDC_STATIC,7,52,15,15
+    LTEXT           "16",IDC_STATIC,7,67,15,15
+    LTEXT           "24",IDC_STATIC,7,82,15,15
+    LTEXT           "32",IDC_STATIC,7,97,15,15
+    LTEXT           "40",IDC_STATIC,7,112,15,15
+    LTEXT           "48",IDC_STATIC,7,127,15,14
+    LTEXT           "56",IDC_STATIC,7,141,15,16
+    CONTROL         "Check1",IDC_VOICE1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,37,8,8
+    CONTROL         "Check1",IDC_VOICE2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,37,37,8,8
+    CONTROL         "Check1",IDC_VOICE3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,52,37,8,8
+    CONTROL         "Check1",IDC_VOICE4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,37,8,8
+    CONTROL         "Check1",IDC_VOICE5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,82,37,8,8
+    CONTROL         "Check1",IDC_VOICE6,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,97,37,8,8
+    CONTROL         "Check1",IDC_VOICE7,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,112,37,8,8
+    CONTROL         "Check1",IDC_VOICE8,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,127,37,8,8
+    CONTROL         "Check1",IDC_VOICE9,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,52,8,8
+    CONTROL         "Check1",IDC_VOICE10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,37,52,8,8
+    CONTROL         "Check1",IDC_VOICE11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,52,52,8,8
+    CONTROL         "Check1",IDC_VOICE16,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,52,8,8
+    CONTROL         "Check1",IDC_VOICE13,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,82,52,8,8
+    CONTROL         "Check1",IDC_VOICE14,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,97,52,8,8
+    CONTROL         "Check1",IDC_VOICE15,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,112,52,8,8
+    CONTROL         "Check1",IDC_VOICE12,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,127,52,8,8
+    CONTROL         "Check1",IDC_VOICE17,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,67,8,8
+    CONTROL         "Check1",IDC_VOICE18,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,37,67,8,8
+    CONTROL         "Check1",IDC_VOICE19,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,52,67,8,8
+    CONTROL         "Check1",IDC_VOICE20,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,67,8,8
+    CONTROL         "Check1",IDC_VOICE21,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,82,67,8,8
+    CONTROL         "Check1",IDC_VOICE22,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,97,67,8,8
+    CONTROL         "Check1",IDC_VOICE23,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,112,67,8,8
+    CONTROL         "Check1",IDC_VOICE24,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,127,67,8,8
+    CONTROL         "Check1",IDC_VOICE25,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,82,8,8
+    CONTROL         "Check1",IDC_VOICE26,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,37,82,8,8
+    CONTROL         "Check1",IDC_VOICE27,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,52,82,8,8
+    CONTROL         "Check1",IDC_VOICE28,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,82,8,8
+    CONTROL         "Check1",IDC_VOICE29,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,82,82,8,8
+    CONTROL         "Check1",IDC_VOICE30,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,97,82,8,8
+    CONTROL         "Check1",IDC_VOICE31,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,112,82,8,8
+    CONTROL         "Check1",IDC_VOICE32,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,127,82,8,8
+    CONTROL         "Check1",IDC_VOICE33,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,97,8,8
+    CONTROL         "Check1",IDC_VOICE34,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,37,97,8,8
+    CONTROL         "Check1",IDC_VOICE35,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,52,97,8,8
+    CONTROL         "Check1",IDC_VOICE36,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,97,8,8
+    CONTROL         "Check1",IDC_VOICE37,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,82,97,8,8
+    CONTROL         "Check1",IDC_VOICE38,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,97,97,8,8
+    CONTROL         "Check1",IDC_VOICE39,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,112,97,8,8
+    CONTROL         "Check1",IDC_VOICE40,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,127,97,8,8
+    CONTROL         "Check1",IDC_VOICE41,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,112,8,8
+    CONTROL         "Check1",IDC_VOICE42,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,37,112,8,8
+    CONTROL         "Check1",IDC_VOICE43,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,52,112,8,8
+    CONTROL         "Check1",IDC_VOICE44,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,112,8,8
+    CONTROL         "Check1",IDC_VOICE45,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,82,112,8,8
+    CONTROL         "Check1",IDC_VOICE46,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,97,112,8,8
+    CONTROL         "Check1",IDC_VOICE47,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,112,112,8,8
+    CONTROL         "Check1",IDC_VOICE48,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,127,112,8,8
+    CONTROL         "Check1",IDC_VOICE49,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,127,8,8
+    CONTROL         "Check1",IDC_VOICE50,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,37,127,8,8
+    CONTROL         "Check1",IDC_VOICE51,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,52,127,8,8
+    CONTROL         "Check1",IDC_VOICE52,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,127,8,8
+    CONTROL         "Check1",IDC_VOICE53,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,82,127,8,8
+    CONTROL         "Check1",IDC_VOICE54,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,97,127,8,8
+    CONTROL         "Check1",IDC_VOICE55,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,112,127,8,8
+    CONTROL         "Check1",IDC_VOICE56,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,127,127,8,8
+    CONTROL         "Check1",IDC_VOICE57,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,141,8,8
+    CONTROL         "Check1",IDC_VOICE58,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,37,141,8,8
+    CONTROL         "Check1",IDC_VOICE59,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,52,141,8,8
+    CONTROL         "Check1",IDC_VOICE60,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,141,8,8
+    CONTROL         "Check1",IDC_VOICE61,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,82,141,8,8
+    CONTROL         "Check1",IDC_VOICE62,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,97,141,8,8
+    CONTROL         "Check1",IDC_VOICE63,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,112,141,8,8
+    CONTROL         "Check1",IDC_VOICE64,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,127,141,8,8
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -94,7 +181,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_MOD_CONFIG, DIALOG
     BEGIN
@@ -103,10 +190,35 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 214
     END
+
+    IDD_MONITOR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 142
+        VERTGUIDE, 22
+        VERTGUIDE, 37
+        VERTGUIDE, 52
+        VERTGUIDE, 67
+        VERTGUIDE, 82
+        VERTGUIDE, 97
+        VERTGUIDE, 112
+        VERTGUIDE, 127
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 157
+        HORZGUIDE, 22
+        HORZGUIDE, 37
+        HORZGUIDE, 52
+        HORZGUIDE, 67
+        HORZGUIDE, 82
+        HORZGUIDE, 97
+        HORZGUIDE, 112
+        HORZGUIDE, 127
+        HORZGUIDE, 141
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
