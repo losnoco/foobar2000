@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.17"
+#define MYVERSION "0.9.9.18"
 
 /*
 	changelog
+
+2010-08-20 00:55 UTC - kode54
+- Fixed channel muting when seeking backwards
+- Version is now 0.9.9.18
 
 2010-08-19 04:20 UTC - kode54
 - Implemented monitor dialog with channel mute control
@@ -3240,10 +3244,12 @@ retry:
 
 		if ( to_pos < from_pos )
 		{
+			monitor_stop( duh_get_it_sigrenderer( sr ) );
 			duh_end_sigrenderer( sr );
 			sr = NULL;
 			limit_info.loop_count = loop_count;
 			if ( ! open2( to_pos ) ) throw exception_io_data();
+			monitor_start( duh_get_it_sigdata( duh ), duh_get_it_sigrenderer( sr ), path );
 		}
 		else while ( to_pos > from_pos && !eof )
 		{
