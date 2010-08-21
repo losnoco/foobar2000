@@ -60,12 +60,9 @@ static void mute_channels( t_uint64 mask )
 	if ( song_renderer )
 	for ( int channel = 0; channel < DUMB_IT_N_CHANNELS; channel++ )
 	{
-		t_uint64 current_mask = 1 << channel;
-		if ( current_mask & channels_allowed )
-		{
-			int muted = !!(mask & current_mask);
-			dumb_it_sr_set_channel_muted( song_renderer, channel, muted );
-		}
+		t_uint64 current_mask = t_uint64(1) << channel;
+		int muted = !!(mask & current_mask);
+		dumb_it_sr_set_channel_muted( song_renderer, channel, muted );
 	}
 }
 
@@ -78,6 +75,8 @@ void monitor_start( DUMB_IT_SIGDATA * p_sigdata, DUMB_IT_SIGRENDERER * p_sigrend
 	song_data = p_sigdata;
 	song_renderer = p_sigrenderer;
 	path = p_path;
+
+	initialize_channels();
 
 	if ( cfg_control_override )
 	{
@@ -114,6 +113,8 @@ void monitor_stop( const DUMB_IT_SIGRENDERER * p_sigrenderer )
 
 		changed_info = true;
 		path = "";
+
+		channels_allowed = 0;
 	}
 }
 
@@ -244,8 +245,6 @@ class monitor_dialog
 		uSetWindowText( wnd, title );
 
 		BOOL enable = song_renderer != 0 && cfg_control_override;
-
-		initialize_channels();
 
 		HWND w;
 		for ( unsigned i = 0; i < DUMB_IT_N_CHANNELS; ++i )

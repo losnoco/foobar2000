@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.18"
+#define MYVERSION "0.9.9.19"
 
 /*
 	changelog
+
+2010-08-21 00:03 UTC - kode54
+- Fixed channel muting when switching or restarting songs, or when seeking
+- Version is now 0.9.9.19
 
 2010-08-20 00:55 UTC - kode54
 - Fixed channel muting when seeking backwards
@@ -3091,6 +3095,7 @@ public:
 
 		if ( sr )
 		{
+			monitor_stop( duh_get_it_sigrenderer( sr ) );
 			duh_end_sigrenderer( sr );
 			sr = NULL;
 		}
@@ -3284,10 +3289,12 @@ private:
 				{
 					if ( loop_count == 0 || --limit_info.loop_count == 0 )
 					{
+						monitor_stop( duh_get_it_sigrenderer( sr ) );
 						duh_end_sigrenderer( sr );
 						sr = NULL;
 						if ( open2() )
 						{
+							monitor_start( duh_get_it_sigdata( duh ), duh_get_it_sigrenderer( sr ), path );
 							if ( limit_info.fade )
 							{
 								fade_time_left = fade_time + written;
