@@ -196,7 +196,7 @@ void CCleaner::do_shit(UINT n)
 			{
 				t->pos+=2;
 				int _d;
-				t->pos+=DecodeDelta(t->data+t->pos,&_d);
+				t->pos+=DecodeDelta(t->data+t->pos,&_d,t->sz-t->pos);
 				t->pos+=_d;
 			}
 		} else if (c0==0xF0)
@@ -249,7 +249,7 @@ bool CCleaner::do_emidi(UINT n)
 			{
 				t->pos+=2;
 				int _d;
-				t->pos+=DecodeDelta(t->data+t->pos,&_d);
+				t->pos+=DecodeDelta(t->data+t->pos,&_d,t->sz-t->pos);
 				t->pos+=_d;
 			}
 		} else if (c0==0xF0)
@@ -316,7 +316,7 @@ void CCleaner::AdvanceTime(TRACK* t)
 	if (t->tm!=-1)
 	{
 		int d;
-		UINT _n=DecodeDelta(t->data+t->pos,&d);
+		UINT _n=DecodeDelta(t->data+t->pos,&d,t->sz-t->pos);
 		if (_n<4) t->tm+=d;
 		t->pos+=_n;
 	}

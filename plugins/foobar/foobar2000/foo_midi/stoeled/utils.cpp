@@ -196,20 +196,21 @@ int ReadSysex(const BYTE* src,int ml)
 		if (src[r]==0xF7) return r+1;
 	}
 	int d;
-	r=1+DecodeDelta(src+1,&d);
+	r=1+DecodeDelta(src+1,&d,ml-1);
 	r+=d;
 	return r;
 }
 
-int DecodeDelta(const BYTE* src,int* _d)
+int DecodeDelta(const BYTE* src,int* _d,int sz)
 {
+	if (!sz) return 0;
 	int l=0;
 	int d=0;
 	BYTE b;
 	do {
 		b=src[l++];
 		d=(d<<7)|(b&0x7F);
-	} while(b&0x80);
+	} while(b&0x80 && l < sz);
 	*_d=d;
 	return l;
 }
@@ -288,7 +289,7 @@ void CSysexMap::AddEvent(const BYTE* e,DWORD s,DWORD t)
 	}
 	data[d_pos]=0xF0;
 	int x;
-	int sp=DecodeDelta(e+1,&x);
+	int sp=DecodeDelta(e+1,&x,s-1);
 	memcpy(data+d_pos+1,e+1+sp,s-1-sp);
 	events[pos].pos=t;
 	events[pos].ofs=d_pos;
@@ -526,7 +527,7 @@ MIDI_EVENT* do_table(MIDI_file * mf,UINT prec,UINT * size,/*UINT* _lstart,UINT* 
 
 	{
 		int _d;
-		n+=DecodeDelta(track+n,&_d);
+		n+=DecodeDelta(track+n,&_d,ts-n);
 		track_pos+=_d;
 	}
 
@@ -565,7 +566,7 @@ MIDI_EVENT* do_table(MIDI_file * mf,UINT prec,UINT * size,/*UINT* _lstart,UINT* 
 					ev=(ev&0xFF0F)|0x7F0080;
 				}
 				int _d;
-				n+=DecodeDelta(track+n,&_d);
+				n+=DecodeDelta(track+n,&_d,ts-n);
 				track_pos+=_d;
 			}
 			else if (smap_pos!=-1)
@@ -659,13 +660,13 @@ KAR_ENTRY * kmap_create(MIDI_file* mf,UINT prec,UINT * num,char** text)
 	while(track<track_end)
 	{
 		int d;
-		track+=DecodeDelta(track,&d);
+		track+=DecodeDelta(track,&d,track_end-track);
 		time+=d;
 		if (*track==0xFF)	//meta
 		{
 			BYTE type=track[1];
 			track+=2;
-			track+=DecodeDelta(track,&d);
+			track+=DecodeDelta(track,&d,track_end-track);
 			char * ptr=(char*)track;
 			track+=d;
 			if ((type==0x5 || type==0x1) && d && *ptr!='@')	//lyrics
@@ -699,7 +700,7 @@ KAR_ENTRY * kmap_create(MIDI_file* mf,UINT prec,UINT * num,char** text)
 		else if (*track==0xF0)
 		{
 			track++;
-			track+=DecodeDelta(track,&d);
+			track+=DecodeDelta(track,&d,track_end-track);
 			track+=d;
 		}
 		else if ((*track&0xF0)==0xF0)

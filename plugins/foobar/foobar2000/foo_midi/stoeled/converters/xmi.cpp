@@ -27,9 +27,9 @@ public:
 	void q_add(BYTE ch,BYTE note,DWORD tm);
 	void WriteDelta(DWORD _d);
 	void DoQueue();
-	DWORD ProcessNote(const BYTE* e);
-	DWORD ProcessDelta(const BYTE* d);
-	DWORD WriteEvent(const BYTE* e);
+	DWORD ProcessNote(const BYTE* e, DWORD);
+	DWORD ProcessDelta(const BYTE* d, DWORD);
+	DWORD WriteEvent(const BYTE* e, DWORD);
 	bool run(MIDI_file* mf,const BYTE*,DWORD);
 #pragma pack(push)
 #pragma pack(1)
@@ -91,10 +91,11 @@ void XMI_cvt::WriteDelta(DWORD _d)
 	tr_sz+=out.get_size()-st;
 }
 
-DWORD _inline ReadDelta1(const BYTE* d,DWORD* _l)
+DWORD _inline ReadDelta1(const BYTE* d,DWORD* _l,DWORD sz)
 {
+	if (!sz) return 0;
 	DWORD r=d[0],l=0;
-	while(!(d[l+1]&0x80))
+	while((l+1 < sz) && !(d[l+1]&0x80))
 	{
 		r+=d[++l];
 	}
@@ -126,16 +127,17 @@ void XMI_cvt::DoQueue()
 	}
 }
 
-DWORD XMI_cvt::ProcessNote(const BYTE* e)
+DWORD XMI_cvt::ProcessNote(const BYTE* e, DWORD sz)
 {
 	DoQueue();
 	WriteDelta(cur_time);
 
+	if (sz < 3) return 0;
 	WriteBuf(e,3);
 	tr_sz+=3;
 	DWORD l=3;
 	int _d;
-	l+=DecodeDelta(e+l,&_d);
+	l+=DecodeDelta(e+l,&_d, sz - l);
 
 
 	if (e[2]) q_add(e[0]&0xF,e[1],cur_time+_d);
@@ -143,23 +145,25 @@ DWORD XMI_cvt::ProcessNote(const BYTE* e)
 	return l;
 }
 
-DWORD XMI_cvt::ProcessDelta(const BYTE* d)
+DWORD XMI_cvt::ProcessDelta(const BYTE* d, DWORD sz)
 {
 	DWORD l;
-	cur_time+=ReadDelta1(d,&l);
+	cur_time+=ReadDelta1(d,&l,sz);
 	return l;
 }
 
-DWORD XMI_cvt::WriteEvent(const BYTE* e)
+DWORD XMI_cvt::WriteEvent(const BYTE* e, DWORD sz)
 {
+	if (!sz) return 0;
 	if ((e[0]&0xF0)==0xF0 && e[0]!=0xFF && e[0]!=0xF0)//hack
 	{
 		UINT l=1;
-		while(!(e[l]&0x80)) l++;
+		while(l < sz && !(e[l]&0x80)) l++;
 		return l;
 	}
 	else if (e[0]==0xFF)
 	{
+		if (sz < 2) return 0;
 		if (e[1]==0x2F)
 		{
 			DWORD _ct=cur_time;
@@ -176,8 +180,9 @@ DWORD XMI_cvt::WriteEvent(const BYTE* e)
 		}
 		else
 		{
+			if (sz < 3) return 0;
 			UINT l=e[2];
-			if (l&0x80)
+			if (l&0x80 && sz >= 4)
 			{
 				l=((l<<7)|e[3])+1;
 			}
@@ -189,7 +194,7 @@ DWORD XMI_cvt::WriteEvent(const BYTE* e)
 	if (e[0]==0xF0)
 	{
 		int d;
-		UINT l = 1 + DecodeDelta(e+1,&d);
+		UINT l = 1 + DecodeDelta(e+1,&d,sz - 1);
 		l+=d;
 		WriteBuf(e,l);
 		tr_sz+=l;
@@ -199,6 +204,7 @@ DWORD XMI_cvt::WriteEvent(const BYTE* e)
 	//hasevents=1;
 	if ((e[0]&0xF0)==0xC0 || (e[0]&0xF0)==0xD0) l=2;
 	else l=3;
+	if (l > sz) return 0;
 	WriteBuf(e,l);
 	tr_sz+=l;
 	return l;	
@@ -247,14 +253,14 @@ _track:
 	{
 		if ((buf[ptr]&0x80)==0)
 		{
-			ptr+=ProcessDelta(buf+ptr);
+			ptr+=ProcessDelta(buf+ptr,sz-ptr);
 		}
 		if ((buf[ptr]&0xF0)==0x90)
 		{
 			hasevents=1;
-			ptr+=ProcessNote(buf+ptr);
+			ptr+=ProcessNote(buf+ptr,sz-ptr);
 		}
-		else ptr+=WriteEvent(buf+ptr);
+		else ptr+=WriteEvent(buf+ptr,sz-ptr);
 	}
 	if (!hasevents) {out.truncate(sp-4);ntrax--;}
 	else out.write_dword_ptr(rev32(tr_sz),sp);

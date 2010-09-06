@@ -208,7 +208,7 @@ CMarkerMap* mmap_create();
 
 
 int EncodeDelta(BYTE* dst,int d);
-int DecodeDelta(const BYTE* src,int* _d);
+int DecodeDelta(const BYTE* src,int* _d,int sz);
 int ReadSysex(const BYTE* src,int ml);
 
 BOOL DoOpenFile(HWND w,char* fn,char* filt,char* ext,BOOL save);

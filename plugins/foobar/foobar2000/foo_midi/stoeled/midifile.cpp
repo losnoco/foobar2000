@@ -103,7 +103,7 @@ static bool load_midi_fix(MIDI_file* mf,const BYTE* buf,int sz,int n_track,int p
 			ptr+=2;
 			if (REM<4) break;
 			int d;
-			int l=DecodeDelta(buf+ptr,&d);
+			int l=DecodeDelta(buf+ptr,&d,REM);
 			if (l+d>REM) break;
 			ptr+=l+d;
 		}
@@ -112,7 +112,7 @@ static bool load_midi_fix(MIDI_file* mf,const BYTE* buf,int sz,int n_track,int p
 			ptr++;
 			if (REM<4) break;
 			int d;
-			int l=DecodeDelta(buf+ptr,&d);
+			int l=DecodeDelta(buf+ptr,&d,REM);
 			if (l+d>REM) break;
 			ptr+=l+d;
 		}

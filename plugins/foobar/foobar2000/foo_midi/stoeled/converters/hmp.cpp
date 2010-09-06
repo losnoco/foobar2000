@@ -49,7 +49,7 @@ static DWORD ProcessTrack(const BYTE* track,grow_buf & out,int size)
 		if (*track == 0xFF)//meta
 		{
 			int _d;
-			UINT s=DecodeDelta(track+2,&_d);
+			UINT s=DecodeDelta(track+2,&_d,size - (track + 2 - pt));
 			out.write(track,2+s+_d);
 			if (track[1]==0x2F) break;			
 		}

@@ -58,7 +58,7 @@ int CGetInfo::DoTrack(const BYTE* track,int size,pfc::string8 & name,pfc::string
 	{
 		{
 			int d;
-			int _n=DecodeDelta(track+n,&d);
+			int _n=DecodeDelta(track+n,&d,size-n);
 			if (_n<4) res+=d;
 			n+=_n;
 		}

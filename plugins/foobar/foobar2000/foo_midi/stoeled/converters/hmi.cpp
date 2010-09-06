@@ -27,7 +27,7 @@ public:
 	}
 	grow_buf buf;
 
-	UINT DoTrack(const BYTE* t,UINT *_bw);
+	UINT DoTrack(const BYTE* t,UINT *_bw,DWORD sz);
 	void DoQueue(DWORD ct,DWORD& tw,BYTE& _run);
 	bool run(MIDI_file * mf,const BYTE* _buf,DWORD sz);
 };
@@ -57,7 +57,7 @@ _t:
 
 //extern BYTE ff7loopstart[12];
 
-UINT HMI_cvt::DoTrack(const BYTE* t,UINT *_bw)
+UINT HMI_cvt::DoTrack(const BYTE* t,UINT *_bw,DWORD sz)
 {
 	{
 		UINT n;
@@ -72,14 +72,16 @@ UINT HMI_cvt::DoTrack(const BYTE* t,UINT *_bw)
 	{
 		{
 			int _d;
-			pt+=DecodeDelta(t+pt,&_d);
+			pt+=DecodeDelta(t+pt,&_d,sz-pt);
 			ct+=_d;
 		}
 		DoQueue(ct,tw,_run);
+		if (pt >= sz) break;
 		BYTE c=t[pt];
 		if (c==0xFF)
 		{
 			DoQueue(-2,tw,_run);
+			if (pt + 1 >= sz) break;
 			if (t[pt+1]==0x2f)
 			{
 				pt+=3;
@@ -94,8 +96,9 @@ UINT HMI_cvt::DoTrack(const BYTE* t,UINT *_bw)
 			gb_write_delta(buf,ct-tw);
 			tw=ct;
 			UINT _p=pt;
-			while(t[pt]!=0xF7) pt++;
+			while(t[pt]!=0xF7 && pt < sz) pt++;
 			pt++;
+			if (pt >= sz) break;
 			buf.write(t+_p,pt-_p);
 		}
 		else if (c==0xFE)
@@ -103,11 +106,14 @@ UINT HMI_cvt::DoTrack(const BYTE* t,UINT *_bw)
 			c=t[pt+1];
 			if (c==0x10)
 			{
+				if (pt + 4 >= sz) break;
 				pt+=t[pt+4]+9;
+				if (pt >= sz) break;
 			}
 			else if (c==0x14)
 			{
 				pt+=4;
+				if (pt >= sz) break;
 				gb_write_delta(buf,ct-tw);
 				tw=ct;
 				//buf.write(ff7loopstart,12);
@@ -117,6 +123,7 @@ UINT HMI_cvt::DoTrack(const BYTE* t,UINT *_bw)
 			else if (c==0x15)
 			{
 				pt+=8;
+				if (pt >= sz) break;
 				gb_write_delta(buf, ct-tw);
 				tw = ct;
 				buf.write_byte(0xB0 | (_run & 0xF));
@@ -131,14 +138,16 @@ UINT HMI_cvt::DoTrack(const BYTE* t,UINT *_bw)
 			if (c&0x80) {pt++;run=c;}
 			else c=run;
 			if (c!=_run) buf.write_byte(_run=c);
+			if (pt >= sz) break;
 			buf.write_byte(t[pt++]);
 			BYTE c1=c&0xF0;
+			if (pt >= sz) break;
 			if (c1!=0xC0 && c1!=0xD0) buf.write_byte(t[pt++]);
 			if (c1==0x90)
 			{
 				BYTE b=t[pt-2];
 				int _t;
-				pt+=DecodeDelta(t+pt,&_t);
+				pt+=DecodeDelta(t+pt,&_t,sz-pt);
 				q_add(c&0xF,b,_t+ct);
 			}
 		}
@@ -191,7 +200,7 @@ bool HMI_cvt::run(MIDI_file* mf,const BYTE* _buf,DWORD sz)
 		}
 		ptr+=ptr[0x57];
 		{
-			DWORD d=DoTrack(ptr,&_b);
+			DWORD d=DoTrack(ptr,&_b,sz-(ptr-_buf));
 			if (d==-1) return 0;
 			ptr+=d;
 		}
