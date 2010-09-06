@@ -5,6 +5,7 @@
 // foobar2000 component copyright (C) 2004-2006 Janne Hyvärinen
 //
 // Changes:
+//  0.3.0  (2010-09-03): Added support for 48KHz source streams to the decode postprocessor
 //  0.2.9  (2010-05-23): Implemented decode_postprocessor interface, removed DSP
 //  0.2.8  (2010-01-11): Updated to 1.0 SDK
 //  0.2.7  (2009-12-13): Found and fixed another false positive with the DSP
@@ -34,7 +35,7 @@
 //  0.0.4  (2004-10-15): Simplified packet decoder, added codec reporting, fixed typo in version number
 //  0.0.3  (2004-10-15): Added Matroska packet decoder support
 
-#define FD_VERSION  "0.2.9"
+#define FD_VERSION  "0.3.0"
 
 //#define DTS_DEBUG // print status info to console
 

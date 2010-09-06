@@ -57,8 +57,6 @@ class dts_postprocessor_instance : public decode_postprocessor_instance
 			return false;
 		}
 
-		srate = 44100;
-
 		return true;
 	}
 
@@ -283,7 +281,7 @@ public:
 		{
 			audio_chunk * chunk = p_chunk_list.get_item( i );
 
-			if ( chunk->get_channels() != 2 || chunk->get_srate() != 44100 ) {
+			if ( chunk->get_channels() != 2 || ( chunk->get_srate() != 44100 && chunk->get_srate() != 48000 ) ) {
 				i += flush_chunks( p_chunk_list, i, valid_stream_found ) + 1;
 				continue;
 			}
