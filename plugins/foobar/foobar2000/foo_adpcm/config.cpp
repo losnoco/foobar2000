@@ -1,7 +1,12 @@
-#define MY_VERSION "1.8"
+#define MY_VERSION "1.9"
 
 /*
 	change log
+
+2010-09-21 01:15 UTC - kode54
+- Added detection for redundant format inputs to disable support for formats
+  better supported by vgmstream
+- Version is now 1.9
 
 2010-08-10 20:24 UTC - kode54
 - Added more decryption keys to ADX input
@@ -53,6 +58,31 @@ static const GUID guid_cfg_loop =
 { 0xccb20bbe, 0x8c08, 0x4337, { 0xb4, 0xee, 0x77, 0x77, 0x8a, 0xf4, 0x99, 0xe3 } };
 
 advconfig_checkbox_factory cfg_loop("ADPCM - Loop indefinitely", guid_cfg_loop, advconfig_branch::guid_branch_playback, 0, false);
+
+bool cfg_enable_overlapping = true;
+
+class adpcm_detect_redundant_decoders : public initquit
+{
+public:
+	virtual void on_init()
+	{
+		unsigned service_count = 0;
+
+		service_enum_t<input_entry> e;
+		service_ptr_t<input_entry> f;
+
+		while ( e.next( f ) )
+		{
+			if ( f->is_our_path( "foo.brstm", "brstm" ) ) service_count++;
+		}
+
+		if ( service_count > 1 ) cfg_enable_overlapping = false;
+	}
+
+	virtual void on_quit() { }
+};
+
+static initquit_factory_t< adpcm_detect_redundant_decoders > g_initquit_adpcm_detector;
 
 DECLARE_COMPONENT_VERSION("kode's ADPCM decoders", MY_VERSION, "Contains ACM, ADX, BRR, EA MUS, Game Cube DSP/ADP, OKI ADPCM, RAC, and XA decoders.");
 

@@ -7,6 +7,7 @@
 #include "reader_foo.h"
 
 extern advconfig_checkbox_factory cfg_loop;
+extern bool cfg_enable_overlapping;
 
 FOOBAR2000COMPONENT_EXTS(foobar2000_extlist);
 
@@ -150,6 +151,7 @@ public:
 
 	static bool g_is_our_path( const char * p_full_path, const char * p_extension )
 	{
+		if ( ! cfg_enable_overlapping ) return false;
 		for (int i = 0; foobar2000_extlist[i]; i++)
 			if (!stricmp_utf8(p_extension, foobar2000_extlist[i])) return true;
 		return false;

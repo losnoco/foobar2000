@@ -31,6 +31,7 @@
 #include "cube.h"
 
 extern advconfig_checkbox_factory cfg_loop;
+extern bool cfg_enable_overlapping;
 
 static const char * exts[] =
 {
@@ -469,6 +470,7 @@ public:
 
 	static bool g_is_our_path( const char * p_full_path, const char * p_extension )
 	{
+		if ( ! cfg_enable_overlapping ) return false;
 		int n;
 		for(n=0;n<tabsize(exts);n++)
 		{
