@@ -3,7 +3,7 @@
 /*
 	change log
 
-2010-09-21 01:15 UTC - kode54
+2010-09-22 03:44 UTC - kode54
 - Added detection for redundant format inputs to disable support for formats
   better supported by vgmstream
 - Version is now 1.9

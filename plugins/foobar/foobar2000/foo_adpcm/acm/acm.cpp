@@ -13,6 +13,8 @@
 
 #include "acmstrm.h"
 
+extern bool cfg_enable_overlapping;
+
 class input_acm
 {
 	service_ptr_t<file>         m_file;
@@ -199,6 +201,7 @@ public:
 
 	static bool g_is_our_path( const char * p_full_path, const char * p_extension )
 	{
+		if ( !cfg_enable_overlapping ) return false;
 		return ! stricmp( p_extension, "acm" );
 	}
 };
