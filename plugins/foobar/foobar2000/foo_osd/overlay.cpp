@@ -21,6 +21,14 @@ using namespace Gdiplus;
 
 #define swap_color(x) (((x) & 0xFF00) | (((x) & 0xFF) << 16) | (((x) & 0xFF0000) >> 16))
 
+void GetDesktopRect(RECT * rc)
+{
+	rc->left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+	rc->top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+	rc->right = rc->left + GetSystemMetrics(SM_CXVIRTUALSCREEN);
+	rc->bottom = rc->top + GetSystemMetrics(SM_CYVIRTUALSCREEN);
+}
+
 #ifdef GDIPLUS
 
 static PointF get_text_size(Graphics * graphics, Font * font, const TCHAR * text, UINT len)
@@ -728,11 +736,7 @@ void COsdWnd::Repaint()
 
 	RECT rc;
 	HDC dDC = GetDC(NULL);
-	if (!GetClientRect(GetDesktopWindow(), &rc))
-	{
-		ReleaseDC(NULL, dDC);
-		return;
-	}
+	GetDesktopRect(&rc);
 
 	{
 #ifdef GDIPLUS
@@ -743,24 +747,24 @@ void COsdWnd::Repaint()
 		PointF sz = get_text_size_lines(&graphics, &font, m_strText.get_ptr(), m_strText.length());
 		m_sSize.cx = (int)(sz.X + 20.5f);
 		m_sSize.cy = (int)(sz.Y + 20.5f);
-		m_pPos.y = (p_config.y * rc.bottom / 100) - m_sSize.cy / 2;
+		m_pPos.y = (p_config.y * (rc.bottom - rc.top) / 100) - m_sSize.cy / 2 + rc.top;
 #else
 		HFONT pOldFont = (HFONT) SelectObject(dDC, hFont);
 		SIZE sz = get_text_size_lines(dDC, m_strText.get_ptr(), m_strText.length());
 		m_sSize.cx = sz.cx + 20;
 		m_sSize.cy = sz.cy + 20;
-		m_pPos.y = (p_config.y * rc.bottom / 100) - m_sSize.cy / 2;
+		m_pPos.y = (p_config.y * (rc.bottom - rc.top) / 100) - m_sSize.cy / 2 + rc.top;
 #endif
 		switch (p_config.pos)
 		{
 		case DT_RIGHT:
-			m_pPos.x = (p_config.x * rc.right / 100);
+			m_pPos.x = (p_config.x * (rc.right - rc.left) / 100) + rc.left;
 			break;
 		case DT_CENTER:
-			m_pPos.x = (p_config.x * rc.right / 100) - m_sSize.cx / 2;
+			m_pPos.x = (p_config.x * (rc.right - rc.left) / 100) - m_sSize.cx / 2 + rc.left;
 			break;
 		case DT_LEFT:
-			m_pPos.x = (p_config.x * rc.right / 100) - m_sSize.cx;
+			m_pPos.x = (p_config.x * (rc.right - rc.left) / 100) - m_sSize.cx + rc.left;
 			break;
 		}
 		SelectObject(dDC, pOldFont);
@@ -894,11 +898,7 @@ bool COsdWnd::RepaintVolume(int volume)
 {
 	RECT rc;
 	HDC dDC = GetDC(NULL);
-	if (!GetClientRect(GetDesktopWindow(), &rc))
-	{
-		ReleaseDC(NULL, dDC);
-		return false;
-	}
+	GetDesktopRect(&rc);
 
 	const osd_config & p_config = m_state.get();
 
@@ -913,19 +913,19 @@ bool COsdWnd::RepaintVolume(int volume)
 	SIZE sz;
 	POINT pos;
 
-	sz.cx = rc.right * p_config.vwidth / 100;
-	sz.cy = rc.bottom * p_config.vheight / 100;
-	pos.y = (p_config.y * rc.bottom / 100) - sz.cy / 2;
+	sz.cx = (rc.right - rc.left) * p_config.vwidth / 100;
+	sz.cy = (rc.bottom - rc.top) * p_config.vheight / 100;
+	pos.y = (p_config.y * (rc.bottom - rc.top) / 100) - sz.cy / 2 + rc.top;
 	switch (p_config.pos)
 	{
 	case DT_RIGHT:
-		pos.x = (p_config.x * rc.right / 100);
+		pos.x = (p_config.x * (rc.right - rc.left) / 100) + rc.left;
 		break;
 	case DT_CENTER:
-		pos.x = (p_config.x * rc.right / 100) - sz.cx / 2;
+		pos.x = (p_config.x * (rc.right - rc.left) / 100) - sz.cx / 2 + rc.left;
 		break;
 	case DT_LEFT:
-		pos.x = (p_config.x * rc.right / 100) - sz.cx;
+		pos.x = (p_config.x * (rc.right - rc.left) / 100) - sz.cx + rc.left;
 		break;
 	}
 

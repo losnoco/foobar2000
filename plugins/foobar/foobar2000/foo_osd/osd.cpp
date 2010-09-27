@@ -32,7 +32,7 @@
 
  */
 
-#define VERSION "1.61"
+#define VERSION "1.62"
 
 /*
 #define GDIPLUS
@@ -41,6 +41,11 @@
 
 /*
 	change log
+
+2010-09-27 20:26 UTC - kode54
+- Changed overlay to position itself relative to the entire virtual desktop instead
+  of just the primary desktop
+- Version is now 1.62
 
 2010-04-13 14:58 UTC - kode54
 - Amended preferences WM_INITDIALOG handler
