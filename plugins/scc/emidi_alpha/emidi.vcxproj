@@ -134,6 +134,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="device\2413tone.h" />
+    <ClInclude Include="device\vrc7tone.h" />
     <ClInclude Include="SccInst.h" />
     <ClInclude Include="SccWave.h" />
     <ClInclude Include="CEnvelope.hpp" />
