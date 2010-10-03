@@ -115,6 +115,7 @@
     <ClCompile Include="z80.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\emuconfig.h" />
     <ClInclude Include="kabuki.h" />
     <ClInclude Include="qmix.h" />
     <ClInclude Include="qsound.h" />

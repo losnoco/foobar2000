@@ -232,12 +232,14 @@
     <ClCompile Include="foo_ea\mus.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="foo_oki\source\pversion.h" />
     <ClInclude Include="ima_adpcm.h" />
     <ClInclude Include="foo_rac\foofile.h" />
     <ClInclude Include="foo_rac\racloops.h" />
     <ClInclude Include="acm\acmstrm.h" />
     <ClInclude Include="foo_dsp\cube.h" />
     <ClInclude Include="foo_oki\reader_foo.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\libisofs\win32\libisofs.vcxproj">

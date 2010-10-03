@@ -122,6 +122,7 @@
     <ClCompile Include="vfs.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\emuconfig.h" />
     <ClInclude Include="bios.h" />
     <ClInclude Include="hebios-50na.h" />
     <ClInclude Include="iop.h" />

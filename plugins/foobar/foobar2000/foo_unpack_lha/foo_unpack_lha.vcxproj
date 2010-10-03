@@ -268,6 +268,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="unlha\LHARC.H" />
+    <ClInclude Include="unlha\lha_macro.h" />
     <ClInclude Include="unlha\SLIDEHUF.H" />
     <ClInclude Include="unlha\UNLHA32.H" />
   </ItemGroup>

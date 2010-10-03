@@ -218,6 +218,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\a52.h" />
+    <ClInclude Include="..\include\mm_accel.h" />
     <ClInclude Include="..\liba52\a52_internal.h" />
     <ClInclude Include="..\liba52\bitstream.h" />
     <ClInclude Include="..\liba52\tables.h" />

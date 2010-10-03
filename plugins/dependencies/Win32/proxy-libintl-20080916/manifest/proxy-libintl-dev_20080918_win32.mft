@@ -1,0 +1,8 @@
+include/libintl.h
+lib/libintl.a
+lib/intl.lib
+src/proxy-libintl/README.txt
+src/proxy-libintl/COPYING.LIB.txt
+src/proxy-libintl/Makefile
+src/proxy-libintl/libintl.c
+manifest/proxy-libintl-dev_20080918_win32.mft

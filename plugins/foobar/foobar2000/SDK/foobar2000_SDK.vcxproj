@@ -202,6 +202,7 @@
     <ClInclude Include="contextmenu_manager.h" />
     <ClInclude Include="core_api.h" />
     <ClInclude Include="coreversion.h" />
+    <ClInclude Include="decode_postprocessor.h" />
     <ClInclude Include="dsp.h" />
     <ClInclude Include="dsp_manager.h" />
     <ClInclude Include="event_logger.h" />

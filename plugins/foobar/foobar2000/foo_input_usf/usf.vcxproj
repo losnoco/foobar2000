@@ -361,6 +361,7 @@
     <ClInclude Include="registers.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="rsp.h" />
+    <ClInclude Include="rsp_x86.h" />
     <ClInclude Include="stdint.h" />
     <ClInclude Include="tlb.h" />
     <ClInclude Include="types.h" />

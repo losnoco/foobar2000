@@ -244,6 +244,7 @@
     <ClCompile Include="vis_spc.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="coleco.h" />
     <ClInclude Include="NSF_File.h" />
     <ClInclude Include="PlaylistDlg.h" />
     <ClInclude Include="monitor.h" />

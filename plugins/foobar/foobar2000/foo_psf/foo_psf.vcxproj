@@ -247,6 +247,8 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\psfemucore\psf2fs.h" />
+    <ClInclude Include="..\..\psfemucore\tag.h" />
     <ClInclude Include="circular_buffer.h" />
     <ClInclude Include="PSXFilter.h" />
     <ClInclude Include="resource.h" />

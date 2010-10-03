@@ -102,6 +102,7 @@
     <ClCompile Include="src\blit\Generator.cpp" />
     <ClCompile Include="src\blit\Stk.cpp" />
     <ClCompile Include="src\tva.cpp" />
+    <ClCompile Include="src\tvf.cpp" />
     <ClCompile Include="src\tvp.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -127,6 +128,7 @@
     <ClInclude Include="src\blit\Generator.h" />
     <ClInclude Include="src\blit\Stk.h" />
     <ClInclude Include="src\tva.h" />
+    <ClInclude Include="src\tvf.h" />
     <ClInclude Include="src\tvp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
