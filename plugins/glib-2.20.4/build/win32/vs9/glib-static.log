@@ -1,0 +1,179 @@
+﻿Build started 1/10/2010 8:25:05 PM.
+     1>Project "C:\programming\glib-2.20.4\build\win32\vs9\glib-static.vcxproj" on node 23 (rebuild target(s)).
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\Microsoft.CppClean.targets(73,5): warning : Access to the path 'C:\programming\foobar\foobar2000\Release\foo_psf!1.pgc' is denied.
+     1>_PrepareForBuild:
+         Creating "C:\programming\foobar\foobar2000\Release\glib.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       PreBuildEvent:
+         if exist ..\..\..\config.h goto GLIB_CONFIG
+         copy ..\..\..\config.h.win32 ..\..\..\config.h
+         :GLIB_CONFIG
+         if exist ..\..\..\glibconfig.h\ goto END
+         copy ..\..\..\glibconfig.h.win32 ..\..\..\glibconfig.h
+         :END
+         
+         :VCEnd
+                 1 file(s) copied.
+       CustomBuild:
+         Description: Generating glib.def
+         echo EXPORTS > "C:\programming\glib-2.20.4\glib\/glib.def" && cl /EP -DG_OS_WIN32 -DINCLUDE_INTERNAL_SYMBOLS -DALL_FILES -DG_GNUC_MALLOC= -DG_GNUC_CONST= -DG_GNUC_NULL_TERMINATED= -DG_GNUC_NORETURN= -DG_GNUC_PRINTF=;G_GNUC_PRINTF -DG_GNUC_FORMAT=;G_GNUC_FORMAT "C:\programming\glib-2.20.4\glib\glib.symbols" >> "C:\programming\glib-2.20.4\glib\/glib.def"
+         
+         :VCEnd
+         Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.21003.01 for 80x86
+         Copyright (C) Microsoft Corporation.  All rights reserved.
+         
+         glib.symbols
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I../../.. /I../../../glib /I"../../../../dependencies/Win32/proxy-libintl-20080916/include" /Zi /nologo /W3 /WX- /O2 /Oy- /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D GLIB_COMPILATION /D DLL_EXPORT /D HAVE_CONFIG_H /D "G_LOG_DOMAIN=\"Glib\"" /D G_DISABLE_DEPRECATED /D PCRE_STATIC /D LINK_SIZE=2 /D MAX_NAME_SIZE=32 /D MAX_NAME_COUNT=10000 /D "NEWLINE=-1" /D POSIX_MALLOC_THRESHOLD=10 /D MATCH_LIMIT=10000000 /D MATCH_LIMIT_RECURSION=10000000 /D _MBCS /Gm- /EHsc /MT /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"C:\programming\foobar\foobar2000\Release\\" /Fd"C:\programming\foobar\foobar2000\Release\vc100.pdb" /Gd /TC /FImsvc_recommended_pragmas.h /analyze- /errorReport:prompt ..\..\..\glib\garray.c ..\..\..\glib\gasyncqueue.c ..\..\..\glib\gatomic.c ..\..\..\glib\gbacktrace.c ..\..\..\glib\gbase64.c ..\..\..\glib\gbookmarkfile.c ..\..\..\glib\gcache.c ..\..\..\glib\gchecksum.c ..\..\..\glib\gcompletion.c ..\..\..\glib\gconvert.c ..\..\..\glib\gdataset.c ..\..\..\glib\gdate.c ..\..\..\glib\gdir.c ..\..\..\glib\gerror.c ..\..\..\glib\gfileutils.c ..\..\..\glib\ghash.c ..\..\..\glib\ghook.c ..\..\..\glib\giochannel.c ..\..\..\glib\giowin32.c ..\..\..\glib\gkeyfile.c ..\..\..\glib\glist.c ..\..\..\glib\gmain.c ..\..\..\glib\gmappedfile.c ..\..\..\glib\gmarkup.c ..\..\..\glib\gmem.c ..\..\..\glib\gmessages.c ..\..\..\glib\gnode.c ..\..\..\glib\goption.c ..\..\..\glib\gpattern.c ..\..\..\glib\gpoll.c ..\..\..\glib\gprimes.c ..\..\..\glib\gprintf.c ..\..\..\glib\gqsort.c ..\..\..\glib\gqueue.c ..\..\..\glib\grand.c ..\..\..\glib\gregex.c ..\..\..\glib\grel.c ..\..\..\glib\gscanner.c ..\..\..\glib\gsequence.c ..\..\..\glib\gshell.c ..\..\..\glib\gslice.c ..\..\..\glib\gslist.c "..\..\..\glib\gspawn-win32.c" ..\..\..\glib\gstdio.c ..\..\..\glib\gstrfuncs.c ..\..\..\glib\gstring.c ..\..\..\glib\gtestutils.c ..\..\..\glib\gthread.c ..\..\..\glib\gthreadpool.c ..\..\..\glib\gtimer.c ..\..\..\glib\gtree.c ..\..\..\glib\gunibreak.c ..\..\..\glib\gunicollate.c ..\..\..\glib\gunidecomp.c ..\..\..\glib\guniprop.c ..\..\..\glib\gurifuncs.c ..\..\..\glib\gutf8.c ..\..\..\glib\gutils.c ..\..\..\glib\gwin32.c ..\..\..\glib\gnulib\asnprintf.c "..\..\..\glib\gnulib\printf-args.c" "..\..\..\glib\gnulib\printf-parse.c" ..\..\..\glib\gnulib\printf.c ..\..\..\glib\gnulib\vasnprintf.c ..\..\..\glib\pcre\pcre_chartables.c ..\..\..\glib\pcre\pcre_compile.c ..\..\..\glib\pcre\pcre_config.c ..\..\..\glib\pcre\pcre_dfa_exec.c ..\..\..\glib\pcre\pcre_exec.c ..\..\..\glib\pcre\pcre_fullinfo.c ..\..\..\glib\pcre\pcre_get.c ..\..\..\glib\pcre\pcre_globals.c ..\..\..\glib\pcre\pcre_info.c ..\..\..\glib\pcre\pcre_maketables.c ..\..\..\glib\pcre\pcre_newline.c ..\..\..\glib\pcre\pcre_ord2utf8.c ..\..\..\glib\pcre\pcre_refcount.c ..\..\..\glib\pcre\pcre_study.c ..\..\..\glib\pcre\pcre_tables.c ..\..\..\glib\pcre\pcre_try_flipped.c ..\..\..\glib\pcre\pcre_ucp_searchfuncs.c ..\..\..\glib\pcre\pcre_valid_utf8.c ..\..\..\glib\pcre\pcre_version.c ..\..\..\glib\pcre\pcre_xclass.c
+         garray.c
+     1>..\..\..\glib\garray.c(429): warning C4018: '>' : signed/unsigned mismatch
+     1>..\..\..\glib\garray.c(442): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\glib\garray.c(445): warning C4018: '<' : signed/unsigned mismatch
+         gasyncqueue.c
+         gatomic.c
+         gbacktrace.c
+         gbase64.c
+         gbookmarkfile.c
+         gcache.c
+         gchecksum.c
+     1>..\..\..\glib\gchecksum.c(142): warning C4018: '<' : signed/unsigned mismatch
+         gcompletion.c
+         gconvert.c
+     1>..\..\..\glib\gconvert.c(1027): warning C4018: '<' : signed/unsigned mismatch
+         gdataset.c
+         gdate.c
+     1>..\..\..\glib\gdate.c(1770): warning C4018: '<=' : signed/unsigned mismatch
+         gdir.c
+         gerror.c
+         gfileutils.c
+     1>..\..\..\glib\gfileutils.c(928): warning C4018: '<' : signed/unsigned mismatch
+         ghash.c
+         ghook.c
+         giochannel.c
+     1>..\..\..\glib\giochannel.c(2130): warning C4018: '<' : signed/unsigned mismatch
+         giowin32.c
+         gkeyfile.c
+         Compiling...
+         glist.c
+         gmain.c
+     1>..\..\..\glib\gmain.c(2110): warning C4018: '<' : signed/unsigned mismatch
+         gmappedfile.c
+         gmarkup.c
+         gmem.c
+         gmessages.c
+         gnode.c
+         goption.c
+         gpattern.c
+         gpoll.c
+     1>..\..\..\glib\gpoll.c(241): warning C4018: '<' : signed/unsigned mismatch
+         gprimes.c
+     1>..\..\..\glib\gprimes.c(82): warning C4018: '<' : signed/unsigned mismatch
+         gprintf.c
+         gqsort.c
+     1>..\..\..\glib\gqsort.c(238): warning C4005: 'min' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\stdlib.h(852) : see previous definition of 'min'
+         gqueue.c
+     1>..\..\..\glib\gqueue.c(320): warning C4018: '>=' : signed/unsigned mismatch
+     1>..\..\..\glib\gqueue.c(425): warning C4018: '>=' : signed/unsigned mismatch
+     1>..\..\..\glib\gqueue.c(711): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\glib\gqueue.c(717): warning C4018: '<' : signed/unsigned mismatch
+         grand.c
+     1>..\..\..\glib\grand.c(339): warning C4018: '>=' : signed/unsigned mismatch
+         gregex.c
+         grel.c
+         gscanner.c
+         gsequence.c
+         gshell.c
+         Compiling...
+         gslice.c
+     1>..\..\..\glib\gslice.c(579): warning C4146: unary minus operator applied to unsigned type, result still unsigned
+         gslist.c
+         gspawn-win32.c
+         gstdio.c
+         gstrfuncs.c
+     1>..\..\..\glib\gstrfuncs.c(852): warning C4146: unary minus operator applied to unsigned type, result still unsigned
+     1>..\..\..\glib\gstrfuncs.c(2759): warning C4018: '<' : signed/unsigned mismatch
+         gstring.c
+     1>..\..\..\glib\gstring.c(658): warning C4018: '<=' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(674): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(678): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(680): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(685): warning C4018: '>' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(697): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(986): warning C4018: '<=' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(1013): warning C4018: '<=' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(1016): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(1088): warning C4018: '<=' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(1091): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(1200): warning C4018: '<=' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(1206): warning C4018: '<=' : signed/unsigned mismatch
+     1>..\..\..\glib\gstring.c(1208): warning C4018: '<' : signed/unsigned mismatch
+         gtestutils.c
+     1>..\..\..\glib\gtestutils.c(1169): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\glib\gtestutils.c(1236): warning C4018: '<' : signed/unsigned mismatch
+     1>..\..\..\glib\gtestutils.c(1496): warning C4018: '<' : signed/unsigned mismatch
+         gthread.c
+     1>..\..\..\glib\gthread.c(96): warning C4113: 'GMutex *(__cdecl *)()' differs in parameter lists from 'GMutex *(__cdecl *)(void)'
+     1>..\..\..\glib\gthread.c(101): warning C4113: 'GCond *(__cdecl *)()' differs in parameter lists from 'GCond *(__cdecl *)(void)'
+         gthreadpool.c
+     1>..\..\..\glib\gthreadpool.c(105): warning C4018: '>=' : signed/unsigned mismatch
+     1>..\..\..\glib\gthreadpool.c(749): warning C4018: '<' : signed/unsigned mismatch
+         gtimer.c
+         gtree.c
+         gunibreak.c
+         gunicollate.c
+         gunidecomp.c
+         guniprop.c
+         gurifuncs.c
+         gutf8.c
+     1>..\..\..\glib\gutf8.c(430): warning C4090: 'function' : different 'const' qualifiers
+     1>..\..\..\glib\gutf8.c(434): warning C4090: 'function' : different 'const' qualifiers
+     1>..\..\..\glib\gutf8.c(737): warning C4018: '>' : signed/unsigned mismatch
+     1>..\..\..\glib\gutf8.c(739): warning C4018: '<' : signed/unsigned mismatch
+         gutils.c
+         gwin32.c
+         asnprintf.c
+         Compiling...
+         printf-args.c
+         printf-parse.c
+         printf.c
+         vasnprintf.c
+     1>..\..\..\glib\gnulib\vasnprintf.c(1023): warning C4018: '>=' : signed/unsigned mismatch
+     1>..\..\..\glib\gnulib\vasnprintf.c(1030): warning C4018: '>=' : signed/unsigned mismatch
+         pcre_chartables.c
+         pcre_compile.c
+         pcre_config.c
+         pcre_dfa_exec.c
+         pcre_exec.c
+         pcre_fullinfo.c
+         pcre_get.c
+         pcre_globals.c
+         pcre_info.c
+         pcre_maketables.c
+         pcre_newline.c
+         pcre_ord2utf8.c
+         pcre_refcount.c
+         pcre_study.c
+         pcre_tables.c
+         pcre_try_flipped.c
+         Compiling...
+         pcre_ucp_searchfuncs.c
+     1>..\..\..\glib\pcre\pcre_ucp_searchfuncs.c(66): warning C4028: formal parameter 1 different from declaration
+         pcre_valid_utf8.c
+         pcre_version.c
+         pcre_xclass.c
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I../../.. /I../../../glib /I"../../../../dependencies/Win32/proxy-libintl-20080916/include" /Zi /nologo /W3 /WX- /O2 /Oy- /GL /D LIBDIR=/irrelevant/lib /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D GLIB_COMPILATION /D DLL_EXPORT /D HAVE_CONFIG_H /D "G_LOG_DOMAIN=\"Glib\"" /D G_DISABLE_DEPRECATED /D PCRE_STATIC /D LINK_SIZE=2 /D MAX_NAME_SIZE=32 /D MAX_NAME_COUNT=10000 /D "NEWLINE=-1" /D POSIX_MALLOC_THRESHOLD=10 /D MATCH_LIMIT=10000000 /D MATCH_LIMIT_RECURSION=10000000 /D _MBCS /Gm- /EHsc /MT /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"C:\programming\foobar\foobar2000\Release\\" /Fd"C:\programming\foobar\foobar2000\Release\vc100.pdb" /Gd /TC /FImsvc_recommended_pragmas.h /analyze- /errorReport:prompt ..\..\..\glib\libcharset\localcharset.c
+         localcharset.c
+       ResourceCompile:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /l"0x0409" /nologo /fo"C:\programming\foobar\foobar2000\Release\glib.res" ..\..\..\glib\glib.rc 
+       Lib:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"C:\programming\foobar\foobar2000\Release\glib.lib" intl.lib Ws2_32.lib /LIBPATH:"../../../../dependencies/Win32/proxy-libintl-20080916/lib" /NOLOGO /LTCG C:\programming\foobar\foobar2000\Release\glib.res C:\programming\foobar\foobar2000\Release\garray.obj C:\programming\foobar\foobar2000\Release\gasyncqueue.obj C:\programming\foobar\foobar2000\Release\gatomic.obj C:\programming\foobar\foobar2000\Release\gbacktrace.obj C:\programming\foobar\foobar2000\Release\gbase64.obj C:\programming\foobar\foobar2000\Release\gbookmarkfile.obj C:\programming\foobar\foobar2000\Release\gcache.obj C:\programming\foobar\foobar2000\Release\gchecksum.obj C:\programming\foobar\foobar2000\Release\gcompletion.obj C:\programming\foobar\foobar2000\Release\gconvert.obj C:\programming\foobar\foobar2000\Release\gdataset.obj C:\programming\foobar\foobar2000\Release\gdate.obj C:\programming\foobar\foobar2000\Release\gdir.obj C:\programming\foobar\foobar2000\Release\gerror.obj C:\programming\foobar\foobar2000\Release\gfileutils.obj C:\programming\foobar\foobar2000\Release\ghash.obj C:\programming\foobar\foobar2000\Release\ghook.obj C:\programming\foobar\foobar2000\Release\giochannel.obj C:\programming\foobar\foobar2000\Release\giowin32.obj C:\programming\foobar\foobar2000\Release\gkeyfile.obj C:\programming\foobar\foobar2000\Release\glist.obj C:\programming\foobar\foobar2000\Release\gmain.obj C:\programming\foobar\foobar2000\Release\gmappedfile.obj C:\programming\foobar\foobar2000\Release\gmarkup.obj C:\programming\foobar\foobar2000\Release\gmem.obj C:\programming\foobar\foobar2000\Release\gmessages.obj C:\programming\foobar\foobar2000\Release\gnode.obj C:\programming\foobar\foobar2000\Release\goption.obj C:\programming\foobar\foobar2000\Release\gpattern.obj C:\programming\foobar\foobar2000\Release\gpoll.obj C:\programming\foobar\foobar2000\Release\gprimes.obj C:\programming\foobar\foobar2000\Release\gprintf.obj C:\programming\foobar\foobar2000\Release\gqsort.obj C:\programming\foobar\foobar2000\Release\gqueue.obj C:\programming\foobar\foobar2000\Release\grand.obj C:\programming\foobar\foobar2000\Release\gregex.obj C:\programming\foobar\foobar2000\Release\grel.obj C:\programming\foobar\foobar2000\Release\gscanner.obj C:\programming\foobar\foobar2000\Release\gsequence.obj C:\programming\foobar\foobar2000\Release\gshell.obj C:\programming\foobar\foobar2000\Release\gslice.obj C:\programming\foobar\foobar2000\Release\gslist.obj "C:\programming\foobar\foobar2000\Release\gspawn-win32.obj" C:\programming\foobar\foobar2000\Release\gstdio.obj C:\programming\foobar\foobar2000\Release\gstrfuncs.obj C:\programming\foobar\foobar2000\Release\gstring.obj C:\programming\foobar\foobar2000\Release\gtestutils.obj C:\programming\foobar\foobar2000\Release\gthread.obj C:\programming\foobar\foobar2000\Release\gthreadpool.obj C:\programming\foobar\foobar2000\Release\gtimer.obj C:\programming\foobar\foobar2000\Release\gtree.obj C:\programming\foobar\foobar2000\Release\gunibreak.obj C:\programming\foobar\foobar2000\Release\gunicollate.obj C:\programming\foobar\foobar2000\Release\gunidecomp.obj C:\programming\foobar\foobar2000\Release\guniprop.obj C:\programming\foobar\foobar2000\Release\gurifuncs.obj C:\programming\foobar\foobar2000\Release\gutf8.obj C:\programming\foobar\foobar2000\Release\gutils.obj C:\programming\foobar\foobar2000\Release\gwin32.obj C:\programming\foobar\foobar2000\Release\localcharset.obj C:\programming\foobar\foobar2000\Release\asnprintf.obj "C:\programming\foobar\foobar2000\Release\printf-args.obj" "C:\programming\foobar\foobar2000\Release\printf-parse.obj" C:\programming\foobar\foobar2000\Release\printf.obj C:\programming\foobar\foobar2000\Release\vasnprintf.obj C:\programming\foobar\foobar2000\Release\pcre_chartables.obj C:\programming\foobar\foobar2000\Release\pcre_compile.obj C:\programming\foobar\foobar2000\Release\pcre_config.obj C:\programming\foobar\foobar2000\Release\pcre_dfa_exec.obj C:\programming\foobar\foobar2000\Release\pcre_exec.obj C:\programming\foobar\foobar2000\Release\pcre_fullinfo.obj C:\programming\foobar\foobar2000\Release\pcre_get.obj C:\programming\foobar\foobar2000\Release\pcre_globals.obj C:\programming\foobar\foobar2000\Release\pcre_info.obj C:\programming\foobar\foobar2000\Release\pcre_maketables.obj C:\programming\foobar\foobar2000\Release\pcre_newline.obj C:\programming\foobar\foobar2000\Release\pcre_ord2utf8.obj C:\programming\foobar\foobar2000\Release\pcre_refcount.obj C:\programming\foobar\foobar2000\Release\pcre_study.obj C:\programming\foobar\foobar2000\Release\pcre_tables.obj C:\programming\foobar\foobar2000\Release\pcre_try_flipped.obj C:\programming\foobar\foobar2000\Release\pcre_ucp_searchfuncs.obj C:\programming\foobar\foobar2000\Release\pcre_valid_utf8.obj C:\programming\foobar\foobar2000\Release\pcre_version.obj C:\programming\foobar\foobar2000\Release\pcre_xclass.obj
+     1>LINK : warning LNK4068: /MACHINE not specified; defaulting to X86
+         glib-static.vcxproj -> C:\programming\foobar\foobar2000\Release\glib.lib
+       _AfterBuild:
+         Deleting file "C:\programming\foobar\foobar2000\Release\glib.unsuccessfulbuild".
+         Touching "C:\programming\foobar\foobar2000\Release\glib.lastbuildstate".
+     1>Done Building Project "C:\programming\glib-2.20.4\build\win32\vs9\glib-static.vcxproj" (rebuild target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:15.53
