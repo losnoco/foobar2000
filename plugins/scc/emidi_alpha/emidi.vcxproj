@@ -133,6 +133,7 @@
     <ClCompile Include="device\emu2413.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="device\2413tone.h" />
     <ClInclude Include="SccInst.h" />
     <ClInclude Include="SccWave.h" />
     <ClInclude Include="CEnvelope.hpp" />
@@ -150,6 +151,7 @@
     <ClInclude Include="device\emutypes.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="device\2413tone.ill" />
     <None Include="readme.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
