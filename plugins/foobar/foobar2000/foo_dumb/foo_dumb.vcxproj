@@ -261,6 +261,8 @@
   <ItemGroup>
     <ClInclude Include="monitor.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="umr.h" />
+    <ClInclude Include="urf.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\dumb\dumb\vc6\dumb\dumb.vcxproj">
