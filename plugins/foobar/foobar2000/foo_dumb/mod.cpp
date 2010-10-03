@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.19"
+#define MYVERSION "0.9.9.20"
 
 /*
 	changelog
+
+2010-10-03 01:15 UTC - kode54
+- Added range checking for XM global volume command
+- Version is now 0.9.9.20
 
 2010-08-21 00:03 UTC - kode54
 - Fixed channel muting when switching or restarting songs, or when seeking
