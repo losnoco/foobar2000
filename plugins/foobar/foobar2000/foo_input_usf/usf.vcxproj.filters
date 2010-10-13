@@ -84,6 +84,9 @@
     <ClInclude Include="rsp_x86.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="rsp_recompiler_cpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="usf.rc">

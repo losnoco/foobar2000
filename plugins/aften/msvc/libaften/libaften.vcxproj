@@ -33,6 +33,7 @@
     <ClCompile Include="..\..\libaften\x86\window_sse.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\bswap.h" />
     <ClInclude Include="..\..\common.h" />
     <ClInclude Include="..\..\libaften\a52.h" />
     <ClInclude Include="..\..\libaften\a52dec.h" />
