@@ -281,11 +281,14 @@ VGMSTREAM * init_vgmstream_musx_v010(STREAMFILE *streamFile) {
 
     /* check header */
     if (read_32bitBE(0x00,streamFile) != 0x4D555358) /* "MUSX" */
-		goto fail;
-	if (read_32bitBE(0x08,streamFile) != 0x0A000000) /* "0x0A000000" */
-		goto fail;
+		  goto fail;
+    if (read_32bitBE(0x800,streamFile) == 0x53424E4B) /* "SBNK", */ // SoundBank, refuse
+		  goto fail;
+	  if (read_32bitBE(0x08,streamFile) != 0x0A000000) /* "0x0A000000" */
+		  goto fail;
 
-	loop_flag = (read_32bitLE(0x34,streamFile)!=0x00000000);
+	loop_flag = ((read_32bitLE(0x34,streamFile)!=0x00000000) &&
+							(read_32bitLE(0x34,streamFile)!=0xABABABAB));
     channel_count = 2;
     
 	musx_type=(read_32bitBE(0x10,streamFile));
@@ -315,6 +318,21 @@ VGMSTREAM * init_vgmstream_musx_v010(STREAMFILE *streamFile) {
             vgmstream->num_samples = read_32bitLE(0x40,streamFile);
             vgmstream->layout_type = layout_interleave;
             vgmstream->interleave_block_size = 0x80;
+            vgmstream->meta_type = meta_MUSX_V010;
+            if (loop_flag)
+            {
+                vgmstream->loop_start_sample = read_32bitLE(0x44,streamFile);
+                vgmstream->loop_end_sample = read_32bitLE(0x40,streamFile);
+            }
+            break;
+        case 0x5053335F: /* PS3_ */
+            start_offset = 0x800;
+            vgmstream->channels = channel_count;
+            vgmstream->sample_rate = 32000;
+            vgmstream->coding_type = coding_DAT4_IMA;
+            vgmstream->num_samples = (get_streamfile_size(streamFile)-0x800)/2/(0x20)*((0x20-4)*2);
+            vgmstream->layout_type = layout_interleave;
+            vgmstream->interleave_block_size = 0x20;
             vgmstream->meta_type = meta_MUSX_V010;
             if (loop_flag)
             {

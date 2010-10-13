@@ -42,11 +42,9 @@ class input_vgmstream {
 		char filename[260];
 		t_input_open_reason currentreason;
 		VGMSTREAM * vgmstream;
-		HANDLE decode_thread_handle;
 
 		bool decoding;
 		int paused;
-		int decode_abort;
 		int decode_pos_ms;
 		int decode_pos_samples;
 		int stream_length_samples;
@@ -56,7 +54,6 @@ class input_vgmstream {
 		double fade_seconds;
 		double fade_delay_seconds;
 		double loop_count;
-		int thread_priority;
 		bool loop_forever;
 		int ignore_loop;
 		int seek_pos_samples;
