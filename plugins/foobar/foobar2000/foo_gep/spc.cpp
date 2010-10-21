@@ -10,6 +10,8 @@
 
 #include "resource.h"
 
+extern volatile LONG vis_spc_windows_opened;
+
 //#undef HEADER_STRING
 //#define HEADER_STRING(i,n,f) if ((f)[0]) (i).meta_set((n), pfc::stringcvt::string_utf8_from_ansi((f), sizeof((f))))
 //#define HEADER_STRING(i,n,f) meta_add((i), (n), (f), sizeof(f))
@@ -812,7 +814,7 @@ public:
 
 	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta )
 	{
-		if ( emu && vis_info )
+		if ( emu && vis_info && vis_spc_windows_opened )
 		{
 			bool ret = false;
 

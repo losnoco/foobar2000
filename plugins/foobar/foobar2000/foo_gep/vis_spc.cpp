@@ -1,3 +1,5 @@
+#define _WIN32_WINNT 0x0501
+
 #include <foobar2000.h>
 #include "../ATLHelpers/ATLHelpers.h"
 #include <atlframe.h>
@@ -5,6 +7,8 @@
 #include <gme/Spc_Dsp.h>
 
 #include <math.h>
+
+volatile LONG vis_spc_windows_opened = 0;
 
 static const char spc_vis_field_registers[]="spc_dsp_registers";
 static const char spc_vis_field_env_modes[]="spc_dsp_env_modes";
@@ -230,6 +234,8 @@ public:
 protected:
 	int OnCreate(LPCREATESTRUCT)
 	{
+		InterlockedIncrement( &vis_spc_windows_opened );
+
 		SetWindowText( _T("SPC700 status") );
 
 		m_hDC=GetDC();
@@ -277,6 +283,8 @@ protected:
 
 	void OnDestroy()
 	{
+		InterlockedDecrement( &vis_spc_windows_opened );
+
 		m_bVisRunning = false;
 		m_bDrawAll = TRUE;
 		Render();

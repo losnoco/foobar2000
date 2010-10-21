@@ -1,7 +1,11 @@
-#define MYVERSION "1.102"
+#define MYVERSION "1.103"
 
 /*
 	change log
+
+2010-10-18 23:37 UTC - kode54
+- Implemented SPC visualizer reference counter so SPC input only emits data when a visualizer is opened
+- Version is now 1.103
 
 2010-04-22 07:03 UTC - kode54
 - Implemented native gzip reader for VGM input in case an appropriate unpacker service is not installed
@@ -221,6 +225,8 @@
 - Version is now 1.0
 
 */
+
+#define _WIN32_WINNT 0x0501
 
 #include "config.h"
 #include "../helpers/dropdown_helper.h"
