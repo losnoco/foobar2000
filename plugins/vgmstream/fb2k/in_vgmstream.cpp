@@ -126,6 +126,7 @@ void input_vgmstream::get_info(file_info & p_info,abort_callback & p_abort ) {
 
 void input_vgmstream::decode_initialize(unsigned p_flags,abort_callback & p_abort) {
 	if (p_flags & input_flag_no_looping) loop_forever = false;
+	decode_seek( 0, p_abort );
 };
 
 bool input_vgmstream::decode_run(audio_chunk & p_chunk,abort_callback & p_abort) {
@@ -508,8 +509,11 @@ void input_vgmstream::getfileinfo(char *filename, char *title, int *length_in_ms
 			*sample_rate = infostream->sample_rate;
 			*channels = infostream->channels;
 			*total_samples = infostream->num_samples;
-			*loop_start = infostream->loop_start_sample;
-			*loop_end = infostream->loop_end_sample;
+			if (infostream->loop_flag)
+			{
+				*loop_start = infostream->loop_start_sample;
+				*loop_end = infostream->loop_end_sample;
+			}
 
 			close_vgmstream(infostream);
 			infostream=NULL;
