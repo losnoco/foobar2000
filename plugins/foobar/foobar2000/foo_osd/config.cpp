@@ -1,6 +1,6 @@
 #include "config.h"
 
-const char default_format[] = "$rgb(0,255,0,0,0,0)[%artist% - ]$if(%title%,['['%album%[ #[%disc%/]$num(%tracknumber%,2)]'] ']%title%,%_filename%)[ '['%_time_elapsed%']']$if(%_ispaused%,' [paused]')\r\n[$char(10)$rgb(35,169,207,16,43,75)Next: %_next%]";
+const char default_format[] = "$rgb(0,255,0,0,0,0)[%artist% - ]$if(%title%,['['%album%[ #[%disc%/]$num(%tracknumber%,2)]'] ']%title%,%_filename%)[ '['%_time_elapsed%']']$if(%_ispaused%,' [paused]')"; // \r\n[$char(10)$rgb(35,169,207,16,43,75)Next: %_next%]";
 //const char default_format_next[] = "[%artist% - ]$if2(%title%,%_filename%)";
 
 inline static t_font_description get_def_font()

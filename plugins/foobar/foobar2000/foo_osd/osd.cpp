@@ -32,7 +32,7 @@
 
  */
 
-#define VERSION "1.62"
+#define VERSION "1.63"
 
 /*
 #define GDIPLUS
@@ -41,6 +41,11 @@
 
 /*
 	change log
+
+2010-10-23 19:39 UTC - kode54
+- Changed preferences dialog to not crash when started with no presets loaded
+- Removed next track formatting from default title formatting script
+- Version is now 1.63
 
 2010-09-27 20:26 UTC - kode54
 - Changed overlay to position itself relative to the entire virtual desktop instead

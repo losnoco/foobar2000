@@ -436,14 +436,24 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 	}
 	::SendMessage( w, CB_SETCURSEL, 0, 0 );
 
-	backup.set_count( names.get_size() );
+	backup.set_count( count );
 
 	for (n = 0; n < count; n++)
 	{
 		g_osd.get( n, backup [n] );
 	}
 	ctx.n_preset = 0;
-	ctx.preset = backup [0];
+
+	if ( count )
+	{
+		ctx.preset = backup [0];
+	}
+	else
+	{
+		ctx.preset.name = "Title auto-pop";
+		ctx.preset.flags = osd_pop | osd_play | osd_dynamic | osd_outline | osd_antialias | osd_fadeinout;
+		ctx.preset.y = 40;
+	}
 
 	on_count( names.get_size(), false );
 
