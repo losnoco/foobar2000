@@ -244,6 +244,7 @@
     <ClInclude Include="config_interface.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="overlay.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="osd.rc" />

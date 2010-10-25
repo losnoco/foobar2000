@@ -142,7 +142,8 @@ void CMyPreferences::on_modified()
 void CMyPreferences::load(const osd_config & c)
 {
 	CWindow hTab, w, w2;
-	
+	int i;
+
 	hTab = GetDlgItem( IDC_TAB );
 	
 	w = hTab.GetDlgItem( IDC_CONFIG1 );
@@ -178,7 +179,13 @@ void CMyPreferences::load(const osd_config & c)
 	
 	w.CheckRadioButton( IDC_PLEFT, IDC_PRIGHT, IDC_PLEFT + c.pos );
 	w.CheckRadioButton( IDC_ALEFT, IDC_ARIGHT, IDC_ALEFT + c.align );
-	
+
+	w.SetDlgItemInt( IDC_IDLE_TIME, c.idletime / 1000, FALSE );
+
+	i = 0;
+	if ( c.flags & osd_hide_until_idle ) i = 1;
+	else if ( c.flags & osd_show_until_idle ) i = 2;
+	w.CheckRadioButton( IDC_IDLE_DISABLED, IDC_IDLE_SHOW, IDC_IDLE_DISABLED + i );
 	
 	w = hTab.GetDlgItem( IDC_CONFIG2 );
 	w.SendDlgItemMessage( IDC_ALPHA, BM_SETCHECK, !!(c.flags & osd_alpha) );
@@ -254,6 +261,8 @@ void CMyPreferences::save(osd_config & c)
 #ifdef GDIPLUS
 	check_flag( c.flags, osd_antialias, w.SendDlgItemMessage( IDC_ANTIALIAS, BM_GETCHECK ) );
 #endif
+	check_flag( c.flags, osd_hide_until_idle, w.SendDlgItemMessage( IDC_IDLE_HIDE, BM_GETCHECK ) );
+	check_flag( c.flags, osd_show_until_idle, w.SendDlgItemMessage( IDC_IDLE_SHOW, BM_GETCHECK ) );
 	
 	n = w.GetDlgItemInt( IDC_TIME, NULL, FALSE );
 	if (n < 1) n = 1;
@@ -278,7 +287,11 @@ void CMyPreferences::save(osd_config & c)
 	else n = DT_RIGHT;
 	c.align = n;
 	
-	
+	n = w.GetDlgItemInt( IDC_IDLE_TIME, NULL, FALSE );
+	if ( n < 1 ) n = 1;
+	c.idletime = n * 1000;
+
+
 	w = hTab.GetDlgItem( IDC_CONFIG2 );
 	check_flag( c.flags, osd_alpha, w.SendDlgItemMessage( IDC_ALPHA, BM_GETCHECK ) );
 	check_flag( c.flags, osd_fadeinout, w.SendDlgItemMessage( IDC_FADEINOUT, BM_GETCHECK ) );
@@ -601,6 +614,9 @@ LRESULT CMyPreferences::OnNotify(int idCtrl, LPNMHDR pnmh)
 				case MAKEID(IDC_CONFIG1, IDC_ALEFT):
 				case MAKEID(IDC_CONFIG1, IDC_ACENTER):
 				case MAKEID(IDC_CONFIG1, IDC_ARIGHT):
+				case MAKEID(IDC_CONFIG1, IDC_IDLE_DISABLED):
+				case MAKEID(IDC_CONFIG1, IDC_IDLE_HIDE):
+				case MAKEID(IDC_CONFIG1, IDC_IDLE_SHOW):
 				case MAKEID(IDC_CONFIG2, IDC_ALPHA):
 				case MAKEID(IDC_CONFIG2, IDC_FADEINOUT):
 				case MAKEID(IDC_CONFIG2, IDC_DISSOLVE):
@@ -610,6 +626,7 @@ LRESULT CMyPreferences::OnNotify(int idCtrl, LPNMHDR pnmh)
 				case MAKEID(IDC_CONFIG1, IDC_TIME):
 				case MAKEID(IDC_CONFIG1, IDC_POSX):
 				case MAKEID(IDC_CONFIG1, IDC_POSY):
+				case MAKEID(IDC_CONFIG1, IDC_IDLE_TIME):
 				case MAKEID(IDC_CONFIG2, IDC_FADETIME):
 				case MAKEID(IDC_CONFIG2, IDC_DECAY):
 				case MAKEID(IDC_CONFIG3, IDC_FORMAT):

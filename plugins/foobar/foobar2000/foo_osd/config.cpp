@@ -37,6 +37,8 @@ osd_config::osd_config()
 		alphaback = 0;
 		fadetime = 200;
 		dissolve_decay = 50;
+
+		idletime = 5 * 60 * 1000;
 	}
 }
 
@@ -62,6 +64,8 @@ const osd_config & osd_config::operator =(const osd_config & in)
 	alphaback = in.alphaback;
 	fadetime = in.fadetime;
 	dissolve_decay = in.dissolve_decay;
+
+	idletime = in.idletime;
 
 	return *this;
 }

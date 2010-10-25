@@ -29,7 +29,7 @@ public:
 	bool DoInterval();
 
 private:
-	void Setup();
+	bool Setup();
 	void Setup2();
 	void Update();
 	void HideInternal();
@@ -65,6 +65,7 @@ private:
 	MODE			  m_mMode;
 
 	// volume
+	int               m_iLastPostedVol;
 	int				  m_iLastVol;
 	int				  m_iLastVolQ;
 

@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -80,6 +78,7 @@ BEGIN
     CONTROL         "Stream titles",IDC_POP_DYNAMIC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,117,35,57,8
     CONTROL         "Dynamic bitrate, etc.",IDC_POP_DYNAMIC_ALL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,208,35,82,8
     CONTROL         "Volume change",IDC_POP_VOLUME,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,48,66,8
+    CONTROL         "... and hide on stop",IDC_POP_STOP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,208,48,82,8
     GROUPBOX        "Style",IDC_STATIC,7,67,299,60
     CONTROL         "Display forever",IDC_PERMANENT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,79,71,8
     CONTROL         "Interval update",IDC_INTERVAL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,117,79,76,8
@@ -115,7 +114,12 @@ BEGIN
     CTEXT           "L",IDC_STATIC,265,159,9,8
     CTEXT           "C",IDC_STATIC,277,159,9,8
     CTEXT           "R",IDC_STATIC,290,159,9,8
-    CONTROL         "... and hide on stop",IDC_POP_STOP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,208,48,82,8
+    GROUPBOX        "On idle timeout:",IDC_STATIC,7,175,299,48
+    EDITTEXT        IDC_IDLE_TIME,66,173,40,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "seconds",IDC_STATIC,109,175,28,10
+    CONTROL         "Do nothing",IDC_IDLE_DISABLED,"Button",BS_AUTORADIOBUTTON,18,187,48,10
+    CONTROL         "Hide until idle, then display",IDC_IDLE_HIDE,"Button",BS_AUTORADIOBUTTON,18,198,99,10
+    CONTROL         "Display until idle, then hide",IDC_IDLE_SHOW,"Button",BS_AUTORADIOBUTTON,18,209,99,10
 END
 
 IDD_CONFIG2 DIALOGEX 0, 0, 313, 231
@@ -197,7 +201,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_CONFIG, DIALOG
     BEGIN
@@ -256,7 +260,7 @@ BEGIN
 END
 #endif    // APSTUDIO_INVOKED
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

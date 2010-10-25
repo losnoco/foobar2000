@@ -7,6 +7,9 @@ void g_callback_unregister();
 static const GUID guid_cfg_g_osd = 
 { 0xb575899f, 0xdb1c, 0x42c3, { 0x9b, 0xba, 0x7, 0x71, 0x59, 0x72, 0xac, 0x4a } };
 
+static const GUID guid_config_idletime = 
+{ 0xedbfc260, 0xe0d9, 0x4de3, { 0x82, 0xf6, 0xe0, 0x42, 0x92, 0x6e, 0x88, 0x80 } };
+
 cfg_osd_list g_osd(guid_cfg_g_osd);
 
 #if 0
@@ -149,6 +152,13 @@ void cfg_osd_list::get_data_raw(stream_writer * p_stream,abort_callback & p_abor
 		p_stream->write_lendian_t( c->fadetime, p_abort );
 		p_stream->write_lendian_t( c->dissolve_decay, p_abort );
 	}
+
+	p_stream->write_lendian_t( guid_config_idletime, p_abort );
+	for (i = 0; i < count && !p_abort.is_aborting(); i++)
+	{
+		const osd_config * c = val[ i ];
+		p_stream->write_lendian_t( c->idletime, p_abort );
+	}
 }
 
 void cfg_osd_list::set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abort_callback & p_abort)
@@ -200,6 +210,22 @@ void cfg_osd_list::set_data_raw(stream_reader * p_stream,unsigned p_sizehint,abo
 			//c->formatnext = formatnext;
 			val.add_item( c );
 			c = 0;
+		}
+
+		try
+		{
+			GUID guid;
+			p_stream->read_lendian_t( guid, p_abort );
+			if ( guid == guid_config_idletime )
+			{
+				for (i = 0; i < count; i++)
+				{
+					p_stream->read_lendian_t( val.get_item( i )->idletime, p_abort );
+				}
+			}
+		}
+		catch ( ... )
+		{
 		}
 	}
 	catch ( ... )

@@ -44,7 +44,6 @@
 #define IDC_ACENTER                     1034
 #define IDC_ARIGHT                      1035
 #define IDC_ALPHA                       1036
-#define IDC_POP_DYNAMIC_ALL2            1036
 #define IDC_POP_STOP                    1036
 #define IDC_ALPHATEXT                   1037
 #define IDC_ALPHABACK                   1038
@@ -71,6 +70,10 @@
 #define IDC_VMIN                        1059
 #define IDC_VMINSPIN                    1060
 #define IDC_EDIT                        1061
+#define IDC_IDLE_TIME                   1062
+#define IDC_IDLE_DISABLED               1063
+#define IDC_IDLE_HIDE                   1064
+#define IDC_IDLE_SHOW                   1065
 
 // Next default values for new objects
 // 

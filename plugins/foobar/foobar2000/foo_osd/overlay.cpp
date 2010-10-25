@@ -18,6 +18,7 @@ using namespace Gdiplus;
 
 #define IDT_DUE_TIME		1
 #define IDT_FADE_TIME		2
+#define IDT_IDLE_TIME		3
 
 #define swap_color(x) (((x) & 0xFF00) | (((x) & 0xFF) << 16) | (((x) & 0xFF0000) >> 16))
 
@@ -506,8 +507,8 @@ COsdWnd::~COsdWnd()
 void COsdWnd::Post(const char * msg, bool interval)
 {
 	m_bInterval = interval;
-	Setup();
 	m_strText = msg;
+	if (!Setup()) return;
 	Repaint();
 	Setup2();
 	Update();
@@ -516,7 +517,8 @@ void COsdWnd::Post(const char * msg, bool interval)
 void COsdWnd::PostVolume(int volume)
 {
 	m_bInterval = false;
-	Setup();
+	m_iLastPostedVol = volume;
+	if (!Setup()) return;
 	bool repainted = RepaintVolume(volume);
 	Setup2();
 	if (repainted) Update();
@@ -549,13 +551,34 @@ bool COsdWnd::DoInterval()
 	return m_bInterval;
 }
 
-void COsdWnd::Setup()
+bool COsdWnd::Setup()
 {
 	KillTimer(m_hWnd, IDT_DUE_TIME);
 	KillTimer(m_hWnd, IDT_FADE_TIME);
+	KillTimer(m_hWnd, IDT_IDLE_TIME);
+	const osd_config & p_config = m_state.get();
+	if ( p_config.flags & ( osd_show_until_idle | osd_hide_until_idle ) )
+	{
+		LASTINPUTINFO lii;
+		lii.cbSize = sizeof( lii );
+		lii.dwTime = 0;
+		if ( GetLastInputInfo( &lii ) )
+		{
+			lii.dwTime = GetTickCount() - lii.dwTime;
+			if ( p_config.flags & osd_show_until_idle )
+			{
+				if ( lii.dwTime >= p_config.idletime ) return false;
+				else SetTimer( m_hWnd, IDT_IDLE_TIME, 100, NULL );
+			}
+			else if ( p_config.flags & osd_hide_until_idle && lii.dwTime < p_config.idletime )
+			{
+				SetTimer( m_hWnd, IDT_IDLE_TIME, 100, NULL );
+				return false;
+			}
+		}
+	}
 	if (m_sState == HIDDEN || m_sState == FADING_OUT)
 	{
-		const osd_config & p_config = m_state.get();
 		if (p_config.flags & osd_fadeinout)
 		{
 			m_iFadeTo = (p_config.flags & osd_alpha) ? (p_config.alphalev << 8) : 65280;
@@ -575,6 +598,7 @@ void COsdWnd::Setup()
 		}
 	}
 	ShowWindow(m_hWnd, SW_SHOWNA);
+	return true;
 }
 
 void COsdWnd::Setup2()
@@ -634,6 +658,7 @@ LRESULT CALLBACK COsdWnd::WindowProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 	case WM_DESTROY:
 		KillTimer(wnd, IDT_DUE_TIME);
 		KillTimer(wnd, IDT_FADE_TIME);
+		KillTimer(wnd, IDT_IDLE_TIME);
 		break;
 
 	case WM_TIMER:
@@ -700,6 +725,37 @@ LRESULT CALLBACK COsdWnd::WindowProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 					}
 				}
 				if (update) Update();
+			}
+			break;
+		case IDT_IDLE_TIME:
+			{
+				const osd_config & p_config = m_state.get();
+				if ( p_config.flags & ( osd_hide_until_idle | osd_show_until_idle ) )
+				{
+					LASTINPUTINFO lii;
+					lii.cbSize = sizeof( lii );
+					lii.dwTime = 0;
+					if ( GetLastInputInfo( &lii ) )
+					{
+						lii.dwTime = GetTickCount() - lii.dwTime;
+						if ( lii.dwTime >= p_config.idletime )
+						{
+							if ( p_config.flags & osd_show_until_idle )
+							{
+								Hide();
+								KillTimer( wnd, IDT_IDLE_TIME );
+							}
+							else if ( p_config.flags & osd_hide_until_idle && m_sState != VISIBLE && m_sState != FADING_IN )
+							{
+								if ( m_mMode == TEXT )
+									Post( m_strText, m_bInterval );
+								else
+									PostVolume( m_iLastVol );
+								KillTimer( wnd, IDT_IDLE_TIME );
+							}
+						}
+					}
+				}
 			}
 			break;
 		}

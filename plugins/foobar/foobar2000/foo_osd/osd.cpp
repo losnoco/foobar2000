@@ -32,7 +32,7 @@
 
  */
 
-#define VERSION "1.63"
+#define VERSION "1.64"
 
 /*
 #define GDIPLUS
@@ -41,6 +41,10 @@
 
 /*
 	change log
+
+2010-10-25 04:48 UTC - kode54
+- Implemented idle timeout display control
+- Version is now 1.64
 
 2010-10-23 19:39 UTC - kode54
 - Changed preferences dialog to not crash when started with no presets loaded
