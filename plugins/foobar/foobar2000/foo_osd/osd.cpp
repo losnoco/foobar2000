@@ -32,7 +32,7 @@
 
  */
 
-#define VERSION "1.64"
+#define VERSION "1.67"
 
 /*
 #define GDIPLUS
@@ -41,6 +41,18 @@
 
 /*
 	change log
+
+2010-10-27 23:34 UTC - kode54
+- Fixed hide until idle constantly popping the overlay up
+- Version is now 1.67
+
+2010-10-26 22:44 UTC - kode54
+- Fixed hide until idle to stop idle timer when the overlay is manually or trigger hidden
+- Version is now 1.66
+
+2010-10-26 02:22 UTC - kode54
+- Fixed hide until idle to correctly hide visible overlays when the system is no longer idle
+- Version is now 1.65
 
 2010-10-25 04:48 UTC - kode54
 - Implemented idle timeout display control

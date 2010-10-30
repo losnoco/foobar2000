@@ -15,6 +15,12 @@ public:
 		FADING_OUT
 	};
 
+	enum IDLE_STATE {
+		DEFAULT,
+		IDLE,
+		ACTIVE
+	};
+
 	COsdWnd(osd_state & _state);
 	~COsdWnd();
 
@@ -22,7 +28,7 @@ public:
 	void Post(const char * msg, bool interval);
 	void PostVolume(int volume);
 	void Repost(const char * msg);
-	void Hide();
+	void Hide(bool stop_idle = true);
 
 	STATE GetState();
 
@@ -56,6 +62,8 @@ private:
 	dissolve         * m_dissolve;
 
 	STATE			   m_sState;
+
+	IDLE_STATE         m_iIdle;
 
 	enum MODE {
 		TEXT,

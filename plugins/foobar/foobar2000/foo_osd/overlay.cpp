@@ -477,6 +477,7 @@ bool COsdWnd::Initialize()
 	else
 	{
 		m_sState = HIDDEN;
+		m_iIdle = DEFAULT;
 		m_mMode = TEXT;
 		return true;
 	}
@@ -531,8 +532,9 @@ void COsdWnd::Repost(const char * msg)
 	Update();
 }
 
-void COsdWnd::Hide()
+void COsdWnd::Hide(bool stop_idle)
 {
+	if ( stop_idle ) KillTimer( m_hWnd, IDT_IDLE_TIME );
 	if (m_sState == FADING_IN || m_sState == VISIBLE)
 	{
 		KillTimer(m_hWnd, IDT_DUE_TIME);
@@ -564,17 +566,12 @@ bool COsdWnd::Setup()
 		lii.dwTime = 0;
 		if ( GetLastInputInfo( &lii ) )
 		{
+			SetTimer( m_hWnd, IDT_IDLE_TIME, 100, NULL );
 			lii.dwTime = GetTickCount() - lii.dwTime;
-			if ( p_config.flags & osd_show_until_idle )
-			{
-				if ( lii.dwTime >= p_config.idletime ) return false;
-				else SetTimer( m_hWnd, IDT_IDLE_TIME, 100, NULL );
-			}
-			else if ( p_config.flags & osd_hide_until_idle && lii.dwTime < p_config.idletime )
-			{
-				SetTimer( m_hWnd, IDT_IDLE_TIME, 100, NULL );
-				return false;
-			}
+			bool is_idle = lii.dwTime >= p_config.idletime;
+			bool is_hidden = ( p_config.flags & osd_show_until_idle ) ? is_idle : !is_idle;
+			m_iIdle = is_idle ? IDLE : ACTIVE;
+			if ( is_hidden ) return false;
 		}
 	}
 	if (m_sState == HIDDEN || m_sState == FADING_OUT)
@@ -738,20 +735,22 @@ LRESULT CALLBACK COsdWnd::WindowProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 					if ( GetLastInputInfo( &lii ) )
 					{
 						lii.dwTime = GetTickCount() - lii.dwTime;
-						if ( lii.dwTime >= p_config.idletime )
+						bool is_idle = lii.dwTime >= p_config.idletime;
+						bool state_changed = ( is_idle && m_iIdle != IDLE ) || ( !is_idle && m_iIdle != ACTIVE );
+						if ( state_changed )
 						{
-							if ( p_config.flags & osd_show_until_idle )
+							m_iIdle = is_idle ? IDLE : ACTIVE;
+							bool is_hiding = ( p_config.flags & osd_show_until_idle ) ? is_idle : !is_idle;
+							if ( is_hiding )
 							{
-								Hide();
-								KillTimer( wnd, IDT_IDLE_TIME );
+								Hide( false );
 							}
-							else if ( p_config.flags & osd_hide_until_idle && m_sState != VISIBLE && m_sState != FADING_IN )
+							else if ( m_sState != VISIBLE && m_sState != FADING_IN )
 							{
 								if ( m_mMode == TEXT )
 									Post( m_strText, m_bInterval );
 								else
 									PostVolume( m_iLastVol );
-								KillTimer( wnd, IDT_IDLE_TIME );
 							}
 						}
 					}
