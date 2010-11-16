@@ -28,7 +28,10 @@ class ISequentialInStream_File : public ISequentialInStream
   service_ptr_t<file> data;
   abort_callback & m_abort;
 public:
-  ISequentialInStream_File(service_ptr_t<file> const& Adata, abort_callback & p_abort) : data(Adata), m_abort(p_abort) { }
+  ISequentialInStream_File(const service_ptr_t<file> * Adata, abort_callback & p_abort) : m_abort(p_abort)
+  {
+	  if ( Adata ) data = *Adata;
+  }
   
   HRESULT Read( void *aData, UINT32 aSize, UINT32 *aProcessedSize )
   {
@@ -44,7 +47,10 @@ protected:
   abort_callback & m_abort;
   unsigned int total;
 public:
-  ISequentialOutStream_File(service_ptr_t<file> const& Adata, abort_callback & p_abort) : data(Adata), m_abort(p_abort), total(0) { }
+  ISequentialOutStream_File(const service_ptr_t<file> * Adata, abort_callback & p_abort) : m_abort(p_abort), total(0)
+  {
+	  if ( Adata ) data = *Adata;
+  }
 
   bool overflow_get() const { return(false); }
   unsigned int size_get() const { return(total); }
@@ -62,7 +68,7 @@ class ISequentialOutStreamCRC32_File : public ISequentialOutStream_File
 {
   unsigned int crc32, accept, skip, skipped;
 public:
-  ISequentialOutStreamCRC32_File( service_ptr_t<file> const& Adata, unsigned int Askip, unsigned int Aaccept, abort_callback & p_abort )
+  ISequentialOutStreamCRC32_File( const service_ptr_t<file> * Adata, unsigned int Askip, unsigned int Aaccept, abort_callback & p_abort )
     : crc32( 0 ), accept( Aaccept ), skip( Askip ), skipped( 0 ), ISequentialOutStream_File( Adata, p_abort ) { }
   
   unsigned int size_get() const { return(total + skipped); }
@@ -132,7 +138,7 @@ class ISequentialOutStream_FileSet : public ISequentialOutStream_File
 public:
   ISequentialOutStream_FileSet( archive * p_owner, const char * p_archive_path, std::vector< file_set > & p_set, archive_callback & p_out )
     : owner( p_owner ), archive_path( p_archive_path ), set( p_set ), m_out( p_out ), overflow( false ), 
-      crc32( 0 ), total_offset( 0 ), total_offset_ret( 0 ), ISequentialOutStream_File( data, p_out )
+      crc32( 0 ), total_offset( 0 ), total_offset_ret( 0 ), ISequentialOutStream_File( NULL, p_out )
   {
     it = set.begin();
     filesystem::g_open_tempmem( data, m_abort );
@@ -299,8 +305,8 @@ namespace JMA
       //Setup access methods for decompression
       filesystem::g_open_tempmem( decompressed_file_block, p_abort );
 
-      ISequentialInStream_File compressed_data( stream, p_abort );
-      ISequentialOutStream_File decompressed_data( decompressed_file_block, p_abort );
+      ISequentialInStream_File compressed_data( &stream, p_abort );
+      ISequentialOutStream_File decompressed_data( &decompressed_file_block, p_abort );
       
       //Decompress the data
       if ( ! decompress_lzma_7z( compressed_data, compressed_size, decompressed_data, file_block_size ) )
@@ -474,7 +480,7 @@ namespace JMA
 
     filesystem::g_open_tempmem( p_out, p_abort );
 
-    ISequentialInStream_File compressed_data( stream, p_abort );
+    ISequentialInStream_File compressed_data( &stream, p_abort );
 
     if ( chunk_size )
     {
@@ -483,7 +489,7 @@ namespace JMA
       chunk_seek( chunks_to_skip, p_abort );
 
       pfc::array_t<t_uint8> compressed_buffer;
-      ISequentialOutStreamCRC32_File decompressed_data( p_out, size_to_skip % chunk_size, file_size, p_abort );
+      ISequentialOutStreamCRC32_File decompressed_data( &p_out, size_to_skip % chunk_size, file_size, p_abort );
 
       while ( decompressed_data.size_get_real() < file_size )
       {
@@ -517,7 +523,7 @@ namespace JMA
 
       stream->read_bendian_t( compressed_size, p_abort );
 
-      ISequentialOutStreamCRC32_File decompressed_data( p_out, size_to_skip, file_size, p_abort );
+      ISequentialOutStreamCRC32_File decompressed_data( &p_out, size_to_skip, file_size, p_abort );
 
       if ( ! decompress_lzma_7z( compressed_data, compressed_size, decompressed_data, file_size + size_to_skip ) )
         throw exception_jma_decompress_failed();
@@ -596,7 +602,7 @@ namespace JMA
 
         stream->read_bendian_t( compressed_size, p_out );
 
-        ISequentialInStream_File compressed_data( stream, p_out );
+        ISequentialInStream_File compressed_data( &stream, p_out );
 
         if ( ! decompress_lzma_7z( compressed_data, compressed_size, decompressed_data, total_size ) )
           throw exception_jma_decompress_failed();

@@ -1,7 +1,11 @@
-#define MY_VERSION "1.3"
+#define MY_VERSION "1.4"
 
 /*
 	changelog
+
+2010-11-14 02:48 UTC - kode54
+- Fixed invalid pointer reference in *_FileSet class used by archive_list function
+- Version is now 1.4
 
 2010-01-14 01:45 UTC - kode54
 - Fixed componentversion about message declaration
