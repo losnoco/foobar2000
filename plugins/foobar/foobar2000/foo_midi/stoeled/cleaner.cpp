@@ -197,6 +197,7 @@ void CCleaner::do_shit(UINT n)
 				t->pos+=2;
 				int _d;
 				t->pos+=DecodeDelta(t->data+t->pos,&_d,t->sz-t->pos);
+				if (_d < 0) return;
 				t->pos+=_d;
 			}
 		} else if (c0==0xF0)
@@ -250,6 +251,7 @@ bool CCleaner::do_emidi(UINT n)
 				t->pos+=2;
 				int _d;
 				t->pos+=DecodeDelta(t->data+t->pos,&_d,t->sz-t->pos);
+				if (_d < 0) return 0;
 				t->pos+=_d;
 			}
 		} else if (c0==0xF0)

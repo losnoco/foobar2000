@@ -197,6 +197,7 @@ int ReadSysex(const BYTE* src,int ml)
 	}
 	int d;
 	r=1+DecodeDelta(src+1,&d,ml-1);
+	if (d < 0) return 0;
 	r+=d;
 	return r;
 }
@@ -290,6 +291,7 @@ void CSysexMap::AddEvent(const BYTE* e,DWORD s,DWORD t)
 	data[d_pos]=0xF0;
 	int x;
 	int sp=DecodeDelta(e+1,&x,s-1);
+	if (x < 0) return;
 	memcpy(data+d_pos+1,e+1+sp,s-1-sp);
 	events[pos].pos=t;
 	events[pos].ofs=d_pos;
@@ -528,6 +530,7 @@ MIDI_EVENT* do_table(MIDI_file * mf,UINT prec,UINT * size,/*UINT* _lstart,UINT* 
 	{
 		int _d;
 		n+=DecodeDelta(track+n,&_d,ts-n);
+		if (_d < 0) return 0;
 		track_pos+=_d;
 	}
 
@@ -567,6 +570,7 @@ MIDI_EVENT* do_table(MIDI_file * mf,UINT prec,UINT * size,/*UINT* _lstart,UINT* 
 				}
 				int _d;
 				n+=DecodeDelta(track+n,&_d,ts-n);
+				if (_d < 0) return 0;
 				track_pos+=_d;
 			}
 			else if (smap_pos!=-1)
@@ -661,12 +665,14 @@ KAR_ENTRY * kmap_create(MIDI_file* mf,UINT prec,UINT * num,char** text)
 	{
 		int d;
 		track+=DecodeDelta(track,&d,track_end-track);
+		if (d < 0) return 0;
 		time+=d;
 		if (*track==0xFF)	//meta
 		{
 			BYTE type=track[1];
 			track+=2;
 			track+=DecodeDelta(track,&d,track_end-track);
+			if (d < 0) return 0;
 			char * ptr=(char*)track;
 			track+=d;
 			if ((type==0x5 || type==0x1) && d && *ptr!='@')	//lyrics
@@ -701,6 +707,7 @@ KAR_ENTRY * kmap_create(MIDI_file* mf,UINT prec,UINT * num,char** text)
 		{
 			track++;
 			track+=DecodeDelta(track,&d,track_end-track);
+			if (d < 0) return 0;
 			track+=d;
 		}
 		else if ((*track&0xF0)==0xF0)

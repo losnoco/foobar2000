@@ -73,6 +73,7 @@ UINT HMI_cvt::DoTrack(const BYTE* t,UINT *_bw,DWORD sz)
 		{
 			int _d;
 			pt+=DecodeDelta(t+pt,&_d,sz-pt);
+			if (_d < 0) return 0;
 			ct+=_d;
 		}
 		DoQueue(ct,tw,_run);
@@ -148,6 +149,7 @@ UINT HMI_cvt::DoTrack(const BYTE* t,UINT *_bw,DWORD sz)
 				BYTE b=t[pt-2];
 				int _t;
 				pt+=DecodeDelta(t+pt,&_t,sz-pt);
+				if (_t < 0) return 0;
 				q_add(c&0xF,b,_t+ct);
 			}
 		}

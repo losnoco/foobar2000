@@ -138,6 +138,7 @@ DWORD XMI_cvt::ProcessNote(const BYTE* e, DWORD sz)
 	DWORD l=3;
 	int _d;
 	l+=DecodeDelta(e+l,&_d, sz - l);
+	if (_d < 0) return 0;
 
 
 	if (e[2]) q_add(e[0]&0xF,e[1],cur_time+_d);
@@ -195,6 +196,7 @@ DWORD XMI_cvt::WriteEvent(const BYTE* e, DWORD sz)
 	{
 		int d;
 		UINT l = 1 + DecodeDelta(e+1,&d,sz - 1);
+		if (d < 0) return 0;
 		l+=d;
 		WriteBuf(e,l);
 		tr_sz+=l;
