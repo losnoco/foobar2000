@@ -141,6 +141,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_vgmstream", "..\.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext_libs", "..\..\vgmstream\ext_libs\ext_libs.vcxproj", "{10E6BFC6-1E5B-46E4-BA42-F04DFBD0ABFF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_upse", "foo_input_upse\foo_input_upse.vcxproj", "{A596288A-368D-4DFD-B24C-6B663028CB50}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
 		SccNumberOfProjects = 64
@@ -1131,6 +1133,18 @@ Global
 		{10E6BFC6-1E5B-46E4-BA42-F04DFBD0ABFF}.Template|Win32.ActiveCfg = Release|Win32
 		{10E6BFC6-1E5B-46E4-BA42-F04DFBD0ABFF}.Template|Win32.Build.0 = Release|Win32
 		{10E6BFC6-1E5B-46E4-BA42-F04DFBD0ABFF}.Template|x64.ActiveCfg = Release|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Debug|Win32.Build.0 = Debug|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Debug|x64.ActiveCfg = Debug|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Release staticlink|Win32.ActiveCfg = Release|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Release staticlink|Win32.Build.0 = Release|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Release staticlink|x64.ActiveCfg = Release|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Release|Win32.ActiveCfg = Release|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Release|Win32.Build.0 = Release|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Release|x64.ActiveCfg = Release|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Template|Win32.ActiveCfg = Release|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Template|Win32.Build.0 = Release|Win32
+		{A596288A-368D-4DFD-B24C-6B663028CB50}.Template|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
