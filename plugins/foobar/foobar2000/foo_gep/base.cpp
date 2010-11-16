@@ -289,6 +289,7 @@ void input_gep::decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		emu->start_track( subsong );
 		handle_warning();
+		if ( no_infinite ) emu->set_fade( tag_song_ms, tag_fade_ms );
 		played = 0;
 	}
 

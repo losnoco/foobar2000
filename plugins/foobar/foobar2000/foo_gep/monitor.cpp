@@ -132,6 +132,8 @@ class monitor_dialog
 				SetTimer( wnd, 0, 100, 0 );
 
 				cfg_placement.on_window_creation(wnd);
+
+				modeless_dialog_manager::g_add( wnd );
 			}
 			return 1;
 
@@ -148,6 +150,7 @@ class monitor_dialog
 
 		case WM_DESTROY:
 			{
+				modeless_dialog_manager::g_remove( wnd );
 				cfg_placement.on_window_destruction( wnd );
 				KillTimer( wnd, 0 );
 				uSetWindowLong( wnd, DWL_USER, 0 );

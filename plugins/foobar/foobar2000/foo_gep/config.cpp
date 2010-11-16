@@ -1,7 +1,19 @@
-#define MYVERSION "1.103"
+#define MYVERSION "1.106"
 
 /*
 	change log
+
+2010-11-10 08:34 UTC - kode54
+- Added GEP Control to modeless dialog manager properly, fixes tab navigation
+- Version is now 1.106
+
+2010-11-10 00:23 UTC - kode54
+- Fixed files playing forever after seeking backwards when they weren't supposed to
+- Version is now 1.105
+
+2010-11-03 00:24 UTC - kode54
+- Made minor change to YM2162 emulator that's not likely to have any audible effect
+- Version is now 1.104
 
 2010-10-18 23:37 UTC - kode54
 - Implemented SPC visualizer reference counter so SPC input only emits data when a visualizer is opened
