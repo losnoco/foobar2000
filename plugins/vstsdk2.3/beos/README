@@ -1,0 +1,37 @@
+#-------------------------------------------------------------------------
+# README  -  VST Plug-Ins SDK
+# version 2.0 extension
+# (c)1999 Steinberg Soft+Hardware GmbH
+#-------------------------------------------------------------------------
+
+
+  #-------------------------------------------------------------------------
+  1. Off-line documentation is available in the following locations:
+
+  vstsdk2/VST Plug-Ins SDK 2.0.pdf
+  vstsdk2/doc/index.html (for VSTGUI)
+
+  #-------------------------------------------------------------------------
+  2. This directory <beos> contains:
+  
+  <README> this file.
+
+  <resource> : directory which contains the bitmaps of the plugin.
+               The format of these bitmaps is BMP. You'll find the mwbres
+               source file that builds the resource file itself.
+
+  <library>  : directory which contains the static VST-GUI library: libvstgui.o
+
+  <vstplugins> : directory which will contain the plug-ins built.
+
+  <ADelayEditGUI.proj> : BeIDE project file for the ADelayEditGui plugin (with GUI).
+  <adelay.mak>         : BeIDE project file for the ADelay plugin.
+  <again.mak>          : BeIDE project file for the AGain plugin.
+  <vstxsynth.mak>      : BeIDE project file for the Vstxsynth plugin.
+
+
+  #-------------------------------------------------------------------------
+  3. To compile those examples, just open the project files with the BeIDE,
+     and select the command "Make".
+
+

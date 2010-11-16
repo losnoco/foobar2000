@@ -1,0 +1,24 @@
+#
+# (c)1999 Steinberg Soft+Hardware GmbH
+#
+
+SRCDIR = ../source
+VSTDIR = $(SRCDIR)/common
+RESOURCEDIR = resource
+MAKDIR = .
+
+#if defined(SHIPPING)
+TGTDIR = .
+#else
+TGTDIR = .
+#endif
+
+OPTS = -I$(VSTDIR) -I$(RESOURCEDIR)
+
+include sgidef
+
+LOPTS = $(LDOPTS) -exported_symbol main -shared -no_unresolved -update_registry so_locations
+LIBS =  -Llibrary -lvstgui -lC -lm
+GUILIBS = -lX11 -lXt -lXm
+
+sinclude $(OBJDIR)/makedepend

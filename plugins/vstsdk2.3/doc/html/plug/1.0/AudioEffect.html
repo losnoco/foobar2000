@@ -1,0 +1,867 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+	<head>
+		<title>AudioEffect</title>
+		<base target="vstdoc">
+		<link href="../../../sdkdoc.css" type="text/css" rel="stylesheet">
+	</head>
+	<body>
+		<div>
+			<h2>AudioEffect</h2>
+			<div class="cpp"><pre>#include &lt;AudioEffect.hpp&gt;
+class AudioEffect;</pre></div>
+			<br>
+			<p>Needs to be defined by the audio effect and is called to create the audio effect 
+				object instance.</p>
+			<h2>Universal Basic Methods</h2>
+			<p>There is a basic set of methods that your plug should support (with *). These 
+				are all found in the&nbsp;AudioEffect class.</p>
+			<h2>
+				<table id="Table1" bordercolor="#000000" cellspacing="0" cellpadding="0" width="5%" border="1">
+					<tbody>
+						<tr>
+							<td valign="top">
+								<div align="center"><b>Version 1.0</b></div>
+							</td>
+						</tr>
+						<tr>
+							<td valign="top">
+								<ul>
+									<center><b>Host -&gt; Plug</b></center>
+								</ul>
+								<p dir="ltr" style="margin-right: 0px;">
+									<a href="AudioEffect.html#setParameter">setParameter</a> *
+									<br>
+									<a href="AudioEffect.html#getParameter">getParameter</a> *
+									<br>
+									<a href="AudioEffect.html#process">process</a> *
+									<br>
+									<a href="AudioEffect.html#processReplacing">processReplacing</a> *
+									<br>
+									<a href="AudioEffect.html#dispatcher">dispatcher</a>
+									<br>
+									<a href="AudioEffect.html#open">open</a>
+									<br>
+									<a href="AudioEffect.html#close">close</a>
+									<br>
+									<a href="AudioEffect.html#getProgram">getProgram</a> *
+									<br>
+									<a href="AudioEffect.html#setProgram">setProgram</a> *
+									<br>
+									<a href="AudioEffect.html#setProgramName">setProgramName</a> *
+									<br>
+									<a href="AudioEffect.html#getProgramName">getProgramName</a> *
+									<br>
+									<a href="AudioEffect.html#getParameterLabel">getParameterLabel</a> *
+									<br>
+									<a href="AudioEffect.html#getParameterDisplay">getParameterDisplay</a> *
+									<br>
+									<a href="AudioEffect.html#getParameterName">getParameterName</a> *
+									<br>
+									<a href="AudioEffect.html#getVu">getVu</a>
+									<br>
+									<a href="AudioEffect.html#getChunk">getChunk</a>
+									<br>
+									<a href="AudioEffect.html#setChunk">setChunk</a>
+									<br>
+									<a href="AudioEffect.html#setSampleRate">setSampleRate</a>
+									<br>
+									<a href="AudioEffect.html#setBlockSize">setBlockSize</a>
+									<br>
+									<a href="AudioEffect.html#suspend">suspend</a>
+									<br>
+									<a href="AudioEffect.html#resume">resume</a></p>
+								<hr noshade size="4">
+								<center><strong>Internal / Tools</strong>
+								</center>
+								<p dir="ltr" style="margin-right: 0px;">
+									<a href="AudioEffect.html#getAeffect">getAeffect</a>
+									<br>
+									<a href="AudioEffect.html#setEditor">setEditor</a>
+									<br>
+									<a href="AudioEffect.html#setUniqueID">setUniqueID</a>
+									<br>
+									<a href="AudioEffect.html#setNumInputs">setNumInputs</a>
+									<br>
+									<a href="AudioEffect.html#setNumOutputs">setNumOutputs</a>
+									<br>
+									<a href="AudioEffect.html#hasVu">hasVu</a>
+									<br>
+									<a href="AudioEffect.html#hasClip">hasClip</a>
+									<br>
+									<a href="AudioEffect.html#canMono">canMono</a>
+									<br>
+									<a href="AudioEffect.html#canProcessReplacing">canProcessReplacing</a>
+									<br>
+									<a href="AudioEffect.html#setRealtimeQualities">setRealtimeQualities</a>
+									<br>
+									<a href="AudioEffect.html#setOfflineQualities">setOfflineQualities</a>
+									<br>
+									<a href="AudioEffect.html#setInitialDelay">setInitialDelay</a>
+									<br>
+									<a href="AudioEffect.html#programsAreChunks">programsAreChunks</a>
+									<br>
+									<a href="AudioEffect.html#dB2string">dB2string</a>
+									<br>
+									<a href="AudioEffect.html#Hz2string">Hz2string</a>
+									<br>
+									<a href="AudioEffect.html#ms2string">ms2string</a>
+									<br>
+									<a href="AudioEffect.html#float2string">float2string</a>
+									<br>
+									<a href="AudioEffect.html#long2string">long2string</a></p>
+								<hr noshade size="4">
+								<center><b>Plug -&gt; Host</b></center>
+								<p dir="ltr" style="margin-right: 0px;">
+									<a href="AudioEffect.html#setParameterAutomated">setParameterAutomated</a>
+									<br>
+									<a href="AudioEffect.html#getSampleRate">getSampleRate</a>
+									<br>
+									<a href="AudioEffect.html#getBlockSize">getBlockSize</a>
+									<br>
+									<a href="AudioEffect.html#getMasterVersion">getMasterVersion</a>
+									<br>
+									<a href="AudioEffect.html#getCurrentUniqueId">getCurrentUniqueId</a>
+									<br>
+									<a href="AudioEffect.html#masterIdle">masterIdle</a>
+									<br>
+									<a href="AudioEffect.html#isInputConnected">isInputConnected</a>
+									<br>
+									<a href="AudioEffect.html#isOutputConnected">isOutputConnected</a></p>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<br>
+				<br>
+			</h2>
+			<strong></strong>
+			<hr noshade size="4">
+			<h2><a name="constructor">Constructor and Destructor</a></h2>
+			<hr noshade size="4">
+			<h4><a name="AudioEffect">AudioEffect</a></h4>
+			<div class="cpp">AudioEffect (audioMasterCallback audioMaster, long numPrograms, long numParams);</div>
+			<p>Create an <code>AudioEffect</code> object. The constructor of your class is 
+				passed a parameter of the type audioMasterCallback. The actual mechanism in 
+				which your class gets constructed is not important right now, but effectively 
+				your class is constructed by the hosting application, and the host passes an 
+				object of type audioMasterCallback that handles the interaction with the 
+				plug-in. You pass this on to the base class's constructor and then can forget 
+				about it.</p>
+			<p>A few flags, and identifiers must be set and you declare your class's input 
+				&amp; output requirements at construction time.</p>
+			<table border="1" cellspacing="0" cellpadding="4" bordercolor="lightgrey">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>audioMaster</code></th>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<th align="right">
+							<code>numPrograms</code></th>
+						<td>The number of programs.</td>
+					</tr>
+					<tr>
+						<th align="right">
+							<code>numParams</code></th>
+						<td>The number of parameters.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>MyPlug::MyPlug (audioMasterCallback audioMaster)<br>    : AudioEffectX (audioMaster, 1, 1)<br>    // 1 program, 1 parameter only<br>{<br>    myParameter = 1.0;<br>     // stereo in :<br>    setNumInputs (2);<br>    <br>    // stereo out :<br>    setNumOutputs (2);<br>    <br>    // identify<br>    // (you must change this for other plugs!) :<br>    setUniqueID ('MyPl');<br>    <br>    // makes sense to feed both inputs<br>    // with the same signal :<br>    canMono ();<br>    <br>    // supports both accumulating<br>    // and replacing output :<br>    canProcessReplacing ();<br>    <br>    // default program name :<br>    strcpy (programName, "Default");<br>}</pre>
+				<br>
+			</div>
+			<br>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#setNumInputs">setNumInputs</a></code>
+				</li>
+				<li>
+					<code><a href="#setNumOutputs">setNumOutputs</a></code>
+				</li>
+				<li>
+					<code><a href="#canMono">canMono</a></code>
+				</li>
+				<li>
+					<code><a href="#canProcessReplacing">canProcessReplacing</a></code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="dAudioEffect">~AudioEffect</a></h4>
+			<div class="cpp">virtual ~AudioEffect();</div>
+			<p>Destroy an <code>AudioEffect</code> object.</p>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>MyPlug::~MyPlug ()<br>{<br>    // nothing to do here<br>}</pre>
+			</div>
+			<hr noshade size="4">
+			<h2><a name="processes">Processes</a></h2>
+			<hr>
+			<h2><a name="processes">Processes</a></h2>
+			<p>Never call any Mac OS 9 functions (or other functions which call into the OS) 
+				inside your audio process function; this will crash the system when your plug 
+				is run in MP (multiprocessor) mode. if you must call into the OS, you must use <code>
+					<a href="http://developer.apple.com/technotes/tn/tn2028.html" target="_blank">MPRemoteCall</a>
+					()</code> (see Apples' documentation), or explicitly use functions which 
+				are documented by Apple to be MP safe.</p>
+			<p>On Mac OS X read the system header files to be sure that you only call thread 
+				safe functions.</p>
+			<hr noshade size="4">
+			<h4><a name="process">process</a></h4>
+			<div class="cpp">virtual void process (float **inputs, float **outputs, long sampleFrames);</div>
+			<p>Audio processing in the plug is accomplished by one of 2 methods, namely <code>process</code>, 
+				and <code>processReplacing</code>. The <code>process</code> method must be 
+				provided, while the second one is optional (but it is highly recommended to 
+				always implement both methods). While <code>process</code> takes input data, 
+				applies its pocessing algorithm, and then adds the result to the output 
+				(accumulating), <code>processReplacing</code> overwrites the output buffer. The 
+				host provides both input and output buffers for either process method.</p>
+			<p>The reasoning behind the accumulating version (process) is that it is much more 
+				efficient in the case where many processors operate on the same output 
+				(aux-send bus), while for simple chained connection schemes (inserts), the 
+				replacing method is more efficient.</p>
+			<p>The plug has to over-ride both these two possible member functions that actually 
+				do the work. These are repeatedly called by the host application, each time 
+				with a new block of data.
+				<br>
+				<br>
+				<table id="Table3" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+					<tbody>
+						<tr>
+							<th align="right">
+								<code>inputs</code></th>
+							<td>An array of pointers to the data.</td>
+						</tr>
+						<tr>
+							<th align="right">
+								<code>outputsuts</code></th>
+							<td>An array of pointers to where the datacan be written to.</td>
+						</tr>
+						<tr>
+							<th align="right">
+								<code>sampleFrames</code></th>
+							<td>How big the block is.</td>
+						</tr>
+					</tbody>
+				</table>
+			</p>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>void MyPlug::process (float **inputs, float **outputs, long sampleFrames)<br>{<br>    float *in1 = inputs[0];<br>    float *in2 = inputs[1];<br>    float *out1 = outputs[0];<br>    float *out2 = outputs[1];<br>    <br>    while (--sampleFrames &gt;= 0)<br>    {<br>        (*out1++) += (*in1++);<br>        (*out2++) += (*in2++);<br>    }<br>}</pre>
+				<br>
+			</div>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#processReplacing">processReplacing</a></code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="processReplacing">processReplacing</a></h4>
+			<div class="cpp">virtual void processReplacing (float **inputs, float **outputs, long sampleFrames);</div>
+			<p>Audio processing in the plug is accomplished by one of 2 methods, namely <code>process</code>, 
+				and <code>processReplacing</code>. The <code>process</code> method must be 
+				provided, while the second one is optional (but it is highly recommended to 
+				always implement both methods). While <code>process</code> takes input data, 
+				applies its pocessing algorithm, and then adds the result to the output 
+				(accumulating), <code>processReplacing</code> overwrites the output buffer. The 
+				host provides both input and output buffers for either process method.</p>
+			<p>The reasoning behind the accumulating version (<code>process</code>) is that it 
+				is much more efficient in the case where many processors operate on the same 
+				output (aux-send bus), while for simple chained connection schemes (inserts), 
+				the replacing method is more efficient.
+			</p>
+			<table id="Table4" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+					</tr>
+					<tr>
+						<th align="right">
+							<code>inputs</code></th>
+						<td>An array of pointers to the data.</td>
+					</tr>
+					<tr>
+					</tr>
+					<tr>
+						<th align="right">
+							<code>outputsuts</code></th>
+						<td>An array of pointers to where the datacan be written to.</td>
+					</tr>
+					<tr>
+						<th align="right">
+							<code>sampleFrames</code></th>
+						<td>How big the block is.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>void MyPlug::processReplacing (float **inputs, float **outputs, long sampleFrames)<br>{<br>	float *in1 = inputs[0];<br>	float *in2 = inputs[1];<br>	float *out1 = outputs[0]; <br>	float *out2 = outputs[1]; <br>	while (--sampleFrames &gt;= 0) <br>	{ <br>		(*out1++) = (*in1++); <br>		(*out2++) = (*in2++); <br>	} <br>}</pre>
+			</div>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#process">process</a></code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h2><a name="parameters">Parameters</a></h2>
+			<p>Parameters are the individual parameter settings the user can adjust. A VST host 
+				can automate these parameters.</p>
+			<hr noshade size="4">
+			<h4><a name="setParameter">setParameter</a></h4>
+			<div class="cpp">virtual void setParameter (long index, float value);</div>
+			<p>Set parameter <code>&lt;index&gt;</code> to <code>&lt;value&gt;</code>.</p>
+			<table id="Table5" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>index</code></th>
+						<td align="left">The index of the parameter.</td>
+					</tr>
+					<tr>
+						<th align="right">
+							<code>value</code></th>
+						<td align="left">A <code>float</code> between 0.0 and 1.0 inclusive.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Note :</h4>
+			<p>Parameter values, like all VST parameters, are declared as floats with an 
+				inclusive range of 0.0 to 1.0. How data is presented to the user is merely in 
+				the user-interface handling. This is a convention, but still worth regarding. 
+				Maybe the VST-host's automation system depends on this range.</p>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>void MyPlug::setParameter (long index, float value)<br>{<br>    switch (index)	{<br>        case kMyTag :<br>             myParameter = value;<br>            break;<br>        default :<br>            break;<br>    }<br>}</pre>
+			</div>
+			<hr noshade size="4">
+			<h4><a name="getParameter">getParameter</a></h4>
+			<div class="cpp">virtual float getParameter (long index);</div>
+			<table id="Table6" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>index</code></th>
+						<td align="left">The index to the parameter.</td>
+					</tr>
+					<tr>
+						<th align="right">
+							<code>return</code></th>
+						<td align="left">The value of the parameter. Should be a <code>float</code> between 
+							0.0 and 1.0 inclusive.</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>Return the value of parameter <code>&lt;index&gt;</code>.</p>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>float MyPlug::getParameter (long index)<br>{<br>    float value = 0.0;<br>	<br>    switch (index)<br>    {<br>        case kMyTag :<br>            value = myParameter;<br>            break;<br>        default :<br>            break;<br>    }<br>    return (value);<br>}</pre>
+			</div>
+			<hr noshade size="4">
+			<h4><a name="setParameterAutomated">setParameterAutomated</a></h4>
+			<div class="cpp">virtual void setParameterAutomated (long index, float value);</div>
+			<p>Called after a control has changed in the editor, as from <code>CControlListener</code>'s
+				<code>valueChanged</code> method.</p>
+			<table id="Table7" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>index</code></th>
+						<td align="left">The index of the parameter.</td>
+					</tr>
+					<tr>
+						<th align="right">
+							<code>value</code></th>
+						<td align="left">A <code>float</code> between 0.0 and 1.0 inclusive.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Note :</h4>
+			<p>An important thing to notice is that if the user changes a parameter in your 
+				editor (which is out of the host's control &ETH;because we are not using the 
+				default string based interface), you should call... <code>setParameterAutomated 
+					(index, (float) newValue);</code>. This ensures that the host is notified 
+				of the parameter change, which allows it to record these changes for 
+				automation.</p>
+			<p>Note that <code>setParameterAutomated</code> calls the plug's <code>setParameter</code>, 
+				and in the case of an <code>AEffGuiEditor</code>, the editor's <code>setparameter</code>
+				will also be called after <code>setParameterAutomated</code>.
+			</p>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>void MyPlugEdit::setParameter (long index, float value)<br>{<br>    MyPlug::setParameter (index, value);<br><br>    if (editor)<br>        (editor)-&gt;setParameter (index, value);<br>}</pre>
+			</div>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="AudioEffect.html#setParameter">AudioEffect::setParameter</a></code>
+				</li>
+				<li>
+					<code><a href="../gui/AEffGuiEditor.html#setparameter">AEffGuiEditor::setparameter</a></code>
+				</li>
+				<li>
+					<code><a href="../gui/CControlListener.html#valueChanged">CControlListener::valueChanged</a></code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="getParameterDisplay">getParameterDisplay</a></h4>
+			<div class="cpp">virtual void getParameterDisplay (long index, char *text);</div>
+			<p>Stuff <code>&lt;text&gt;</code> with a string representation ("0.5", "-3", 
+				"PLATE", etc...) of the value of parameter <code>&lt;index&gt;</code>.</p>
+			<table id="Table8" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>index</code></th>
+						<td align="left">The index of the parameter.</td>
+					</tr>
+					<tr>
+						<th align="right">
+							<code>text</code></th>
+						<td align="left">A string.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>void MyPlug::getParameterDisplay (long index, char *text)<br>{<br>    float2string (fMyParameter, text);<br>}</pre>
+			</div>
+			<hr noshade size="4">
+			<h4><a name="getParameterName">getParameterName</a></h4>
+			<div class="cpp">virtual void getParameterName (long index, char *text)</div>
+			<p>Stuff <code>&lt;text&gt;</code> with the name ("Time", "Gain", "RoomType", 
+				etc...) of parameter <code>&lt;index&gt;</code>.</p>
+			<table id="Table9" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>index</code></th>
+						<td>The index of the parameter</td>
+					</tr>
+					<tr>
+						<th align="right">
+							<code>text</code></th>
+						<td>A string up to <strong>8</strong> chars.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Example :</h4>
+			<div class="cpp"><pre>void MyPlug::getParameterName (long index, char *label)
+{
+	if (index == 0)
+		strcpy (label, "my name0");
+	else if (index == 1)
+		strcpy (label, "my name1");
+}</pre>	</div>
+			<hr noshade size="4">
+			<h4><a name="getParameterLabel">getParameterLabel</a></h4>
+			<div class="cpp">virtual void getParameterLabel(long index, char *label)</div>
+			<p>Stuff <code>&lt;label&gt;</code> with the units in which parameter <code>&lt;index&gt;</code>
+				is displayed (i.e. "sec", "dB", "type", etc...).</p>
+			<table id="Table10" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>index</code></th>
+						<td>The index of the parameter</td>
+					</tr>
+					<tr>
+						<th align="right">
+							<code>text</code></th>
+						<td>A string up to <strong>8</strong> chars.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>void MyPlug::getParameterLabel (long index, char *label)<br>{<br>	if (index == 0)<br>		strcpy (label, "my label0");<br>	else if (index == 1)<br>		strcpy (label, "my label1");<br>}</pre>
+			</div>
+			<hr noshade size="4">
+			<h2><a name="programs">Programs</a></h2>
+			<p>Programs are a complete set of parameters that refer to the current state of the 
+				plug-in. Banks are a collection of Program objects.</p>
+			<hr noshade size="4">
+			<h4><a name="getProgram">getProgram</a></h4>
+			<div class="cpp">virtual long getProgram ();</div>
+			<p>Return the index to the current program.</p>
+			<table id="Table11" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>return</code></th>
+						<td>The number of the current program.</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="setProgram">setProgram</a></h4>
+			<div class="cpp">virtual void setProgram (long program);</div>
+			<p>Set the current program to <code>&lt;program&gt;</code>.</p>
+			<table id="Table12" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>program</code></th>
+						<td>The number of the program.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Note :</h4>
+			<p>Don't forget to call this from the <a href="#AudioEffect">constructor</a>.</p>
+			<hr noshade size="4">
+			<h4><a name="setProgramName">setProgramName</a></h4>
+			<div class="cpp">virtual void setProgramName (char *name);</div>
+			<p>Stuff the name field of the current program with <code>&lt;name&gt;</code>. The 
+				program name is displayed in the rack, and can be edited by the user.</p>
+			<table id="Table13" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>name</code></th>
+						<td>A string up to <strong>24</strong> chars.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Note :</h4>
+			<p>Please be aware that the string lengths supported by the default VST interface 
+				are normally limited to <strong>24</strong> characters. If you copy too much 
+				data into the buffers provided, you will break the host application.</p>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>void MyPlug::setProgramName (char *name)<br>{<br>    strcpy (myProgramName, name);<br>}</pre>
+			</div>
+			<hr noshade size="4">
+			<h4><a name="getProgramName">getProgramName</a></h4>
+			<div class="cpp">virtual void getProgramName (char *name);</div>
+			<p>Stuff <code>name</code> with the name of the current program.</p>
+			<table id="Table14" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>name</code></th>
+						<td>A string at least <strong>24</strong> chars.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>void MyPlug::getProgramName (char *name)<br>{<br>    strcpy (name, programName);<br>}</pre>
+			</div>
+			<hr noshade size="4">
+			<h4><a name="dispatcher">dispatcher</a></h4>
+			<div class="cpp">
+				<pre>virtual long dispatcher (long opCode, long index, long value, void *ptr, float opt);</pre>
+			</div>
+			<hr noshade size="4">
+			<h4><a name="open">open</a></h4>
+			<div class="cpp">virtual void open ();</div>
+			<hr noshade size="4">
+			<h4><a name="close">close</a></h4>
+			<div class="cpp">virtual void close ();</div>
+			<hr noshade size="4">
+			<h4><a name="getVu">getVu</a></h4>
+			<div class="cpp">virtual float getVu ();</div>
+			<hr noshade size="4">
+			<h4><a name="getChunk">getChunk</a></h4>
+			<div class="cpp">virtual long getChunk (void** data, bool isPreset = false);</div>
+			<p>Returns byteSize.</p>
+			<hr noshade size="4">
+			<h4><a name="setChunk">setChunk</a></h4>
+			<div class="cpp">
+				<pre>virtual long setChunk (void* data, long byteSize, bool isPreset = false);</pre>
+			</div>
+			<hr noshade size="4">
+			<h4><a name="setSampleRate">setSampleRate</a></h4>
+			<div class="cpp">virtual void setSampleRate (float sampleRate);</div>
+			<hr noshade size="4">
+			<h4><a name="setBlockSize">setBlockSize</a></h4>
+			<div class="cpp">virtual void setBlockSize (long blockSize);</div>
+			<p>This is called by the host, and tells the plug that the <strong>maximum</strong> 
+				blocksize passed to either <code>process</code> method will be <code>&lt;blockSize&gt;</code>.</p>
+			<h4>Note :</h4>
+			<p><code>process (float** ins, float** outs, long sampleFrames)</code></p>
+			<p>means you <strong>must</strong> process <strong>exactly</strong> <code>sampleFrames</code>
+				number of samples, and not more! for instance</p>
+			<div class="cpp">
+				<pre>void MyPlug::setBlockSize (long blockSize)<br>{<br>	// assume blockSize is 1024<br>	myBlockSize = blockSize;<br>}<br><br>void MyPlug::process (float** ins,<br>    float** outs, long sampleFrames)<br>{<br>	// assume sampleFrames is 1<br><br>	float* in = ins[0];<br>	float* out = outs[0];<br>	// long frames = myBlockSize;	// KILLER!<br>	long frames = sampleFrames;	// OK: you should always use the passed sampleFrames value<br>	while (--frames &gt;= 0)<br>		*out++ += *in++ * gain;<br>		// boom on 2nd sample... if "long frames = myBlockSize;" is used<br>}</pre>
+			</div>
+			<p>Using <code>myBlockSize</code> instead of <code>sampleFrames</code> can write 
+				wildly into memory because the host may provide buffers of smaller size (e.g. 
+				Peak when reaching the end of a file) than stated in <code>setBlockSize</code>. 
+				Again, <code>setBlockSize</code> only tells you the <strong>maximum</strong> that 
+				you will have to expect in <code>process</code> (or <code>processReplacing</code>), 
+				but the <code>ampleFrames</code> argument passed to the process function, as 
+				well as the buffers provided there, might be only 1 sample, for instance.</p>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#process">process</a></code>
+				</li>
+				<li>
+					<code><a href="#processReplacing">processReplacing</a></code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="suspend">suspend</a></h4>
+			<div class="cpp">virtual void suspend ();</div>
+			<p>This method is called when the effect is turned off by the user.</p>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>void MyPlug::suspend ()<br>{<br>    memset (myBuffer, 0, myBufferSize * sizeof(float));<br>}</pre>
+			</div>
+			<p>The buffer gets flushed here because otherwise pending data would sound again 
+				when the effect is switched on next time.</p>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#resume">resume</a></code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="resume">resume</a></h4>
+			<div class="cpp">virtual void resume ();</div>
+			<p>This method is called when the effect is turned on by the user.</p>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#suspend">suspend</a></code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h2><a name="setup">Setup</a></h2>
+			<p>Method that are called at construction time.</p>
+			<hr noshade size="4">
+			<h4><a name="setUniqueID">setUniqueID</a></h4>
+			<div class="cpp">virtual void setUniqueID (long iD)</div>
+			<p>Must call this! Set the plug's unique identifier. The host uses this to identify 
+				the plug-in, for instance when it is loading effect programs and banks. On 
+				Steinberg Web Page you can find an UniqueID Database where you can record your 
+				UniqueID, it will check if the ID is already used by an another vendor. You can 
+				use CCONST('a','b','c','d') (define in VST 2.0) to be platform independent to 
+				initialize an UniqueID.</p>
+			<table id="Table15" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>iD</code></th>
+						<td>The plug's identifier.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>#define   kUniqueID 'MyPl'<br>// or (with VST 2.0 include file)<br>#define kUniqueID CCONST('M','y','P','l')<br><br>MyPlug::MyPlug (audioMasterCallback audioMaster)<br>	: AudioEffectX (audioMaster, 1, 1)<br>{<br>	... <br>	setUniqueID (kUniqueID);<br>	...<br>}</pre>
+			</div>
+			<hr noshade size="4">
+			<h4><a name="setNumInputs">setNumInputs</a></h4>
+			<div class="cpp">virtual void setNumInputs (long inputs);</div>
+			<p>Set the number of inputs the plug will handle.</p>
+			<table id="Table16" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>inputs</code></th>
+						<td>The number of inputs.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Note :</h4>
+			<p>This number is fixed at construction time and can't change until the plug is 
+				destroyed.</p>
+			<h4>Example :</h4>
+			<div class="cpp">
+				<pre>setNumInputs (2);</pre>
+			</div>
+			<p>In case of stereo input.</p>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#isInputConnected">isInputConnected</a></code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="setNumOutputs">setNumOutputs</a></h4>
+			<div class="cpp">virtual void setNumOutputs (long outputs);</div>
+			<p>Set the number of outputs the plug will handle.</p>
+			<table id="Table17" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>outputs</code></th>
+						<td>The number of outputs.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Note :</h4>
+			<p>This number is fixed at construction time and can't change until the plug is 
+				destroyed.</p>
+			<h4>Example :</h4>
+			<div class="cpp">setNumOutputs (2);</div>
+			<p>In case of stereo output.</p>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#isOutputConnected">isOutputConnected</a></code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="hasVu">hasVu</a></h4>
+			<div class="cpp">virtual void hasVu (bool state = true);</div>
+			<p>return vu value in <code>getVu ()</code>; &gt; 1. means clipped</p>
+			<hr noshade size="4">
+			<h4><a name="hasClip">hasClip</a></h4>
+			<div class="cpp">virtual void hasClip (bool state = true);</div>
+			<p>return &gt; 1. in getVu () if clipped</p>
+			<hr noshade size="4">
+			<h4><a name="canMono">canMono</a></h4>
+			<div class="cpp">virtual void canMono (bool state = true);</div>
+			<p>Tells the host that it makes sense to use this plug-in as a 1 in / 2 out device. 
+				When the host has mono effects sends and has a stereo bus for the effect 
+				returns, then the host can check this flag to add it to the list of plug-ins 
+				that could be used in this way.</p>
+			<hr noshade size="4">
+			<h4><a name="canProcessReplacing">canProcessReplacing</a></h4>
+			<div class="cpp">virtual void canProcessReplacing (bool state = true);</div>
+			<p>Plug supports in place output (the <code>processReplacing</code> method is 
+				implemented).</p>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#processReplacing">processReplacing</a></code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="programsAreChunks">programsAreChunks</a></h4>
+			<div class="cpp">virtual void programsAreChunks (bool state = true);</div>
+			<p>Program data are handled in formatless chunks.</p>
+			<hr noshade size="4">
+			<h4><a name="setRealtimeQualities">setRealtimeQualities</a></h4>
+			<div class="cpp">virtual void setRealtimeQualities (long qualities);</div>
+			<p>number of realtime qualities (0: realtime).</p>
+			<hr noshade size="4">
+			<h4><a name="setOfflineQualities">setOfflineQualities</a></h4>
+			<div class="cpp">virtual void setOfflineQualities (long qualities);</div>
+			<p>number of offline qualities (0: realtime only)</p>
+			<hr noshade size="4">
+			<h4><a name="setInitialDelay">setInitialDelay</a></h4>
+			<div class="cpp">virtual void setInitialDelay (long delay);</div>
+			<p>For algorithms which need input in the first place.</p>
+			<hr noshade size="4">
+			<h2><a name="inquiry">Inquiry</a></h2>
+			<hr noshade size="4">
+			<h4><a name="getSampleRate">getSampleRate</a></h4>
+			<div class="cpp">virtual float getSampleRate ();</div>
+			<hr noshade size="4">
+			<h4><a name="getBlockSize">getBlockSize</a></h4>
+			<div class="cpp">virtual long getBlockSize ();</div>
+			<hr noshade size="4">
+			<h2><a name="host">Host communication (Plug -&gt; Host)</a></h2>
+			<hr noshade size="4">
+			<h4><a name="getMasterVersion">getMasterVersion</a></h4>
+			<div class="cpp">virtual long getMasterVersion ();</div>
+			<hr noshade size="4">
+			<h4><a name="getCurrentUniqueId">getCurrentUniqueId</a></h4>
+			<div class="cpp">virtual long getCurrentUniqueId ();</div>
+			<hr noshade size="4">
+			<h4><a name="masterIdle">masterIdle</a></h4>
+			<div class="cpp">virtual void masterIdle ();</div>
+			<hr noshade size="4">
+			<h4><a name="isInputConnected">isInputConnected</a></h4>
+			<div class="cpp">virtual bool isInputConnected (long input);</div>
+			<p>There is no negotiation currently, thus <code>numOutputs</code> (or <code>numInputs</code>) 
+				must not change at any time. A vst plug is taken to be a device with a fixed 
+				number of i/o pins. How these are beeing used depends on the application. In 
+				cubase/nuendo :
+			</p>
+			<ul>
+				<li>
+					Insert fx can have up to 8 i/o pins. When inserted into a mono channel, input 0 
+					only is connected. both mono and stereo channels connect 2 outputs if available 
+					(if only one is present, only the left channel is passed). i/o above 2 is 
+					ignored (buffers point to the 'nirvana bin' which is nevertheless a valid 
+					address).
+				</li>
+				<li>
+					In nuendo up to 8 channels i/o can be used in the master inserts rack. there is 
+					a user interface for extensive routing there.
+				</li>
+				<li>
+					'aux send' fx must have 1 input and 2 outputs, or 2 inputs and call '<code><a href="#canMono">canMono</a>
+						which hints to the application that it makes sense to feed a mono signal.</code>
+				</li>
+			</ul>
+			<code>It might be useful if makers of other hosts want to document connection 
+				schemes differing from these. </code>
+			<p>The plug can inquire <code>isInputConnected</code> and <code>isOutputConnected</code>
+				in order to suit the routing. Also the <code>speakerArrangement</code> information 
+				can be useful. Later vst implementations may support dynamic pin connection and 
+				negotiation.</p>
+			<table id="Table18" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th valign="top" align="right">
+							<code>input</code></th>
+						<td>The index of the input, starting at 0 (e.g. left=0, right=1).</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>Note :</h4>
+			<p>This method should be called from <code><a href="#resume">resume</a></code> rather 
+				than from the constructor.</p>
+			<hr noshade size="4">
+			<h4><a name="isOutputConnected">isOutputConnected</a></h4>
+			<div class="cpp">virtual bool isOutputConnected (long output);</div>
+			<hr noshade size="4">
+			<h2><a name="tools">Tools</a></h2>
+			<hr noshade size="4">
+			<h4><a name="dB2string">dB2string</a></h4>
+			<div class="cpp">virtual void dB2string (float value, char *text);</div>
+			<p>Stuffes <code>&lt;text&gt;</code> with an amplitude on the [0.0, 1.0] scale 
+				converted to its value in decibels.</p>
+			<h4>Example :</h4>
+			<p>1.0 maps to 0 dB and 0.0 to -oo dB.</p>
+			<hr noshade size="4">
+			<h4><a name="Hz2string">Hz2string</a></h4>
+			<div class="cpp">virtual void Hz2string (float samples, char *text);</div>
+			<p>Stuffes <code>&lt;text&gt;</code> with the frequency in Hertz that has a period 
+				of <code>&lt;samples&gt;</code>.</p>
+			<h4>Example :</h4>
+			<p>44100 will map to 1.0 if <code>sampleRate</code> is set to 44.1 kHz.</p>
+			<hr noshade size="4">
+			<h4><a name="ms2string">ms2string</a></h4>
+			<div class="cpp">virtual void ms2string (float samples, char *text);</div>
+			<p>Stuffes <code>&lt;text&gt;</code> with the duration in milliseconds of <code>&lt;smaples&gt;</code>
+				frames.</p>
+			<hr noshade size="4">
+			<h4><a name="float2string">float2string</a></h4>
+			<div class="cpp">virtual void float2string (float value, char *string);</div>
+			<p>Stuffes <code>&lt;text&gt;</code> with a string representation on the floating 
+				point <code>&lt;value&gt;</code>.</p>
+			<hr noshade size="4">
+			<h4><a name="long2string">long2string</a></h4>
+			<div class="cpp">virtual void long2string (long value, char *text);</div>
+			<p>Stuffes <code>&lt;text&gt;</code> with a string representation on the integer <code>&lt;value&gt;</code>.</p>
+			<hr noshade size="4">
+			<hr noshade size="4">
+			<h2><a name="members">Protected Members</a></h2>
+			<hr noshade size="4">
+			<div class="cpp">
+				<pre>float sampleRate;<br><br><a href="AEffEditor.html">AEffEditor</a> *editor;<br>audioMasterCallback audioMaster;<br>long numPrograms;<br>long numParams;<br>long curProgram;<br>long blockSize;<br><br><a
+ href="AEffect.html">AEffect</a> cEffect;</pre>
+			</div>
+			<br>
+			<hr noshade size="4">
+			<div align="center">Copyright &copy;2003 <a href="http://www.steinberg.net" target="_blank">
+					<u>Steinberg Media Technologies GmbH</u></a>. All Rights Reserved.
+			</div>
+			<br>
+		</div>
+		<br>
+	</body>
+</html>

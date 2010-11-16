@@ -1,0 +1,31 @@
+/* XPM */
+static char *bmp00130[] = {
+/* width height num_colors chars_per_pixel */
+"    14    12       12            1",
+/* colors */
+". c #ffffff",
+"# c #f5f5f5",
+"a c #ebebeb",
+"b c #d3d3d3",
+"c c #c6c6c6",
+"d c #a7a7a7",
+"e c #969696",
+"f c #717171",
+"g c #5c5c5c",
+"h c #303030",
+"i c #181818",
+"j c #000000",
+/* pixels */
+".............d",
+"abbbbbbbbbbbbg",
+"aaaaaaaaaaaaaj",
+".############j",
+"bffffffffffffj",
+"#cbccbcbcbcccj",
+"bgghiiiiiiiiij",
+"aaaaaaaaaaaaaj",
+"#bccccccccccdj",
+"#ceeeeeeeeeefj",
+"#hiiiiiiiiiijj",
+"ijjjjjjjjjjjjj"
+};

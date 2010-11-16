@@ -1,0 +1,108 @@
+#
+# Generic defines for VSTSDK-VSTGUI projects
+#
+# (c)1999 Steinberg Soft+Hardware GmbH
+#
+
+include /usr/include/make/releasedefs
+
+
+###################### CPU Specifics ############################
+#if defined(R10000)
+PROC      = -mips4
+SCHEDULE  = -r10000
+#elif defined(R5000)
+PROC      = -mips4
+SCHEDULE  = -r5000
+#elif defined(R8000)
+PROC      = -mips4
+SCHEDULE  = -r8000
+#elif defined(MIPS4)
+PROC      = -mips4
+SCHEDULE  =
+#else
+PROC      =
+SCHEDULE  =
+#endif
+
+
+##################### Specialized Target Directories #############
+#if !defined(DIRPOSTFIX)
+DIRPOSTFIX 	=
+#endif
+
+###########################################################
+#if defined(SHIPPING)
+CC        = CC
+ABI       = -n32
+DEFS      =  
+OBJDIR    = release$(DIRPOSTFIX)
+DEBUG     = -g3
+OPTIMIZE  = -O3 $(SCHEDULE)
+LEVEL     = -DRELEASE=1
+RPATH     = -rpath .
+MALLOC    = -lmalloc 
+WOFF      = -woff 1110
+
+########### DEBUG O32 Object ABI ######### 
+#elif defined(O32)
+CC        = CC
+ABI       = -o32
+OBJDIR    = debug_o32$(DIRPOSTFIX)
+DEFS      = -DNOBOOL=1
+RPATH     = -rpath .
+DEBUG     = -g
+OPTIMIZE  = -O0
+LEVEL     = -DDEVELOPMENT=1
+MALLOC    = -lmalloc_cv
+WOFF      =
+
+########### DEBUG N32 Object ABI ######### 
+#else
+CC        = CC
+ABI       = -n32
+DEFS      =  
+OBJDIR    = debug$(DIRPOSTFIX)
+DEBUG     = -g
+OPTIMIZE  = -O0
+LEVEL     = -DDEVELOPMENT=1 -DDEBUG=1
+RPATH     = -rpath .
+MALLOC    = -lmalloc_cv
+WOFF      = -woff 1110
+
+#endif
+
+#if defined(SHIPPING) || defined(RESTRICT)
+RESTRICT	= -g0 -O3 -OPT:alias=restrict
+#else
+RESTRICT	= 
+#endif
+
+#if defined (SHIPPING)
+USERDEF 	=
+#else
+USERDEF 	=
+#endif
+
+########### EXTRA Defs ######### 
+#if defined(IRIX62)
+OSVERSION = -DIRIX62=1
+#else
+OSVERSION = 
+#endif
+
+#if !defined (OPTS)
+OPTS			=
+#endif
+
+EXTRADEFS = $(OSVERSION)
+
+###########################################################
+SYSINCL   = -I /usr/include -I /usr/include/CC -I /usr/include/X11
+
+INCLUDES  = $(SYSINCL)
+CODEGEN   = $(ABI) $(PROC) $(OPTIMIZE) -float -ptused -signed
+DEFINES   = $(DEFS) -D__xlC__ -D__UNIX__ -D__X_MOTIF__ -DSGI=1 $(LEVEL) $(USERDEF) $(EXTRADEFS)
+CCOPTS    = -c $(OPTS) $(INCLUDES) $(DEBUG) $(DEFINES) $(CODEGEN) -MDupdate $(OBJDIR)/makedepend $(WOFF)
+LDOPTS    = $(ABI) $(DEBUG) -woff 15,131,84
+LNKOPTS   = $(LDOPTS) -Wl,-woff,85 -Wl,-woff,84 -Wl,-woff,15 -Wl,-woff,47 $(RPATH) -update_registry so_locations

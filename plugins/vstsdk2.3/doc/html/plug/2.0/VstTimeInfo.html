@@ -1,0 +1,300 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+	<head>
+		<title>VstTimeInfo</title>
+		<base target="vstdoc">
+		<link rel="stylesheet" type="text/css" href="../../../sdkdoc.css">
+	</head>
+	<body>
+		<div>
+			<h2>VST Time Info</h2>
+			<hr noshade size="4">
+			<h2><a name="VstTimeInfo">VstTimeInfo</a></h2>
+			<p><div class="cpp">struct VstTimeInfo</div>
+			<P></P>
+			<p>VstTimeInfo as requested via audioMasterGetTime (<EM>getTimeInfo</EM> ()) refers 
+				to the current time slice. note the new slice is already started when <code><a href="AudioEffectX.html#processEvents">
+						processEvents</a> ()</code> is called.
+			</p>
+			<hr noshade size="4">
+			<h4><a name="samplePos">samplePos</a></h4>
+			<p><div class="cpp">double samplePos;</div>
+			<P></P>
+			<p>Current location, Note that it may jump backwards in cycle mode. It must always 
+				be valid, and should not cost a lot to ask for.
+				<quote> The 
+ sample pos is that of the sequencer ('unrolled', that means without cycle 
+ jumps). in sequencer stop mode, it simply continues to count. a 32 bit integer 
+ is too small for sample positions, and it's a double to make it easier to 
+ convert between ppq and samples. </quote>
+			</p>
+			<hr noshade size="4">
+			<h4><a name="sampleRate">sampleRate</a></h4>
+			<p><div class="cpp">double sampleRate;</div>
+			<P></P>
+			<p>It must always be valid, and should not cost a lot to ask for.</p>
+			<hr noshade size="4">
+			<h4><a name="nanoSeconds">nanoSeconds</a></h4>
+			<p><div class="cpp">double nanoSeconds;</div>
+			<P></P>
+			<p>System Time related to samplePos (which is related to the first sample in the 
+				buffers passed to the <code>process ()</code> methods). system time is derived 
+				from <code>timeGetTime ()</code> on WINDOWS platforms, <code>Microseconds ()</code>
+				on MAC platform, <code>UST</code> for MOTIF, and <code>BTimeSource::RealTime ()</code>
+				for BEOS.</p>
+			<hr noshade size="4">
+			<h4><a name="ppqPos">ppqPos</a></h4>
+			<p><div class="cpp">double ppqPos;</div>
+			<P></P>
+			<p>the quarter position related to samplePos. as this is a floating point value, it 
+				can be easily converted to any scale. provided that the tempo is also given, 
+				any linear positions (like samples, smpte) can also be calculated precisely.</p>
+			<h4>Example :</h4>
+			<p>At tempo 120, 1 quarter makes 1/2 second, so 2.0 ppq translates to 48000 samples 
+				at 48kHz sample rate.<br>
+				.25 ppq is one sixteenth note then. if you need something like 480ppq, you 
+				simply multiply ppq by that scaler.</p>
+			<hr noshade size="4">
+			<h4><a name="tempo">tempo</a></h4>
+			<p><div class="cpp">double tempo;</div>
+			<P></P>
+			<p>tempo in Beats Per Minute (no scaling).</p>
+			<hr noshade size="4">
+			<h4><a name="barStartPos">barStartPos</a></h4>
+			<p><div class="cpp">double barStartPos;</div>
+			<P></P>
+			<p>In 1 pulse (unit) per quarter. Useful in conjunction with Time Signature, or to 
+				calculate a precise sample position of a beat or other measure.</p>
+			<h4>Example :</h4>
+			<p>Say we're at bars/beats readout 3.3.3. That's 2 bars + 2 q + 2 sixteenth, makes 
+				2 * 4 + 2 + .25 = 10.25 ppq. at tempo 120, that's 10.25 * .5 = 5.125 seconds, 
+				times 48000 = 246000 samples (if my calculator servers me well :-).
+			</p>
+			<hr noshade size="4">
+			<h4><a name="cycleStartPos">cycleStartPos</a></h4>
+			<p><div class="cpp">double cycleStartPos;</div>
+			<P></P>
+			<p>locator positions in quarter notes. note the <code><a href="#kVstTransportCycleActive">kVstTransportCycleActive</a></code>
+				flag.</p>
+			<hr noshade size="4">
+			<h4><a name="cycleEndPos">cycleEndPos</a></h4>
+			<p><div class="cpp">double cycleEndPos;</div>
+			<P></P>
+			<p>locator positions in quarter notes. note the <code><a href="#kVstTransportCycleActive">kVstTransportCycleActive</a></code>
+				flag.</p>
+			<hr noshade size="4">
+			<h4><a name="timeSigNumerator">timeSigNumerator</a></h4>
+			<p><div class="cpp">long timeSigNumerator;</div>
+			<P></P>
+			<p>Time Signature; 1/4 has timeSigNumerator == 1 and timeSigDenominator == 4.</p>
+			<hr noshade size="4">
+			<h4><a name="timeSigDenominator">timeSigDenominator</a></h4>
+			<p><div class="cpp">long timeSigDenominator;</div>
+			<P></P>
+			<p>Time Signature; 1/4 has timeSigNumerator == 1 and timeSigDenominator == 4.</p>
+			<hr noshade size="4">
+			<h4><a name="smpteOffset">smpteOffset</a></h4>
+			<p><div class="cpp">long smpteOffset;</div>
+			<P></P>
+			<p>in SMPTE subframes (bits; 1/80 of a frame). the current smpte position can be 
+				calculated using samplePos, sampleRate, and smpteFrameRate.</p>
+			<hr noshade size="4">
+			<h4><a name="smpteFrameRate">smpteFrameRate</a></h4>
+			<p><div class="cpp">long smpteFrameRate;</div>
+			<P></P>
+			<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc">
+				<tbody>
+					<tr>
+						<th align="right">
+							value</th>
+						<td>frames</td>
+					</tr>
+					<tr>
+						<th align="right">
+							0</th>
+						<td>24</td>
+					</tr>
+					<tr>
+						<th align="right">
+							1</th>
+						<td>25</td>
+					</tr>
+					<tr>
+						<th align="right">
+							2</th>
+						<td>24</td>
+					</tr>
+					<tr>
+						<th align="right">
+							3</th>
+						<td>30</td>
+					</tr>
+					<tr>
+						<th align="right">
+							4</th>
+						<td>29.97 df</td>
+					</tr>
+					<tr>
+						<th align="right">
+							5</th>
+						<td>30 df</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="samplesToNextClock">samplesToNextClock</a></h4>
+			<p><div class="cpp">long samplesToNextClock;</div>
+			<P></P>
+			<p>midi clock resolution (24 ppq), can be negative the distance to the next midi 
+				clock (24 ppq, pulses per quarter) in samples. unless samplePos falls precicely 
+				on a midi clock, this will either be negative such that the previous midi clock 
+				is addressed, or positive when referencing the following (future) midi clock.</p>
+			<hr noshade size="4">
+			<h4>flags</h4>
+			<p><div class="cpp">long flags;</div>
+			<P></P>
+			<p>see below</p>
+			<hr noshade size="4">
+			<h2><a name="flags">flags</a></h2>
+			<p><div class="cpp">enum flags;</div>
+			<P></P>
+			<hr noshade size="4">
+			<h4><a name="kVstTransportChanged">kVstTransportChanged</a></h4>
+			<p><code>kVstTransportChanged = 1</code></p>
+			<p>something has changed. this is not restricted to start/stop, or location changes 
+				but may also be set (once!) to indicate other changes like tempo, cycle state 
+				or positions etc.</p>
+			<hr noshade size="4">
+			<h4><a name="kVstTransportPlaying">kVstTransportPlaying</a></h4>
+			<p><code>kVstTransportPlaying = 1 &lt;&lt; 1</code></p>
+			<p>Sequencer is started (running).</p>
+			<hr noshade size="4">
+			<h4><a name="kVstTransportCycleActive">kVstTransportCycleActive</a></h4>
+			<p><code>kVstTransportCycleActive = 1 &lt;&lt; 2</code></p>
+			<p>Cycle mode is active.</p>
+			<hr noshade size="4">
+			<h4><a name="kVstAutomationWriting">kVstAutomationWriting</a></h4>
+			<p><code>kVstAutomationWriting = 1 &lt;&lt; 6</code></p>
+			<p>Automation Write mode is activated.</p>
+			<hr noshade size="4">
+			<h4><a name="kVstAutomationReading">kVstAutomationReading</a></h4>
+			<p><code>kVstAutomationReading = 1 &lt;&lt; 7</code></p>
+			<p>Automation Read mode is activated.</p>
+			<hr noshade size="4">
+			<p>Flags which indicate which of the fields in this <code><a href="#VstTimeInfo">VstTimeInfo</a></code>
+				are valid. <code><a href="#SamplePos">SamplePos</a></code> and <code><a href="#sampleRate">
+						sampleRate</a></code> are always valid.</p>
+			<hr noshade size="4">
+			<h4><a name="kVstNanosValid">kVstNanosValid</a></h4>
+			<p><code>kVstNanosValid = 1 &lt;&lt; 8</code></p>
+			<p>The <code><a href="#nanoSeconds">nanoSeconds</a></code> field in this <code>VstTimeInfo</code>
+				is valid (or requested from <code>getTimeInfo</code>).</p>
+			<hr noshade size="4">
+			<h4><a name="kVstPpqPosValid">kVstPpqPosValid</a></h4>
+			<p><code>kVstPpqPosValid = 1 &lt;&lt; 9</code></p>
+			<p>the ppqPos field in this VstTimeInfo is valid (or requested from getTimeInfo 
+				()).</p>
+			<hr noshade size="4">
+			<h4><a name="kVstTempoValid">kVstTempoValid</a></h4>
+			<p><code>kVstTempoValid = 1 &lt;&lt; 10</code></p>
+			<p>the tempo field in this VstTimeInfo is valid (or requested from getTimeInfo ()).</p>
+			<hr noshade size="4">
+			<h4><a name="kVstBarsValid">kVstBarsValid</a></h4>
+			<p><code>kVstBarsValid = 1 &lt;&lt; 11</code></p>
+			<p>the <code><a href="#barStartPos">barStartPos</a></code> field in this 
+				VstTimeInfo is valid (or requested from getTimeInfo ()).</p>
+			<hr noshade size="4">
+			<h4><a name="kVstCyclePosValid">kVstCyclePosValid</a></h4>
+			<code>kVstCyclePosValid = 1 &lt;&lt; 12</code>
+			<p>the <a href="#cycleStartPos">cycleStartPos</a> and <a href="#cycleEndPos">cycleEndPos</a>
+				fields in this VstTimeInfo are valid (or requested from getTimeInfo ()).</p>
+			<hr noshade size="4">
+			<h4><a name="kVstTimeSigValid">kVstTimeSigValid</a></h4>
+			<p><code>kVstTimeSigValid = 1 &lt;&lt; 13</code></p>
+			<p>the <code><a href="#timeSigNumerator">timeSigNumerator</a></code> and <code><a href="#timeSigDenominator">
+						timeSigDenominator</a></code> fields in this VstTimeInfo are valid (or 
+				requested from getTimeInfo ()).</p>
+			<hr noshade size="4">
+			<h4><a name="kVstSmpteValid">kVstSmpteValid</a></h4>
+			<p><code>kVstSmpteValid = 1 &lt;&lt; 14</code></p>
+			<p>the <code><a href="#smpteOffset">smpteOffset</a></code> and <code><a href="#smpteFrameRate">
+						smpteFrameRate</a></code> fields in this VstTimeInfo are valid (or 
+				requested from getTimeInfo ()).</p>
+			<hr noshade size="4">
+			<h4><a name="kVstClockValid">kVstClockValid</a></h4>
+			<p><code>kVstClockValid = 1 &lt;&lt; 15</code></p>
+			<p>the <code><a href="VstTimeInfo.html#samplesToNextClock">samplesToNextClock</a></code>
+				field in this VstTimeInfo is valid (or requested from getTimeInfo ()).</p>
+			<hr noshade size="4">
+			<h2><a name="getTimeInfo">getTimeInfo</a> (-&gt;host)</h2>
+			<p><div class="cpp">virtual <a href="aeffectx.html#VstTimeInfo">VstTimeInfo</a>* getTimeInfo (long filter);</div>
+			<P></P>
+			<p>A Plug will request time info by calling the function <code>getTimeInfo(long mask)</code>
+				which returns a <code><a href="aeffectx.html#VstTimeInfo">VstTimeInfo</a></code>
+				pointer (or <code>NULL</code> if not implemented by the host). The mask 
+				parameter is composed of the same flags which will be found in the <code>flags</code>
+				field of <code><a href="aeffectx.html#VstTimeInfo">VstTimeInfo</a></code> when 
+				returned, that is, if you need information about tempo, the parameter passed to <code>
+					getTimeInfo</code> should have the <code><a href="aeffectx.html#kVstTempoValid">kVstTempoValid</a></code>
+				flag set.
+			</p>
+			<p>
+				This request and delivery system is important, as a request like this may cause 
+				significant calculations at the application's end, which may take a lot of our 
+				precious time. This obviously means you should only set those flags that are 
+				required to get the information you need. Also please be aware that requesting 
+				information does not necessarily mean that that information is provided in 
+				return. Check the <code><a href="aeffectx.html#VstTimeInfo">flags</a></code> field 
+				in the <code><a href="aeffectx.html#VstTimeInfo">VstTimeInfo</a></code> structure 
+				to see if your request was actually met.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+				<tbody>
+					<tr>
+						<th align="right" valign="top">
+							<code>filter</code></th>
+						<td>A mask indicating which fields are requested, as some items may require 
+							extensive conversions. See the <a href="aeffectx.html#VstTimeInfo">flags</a> in <code>
+								VstTimeInfo</code>.</td>
+					</tr>
+					<tr>
+						<th align="right" valign="top">
+							<code>return</code></th>
+						<td>A pointer to a <a href="aeffectx.html#VstTimeInfo">VstTimeInfo</a> structure or <code>
+								null</code> if not implemented by the host.</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="tempoAt">tempoAt</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual long tempoAt (long position);</div>
+			<P></P>
+			<p>Gets the tempo at <code>position</code>. Note that this call may cause heavy 
+				calculations on the application side.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+				<tbody>
+					<tr>
+						<th align="right" valign="top">
+							<code>position</code></th>
+						<td>Sample frame.</td>
+					</tr>
+					<tr>
+						<th align="right" valign="top">
+							<code>return</code></th>
+						<td>Tempo (in bpm * 10000).</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>Sample position and other time info can be obtained though <code><a href="VstTimeInfo.html">
+						VstTimeInfo</a></code>.<br>
+				<br>
+				<br>
+			</p>
+			<hr noshade size="4">
+			<div align="center">Copyright ©2003 <a href="http://www.steinberg.net" target="_blank"><u>Steinberg 
+						Media Technologies GmbH</u></a>. All Rights Reserved.
+			</div>
+			<br>
+		</div>
+		<br>
+	</body>
+</html>

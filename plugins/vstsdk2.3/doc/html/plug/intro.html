@@ -1,0 +1,424 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Introduction</title>
+ 		<base target="vstdoc"> 		
+  <link href="../../sdkdoc.css" type="text/css" rel="stylesheet">
+</head>
+  	<body>
+ 		
+<div> 			
+<h1>VST Plug-Ins Formal issues</h1>
+ 			
+<p align="center"><img alt="" src="../../gfx/logo.jpg">
+ 			</p>
+ 			
+<h2>What is a VST Plug-In?</h2>
+ 			
+<p>In the widest possible sense a VST Plug-In is an audio process. A VST
+Plug-In is  				not an application. It needs a host application that handles
+the audio streams  				and makes use of the process the VST Plug-In supplies.</p>
+ 			
+<p>Generally speaking, it can take a stream of audio data, apply a process
+to the  				audio and send the result back the host application. A VST Plug-In
+performs its  				process normally using the processor of the computer, it
+does not necessarily  				need dedicated digital signal processors. The audio
+stream is broken down into  				a series of blocks. The host supplies the
+blocks in sequence. The host and its  				current environment control the
+block-size. The VST Plug-In maintains all  				parameters statuses that refer
+to the running process: The host does not  				maintain any information about
+what the Plug-In did with the last block of data  				it processed. 			</p>
+ 			
+<p>From the host application&#8217;s point of view, a VST Plug-In is a black box
+with an  				arbitrary number of inputs, outputs (Midi or Audio), and associated
+parameters.  				The Host needs no knowledge of the Plug-In process to be
+able to use it.</p>
+ 			
+<p>The Plug-In process can use whatever parameters it wishes, internally
+to the  				process, but it can choose to allow the changes to user parameters
+to be  				automated by the host, if the host application wishes to do so.</p>
+ 			
+<p>The source code of a VST Plug-In is platform independent, but the delivery
+ 				system depends on the platform architecture. 			</p>
+ 			
+<div align="center"> 				
+<table bordercolor="#000000" cellspacing="0" cellpadding="0" width="80%"
+ bgcolor="lightyellow" border="1">
+ 					<tbody>
+ 						<tr>
+ 							<td>On the <strong>Windows</strong>   platform, a VST Plug-In is
+a multi-threaded DLL (Dynamic Link  								Library).<br>
+ 								<br>
+ 								On <strong>Mac OS        X</strong> 								   , a VST Plug-In is
+a Bundle. You define the plug's name in the  								plist.info file with
+the CFBundleName key. It is also possible to use the old  								Mac OS
+9 format (see below) on OS X, but it is not recommended.<br>
+ 								On <strong>Mac OS 9</strong> 								   , it's a raw Code resource.
+Note that the plug's name as seen by the  								user is the resource name
+(not the file name). A folder labeled 'VstPlugIns' is  								searched for
+plugs, this should preferably be installed in the System Folder.  								Applications
+should additionally search the application folder.<br>
+ 								<br>
+ 								On <strong>BeOS</strong>,        <strong>SGI</strong> 								 
+ (under MOTIF, UNIX), a VST Plug-In is a shared&nbsp;Library. 								<br>
+ 							</td>
+ 						</tr>
+ 					
+  </tbody>
+</table>
+ 			</div>
+ 			<br>
+ 			
+<h2>Processing Options</h2>
+ 			
+<p>Audio processing in the plug is accomplished by one of 2 methods, namely
+<em>process </em> 				(), and <em>processReplacing</em> (). The first one
+must be provided, while the  				second one is optional (but it is highly
+recommended to always implement both  				methods). While <em>process</em>
+() takes input data, applies its pocessing  				algorithm, and then adds
+the result to the output (accumulating), <em>processReplacing</em> 				()
+overwrites the output buffer. The host provides both input and output  				buffers
+for either process method.</p>
+ 			
+<p>The reasoning behind the accumulating version (<em>process</em> ()) is
+that it  				is much more efficient in the case where many processors operate
+on the same  				output (aux-send bus), while for simple chained connection
+schemes (inserts),  				the replacing method is more efficient.</p>
+ 			
+<p>All parameters - the user parameters, acting directly or indirectly on
+that  				data, as automated by the host, are 32 bit floating-point numbers.
+They must  				always range from <strong>0.0</strong> to <strong>1.0</strong>
+inclusive,  				regardless of their internal or external representation.</p>
+ 			
+<p>Audio data processed by VST Plug-Ins are <em>32 bit floating-point</em>
+numbers.  				They must always range from <strong>-1.0 </strong>to<strong>
++1.0</strong> inclusive.</p>
+ 			<br>
+ 			
+<h2>Plug-In implementation</h2>
+ 			
+<p>If you want to develop a VST Plug-In, you may prefer to go straight to
+the code  				examples now. These are very simple examples in which you will
+learn most of  				the important basic concepts just by reading a few lines
+of code.</p>
+ 			
+<p>As a Plug-In developer you actually need to know very little about hosting
+a  				Plug-In. You should concentrate on the <strong>AudioEffect</strong>
+and <strong>AudioEffectX</strong> 				base classes. 			</p>
+ 			
+<p><strong>AudioEffect</strong> is the base class, which represents VST 1.0
+ 				plugs-ins, and has its declarations in <a
+ href="../../source/common/audioeffect.hpp" target="blank"> 					audioeffect.hpp</a>,
+and the implementation in <a href="../../source/common/audioeffect.cpp"
+ target="blank"> 					audioeffect.cpp</a>. You will also need to be aware
+of the structure  				definitions in <a
+ href="../../source/common/aeffect.h" target="blank">aeffect.h</a>.</p>
+ 			
+<p>The files <a href="../../source/common/aeffectx.h" target="blank">aeffectx.h</a> 
+				(more structures), <a href="../../source/common/audioeffectx.h"
+ target="blank">audioeffectx.h</a>,  				and <a
+ href="../../source/common/audioeffectx.cpp" target="blank">audioeffectx.cpp</a> 
+				are similar to the ones above, and extend them to the version 2.3  				specification.</p>
+ 			<br>
+ 			
+<h2>X marks the Spot</h2>
+ 			
+<p>The files relating to the 2.3 specification have their counterparts in
+the  				original 1.0 specification. The original files are expanded upon
+by versions  				representing the 2.3 specification. Basically the new classes
+files all have a  				1.0 predecessor but the new ones have an X in the name. 
+			</p>
+ 			
+<p><b><a href="../../source/common/aeffectx.h" target="blank">aeffectx.h</a>
+</b> 				includes <a href="../../source/common/aeffect.hpp"
+ target="blank">aeffect.hpp</a><br>
+ 				<a href="../../source/common/audioeffectx.h" target="blank">audioeffectx.h</a> 
+				includes <a href="../../source/common/audioeffect.hpp"
+ target="blank">audioeffect.hpp</a> 				and 				<br>
+ 				<a href="../../source/common/audioeffectx.cpp" target="blank">audioeffectx.cpp</a> 
+				extends the implementation in <a
+ href="../../source/common/audioeffect.cpp" target="blank"> 					audioeffect.cpp</a>
+through the 				<br>
+ 				<b>AudioEffectX</b> class, which inherits from <b>AudioEffect</b> and
+thus is  				compatible to the 1.0 specs. 				<br>
+ 				<br>
+ 				<br>
+ 			</p>
+ 			
+<h2>Don't Edit. Inherit</h2>
+ 			
+<p>Never edit any of these files. Never ever. The host application relies
+on them  				being used as they are provided. Anything can be added or changed
+by overriding  				in your private classes derived from <strong>AudioEffectX</strong>.</p>
+ 			<br>
+ 			
+<h2>User Interfaces</h2>
+ 			
+<p>All user-interface issues are entirely separated from the audio processing
+ 				issues. At its simplest there is an option where you can avoid providing
+a user  				interface at all. In this case the host requests character strings
+from the  				Plug-In representing each of the parameters. The host can use
+the separate  				ASCII strings for the value, the label, and the units of
+the parameters to  				construct its own user interface. This is how the
+simple code-examples, AGain  				&amp; ADelay, work. This is also often a
+good way to develop a VST Plug-In, it  				offers a very short development
+cycle to start to test the algorithm. The  				proper interface can come
+later.</p>
+ 			
+<p>The next user interface level is provided when the Plug-In defines its
+own  				editor. This allows practically any user interface to be defined.
+A negative  				aspect is that then you can quickly land up in platform specifics
+when dealing  				with the nuts an bolts of the interface issues, even though
+the audio process,  				the concepts and methodology remain platform independent.</p>
+ 			
+<p>The final option is to use a portable framework for creating sophisticated
+user  				interfaces. This framework takes the form of the VSTGUI Library
+files that are  				available for all supported VST platforms. Apart from
+converting a few pictures  				from one resource format to another, for which
+there are tools available, and  				setting up the initial project files,
+writing a VST 2.3 Plug-In can really be  				completely cross-platform (some
+given examples: ControlsGUI, ADelayEditGUI,  				SurroundDelay). VSTGUI Library
+files and their usage is completely described in  				the HMTL files that
+accompany this SDK. After reading about the underlying  				issues in this
+document and associated code examples, the VSTGUI comes very  				highly
+recommended.</p>
+ 			
+<hr noshade="noshade" size="4"> 			
+<h2><a name="licence"></a>Licensing issues &amp; Trademark Usage</h2>
+ 			
+<h3>Steinberg VST Plug-Ins SDK Licensing Agreement</h3>
+ 			
+<p>The Steinberg VST Plug-In Software Development Kit can be used freely
+subject to  				certain licensing conditions by anyone interested in developing
+Plug-Ins, or to  				extend an application so that it&#8217;s capable of hosting
+VST Plug-Ins. When you  				chose to receive the VST Plug-In SDK you declared
+yourself to be in agreement  				with the Licensing conditions.</p>
+ 			
+<p><strong>These notes don&#8217;t replace the licensing agreement in any way</strong>,
+ 				but quickly explain what you can and cannot do with the Steinberg VST
+Plug-In  				Software Development Kit.</p>
+ 			
+<h3>The License:</h3>
+ 			
+<p></p>
+ 			
+<ul>
+ 				<li> 					
+    <p>is not time limited.&nbsp; 					</p>
+ 				</li>
+  <li> 					
+    <p>is subject to the laws of the Federal Republic of Germany only. 					</p>
+ 				</li>
+  <li> 					
+    <p>its remaining conditions remain valid even if one of the conditions
+become  						invalid.</p>
+ 				</li>
+ 			
+</ul>
+ 			
+<h3>This SDK:</h3>
+ 			
+<p></p>
+ 			
+<ul>
+ 				<li> 					
+    <p>is created with the sole aim that you can create or host VST Plug-Ins. 
+					</p>
+ 				</li>
+  <li> 					
+    <p>is offered &#8216;AS IS&#8217; and we make no claims about how suitable it is
+for your  						application.</p>
+ 				</li>
+ 			
+</ul>
+ 			
+<h3>Steinberg: 			</h3>
+ 			
+<p></p>
+ 			
+<ul>
+ 				<li> 					
+    <p>still holds the copyright for VST Plug-In specification.&nbsp; 					</p>
+ 				</li>
+  <li> 					
+    <p>are not responsible for anything that happens because you chose to
+use the VST  						Plug-In Interface.&nbsp; 					</p>
+ 				</li>
+  <li> 					
+    <p>cannot be held liable if your use of the VST Plug-In Interfaces causes
+damage or  						loss to anyone. 					</p>
+ 				</li>
+  <li> 					
+    <p>may release improved versions of the Licensed Software Developer Kit 
+					</p>
+ 				</li>
+  <li> 					
+    <p>offer no commitment that updates will occur at anytime or for anybody. 
+					</p>
+ 				</li>
+  <li> 					
+    <p>are not aware of VST Plug-In technology infringing the intellectual
+copyright of  						anyone else, 					</p>
+ 				</li>
+  <li> 					
+    <p>cannot accept any responsibility for any claims made against you. 					</p>
+ 				</li>
+ 			
+</ul>
+ 			
+<p></p>
+ 			
+<h3>You cannot:&nbsp;</h3>
+ 			
+<p></p>
+ 			
+<ul>
+ 				<li> 					
+    <p>transfer your License to anyone&nbsp; 					</p>
+ 				</li>
+  <li> 					
+    <p>license the information contained in this SDK to anyone else.&nbsp; 
+					</p>
+ 				</li>
+  <li> 					
+    <p>sell the information contained in this SDK to anyone.&nbsp; 					</p>
+ 				</li>
+  <li> 					
+    <p>re-work or otherwise pass this technology off as your own.&nbsp; 					</p>
+ 				</li>
+  <li> 					
+    <p>give it away or in any other way distribute it, or cause it to be
+become  						distributed. 					</p>
+ 				</li>
+  <li> 					
+    <p>use the VST logo or other marks on promotional merchandise. So no
+VST t-shirts  						or baseball caps. 					</p>
+ 				</li>
+  <li> 					
+    <p>claim to be a partner of Steinberg or be acting on our behalf. 					</p>
+ 				</li>
+  <li> 					
+    <p>make any statements on Steinberg&#8217;s behalf.</p>
+ 				</li>
+ 			
+</ul>
+ 			
+<h3>You should not: 			</h3>
+ 			
+<p></p>
+ 			
+<ul>
+ 				<li> 					
+    <p>bring the VST technology into disrepute, or damage its reputation
+in any way. 					</p>
+ 				</li>
+  <li> 					
+    <p>use VST technology in connection with products that are obscene,  						pornographic.&nbsp; 
+					</p>
+ 				</li>
+  <li> 					
+    <p>use VST technology in connection with products that are excessively
+violent, or  						in poor taste. 					</p>
+ 				</li>
+  <li> 					
+    <p>break the rules of the license, or we have the right terminate the
+License  						immediately. 					</p>
+ 				</li>
+ 			
+</ul>
+ 			
+<p></p>
+ 			
+<h3>You have to:&nbsp;</h3>
+ 			
+<p></p>
+ 			
+<ul>
+ 				<li> 					
+    <p>include references to Steinberg&#8217;s copyrights and trademarks in a product
+that  						uses this SDK.&nbsp; 					</p>
+ 				</li>
+  <li> 					
+    <p>ensure &#8220;VST is a trademark of Steinberg Media Technologies GmbH&#8221; appears
+on any  						packaging 					</p>
+ 				</li>
+  <li> 					
+    <p>place the VST Logo on packages and promotional material. We provide
+the artwork. 					</p>
+ 				</li>
+  <li> 					
+    <p>add our copyright notice to your about box. &#8220;VST Plug-In Technology
+by  						Steinberg.&#8221; 					</p>
+ 				</li>
+  <li> 					
+    <p>agree that we hold your details on file for our internal purposes.&nbsp; 
+					</p>
+ 				</li>
+  <li> 					
+    <p>inform Steinberg immediately if any one makes a claim against you
+in regard to  						VST-Plug-Ins. 					</p>
+ 				</li>
+  <li> 					
+    <p>make sure the end-publisher of your work is also a VST license holder. 
+					</p>
+ 				</li>
+ 			
+</ul>
+ 			
+<p></p>
+ 			
+<h3>You can:&nbsp;</h3>
+ 			
+<p></p>
+ 			
+<ul>
+ 				<li> 					
+    <p>make vst Plug-Ins or vst-host applications and distribute them worldwide. 
+					</p>
+ 				</li>
+  <li> 					
+    <p>release products without having to pay to use the VST Plug-In Interface
+ 						technology&nbsp; 					</p>
+ 				</li>
+  <li> 					
+    <p>use VST technology in demo-versions of your products.</p>
+ 				</li>
+ 			
+</ul>
+ 			
+<h1>Please read the License Agreement!</h1>
+ 			
+<hr noshade="noshade" size="4"> 			
+<h2>Thanks &amp; Acknowledgements</h2>
+ 			
+<p>The VSTGUI interfaces &amp; Libraries were created by Wolfgang Kundrus
+and Yvan  				Grabit (additional developing Matthias Juwan, Arne Sheffler).
+The time they  				have invested has really made the huge inroads into cross-platform
+code  				compatibility.</p>
+ 			
+<p>Thanks too, to Philippe Goutier who provided the VST Offline Interface.</p>
+ 			
+<p>Not forgetting Dave Nicholson,&nbsp;Julien Junod, Pierre Jean Camillieri,
+Janne  				Roeper&nbsp;who did some additional typing.</p>
+ 			
+<p>There were many more people involved in the creation of this interface,
+not all  				of whom can be mentioned here. We extend our thanks not just
+to the Steinberg  				Staff and Associates that contributed but also to the
+many other developers  				from other parties have helped with their input
+- mainly all the nice people on  				the VST Plug-In DEVELOPER MAILING LIST 
+			</p>
+ 			
+<p>Thanks to all of you for having made this possible. 			</p>
+ 			
+<p>Charlie Steinberg 2003</p>
+ 			<br>
+ 			
+<hr noshade="noshade" size="4"> 			
+<div align="center">Copyright &copy;2003 <a
+ href="http://www.steinberg.net" target="_blank"><u>Steinberg  						Media
+Technologies GmbH</u></a>. All Rights Reserved. 			</div>
+ 			<br>
+ 		</div>
+ 	<br>
+</body>
+</html>

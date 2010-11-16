@@ -1,0 +1,2294 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 38;
+	objects = {
+		089C1669FE841209C02AAC07 = {
+			buildStyles = (
+				4F9091AC011F3BD104CA0E50,
+				4F9091AD011F3BD104CA0E50,
+			);
+			isa = PBXProject;
+			mainGroup = 089C166AFE841209C02AAC07;
+			projectDirPath = "";
+			targets = (
+				F5E915E703BF444F01A82A01,
+				F5D914D10472864B0111649E,
+				F5D91528047288C30111649E,
+				F5D91549047289180111649E,
+				F5D91569047289690111649E,
+				F5D9159704728A010111649E,
+			);
+		};
+		089C166AFE841209C02AAC07 = {
+			children = (
+				08FB77ADFE841716C02AAC07,
+				089C167CFE841241C02AAC07,
+				089C1671FE841209C02AAC07,
+				19C28FB4FE9D528D11CA2CBB,
+			);
+			isa = PBXGroup;
+			name = adelayedit;
+			refType = 4;
+		};
+		089C1671FE841209C02AAC07 = {
+			children = (
+				08EA7FFBFE8413EDC02AAC07,
+				F40DC58A03C1B53E00A82A01,
+				F5D915DE0472923F0111649E,
+			);
+			isa = PBXGroup;
+			name = "External Frameworks and Libraries";
+			refType = 4;
+		};
+		089C167CFE841241C02AAC07 = {
+			children = (
+				F5D9161904729B770111649E,
+				F5D9161804729B5F0111649E,
+				F506BD35038192CF01116452,
+			);
+			isa = PBXGroup;
+			name = Resources;
+			refType = 4;
+		};
+		08EA7FFBFE8413EDC02AAC07 = {
+			isa = PBXFrameworkReference;
+			name = Carbon.framework;
+			path = /System/Library/Frameworks/Carbon.framework;
+			refType = 0;
+		};
+		08FB77ADFE841716C02AAC07 = {
+			children = (
+				F5D9158E047289D30111649E,
+				F5D9151D0472889D0111649E,
+				F5D91510047288790111649E,
+				F5D91509047288560111649E,
+				F5D914FE047288280111649E,
+				F5D914FD047287DE0111649E,
+				F5E2151F035C746B01116402,
+				F5E2151E035C745801116402,
+			);
+			isa = PBXGroup;
+			name = Source;
+			refType = 4;
+		};
+//080
+//081
+//082
+//083
+//084
+//190
+//191
+//192
+//193
+//194
+		19C28FB4FE9D528D11CA2CBB = {
+			children = (
+				F5E915E803BF444F01A82A01,
+				F5D914E00472864B0111649E,
+				F5D9153D047288C30111649E,
+				F5D91568047289180111649E,
+				F5D91588047289690111649E,
+				F5D915B404728A010111649E,
+			);
+			isa = PBXGroup;
+			name = Products;
+			refType = 4;
+		};
+//190
+//191
+//192
+//193
+//194
+//4F0
+//4F1
+//4F2
+//4F3
+//4F4
+		4F9091AC011F3BD104CA0E50 = {
+			buildRules = (
+			);
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				OPTIMIZATION_CFLAGS = "-O0";
+				OTHER_CFLAGS = "-DDEVELOPMENT";
+			};
+			isa = PBXBuildStyle;
+			name = Development;
+		};
+		4F9091AD011F3BD104CA0E50 = {
+			buildRules = (
+			);
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				OPTIMIZATION_CFLAGS = "-O3";
+			};
+			isa = PBXBuildStyle;
+			name = Deployment;
+		};
+//4F0
+//4F1
+//4F2
+//4F3
+//4F4
+//F40
+//F41
+//F42
+//F43
+//F44
+		F40DC58A03C1B53E00A82A01 = {
+			isa = PBXFrameworkReference;
+			name = ApplicationServices.framework;
+			path = /System/Library/Frameworks/ApplicationServices.framework;
+			refType = 0;
+		};
+		F40DC58B03C1B53E00A82A01 = {
+			fileRef = F40DC58A03C1B53E00A82A01;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+//F40
+//F41
+//F42
+//F43
+//F44
+//F50
+//F51
+//F52
+//F53
+//F54
+		F506BD35038192CF01116452 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			path = PkgInfo;
+			refType = 4;
+		};
+		F5D914D10472864B0111649E = {
+			buildPhases = (
+				F5D914D20472864B0111649E,
+				F5D914D30472864B0111649E,
+				F5D914D50472864B0111649E,
+				F5D914DA0472864B0111649E,
+				F5D914DD0472864B0111649E,
+				F5D914DE0472864B0111649E,
+				F5D914DF0472864B0111649E,
+			);
+			buildSettings = {
+				HEADER_SEARCH_PATHS = "../source/common ../source/AGain";
+				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/VST/";
+				OPTIMIZATION_CFLAGS = "-O0";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREFIX_HEADER = ../source/common/vstplugsmacho.h;
+				PRODUCT_NAME = Delay;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+				WRAPPER_EXTENSION = vst;
+			};
+			dependencies = (
+			);
+			isa = PBXBundleTarget;
+			name = adelay;
+			productInstallPath = "";
+			productName = "NIB-adelay";
+			productReference = F5D914E00472864B0111649E;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>Delay</string>
+	<key>CFBundleGetInfoString</key>
+	<string>© Steinberg Media Technologies 2003</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>com.steinberg.examples.delay</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Delay</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleShortVersionString</key>
+	<string></string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.1d1</string>
+</dict>
+</plist>
+";
+			shouldUseHeadermap = 0;
+		};
+		F5D914D20472864B0111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D914EC047287900111649E,
+				F5D914F3047287CC0111649E,
+				F5D914F4047287CC0111649E,
+				F5D914F5047287CC0111649E,
+				F5D914F6047287CC0111649E,
+				F5D914F7047287CC0111649E,
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D914D30472864B0111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D914D40472864B0111649E,
+			);
+			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D914D40472864B0111649E = {
+			fileRef = F506BD35038192CF01116452;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914D50472864B0111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D914D60472864B0111649E,
+				F5D914D70472864B0111649E,
+				F5D914EB047287900111649E,
+				F5D914ED047287900111649E,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D914D60472864B0111649E = {
+			fileRef = F5EEBF8004728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914D70472864B0111649E = {
+			fileRef = F5EEBF8104728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914DA0472864B0111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D914DB0472864B0111649E,
+				F5D914DC0472864B0111649E,
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D914DB0472864B0111649E = {
+			fileRef = 08EA7FFBFE8413EDC02AAC07;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914DC0472864B0111649E = {
+			fileRef = F40DC58A03C1B53E00A82A01;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914DD0472864B0111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D914DE0472864B0111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp PkgInfo build/Delay.vst/Contents/";
+		};
+		F5D914DF0472864B0111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -r build/Delay.vst $HOME/Library/Audio/Plug-Ins/VST/";
+		};
+		F5D914E00472864B0111649E = {
+			isa = PBXBundleReference;
+			path = Delay.vst;
+			refType = 3;
+		};
+		F5D914E8047287900111649E = {
+			isa = PBXFileReference;
+			name = ADelay.cpp;
+			path = ../source/ADelay/ADelay.cpp;
+			refType = 2;
+		};
+		F5D914E9047287900111649E = {
+			isa = PBXFileReference;
+			name = ADelay.hpp;
+			path = ../source/ADelay/ADelay.hpp;
+			refType = 2;
+		};
+		F5D914EA047287900111649E = {
+			isa = PBXFileReference;
+			name = ADelayMain.cpp;
+			path = ../source/ADelay/ADelayMain.cpp;
+			refType = 2;
+		};
+		F5D914EB047287900111649E = {
+			fileRef = F5D914E8047287900111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914EC047287900111649E = {
+			fileRef = F5D914E9047287900111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914ED047287900111649E = {
+			fileRef = F5D914EA047287900111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914EE047287CC0111649E = {
+			isa = PBXFileReference;
+			name = AEffect.h;
+			path = ../source/common/AEffect.h;
+			refType = 2;
+		};
+		F5D914EF047287CC0111649E = {
+			isa = PBXFileReference;
+			name = aeffectx.h;
+			path = ../source/common/aeffectx.h;
+			refType = 2;
+		};
+		F5D914F0047287CC0111649E = {
+			isa = PBXFileReference;
+			name = AEffEditor.hpp;
+			path = ../source/common/AEffEditor.hpp;
+			refType = 2;
+		};
+		F5D914F1047287CC0111649E = {
+			isa = PBXFileReference;
+			name = AudioEffect.hpp;
+			path = ../source/common/AudioEffect.hpp;
+			refType = 2;
+		};
+		F5D914F2047287CC0111649E = {
+			isa = PBXFileReference;
+			name = audioeffectx.h;
+			path = ../source/common/audioeffectx.h;
+			refType = 2;
+		};
+		F5D914F3047287CC0111649E = {
+			fileRef = F5D914EE047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914F4047287CC0111649E = {
+			fileRef = F5D914EF047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914F5047287CC0111649E = {
+			fileRef = F5D914F0047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914F6047287CC0111649E = {
+			fileRef = F5D914F1047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914F7047287CC0111649E = {
+			fileRef = F5D914F2047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914F8047287D10111649E = {
+			fileRef = F5D914EE047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914F9047287D10111649E = {
+			fileRef = F5D914EF047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914FA047287D10111649E = {
+			fileRef = F5D914F0047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914FB047287D20111649E = {
+			fileRef = F5D914F1047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914FC047287D20111649E = {
+			fileRef = F5D914F2047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D914FD047287DE0111649E = {
+			children = (
+				F5D914E8047287900111649E,
+				F5D914E9047287900111649E,
+				F5D914EA047287900111649E,
+			);
+			isa = PBXGroup;
+			name = ADelay;
+			refType = 4;
+		};
+		F5D914FE047288280111649E = {
+			children = (
+				F5D914FF047288470111649E,
+				F5D91500047288470111649E,
+				F5D91501047288470111649E,
+				F5D91502047288470111649E,
+				F5D91503047288470111649E,
+			);
+			isa = PBXGroup;
+			name = ADelayEditGUI;
+			refType = 4;
+		};
+		F5D914FF047288470111649E = {
+			isa = PBXFileReference;
+			name = ADEditor.cpp;
+			path = ../source/ADelayEditGUI/ADEditor.cpp;
+			refType = 2;
+		};
+		F5D91500047288470111649E = {
+			isa = PBXFileReference;
+			name = ADEditor.hpp;
+			path = ../source/ADelayEditGUI/ADEditor.hpp;
+			refType = 2;
+		};
+		F5D91501047288470111649E = {
+			isa = PBXFileReference;
+			name = ADelayEdit.cpp;
+			path = ../source/ADelayEditGUI/ADelayEdit.cpp;
+			refType = 2;
+		};
+		F5D91502047288470111649E = {
+			isa = PBXFileReference;
+			name = ADelayEdit.hpp;
+			path = ../source/ADelayEditGUI/ADelayEdit.hpp;
+			refType = 2;
+		};
+		F5D91503047288470111649E = {
+			isa = PBXFileReference;
+			name = ADelayEditMain.cpp;
+			path = ../source/ADelayEditGUI/ADelayEditMain.cpp;
+			refType = 2;
+		};
+		F5D91509047288560111649E = {
+			children = (
+				F5D9150A047288710111649E,
+				F5D9150B047288710111649E,
+				F5D9150C047288710111649E,
+			);
+			isa = PBXGroup;
+			name = SurroundDelay;
+			refType = 4;
+		};
+		F5D9150A047288710111649E = {
+			isa = PBXFileReference;
+			name = surrounddelay.cpp;
+			path = ../source/surrounddelay/surrounddelay.cpp;
+			refType = 2;
+		};
+		F5D9150B047288710111649E = {
+			isa = PBXFileReference;
+			name = surrounddelay.hpp;
+			path = ../source/surrounddelay/surrounddelay.hpp;
+			refType = 2;
+		};
+		F5D9150C047288710111649E = {
+			isa = PBXFileReference;
+			name = surrounddelaymain.cpp;
+			path = ../source/surrounddelay/surrounddelaymain.cpp;
+			refType = 2;
+		};
+		F5D91510047288790111649E = {
+			children = (
+				F5D91511047288920111649E,
+				F5D91512047288920111649E,
+				F5D91513047288920111649E,
+				F5D91514047288920111649E,
+				F5D91515047288920111649E,
+				F5D91516047288920111649E,
+			);
+			isa = PBXGroup;
+			name = VSTGUI;
+			refType = 4;
+		};
+		F5D91511047288920111649E = {
+			isa = PBXFileReference;
+			name = aeffguieditor.cpp;
+			path = ../source/common/aeffguieditor.cpp;
+			refType = 2;
+		};
+		F5D91512047288920111649E = {
+			isa = PBXFileReference;
+			name = aeffguieditor.h;
+			path = ../source/common/aeffguieditor.h;
+			refType = 2;
+		};
+		F5D91513047288920111649E = {
+			isa = PBXFileReference;
+			name = vstcontrols.cpp;
+			path = ../source/common/vstcontrols.cpp;
+			refType = 2;
+		};
+		F5D91514047288920111649E = {
+			isa = PBXFileReference;
+			name = vstcontrols.h;
+			path = ../source/common/vstcontrols.h;
+			refType = 2;
+		};
+		F5D91515047288920111649E = {
+			isa = PBXFileReference;
+			name = vstgui.cpp;
+			path = ../source/common/vstgui.cpp;
+			refType = 2;
+		};
+		F5D91516047288920111649E = {
+			isa = PBXFileReference;
+			name = vstgui.h;
+			path = ../source/common/vstgui.h;
+			refType = 2;
+		};
+		F5D9151D0472889D0111649E = {
+			children = (
+				F5D9151E047288B30111649E,
+				F5D9151F047288B30111649E,
+				F5D91520047288B30111649E,
+				F5D91521047288B30111649E,
+				F5D91522047288B30111649E,
+			);
+			isa = PBXGroup;
+			name = ControlsGUI;
+			refType = 4;
+		};
+		F5D9151E047288B30111649E = {
+			isa = PBXFileReference;
+			name = controlsgui.cpp;
+			path = ../source/controlsgui/controlsgui.cpp;
+			refType = 2;
+		};
+		F5D9151F047288B30111649E = {
+			isa = PBXFileReference;
+			name = controlsgui.h;
+			path = ../source/controlsgui/controlsgui.h;
+			refType = 2;
+		};
+		F5D91520047288B30111649E = {
+			isa = PBXFileReference;
+			name = controlsguieditor.cpp;
+			path = ../source/controlsgui/controlsguieditor.cpp;
+			refType = 2;
+		};
+		F5D91521047288B30111649E = {
+			isa = PBXFileReference;
+			name = controlsguieditor.h;
+			path = ../source/controlsgui/controlsguieditor.h;
+			refType = 2;
+		};
+		F5D91522047288B30111649E = {
+			isa = PBXFileReference;
+			name = controlsguimain.cpp;
+			path = ../source/controlsgui/controlsguimain.cpp;
+			refType = 2;
+		};
+		F5D91528047288C30111649E = {
+			buildPhases = (
+				F5D91529047288C30111649E,
+				F5D91530047288C30111649E,
+				F5D91532047288C30111649E,
+				F5D91537047288C30111649E,
+				F5D9153A047288C30111649E,
+				F5D9153B047288C30111649E,
+				F5D9153C047288C30111649E,
+			);
+			buildSettings = {
+				HEADER_SEARCH_PATHS = "../source/common ../source/AGain";
+				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/VST/";
+				OPTIMIZATION_CFLAGS = "-O0";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREFIX_HEADER = ../source/common/vstplugsmacho.h;
+				PRODUCT_NAME = DelayEditGUI;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+				WRAPPER_EXTENSION = vst;
+			};
+			dependencies = (
+			);
+			isa = PBXBundleTarget;
+			name = adelayeditgui;
+			productInstallPath = "";
+			productName = "NIB-adelay";
+			productReference = F5D9153D047288C30111649E;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>DelayEditGUI</string>
+	<key>CFBundleGetInfoString</key>
+	<string>© Steinberg Media Technologies 2003</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>com.steinberg.examples.delayeditgui</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>DelayEditGUI</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleShortVersionString</key>
+	<string></string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.1d1</string>
+</dict>
+</plist>
+";
+			shouldUseHeadermap = 0;
+		};
+		F5D91529047288C30111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D9152A047288C30111649E,
+				F5D9152B047288C30111649E,
+				F5D9152C047288C30111649E,
+				F5D9152D047288C30111649E,
+				F5D9152E047288C30111649E,
+				F5D9152F047288C30111649E,
+				F5D9153F047288FF0111649E,
+				F5D91541047289000111649E,
+				F5D91543047289010111649E,
+				F5D91545047289050111649E,
+				F5D91547047289050111649E,
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D9152A047288C30111649E = {
+			fileRef = F5D914E9047287900111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9152B047288C30111649E = {
+			fileRef = F5D914EE047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9152C047288C30111649E = {
+			fileRef = F5D914EF047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9152D047288C30111649E = {
+			fileRef = F5D914F0047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9152E047288C30111649E = {
+			fileRef = F5D914F1047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9152F047288C30111649E = {
+			fileRef = F5D914F2047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91530047288C30111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D91531047288C30111649E,
+				F5D9160704729AF70111649E,
+				F5D9160804729AF70111649E,
+				F5D9160904729AF70111649E,
+			);
+			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D91531047288C30111649E = {
+			fileRef = F506BD35038192CF01116452;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91532047288C30111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D91533047288C30111649E,
+				F5D91534047288C30111649E,
+				F5D91535047288C30111649E,
+				F5D9153E047288FF0111649E,
+				F5D91540047289000111649E,
+				F5D91542047289000111649E,
+				F5D91544047289040111649E,
+				F5D91546047289050111649E,
+				F5D91548047289060111649E,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D91533047288C30111649E = {
+			fileRef = F5EEBF8004728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91534047288C30111649E = {
+			fileRef = F5EEBF8104728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91535047288C30111649E = {
+			fileRef = F5D914E8047287900111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91537047288C30111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D91538047288C30111649E,
+				F5D91539047288C30111649E,
+				F5D91601047292400111649E,
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D91538047288C30111649E = {
+			fileRef = 08EA7FFBFE8413EDC02AAC07;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91539047288C30111649E = {
+			fileRef = F40DC58A03C1B53E00A82A01;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9153A047288C30111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D9153B047288C30111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp PkgInfo build/DelayEditGUI.vst/Contents/";
+		};
+		F5D9153C047288C30111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -r build/DelayEditGUI.vst $HOME/Library/Audio/Plug-Ins/VST/";
+		};
+		F5D9153D047288C30111649E = {
+			isa = PBXBundleReference;
+			path = DelayEditGUI.vst;
+			refType = 3;
+		};
+		F5D9153E047288FF0111649E = {
+			fileRef = F5D91511047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9153F047288FF0111649E = {
+			fileRef = F5D91512047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91540047289000111649E = {
+			fileRef = F5D91513047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91541047289000111649E = {
+			fileRef = F5D91514047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91542047289000111649E = {
+			fileRef = F5D91515047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91543047289010111649E = {
+			fileRef = F5D91516047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91544047289040111649E = {
+			fileRef = F5D914FF047288470111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91545047289050111649E = {
+			fileRef = F5D91500047288470111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91546047289050111649E = {
+			fileRef = F5D91501047288470111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91547047289050111649E = {
+			fileRef = F5D91502047288470111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91548047289060111649E = {
+			fileRef = F5D91503047288470111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91549047289180111649E = {
+			buildPhases = (
+				F5D9154A047289180111649E,
+				F5D91556047289180111649E,
+				F5D91558047289180111649E,
+				F5D91562047289180111649E,
+				F5D91565047289180111649E,
+				F5D91566047289180111649E,
+				F5D91567047289180111649E,
+			);
+			buildSettings = {
+				HEADER_SEARCH_PATHS = "../source/common ../source/AGain";
+				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/VST/";
+				OPTIMIZATION_CFLAGS = "-O0";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREFIX_HEADER = ../source/common/vstplugsmacho.h;
+				PRODUCT_NAME = SurroundDelay;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+				WRAPPER_EXTENSION = vst;
+			};
+			dependencies = (
+			);
+			isa = PBXBundleTarget;
+			name = surrounddelay;
+			productInstallPath = "";
+			productName = "NIB-adelay";
+			productReference = F5D91568047289180111649E;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>SurroundDelay</string>
+	<key>CFBundleGetInfoString</key>
+	<string>© Steinberg Media Technologies 2003</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>com.steinberg.examples.surrounddelay</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>SurroundDelay</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleShortVersionString</key>
+	<string></string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.1d1</string>
+</dict>
+</plist>
+";
+			shouldUseHeadermap = 0;
+		};
+		F5D9154A047289180111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D9154B047289180111649E,
+				F5D9154C047289180111649E,
+				F5D9154D047289180111649E,
+				F5D9154E047289180111649E,
+				F5D9154F047289180111649E,
+				F5D91550047289180111649E,
+				F5D91551047289180111649E,
+				F5D91552047289180111649E,
+				F5D91553047289180111649E,
+				F5D91554047289180111649E,
+				F5D91555047289180111649E,
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D9154B047289180111649E = {
+			fileRef = F5D914E9047287900111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9154C047289180111649E = {
+			fileRef = F5D914EE047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9154D047289180111649E = {
+			fileRef = F5D914EF047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9154E047289180111649E = {
+			fileRef = F5D914F0047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9154F047289180111649E = {
+			fileRef = F5D914F1047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91550047289180111649E = {
+			fileRef = F5D914F2047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91551047289180111649E = {
+			fileRef = F5D91512047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91552047289180111649E = {
+			fileRef = F5D91514047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91553047289180111649E = {
+			fileRef = F5D91516047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91554047289180111649E = {
+			fileRef = F5D91500047288470111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91555047289180111649E = {
+			fileRef = F5D91502047288470111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91556047289180111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D91557047289180111649E,
+				F5D9160A04729AFD0111649E,
+				F5D9160B04729AFD0111649E,
+				F5D9160C04729AFE0111649E,
+			);
+			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D91557047289180111649E = {
+			fileRef = F506BD35038192CF01116452;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91558047289180111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D91559047289180111649E,
+				F5D9155A047289180111649E,
+				F5D9155B047289180111649E,
+				F5D9155C047289180111649E,
+				F5D9155D047289180111649E,
+				F5D9155E047289180111649E,
+				F5D9155F047289180111649E,
+				F5D91560047289180111649E,
+				F5D91561047289180111649E,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D91559047289180111649E = {
+			fileRef = F5EEBF8004728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9155A047289180111649E = {
+			fileRef = F5EEBF8104728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9155B047289180111649E = {
+			fileRef = F5D914E8047287900111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9155C047289180111649E = {
+			fileRef = F5D91511047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9155D047289180111649E = {
+			fileRef = F5D91513047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9155E047289180111649E = {
+			fileRef = F5D91515047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9155F047289180111649E = {
+			fileRef = F5D914FF047288470111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91560047289180111649E = {
+			fileRef = F5D91501047288470111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91561047289180111649E = {
+			fileRef = F5D91503047288470111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91562047289180111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D91563047289180111649E,
+				F5D91564047289180111649E,
+				F5D91603047292480111649E,
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D91563047289180111649E = {
+			fileRef = 08EA7FFBFE8413EDC02AAC07;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91564047289180111649E = {
+			fileRef = F40DC58A03C1B53E00A82A01;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91565047289180111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D91566047289180111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp PkgInfo build/SurroundDelay.vst/Contents/";
+		};
+		F5D91567047289180111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -r build/SurroundDelay.vst $HOME/Library/Audio/Plug-Ins/VST/";
+		};
+		F5D91568047289180111649E = {
+			isa = PBXBundleReference;
+			path = SurroundDelay.vst;
+			refType = 3;
+		};
+		F5D91569047289690111649E = {
+			buildPhases = (
+				F5D9156A047289690111649E,
+				F5D91576047289690111649E,
+				F5D91578047289690111649E,
+				F5D91582047289690111649E,
+				F5D91585047289690111649E,
+				F5D91586047289690111649E,
+				F5D91587047289690111649E,
+			);
+			buildSettings = {
+				HEADER_SEARCH_PATHS = "../source/common ../source/AGain";
+				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/VST/";
+				OPTIMIZATION_CFLAGS = "-O0";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREFIX_HEADER = ../source/common/vstplugsmacho.h;
+				PRODUCT_NAME = ControlsGUI;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+				WRAPPER_EXTENSION = vst;
+			};
+			dependencies = (
+			);
+			isa = PBXBundleTarget;
+			name = controlsgui;
+			productInstallPath = "";
+			productName = "NIB-adelay";
+			productReference = F5D91588047289690111649E;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>ControlsGUI</string>
+	<key>CFBundleGetInfoString</key>
+	<string>© Steinberg Media Technologies 2003</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>com.steinberg.examples.controlsgui</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>ControlsGUI</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleShortVersionString</key>
+	<string></string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.1d1</string>
+</dict>
+</plist>
+";
+			shouldUseHeadermap = 0;
+		};
+		F5D9156A047289690111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D9156C047289690111649E,
+				F5D9156D047289690111649E,
+				F5D9156E047289690111649E,
+				F5D9156F047289690111649E,
+				F5D91570047289690111649E,
+				F5D91571047289690111649E,
+				F5D91572047289690111649E,
+				F5D91573047289690111649E,
+				F5D9158A047289AD0111649E,
+				F5D9158C047289AE0111649E,
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D9156C047289690111649E = {
+			fileRef = F5D914EE047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9156D047289690111649E = {
+			fileRef = F5D914EF047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9156E047289690111649E = {
+			fileRef = F5D914F0047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9156F047289690111649E = {
+			fileRef = F5D914F1047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91570047289690111649E = {
+			fileRef = F5D914F2047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91571047289690111649E = {
+			fileRef = F5D91512047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91572047289690111649E = {
+			fileRef = F5D91514047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91573047289690111649E = {
+			fileRef = F5D91516047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91576047289690111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D91577047289690111649E,
+				F5D9162A04729D610111649E,
+				F5D9162B04729D610111649E,
+				F5D9162C04729D610111649E,
+				F5D9162D04729D610111649E,
+				F5D9162E04729D610111649E,
+				F5D9162F04729D610111649E,
+				F5D9163004729D610111649E,
+				F5D9163104729D610111649E,
+				F5D9163204729D610111649E,
+				F5D9163304729D610111649E,
+				F5D9163404729D610111649E,
+				F5D9163504729D610111649E,
+				F5D9163604729D610111649E,
+				F5D9163704729D610111649E,
+				F5D9163804729D610111649E,
+				F5D9163904729D610111649E,
+			);
+			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D91577047289690111649E = {
+			fileRef = F506BD35038192CF01116452;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91578047289690111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D91579047289690111649E,
+				F5D9157A047289690111649E,
+				F5D9157C047289690111649E,
+				F5D9157D047289690111649E,
+				F5D9157E047289690111649E,
+				F5D91589047289AC0111649E,
+				F5D9158B047289AD0111649E,
+				F5D9158D047289AE0111649E,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D91579047289690111649E = {
+			fileRef = F5EEBF8004728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9157A047289690111649E = {
+			fileRef = F5EEBF8104728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9157C047289690111649E = {
+			fileRef = F5D91511047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9157D047289690111649E = {
+			fileRef = F5D91513047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9157E047289690111649E = {
+			fileRef = F5D91515047288920111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91582047289690111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D91583047289690111649E,
+				F5D91584047289690111649E,
+				F5D91602047292440111649E,
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D91583047289690111649E = {
+			fileRef = 08EA7FFBFE8413EDC02AAC07;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91584047289690111649E = {
+			fileRef = F40DC58A03C1B53E00A82A01;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91585047289690111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D91586047289690111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp PkgInfo build/ControlsGUI.vst/Contents/";
+		};
+		F5D91587047289690111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -r build/ControlsGUI.vst $HOME/Library/Audio/Plug-Ins/VST/";
+		};
+		F5D91588047289690111649E = {
+			isa = PBXBundleReference;
+			path = ControlsGUI.vst;
+			refType = 3;
+		};
+		F5D91589047289AC0111649E = {
+			fileRef = F5D9151E047288B30111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9158A047289AD0111649E = {
+			fileRef = F5D9151F047288B30111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9158B047289AD0111649E = {
+			fileRef = F5D91520047288B30111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9158C047289AE0111649E = {
+			fileRef = F5D91521047288B30111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9158D047289AE0111649E = {
+			fileRef = F5D91522047288B30111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9158E047289D30111649E = {
+			children = (
+				F5D9158F047289F50111649E,
+				F5D91590047289F50111649E,
+				F5D91591047289F50111649E,
+				F5D91592047289F50111649E,
+			);
+			isa = PBXGroup;
+			name = VSTXSynth;
+			refType = 4;
+		};
+		F5D9158F047289F50111649E = {
+			isa = PBXFileReference;
+			name = vstxsynth.cpp;
+			path = ../source/vstxsynth/vstxsynth.cpp;
+			refType = 2;
+		};
+		F5D91590047289F50111649E = {
+			isa = PBXFileReference;
+			name = vstxsynth.h;
+			path = ../source/vstxsynth/vstxsynth.h;
+			refType = 2;
+		};
+		F5D91591047289F50111649E = {
+			isa = PBXFileReference;
+			name = vstxsynthmain.cpp;
+			path = ../source/vstxsynth/vstxsynthmain.cpp;
+			refType = 2;
+		};
+		F5D91592047289F50111649E = {
+			isa = PBXFileReference;
+			name = vstxsynthproc.cpp;
+			path = ../source/vstxsynth/vstxsynthproc.cpp;
+			refType = 2;
+		};
+		F5D9159704728A010111649E = {
+			buildPhases = (
+				F5D9159804728A010111649E,
+				F5D915A304728A010111649E,
+				F5D915A504728A010111649E,
+				F5D915AE04728A010111649E,
+				F5D915B104728A010111649E,
+				F5D915B204728A010111649E,
+				F5D915B304728A010111649E,
+			);
+			buildSettings = {
+				HEADER_SEARCH_PATHS = "../source/common ../source/AGain";
+				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/VST/";
+				OPTIMIZATION_CFLAGS = "-O0";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREFIX_HEADER = ../source/common/vstplugsmacho.h;
+				PRODUCT_NAME = Vstxsynth;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+				WRAPPER_EXTENSION = vst;
+			};
+			dependencies = (
+			);
+			isa = PBXBundleTarget;
+			name = vstxsynth;
+			productInstallPath = "";
+			productName = "NIB-adelay";
+			productReference = F5D915B404728A010111649E;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>Vstxsynth</string>
+	<key>CFBundleGetInfoString</key>
+	<string>© Steinberg Media Technologies 2003</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>com.steinberg.examples.vstxsynth</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Vstxsynth</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleShortVersionString</key>
+	<string></string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.1d1</string>
+</dict>
+</plist>
+";
+			shouldUseHeadermap = 0;
+		};
+		F5D9159804728A010111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D9159904728A010111649E,
+				F5D9159A04728A010111649E,
+				F5D9159B04728A010111649E,
+				F5D9159C04728A010111649E,
+				F5D9159D04728A010111649E,
+				F5D915B604728A100111649E,
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D9159904728A010111649E = {
+			fileRef = F5D914EE047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9159A04728A010111649E = {
+			fileRef = F5D914EF047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9159B04728A010111649E = {
+			fileRef = F5D914F0047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9159C04728A010111649E = {
+			fileRef = F5D914F1047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9159D04728A010111649E = {
+			fileRef = F5D914F2047287CC0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D915A304728A010111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D915A404728A010111649E,
+			);
+			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D915A404728A010111649E = {
+			fileRef = F506BD35038192CF01116452;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D915A504728A010111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D915A604728A010111649E,
+				F5D915A704728A010111649E,
+				F5D915B504728A0F0111649E,
+				F5D915B704728A100111649E,
+				F5D915B804728A100111649E,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D915A604728A010111649E = {
+			fileRef = F5EEBF8004728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D915A704728A010111649E = {
+			fileRef = F5EEBF8104728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D915AE04728A010111649E = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D915AF04728A010111649E,
+				F5D915B004728A010111649E,
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D915AF04728A010111649E = {
+			fileRef = 08EA7FFBFE8413EDC02AAC07;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D915B004728A010111649E = {
+			fileRef = F40DC58A03C1B53E00A82A01;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D915B104728A010111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5D915B204728A010111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp PkgInfo build/Vstxsynth.vst/Contents/";
+		};
+		F5D915B304728A010111649E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -r build/Vstxsynth.vst $HOME/Library/Audio/Plug-Ins/VST/";
+		};
+		F5D915B404728A010111649E = {
+			isa = PBXBundleReference;
+			path = Vstxsynth.vst;
+			refType = 3;
+		};
+		F5D915B504728A0F0111649E = {
+			fileRef = F5D9158F047289F50111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D915B604728A100111649E = {
+			fileRef = F5D91590047289F50111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D915B704728A100111649E = {
+			fileRef = F5D91591047289F50111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D915B804728A100111649E = {
+			fileRef = F5D91592047289F50111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D915DE0472923F0111649E = {
+			isa = PBXFrameworkReference;
+			name = QuickTime.framework;
+			path = /System/Library/Frameworks/QuickTime.framework;
+			refType = 0;
+		};
+		F5D91601047292400111649E = {
+			fileRef = F5D915DE0472923F0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91602047292440111649E = {
+			fileRef = F5D915DE0472923F0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D91603047292480111649E = {
+			fileRef = F5D915DE0472923F0111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9160404729AF70111649E = {
+			isa = PBXFileReference;
+			name = bmp00128.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/delayeditgui/bmp00128.bmp;
+			refType = 0;
+		};
+		F5D9160504729AF70111649E = {
+			isa = PBXFileReference;
+			name = bmp00129.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/delayeditgui/bmp00129.bmp;
+			refType = 0;
+		};
+		F5D9160604729AF70111649E = {
+			isa = PBXFileReference;
+			name = bmp00130.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/delayeditgui/bmp00130.bmp;
+			refType = 0;
+		};
+		F5D9160704729AF70111649E = {
+			fileRef = F5D9160404729AF70111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9160804729AF70111649E = {
+			fileRef = F5D9160504729AF70111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9160904729AF70111649E = {
+			fileRef = F5D9160604729AF70111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9160A04729AFD0111649E = {
+			fileRef = F5D9160404729AF70111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9160B04729AFD0111649E = {
+			fileRef = F5D9160504729AF70111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9160C04729AFE0111649E = {
+			fileRef = F5D9160604729AF70111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9161804729B5F0111649E = {
+			children = (
+				F5D9160404729AF70111649E,
+				F5D9160504729AF70111649E,
+				F5D9160604729AF70111649E,
+			);
+			isa = PBXGroup;
+			name = delayeditgui;
+			refType = 4;
+		};
+		F5D9161904729B770111649E = {
+			children = (
+				F5D9161A04729D610111649E,
+				F5D9161B04729D610111649E,
+				F5D9161C04729D610111649E,
+				F5D9161D04729D610111649E,
+				F5D9161E04729D610111649E,
+				F5D9161F04729D610111649E,
+				F5D9162004729D610111649E,
+				F5D9162104729D610111649E,
+				F5D9162204729D610111649E,
+				F5D9162304729D610111649E,
+				F5D9162404729D610111649E,
+				F5D9162504729D610111649E,
+				F5D9162604729D610111649E,
+				F5D9162704729D610111649E,
+				F5D9162804729D610111649E,
+				F5D9162904729D610111649E,
+			);
+			isa = PBXGroup;
+			name = controlsgui;
+			refType = 4;
+		};
+		F5D9161A04729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10001.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10001.bmp;
+			refType = 0;
+		};
+		F5D9161B04729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10002.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10002.bmp;
+			refType = 0;
+		};
+		F5D9161C04729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10003.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10003.bmp;
+			refType = 0;
+		};
+		F5D9161D04729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10004.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10004.bmp;
+			refType = 0;
+		};
+		F5D9161E04729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10005.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10005.bmp;
+			refType = 0;
+		};
+		F5D9161F04729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10006.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10006.bmp;
+			refType = 0;
+		};
+		F5D9162004729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10007.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10007.bmp;
+			refType = 0;
+		};
+		F5D9162104729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10008.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10008.bmp;
+			refType = 0;
+		};
+		F5D9162204729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10009.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10009.bmp;
+			refType = 0;
+		};
+		F5D9162304729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10010.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10010.bmp;
+			refType = 0;
+		};
+		F5D9162404729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10011.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10011.bmp;
+			refType = 0;
+		};
+		F5D9162504729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10012.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10012.bmp;
+			refType = 0;
+		};
+		F5D9162604729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10013.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10013.bmp;
+			refType = 0;
+		};
+		F5D9162704729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10014.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10014.bmp;
+			refType = 0;
+		};
+		F5D9162804729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10015.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10015.bmp;
+			refType = 0;
+		};
+		F5D9162904729D610111649E = {
+			isa = PBXFileReference;
+			name = bmp10016.bmp;
+			path = /Volumes/Data/newbase/vstplugs/vstsdk2.3/resource/controlsgui/bmp10016.bmp;
+			refType = 0;
+		};
+		F5D9162A04729D610111649E = {
+			fileRef = F5D9161A04729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9162B04729D610111649E = {
+			fileRef = F5D9161B04729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9162C04729D610111649E = {
+			fileRef = F5D9161C04729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9162D04729D610111649E = {
+			fileRef = F5D9161D04729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9162E04729D610111649E = {
+			fileRef = F5D9161E04729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9162F04729D610111649E = {
+			fileRef = F5D9161F04729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9163004729D610111649E = {
+			fileRef = F5D9162004729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9163104729D610111649E = {
+			fileRef = F5D9162104729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9163204729D610111649E = {
+			fileRef = F5D9162204729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9163304729D610111649E = {
+			fileRef = F5D9162304729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9163404729D610111649E = {
+			fileRef = F5D9162404729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9163504729D610111649E = {
+			fileRef = F5D9162504729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9163604729D610111649E = {
+			fileRef = F5D9162604729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9163704729D610111649E = {
+			fileRef = F5D9162704729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9163804729D610111649E = {
+			fileRef = F5D9162804729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5D9163904729D610111649E = {
+			fileRef = F5D9162904729D610111649E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5E2151E035C745801116402 = {
+			children = (
+				F5EEBF8004728198011164B6,
+				F5EEBF8104728198011164B6,
+				F5D914EE047287CC0111649E,
+				F5D914EF047287CC0111649E,
+				F5D914F0047287CC0111649E,
+				F5D914F1047287CC0111649E,
+				F5D914F2047287CC0111649E,
+			);
+			isa = PBXGroup;
+			name = VST;
+			path = "";
+			refType = 4;
+		};
+		F5E2151F035C746B01116402 = {
+			children = (
+				F5EEBF84047281C9011164B6,
+				F5EEBF85047281C9011164B6,
+			);
+			isa = PBXGroup;
+			name = AGain;
+			path = "";
+			refType = 4;
+		};
+		F5E915E203BF444F01A82A01 = {
+			buildActionMask = 2147483647;
+			files = (
+				F5D914F8047287D10111649E,
+				F5D914F9047287D10111649E,
+				F5D914FA047287D10111649E,
+				F5D914FB047287D20111649E,
+				F5D914FC047287D20111649E,
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5E915E303BF444F01A82A01 = {
+			buildActionMask = 2147483647;
+			files = (
+				F5E915EE03BF44DC01A82A01,
+			);
+			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5E915E403BF444F01A82A01 = {
+			buildActionMask = 2147483647;
+			files = (
+				F5EEBF8204728198011164B6,
+				F5EEBF8304728198011164B6,
+				F5EEBF86047281C9011164B6,
+				F5EEBF87047281C9011164B6,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5E915E503BF444F01A82A01 = {
+			buildActionMask = 2147483647;
+			files = (
+				F5E915EF03BF44DF01A82A01,
+				F40DC58B03C1B53E00A82A01,
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5E915E603BF444F01A82A01 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5E915E703BF444F01A82A01 = {
+			buildPhases = (
+				F5E915E203BF444F01A82A01,
+				F5E915E303BF444F01A82A01,
+				F5E915E403BF444F01A82A01,
+				F5E915E503BF444F01A82A01,
+				F5E915E603BF444F01A82A01,
+				F5E915F603BF527301A82A01,
+				F5E915F703BF527B01A82A01,
+			);
+			buildSettings = {
+				HEADER_SEARCH_PATHS = "../source/common ../source/AGain";
+				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/VST/";
+				OPTIMIZATION_CFLAGS = "-O0";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREFIX_HEADER = ../source/common/vstplugsmacho.h;
+				PRODUCT_NAME = Gain;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+				WRAPPER_EXTENSION = vst;
+			};
+			dependencies = (
+			);
+			isa = PBXBundleTarget;
+			name = again;
+			productInstallPath = "";
+			productName = "NIB-adelay";
+			productReference = F5E915E803BF444F01A82A01;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>Gain</string>
+	<key>CFBundleGetInfoString</key>
+	<string>© Steinberg Media Technologies 2003</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>com.steinberg.examples.gain</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Gain</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleShortVersionString</key>
+	<string></string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.1d1</string>
+</dict>
+</plist>
+";
+			shouldUseHeadermap = 0;
+		};
+		F5E915E803BF444F01A82A01 = {
+			isa = PBXBundleReference;
+			path = Gain.vst;
+			refType = 3;
+		};
+		F5E915EE03BF44DC01A82A01 = {
+			fileRef = F506BD35038192CF01116452;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5E915EF03BF44DF01A82A01 = {
+			fileRef = 08EA7FFBFE8413EDC02AAC07;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5E915F603BF527301A82A01 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp PkgInfo build/Gain.vst/Contents/";
+		};
+		F5E915F703BF527B01A82A01 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -r build/Gain.vst $HOME/Library/Audio/Plug-Ins/VST/";
+		};
+		F5EEBF8004728198011164B6 = {
+			isa = PBXFileReference;
+			name = AudioEffect.cpp;
+			path = ../source/common/AudioEffect.cpp;
+			refType = 2;
+		};
+		F5EEBF8104728198011164B6 = {
+			isa = PBXFileReference;
+			name = audioeffectx.cpp;
+			path = ../source/common/audioeffectx.cpp;
+			refType = 2;
+		};
+		F5EEBF8204728198011164B6 = {
+			fileRef = F5EEBF8004728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5EEBF8304728198011164B6 = {
+			fileRef = F5EEBF8104728198011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5EEBF84047281C9011164B6 = {
+			isa = PBXFileReference;
+			name = AGain.cpp;
+			path = ../source/AGain/AGain.cpp;
+			refType = 2;
+		};
+		F5EEBF85047281C9011164B6 = {
+			isa = PBXFileReference;
+			name = AGainMain.cpp;
+			path = ../source/AGain/AGainMain.cpp;
+			refType = 2;
+		};
+		F5EEBF86047281C9011164B6 = {
+			fileRef = F5EEBF84047281C9011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5EEBF87047281C9011164B6 = {
+			fileRef = F5EEBF85047281C9011164B6;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+	};
+	rootObject = 089C1669FE841209C02AAC07;
+}

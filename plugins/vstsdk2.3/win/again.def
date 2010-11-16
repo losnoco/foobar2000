@@ -1,0 +1,3 @@
+LIBRARY			GAIN
+DESCRIPTION		'Gain Plugin for VstPC'
+EXPORTS			main

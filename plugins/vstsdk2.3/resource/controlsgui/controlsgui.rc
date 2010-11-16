@@ -1,0 +1,78 @@
+//Microsoft Developer Studio generated resource script.
+//
+//#include "resource.h"
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+10001                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10001.bmp"
+10002                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10002.bmp"
+10003                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10003.bmp"
+10004                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10004.bmp"
+10005                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10005.bmp"
+10006                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10006.bmp"
+10007                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10007.bmp"
+10008                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10008.bmp"
+10009                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10009.bmp"
+10010                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10010.bmp"
+10011                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10011.bmp"
+10012                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10012.bmp"
+10013                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10013.bmp"
+10014                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10014.bmp"
+10015                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10015.bmp"
+10016                     BITMAP  DISCARDABLE     "..\controlsgui\bmp10016.bmp"
+
+#endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+1 VERSIONINFO
+ FILEVERSION 1,1,0,0
+ PRODUCTVERSION 1,1,0,0
+ FILEFLAGSMASK 0x0L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004e4"
+        BEGIN
+            VALUE "CompanyName", "Steinberg Media Technologies\0"
+            VALUE "FileDescription", "VST Plug-In\0"
+            VALUE "FileVersion", "1.1\0"
+            VALUE "InternalName", "ControlsGUI\0"
+            VALUE "LegalCopyright", "© Steinberg Media Technologies 2003\0"
+            VALUE "LegalTrademarks", "Cubase VST is a trademark of Steinberg Media Technologies\0"
+            VALUE "OriginalFilename", "ControlsGui.dll\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1252
+    END
+END
+
+#endif    // !_MAC
+
+#endif    // German (Germany) resources
+/////////////////////////////////////////////////////////////////////////////

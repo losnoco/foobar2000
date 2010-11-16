@@ -1,0 +1,54 @@
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+128                     BITMAP  DISCARDABLE     "bmp00128.bmp"
+129                     BITMAP  DISCARDABLE     "bmp00129.bmp"
+130                     BITMAP  DISCARDABLE     "bmp00130.bmp"
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+1 VERSIONINFO
+ FILEVERSION 1,1,0,0
+ PRODUCTVERSION 1,1,0,0
+ FILEFLAGSMASK 0x0L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004e4"
+        BEGIN
+            VALUE "CompanyName", "Steinberg Media Technologies\0"
+            VALUE "FileDescription", "VST Plug-In\0"
+            VALUE "FileVersion", "1.1\0"
+            VALUE "InternalName", "DelayEditGUI\0"
+            VALUE "LegalCopyright", "© Steinberg Media Technologies 2003\0"
+            VALUE "LegalTrademarks", "Cubase VST is a trademark of Steinberg Media Technologies\0"
+            VALUE "OriginalFilename", "DelayEditGUI.dll\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1252
+    END
+END
+
+#endif    // !_MAC
+
+#endif    // German (Germany) resources
+/////////////////////////////////////////////////////////////////////////////

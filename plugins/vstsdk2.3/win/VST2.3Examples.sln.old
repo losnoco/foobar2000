@@ -1,0 +1,83 @@
+Microsoft Visual Studio Solution File, Format Version 7.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ControlsGui", "controlsgui.vcproj", "{1763E4AA-7027-44C8-A44B-7D429DA3385D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Delay", "adelay.vcproj", "{9ACF1CA1-D59D-491F-B57F-1622F9333D14}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Gain", "again.vcproj", "{A84DC518-9C46-4B0F-BDF1-9AEBE1EB4EB3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Offline", "Offline.vcproj", "{C6EF2B2D-11AD-404B-9899-2ADC7A7CC9B3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SurroundDelay", "surrounddelay.vcproj", "{1939CA32-21F1-4428-A446-29C2E55E6FE2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "delayeditgui", "delayeditgui.vcproj", "{C00D68D8-EED4-45DA-8512-2AC04DE7F42F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vstgui", "vstgui.vcproj", "{0D8E80A3-122F-4A39-BEDB-7C17C15DA5C7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vstxsynth", "vstxsynth.vcproj", "{51A24A7C-6965-48B9-A8EB-B17DB891536C}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Debug with VSTGUI Source
+		ConfigName.2 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+		{1763E4AA-7027-44C8-A44B-7D429DA3385D}.0 = {0D8E80A3-122F-4A39-BEDB-7C17C15DA5C7}
+		{1939CA32-21F1-4428-A446-29C2E55E6FE2}.0 = {0D8E80A3-122F-4A39-BEDB-7C17C15DA5C7}
+		{C00D68D8-EED4-45DA-8512-2AC04DE7F42F}.0 = {0D8E80A3-122F-4A39-BEDB-7C17C15DA5C7}
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{1763E4AA-7027-44C8-A44B-7D429DA3385D}.Debug.ActiveCfg = Debug|Win32
+		{1763E4AA-7027-44C8-A44B-7D429DA3385D}.Debug.Build.0 = Debug|Win32
+		{1763E4AA-7027-44C8-A44B-7D429DA3385D}.Debug with VSTGUI Source.ActiveCfg = Debug with VSTGUI Source|Win32
+		{1763E4AA-7027-44C8-A44B-7D429DA3385D}.Debug with VSTGUI Source.Build.0 = Debug with VSTGUI Source|Win32
+		{1763E4AA-7027-44C8-A44B-7D429DA3385D}.Release.ActiveCfg = Release|Win32
+		{1763E4AA-7027-44C8-A44B-7D429DA3385D}.Release.Build.0 = Release|Win32
+		{9ACF1CA1-D59D-491F-B57F-1622F9333D14}.Debug.ActiveCfg = Debug|Win32
+		{9ACF1CA1-D59D-491F-B57F-1622F9333D14}.Debug.Build.0 = Debug|Win32
+		{9ACF1CA1-D59D-491F-B57F-1622F9333D14}.Debug with VSTGUI Source.ActiveCfg = Debug|Win32
+		{9ACF1CA1-D59D-491F-B57F-1622F9333D14}.Debug with VSTGUI Source.Build.0 = Debug|Win32
+		{9ACF1CA1-D59D-491F-B57F-1622F9333D14}.Release.ActiveCfg = Release|Win32
+		{9ACF1CA1-D59D-491F-B57F-1622F9333D14}.Release.Build.0 = Release|Win32
+		{A84DC518-9C46-4B0F-BDF1-9AEBE1EB4EB3}.Debug.ActiveCfg = Debug|Win32
+		{A84DC518-9C46-4B0F-BDF1-9AEBE1EB4EB3}.Debug.Build.0 = Debug|Win32
+		{A84DC518-9C46-4B0F-BDF1-9AEBE1EB4EB3}.Debug with VSTGUI Source.ActiveCfg = Debug|Win32
+		{A84DC518-9C46-4B0F-BDF1-9AEBE1EB4EB3}.Debug with VSTGUI Source.Build.0 = Debug|Win32
+		{A84DC518-9C46-4B0F-BDF1-9AEBE1EB4EB3}.Release.ActiveCfg = Release|Win32
+		{A84DC518-9C46-4B0F-BDF1-9AEBE1EB4EB3}.Release.Build.0 = Release|Win32
+		{C6EF2B2D-11AD-404B-9899-2ADC7A7CC9B3}.Debug.ActiveCfg = Debug|Win32
+		{C6EF2B2D-11AD-404B-9899-2ADC7A7CC9B3}.Debug.Build.0 = Debug|Win32
+		{C6EF2B2D-11AD-404B-9899-2ADC7A7CC9B3}.Debug with VSTGUI Source.ActiveCfg = Debug|Win32
+		{C6EF2B2D-11AD-404B-9899-2ADC7A7CC9B3}.Debug with VSTGUI Source.Build.0 = Debug|Win32
+		{C6EF2B2D-11AD-404B-9899-2ADC7A7CC9B3}.Release.ActiveCfg = Release|Win32
+		{C6EF2B2D-11AD-404B-9899-2ADC7A7CC9B3}.Release.Build.0 = Release|Win32
+		{1939CA32-21F1-4428-A446-29C2E55E6FE2}.Debug.ActiveCfg = Debug|Win32
+		{1939CA32-21F1-4428-A446-29C2E55E6FE2}.Debug.Build.0 = Debug|Win32
+		{1939CA32-21F1-4428-A446-29C2E55E6FE2}.Debug with VSTGUI Source.ActiveCfg = Debug with VSTGUI Source|Win32
+		{1939CA32-21F1-4428-A446-29C2E55E6FE2}.Debug with VSTGUI Source.Build.0 = Debug with VSTGUI Source|Win32
+		{1939CA32-21F1-4428-A446-29C2E55E6FE2}.Release.ActiveCfg = Release|Win32
+		{1939CA32-21F1-4428-A446-29C2E55E6FE2}.Release.Build.0 = Release|Win32
+		{C00D68D8-EED4-45DA-8512-2AC04DE7F42F}.Debug.ActiveCfg = Debug|Win32
+		{C00D68D8-EED4-45DA-8512-2AC04DE7F42F}.Debug.Build.0 = Debug|Win32
+		{C00D68D8-EED4-45DA-8512-2AC04DE7F42F}.Debug with VSTGUI Source.ActiveCfg = Debug with VSTGUI source|Win32
+		{C00D68D8-EED4-45DA-8512-2AC04DE7F42F}.Debug with VSTGUI Source.Build.0 = Debug with VSTGUI source|Win32
+		{C00D68D8-EED4-45DA-8512-2AC04DE7F42F}.Release.ActiveCfg = Release|Win32
+		{C00D68D8-EED4-45DA-8512-2AC04DE7F42F}.Release.Build.0 = Release|Win32
+		{0D8E80A3-122F-4A39-BEDB-7C17C15DA5C7}.Debug.ActiveCfg = Debug|Win32
+		{0D8E80A3-122F-4A39-BEDB-7C17C15DA5C7}.Debug.Build.0 = Debug|Win32
+		{0D8E80A3-122F-4A39-BEDB-7C17C15DA5C7}.Debug with VSTGUI Source.ActiveCfg = Debug|Win32
+		{0D8E80A3-122F-4A39-BEDB-7C17C15DA5C7}.Debug with VSTGUI Source.Build.0 = Debug|Win32
+		{0D8E80A3-122F-4A39-BEDB-7C17C15DA5C7}.Release.ActiveCfg = Release|Win32
+		{0D8E80A3-122F-4A39-BEDB-7C17C15DA5C7}.Release.Build.0 = Release|Win32
+		{51A24A7C-6965-48B9-A8EB-B17DB891536C}.Debug.ActiveCfg = Debug|Win32
+		{51A24A7C-6965-48B9-A8EB-B17DB891536C}.Debug.Build.0 = Debug|Win32
+		{51A24A7C-6965-48B9-A8EB-B17DB891536C}.Debug with VSTGUI Source.ActiveCfg = Debug|Win32
+		{51A24A7C-6965-48B9-A8EB-B17DB891536C}.Debug with VSTGUI Source.Build.0 = Debug|Win32
+		{51A24A7C-6965-48B9-A8EB-B17DB891536C}.Release.ActiveCfg = Release|Win32
+		{51A24A7C-6965-48B9-A8EB-B17DB891536C}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

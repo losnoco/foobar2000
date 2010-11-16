@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>AEffEditor</title>
+     		 		<base target="vstdoc"> 		   
+  <link rel="stylesheet" type="text/css" href="../../../sdkdoc.css">
+</head>
+  	<body>
+  		 
+<div> 			 
+<h2>AEffEditor</h2>
+  			  
+<div class="cpp">class AEffEditor</div>
+  			   			 
+<p>Just as all the plug-ins are derived from <code><a
+ href="../2.0/AudioEffectX.html">AudioEffectX</a></code>,  				all the editors 
+are derived from the class <code>AEffEditor</code>. If a  				plug-in has 
+its own editor, it instanciates one when it. If a plug-in has its  				own 
+editor, as opposed to working on the built-in 'string interface provided by
+ 				a VST host. it instanciates one when it itself is constructed.</p>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h2>Constructor and Destructor</h2>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="AEffEditor">AEffEditor</a></h4>
+  			  
+<div class="cpp">AEffEditor (<a href="AudioEffect.html">AudioEffect</a>*effect);</div>
+  			   			 
+<p>The editor gets passed the plug-in object as a parameter to its constructor, 
+and  				the editor uses this to notify the effect object of its presence.</p>
+  			 
+<h4>Example :</h4>
+  			 
+<p>As usual we define a class for the new plug-in. This <code>ADelayEdit</code> 
+class  				inherits directly from <code>ADelay</code>, thus both the declaration 
+and  				constructor methods are very simple...</p>
+  			 
+<div class="cpp"> 
+<pre>class ADelayEdit : public ADelay<br>{<br>public:<br>	ADelayEdit (audioMasterCallback audioMaster);<br>	~ADelayEdit ();<br>};<br><br>ADelayEdit::ADelayEdit (audioMasterCallback audioMaster)<br> : ADelay (audioMaster)<br>{<br>	setUniqueID ('ADlE');<br>	editor = new ADEditor (this);<br>	if (!editor)<br>		oome = true;<br>}</pre>
+ </div>
+  			 
+<p>As you can see from the constructor, <code>ADelayEdit</code> merely adds 
+an  				editor <code>ADEditor</code>. This editor is derived from the base 
+class <code>AEffEditor</code> 				as described above. Looking at the constructor 
+of the editor, you can see the  				Audio Effect (our plug-in) being used 
+as a parameter, and the plug-in being  				formally informed about the editor.</p>
+  			 
+<div class="cpp"> 
+<pre>ADEditor::ADEditor (AudioEffect *effect)<br>: AEffEditor (effect)<br>{<br>    effect-&gt;setEditor (this); // notify effect that "this is the editor"<br>}</pre>
+ </div>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="dAEffEditor">~AEffEditor</a></h4>
+  			  
+<div class="cpp">virtual ~AEffEditor ();</div>
+  			   			 
+<h4>Example :</h4>
+  			 
+<p>The <code>ADelayEdit</code> destructor has nothing to do, as <code>AudioEffect</code>
+ 				takes care of deleting the editor when the plug-in is removed.</p>
+  			 
+<div class="cpp"> 
+<pre>ADelayEdit::~ADelayEdit ()<br>{<br>    // the editor gets deleted by the<br>    // <a
+ href="AudioEffect.html#dAudioEffect">AudioEffect</a> base class<br>}</pre>
+ </div>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="getRect"></a>getRect</h4>
+  			  
+<div class="cpp">virtual long getRect (<a href="#ERect">ERect</a> **rect);</div>
+  			   			 
+<p>Host is asking the editor how big it wants its window to be.</p>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="open">open</a></h4>
+  			  
+<div class="cpp">virtual long open (void *ptr);</div>
+  			   			 
+<p>Host is about to open a window for the editor.</p>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="close">close</a></h4>
+  			  
+<div class="cpp">virtual void close ();</div>
+  			   			 
+<p>Host is about to close the window for the editor.</p>
+  			 
+<h4>Example :</h4>
+  			 
+<div class="cpp"> 
+<pre>void MyEditor::close ()<br>{<br>    // don't forget to remove the frame !!<br>    if (frame)<br>        delete frame;<br>    frame = 0;<br><br>    // forget background if not anymore used<br>    if (myBackground)<br>    {<br>        if (myBackground-&gt;getNbReference () &lt;= 1)<br>		{<br>            myBackground-&gt;forget ();	<br>            myBackground = 0;<br>        }<br>        else<br>            myBackground-&gt;forget ();	<br>	}<br>	// set to zero all pointer (security)<br>    myControl = 0;<br>}</pre>
+ </div>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="idle">idle</a></h4>
+  			  
+<div class="cpp">virtual void idle ();</div>
+  			   			 
+<p>Host has "idling" events for the editor.</p>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="update">update</a></h4>
+  			  
+<div class="cpp">virtual void update ();</div>
+  			   			 
+<p>Update your graphics during this call if you have flagged any updates. 
+This gets  				called during <code><a href="#idle">idle</a> ()</code>.</p>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="postUpdate">postUpdate</a></h4>
+  			  
+<div class="cpp">virtual void postUpdate ();</div>
+  			   			 
+<p>Here you can flag any updates that will later be actioned in <code><a
+ href="#update">update</a> 					()</code>.</p>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h2>Macintosh</h2>
+  			 
+<p>The resource file should always be open, and the current resource file 
+should  				point to the plugs' resources, in all of the following calls:
+ 			</p>
+  			 
+<ul>
+  				<li> 					<code><a href="#">main</a></code> 				</li>
+  				<li> 					<code><a href="#close">close</a></code> 				</li>
+  				<li> 					<code><a href="#open">open editor</a></code> 				</li>
+  				<li> 					<code><a href="#close">close editor</a></code> 				</li>
+  				<li> 					<code><a href="#draw">draw</a></code> 				</li>
+  				<li> 					<code><a href="#mouse">mouse</a></code> 				</li>
+  				<li> 					<code><a href="#key">key</a></code> 				</li>
+  				<li> 					<code><a href="#idle">idle</a></code></li>
+  			 
+</ul>
+  			that means all init/exit calls, and all GUI related calls where we expect 
+the  			plug to do something with its resources. 			 
+<p>Don't forget to set the current resource file before calling into any of
+the  				mentioned calls, by applying something like :</p>
+  			 
+<div class="cpp"> 
+<pre> short currentResFile = CurResFile ();<br> UseResFile (plug-&gt;resFile);<br><br> plug-&gt;effect-&gt;dispatcher (whateverOpcode, bla, bla...)<br><br> UseResFile (currentResFile);<br></pre>
+ </div>
+  			 
+<p>The vstgui will mainly access the resource file when the editor is opened 
+(most  				of all when getting PICTs for CBitmap classes). I hope all of this
+is utterly  				correct because i can't access the sources while writing this...
+if you still  				have problems, we can look it up.</p>
+  			 
+<p>On the Macintosh the window your plug-in receives is created by the host, 
+and  				the GUI events your plug-in receives are received globally by the 
+host  				application and posted on to the plug-in with these methods. VST 
+hosts on the  				Mac create a window for the plug-in's editor and then passes 
+all the events on  				to the editor. There are a few functions that negotiate 
+this process. Here they  				are:</p>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="draw">draw</a></h4>
+  			  
+<div class="cpp">virtual void draw (<a href="#ERect">ERect</a> *rect);</div>
+  			   			 
+<p>Host says this area of the editor window needs updating.</p>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="mouse">mouse</a></h4>
+  			  
+<div class="cpp">virtual long mouse (long x, long y);</div>
+  			   			 
+<p>Host says the mouse was clicked here. See <code><a
+ href="../gui/AEffGUIEditor.html">AEffGUIEditor</a></code>.</p>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="key">key</a></h4>
+  			  
+<div class="cpp">virtual long key (long keyCode);</div>
+  			   			 
+<p>Host says what key was pressed.</p>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="top">top</a></h4>
+  			  
+<div class="cpp">virtual void top ();</div>
+  			   			 
+<hr noshade="noshade" size="4"> 			 
+<h4><a name="sleep">sleep</a></h4>
+  			  
+<div class="cpp">virtual void sleep ();</div>
+  			   			 
+<hr noshade="noshade" size="4"> 			 
+<h2>protected members :</h2>
+  			 
+<hr noshade="noshade" size="4"> 			  
+<div class="cpp">AEffEditor ();</div>
+  			   			 
+<hr noshade="noshade" size="4"> 			  
+<div class="cpp"><a href="AudioEffect.html">AudioEffect</a> *effect;</div>
+  			   			 
+<hr noshade="noshade" size="4"> 			  
+<div class="cpp">void *systemWindow;</div>
+  			   			 
+<hr noshade="noshade" size="4"> 			  
+<div class="cpp">long updateFlag;</div>
+  			   			 
+<hr noshade="noshade" size="4"> 			 
+<h2><a name="ERect">ERect</a></h2>
+  			  
+<div class="cpp">struct ERect;</div>
+  			   			 
+<p>Members are of type <code>short</code> and in the folowing order : <code>top</code>,
+ 				<code>left</code>, <code>bottom</code>, <code>right</code>.</p>
+  			<br>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<div align="center">Copyright &copy;2003 <a
+ href="http://www.steinberg.net" target="_blank"> 					<u>Steinberg Media 
+Technologies GmbH</u></a>. All Rights Reserved. 			</div>
+  			<br>
+  		</div>
+  		<br>
+  	<br>
+ 
+</body>
+</html>

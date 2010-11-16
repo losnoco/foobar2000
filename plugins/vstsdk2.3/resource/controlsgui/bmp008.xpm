@@ -1,0 +1,30 @@
+/* XPM */
+static char *bmp008[] = {
+/* width height num_colors chars_per_pixel */
+"     7     7       16            1",
+/* colors */
+". c #ffffff",
+"# c #bbbbbb",
+"a c #aaaaaa",
+"b c #999999",
+"c c #888888",
+"d c #777777",
+"e c #666666",
+"f c #555555",
+"g c #444444",
+"h c #333333",
+"i c #222222",
+"j c #111111",
+"k c #000000",
+"l c #c0c0c0",
+"m c #a0a0a4",
+"n c #808080",
+/* pixels */
+"..kkk..",
+".kkjih.",
+"kkihgfe",
+"jhgfenc",
+"hffdnba",
+".enca#.",
+"..m#l.."
+};

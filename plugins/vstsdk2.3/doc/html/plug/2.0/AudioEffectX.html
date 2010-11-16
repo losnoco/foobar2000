@@ -1,0 +1,3231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+	<head>
+		<title>AudioEffectX</title>
+		<base target="vstdoc">
+		<link rel="stylesheet" type="text/css" href="../../../sdkdoc.css">
+	</head>
+	<body>
+		<div>
+			<h2>AudioEffectX</h2>
+			<div class="cpp">class AudioEffectX : public <a href="../1.0/AudioEffect.html">AudioEffect</a>;</div>
+			<p>Just as the VST 1.0 specification was built around a class <code><a href="../1.0/AudioEffect.html">
+						AudioEffect</a></code>, the VST 2.0 specification is built around a new 
+				core class <code>AudioEffectX</code>. We start with a complete discussion of 
+				the <code>AudioEffectX</code> class and its methods, which declares all new VST 
+				2.0 (2.1, 2.2 and 2.3) features as seen from plug-in point of view.</p>
+			<h2>General new features of version 2.0 / 2.1 / 2.2 / 2.3</h2>
+			<ul>
+				<li>
+					<h4><a href="VstEvents.html">Instruments</a>
+					</h4>
+					<p>Plug-ins that can receive MIDI events from the host application and then 
+						"render" audio however they please.</p>
+				<li>
+					<h4><a href="VstTimeInfo.html">VstTimeInfo</a>
+					</h4>
+					<p>A protocol defining how a plug-in can obtain time &amp; tempo information from 
+						the host application in a variety of formats.</p>
+				<li>
+					<h4><a href="VstOffline.html">VstOffline</a> Processing</h4>
+					<p>A complete interface definition between host and plug-in defining off-line audio 
+						processes. Apart from these new capabilities, there is a whole batch of new 
+						methods on both the plug-in and application side of the VST Plug-in interface.</p>
+				</li>
+			</ul>
+			<h2><a name="additions">New Universal Basic Methods</a>
+			</h2>
+			<p>There is a basic set of methods that your plug should support (with *), even if 
+				you have a 1.0 version working already. These are all found in the new 
+				AudioEffectX class.</p>
+			<table width="100%" bordercolor="#000000" border="1" cellspacing="0" cellpadding="0">
+				<tbody>
+					<tr>
+						<td valign="top">
+							<div align="center"><b>Version 1.0</b></div>
+						</td>
+						<td valign="top">
+							<div align="center"><b>Version 2.0</b></div>
+						</td>
+						<td valign="top">
+							<div align="center"><b>Version 2.1</b></div>
+						</td>
+						<td valign="top">
+							<div align="center"><b>Version 2.2</b></div>
+						</td>
+						<td valign="top">
+							<div align="center"><b>Version 2.3</b></div>
+							<div align="center">&nbsp;</div>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top">
+							<ul>
+								<center><b>Host -&gt; Plug</b></center>
+							</ul>
+							<p dir="ltr" style="MARGIN-RIGHT: 0px">
+								<a href="../1.0/AudioEffect.html#setParameter">setParameter</a> *
+								<br>
+								<a href="../1.0/AudioEffect.html#getParameter">getParameter</a> *
+								<br>
+								<a href="../1.0/AudioEffect.html#process">process</a> *
+								<br>
+								<a href="../1.0/AudioEffect.html#processReplacing">processReplacing</a> *
+								<br>
+								<a href="../1.0/AudioEffect.html#dispatcher">dispatcher</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#open">open</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#close">close</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#getProgram">getProgram</a> *
+								<br>
+								<a href="../1.0/AudioEffect.html#setProgram">setProgram</a> *
+								<br>
+								<a href="../1.0/AudioEffect.html#setProgramName">setProgramName</a> *
+								<br>
+								<a href="../1.0/AudioEffect.html#getProgramName">getProgramName</a> *
+								<br>
+								<a href="../1.0/AudioEffect.html#getParameterLabel">getParameterLabel</a> *
+								<br>
+								<a href="../1.0/AudioEffect.html#getParameterDisplay">getParameterDisplay</a> *
+								<br>
+								<a href="../1.0/AudioEffect.html#getParameterName">getParameterName</a> *
+								<br>
+								<a href="../1.0/AudioEffect.html#getVu">getVu</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#getChunk">getChunk</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#setChunk">setChunk</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#setSampleRate">setSampleRate</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#setBlockSize">setBlockSize</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#suspend">suspend</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#resume">resume</a>
+								<br>
+							</p>
+							<hr noshade size="4">
+							<center><strong>Internal / Tools</strong>
+							</center>
+							<p dir="ltr" style="MARGIN-RIGHT: 0px">
+								getAeffect
+								<br>
+								<a href="../1.0/AudioEffect.html#setEditor">setEditor</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#setUniqueID">setUniqueID</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#setNumInputs">setNumInputs</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#setNumOutputs">setNumOutputs</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#hasVu">hasVu</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#hasClip">hasClip</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#canMono">canMono</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#canProcessReplacing">canProcessReplacing</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#setRealtimeQualities">setRealtimeQualities</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#setOfflineQualities">setOfflineQualities</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#setInitialDelay">setInitialDelay</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#programsAreChunks">programsAreChunks</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#getSampleRate">getSampleRate</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#getBlockSize">getBlockSize</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#dB2string">dB2string</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#Hz2string">Hz2string</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#ms2string">ms2string</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#float2string">float2string</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#long2string">long2string</a>
+								<br>
+							</p>
+							<hr noshade size="4">
+							<center><b>Plug -&gt; Host</b></center>
+							<p dir="ltr" style="MARGIN-RIGHT: 0px">
+								<a href="../1.0/AudioEffect.html#setParameterAutomated">setParameterAutomated</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#getMasterVersion">getMasterVersion</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#getCurrentUniqueId">getCurrentUniqueId</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#masterIdle">masterIdle</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#isInputConnected">isInputConnected</a>
+								<br>
+								<a href="../1.0/AudioEffect.html#isOutputConnected">isOutputConnected</a>
+								<br>
+							</p>
+						</td>
+						<td valign="top">
+							<ul>
+								<center><b>Host -&gt; Plug</b></center>
+							</ul>
+							<p dir="ltr" style="MARGIN-RIGHT: 0px">
+								<a href="AudioEffectX.html#canDo">canDo</a> *
+								<br>
+								<a href="AudioEffectX.html#canParameterBeAutomated">canParameterBeAutomated</a>
+								<br>
+								<a href="AudioEffectX.html#copyProgram">copyProgram</a>
+								<br>
+								<a href="#fxIdle">fxIdle</a>
+								<br>
+								<a href="AudioEffectX.html#getChannelParameter">getChannelParameter</a>
+								<br>
+								<a href="AudioEffectX.html#getNumCategories">getNumCategories</a>
+								<br>
+								<a href="AudioEffectX.html#getProgramNameIndexed">getProgramNameIndexed</a> *
+								<br>
+								<a href="AudioEffectX.html#getInputProperties">getInputProperties</a>
+								<br>
+								<a href="AudioEffectX.html#getOutputProperties">getOutputProperties</a>
+								<br>
+								<a href="AudioEffectX.html#getIcon">getIcon</a>
+								<br>
+								<a href="AudioEffectX.html#getEffectName">getEffectName</a>
+								<br>
+								<a href="AudioEffectX.html#getErrorText">getErrorText</a>
+								<br>
+								<a href="AudioEffectX.html#getGetTailSize">getGetTailSize</a>
+								<br>
+								<a href="AudioEffectX.html#getParameterProperties">getParameterProperties</a>
+								<br>
+								<a href="AudioEffectX.html#getPlugCategory">getPlugCategory</a> *
+								<br>
+								<a href="AudioEffectX.html#getProductString">getProductString</a> *
+								<br>
+								<a href="AudioEffectX.html#getVendorString">getVendorString</a> *
+								<br>
+								<a href="AudioEffectX.html#getVendorVersion">getVendorVersion</a>
+								<br>
+								<a href="AudioEffectX.html#getVstVersion">getVstVersion</a>
+								<br>
+								<a href="AudioEffectX.html#inputConnected">inputConnected</a>
+								<br>
+								<a href="AudioEffectX.html#outputConnected">outputConnected</a>
+								<br>
+								<a href="AudioEffectX.html#keysRequired">keysRequired</a>
+								<br>
+								<a href="AudioEffectX.html#offlineNotify">offlineNotify</a>
+								<br>
+								<a href="AudioEffectX.html#offlineGetNumPasses">offlineGetNumPasses</a>
+								<br>
+								<a href="AudioEffectX.html#offlineGetNumMetaPasses">offlineGetNumMetaPasses</a>
+								<br>
+								<a href="AudioEffectX.html#offlinePrepare">offlinePrepare</a>
+								<br>
+								<a href="AudioEffectX.html#offlineRun">offlineRun</a>
+								<br>
+								<a href="#wantEvents">processEvents</a>
+								<br>
+								<a href="AudioEffectX.html#processVariableIo">processVariableIo</a>
+								<br>
+								<a href="AudioEffectX.html#reportCurrentPosition">reportCurrentPosition</a>
+								<br>
+								<a href="AudioEffectX.html#reportDestinationBuffer">reportDestinationBuffer</a>
+								<br>
+								<a href="AudioEffectX.html#setBlockSizeAndSampleRate">setBlockSizeAndSampleRate</a>
+								<br>
+								<a href="AudioEffectX.html#setBypass">setBypass</a> *
+								<br>
+								<a href="AudioEffectX.html#setSpeakerArrangement">setSpeakerArrangement</a>
+								<br>
+								<a href="AudioEffectX.html#setViewPosition">setViewPosition</a>
+								<br>
+								<a href="AudioEffectX.html#string2parameter">string2parameter</a> *
+								<br>
+								<a href="AudioEffectX.html#vendorSpecific">vendorSpecific</a>
+								<br>
+							</p>
+							<hr noshade size="4">
+							<center><b>Plug -&gt; Host</b></center>
+							<p dir="ltr" style="MARGIN-RIGHT: 0px">
+								<a href="AudioEffectX.html#canHostDo">canHostDo</a>
+								<br>
+								<a href="AudioEffectX.html#closeWindow">closeWindow</a>
+								<br>
+								<a href="AudioEffectX.html#openWindow">openWindow</a>
+								<br>
+								<a href="AudioEffectX.html#ioChanged">ioChanged</a>
+								<br>
+								<a href="AudioEffectX.html#getTimeInfo">getTimeInfo</a>
+								<br>
+								<a href="AudioEffectX.html#sendVstEventsToHost">sendVstEventsToHost</a>
+								<br>
+								<a href="AudioEffectX.html#needIdle">needIdle</a>
+								<br>
+								<a href="AudioEffectX.html#sizeWindow">sizeWindow</a>
+								<br>
+								<a href="AudioEffectX.html#updateSampleRate">updateSampleRate</a>
+								<br>
+								<a href="AudioEffectX.html#updateBlockSize">updateBlockSize</a>
+								<br>
+								<a href="AudioEffectX.html#getAutomationState">getAutomationState</a>
+								<br>
+								<a href="AudioEffectX.html#getCurrentProcessLevel">getCurrentProcessLevel</a>
+								<br>
+								<a href="AudioEffectX.html#getDirectory">getDirectory</a>
+								<br>
+								<a href="AudioEffectX.html#getHostProductString">getHostProductString</a>
+								<br>
+								<a href="AudioEffectX.html#getHostVendorVersion">getHostVendorVersion</a>
+								<br>
+								<a href="AudioEffectX.html#getHostVendorString">getHostVendorString</a>
+								<br>
+								<a href="AudioEffectX.html#getHostLanguage">getHostLanguage</a>
+								<br>
+								<a href="AudioEffectX.html#getInputLatency">getInputLatency</a>
+								<br>
+								<a href="AudioEffectX.html#getOutputLatency">getOutputLatency</a>
+								<br>
+								<a href="AudioEffectX.html#getNextPlug">getNextPlug</a>
+								<br>
+								<a href="AudioEffectX.html#getPreviousPlug">getPreviousPlug</a>
+								<br>
+								<a href="AudioEffectX.html#getNumAutomatableParameters">getNumAutomatableParameters</a>
+								<br>
+								<a href="AudioEffectX.html#getParameterQuantization">getParameterQuantization</a>
+								<br>
+								<a href="AudioEffectX.html#getSpeakerArrangement">getSpeakerArrangement</a>
+								<br>
+								<a href="AudioEffectX.html#hasExternalBuffer">hasExternalBuffer</a>
+								<br>
+								<a href="AudioEffectX.html#hostVendorSpecific">hostVendorSpecific</a>
+								<br>
+								<a href="AudioEffectX.html#isSynth">isSynth</a>
+								<br>
+								<a href="AudioEffectX.html#noTail">noTail</a>
+								<br>
+								<a href="AudioEffectX.html">offlineGetCurrentMetaPass</a>
+								<br>
+								<a href="#offlineGetCurrentPass">offlineGetCurrentPass</a>
+								<br>
+								<a href="#offlineRead">offlineRead</a>
+								<br>
+								<a href="#offlineStart">offlineStart</a>
+								<br>
+								<a href="#offlineWrite">offlineWrite</a>
+								<br>
+								<a href="AudioEffectX.html#setOutputSamplerate">setOutputSamplerate</a>
+								<br>
+								<a href="#tempoAt">tempoAt</a>
+								<br>
+								<a href="AudioEffectX.html#updateDisplay">updateDisplay</a>
+								<br>
+								<a href="AudioEffectX.html#wantAsyncOperation">wantAsyncOperation</a>
+								<br>
+								<a href="#wantEvents">wantEvents</a>
+								<br>
+								<a href="AudioEffectX.html#willProcessReplacing">willProcessReplacing</a>
+								<br>
+							</p>
+						</td>
+						<td valign="top">
+							<ul>
+								<center><b>Host -&gt; Plug</b></center>
+							</ul>
+							<p dir="ltr" style="MARGIN-RIGHT: 0px">
+								<a href="AudioEffectX.html#getMidiProgramName">getMidiProgramName</a>
+								<br>
+								<a href="AudioEffectX.html#getCurrentMidiProgram">getCurrentMidiProgram</a>
+								<br>
+								<a href="AudioEffectX.html#getMidiProgramCategory">getMidiProgramCategory</a>
+								<br>
+								<a href="AudioEffectX.html#hasMidiProgramsChanged">hasMidiProgramsChanged</a>
+								<br>
+								<a href="AudioEffectX.html#getMidiKeyName">getMidiKeyName</a>
+								<br>
+								<a href="AudioEffectX.html#beginSetProgram">beginSetProgram</a>
+								<br>
+								<a href="AudioEffectX.html#endSetProgram">endSetProgram</a>
+							</p>
+							<hr noshade size="4">
+							<br>
+							<center><b>Plug -&gt; Host</b></center>
+							<p dir="ltr" style="MARGIN-RIGHT: 0px">
+								<a href="AudioEffectX.html#beginEdit">beginEdit</a>
+								<br>
+								<a href="AudioEffectX.html#endEdit">endEdit</a>
+								<br>
+								<a href="AudioEffectX.html#openFileSelector">openFileSelector</a></p>
+						</td>
+						<td valign="top">
+							<ul>
+								<center><b>Plug -&gt; Host</b></center>
+							</ul>
+							<P dir="ltr" style="MARGIN-RIGHT: 0px">
+								<a href="AudioEffectX.html#closeFileSelector">closeFileSelector</a>
+								<br>
+								<a href="AudioEffectX.html#getChunkFile">getChunkFile</a>
+								<br>
+							</P>
+						</td>
+						<td valign="top">
+							<ul>
+								<center><b>Host -&gt; Plug</b></center>
+							</ul>
+							<p dir="ltr" style="MARGIN-RIGHT: 0px">
+								<a href="#setTotalSampleToProcess">setTotalSampleToProcess</a>
+								<br>
+								<a href="#getNextSchellPlugin">getNextShellPlugin</a>
+								<br>
+								<a href="#startProcess">startProcess</a>
+								<br>
+								<a href="#stopProcess">stopProcess</a>
+							</p>
+							<hr noshade size="4">
+							<br>
+							<center><strong>Internal / Tools</strong>
+							</center>
+							<p dir="ltr" style="MARGIN-RIGHT: 0px">
+								<br>
+								<a href="#allocateArrangement">allocateArrangement</a>
+								<br>
+								<a href="#deallocateArrangement">deallocateArrangement</a>
+								<br>
+								<a href="#copySpeaker">copySpeaker</a>
+								<br>
+								<a href="#matchArrangement">matchArrangement</a>
+							</p>
+							<hr noshade size="4">
+							<br>
+							<center><b>Plug -&gt; Host</b></center>
+							<p dir="ltr" style="MARGIN-RIGHT: 0px">
+								<a href="#setPanLaw">setPanLaw </a>
+								<br>
+								<a href="#beginLoadBank">beginLoadBank</a>
+								<br>
+								<a href="#beginLoadProgram">beginLoadProgram</a><br>
+							</p>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<br>
+			<br>
+			<hr noshade size="4">
+			<h2><a name="Constructor">Constructor and Destructor</a>
+			</h2>
+			<hr noshade size="4">
+			<h4><a name="AudioEffectX">AudioEffectX</a>
+			</h4>
+			<div class="cpp">AudioEffectX (audioMasterCallback audioMaster, long numPrograms, long numParams);</div>
+			<p>The constructor method. Same arguments as <code><a href="../1.0/AudioEffect.html#AudioEffect">
+						AudioEffect</a> </code>.</p>
+			<hr noshade size="4">
+			<h4>~AudioEffectX</h4>
+			<div class="cpp">virtual ~AudioEffectX ();</div>
+			<p>The destructor method. See <code><a href="../1.0/AudioEffect.html#dAudioEffect">~AudioEffect</a>
+				</code>.</p>
+			<hr noshade size="4">
+			<p>'host' are methods which go from plug to host, and are usually not overridden 
+				'plug' are methods which you may override to implement the according 
+				functionality (to host) also note that a return value of 0 of either methods 
+				almost always indicates 'not implemented'.</p>
+			<hr noshade size="4">
+			<h2><a name="parameters">Parameters and Programs</a>
+			</h2>
+			<hr noshade size="4">
+			<h4><a name="getNumAutomatableParameters">getNumAutomatableParameters</a> (-&gt;host)</h4>
+			<div class="cpp">virtual long getNumAutomatableParameters ();</div>
+			<p>Asks the host application about the maximum number of automatable parameters, 
+				which may be limited.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table1">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table2">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>0</code> :</th>
+										<td>Not implemented.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>other</code> :</th>
+										<td>The number of automatable parameters.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="getParameterQuantization">getParameterQuantization</a> (-&gt;host)</h4>
+			<div class="cpp">virtual long getParameterQuantization ();</div>
+			<p>Parameter index in &lt;value&gt; (-1: all, any). When the application stores and 
+				restores automation data, or when a user control (like a fader or knob) is 
+				quantized to integer values, there is some quantization applied related to the 
+				floating point value.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table3">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table4">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>0</code> :</th>
+										<td>Not implemented.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>1</code> :</th>
+										<td>Full single float precision is maintained in automation.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>other</code> :</th>
+										<td>The integer value that represents <code>+1.0</code>.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="beginLoadBank"></a>beginLoadBank&nbsp; (-&gt;host)</h4>
+			<div class="cpp">virtual long beginLoadBank (<a href="aeffectx.html/#VstPatchChunkInfo">VstPatchChunkInfo</a>* ptr);</div>
+			<p>Called before a bank is loaded.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table5">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table6">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>0</code> :</th>
+										<td>Not implemented.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>1</code> :</th>
+										<td>The bank can be loaded.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>-1</code>&nbsp; :</th>
+										<td>The bank can't be loaded<code></code>.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<code></code>
+			<hr noshade size="4">
+			<h4><a name="beginLoadProgram">beginLoadProgram</a>&nbsp; (-&gt;host)</h4>
+			<div class="cpp">virtual long beginLoadProgram (<a href="aeffectx.html/#VstPatchChunkInfo">VstPatchChunkInfo</a>* ptr);</div>
+			<p>Called before a Program is loaded. (called before beginSetProgram).</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table7">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table8">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>0</code> :</th>
+										<td>Not implemented.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>1</code> :</th>
+										<td>The Program can be loaded.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>-1</code>&nbsp; :</th>
+										<td>The Program cannot be loaded..</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="canParameterBeAutomated">canParameterBeAutomated</a> (-&gt;plug)</h4>
+			<div class="cpp">virtual bool canParameterBeAutomated (long index);</div>
+			<p>Indicates if a parameter can be automated. Obviously only useful when the 
+				application supports this.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table9">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>index</code></th>
+						<td>An index to the parameter.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table width="185" cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table10">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Can be autoimated.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Can not.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="string2parameter">string2parameter</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool string2parameter (long index, char *text);</div>
+			<P></P>
+			<p>Convert a string representation to a parameter value. Especially useful for 
+				plug-ins without user interface. The application can then implement a text edit 
+				field for the user to set a parameter by entering text.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table11">
+				<tbody>
+					<tr>
+						<th align="right" valign="top">
+							<code>index</code></th>
+						<td>The index to the parameter.</td>
+					</tr>
+					<tr>
+						<th align="right" valign="top">
+							<code>text</code></th>
+						<td>A textual description oif the parameter's value. A <code>null</code> pointer is 
+							used to check the capability (return <code>true</code>).</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table12">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>Note: implies <code><a href="../1.0/AudioEffect.html#setparameter">setParameter</a> </code>
+				.</p>
+			<hr noshade size="4">
+			<h4><a name="getChannelParameter">getChannelParameter</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual float getChannelParameter (long channel, long index);</div>
+			<P></P>
+			<p>For internal use of soft synth voices, as a voice may be channel dependant.</p>
+			<hr noshade size="4">
+			<h4><a name="getNumCategories">getNumCategories</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long getNumCategories ();</div>
+			<P></P>
+			<p>If you support of more than 1 category (i.e. if programs are divided into 
+				groups, like in General MIDI), override this.</p>
+			<hr noshade size="4">
+			<h4><a name="getProgramNameIndexed">getProgramNameIndexed</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool getProgramNameIndexed (long category, long index, char *text);</div>
+			<P></P>
+			<p>Fill <code>text</code> with the name of program <code>&lt;index&gt;</code> in <code>&lt;category&gt;</code>. 
+				Allows a host application to list your programs (presets).</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table13">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>category</code></th>
+						<td>If -1, program indices are enumerated linearily (as usual). Otherwise, each 
+							category starts over with index 0.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>index</code></th>
+						<td>The index to the program in a given category, starting with 0.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>text</code></th>
+						<td>A string up to <strong>24</strong> chars.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table14">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>This should be supported (see the general <a href="#additions">2.0 additions</a> 
+				).</p>
+			<h4>Example :</h4>
+			<div class="cpp"><pre>bool MyPlug::getProgramNameIndexed (long category, long index, char *text)
+{
+	bool returnCode = false;
+	
+	if (index &lt; kNumPrograms)
+	{
+		strcpy (text, programs[index].name);
+		returnCode = true;
+	}
+	return (returnCode);
+}</pre>	</div>
+			<hr noshade size="4">
+			<h4><a name="copyProgram">copyProgram</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool copyProgram (long destination);</div>
+			<P></P>
+			<p>Copy currently selected program to program <code>destination</code>.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table15">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>destination</code></th>
+						<td>The index of the target program.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table16">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>This should be supported (see the general <a href="#additions">2.0 additions</a> 
+				).</p>
+			<h4>Example :</h4>
+			<div class="cpp"><pre>bool MyPlug::copyProgram (long destination)
+{
+	bool returnCode = false;
+	if (destination &lt; kNumPrograms)
+	{
+		programs[destination] = programs[curProgram];
+		returnCode = true;
+	}
+	return (returnCode);
+}</pre></div>
+			<hr noshade size="4">
+			<h4><a name="beginSetProgram">beginSetProgram</a> (-&gt;plug)</h4>
+			<div class="cpp">virtual bool beginSetProgram ();</div>
+			<br>
+			<br>
+			Called before a program is loaded.<br>
+			<br>
+			<p>
+				<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table17">
+					<tbody>
+						<tr>
+							<th width="100" align="right" valign="top">
+								<code>state</code></th>
+							<td>
+								<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table18">
+									<tbody>
+										<tr>
+											<th align="right" valign="top" width="52">
+												<code>true</code> :</th>
+											<td><font face="Times New Roman">The plug took the notification into account. </font>
+											</td>
+										</tr>
+										<tr>
+											<th align="right" valign="top" width="52">
+												<code>false</code> :</th>
+											<td><font face="Times New Roman">It didn't...<br>
+												</font>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</p>
+			<ul>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="endSetProgram">endSetProgram</a> (-&gt;plug)</h4>
+			<div class="cpp">virtual bool endSetProgram ();</div>
+			<br>
+			Called after a program is loaded.
+			<br>
+			<p>
+				<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table19">
+					<tbody>
+						<tr>
+							<th width="100" align="right" valign="top">
+								<code>state</code></th>
+							<td>
+								<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table20">
+									<tbody>
+										<tr>
+											<th align="right" valign="top">
+												<code>true</code> :</th>
+											<td><font face="Times New Roman">The plug took the notification into account. </font>
+											</td>
+										</tr>
+										<tr>
+											<th align="right" valign="top">
+												<code>false</code> :</th>
+											<td><font face="Times New Roman">It didn't... </font>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</p>
+			<ul>
+			</ul>
+			<hr noshade size="4">
+			<h2><a name="connections">Connections and Configuration</a>
+			</h2>
+			<hr noshade size="4">
+			<h4><a name="ioChanged">ioChanged</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual bool ioChanged ();</div>
+			<P></P>
+			<p>Tell host numInputs and/or numOutputs and/or initialDelay has changed. The host could call a suspend (if the plugin was enabled (in resume state)) and then ask for getSpeakerArrangement and/or check the numInputs and numOutputs and initialDelay and then call a resume.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table21">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table22">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success, host supports this feature.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<H4>See also :</H4>
+			<UL>
+				<LI><A href="aeffectx.html#Surround">Surround Setup</A>
+				<LI><A href="#setSpeakerArrangement">setSpeakerArrangement</A>
+				<LI><A href="#getSpeakerArrangement">getSpeakerArrangement</A>
+				</LI>
+			</UL>
+			<hr noshade size="4">
+			<h4><a name="needIdle">needIdle</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual bool needIdle ();</div>
+			<P></P>
+			<p>Tells host plug needs idle calls (outside its editor window). Some plugs need 
+				idle calls even when their editor is closed.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table23">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table24">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success, host supports this feature.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="sizeWindow">sizeWindow</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual bool sizeWindow (long width, long height);</div>
+			<P></P>
+			<p>Requests to resize the editor window.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table25">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>width</code></th>
+						<td>The window's width in pixel.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>height</code></th>
+						<td>The window's height in pixel.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table26">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="updateSampleRate">updateSampleRate</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual double updateSampleRate ();</div>
+			<P></P>
+			<p>Returns the sample rate from host.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table27">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>The host's sample rate.</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>Will cause application to call AudioEffect's <code><a href="../1.0/AudioEffect.html#setSampleRate">
+						setSampleRate</a> </code>method to be called (when implemented).</p>
+			<hr noshade size="4">
+			<h4><a name="updateBlockSize">updateBlockSize</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual long updateBlockSize ();</div>
+			<P></P>
+			<p>Returns the block size from host.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table28">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>The host's block size.</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>Will cause application to call AudioEffect's <code><a href="../1.0/AudioEffect.html#setBlockSize">
+						setBlockSize</a> </code>method to be called (when implemented).</p>
+			<hr noshade size="4">
+			<h4><a name="getInputLatency">getInputLatency</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual long getInputLatency ();</div>
+			<P></P>
+			<p>Returns the ASIO input latency values.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table29">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>The ASIO input latency.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#getOutputLatency">getOutputLatency</a> </code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="getOutputLatency">getOutputLatency</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual long getOutputLatency ();</div>
+			<P></P>
+			<p>Returns the ASIO output latency values. while inputLatency is probably not of 
+				concern, outputLatency may be used in conjunction with <code><a href="VstTimeInfo.html#getTimeInfo">
+						getTimeInfo</a> </code>. <code><a href="VstTimeInfo.html#samplePos">samplePos</a>
+				</code>of <code>VstTimeInfo</code> is ahead of the 'visual' sequencer play time 
+				by the output latency, such that when outputLatency samples have passed by, our 
+				processing result becomes audible.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table30">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>The ASIO output latency.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#getInputLatency">getInputLatency</a> </code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="getPreviousPlug">getPreviousPlug</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual <a href="../1.0/AEffect.html">AEffect</a> *getPreviousPlug (long input);</div>
+			<P></P>
+			<p>For future expansion.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table31">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>input</code></th>
+						<td>An index to a pin, as several plugs may be connected on several pins. <code>input</code>
+							can be -1 in which case the first found is returned.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>A pointer to an <code>AEffect</code> structure.</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="getNextPlug">getNextPlug</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual <a href="../1.0/AEffect.html">AEffect</a> *getNextPlug (long output);</div>
+			<P></P>
+			<p>For future expansion.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table32">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>output</code></th>
+						<td>An index to a pin, as several plugs may be connected on several pins. <code>output</code>
+							can be -1 in which case the first found is returned.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>A pointer to an <code>AEffect</code> structure.</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="setPanLaw">setPanLaw</a>&nbsp; (-&gt;host)</h4>
+			<p><div class="cpp">virtual bool setPanLaw (long type, float val);</div>
+			<P></P>
+			<p>Set the Panning Law used by the host (in Gain : 0.5 is -6.02dB).</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table33">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>type</code><br>
+						</th>
+						<td>The type of the panning law.
+							<br>
+							Could be (defined via an enum):<br>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table34">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>kLinearPanLaw = 0</code></th>
+										<td>L = pan * M; R = (1 - pan) * M.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>kEqualPowerPanLaw</code></th>
+										<td>L = pow (pan, 0.5) * M;
+											<br>
+											R = pow ((1 - pan), 0.5) * M;</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>val</code><br>
+						</th>
+						<td>in [0..1]</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							true if the host manages to deal with this law.<br>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<p><br>
+			</p>
+			<hr noshade size="4">
+			<h4><a name="inputConnected">inputConnected</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual void inputConnected (long index, bool state);</div>
+			<P></P>
+			<p>Input <code>index</code> has been (dis-)connected. The application may issue 
+				this call when implemented.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table35">
+				<tbody>
+					<tr>
+						<th width="100" align="right">
+							<code>index</code></th>
+						<td>The index to the input.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right">
+							<code>state</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table36">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Connected.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Disconnected.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="outputConnected">outputConnected</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual void outputConnected (long index, bool state);</div>
+			<P></P>
+			<p>Output <code>index</code> has been (dis-)connected. The application may issue 
+				this call when implemented.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table37">
+				<tbody>
+					<tr>
+						<th width="100" align="right">
+							<code>index</code></th>
+						<td>The index to the output.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right">
+							<code>state</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table38">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Connected.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Disconnected.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="getInputProperties">getInputProperties</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool getInputProperties (long index, <a href="aeffectx.html#VstPinProperties"> VstPinProperties</a> *properties);</div>
+			<P></P>
+			<p>Stuff the <code>VstPinProperties</code> structure with info about the inputs for 
+				the host.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table39">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>index</code></th>
+						<td>The index to the input, starting with 0.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>properties</code></th>
+						<td>A pointer to a <code><a href="aeffectx.html#VstPinProperties">VstPinProperties</a> </code>
+							structure.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table40">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>This should be supported (see the general <a href="#additions">2.0 additions</a> 
+				).</p>
+			<h4>Example :</h4>
+			<div class="cpp"><pre>
+bool MyPlug::getInputProperties (long index, VstPinProperties* properties)
+{
+	bool returnCode = false;
+	if (index < kNumInputs)
+	{
+		sprintf (properties->label, "My %1d In", index + 1);
+		properties->flags = kVstPinIsStereo | kVstPinIsActive;
+		returnCode = true;
+	}
+	return returnCode;
+}</pre></div>
+			<hr noshade size="4">
+			<h4><a name="getOutputProperties">getOutputProperties</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool getOutputProperties (long index, <a href="aeffectx.html#VstPinProperties">VstPinProperties</a> * properties);</div>
+			<P></P>
+			<p>Return the properties of output <code>index</code>.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table41">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>index</code></th>
+						<td>The index to the output, starting with 0.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>properties</code></th>
+						<td>A pointer to a <code><a href="aeffectx.html#VstPinProperties">VstPinProperties</a> </code>
+							structure.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table42">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>This should be supported (see the general <a href="#additions">2.0 additions</a> 
+				).</p>
+			<h4>Example :</h4>
+			<div class="cpp"><pre>bool MyPlug::getOutputProperties (long index, VstPinProperties* properties)
+{
+	bool returnCode = false;
+	if (index &lt; kNumOutputs)
+	{
+		sprintf (properties-&gt;label, "My %1d Out", index + 1);
+		properties-&gt;flags = kVstPinIsStereo | kVstPinIsActive;
+		returnCode = true;
+	}
+	return (returnCode);
+}</pre></div>
+		
+		<div class="cpp"><pre>// for plugin with 1 mono, 1 stereo and one 5.1 outputs (kNumOutputs = 9):
+bool MyPlug::getOutputProperties (long index, VstPinProperties* properties)
+{
+	bool returnCode = false;
+	if (index >= 0 && index < kNumOutputs)
+	{
+		properties->flags = kVstPinIsActive;
+		if (index == 0) // mono
+		{
+			strcpy (properties->label, "Mono Out");
+			properties->arrangementType = kSpeakerArrMono;
+		}
+		else if (index == 1) // stereo (1 -> 2)
+		{
+			strcpy (properties->label, "Stereo Out");
+			properties->flags |= kVstPinIsStereo;
+			properties->arrangementType = kSpeakerArrStereo;
+		}
+		else if (index >= 3) // 5.1 (3 -> 8)
+		{
+			strcpy (properties->label, "5.1 Out");
+			properties->flags |= kVstPinUseSpeaker;
+			properties->arrangementType = kSpeakerArr51;
+			
+			// for old VST Host < 2.3, make 5.1 to stereo/mono/mono/stereo (L R C Lfe Ls Rs)
+			if (index == 3 || index == 7)
+				properties->flags |= kVstPinIsStereo;
+			if (index == 5)
+				strcpy (properties->label, "Center");	
+			else if (index == 6)
+				strcpy (properties->label, "Lfe");	
+			else if (index == 7) // (7 -> 8)
+				strcpy (properties->label, "Stereo Back");
+		}
+		returnCode = true;
+	}
+	return returnCode;
+}</pre></div>
+			<hr noshade size="4">
+			<h4><a name="getPlugCategory">getPlugCategory</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual <a href="aeffectx.html#VstPlugCategory">VstPlugCategory</a> getPlugCategory ();</div>
+			<P></P>
+			<p>Specify a category that fits the plug.</p>
+			<h4>Example :</h4>
+			<div class="cpp"><pre>VstPlugCategory MyPlug::getPlugCategory ()
+{
+	return (kPlugCategEffect);
+}</pre></div>
+			<br>
+			<hr noshade size="4">
+			<h4><a name="setTotalSampleToProcess"></a> setTotalSampleToProcess (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long setTotalSampleToProcess (long value);</div>
+			<P></P>
+			<p>Called in offline (non RealTime) Process before process is called, indicates how 
+				many samples will be processed.<br>
+				Actually returns <code>value</code>.</p>
+			<hr noshade size="4">
+			<h4><a name="getNextSchellPlugin">getNextSchellPlugin</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long getNextShellPlugin (char* name);</div>
+			<P></P>
+			<p>This opcode is only called if plugin is of type kPlugCategShell.
+				<br>
+			</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table43">
+				<tbody>
+					<tr>
+						<th width="100" align="right">
+							<code>name</code><br>
+						</th>
+						<td>Points to a char buffer of size 64, which is to be filled with the name of the 
+							plugin including the terminating 0.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right">
+							<code>return</code><br>
+						</th>
+						<td>
+							Returns the next plugin's uniqueID.<br>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<code></code>
+			<hr noshade size="4">
+			<h2><a name="realtime">Realtime</a>
+			</h2>
+			<hr noshade size="4">
+			<h4><a name="willProcessReplacing">willProcessReplacing</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual long willProcessReplacing ();</div>
+			<P></P>
+			<p>Asks host if it will call the plug's <code>processReplacing</code> method. 
+				Remember all plugs should really support both methods, it's a matter of copy 
+				and paste but may significantly enhance audio performance.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table44">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table45">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>0</code> :</th>
+										<td>Not implemented. we don't know whether <code>process</code> or is called.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>1</code> :</th>
+										<td>Indicates that host will call <code>processReplacing</code> .</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>other</code> :</th>
+										<td><code>process</code> (accumulating) will be used.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="../1.0/AudioEffect.html#process">process</a> </code>
+				<li>
+					<code><a href="../1.0/AudioEffect.html#processReplacing">processReplacing</a> </code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="getCurrentProcessLevel">getCurrentProcessLevel</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual long getCurrentProcessLevel ();</div>
+			<P></P>
+			<p>Returns the hosts's process level. A plug is like a black box processing some 
+				audio coming in on some inputs (if any) and going out of some outputs (if any). 
+				This may be used to do offline or real-time processing, and sometimes it may be 
+				desirable to know the current context.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table46">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table47">
+							</table>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table48">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>0</code> :</th>
+										<td>Not supported.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>1</code> :</th>
+										<td>Currently in user thread (gui).</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>2</code> :</th>
+										<td>Currently in audio thread or irq (where process is called).</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>3</code> :</th>
+										<td>Currently in 'sequencer' thread or irq (midi, timer etc).</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>4</code> :</th>
+										<td>Currently offline processing and thus in user thread.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>other</code> :</th>
+										<td>Not defined, but probably pre-empting user thread.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="getAutomationState">getAutomationState</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual long getAutomationState ();</div>
+			<P></P>
+			<p>Returns the host's automation state.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table49">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							return</th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table50">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>0</code> :</th>
+										<td>Not supported.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>1</code> :</th>
+										<td>Off.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>2</code> :</th>
+										<td>Read.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>3</code> :</th>
+										<td>Write.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>4</code> :</th>
+										<td>Read/write.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="wantAsyncOperation">wantAsyncOperation</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual void wantAsyncOperation (bool state = true);</div>
+			<P></P>
+			<p>Notify host that we want to operate asynchronously. <code><a href="../1.0/AudioEffect.html#process">
+						process</a> </code>will return immedeately; host will poll <code><a href="#reportCurrentPosition">
+						reportCurrentPosition</a> </code>to see if data are available in time.</p>
+			<p>Support for plug-ins whose processing is actually carried out on external 
+				resources (dsp). The idea is to use asynchronous processing here. The host will 
+				call the <code><a href="../1.0/AudioEffect.html#process">process</a> </code>method 
+				as always, but the plug will only pass input data to its dsp, and return 
+				immediately. Now while the external processor does its work, the host may call 
+				other (native) audio processes which are not depending on the output of this 
+				plug. When the host is done, it will poll the plug's <code><a href="#reportCurrentPosition">
+						reportCurrentPosition</a> </code>method to learn if the external dsp is 
+				done, and then take the data from the plugs output buffer (<code><a href="#reportDestinationBuffer">reportDestinationBuffer</a>
+				</code>), or the 'regular' output buffers if none is provided.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table51">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top" height="45">
+							<code>state</code></th>
+						<td height="45">
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table52">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Operate asynchronously.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Operate synchronously.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>Use <code><a href="#canHostDo">canHostDo</a> ("asyncProcessing")</code> to find 
+				out if this functionality is supported by the host.</p>
+			<hr noshade size="4">
+			<h4><a name="hasExternalBuffer">hasExternalBuffer</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual void hasExternalBuffer (bool state = true);</div>
+			<P></P>
+			<p>Notifies the host that the plug uses an external buffer, as external dsp, may 
+				have their own output buffer (32 bit float). The host then requests this via <code>effGetDestinationBuffer</code>. 
+				For dma access it may be more efficient for a plug with external dsp to provide 
+				its own buffers.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table53">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>state</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table54">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Plug provides its own output buffers.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Host expects output data in the output buffers passed to <code><a href="../1.0/AudioEffect.html#process">
+													process</a> </code>as usual.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="reportCurrentPosition">reportCurrentPosition</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long reportCurrentPosition ();</div>
+			<P></P>
+			<p>Return how much data has been processed in external buffer. The host will poll <code>
+					reportCurrentPosition</code> to see if data is available in time.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table55">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>The position in external buffer.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#wantAsyncOperation">wantAsyncOperation</a> </code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="reportDestinationBuffer">reportDestinationBuffer</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual float* reportDestinationBuffer ();</div>
+			<P></P>
+			<p>Return an external buffer. The host will take the data from the plugs output 
+				buffer once it nows from <code><a href="#reportCurrentPosition">reportCurrentPosition</a>
+				</code>that the external dsp has finished.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table56">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>A pointer to an external output buffer, or the 'regular' output buffers if none 
+							is provided.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#wantAsyncOperation">wantAsyncOperation</a> </code>for external 
+					dsp (dma option).</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="startProcess"></a> startProcess (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long startProcess ();</div>
+			<P></P>
+			<p>Called one time before the start of process call.</p>
+			<hr noshade size="4">
+			<h4><a name="stopProcess"></a> stopProcess (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long stopProcess ();</div>
+				<br>
+			<P></P>
+			<p>Called after the stop of process call.</p>
+			<hr noshade size="4">
+			<h2><a name="other">Other</a>
+			</h2>
+			<hr noshade size="4">
+			<h4><a name="setOutputSamplerate">setOutputSamplerate</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual void setOutputSamplerate (float samplerate);</div>
+			<P></P>
+			<p>Used for variable I/O processing.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table57">
+				<tbody>
+					<tr>
+						<th align="right" valign="top" height="22" width="99">
+							<code>samplerate</code> :</th>
+						<td height="22">The new sample rate.</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="getHostVendorString">getHostVendorString</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual bool getHostVendorString (char* text);</div>
+			<P></P>
+			<p>Fills <code>text</code> with a string identifying the host's vendor.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table60">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>text</code></th>
+						<td>A string up to <strong>64</strong> chars.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table61">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="getHostProductString">getHostProductString</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual bool getHostProductString (char* text);</div>
+			<P></P>
+			<p>Fills <code>text</code> with a string identifying the host's name.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table62">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>text</code></th>
+						<td>A string up to <strong>64</strong> chars.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table width="120" cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table63">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="getHostVendorVersion">getHostVendorVersion</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual long getHostVendorVersion ();</div>
+			<P></P>
+			<p>Returns the host's vendor-specific version.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table64">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>The host's version.</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="hostVendorSpecific">hostVendorSpecific</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual long hostVendorSpecific (long lArg1, long lArg2, void* ptrArg, float floatArg);</div>
+			<P></P>
+			<p>No definition.</p>
+			<hr noshade size="4">
+			<h4><a name="canHostDo">canHostDo</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual long canHostDo (char* text);</div>
+				<br>
+			<P></P>
+			<p>Asks host if it implements the feature <code>text</code>.</p>
+			<p>A plug-in cannot assume a 2.0 feature is available from the host. Use this 
+				method to ascertain the environment in which the plug finds itself. Ignoring 
+				this inquiry methods and trying to access a 2.0 feature in a 1.0 host will mean 
+				your plug-in or host application will break.</p>
+			<p>It is
+				<string>not the end-users job to pick and choose which plug-ins 
+  can be supported by which host.</string></p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table65">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							text</th>
+						<td>A string from <code><a href="aeffectx.html#hostCanDos">hostCanDos</a> </code>.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table66">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>0</code> :</th>
+										<td>Don't know (default).</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>1</code> :</th>
+										<td>Yes.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>-1</code> :</th>
+										<td>No.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="isSynth">isSynth</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual void isSynth (bool state = true);</div>
+			<P></P>
+			<p>Tells the host that the plug is an instrument, i.e. that it will call the <code>wantEvents</code>
+				method.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table67">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>state</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table68">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Is an instrument, the default.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>A simple audio effect.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#wantEvents">wantEvents</a> </code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="getMidiProgramName">getMidiProgramName</a> (-&gt;plug)</h4>
+			<h4>Purpose:</h4>
+			ask plugin if MidiPrograms are used and if so, query for names, numbers 
+			(ProgramChange-Number + BankSelect-Number), categories and keynames of each 
+			MidiProgram, on each Midi-channel.
+			<h4>Condition:</h4>
+			Plug canDo "midiProgramNames". No effect, if 0 is returned.
+			<h4>Caution:</h4>
+			don't mix concepts: the MidiPrograms are totally independent from all other 
+			programs present in VST. The main difference is, that there are upto 16 
+			simultaneous active MidiPrograms (one per channel), while there can be only one 
+			active "VST"-Program. (You should see the "VST"-Program as the one single main 
+			global program, which contains the entire current state of the plugin.) This 
+			function can be called in any sequence.
+			<h4>Usage:</h4>
+			if that function is called, your plug has to read 
+			MidiProgramName::thisProgramIndex, fill out the other fields with the 
+			information assigned to a certain MidiProgram and return the number of 
+			available MidiPrograms on that MidiChannel.
+			<h4>Example:</h4>
+			your plug has 3 MidiPrograms on MidiChannel 0.
+			<p>Host calls getMidiProgramName with <code>idx</code> = 0 and <code>MidiProgramName::thisProgramIndex</code>
+				= 0.<br>
+				Plug fills out:
+				<br>
+				<code>MidiProgramName::name[64]</code> = "Program A"<br>
+				<code>MidiProgramName::midiProgram</code> = 0<br>
+				<code>MidiProgramName::midiBankMsb</code> = -1<br>
+				<code>MidiProgramName::midiBankLsb</code> = -1<br>
+				<code>MidiProgramName::parentCategoryIndex</code> = -1<br>
+				<code>MidiProgramName::flags</code> = 
+  0 (if plug isn't "Omni").<br>
+				Plug returns 3.<br>
+				Host calls getMidiProgramName with <code>idx</code> = 0 and <code>MidiProgramName::thisProgramIndex</code>
+				= 1.<br>
+				Plug fills out:
+				<br>
+				<code>MidiProgramName::name[64]</code> = "Program B"<br>
+				<code>MidiProgramName::midiProgram</code> = 1<br>
+				<code>MidiProgramName::midiBankMsb</code> = -1<br>
+				<code>MidiProgramName::midiBankLsb</code> = -1<br>
+				<code>MidiProgramName::parentCategoryIndex</code> = -1<br>
+				<code>MidiProgramName::flags</code> = 
+  0 (if plug isn't "Omni").<br>
+				Plug returns 3.<br>
+				Host calls getMidiProgramName with <code>idx</code> = 0 and <code>MidiProgramName::thisProgramIndex</code>
+				= 2.<br>
+				Plug fills out:
+				<br>
+				<code>MidiProgramName::name[64]</code> = "Program C"<br>
+				<code>MidiProgramName::midiProgram</code> = 2<br>
+				<code>MidiProgramName::midiBankMsb</code> = -1<br>
+				<code>MidiProgramName::midiBankLsb</code> = -1<br>
+				<code>MidiProgramName::parentCategoryIndex</code> = -1<br>
+				<code>MidiProgramName::flags</code> = 
+  0 (if plug isn't "Omni").<br>
+				Plug returns 3.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table69">
+				<tbody>
+					<tr>
+						<th width="120" align="right" valign="top">
+							<code>channel</code></th>
+						<td>IN: MidiChannel. 0-15.</td>
+					</tr>
+					<tr>
+						<th width="120" align="right" valign="top">
+							<code>midiProgramName</code></th>
+						<td>IN: points to <code>MidiProgramName</code> struct.
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table70">
+								<tbody>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::thisProgramIndex</code> :</th>
+										<td>IN: &gt;= 0. fill struct for this program index.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::name[64]</code> :</th>
+										<td>OUT: fill in the name of the program.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::midiProgram</code> :</th>
+										<td>OUT: -1:off, 0-127.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::midiBankMsb</code> :</th>
+										<td>OUT: -1:off, 0-127.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::midiBankLsb</code> :</th>
+										<td>OUT: -1:off, 0-127.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::parentCategoryIndex</code> :</th>
+										<td>OUT: -1: no parent category, &gt;= 0: Categ.Index.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::flags</code> :</th>
+										<td>OUT: Set to "kMidiIsOmni", when MidiChannel is ignored.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::reserved</code> :</th>
+										<td>IGNORE: Undefined, don't touch.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<th width="120" align="right" valign="top">
+							<code>return</code></th>
+						<td>number of available MidiPrograms on that channel</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#getCurrentMidiProgram">getCurrentMidiProgram</a></code>
+				<li>
+					<code><a href="#getMidiProgramCategory">getMidiProgramCategory</a></code>
+				<li>
+					<code><a href="#hasMidiProgramsChanged">hasMidiProgramsChanged</a></code>
+				<li>
+					<code><a href="#getMidiKeyName">getMidiKeyName</a></code></li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="getCurrentMidiProgram">getCurrentMidiProgram</a> (-&gt;plug)</h4>
+			<h4>Purpose:</h4>
+			ask plugin for the currently active program on a certain MidiChannel.
+			<h4>Condition:</h4>
+			Plug canDo "midiProgramNames" and initial getMidiProgramName-call did not 
+			return 0.
+			<h4>Usage:</h4>
+			just like getMidiProgramName, but MidiProgramName::thisProgramIndex has to be 
+			filled out with the currently active MidiProgram-index, which also has to be 
+			returned.
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table71">
+				<tbody>
+					<tr>
+						<th width="120" align="right" valign="top">
+							<code>channel</code></th>
+						<td>IN: MidiChannel. 0-15.</td>
+					</tr>
+					<tr>
+						<th width="120" align="right" valign="top">
+							<code>currentProgram</code></th>
+						<td>IN: points to <code>MidiProgramName</code> struct.
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table72">
+								<tbody>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::thisProgramIndex</code> :</th>
+										<td>OUT: &gt;= 0. currently active MidiProgram-index.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::name[64]</code> :</th>
+										<td>OUT: fill in the name of the program.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::midiProgram</code> :</th>
+										<td>OUT: -1:off, 0-127.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::midiBankMsb</code> :</th>
+										<td>OUT: -1:off, 0-127.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::midiBankLsb</code> :</th>
+										<td>OUT: -1:off, 0-127.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::parentCategoryIndex</code> :</th>
+										<td>OUT: -1: no parent category, &gt;= 0: Categ.Index.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::flags</code> :</th>
+										<td>OUT: Set to "kMidiIsOmni", when MidiChannel is ignored.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramName::reserved</code> :</th>
+										<td>IGNORE: Undefined, don't touch.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<th width="120" align="right" valign="top">
+							<code>return</code></th>
+						<td>currently active MidiProgram-index</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#getMidiProgramName">getMidiProgramName</a></code>
+				<li>
+					<code><a href="#getMidiProgramCategory">getMidiProgramCategory</a></code>
+				<li>
+					<code><a href="#hasMidiProgramsChanged">hasMidiProgramsChanged</a></code>
+				<li>
+					<code><a href="#getMidiKeyName">getMidiKeyName</a></code></li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="getMidiProgramCategory">getMidiProgramCategory</a> (-&gt;plug)</h4>
+			<h4>Purpose:</h4>
+			MidiPrograms can be grouped in a category-tree (eg. Instrument-Type, Bank).
+			<h4>Condition:</h4>
+			Plug canDo "midiProgramNames", initial getMidiProgramName-call did not return 0 
+			and an earlier call to "getMidiProgramName", "getCurrentMidiProgram" or 
+			"getMidiProgramCategory" returned a value &gt;= 0 in the field <code>MidiProgramName::parentCategoryIndex 
+				/ MidiProgramCategory::parentCategoryIndex</code>.
+			<h4>Usage:</h4>
+			similar to getMidiProgramName, but is recursive: you can have categories in 
+			categories in ..., when you return a number &gt;= 0 in <code>MidiProgramCategory::parentCategoryIndex</code>.
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table73">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>channel</code></th>
+						<td>IN: MidiChannel. 0-15.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>category</code></th>
+						<td>IN: points to <code>MidiProgramCategory</code> struct.
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table74">
+								<tbody>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramCategory::thisCategoryIndex</code> :</th>
+										<td>IN: &gt;= 0. fill struct for this category index.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramCategory::name[64]</code> :</th>
+										<td>OUT: fill in the name of the category.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramCategory::parentCategoryIndex</code> :</th>
+										<td>OUT: -1: no parent category, &gt;= 0: Categ.Index.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiProgramCategory::flags</code> :</th>
+										<td>IGNORE: Undefined, don't touch.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>number of available categories on that channel. If 0, no categories supported.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#getMidiProgramName">getMidiProgramName</a></code>
+				<li>
+					<code><a href="#getCurrentMidiProgram">getCurrentMidiProgram</a></code>
+				<li>
+					<code><a href="#hasMidiProgramsChanged">hasMidiProgramsChanged</a></code>
+				<li>
+					<code><a href="#getMidiKeyName">getMidiKeyName</a></code></li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="hasMidiProgramsChanged">hasMidiProgramsChanged</a> (-&gt;plug)</h4>
+			<h4>Purpose:</h4>
+			the host asks the plug (whenever he wants), if anything (except 
+			currentMidiProgram) in the MidiProgramNames has changed (since the last scan) 
+			on a specific MidiChannel. If the plugin returns true, the host will rescan the 
+			entire MidiProgramNames, MidiProgramCategories and MidiKeyNames.
+			<h4>Condition:</h4>
+			Plug canDo "midiProgramNames" and initial getMidiProgramName-call did not 
+			return 0.
+			<h4>Usage:</h4>
+			you should only return true, if the user loaded another soundbank or renamed a 
+			MidiProgram / MidiProgramCategory / MidiKeyName. When returning true, you 
+			should immediatly reset this flag to false, otherwise the host might think, 
+			that the new scan is invalid again. Initially you should return false (because 
+			there was no previous scan).
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table75">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>channel</code></th>
+						<td>IN: MidiChannel. 0-15.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>state</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table76">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Names have changed since last scan.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Names haven't changed.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#getMidiProgramName">getMidiProgramName</a></code>
+				<li>
+					<code><a href="#getCurrentMidiProgram">getCurrentMidiProgram</a></code>
+				<li>
+					<code><a href="#getMidiProgramCategory">getMidiProgramCategory</a></code>
+				<li>
+					<code><a href="#getMidiKeyName">getMidiKeyName</a></code></li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="getMidiKeyName">getMidiKeyName</a> (-&gt;plug)</h4>
+			<h4>Purpose:</h4>
+			each MidiProgram can have a set of keynames, that defines which SoundName is 
+			triggered by which MidiNoteNumber. Usefull for drumsets, samplers and 
+			split-zones.
+			<h4>Condition:</h4>
+			Plug canDo "midiProgramNames" and initial getMidiProgramName-call did not 
+			return 0.
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table77">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>channel</code></th>
+						<td>IN: MidiChannel. 0-15.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>keyName</code></th>
+						<td>IN: points to <code>MidiKeyName</code> struct.
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table78">
+								<tbody>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiKeyName::thisProgramIndex</code> :</th>
+										<td>IN: &gt;= 0. fill struct for this program index.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiKeyName::thisKeyNumber</code> :</th>
+										<td>IN: 0 - 127. fill struct for this key number.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiKeyName::keyName[64]</code> :</th>
+										<td>OUT: fill in the name of the NoteNumber.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiKeyName::reserved</code> :</th>
+										<td>IGNORE: Undefined, don't touch.</td>
+									</tr>
+									<tr>
+										<th align="left" valign="top">
+											<code>MidiKeyName::flags</code> :</th>
+										<td>IGNORE: Undefined, don't touch.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>state</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table79">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>MidiProgram has keynames.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>MidiProgram has no keynames.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#getMidiProgramName">getMidiProgramName</a></code>
+				<li>
+					<code><a href="#getCurrentMidiProgram">getCurrentMidiProgram</a></code>
+				<li>
+					<code><a href="#getMidiProgramCategory">getMidiProgramCategory</a></code>
+				<li>
+					<code><a href="#hasMidiProgramsChanged">hasMidiProgramsChanged</a></code></li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="noTail">noTail</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual void noTail (bool state = true);</div>
+			<P></P>
+			<p>Tells the host that no data will be produced when silence comes in.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table80">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>state</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table81">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Host can omit to call <code>process</code> when no data is present on any 
+											input.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Host should allways call <code>process</code>.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="../1.0/AudioEffect.html#process">process</a> </code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="getHostLanguage">getHostLanguage</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual long getHostLanguage ();</div>
+			<P></P>
+			<p>Returns the host's language.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table82">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>Any constant in <code><a name="VstHostLanguage">VstHostLanguage</a> </code>:
+							<table id="Table83">
+								<tbody>
+									<tr>
+										<td><code>kVstLangEnglish</code></td>
+									</tr>
+									<tr>
+										<td><code>kVstLangGerman</code></td>
+									</tr>
+									<tr>
+										<td><code>kVstLangFrench</code></td>
+									</tr>
+									<tr>
+										<td><code>kVstLangItalian</code></td>
+									</tr>
+									<tr>
+										<td><code>kVstLangSpanish</code></td>
+									</tr>
+									<tr>
+										<td><code>kVstLangJapanese</code></td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="openWindow">openWindow</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual void* openWindow (<a href="aeffectx.html#VstWindow">VstWindow</a>* vstWindow);</div>
+			<P></P>
+			<p>Creates a new window.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table84">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>vstWindow</code></th>
+						<td>A pointer to a <code><a href="aeffectx.html#VstWindow">VstWindow</a> </code>structure.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>A pointer to the newly created window (<code>WindowPtr</code> on mac.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#closeWindow">closeWindow</a> </code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="closeWindow">closeWindow</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual bool closeWindow (<a href="aeffectx.html#VstWindow">VstWindow</a>* vstWindow);</div>
+			<P></P>
+			<p>Closes a newly created window.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table85">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>vstWindow</code></th>
+						<td>A pointer to a <code><a href="aeffectx.html#VstWindow">VstWindow</a> </code>structure.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table86">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#openWindow">openWindow</a></code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="getDirectory">getDirectory</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual void* getDirectory ();</div>
+			<P></P>
+			<p>Returns the plug's containing directory.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table87">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							return<code></code></th>
+						<td><code>FSSpec</code> on mac, else <code>char *</code>.</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="updateDisplay">updateDisplay</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual bool updateDisplay();</div>
+			<P></P>
+			<p>Something has changed, update 'multi-fx' display.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table88">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table89">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="processVariableIo">processVariableIo</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool processVariableIo (<a href="aeffectx.html#VstVariableIo"> VstVariableIo</a>* varIo);</div>
+			<P></P>
+			<p>Used for variableIo processing.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table90">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>varIo</code> :</th>
+						<td>A pointer to a <code><a href="aeffectx.html#VstVariableIo">VstVariableIo</a> </code>
+							structure.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table91">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="setSpeakerArrangement">setSpeakerArrangement</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool setSpeakerArrangement (<a href="aeffectx.html#VstSpeakerArrangement">VstSpeakerArrangement</a>* pluginInput, <a href="aeffectx.html#VstSpeakerArrangement">VstSpeakerArrangement</a> *pluginOutput);</div>
+			<P></P>
+			<p>Set the plug's speaker arrangements.&nbsp;With 
+a&nbsp;<STRONG>VST 2.3</STRONG>&nbsp;Plugin if it returns <STRONG>true</STRONG>, 
+it means that the plugin accepts this IO arrangement. The host doesn't need to 
+ask for <EM>getSpeakerArrangement</EM>. If the plugin returns 
+<STRONG>false</STRONG>, it means that it doesn't accept this arrangement, the 
+host should then ask for getSpeakerArrangement and then can (optional) recall 
+<EM>setSpeakerArrangement</EM>.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table92">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>pluginInput</code></th>
+						<td>A pointer to the input's <code><a href="aeffectx.html#VstSpeakerArrangement">VstSpeakerArrangement</a>
+							</code>structure.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>pluginOutput</code></th>
+						<td>A pointer to the output's <code><a href="aeffectx.html#VstSpeakerArrangement">VstSpeakerArrangement</a>
+							</code>structure.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table93">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+				<A href="aeffectx.html#Surround">Surround Setup</A>
+				<LI>
+					<A href="#getSpeakerArrangement">getSpeakerArrangement</A></LI>
+			</ul>
+			<HR noShade SIZE="4">
+			<h4><A name="getSpeakerArrangement">getSpeakerArrangement</A> (-&gt;plug)</h4>
+			<P>
+				<DIV class="cpp">virtual bool getSpeakerArrangement (<A href="aeffectx.html/#VstSpeakerArrangement">VstSpeakerArrangement</A>** pluginInput, <A href="aeffectx.html/#VstSpeakerArrangement">VstSpeakerArrangement</A>** pluginOutput);</DIV>
+			<P></P>
+			<P>Gets the speaker arrangement of the Plugin.</P>
+			<TABLE id="Table58" borderColor="#000000" cellSpacing="0" cellPadding="0" width="100%" border="1">
+				<TR>
+					<TH vAlign="top" align="right" width="100">
+						<CODE>pluginInput</CODE></TH>
+					<TD>A pointer to the input's <CODE><A href="aeffectx.html#VstSpeakerArrangement">VstSpeakerArrangement</A>
+						</CODE>structure.</TD>
+				</TR>
+				<TR>
+					<TH vAlign="top" align="right" width="100">
+						<CODE>pluginOutput</CODE></TH>
+					<TD>A pointer to the output's <CODE><A href="aeffectx.html#VstSpeakerArrangement">VstSpeakerArrangement</A>
+						</CODE>structure.</TD>
+				</TR>
+				<TR>
+					<TH vAlign="top" align="right" width="100">
+						<CODE>return</CODE></TH>
+					<TD>
+						<TABLE id="Table59" borderColor="#cccccc" cellSpacing="0" cellPadding="0" border="1">
+							<TR>
+								<TH vAlign="top" align="right">
+									<CODE>true</CODE> :</TH>
+								<TD>Success.</TD>
+							</TR>
+							<TR>
+								<TH vAlign="top" align="right">
+									<CODE>false</CODE> :</TH>
+								<TD>Failure.</TD>
+							</TR>
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+			<P></P>
+			<H4>See also :</H4>
+			<UL>
+				<LI><A href="aeffectx.html#Surround">Surround Setup</A>
+				<LI>
+					<A href="#setSpeakerArrangement">setSpeakerArrangement</A>
+				</LI>
+			</UL>
+			<hr noshade size="4">
+			<h4><a name="setBlockSizeAndSampleRate">setBlockSizeAndSampleRate</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual void setBlockSizeAndSampleRate (long blockSize, float sampleRate)</div>
+			<P></P>
+			<p>Set the sample rate and block size.</p>
+			More handy than the seperate methods <code>setBlockSize</code> and <code>setSampleRate</code>.
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table94">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>blockSize</code></th>
+						<td>A pointer to the input's <code>The plug's new block size.</code></td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>sampleRate</code></th>
+						<td>The plug's new sample rate.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<a href="../1.0/AudioEffect.html#setBlockSize">setBlockSize</a>
+				<li>
+					<a href="../1.0/AudioEffect.html#setSampleRate">setSampleRate</a>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="setBypass">setBypass</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool setBypass (bool onOff);</div>
+			<P></P>
+			<p>For 'soft-bypass'; <code>process</code> still called (if Supported). Some plugs 
+				need to stay 'alive' even when bypassed. An example is a surround decoder which 
+				has more inputs than outputs and must maintain some reasonable signal 
+				distribution even when being bypassed. A CanDo 'bypass' allows to ask the 
+				plugin if it supports softbayppas or not.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table95">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>onOff</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table96">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>
+											<br>
+										</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>
+											<br>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="100">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table119">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>
+											Supports SoftBypass, process will be called, the plug should compensate its 
+											delay, and copy inputs to outputs.
+										</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>
+											doesnt support SoftBypass, process will not be called, the host should bypass 
+											the process call.
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="../1.0/AudioEffect.html#process">process</a> </code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="getEffectName">getEffectName</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool getEffectName (char* name)</div>
+			<P></P>
+			<p>Fill <code>text</code> with a string identifying the effect.</p>
+			<p>This should be supported.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table97">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>name</code></th>
+						<td>A string up to <strong>32</strong><code>char</code>s.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table98">
+								<tbody>
+									<tr>
+										<td align="right" valign="top"><code>true</code></td>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<td align="right" valign="top"><code>false</code></td>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					general <a href="#additions">2.0 additions</a>
+				</li>
+			</ul>
+			<h4>Example :</h4>
+			<div class="cpp">bool MyPlug::getEffectName (char* name)
+{
+	strcpy (name, "MyPlug");
+	return true;
+}</pre></div>
+			<hr noshade size="4">
+			<h4><a name="getErrorText">getErrorText</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool getErrorText (char* text)</div>
+			<P></P>
+			<p>Fill <code>text</code> with an error string.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table99">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>text</code></th>
+						<td>A string up to <strong>256</strong><code>char</code>s.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table100">
+								<tbody>
+									<tr>
+										<td align="right" valign="top"><code>true</code></td>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<td align="right" valign="top"><code>false</code></td>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="getVendorString">getVendorString</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool getVendorString (char* text)</div>
+			<P></P>
+			<p>Fill <code>text</code> with a string identifying the vendor.</p>
+			<p>This should be supported.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table101">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>text</code></th>
+						<td>A string up to <strong>64</strong><code>char</code>s.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							return<code></code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table102">
+								<tbody>
+									<tr>
+										<td align="right" valign="top"><code>true</code></td>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<td align="right" valign="top"><code>false</code></td>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					general <a href="#additions">2.0 additions</a>
+				</li>
+			</ul>
+			<h4>Example :</h4>
+			<div class="cpp"><pre>bool MyPlug::getVendorString (char* text)
+{
+	strcpy (text, "My Company");
+	return (true);
+}</pre></div>
+			<hr noshade size="4">
+			<h4><a name="getProductString">getProductString</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool getProductString (char* text)</div>
+			<P></P>
+			<p>Fill text with a string identifying the product name.</p>
+			<p>This should be supported.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table103">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>text</code></th>
+						<td>A string up to <strong>64</strong><code>char</code>s.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							return<code></code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table104">
+								<tbody>
+									<tr>
+										<td align="right" valign="top"><code>true</code></td>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<td align="right" valign="top"><code>false</code></td>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					general <a href="#additions">2.0 additions</a>
+				</li>
+			</ul>
+			<h4>Example :</h4>
+		<div class="cpp">bool MyPlug::getProductString (char* text)<br>{<br>    strcpy (text, "My Plug Soft Synth");<br>    <br>    return (true);<br>}</pre>
+			</div>
+			<hr noshade size="4">
+			<h4><a name="getVendorVersion">getVendorVersion</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long getVendorVersion ();</div>
+				<br>
+			<P></P>
+			<p>Return vendor-specific version.</p>
+			<p>This should be supported.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table105">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>The version of the plug.</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					general <a href="#additions">2.0 additions</a>
+				</li>
+			</ul>
+			<h4>Example :</h4>
+			<div class="cpp">bool MyPlug::getVendorVersion ()<br>{   <br>    return (1);<br>}</pre>
+			</div>
+			<hr noshade size="4">
+			<h4><a name="vendorSpecific">vendorSpecific</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long vendorSpecific (long lArg, long lArg2, void* ptrArg, float floatArg);</div>
+			<P></P>
+			<p>No definition, vendor specific handling.</p>
+			<hr noshade size="4">
+			<h4><a name="canDo">canDo</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long canDo (char* text)</div>
+			<P></P>
+			<p>Report what the plug is able to do. In general you can but don't have to report 
+				whatever you support or not support via <code>canDo</code>. Some application 
+				functionality may require some specific reply, but in that case you will 
+				probably know. Best is to report whatever you know for sure.</p>
+			<p>A host application cannot make assumptions about the presence of the new 2.0 
+				features of a plug-in. Ignoring this inquiry methods and trying to access a 2.0 
+				feature from a 1.0 plug, or vice versa, will mean the plug-in or host 
+				application will break. It is not the end-users job to pick and choose which 
+				plug-ins can be supported by which host.</p>
+			<p>This should be supported.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table106">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>text</code></th>
+						<td>A string from <code><a href="aeffectx.html#plugCanDos">plugCanDos</a> </code>.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table107">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>0</code></th>
+										<td>Don't know (default).</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>1</code></th>
+										<td>Yes.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>-1</code></th>
+										<td>No.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					general <a href="#additions">2.0 additions</a>
+				.
+				<li>
+					<code><a href="#canHostDo">canHostDo</a> </code>
+				</li>
+			</ul>
+			<h4>Example :</h4>
+			<div class="cpp">long MyPlug::canDo (char* text)<br>{<br>    long returnCode = 0L;<br>	<br>    if (!strcmp (text, "receiveVstEvents"))<br>        returnCode = 1L;<br>    else if (!strcmp (text, "receiveVstMidiEvent"))<br>        returnCode = 1L;<br>        <br>    return (returnCode);<br>}
+			</div>
+			<p>This set of canDo’s (receiveVstEvents and receiveVstMidiEvent) is how Virtual 
+				Instruments (synths based on VST2.0) declare to Cubase VST what they are 
+				capable of, and what events they need to be notified of.</p>
+			<hr noshade size="4">
+			<h4><a name="getIcon">getIcon</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual void* getIcon ()</div>
+			<P></P>
+			<p>Not yet defined. Could be a <code><a href="../gui/CBitmap.html">CBitmap</a> </code>
+				.</p>
+			<hr noshade size="4">
+			<h4><a name="setViewPosition">setViewPosition</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool setViewPosition (long x, long y)</div>
+			<P></P>
+			<p>Set view position (in window) to (<code>x</code>, <code>y</code>).</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table108">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>x</code></th>
+						<td>The horizontal position.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>y</code></th>
+						<td>The vertical position.</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table109">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure, by default.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="getGetTailSize">getGetTailSize</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long getGetTailSize ();</div>
+			<P></P>
+			<p>Return after what time the response to an input sample will have die to zero. 
+				For instance, a reverb will have a tail somewhat similar to its reverbaration 
+				time, an IIR will 'never' die, and an FIR will usually die after a short amount 
+				of samples, but many plugs will have no tail at all. The application may decide 
+				to not call the plug's <code>process</code> method after it sounded out, and no 
+				input data will be applied (silence).</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table110">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table111">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>0</code> :</th>
+										<td>Not supported, continuous calls to the process methods are required.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>1</code> :</th>
+										<td>No tail at all.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>other</code> :</th>
+										<td>The duration, in samples, the plug needs to 'sound out'.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="../1.0/AudioEffect.html#process">process</a> </code>
+				</li>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="fxIdle">fxIdle</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long fxIdle ();</div>
+			<P></P>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table112">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td><code>0</code> by default.</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="getParameterProperties">getParameterProperties</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool getParameterProperties (long index, <a href="aeffectx.html#VstParameterProperties">VstParameterProperties</a> *p);</div>
+			<P></P>
+			<p>Stuff <code>p</code> with information about the parameter <code>index</code> .</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table113">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>index</code></th>
+						<td>An index to the parameter.</td>
+					</tr>
+					<tr>
+						<th align="right" valign="top">
+							<code>p</code></th>
+						<td>A pointer to a <code><a href="aeffectx.html#VstParameterProperties">VstParameterProperties</a>
+							</code>structure.
+						</td>
+					</tr>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table114">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="beginEdit">beginEdit</a> (-&gt;host)</h4>
+			<div class="cpp">virtual bool beginEdit (long index);</div>
+			<br>
+			<br>
+			To be called before a setParameterAutomated with mouse move (one per Mouse 
+			Down). It tells the host that if it needs to, it has to record automation data 
+			for this control.<br>
+			<br>
+			<h4><a name="endEdit">endEdit</a> (-&gt;host)</h4>
+			<div class="cpp">virtual bool endEdit (long index);</div>
+			<br>
+			<br>
+			To be called after a setParameterAutomated (on Mouse Up). It notifies the host 
+			that this control is no more moved by the mouse.<br>
+			<p>
+			</p>
+			<ul>
+			</ul>
+			<hr noshade size="4">
+			<h4><a name="keysRequired">keysRequired</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual bool keysRequired ();</div>
+			<P></P>
+			<p>Return if keys are needed or not.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table115">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table116">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Keys are needed, the default for VST-1.0 plugs.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Keys are not needed.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade size="4">
+			<h4><a name="getVstVersion">getVstVersion</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long getVstVersion ();</div>
+			<P></P>
+			<p>Return the VST-specification the plug is derived from.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000" id="Table117">
+				<tbody>
+					<tr>
+						<th width="100" align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc" id="Table118">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>2</code> :</th>
+										<td>By default for VST-2.0 plugs.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>0</code> :</th>
+										<td>Older versions.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<br>
+			<hr noshade size="4">
+			<h4><a name="openFileSelector">openFileSelector</a> (-&gt;plug)</h4>
+			<div class="cpp">virtual bool openFileSelector (<a href="../gui/VstFileSelect.html">VstFileSelect</a> *ptr);</div>
+			<p>
+				Open a host File selector (see <a href="../gui/VstFileSelect.html">VstFileSelect</a>).
+			</p>
+			<br>
+			<hr noshade size="4">
+			<h4><a name="closeFileSelector">closeFileSelector</a> (-&gt;plug)</h4>
+			<div class="cpp">bool closeFileSelector (<a href="../gui/VstFileSelect.html">VstFileSelect</a> *ptr);</div>
+			<br>
+			<p>
+				Close the file selector.</p>
+			<br>
+			<hr noshade size="4">
+			<h4><a name="getChunkFile">getChunkFile</a> (-&gt;plug)</h4>
+			<div class="cpp">bool getChunkFile (void* nativePath);</div>
+			<br>
+			<p>
+				nativePath will point (if true is returned) to the path of the chunk file.</p>
+			<br>
+			<hr noshade size="4">
+			<h4><a name="allocateArrangement">allocateArrangement</a> (tool)</h4>
+			<div class="cpp">virtual bool allocateArrangement (<a href="aeffectx.html#VstSpeakerArrangement">VstSpeakerArrangement</a>** arrangement, long nbChannels);</div>
+			<br>
+			<p>
+				Allocate memory for a VstSpeakerArrangement containing the given number of 
+				channels.
+			</p>
+			<br>
+			<hr noshade size="4">
+			<h4><a name="deallocateArrangement">deallocateArrangement</a> (tool)</h4>
+			<div class="cpp">virtual bool deallocateArrangement (<a href="aeffectx.html#VstSpeakerArrangement">VstSpeakerArrangement</a>* arrangement);</div>
+			<br>
+			<p>
+				delete/free memory for a speaker arrangement
+			</p>
+			<br>
+			<hr noshade size="4">
+			<h4><a name="copySpeaker">copySpeaker</a> (tool)</h4>
+			<div class="cpp">virtual bool copySpeaker (<a href="aeffectx.html#VstSpeakerProperties">VstSpeakerProperties</a>* to, <a href="aeffectx.html#VstSpeakerProperties">VstSpeakerProperties</a>* from);</div>
+			<br>
+			<p>
+				feed the "to" speaker properties with the same values than "from"'s ones. It is 
+				assumed here that "to" exists yet, ie this function won't allocate memory for 
+				the speaker (this will prevent from having a difference between an 
+				Arrangement's number of channels and its actual speakers...)
+			</p>
+			<br>
+			<hr noshade size="4">
+			<h4><a name="matchArrangement">matchArrangement</a> (tool)</h4>
+			<div class="cpp">virtual bool matchArrangement (<a href="aeffectx.html#VstSpeakerArrangement">VstSpeakerArrangement</a>** to, <a href="aeffectx.html#VstSpeakerArrangement">VstSpeakerArrangement</a>* from);</div>
+			<br>
+			<p>
+				"to" is deleted, then created and initialized with the same values as "from" ones ("from" must exist).<br>
+				It's notably useful when <code>setSpeakerArrangement</code> is called by the host.
+			</p>
+			<br>
+			<br>
+			<hr noshade size="4">
+			<div align="center">Copyright ©2003 <a href="http://www.steinberg.net" target="_blank"><u>Steinberg 
+						Media Technologies GmbH</u></a>. All Rights Reserved.
+			</div>
+			<br>
+		</div>
+		<br>
+		<DIV></DIV>
+		<DIV></DIV>
+		<br>
+	</body>
+</html>

@@ -1,0 +1,1157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Examples</title>
+             		 		<base target="vstdoc"> 		         
+  <link rel="stylesheet" type="text/css" href="../../../sdkdoc.css">
+</head>
+  	<body>
+	<div>  		   
+	<h1><a name="AGain">Basic Programming Examples<br>
+    			A simple gain-change plug-in.</a></h1>
+    <br>
+	You may ask why we are diving right into a programming example. Well
+ the answer  		is clear, creating a VST plug-in is easy and we don&#8217;t want
+to cloud the issue.  		If the SDK is standing in the way of understanding
+something relatively  		uncomplicated, then something has gone wrong.
+	<br>
+    <br>
+	This example is very simple and the resulting plug-in does not really 
+ do  		anything interesting, but it does show the how uncomplicated creating 
+ a VST  		plug-in can be. The example source files can be found in the accompanying 
+  		&#8216;examples&#8217; folder along with project files for the various platforms.<br>
+    <br>
+    		Please note that when you start experimenting with these examples we
+ have  		marked the places where you should make your changes if these examples 
+ were to  		be used as templates for your own plug-ins.<br>
+    <br>
+    		Before getting our programming feet wet, maybe we should cover just 
+a  couple of  		background points that will help with understanding the following 
+ code  		fragments.
+	<br>
+	<br>
+    <br>
+    		   
+	<table border="1" cellspacing="0" cellpadding="0" bordercolor="#000000" width="80%" align="center">
+	<tbody>
+		<tr>
+    		<td> 					                     
+				<ul>
+    			<li> 							The core of your VST plug-in code, and this 'AGain' 
+example  too, is built  							around a C++ class derived from a Steinberg 
+supplied  base class called <code>AudioEffectX.</code>
+				<br>
+    							<br>
+    						</li>
+    						<li> 							The constructor of your class is passed a parameter 
+of  the type <code>audioMasterCallback</code>.  							The actual mechanism 
+in  which your class gets constructed is not important  							right now, 
+but  effectively your class is constructed by the hosting  							application, 
+ and the host passes an object of type <code>audioMasterCallback</code> 							that 
+ handles the interaction with the plug-in. You pass this on to the base  							class&#8217;s
+ constructor and then can forget about it.<br>
+    							<br>
+    						</li>
+    						<li> 							A few flags, and identifiers must be set and you declare 
+ your class&#8217;s  							input &amp; output requirements at construction time.<br>
+    							<br>
+    						</li>
+    						<li> 							Finally your class gets to over-ride both of two possible 
+ member functions that  							actually do the work. These are repeatedly 
+called by the host application, each  							time with a new block of data. 
+These member functions have only three  							parameters: a pointer to the 
+data, a pointer to where you can write modified  							data to, and how big
+the block is. 						</li>
+    					                     
+      </ul>
+    				</td>
+    			</tr>
+    		         
+  </tbody>   
+</table>
+    		<br>
+    		<br>
+    		   
+<h2>Example Code : AGain</h2>
+    		   
+<p><br>
+    			Basic Source Files Required<br>
+    			AGain.cpp<br>
+    			AGain.hpp<br>
+    			AGainMain.cpp<br>
+</p>
+    		   
+    		<br>
+    		<div class="cpp"><pre>
+#ifndef __AGAIN_H
+#include "AGain.hpp"
+#endif
+
+//-------------------------------------------------------------------------------------------------------
+AGain::AGain (audioMasterCallback audioMaster)
+	: AudioEffectX (audioMaster, 1, 1)	// 1 program, 1 parameter only
+{
+	fGain = 1.;				// default to 0 dB
+	setNumInputs (2);		// stereo in
+	setNumOutputs (2);		// stereo out
+	setUniqueID ('Gain');	// identify
+	canMono ();				// makes sense to feed both inputs with the same signal
+	canProcessReplacing ();	// supports both accumulating and replacing output
+	strcpy (programName, "Default");	// default program name
+}
+
+//-------------------------------------------------------------------------------------------------------
+AGain::~AGain ()
+{
+	// nothing to do here
+}
+
+//-------------------------------------------------------------------------------------------------------
+void AGain::setProgramName (char *name)
+{
+	strcpy (programName, name);
+}
+
+//-----------------------------------------------------------------------------------------
+void AGain::getProgramName (char *name)
+{
+	strcpy (name, programName);
+}
+
+//-----------------------------------------------------------------------------------------
+void AGain::setParameter (long index, float value)
+{
+	fGain = value;
+}
+
+//-----------------------------------------------------------------------------------------
+float AGain::getParameter (long index)
+{
+	return fGain;
+}
+
+//-----------------------------------------------------------------------------------------
+void AGain::getParameterName (long index, char *label)
+{
+	strcpy (label, "Gain");
+}
+
+//-----------------------------------------------------------------------------------------
+void AGain::getParameterDisplay (long index, char *text)
+{
+	dB2string (fGain, text);
+}
+
+//-----------------------------------------------------------------------------------------
+void AGain::getParameterLabel(long index, char *label)
+{
+	strcpy (label, "dB");
+}
+
+//------------------------------------------------------------------------
+bool AGain::getEffectName (char* name)
+{
+	strcpy (name, "Gain");
+	return true;
+}
+
+//------------------------------------------------------------------------
+bool AGain::getProductString (char* text)
+{
+	strcpy (text, "Gain");
+	return true;
+}
+
+//------------------------------------------------------------------------
+bool AGain::getVendorString (char* text)
+{
+	strcpy (text, "Steinberg Media Technologies");
+	return true;
+}
+
+//-----------------------------------------------------------------------------------------
+void AGain::process (float **inputs, float **outputs, long sampleFrames)
+{
+    float *in1  =  inputs[0];
+    float *in2  =  inputs[1];
+    float *out1 = outputs[0];
+    float *out2 = outputs[1];
+
+    while (--sampleFrames >= 0)
+    {
+        (*out1++) += (*in1++) * fGain;    // accumulating
+        (*out2++) += (*in2++) * fGain;
+    }
+}
+
+//-----------------------------------------------------------------------------------------
+void AGain::processReplacing (float **inputs, float **outputs, long sampleFrames)
+{
+    float *in1  =  inputs[0];
+    float *in2  =  inputs[1];
+    float *out1 = outputs[0];
+    float *out2 = outputs[1];
+
+    while (--sampleFrames >= 0)
+    {
+        (*out1++) = (*in1++) * fGain;    // replacing
+        (*out2++) = (*in2++) * fGain;
+    }
+}
+</pre>
+</div>
+<br>
+<br>
+    		
+    		<p>
+    		That's all there is to it! That cannot have hurt too much. So let&#8217;s walk through all that again and explain what&#8217;s where.<br>
+    		<br>
+    		To recap, apart from a very small &#8216;main&#8217; function that resides in another file, which is used by the host to construct your plug-in, you really 
+have seen the complete code for an VST plug-in, admittedly it does not really do much.<br>
+    		<br>
+    		Your plug-in class is derived from AudioEffectX and provides is own processing methods, and that&#8217;s all you need to create a VST plug-in that 
+uses the  host&#8217;s default method for displaying its parameters.<br>
+    		<br>
+    		<br>
+    		</p>
+     
+<h2>How does it work?</h2>
+
+    		<p>Before proceeding with the description of the plug-in code fragment,
+ we will  		take a short look at a skeleton code fragment from the host-side. 
+ That is, the  		application code associated with supporting VST-Plug-ins 
+in an application.  		This SDK does not handle the host-side implementation 
+of VST Plug-ins and the  		code here is purely for understanding purposes.<br>
+    		<br>
+    		First, when the Application instanciates a plug-in, it calls the plug-ins 
+ main  		() function somewhat like this:<br>
+    		<br>
+    		</p>
+    		<div class="cpp"><pre>
+typedef AEffect *(*mainCall)(audioMasterCallback cb);
+audioMasterCallback audioMaster;
+
+void instanciatePlug (mainCall plugsMain)
+{   			   
+	AEffect *ce = plugsMain (&amp;audioMaster);
+	if (ce &amp;&amp; ce-&gt;magic == AEffectMagic)
+    {
+    	....
+    }
+
+}
+</pre>
+</div>
+<br>
+<br>
+<p>It&#8217;s all pretty elementary stuff, our instanciatePlug() function 
+ takes a  		typedef&#8217;d pointer to the <code>main()</code> function in our plug-in
+ code. Our  		plug&#8217;s <code>Main()</code> is then called with the audioMaster
+ data which we  		have already established is:<br>
+    		<br>
+    		   
+<ul>
+    			<li> 				Data, controlling the interchange between the host and the
+ plug-in</li>
+    			<li> 				Passed on to the constructor of the base-class <code>AudioEffectX</code></li>
+    			<li> 				and is nothing to worry about.</li>
+    		   
+</ul>
+    		<br>
+    		The host then gets a pointer to the plug-in, if all is well, and then 
+ can check  		if it was actually a VST plug-in that was actually created.<br>
+    		This is magic.<br>
+    		<br>
+    		Returning now to the plug-in code for this example, let&#8217;s have a look 
+ at the <code>main()</code> 		function itself.<br>
+    		This you can find in AGainMain.cpp.<br></p>
+    		<br>
+    		<br>
+    		</p>
+    		<div class="cpp"><pre>
+#if BEOS
+#define main main_plugin
+extern "C" __declspec(dllexport) AEffect *main_plugin (audioMasterCallback audioMaster);
+
+#elif MACX
+#define main main_macho
+extern "C" AEffect *main_macho (audioMasterCallback audioMaster);
+
+#else
+AEffect *main (audioMasterCallback audioMaster);
+#endif
+
+//------------------------------------------------------------------------
+AEffect *main (audioMasterCallback audioMaster)
+{
+	// Get VST Version
+	if (!audioMaster (0, audioMasterVersion, 0, 0, 0, 0))
+		return 0;  // old version
+
+	// Create the AudioEffect
+	ADelay* effect = new ADelay (audioMaster);
+	if (!effect)
+		return 0;
+	
+	// Check if no problem in constructor of AGain
+	if (oome)
+	{
+		delete effect;
+		return 0;
+	}
+	return effect->getAeffect ();
+}
+</pre>
+</div>
+<br>
+<br>
+<p>
+    		Firstly you can see that the <code>audioMasterCallback audioMaster</code> 
+ is  		called with the <code>audioMasterVersion</code> flag just to check 
+that our  		plug-in is being opened in a valid VST host.<br>
+    		<br>
+    		Next the constructor of our gain plug in is called. Unless something
+ goes wrong  		(out of memory etc), and we return null to the VST host, then
+ the resulting <code>effect</code> 		object has one of it&#8217;s member functions
+ called <code>effect-&gt;getAeffect</code> (),  		and the result of this
+call  is returned to the host.<br>
+    		<br>
+    		What&#8217;s actually being returned to the host is the C interface of our
+ plug-in:  		We may be writing code in C++ but deep down there is a C structure
+ filled with  		fields we need to know nothing about.<br>
+    		<br>
+    		Whenever the Host instanciates a plug-in, after the <code>main()</code> 
+ call,  		it also immediately informs the plug-in about important system parameters
+ like  		sample rate, and sample block size. Because the audio effect object
+ is  		constructed in our plug-in&#8217;s main(), before the host gets any information
+ about  		the created object, you need to be careful what functions are called
+ within the  		constructor of the plug-in. You may be talking but no-one
+is  listening.<br>
+    		<br>
+    		Let's look at some details of the gain example. First, the constructor:<br></p>
+    		<br>
+ </p>   		
+    		<div class="cpp"><pre>
+AGain::AGain (audioMasterCallback audioMaster)
+: AudioEffectX (audioMaster, 1, 1)	// 1 program, 1 parameter only
+{
+	fGain = 1.;				// default to 0 dB
+	setNumInputs (2);		// stereo in
+	setNumOutputs (2);		// stereo out
+	setUniqueID ('Gain');	// identify
+	canMono ();				// makes sense to feed both inputs with the same signal
+	canProcessReplacing ();	// supports both accumulating and replacing output
+	strcpy (programName, "Default");	// default program name
+}
+</pre>
+</div>
+<br>
+<br>
+<p>
+    		Our plug-in&#8217;s constructor has the callback to the host as its parameter. 
+ This  		is passed onto the <code>AudioEffectX</code> base-class where it 
+is stored, but  		the constructor to the base-class also has two extra parameters 
+ that set the  		number of programs the effect has, and the number of parameters 
+ the host should  		&#8216;see&#8217; as user parameters for the plug-in.<br>
+    		<br>
+    		<br>
+ </p>   		   
+<table border="1" cellspacing="0" cellpadding="0" bordercolor="#000000"
+ width="80%" align="center">
+    			<tbody>
+       <tr>
+    				<td>Parameters are the individual parameter settings the user can 
+adjust.<br>
+    					A VST host can automate these parameters.<br>
+    					<br>
+    					Programs are a complete set of parameters that refer to the current 
+ state of  					the plug-in.<br>
+    					<br>
+    					Banks are a collection of Program objects.<br>
+    		</td>
+       </tr>
+           
+  </tbody>   
+</table>
+<p>
+    		<br>
+    		<br>
+    		Our plug-in only has one parameter, namely the gain. This is a member 
+ variable  		of our AGain class, and get initialized to 1.0, which translates 
+ to 0dB. This  		value like all VST parameters is declared as a <code>float</code> 
+ with a  		inclusive range of 0.0 to 1.0. How data is presented to the user 
+ is merely in  		the userinterface handling.<br>
+    		<br>
+ </p>   		   
+<table border="1" cellspacing="0" cellpadding="0" bordercolor="#000000"
+ width="80%" align="center">
+    			<tbody>
+       <tr>
+    				<td> 					<b>Parameter </b>values are limited to the range 0.0 to 
+1.0<br>
+    			This is a convention, but still worth regarding. Maybe the VST-host&#8217;s 
+  			automation system depends on this range. 		</td>
+       </tr>
+           
+  </tbody>   
+</table>
+    		<br>
+    		<br>
+    		<br>
+    		<p>
+    		Next the plug-in states the number of inputs and outputs it can process 
+ with <code>setNumInputs(2)</code> 		&amp; <code>setNumOutputs(2);</code>
+ 		<br>
+    		<br>
+    		The plug-in next declares its unique identifier. The host uses this 
+to  identify  		the plug-in, for instance when it is loading effect programs 
+and banks.  		Steinberg will keep a record of all these IDs so if you want 
+to, before  		releasing a plug-in ask us if anyone else has already said they
+use to the ID.  		Otherwise be inventive; you can be pretty certain that
+someone already has used  		&#8216;DLAY&#8217;.<br>
+    		<br>
+    		The call <code>canMono()</code> tells the host that it makes sense
+to  use this  		plug-in as a 1 in / 2 out device. When the host has mono
+effects  sends and has  		a stereo buss for the effects returns, then the
+host can  check this flag to add  		it to the list of plug-ins that could
+be used in  this way.<br>
+    		<br>
+    		In this instance the host can check to see if a stereo plug is selected, 
+ and  		can decide to feed both inputs with the same signal.<br><br>
+    		   
+<table border="1" cellspacing="0" cellpadding="0" bordercolor="#000000"
+ width="80%" align="center">
+    			<tbody>
+       <tr>
+    				<td> 					For the gain plug, this makes sense (although it would
+be  much more efficient  					to have a separate 1 in / 2 out version), but 
+a  stereo width enhancer, for  					instance, really doesn't make sense to 
+be  used with both inputs receiving the  					same signal; such a plug should 
+ definitely not call <code>canMono()</code> 			. 		</td>
+       </tr>
+           
+  </tbody>   
+</table>
+    		<br>
+    		<br>
+    		<br>
+    		We then tell host that we support replacing processing with the call
+ <code>canProcessReplacing()</code>  		(see &#8216;Basic Concepts&#8217; for more information).<br>
+    		<br>
+    		Finally, the one and only program name gets set to "Default" with <code>strcpy(programName, 
+  			"Default")</code>. The program name is displayed in the rack, and can 
+ be  		edited by the user.<br>
+    		<br>
+    		This gain plug-in only has one parameter so its handling of the hosts 
+ requests  		for parameter information are very simple, in that the index 
+to the parameter  		required is simply ignored, and either the current value 
+ of our fGain member is  		set or returned.<br></p>
+    		<br>
+    		<br>
+    		</p>
+    		<div class="cpp"><pre>
+void AGain::setParameter (long index, float value)
+{
+	fGain = value;
+}
+
+float AGain::getParameter (long index)
+{
+	return fGain;
+}
+
+</pre>
+</div>
+<br>
+<br>
+ <p>   		   
+<table border="1" cellspacing="0" cellpadding="0" width="80%"
+ align="center" bordercolor="#000000">
+    			<tbody>
+       <tr>
+    				<td> 					In this case the parameter directly reflects the &#8216;value&#8217;
+ used in our processing  					method. When the user &#8216;turns the dial&#8217; on a
+generic plug interface it is this  					value that gets swept between 0.0
+&amp; 1.0 as the <code>setParameter()</code>function  					gets called. If
+you want a different relationship between the parameters that  					are automated 
+ by the host and what is actually used in your processing method,  					then 
+ that&#8217;s up to you to do the mapping.</td>
+    		</tr>
+           
+  </tbody>   
+</table>
+    		<br>
+    		<br>
+    		<br>
+    		When using the default host interface to provide an interface for a 
+plug-in,  as  		we are doing here, it is necessary that effect object overrides 
+the  following  		functions to allow the default interface a chance to display 
+ useful values to  		the user. Note, here again we are ignoring the parameter 
+ &#8216;index&#8217; while we only  		have one parameter.<br>
+    		<br>
+    		   
+<table border="1" cellspacing="0" cellpadding="0" width="80%"
+ bordercolor="#000000" align="center">
+    			<tbody>
+       <tr>
+    				<td> 					The Default User-Interface<br>
+    					The VST Host provides a method of displaying parameter values. The 
+ plug-in only  					needs to provide character strings representing its paramter 
+ values, labels &amp;  					names. The Host then is free to display and edit 
+ these parameters as it wishes.</td>
+    		</tr>
+           
+  </tbody>   
+</table>
+    		<br>
+    		<br>
+    		</p>
+    		<div class="cpp"><pre>
+void AGain::getParameterName (long index, char *label)
+{
+	strcpy (label, "Gain");
+}
+
+void AGain::getParameterDisplay (long index, char *text)
+{
+	dB2string (fGain, text);
+}
+
+void AGain::getParameterLabel(long index, char *label)
+{
+	strcpy (label, "dB");
+}
+</pre>
+</div>
+<br>
+<br>	 
+<p>  
+<table border="1" cellspacing="0" cellpadding="0" width="80%"
+ align="center" bordercolor="#000000">
+    			<tbody>
+       <tr>
+    				<td> 					Please be aware that the string lengths supported by the
+ default VST interface  					are normally limited to 24 characters. If you
+ copy too much data into the  					buffers provided, you will break the host
+ application. Don&#8217;t do it.<br>
+    				</td>
+    		</tr>
+           
+  </tbody>   
+</table>
+    		<br>
+    		<br>
+    		<br>
+    		As you can see, the <code>AudioEffectX</code> base-class has some default 
+  		methods that are useful for parameter to value and parameter to string 
+  		conversions, for instance here to display a dB value string. <code>dB2string(fGain, 
+  			text)</code> . Please check the <code>audioeffectX.hpp</code> &amp; <code>AudioEffect.h</code>
+ 		files for the full compliment.<br></p>
+    		   
+<h2>So that's it ? !</h2>
+<p>
+    		Yes, that&#8217;s all you need to know to create a fully working VST plug-in. 
+ If you  		already have an idea for an algorithm or audio process you could 
+ test it out  		right now.<br>
+    		<br>
+    		Actually there are two different kinds of processes that you can support, 
+ so  		it&#8217;s probably a good idea to keep on reading a little further.<br>
+    		<br>
+    		Anyway that's all there is to initialization, parameter handling, and 
+ user  		interfacing in its simplest form.<br>
+    		<br>
+    		<br>
+    		Now you should proceed to the ADelay example, which is similar to AGain 
+ but has  		more parameters, and provides the basis for a plug-in with its 
+ own graphical  		user interface.<br>
+    		<br>
+    		<br>
+  </p>  		   
+  
+<hr noshade="noshade" size="4">   
+  
+<h1><a name="ADelay">Basic Programming Examples<br>
+    			A simple delay plug-in.</a></h1>
+    		
+    		<p>This next coding example builds on what was learnt from the previous
+ example,  		the simple gain plug-in. Please read this first if you have
+not  already done  		so, because only what&#8217;s new is explained. Apart from
+offering  a somewhat more  		meaningful audio process, the main reason for
+this example  is to learn more  		about how multiple parameters are handled
+and how a plug  manages more than one  		snapshot of user settings.<br>
+    		<br>
+ </p>   		   
+<h2>Example Code : ADelay</h2>
+    		<br>
+    		Basic Source Files Required<br>
+    		ADelay.cpp<br>
+    		ADelay.hpp<br>
+    		ADelayMain.cpp<br>
+    		<br>
+    		<br>
+    		<p>
+    		First, let's look at the simple and short declaration of the ADelay 
+class  and  		it&#8217;s companion class ADelayProgram:<br><br></p>
+    		<div class="cpp"><pre>
+#ifndef __audioeffectx__
+#include "audioeffectx.h"
+#endif
+
+enum
+{
+	// Global
+	kNumPrograms = 16,
+
+	// Parameters Tags
+	kDelay = 0,
+	kFeedBack,
+	kOut,
+
+	kNumParams
+};
+
+class ADelay;
+
+//------------------------------------------------------------------------
+class ADelayProgram
+{
+friend class ADelay;
+public:
+	ADelayProgram ();
+	~ADelayProgram () {}
+
+private:	
+	float fDelay;
+	float fFeedBack;
+	float fOut;
+	char name[24];
+};
+
+//------------------------------------------------------------------------
+class ADelay : public AudioEffectX
+{
+public:
+	ADelay (audioMasterCallback audioMaster);
+	~ADelay ();
+
+	virtual void process (float **inputs, float **outputs, long sampleframes);
+	virtual void processReplacing (float **inputs, float **outputs, long sampleFrames);
+
+	virtual void setProgram (long program);
+	virtual void setProgramName (char *name);
+	virtual void getProgramName (char *name);
+	virtual bool getProgramNameIndexed (long category, long index, char* text);
+	
+	virtual void setParameter (long index, float value);
+	virtual float getParameter (long index);
+	virtual void getParameterLabel (long index, char *label);
+	virtual void getParameterDisplay (long index, char *text);
+	virtual void getParameterName (long index, char *text);
+
+	virtual void resume ();
+
+	virtual bool getEffectName (char* name);
+	virtual bool getVendorString (char* text);
+	virtual bool getProductString (char* text);
+	virtual long getVendorVersion () { return 1000; }
+	
+	virtual VstPlugCategory getPlugCategory () { return kPlugCategEffect; }
+
+protected:
+	void setDelay (float delay);
+
+	ADelayProgram *programs;
+	
+	float *buffer;
+	float fDelay, fFeedBack, fOut;
+	
+	
+	long delay;
+	long size;
+	long cursor;
+};
+</pre>
+</div>
+<br>
+    		<br>
+    		   
+<h2>So what's new?</h2>
+<p>
+    		So after scanning through that you probably can see what&#8217;s familiar 
+from  the  		original gain plug-in but also what&#8217;s new. Now one more time, 
+step  by step&#8230;<br>
+    		<br>
+    		</p>
+    		<div class="cpp"><pre>
+enum
+{
+	// Global
+	kNumPrograms = 16,
+
+	// Parameters Tags
+	kDelay = 0,
+	kFeedBack,
+	kOut,
+
+	kNumParams
+};
+</pre>
+</div>
+<br>
+<br>
+ <p>   		This enumerates all parameters that are accessible to the user. 
+ It's a  		good habit to use such an enumerator for any plug-in. If our final 
+ linked  		plug-in was dropped into the host&#8217;s VST Plug-in folder, then the 
+ parameters we  		would see would be representations of these, namely the 
+delay time, the output  		to input feedback amount, and the output level as
+parameters.<br>
+    		<br>
+    		   
+<table border="1" cellspacing="0" cellpadding="0" width="80%"
+ bordercolor="#000000" align="center">
+    			<tbody>
+       <tr>
+    				<td> 					While we are on the topic of good ideas, we would recommend 
+ having at least one  					representation of these parameters in your plug-ins 
+ main class that corresponds  					to the generic parameter format. In other 
+ words, for each of these parameters  					declared in the enumeration there 
+ should a (similarly named) parameter that  					holds it&#8217;s value, where the
+ value is a float type between the values 0.0 and  					1.0 inclusive.<br>
+    				</td>
+    		</tr>
+           
+  </tbody>   
+</table>
+    		<br>
+    		<br>
+    		The handling of programs, the snapshots of user settings, is going
+to  need a  		container for each set of parameters. We define a class to
+handle  this.<br>
+    		<br>
+</p>    		
+    		<div class="cpp"><pre>
+class ADelayProgram
+{
+friend class ADelay;
+public:
+	ADelayProgram ();
+	~ADelayProgram () {}
+
+private:	
+	float fDelay;
+	float fFeedBack;
+	float fOut;
+	char name[24];
+};
+</pre>
+</div>		
+<br>
+<br>
+<p>
+    		The members, <code>fDelay, fFeedBack,</code> and <code>fOut</code>
+are  the  		generic representations of the parameters as stored in this container. 
+ They are  		not themselves the parameters used in the audio process but places
+ where they  		will be copied from when the user selects another program. 
+At this point the  		user can edit these values using the controls provided 
+by the host using <code>setParameter()</code> 		&amp; <code>getParameter()</code>.
+  		<br>
+    		<br>
+    		The same is true of the name, if this program was to be selected by 
+the  user,  		after the plug-in has copied it from the container, the user 
+can  use the host  		application to edit the name, which is achieved with 
+<code>getProgramName()</code>  		and <code>setProgramName()</code>.<br>
+    		<br>
+    		We will omit the method declarations and have a look at their implementation 
+  		instead, firstly the ADelayProgram constructor:<br>
+    		<br>
+ </p>   		
+    		<div class="cpp"><pre>
+ADelayProgram::ADelayProgram ()
+{
+	// default Program Values
+	fDelay = 0.5;
+	fFeedBack = 0.5;
+	fOut = 0.75;
+
+	strcpy (name, "Init");
+}
+</pre>
+</div>
+<br>
+<br>
+<p>
+    		This simply sets the default parameter values for all programs. You 
+might  want  		to assign different values (for instance, from a table or array)
+for each  		program, in order to provide some useful presets. That's all
+there is to the  		ADelayProgram class.<br>
+    		<br>
+    		So, back to the constructor of the ADelay class&#8230;<br>
+    		<br>
+    	</p>	
+    		<div class="cpp"><pre>
+ADelay::ADelay (audioMasterCallback audioMaster)
+: AudioEffectX (audioMaster, kNumPrograms, kNumParams)
+{
+	// init
+	size = 44100;
+	buffer = new float[size];
+	
+	programs = new ADelayProgram[numPrograms];
+	fDelay = fFeedBack = fOut = 0;
+	delay = inPos = outPos = 0;
+
+	if (programs)
+		setProgram (0);
+
+	setNumInputs (1);	// mono input
+	setNumOutputs (2);	// stereo output
+
+	hasVu ();
+	canProcessReplacing ();
+	setUniqueID ('ADly');
+
+	resume ();		// flush buffer
+}
+</pre>
+</div>
+<br>
+<br>
+<p>
+    		When the ADelay class is constructed, firstly the base-class AudioEffectX 
+ is  		constructed. As you will remember from the AGain example, one of AudioEffectX&#8217;s 
+  		arguments is the number of programs the plug-in has (here set to 2). Once
+ the  		base class is constructed, during the construction of the ADelay object,
+ the  		member variable numPrograms is valid and is used to construct a set
+ of  		ADelayPrograms.<br>
+    		<br>
+    		Because this is a delay process we are going to need some memory to 
+store   		samples. The parameter &#8216;size&#8217; is set to 44100 to provide a maximum 
+of one  		second of delay, and then a buffer of floats is allocated.<br>
+    		<br>
+    		   
+<table border="1" cellspacing="0" cellpadding="0" bordercolor="#000000"
+ width="80%" align="center">
+    			<tbody>
+       <tr>
+    				<td> 					Probably a statement such as size = getSampleRate() would 
+ be better, but as we  					don&#8217;t react to changes in sample rate in this 
+simple example, and then anyway  					we would have to re-allocate the buffer 
+accordingly etc. That&#8217;s not the point  					of this example.<br>
+    				</td>
+    		</tr>
+           
+  </tbody>   
+</table>
+    		<br>
+    		<br>
+    		Next all the parameters that are used in the audio process are set
+to  zero as a  		matter of good behavior, but actually they will get set
+to an  initial value  		when setProgram() gets called if delay programs were 
+successfully  created.<br>
+    		<br>
+    		<br>
+    		Just as in the AGain example, <code>setUniqueID()</code> is very important, 
+ you  		must set this to a value as unique as possible as the host uses this 
+ to  		identify the plug-in, for instance when it is loading effect programs 
+ and  		banks.<br>
+    		<br>
+    		Finally, we state that we support vu meters, and in-place processing
+ as with  		the gain example. The destructor just takes care of cleaning
+up  (remember,  		we're in the Hosts' context):<br>
+    		<br>
+    		<br>
+   </p> 		
+    		<div class="cpp"><pre>
+ADelay::~ADelay ()
+{
+	if (buffer)
+		delete[] buffer;
+	if (programs)
+		delete[] programs;
+}
+</pre>
+</div> 		
+<br>
+<br>
+    		   
+<h2>Changing Programs</h2>
+<p>
+    		Next we should have a look at the <code>setProgram()</code> method. 
+This  is  		called whenever the user, or the host as a result of automation 
+activity,  wants  		to change the current active program in the plug-in. This
+(re-) initializes  		both generic, internal parameters, and variables:<br>
+    		<br>
+  </p>  		
+    		<div class="cpp"><pre>
+void ADelay::setProgram (long program)
+{
+	ADelayProgram * ap = &programs[program];
+
+	curProgram = program;
+	setParameter (kDelay, ap->fDelay);	
+	setParameter (kFeedBack, ap->fFeedBack);
+	setParameter (kOut, ap->fOut);
+}
+</pre>
+</div> 		
+<br>
+<br>
+<p>
+    		It reads the parameters from the selected program, makes that the current 
+  		program, and calls <code>setParameter()</code> for each of the indexed 
+  		parameters, with the new values, just as if the user would have set them 
+ by  		hand. It doesn&#8217;t matter why the parameters are being changed, user 
+selection,  		automation, program change, the same <code>setParameter()</code> 
+method gets  		called.<br>
+    		<br>
+    		<br>
+</p>    		   
+<h2>Changing Parameters</h2>
+    		<p>Well, while we are on the subject of <code>setParameter()</code> we 
+should  look  		at its implementation.<br>
+    		<br>
+    		</p>
+    		<div class="cpp"><pre>
+void ADelay::setParameter (long index, float value)
+{
+	ADelayProgram * ap = &programs[curProgram];
+
+	switch (index)
+	{
+		case kDelay :    setDelay (value); break;
+		case kFeedBack : fFeedBack = ap->fFeedBack = value; break;
+		case kOut :      fOut = ap->fOut = value; break;
+	}
+	if (editor)
+		editor->postUpdate ();
+}
+</pre>
+</div>
+<br>
+<br>
+    		<p>We'll get back to <code>setDelay()</code> later. The <code>setParameter()</code>
+  		function is also called from the Host, it's important that we store the 
+  		parameters back into the current program, to maintain the currently edited 
+  		state of any particular program.<br>
+    		<br>
+    		Both <code>getParameter()</code> and <code>setParameter()</code> always 
+ refer  		to the current program.<br>
+    		<br>
+    		   
+<table border="1" cellspacing="0" cellpadding="0" bordercolor="#000000"
+ width="80%" align="center">
+    			<tbody>
+       <tr>
+    				<td> 					But notice that last section referring to the editor. When 
+ a parameter gets  					changed you want the user&#8217;s display to be updated 
+as well. And here is exactly  					where you should NOT do it. The reason 
+is that <code>setParameter</code> can &amp;  					will get called from interrupt 
+ and drawing graphics from an interrupt (on the  					Mac!) is basically impossible.
+ And we will leave it at that. There are actually  					performance reasons
+ why deferring graphic updates to the user-interface thread  					is a good
+ idea. What you actually do is post a message to the user-interface  					that
+ something or everything needs updating.</td>
+    		</tr>
+           
+  </tbody>   
+</table>
+    		<br>
+    		<br>
+    		<br>
+    		To complete the picture, here&#8217;s the implementation of <code>getParameter()</code>&#8230;<br>
+    		<br>
+    		<br>
+   </p> 		
+    		<div class="cpp"><pre>
+float ADelay::getParameter (long index)
+{
+	float v = 0;
+
+	switch (index)
+	{
+		case kDelay :    v = fDelay; break;
+		case kFeedBack : v = fFeedBack; break;
+		case kOut :      v = fOut; break;
+	}
+	return v;
+}
+</pre>
+</div>		
+<br>
+<br>
+    		<p>That&#8217;s simple enough. Compared with the version in AGain where we had 
+ only one  		parameter, we use the index value to return the appropriate parameter.
+  		Alternatively we could have returned values that referred to the program
+ index  		by <code>curProgram</code>, but because we were so diligent in
+how  <code>setProgram()</code> 		also updated the current program, there
+was no  need.<br>
+    		<br>
+    		<br>
+    		There's also <code>getProgramName()</code> and <code>setProgramName()</code>: 
+  		Remember the size of the character arrays, and the consequences of overfilling 
+  		them?<br>
+    		<br>
+    		<br>
+    		</p>
+    		<div class="cpp"><pre>
+void ADelay::setProgramName (char *name)
+{
+	strcpy (programs[curProgram].name, name);
+}
+
+void ADelay::getProgramName (char *name)
+{
+	if (!strcmp (programs[curProgram].name, "Init"))
+		sprintf (name, "%s %d", programs[curProgram].name, curProgram + 1);
+	else
+		strcpy (name, programs[curProgram].name);
+}
+</pre>
+</div>
+<br>
+<br>
+
+<p>Fairly straightforward as well. And as we have more than one 
+parameter,   		we use switch statements where the Host asks us for strings. 
+We still don&#8217;t  		have our own interface yet and must support the host&#8217;s efforts
+in providing us  		with the generic interface.<br>
+    		<br>
+    		   
+<table border="1" cellspacing="0" cellpadding="0" bordercolor="#000000"
+ width="80%" align="center">
+    			<tbody>
+       <tr>
+    				<td> 					<b>Even if you do provide your own editor you should still 
+ have a fully set of  						&#8216;string&#8217; interfaces, so the host application can
+ graphically edit your  						automated parameters, with their names and
+labels.</b></td>
+    		</tr>
+           
+  </tbody>   
+</table>
+    		<br>
+    		<br>
+  </p>  		
+    		<div class="cpp"><pre>
+void ADelay::getParameterName (long index, char *label)
+{
+	switch (index)
+	{
+		case kDelay :    strcpy (label, "Delay"); break;
+		case kFeedBack : strcpy (label, "FeedBack"); break;
+		case kOut :      strcpy (label, "Volume"); break;
+	}
+}
+
+//------------------------------------------------------------------------
+void ADelay::getParameterDisplay (long index, char *text)
+{
+	switch (index)
+	{
+		case kDelay :    long2string (delay, text); break;
+		case kFeedBack : float2string (fFeedBack, text);	break;
+		case kOut :      dB2string (fOut, text); break;
+	}
+}
+
+//------------------------------------------------------------------------
+void ADelay::getParameterLabel (long index, char *label)
+{
+	switch (index)
+	{
+		case kDelay :    strcpy (label, "samples");	break;
+		case kFeedBack : strcpy (label, "amount");	break;
+		case kOut :      strcpy (label, "dB");	break;
+	}
+}
+
+//------------------------------------------------------------------------
+bool ADelay::getEffectName (char* name)
+{
+	strcpy (name, "Delay");
+	return true;
+}
+</pre>
+</div>
+<br>
+<br>
+    		<p>This just a small detail really but the <code>AudioEffectX</code> base 
+ class  		provides a number of conversion functions, we have already used 
+<code>dB2string()</code> 		in the gain plug-in, but here <code>long2string()</code> 
+and <code>float2string()</code> 		are used as well.<br>
+    		<br>
+    		We are getting close the to end of the new stuff here. Have a look
+at  the  		method <code>resume()</code>.<br>
+    		<br>
+    	</p>	
+    		<div class="cpp"><pre>
+void ADelay::resume ()
+{
+	memset (buffer, 0, size * sizeof (float));
+	AudioEffectX::resume ();
+}
+</pre>
+</div> 		
+<br>
+<br>
+    		<p>This method <code>resume()</code> is called when the effect is turned 
+ on by  		the user; the buffer gets flushed because otherwise pending delays 
+ would sound. It&#8217;s not essential
+ to do this  		but it would be rather strange not to, but there&#8217;s no accounting
+ for taste.<br>
+    		<br>
+    		   
+<h2>And Finally, the Process.</h2>
+    		<br>
+    		<div class="cpp"><pre>
+void ADelay::process (float** inputs, float** outputs, long sampleFrames)
+{
+	float* in = inputs[0];
+	float* out1 = outputs[0];
+	float* out2 = outputs[1];
+
+	while (--sampleFrames >= 0)
+	{
+		float x = *in++;
+		float y = buffer[cursor];
+		buffer[cursor++] = x + y * fFeedBack;
+		if (cursor >= delay)
+			cursor = 0;
+		(*out1++) += y;
+		if (out2)
+			(*out2++) += y;
+	}
+}
+</pre>
+</div>
+<br>
+<br>
+    			<p>There is a buffer of (at least) the maximum number of samples to be
+ delayed,  			reflected by the size member variable.
+    			<br>
+    			The details of the processes and are left for you to figure out by 
+yourself.   			All in all, this is a simple delay with feedback.<br>
+    			<br>
+    			At this point, we have seen enough to understand the fundamental mechanisms 
+ of  			writing VST plug-ins: Now complete with multiple parameters, that 
+can be  			correctly automated and saved as programs, and displayed with labels
+and value  			units by the host. Not bad for a few lines of code.<br>
+    			<br>
+    			Both the gain plug-in and this simple delay plug-in have used the
+host&#8217;s   			default parameter handling for changing and displaying values.
+Nothing  wrong  			with that, but VST plug-ins can also provide their own
+user interface,  so that  			they can do customize their look and feel. In
+the next example  code we will  			look at how the delay plug-in can be extended
+to do just  that.<br>
+    			<br>
+    			</p>
+     
+<hr noshade="noshade" size="4"> 			   
+<div align="center">Copyright &copy;2003 <a
+ href="http://www.steinberg.net" target="_blank"><u>Steinberg  						Media 
+ Technologies GmbH</u></a>. All Rights Reserved. 			</div>
+    	<br>
+   </div>
+     
+</body>
+</html>

@@ -1,0 +1,554 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Others</title>
+  <base target="vstdoc">               
+  <link href="../../sdkdoc.css" type="text/css" rel="stylesheet">
+</head>
+  <body> <div>
+<h1>Others</h1>
+	<UL>
+		<li><A href="#links">Links</A>
+		<li><A href="#vstmonitor">VSTMonitor Plug-In</A>  (Monitoring)
+		<li>"Reference" <A href="#sequencing">VST Calls 
+  Sequences</A>
+		</li>
+	</UL>
+<DIV>
+	<br></DIV>
+<DIV>
+<HR noShade SIZE=4>
+</DIV>
+<H2><A name=links></A>Links</H2>
+<P>You can find more information about VST (links to web pages providing examples, last news, online documentation, VSTGUI update, mailing List, 
+archive, register a Plug-In ID...) under <A 
+href="http://www.steinberg.net/en/ps/support/3rdparty" target="_blank">http://www.steinberg.net/en/ps/support/3rdparty</A> 
+or <A href="http://ygrabit.steinberg.de" target="_blank">http://ygrabit.steinberg.de</A>.</P>
+<P>We encourage you to subscribe to the VST mailing List, where you can find 
+(almost always..:-)) an answer to all your question...To subscribe go to the 
+previous given internet links.</P>
+<P>&nbsp;</P>
+<P>
+
+<HR noShade SIZE=4>
+
+<P></P>
+<H2><A name=vstmonitor></A>VSTMonitor 
+Plug-In (Monitoring)</H2>
+      		     
+<p>VSTMonitor, provided with this SDK, is a Plug-In which is dedicated to 
+  "monitor"  			the communications between a VST Plug-In and the host which 
+  instanciates it :  			it keeps track of all the calls made by the host to
+  the Plug-In's dispatcher,  			and of all the calls made by the Plug-In to
+  the host's audiomaster.<br>
+      			<br>
+      			This is useful to record the sequence of calls done by any host
+to  a  VST  			Plug-In while loading it. 			<br>
+      			Besides VSTMonitor has a "trigger" function which lets the user
+trigger   (via a  			pop-up menu) any call to the host's audiomaster, to
+see how the   host reacts  			(and notably to see if the function is implemented 
+by the   host...).</p>
+<p>You will find this plug-in in the <b>VSTPlug-ins</b> folder dedicated
+to each platform. You only need to put it directly in your own VST plug-ins
+folder in order to make it work.</p>
+<p>   Calls made by the host to the plug-in are shown in grey, calls from
+the  plug-in to the host are displayed in red. <br>
+ Internal (to the plug-in) calls are shown in blue.&nbsp;</p>
+<p>All the GUI buttons don't correspond to "real" parameters declared to
+the host, in order to prevent from disturbing the monitoring. Nevertheless,
+3 "real" parameters and 2 programs are declared "publically" (although they
+are not used internally) to let you see how they are handled by the host.<br>
+ <br>
+ <b>Important Note :</b> many hosts, while loading, open each Vst plug-in, 
+for example to check their IO configuration. This is "hidden" to the user 
+(as the plug-in is always closed as soon as the information needed has been 
+recorded by the host), but VstMonitor can record even those calls, and display 
+them the next time it is open "normally" in the sequencer. That's why while 
+the host is loading, an alert window may be automatically opened, asking if
+the user want to keep track of "what has happened" (and although he has not
+explicitly opened the plug-in).<br>
+ <br>
+    <b>VstMonitor's buttons :</b> <br>
+</p>
+<UL>
+  <li><i>display </i>: by default, comms 
+  (a "comm" means a call to the dispatcher or audiomaster) are not automatically 
+  displayed when they occur. Clicking on this button causes the 
+  displaying.&nbsp; 
+  <li><i>reset </i>: used to erase all 
+  the comms recorded.&nbsp; 
+  <li><i>export </i>: export as a .txt 
+  file all the comms recorded,&nbsp; 
+  <li><i>trigger </i>: a pop-up menu 
+  from which you can select a call to the host you would like to trigger 
+  VstMonitor's options :&nbsp; 
+  <li><i>filters </i>: the user can 
+  choose to filter (ie not display, as they are always recorded in the 
+  background) some coms. In order to do that, you simply need to right-click (in 
+  the display) on the comm you want to filter. This comm is then added to the 
+  "filter menu" (one of the buttons beneath the display). Clicking on the name 
+  of a function in this menu cause the filter to be removed. Some filters are 
+  set by default, notably those which concern parameters (setParameter...), but 
+  can be unset via the menu.&nbsp; 
+  <li><i>function's params</i> : the 
+  user can choose to display the parameters of the calls&nbsp; 
+  <li><i>function's returned value</i> : 
+  the user can choose to display the "result" of th call (it means the value 
+  returned, and pointers which have been filled if necessary).&nbsp; 
+  <li><i>continuous display</i> : set this if you want the synchronous display
+of the comms.    		</li></UL>
+<P>&nbsp;</P>
+<DIV>
+      		     
+<HR noShade SIZE=4>
+</DIV>
+     		     
+<h2><A name=sequencing></A>"Reference" VST Calls Sequences</h2>
+      		     
+<h4>Introduction :</h4>
+      		     
+<p>What follows concerns both VST Plug-Ins and VST hosts developers. 			<br>
+      			It gives the sequences of calls due to the “VST&nbsp;Communication”
+  between a  			Plug-In and a host, at different moments of the “life” of
+the  Plug-In.<br>
+      			Plug-Ins developers can find here the sequence of calls to which 
+their   Plug-Ins  			should have to answer.<br>
+      			Hosts developers can find here what could be considered as a “reference” 
+  for  			the VST calls (and their order) they have to implement.<br>
+      			<br>
+      			The sequences have been tracked using <strong>NUENDO 2.0</strong>, 
+ and  a <strong>VST  				2.3</strong> compatible Plug-In:</p>
+<UL>
+  <LI><A href="#seq1">During Nuendo 2.0 Initialisation</A>
+  <LI><A href="#seq2">When the Plug-In is loaded on a track as Insert </A>
+  <LI><A href="#seq3">Then if the Plug-In is deactivated (Off), and 
+  reactivated (On) </A>
+  <LI><A href="#seq4">The Editor is closed, then opened </A>
+  <LI><A href="#seq5">The Plug-In triggers a call to “iochanged” </A>
+  <LI><A href="#seq6">The Plug-In is used in offline processing</A></LI></UL>
+<DIV>
+      		<br></DIV>
+<DIV>
+      		     
+<hr noshade size="4">
+</DIV> 		     
+<div> 			     
+<h4><A name=seq1></A>During Nuendo 2.0 Initialisation (first start when plugins are registred):
+   			</h4>
+      			<strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+   				-&gt;Instanciation&lt;-</strong>&nbsp;<br>
+      			&nbsp;0 :&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,  			***************CONSTRUCTOR***************<br>
+      			&nbsp;1 :&nbsp;&nbsp; &nbsp;&nbsp; &nbsp; Internal,&nbsp;&nbsp;&nbsp;&nbsp; 
+   			__EDITOR__ ********CONSTRUCTOR********<br>
+      			&nbsp;2 :&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,  			getPlugCategory&nbsp; 
+  returned : PlugSurroundFx 			<br>
+      			&nbsp;3 :&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, setSampleRate 
+  (  			44100.000000 ) 			<br>
+      			&nbsp;4 :&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, setBlockSize 
+  (  			5512 ) 			<br>
+      			&nbsp;5 :&nbsp;&nbsp; &nbsp;&nbsp; &nbsp; Host to Plug, open<br>
+      			&nbsp;6 :&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, canDo 
+ (  bypass  			)&nbsp;&nbsp; returned : 0 			<br>
+      			&nbsp;7 :&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, setPanLaw 
+  ( 0 ,  			0.707107 )&nbsp;&nbsp; returned : false&nbsp;<br>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  <strong>-&gt;Construct  				the program List&lt;-</strong>&nbsp;<br>
+      			&nbsp;8 :&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, getProgram&nbsp; 
+   			returned : 0 			<br>
+      			&nbsp;9 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Host to Plug,
+  			getVstVersion&nbsp;  returned : 2300 			<br>
+      			&nbsp;10 :&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, getProgramNameIndexed 
+  ( -1 ,  			0 , ptr to char )&nbsp;&nbsp; returned : true , Default&nbsp;<br>
+      			&nbsp;&nbsp;&nbsp; ... other programs here...<br>
+      			&nbsp;25 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; Host to Plug, getProgramName 
+  ( ptr to  			char )&nbsp;&nbsp; returned : Default 			<br>
+      			&nbsp;26 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; Host to Plug, getProgram&nbsp; 
+   			returned : 0 		</div>
+      		     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  <strong>-&gt;Get  				Some Info&lt;-</strong>&nbsp;<br>
+      			&nbsp;27 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Host to Plug, canDo 
+ (   			midiProgramNames )&nbsp;&nbsp; returned : 0 			<br>
+      			&nbsp;28 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Host to Plug,  			getPlugCategory&nbsp; 
+  returned : PlugSurroundFx 			<br>
+      			&nbsp;29 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Host to Plug,  			getVstVersion&nbsp; 
+  returned : 2300 			<br>
+      			&nbsp;30 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Host to Plug, getVendorString 
+  (  			ptr to char )&nbsp;&nbsp; returned : true , Steinberg Media Technologies&nbsp;<br>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  <strong> 				-&gt;Release it&lt;-</strong> 			<br>
+      			31 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;Host to Plug, close<br>
+      			&nbsp;32 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  			Internal,&nbsp;&nbsp;&nbsp;&nbsp; 
+  __EDITOR__ ********DESTRUCTOR********<br>
+      			&nbsp;33 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Host to Plug,  			***************DESTRUCTOR***************</div>
+      		     
+<div><br>
+      			     
+<hr noshade size="4"> 		</div>
+      		     
+<div> 			     
+<h4><A name=seq2></A>When the Plug-In is loaded on a track as Insert:</h4>
+      			<strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+   				-&gt;Instanciation&lt;-</strong> 			<br>
+      			&nbsp;0 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,   			***************CONSTRUCTOR***************<br>
+      			&nbsp;1 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;  			&nbsp;Internal,&nbsp;&nbsp;&nbsp;&nbsp; 
+  __EDITOR__ ********CONSTRUCTOR********<br>
+      			&nbsp;2 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,   			getPlugCategory&nbsp; returned : PlugSurroundFx 			<br>
+      			&nbsp;3 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,   			setSampleRate ( 44100.000000 ) 			<br>
+      			&nbsp;4 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,   			setBlockSize ( 5512 ) 			<br>
+      			&nbsp;5 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,  open<br>
+      			&nbsp;6 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,  canDo  			( bypass )&nbsp;&nbsp; returned : 0 			<br>
+      			&nbsp;7 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,   			setPanLaw ( 0 , 0.707107 )&nbsp;&nbsp; returned : false 		</div>
+      		     
+<div>&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>-&gt;Construct
+ 				the program List&lt;-</strong> 			<br>
+      			&nbsp;8 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,   			getProgram&nbsp; returned : 0 			<br>
+      			&nbsp;9 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Host   to Plug,  			getVstVersion&nbsp; returned : 2300 			<br>
+      			&nbsp;10 :&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,  			getProgramNameIndexed 
+  ( -1 , 0 , ptr to char )&nbsp;&nbsp; returned : true ,  			Default&nbsp;
+  			<br>
+      			&nbsp;&nbsp;&nbsp; ... other programs here... 			<br>
+      			&nbsp;25 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+   			getProgramName ( ptr to char )&nbsp;&nbsp; returned : Default 			<br>
+      			&nbsp;26 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+   			getProgram&nbsp; returned : 0&nbsp;<br>
+      			&nbsp;27 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+  canDo (  			midiProgramNames )&nbsp;&nbsp; returned : 0&nbsp;<br>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+   			<strong>-&gt;Switched to ON&lt;-</strong><br>
+      			&nbsp;33 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Host
+to   			Plug, getVstVersion&nbsp; returned : 2300 			<br>
+      			&nbsp;34 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+   			setSpeakerArrangement&nbsp; returned : true 		</div>
+      		     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Note: if <em>setSpeakerArrangement ()</em>&nbsp; 
+   			returns false, this means that the Plug refuses this&nbsp;arrangement,&nbsp;the 
+   			Host will ask <em>getSpeakerArrangement</em> () and then recall&nbsp;<em>setSpeakerArrangement</em>&nbsp;()&nbsp;with 
+   			the&nbsp;required arrangement.<br>
+      			&nbsp;35 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+  resume<br>
+      			&nbsp;36 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+  canDo (  			sendVstMidiEvent )&nbsp;&nbsp; returned : 0 		</div>
+      		     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+   			-&gt;<strong>Open Editor</strong>&lt;- 			<br>
+      			&nbsp;37 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+  canDo (  			LiveWithoutToolbar )&nbsp;&nbsp; returned : 0&nbsp; 			<br>
+      			&nbsp;39 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+  __EDITOR__  			getRect&nbsp; returned : 1 			<br>
+      			&nbsp;40 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+  __EDITOR__  			open</div>
+      		     
+<div>&nbsp;92 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, __EDITOR__
+ 			getRect&nbsp; returned : 1 			<br>
+      			&nbsp;93 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+   			getProgram&nbsp; returned : 0 			<br>
+      			&nbsp;94 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+  __EDITOR__  			setKnobMode ( 2 )&nbsp;&nbsp; returned : 1 			<br>
+      			&nbsp;95 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+  __EDITOR__  			update<br>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+   			-&gt;<strong>Start Processing</strong>&lt;-&nbsp;<br>
+      			&nbsp;41 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+   			startProcess&nbsp; returned : 0 			<br>
+      			&nbsp;42 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+   			processReplacing ( 5512 )&nbsp;&nbsp;<br>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+      		</div>
+      		     
+<div> 			     
+<hr noshade size="4"> 		</div>
+      		   		     
+<div> 			     
+<A name=seq3></A><h4>Then if the Plug-In is deactivated (Off), and reactivated (On):</h4>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;<strong>Switched 
+   				to OFF</strong>&lt;- 		</div>
+      		     
+<div>&nbsp;0 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, 
+			stopProcess&nbsp; returned : 0 			<br>
+      			&nbsp;1 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, 
+ suspend<br>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; -&gt;<strong>Switched 
+  to ON&lt;-</strong>&nbsp;</div>
+      		     
+<div>&nbsp;2 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, resume<br>
+      			&nbsp;3 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, 
+ canDo  (  			sendVstMidiEvent )&nbsp;&nbsp; returned : 0 			<br>
+      			&nbsp;4 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, 
+  			startProcess&nbsp; returned : 0 			<br>
+      			&nbsp;5 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug, 
+  			processReplacing ( 5512 )<br>
+      			<br>
+      		</div>
+   		     
+<hr noshade size="4">
+<div> 			     
+<A name=seq4></A><h4>The Editor is closed, then opened :</h4>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  <strong>-&gt;Close&lt;-</strong>&nbsp;<br>
+      			&nbsp;0 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,   			__EDITOR__ close</div>
+      		     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  <strong>-&gt;Open&lt;-</strong>&nbsp;<br>
+      			&nbsp;1 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,  canDo  			( LiveWithoutToolbar )&nbsp;&nbsp; returned : 0 			<br>
+      			&nbsp;2 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,   			__EDITOR__ getRect&nbsp; returned : 1&nbsp;<br>
+      			&nbsp;4 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;Host
+to  Plug,   			__EDITOR__ open<br>
+      			&nbsp;54 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Host to Plug, __EDITOR__ 
+   			getRect&nbsp; returned : 1 			<br>
+      			&nbsp;55 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Host to Plug, __EDITOR__ 
+   			setKnobMode ( 2 )&nbsp;&nbsp; returned : 1 			<br>
+      			&nbsp;56 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Host to Plug, __EDITOR__ 
+  update<br>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  <strong> 				-&gt;Open a Host FileSelector&lt;-</strong>&nbsp;<br>
+      			&nbsp;57 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Plug to Host, canHostDo 
+  (  			openFileSelector )&nbsp;&nbsp; returned : 1 			<br>
+      			&nbsp;58 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Plug to Host, canHostDo 
+  (  			closeFileSelector )&nbsp;&nbsp; returned : 1 			<br>
+      			&nbsp;59 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Plug to Host,  			openFileSelector&nbsp; 
+  returned : true&nbsp;<br>
+      			&nbsp;&nbsp;&nbsp; </div>
+
+<hr noshade size="4">     
+<div>     
+<A name=seq5></A><h4>The Plug-In triggers a call to “iochanged” :</h4>
+      			&nbsp;0 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; Plug 
+to  Host,  			ioChanged&nbsp; returned : true&nbsp;<br>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  <strong> 				-&gt;Stop Processing&lt;-</strong>&nbsp;<br>
+      			&nbsp;1 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; Host 
+to  Plug,  			stopProcess&nbsp; returned : 0 			<br>
+      			&nbsp;2 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; Host 
+to  Plug,  			suspend<br>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  <strong> 				-&gt;Ask the new Plug Configuration + Check the initialDelay&lt;-</strong>&nbsp;<br>
+      			&nbsp;3 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  Host to  			Plug, getVstVersion&nbsp; returned : 2300 			<br>
+      			&nbsp;4 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; Host 
+to  Plug,  			getSpeakerArrangement&nbsp; returned : true&nbsp;<br>
+      			&nbsp;5 :&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
+Host   to Plug,  			setSpeakerArrangement&nbsp; returned : true&nbsp;<br>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  <strong> 				-&gt;Reactivate the Plug&lt;-</strong>&nbsp;<br>
+      			&nbsp;16 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+  resume<br>
+      			&nbsp;17 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+  canDo (  			sendVstMidiEvent )&nbsp;&nbsp; returned : 0&nbsp;<br>
+      			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+ &nbsp;  <strong>-&gt;Start  				Processing&lt;-</strong>&nbsp;<br>
+      			&nbsp;18 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+   			startProcess&nbsp; returned : 0 			<br>
+      			&nbsp;19 :&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Host to Plug,
+   			processReplacing ( 5512 )</div>
+      		     
+<br>
+
+<div> 			     
+<hr noshade size="4"> 			     
+<A name=seq6></A><h4>The Plug-In is used in offline processing :</h4>
+      			     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;<strong>Instanciation</strong>&lt;-</div>
+      			     
+<div>0 : Host to Plug, ***************CONSTRUCTOR***************</div>
+      			     
+<div>1 : Internal, __EDITOR__ ********CONSTRUCTOR******** 			</div>
+      			     
+<div>2 : Host to Plug, getPlugCategory returned : PlugSurroundFx 			</div>
+      			     
+<div>3 : Host to Plug, setSampleRate ( 44100.000000 ) 			</div>
+      			     
+<div>4 : Host to Plug, setBlockSize ( 5292 ) 			</div>
+      			     
+<div>5 : Host to Plug, open 			</div>
+      			     
+<div>6 : Host to Plug, canDo ( bypass ) returned : 0 			</div>
+      			     
+<div>7 : Host to Plug, setPanLaw ( 0 , 0.707107 ) returned : false 			</div>
+      			     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  <strong>-&gt;Construct  					the program List&lt;-</strong>&nbsp;<br>
+      				8 : Host to Plug, getProgram returned : 0 			</div>
+      			     
+<div>9 : Host to Plug, getVstVersion returned : 2300 			</div>
+      			     
+<div>10 : Host to Plug, getProgramNameIndexed ( -1 , 0 , ptr to char ) returned 
+  :  				true , Default 			</div>
+      			     
+<div>&nbsp;&nbsp;&nbsp; ... other programs here...<br>
+      				25 : Host to Plug, getProgramName ( ptr to char ) returned : Default
+   			</div>
+      			     
+<div>26 : Host to Plug, getProgram returned : 0 			</div>
+      			     
+<div>27 : Host to Plug, canDo ( midiProgramNames ) returned : 0 			</div>
+      			     
+<div>28 : Host to Plug, resume</div>
+      			     
+<div>29 : Host to Plug, canDo ( sendVstMidiEvent ) returned : 0 			</div>
+      			     
+<div>30 : Host to Plug, suspend 			</div>
+      			     
+<div> 				     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;<strong>Load 
+   						Last used Program</strong>&lt;-</div>
+      				31 : Host to Plug, beginLoadProgram returned : 0 			</div>
+      			     
+<div>32 : Host to Plug, beginSetProgram returned : false 			</div>
+      			     
+<div>33 : Host to Plug, setProgramName ( Default )</div>
+      			     
+<div>34 : Host to Plug, getProgram returned : 0 			</div>
+      			     
+<div>95 : Host to Plug, endSetProgram returned : false</div>
+      			     
+<div> 				     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;<strong> 
+  Set  						some variables and Arrangement</strong>&lt;-</div>
+      			</div>
+      			     
+<div>96 : Host to Plug, setSampleRate ( 44100.000000 ) 			</div>
+      			     
+<div>97 :&nbsp;Host to Plug, getVstVersion returned : 2300</div>
+      			     
+<div>98 : Host to Plug, setSpeakerArrangement returned : true 			</div>
+      			     
+<div> 				     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;<strong>Open 
+   						Editor</strong>&lt;-</div>
+      				99 : Host to Plug, __EDITOR__ getRect returned : 1 			</div>
+      			     
+<div>101 : Host to Plug, __EDITOR__ open 			</div>
+      			     
+<div>151 : Host to Plug, __EDITOR__ getRect returned : 1 			</div>
+      			     
+<div>152 : Host to Plug, getProgram returned : 0 			</div>
+      			     
+<div>153 : Host to Plug, __EDITOR__ setKnobMode ( 0 ) returned : 1 			</div>
+      			     
+<div>154 : Host to Plug, __EDITOR__ update 			</div>
+      			     
+<div> 				     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;<strong>Preview 
+   						Enable</strong>&lt;-</div>
+      				     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;<strong>First 
+   						Loop</strong>&lt;-</div>
+      				155 : Host to Plug, setSampleRate ( 44100.000000 ) 			</div>
+      			     
+<div>156 : Host to Plug, getVstVersion returned : 2300 			</div>
+      			     
+<div>157 : Host to Plug, setSpeakerArrangement returned : true 			</div>
+      			     
+<div>159 : Host to Plug, resume 			</div>
+      			     
+<div>160 : Host to Plug, canDo ( sendVstMidiEvent ) returned : 0 			</div>
+      			     
+<div>161 : Host to Plug, processVariableIo(0) returned : false 			</div>
+      			     
+<div>162 : Host to Plug, setTotalSampleToProcess ( 130944 ) returned : 130944
+   			</div>
+      			     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;Note: if&nbsp;<em>processVariableIo 
+  </em>(0)  				returns false, <em>processReplacing</em> or <em>Process </em>will 
+  be called,  				else <em>processVariableIo</em> will be used&lt;-</div>
+      			     
+<div>163 : Host to Plug, processReplacing ( 5292 ) 			</div>
+      			     
+<div>164 : Host to Plug, suspend 			</div>
+      			     
+<div> 				     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;<strong>Second 
+   						Loop</strong>&lt;-</div>
+      				165 : Host to Plug, setSampleRate ( 44100.000000 ) 			</div>
+      			     
+<div>166 : Host to Plug, getVstVersion returned : 2300 			</div>
+      			     
+<div>167 : Host to Plug, setSpeakerArrangement returned : true 			</div>
+      			     
+<div>168 : Host to Plug, resume 			</div>
+      			     
+<div>169 : Host to Plug, canDo ( sendVstMidiEvent ) returned : 0 			</div>
+      			     
+<div>170 : Host to Plug, processVariableIo (0)&nbsp;returned : false 			</div>
+      			     
+<div>171 : Host to Plug, setTotalSampleToProcess ( 130944 ) returned : 130944
+   			</div>
+      			     
+<div> 				     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;Note: if&nbsp;<em>processVariableIo 
+  </em>(0)  					returns false, <em>processReplacing</em> or <em>Process </em>will
+  be called,  					else <em>processVariableIo</em> will be used&lt;-</div>
+      				172 : Host to Plug, processReplacing ( 5292 ) 			</div>
+      			     
+<div>173 : Host to Plug, suspend 			</div>
+      			     
+<div> 				     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;<strong>Apply 
+   						Process</strong>&lt;-</div>
+      				183 : Host to Plug, __EDITOR__ close 			</div>
+      			     
+<div>184 : Host to Plug, getProgramName ( ptr to char ) returned : Default
+   			</div>
+      			     
+<div>245 : Host to Plug, setSampleRate ( 44100.000000 )</div>
+      			     
+<div>246 :&nbsp;Host to Plug, getVstVersion returned : 2300 			</div>
+      			     
+<div>247 : Host to Plug, setSpeakerArrangement returned : true 			</div>
+      			     
+<div>248 : Host to Plug, resume 			</div>
+      			     
+<div>249 : Host to Plug, canDo ( sendVstMidiEvent ) returned : 0 			</div>
+      			     
+<div>250 : Host to Plug, processVariableIo(0) returned : false 			</div>
+      			     
+<div>251 : Host to Plug, setTotalSampleToProcess ( 130944 ) returned : 130944
+   			</div>
+      			     
+<div> 				     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;Note: if&nbsp;<em>processVariableIo 
+  </em>(0)  					returns false, <em>processReplacing</em> or <em>Process </em>will
+  be called,  					else <em>processVariableIo</em> will be used&lt;-</div>
+      				252 : Host to Plug, processReplacing ( 5292 ) 			</div>
+      			     
+<div>253 : Host to Plug, suspend 			</div>
+      			     
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;<strong>Release 
+   					it</strong>&lt;-</div>
+      			     
+<div>254 : Host to Plug, close 			</div>
+      			     
+<div>255 : Internal, __EDITOR__ ********DESTRUCTOR********</div>
+      			     
+<div>256 : Host to Plug, ***************DESTRUCTOR***************</div>
+      			     
+<div> 				<br>
+      				&nbsp;</div>
+      		</div>
+<DIV>
+      		     
+<hr noshade size="4">
+</DIV> 		     
+<div align="center">Copyright ©2003 <a
+ href="http://www.steinberg.net" target="_blank"><u>Steinberg  					Media 
+  Technologies GmbH</u></a>. All Rights Reserved. 		</div>
+<DIV>
+      		<br>
+      	<br></DIV>
+      <br>
+     </div>
+</body>
+</html>

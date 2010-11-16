@@ -1,0 +1,1540 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+	<head>
+		<title>aeffectx</title>
+		<base target="vstdoc">
+		<link href="../../../sdkdoc.css" type="text/css" rel="stylesheet">
+	</head>
+	<body><div>
+			<h2>aeffectx<font size="2"> (defined in aeffectx.h)</font>
+				<hr noshade size="4">
+			</h2>
+			<h2>VST Events</h2>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="VstEvent">VstEvent</a></h4>
+			<code></code>
+			<div class="cpp">struct VstEvent;</div>
+			<p>A generic timestamped event.</p>
+<DIV>
+			<table id="Table16" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td valign="top" width="154"><code>long type;</code></td>
+						<td>Any of the following constants :
+							<table id="Table17">
+								<tbody>
+									<tr>
+										<td><code>kVstMidiType</code></td>
+										<td>midi event, can be cast as VstMidiEvent</td>
+									</tr>
+									<tr>
+										<td><code>kVstAudioType</code></td>
+										<td>audio</td>
+									</tr>
+									<tr>
+										<td><code>kVstVideoType</code></td>
+										<td>video</td>
+									</tr>
+									<tr>
+										<td><code>kVstParameterType</code></td>
+										<td>parameter</td>
+									</tr>
+									<tr>
+										<td><code>kVstTriggerType</code></td>
+										<td>trigger</td>
+									</tr>
+									<tr>
+										<td valign="top"><code>kVstSysExType</code><br>
+										</td>
+										<td valign="top">midi system exclusive<br>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top" width="154"><code>long byteSize;</code></td>
+						<td>of this event, excl. type and byteSize</td>
+					</tr>
+					<tr>
+						<td valign="top" width="154"><code>long deltaFrames;</code></td>
+						<td>sample frames related to the current block start sample position</td>
+					</tr>
+					<tr>
+						<td valign="top" width="154"><code>long flags;</code></td>
+						<td>generic flags, none defined yet (0)</td>
+					</tr>
+					<tr>
+						<td valign="top" width="154"><code>char data[16];</code></td>
+						<td>size may vary but is usually 16</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="VstMidiEvent">VstMidiEvent</a></h4>
+			<div class="cpp">struct VstMidiEvent;</div>
+			<p>To be casted from a <code><a href="#VstEvent">VstEvent</a></code>.</p>
+<DIV>
+			<table id="Table18" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td valign="top" width="168"><code>long type;</code></td>
+						<td>kVstMidiType</td>
+					</tr>
+					<tr>
+						<td valign="top" width="168"><code>long byteSize;</code></td>
+						<td>24</td>
+					</tr>
+					<tr>
+						<td valign="top" width="168"><code>long deltaFrames;</code></td>
+						<td>sample frames related to the current block start sample position</td>
+					</tr>
+					<tr>
+						<td valign="top" width="168"><code>long flags;</code></td>
+						<td>none defined yet</td>
+					</tr>
+					<tr>
+						<td valign="top" width="168"><code>long noteLength;</code></td>
+						<td>(in sample frames) of entire note, if available, else 0</td>
+					</tr>
+					<tr>
+						<td valign="top" width="168"><code>long noteOffset;</code></td>
+						<td>offset into note from note start if available, else 0</td>
+					</tr>
+					<tr>
+						<td valign="top" width="168"><code>char midiData[4];</code></td>
+						<td>1 thru 3 midi bytes; midiData[3] is reserved (zero)</td>
+					</tr>
+					<tr>
+						<td valign="top" width="168"><code>char detune;</code></td>
+						<td>-64 to +63 cents; for scales other than 'well-tempered' ('microtuning')</td>
+					</tr>
+					<tr>
+						<td valign="top" width="168"><code>char noteOffVelocity;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top" width="168"><code>char reserved1;</code></td>
+						<td>zero</td>
+					</tr>
+					<tr>
+						<td valign="top" width="168"><code>char reserved2; </code>
+						</td>
+						<td>zero</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="VstEvents">VstEvents</a></h4>
+			<div class="cpp">struct VstEvents;</div>
+			<p>A block of events for the current audio block.</p>
+<DIV>
+			<table id="Table19" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td valign="top" width="176"><code>long numEvents;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top" width="176"><code>long reserved;</code></td>
+						<td>zero</td>
+					</tr>
+					<tr>
+						<td valign="top" width="176"><code><a href="#VstEvent">VstEvent</a> *events[2];</code></td>
+						<td>variable</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="VstPinProperties">VstPinProperties</a></h4>
+			<div class="cpp">struct VstPinProperties;</div>
+<DIV>
+			<br></DIV>
+<DIV>
+			<table id="Table20" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td valign="top" align="right" width="178">
+							<p align="left"><code>char label[64];</code></p>
+						</td>
+						<td>A string up to <strong>63</strong> chars.</td>
+					</tr>
+					<tr>
+						<td valign="top" align="right" width="178">
+							<p align="left"><code>long flags;</code></p>
+						</td>
+						<td>
+							<table id="Table21">
+								<tbody>
+									<tr>
+										<td><code>kVstPinIsActive</code></td>
+									</tr>
+									<tr>
+										<td><code>kVstPinIsStereo</code></td>
+									</tr>
+									<tr>
+										<td><code>kVstPinUseSpeaker</code></td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td align="right" width="178">
+							<p align="left"><code>long arrangementType</code><code></code>;</p>
+						</td>
+						<td>-</td>
+					</tr>
+					<tr>
+						<td valign="top" align="right" width="178">
+							<p align="left"><code>char shortLabel[8];</code></p>
+						</td>
+						<td>a string up to <strong>6</strong> chars, plus one delimiter.</td>
+					</tr>
+					<tr>
+						<td valign="top" align="right" width="178">
+							<p align="left"><code>char future[48];</code></p>
+						</td>
+						<td>-</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="VstPlugCategory">VstPlugCategory</a></h4>
+			<code></code>
+			<div class="cpp">enum VstPlugCategory;</div>
+			<p>
+			</p>
+<DIV>
+			<table id="Table1" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>kPlugCategUnknown</code></em></font>
+						</th>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>kPlugCategEffect</code></em></font>
+						</th>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>kPlugCategSynth</code></em></font>
+						</th>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>kPlugCategAnalysis</code></em> </font>
+						</th>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>kPlugCategMastering</code></em> </font>
+						</th>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>kPlugCategSpacializer</code></em> </font>
+						</th>
+						<td>like surround panners</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>kPlugCategRoomFx</code></em></font>
+						</th>
+						<td>like delays and reverbs.</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>kPlugSurroundFx</code></em></font>
+						</th>
+						<td>Dedicated surround processor.</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>kPlugCategRestoration</code></em></font>
+						</th>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>PlugCategOfflineProcess</code></em></font>
+						</th>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>kPlugCategShell</code></em></font>
+						</th>
+						<td>plugin which is only a container of plugins
+						</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right" width="224">
+							<font size="3"><em><code>kPlugCategGenerator</code></em></font>
+						</th>
+						<td><br>
+						</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="VstParameterProperties">VstParameterProperties</a></h4>
+			<code>
+				<div class="cpp">struct VstParameterProperties;</div>
+			</code>
+<DIV>
+			<br></DIV>
+<DIV>
+			<table id="Table2" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td><code>float stepFloat;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td><code>float smallStepFloat;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td><code>float largeStepFloat;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td><code>char label[64];</code></td>
+						<td>A string up to <strong>63</strong> chars.</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long flags;</code></td>
+						<td>Parameter properties flags :
+							<table id="Table3" width="100%">
+								<tbody>
+									<tr>
+										<td><code>kVstParameterIsSwitch</code></td>
+									</tr>
+									<tr>
+										<td><code>kVstParameterUsesIntegerMinMax</code></td>
+									</tr>
+									<tr>
+										<td><code>kVstParameterUsesFloatStep</code></td>
+									</tr>
+									<tr>
+										<td><code>kVstParameterUsesIntStep</code></td>
+									</tr>
+									<tr>
+										<td valign="top"><code>kVstParameterSupportsDisplayIndex </code>
+											<br>
+										</td>
+									</tr>
+									<tr>
+										<td valign="top"><code>kVstParameterSupportsDisplayCategory</code><br>
+										</td>
+									</tr>
+									<tr>
+										<td valign="top"><code>kVstParameterCanRamp</code><br>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td><code>long minInteger;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td><code>long maxInteger;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td><code>long stepInteger;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td><code>long largeStepInteger;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td><code>char shortLabel[8];</code></td>
+						<td>Recommended: <strong>6</strong> chars + delimiter.</td>
+					</tr>
+					<tr>
+						<td><code>short displayIndex;</code><br>
+						</td>
+						<td>For remote controllers, the index where this parameter should be displayed 
+							(starting with 0).
+							<br>
+							Note that the kVstParameterSupportsDisplayIndex flag must be set.<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>short category;<br>
+							</code>
+						</td>
+						<td valign="top">Host can also possibly display the parameter group (category), 
+							such as<br>
+							&nbsp;&nbsp;&nbsp; ---------------------------<br>
+							&nbsp;&nbsp;&nbsp; Osc 1<br>
+							&nbsp;&nbsp;&nbsp; Wave&nbsp; Detune&nbsp; Octave&nbsp; Mod<br>
+							&nbsp;&nbsp;&nbsp; ---------------------------<br>
+							if the plug supports it (flag kVstParameterSupportsDisplayCategory).<br>
+							&nbsp;<br>
+							0: no category, else group index + 1<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>short numParametersInCategory;<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>short reserved;<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char categoryLabel[24];<br>
+							</code>
+						</td>
+						<td valign="top">for instance, "Osc 1"<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char future[16];</code><br>
+						</td>
+						<td valign="top">Reserved for future use.<br>
+						</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="VstWindow">VstWindow</a> :</h4>
+			<div class="cpp">struct VstWindow;</div>
+			<p>The structure passed to <code><a href="AudioEffectX.html#openWindow">openWindow</a></code>
+				and <code><a href="AudioEffectX.html#closeWindow">closeWindow</a></code>.</p>
+<DIV>
+			<table id="Table4" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td valign="top"><code>char title[128];</code></td>
+						<td>The window's title.</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>short xPos;</code></td>
+						<td>The window's horizontal position.</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>short yPos;</code></td>
+						<td>The window's vertical position.</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>short width;</code></td>
+						<td>The window's width.</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>short height;</code></td>
+						<td>The window's height.</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long style;</code></td>
+						<td>
+							<table id="Table5">
+								<tbody>
+									<tr>
+										<td align="right"><code>0</code> :</td>
+										<td>With title.</td>
+									</tr>
+									<tr>
+										<td align="right"><code>1</code> :</td>
+										<td>Without title.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>void *parent;</code></td>
+						<td>The parent of this window.</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>void *userHandle;</code></td>
+						<td>Reserved.</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>void *winHandle;</code></td>
+						<td>Reserved.</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char future[104];</code></td>
+						<td>Reserved for future use.</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="VstVariableIo">VstVariableIo</a></h4>
+			<div class="cpp">struct VstVariableIo;</div>
+<DIV>
+			<br></DIV>
+<DIV>
+			<table id="Table6" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td valign="top"><code>float **inputs;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>float **outputs;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long numSamplesInput;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long numSamplesOutput;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long *numSamplesInputProcessed;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long *numSamplesOutputProcessed;</code></td>
+						<td><br>
+						</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<hr width="100%" size="2">
+</DIV>
+			<h4><a name="VstPatchChunkInfo">VstPatchChunkInfo</a></h4>
+			<div class="cpp">struct VstPatchChunkInfo;</div>
+<DIV>
+			<br></DIV>
+<DIV>
+			<table id="Table7" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td valign="top"><code>long version;</code></td>
+						<td>Format Version (should be 1)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long pluginUniqueID;</code></td>
+						<td>UniqueID of the plugin<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long pluginVersion;</code></td>
+						<td>Plugin Version<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long numElements;</code></td>
+						<td>Number of Programs (Bank) or Parameters (Program)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char future[48];</code></td>
+						<td><br>
+						</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<hr width="100%" size="2">
+</DIV>
+			<h4><a name="PanLaw">PanLaw Type</a></h4>
+			<p><code>enum<br>
+				</code>
+			</p>
+<DIV>
+			<table id="Table8" bordercolor="#cccccc" cellspacing="0" cellpadding="0" border="1">
+				<tbody>
+					<tr>
+						<th valign="top" align="right">
+							<code>kLinearPanLaw = 0</code></th>
+						<td>&nbsp;L = pan * M; R = (1 - pan) * M.</td>
+					</tr>
+					<tr>
+						<th valign="top" align="right">
+							<code>kEqualPowerPanLaw</code></th>
+						<td>&nbsp;L = pow (pan, 0.5) * M;
+							<br>
+							&nbsp;R = pow ((1 - pan), 0.5) * M;</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h2><a name="Surround">Surround Setup</a></h2>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="VstSpeakerProperties">VstSpeakerProperties</a></h4>
+			<div class="cpp">struct VstSpeakerProperties</div>
+<DIV>
+			<br></DIV>
+<DIV>
+			<table id="Table9" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<th>
+							<br>
+						</th>
+						<th>
+							units</th>
+						<th>
+							range</th>
+						<th>
+							except</th>
+					</tr>
+					<tr>
+						<td valign="top"><code>float azimuth;</code></td>
+						<td>rad</td>
+						<td>-PI...PI</td>
+						<td>10.f for LFE channel</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>float elevation;</code></td>
+						<td>rad</td>
+						<td>-PI/2...PI/2</td>
+						<td>10.f for LFE channel</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>float radius;</code></td>
+						<td>meter</td>
+						<td><br>
+						</td>
+						<td>0.f for LFE channel</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>float reserved;</code></td>
+						<td>0.</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char name[64];</code></td>
+						<td>For new setups, new names should be given (L/R/C... won't do)</td>
+					</tr>
+					<tr>
+						<td valign="top" height="13"><font face="Courier">long type;</font></td>
+						<td height="13"><a href="#SpeakerTypes">speaker type</a></td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char future[28];</code></td>
+						<td>Reserved for future use.</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<br></DIV>
+			<h4><a name="SpeakerTypes"></a>Speaker Types</h4>
+<DIV>
+			<code>enum</code><br>
+			<br></DIV>
+<DIV>
+			<table id="Table10" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td valign="top"><code>kSpeakerUndefined<br>
+							</code>
+						</td>
+						<td valign="top">Undefinded<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerM
+								<br>
+							</code>
+						</td>
+						<td valign="top">Mono (M)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerL<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;Left (L)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerR<br>
+							</code>
+						</td>
+						<td valign="top">Right (R)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerC<br>
+							</code>
+						</td>
+						<td valign="top">Center (C)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerLfe<br>
+							</code>
+						</td>
+						<td valign="top">Subbass (Lfe)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerLs<br>
+							</code>
+						</td>
+						<td valign="top">Left Surround (Ls)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerRs<br>
+							</code>
+						</td>
+						<td valign="top">Right Surround (Rs)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerLc<br>
+							</code>
+						</td>
+						<td valign="top">Left of Center (Lc)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerRc<br>
+							</code>
+						</td>
+						<td valign="top">Right of Center (Rc)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerS<br>
+							</code>
+						</td>
+						<td valign="top">Surround (S)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerCs = kSpeakerS<br>
+							</code>
+						</td>
+						<td valign="top">Center of Surround (Cs) = Surround (S)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerSl<br>
+							</code>
+						</td>
+						<td valign="top">Side Left (Sl)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerSr<br>
+							</code>
+						</td>
+						<td valign="top">Side Right (Sr)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerTm<br>
+							</code>
+						</td>
+						<td valign="top">Top Middle (Tm)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerTfl<br>
+							</code>
+						</td>
+						<td valign="top">Top Front Left (Tfl)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerTfc<br>
+							</code>
+						</td>
+						<td valign="top">Top Front Center (Tfc)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerTfr<br>
+							</code>
+						</td>
+						<td valign="top">Top Front Right (Tfr)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerTrl<br>
+							</code>
+						</td>
+						<td valign="top">Top Rear Left (Trl)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerTrc<br>
+							</code>
+						</td>
+						<td valign="top">Top Rear Center (Trc)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerTrr<br>
+							</code>
+						</td>
+						<td valign="top">Top Rear Right (Trr)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerLfe2<br>
+							</code>
+						</td>
+						<td valign="top">Subbass 2 (Lfe2)<br>
+						</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+			<h4><a name="UserDefinedSpeakerTypes"></a>User-defined speaker types&nbsp;&nbsp;(to 
+				be extended in the negative range)</h4>
+<DIV>
+			Will be handled as their corresponding speaker types 
+with abs values: e.g abs(kSpeakerU1) ==
+			           kSpeakerL, 
+			abs(kSpeakerU2) ==    kSpeakerR.<br>
+			<br>
+			<code>enum</code><br>
+			<br></DIV>
+<DIV>
+			<table id="Table11" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td valign="top"><code>kSpeakerU32 = -32<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU31<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU30<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU29<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU28<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU27<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU26<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU25<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU24<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU23<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU22<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU21<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU20<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerLfe2<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU19<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerTrr<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU18<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerTrc<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU17<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerTrl<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU16<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerTfr<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU15<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerTfc<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU14<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerTfl<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU13<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerTm<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU12<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerSr<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU11<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerSl<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU10<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerCs<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU9<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerS<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU8<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerRc<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU7<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerLc<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU6<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerRs<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU5<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerLs<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU4<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerLfe<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU3<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerC<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU2<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerR<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerU1<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;== kSpeakerL<br>
+						</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<br>
+			<br></DIV>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="VstSpeakerArrangement">VstSpeakerArrangement</a></h4>
+			<div class="cpp">struct VstSpeakerArrangement;</div>
+<DIV>
+			<br></DIV>
+<DIV>
+			<table id="Table12" bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td valign="top"><code>long type;</code></td>
+						<td>(Was <code>float lfeGain</code>).<br>
+							Speaker Arrangement type.
+							<br>
+							<a href="#SpeakerArrangementTypes">See below.</a><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long numChannels;</code></td>
+						<td>number of channel defined in the array speakers</td>
+					</tr>
+					<tr>
+						<td valign="top"><code><a href="#VstSpeakerProperties">VstSpeakerProperties</a> speakers[8];</code></td>
+						<td>Variable. The size 8 is only the "by default" size, not at all the maximum one. 
+							numChannels tells what is this size.</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<br></DIV>
+			<h4><a name="SpeakerArrangementTypes"></a>Speaker Arrangement Types</h4>
+<DIV>
+			<code>enum</code><br>
+			<br></DIV>
+<DIV>
+			<table id="Table13" cellspacing="0" cellpadding="0" width="100%" border="1">
+				<tbody>
+					<tr>
+						<td valign="top"><code>kSpeakerArrUserDefined = -2<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArrEmpty = -1<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArrMono&nbsp; =&nbsp; 0<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;M<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArrStereo<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArrStereoSurround<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;Ls Rs<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArrStereoCenter<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;Lc Rc<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArrStereoSide<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;Sl Sr<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArrStereoCLfe<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;C Lfe<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr30Cine<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr30Music<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R S<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr31Cine<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Lfe<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr31Music<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R Lfe S<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr40Cine<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C&nbsp;&nbsp; S (LCRS)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr40Music<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R Ls&nbsp; Rs (Quadro)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr41Cine<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C&nbsp;&nbsp; Lfe S (LCRS+Lfe)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr41Music<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R Lfe Ls Rs (Quadro+Lfe)<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr50<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Ls&nbsp; Rs
+							<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr51<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Lfe Ls Rs<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr60Cine<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C&nbsp;&nbsp; Ls&nbsp; Rs Cs<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr60Music<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R Ls&nbsp; Rs&nbsp; Sl Sr
+							<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr61Cine<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C&nbsp;&nbsp; Lfe Ls Rs Cs<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr61Music<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R Lfe Ls&nbsp; Rs Sl Sr
+							<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr70Cine<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Ls&nbsp; Rs Lc Rc
+							<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr70Music<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Ls&nbsp; Rs Sl Sr<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr71Cine<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Lfe Ls Rs Lc Rc<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr71Music<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Lfe Ls Rs Sl Sr<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr80Cine<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Ls&nbsp; Rs Lc Rc Cs<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr80Music<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Ls&nbsp; Rs Cs Sl Sr<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr81Cine<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Lfe Ls Rs Lc Rc Cs<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr81Music<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Lfe Ls Rs Cs Sl Sr
+							<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kSpeakerArr102<br>
+							</code>
+						</td>
+						<td valign="top">&nbsp;L R C Lfe Ls Rs Tfl Tfc Tfr Trl Trr Lfe2<br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>kNumSpeakerArr<br>
+							</code>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>&nbsp;</DIV>
+
+<H4>See also :</H4>
+<UL>
+  <LI><A href="AudioEffectX.html#setSpeakerArrangement">setSpeakerArrangement</A>
+  <LI><A href="AudioEffectX.html#getSpeakerArrangement">getSpeakerArrangement</A>
+<LI><A href="AudioEffectX.html#ioChanged">ioChanged</A>
+  </LI>
+  
+</UL>
+
+<hr noshade size="4">
+
+<DIV></DIV>
+			<h2><a name="hostcandos">Can Do (of Host, of Plug)</a></h2>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="VstTimeInfo">hostCanDos</a><a name="hostcandos"></a></h4>
+			<div class="cpp">const char *hostCanDos [];</div>
+			<p>'canDo' strings. note other 'canDos' can be evaluated by calling the according 
+				function, for instance if getSampleRate returns 0, you will certainly want to 
+				assume that this selector is not supported.</p>
+<DIV>
+			<table bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1" id="Table14">
+				<tbody>
+					<tr>
+						<td><code>"sendVstEvents"</code></td>
+					</tr>
+					<tr>
+						<td><code>"sendVstMidiEvent"</code></td>
+					</tr>
+					<tr>
+						<td><code>"sendVstTimeInfo"</code></td>
+					</tr>
+					<tr>
+						<td><code>"receiveVstEvents"</code></td>
+					</tr>
+					<tr>
+						<td><code>"receiveVstMidiEvent"</code></td>
+					</tr>
+					<tr>
+						<td><code>"receiveVstTimeInfo"</code></td>
+					</tr>
+					<tr>
+						<td><code>"reportConnectionChanges"</code></td>
+					</tr>
+					<tr>
+						<td><code>"acceptIOChanges"</code></td>
+					</tr>
+					<tr>
+						<td><code>"sizeWindow"</code></td>
+					</tr>
+					<tr>
+						<td><code>"asyncProcessing"</code></td>
+					</tr>
+					<tr>
+						<td><code>"offline"</code></td>
+					</tr>
+					<tr>
+						<td><code>"supplyIdle"</code></td>
+					</tr>
+					<tr>
+						<td><code>"supportShell"</code></td>
+						<td>'shell' handling via uniqueID as suggested by Waves.</td>
+					</tr>
+					<tr>
+						<td><code>"editFile"</code> (2.2)</td>
+					</tr>
+					<tr>
+						<td><code>"closeFileSelector"</code> (2.2)</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>"startStopProcess"</code> (2.3)<br>
+						</td>
+						<td valign="top"><br>
+						</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<h4><a name="plugCanDos">plugCanDos</a></h4>
+			<div class="cpp">const char *plugCanDos [];</div>
+<DIV>
+			<br></DIV>
+<DIV>
+			<table bordercolor="#000000" cellspacing="0" cellpadding="0" width="100%" border="1" id="Table15">
+				<tbody>
+					<tr>
+						<td><code>"sendVstEvents"</code></td>
+					</tr>
+					<tr>
+						<td><code>"sendVstMidiEvent"</code></td>
+					</tr>
+					<tr>
+						<td><code>"sendVstTimeInfo"</code></td>
+					</tr>
+					<tr>
+						<td><code>"receiveVstEvents"</code></td>
+					</tr>
+					<tr>
+						<td><code>"receiveVstMidiEvent"</code></td>
+					</tr>
+					<tr>
+						<td><code>"receiveVstTimeInfo"</code></td>
+					</tr>
+					<tr>
+						<td><code>"offline"</code></td>
+					</tr>
+					<tr>
+						<td><code>"plugAsChannelInsert"</code></td>
+					</tr>
+					<tr>
+						<td><code>"plugAsSend"</code></td>
+					</tr>
+					<tr>
+						<td><code>"mixDryWet"</code></td>
+					</tr>
+					<tr>
+						<td><code>"noRealTime"</code></td>
+					</tr>
+					<tr>
+						<td><code>"multipass"</code></td>
+					</tr>
+					<tr>
+						<td><code>"metapass"</code></td>
+					</tr>
+					<tr>
+						<td><code>"1in1out"</code></td>
+					</tr>
+					<tr>
+						<td><code>"1in2out"</code></td>
+					</tr>
+					<tr>
+						<td><code>"2in1out"</code></td>
+					</tr>
+					<tr>
+						<td><code>"2in2out"</code></td>
+					</tr>
+					<tr>
+						<td><code>"2in4out"</code></td>
+					</tr>
+					<tr>
+						<td><code>"4in2out"</code></td>
+					</tr>
+					<tr>
+						<td><code>"4in4out"</code></td>
+					</tr>
+					<tr>
+						<td><code>"4in8out"</code></td>
+						<td>4:2 matrix to surround bus</td>
+					</tr>
+					<tr>
+						<td><code>"8in4out"</code></td>
+						<td>surround bus to 4:2 matrix</td>
+					</tr>
+					<tr>
+						<td><code>"8in8out"</code></td>
+					</tr>
+					<tr>
+						<td height="17"><code>"midiProgramNames"</code>(2.1)</td>
+					</tr>
+					<tr>
+						<td><code>"conformsToWindowRules"</code>(2.1)</td>
+					</tr>
+					<tr>
+						<td><font face="Courier"><code>"bypass"</code></font>(2.3)</td>
+					</tr>
+				</tbody>
+			</table></DIV>
+<DIV>
+			<br></DIV>
+<DIV>
+			<hr noshade size="4">
+</DIV>
+			<div align="center">Copyright ©2003 <a href="http://www.steinberg.net" target="_blank"><u>Steinberg 
+						Media Technologies GmbH</u></a>. All Rights Reserved.
+			</div>
+<DIV>
+			<br></DIV>
+		<br></div>
+	</body>
+</html>

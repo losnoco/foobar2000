@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Examples</title>
+     		 		<base target="vstdoc"> 		   
+  <link rel="stylesheet" type="text/css" href="../../sdkdoc.css">
+</head>
+  	<body>
+  		 
+<div>		 
+<h1>VST Plug-Ins Examples</h1>
+  			 
+<p> 				This SDK comes with 7 examples of Plug-Ins. Each time both Windows 
+(VisualC++ 6  				and Visual .Net) (except for Offline)&nbsp;and Mac OSX (CodeWarrior
+8.3 and  				ProjectBuilder) projects are provided. 			</p>
+  			 
+<hr noshade size="4">
+<h2><a href="2.0/examples.html#AGain">AGain</a></h2>
+  			 
+<p> 				AGain is a very simple VST Plug-In, but which demonstrates everything 
+you have  				to know concerning the core API in order to start building your
+own Plug-Ins.<br>
+  				Indeed this example should help you understand how to deal with the 
+audio  				process, and with parameters and programs : an audio Plug-In is 
+actually no  				more than that! 				<br>
+  				Nevertheless, this Plug-In uses the default editor provided by the
+host to  				display its parameters : nothing concerning specific GUI stuff
+is provided with  				this example. But keeping in mind that in a VST Plug-In 
+the user interface is  				totally independant from the core API, this example 
+is a good starting point,  				even to be able later to build Plug-Ins with 
+their own editor.<br>
+  			</p>
+  			<br>
+  			 
+<hr noshade size="4">
+<h2><a href="2.0/examples.html#ADelay">ADelay</a>, ADelayEdit, ADelaySurround</h2>
+  			 
+<p> 				Those three examples consist in a natural way you will perhaps want 
+to follow  				to make a Plug-In evolve.<br>
+  			</p>
+  			<br>
+  			 
+<h4>ADelay</h4>
+  			 
+<p> 				ADelay is the first step : a simple delay Plug-In which uses the default
+editor  				provided by the host. By the way it's nothing really more than
+what you can  				find in AGain above.<br>
+  			</p>
+  			<br>
+  			 
+<h4>ADelayEdit</h4>
+  			 
+<p> 				ADelayEdit uses ADelay, but it provides a specific editor for the 
+Plug-In. Thus  				evolving from ADelay to ADelayEdit mainly consists in creating
+this editor :  				the core Plug-In reuses what has yet been done.<br>
+  				The editor is developped using the VSTGUI (see the specific section 
+for further  				information on this topic) library.<br>
+  			</p>
+  			<br>
+  			 
+<h4>ADelaySurround</h4>
+  			 
+<p> 				ADelaySurround is the surround version of ADelayEdit : it has the 
+same editor,  				the same parameters and even the same audio process. But 
+it implements new  				features provided by VST 2.3 to be able to work with 
+any Input/Output  				configuration, until 6 Ins, 6 Outs.<br>
+  			</p>
+  			 
+<hr noshade size="4">
+<h2>ControlsGUI</h2>
+  			 
+<p>This is not really a plugin (it does nothing). It has only a User Interface 
+ 				using almost all provided Controls of VSTGUI Library. It helps you understand 
+ 				how you can use the VSTGUI Library.</p>
+  			 
+<hr noshade size="4">
+<h2>Offline</h2>
+  			 
+<p>This example (only for Windows) helps you to understand how the VST Offline 
+ 				Interface could be used. The Host&nbsp;Application <strong>Wavelab</strong> 
+implements  				it.</p>
+  			 
+<hr noshade size="4">
+<h2>VstXSynth</h2>
+  			 
+<p>This is a soft synth ("VST instrument") example. It helps you to understand 
+how  				you can tell the host that you would like to receive MIDI events, 
+and how to  				deal with them. That's nearly the only new thing you have 
+to know to be able to  				create VSTi! Everything else has been seen in the
+previous examples!</p>
+  			<br>
+  			 
+<hr noshade="noshade" size="4"> 			 
+<div align="center">Copyright &copy;2003 <a
+ href="http://www.steinberg.net" target="_blank"><u>Steinberg  						Media 
+Technologies GmbH</u></a>. All Rights Reserved. 			</div>
+  		</div>
+  		<br>
+  	<br>
+ 
+</body>
+</html>

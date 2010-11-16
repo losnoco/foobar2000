@@ -1,0 +1,209 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+	<head>
+		<base target="vstdoc">
+		<title>VstEvents</title>
+		<link rel="stylesheet" type="text/css" href="../../../sdkdoc.css">
+	</head>
+	<body>
+		<div>
+			<h2>VST Events</h2>
+			<hr noshade="noshade" size="4">
+			<h4><a name="VstEvent">VstEvent</a></h4>
+			<p><div class="cpp">struct VstEvent;</div></p>
+			<p>A generic timestamped event.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+				<tbody>
+					<tr>
+						<td valign="top"><code>long type;</code></td>
+						<td>Any of the following constants :
+							<table>
+								<tbody>
+									<tr>
+										<td><code>kVstMidiType</code></td>
+										<td>midi event, can be cast as VstMidiEvent</td>
+									</tr>
+									<tr>
+										<td><code>kVstAudioType</code></td>
+										<td>audio</td>
+									</tr>
+									<tr>
+										<td><code>kVstVideoType</code></td>
+										<td>video</td>
+									</tr>
+									<tr>
+										<td><code>kVstParameterType</code></td>
+										<td>parameter</td>
+									</tr>
+									<tr>
+										<td><code>kVstTriggerType</code></td>
+										<td>trigger</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long byteSize;</code></td>
+						<td>of this event, excl. type and byteSize</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long deltaFrames;</code></td>
+						<td>sample frames related to the current block start sample position</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long flags;</code></td>
+						<td>generic flags, none defined yet (0)</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char data[16];</code></td>
+						<td>size may vary but is usually 16</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade="noshade" size="4">
+			<h4><a name="VstMidiEvent">VstMidiEvent</a></h4>
+			<p><div class="cpp">struct VstMidiEvent;</div></p>
+			<p>To be casted from a <code><a href="#VstEvent">VstEvent</a></code>.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+				<tbody>
+					<tr>
+						<td valign="top"><code>long type;</code></td>
+						<td>kVstMidiType</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long byteSize;</code></td>
+						<td>24</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long deltaFrames;</code></td>
+						<td>sample frames related to the current block start sample position</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long flags;</code></td>
+						<td>none defined yet</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long noteLength;</code></td>
+						<td>(in sample frames) of entire note, if available, else 0</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long noteOffset;</code></td>
+						<td>offset into note from note start if available, else 0</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char midiData[4];</code></td>
+						<td>1 thru 3 midi bytes; midiData[3] is reserved (zero)</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char detune;</code></td>
+						<td>-64 to +63 cents; for scales other than 'well-tempered' ('microtuning')</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char noteOffVelocity;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char reserved1;</code></td>
+						<td>zero</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>char reserved2; </code>
+						</td>
+						<td>zero</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade="noshade" size="4">
+			<h4><a name="VstEvents">VstEvents</a></h4>
+			<p><div class="cpp">struct VstEvents;</div></p>
+			<p>A block of events for the current audio block.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+				<tbody>
+					<tr>
+						<td valign="top"><code>long numEvents;</code></td>
+						<td><br>
+						</td>
+					</tr>
+					<tr>
+						<td valign="top"><code>long reserved;</code></td>
+						<td>zero</td>
+					</tr>
+					<tr>
+						<td valign="top"><code><a href="#VstEvent">VstEvent</a>* events[2];</code></td>
+						<td>variable</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade="noshade" size="4">
+			<h4><a name="wantEvents">wantEvents</a> (-&gt;host)</h4>
+			<p><div class="cpp">virtual void wantEvents (long filter = 1);</div></p>
+			<p>Asks the host to send <code>VstEvents</code>, as would request an instrument. 
+				This call can't be issued at construction time, it should be done in the <code><a href="../1.0/AudioEffect.html#resume">
+						resume</a></code> method instead.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+				<tbody>
+					<tr>
+						<th align="right">
+							<code>filter</code></th>
+						<td>Currently ignored, midi channel data only (default).</td>
+					</tr>
+				</tbody>
+			</table>
+			<h4>See also :</h4>
+			<ul>
+				<li>
+					<code><a href="#processEvents">processEvents</a></code></li>
+			</ul>
+			<hr noshade="noshade" size="4">
+			<h4><a name="sendVstEventsToHost">sendVstEventsToHost</a> (-&gt;host)</h4>
+			<p><div class="cpp">bool sendVstEventsToHost (VstEvents* events);</div></p>
+			<p>See discussion of <code>VstEvents</code>, and Steinberg products implementation 
+				issues.</p>
+			<table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+				<tbody>
+					<tr>
+						<th align="right" valign="top">
+							<code>events</code></th>
+						<td>A pointer to a <code>VstEvents</code> structure.</td>
+						<td>
+							<br>
+						</td>
+					</tr>
+					<tr>
+						<th align="right" valign="top">
+							<code>return</code></th>
+						<td>
+							<table cellpadding="0" cellspacing="0" border="1" bordercolor="#cccccc">
+								<tbody>
+									<tr>
+										<th align="right" valign="top">
+											<code>true</code> :</th>
+										<td>Success.</td>
+									</tr>
+									<tr>
+										<th align="right" valign="top">
+											<code>false</code> :</th>
+										<td>Failure.</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<hr noshade="noshade" size="4">
+			<h4><a name="processEvents">processEvents</a> (-&gt;plug)</h4>
+			<p><div class="cpp">virtual long processEvents (VstEvents* events);</div></p>
+			<p>Override this to evaluate <code>VstEvents</code> that may be sent to your plug 
+				due to a <code><a href="#wantEvents">wantEvents</a></code> request.</p>
+			<hr noshade="noshade" size="4">
+			<div align="center">Copyright &copy;2003 <a href="http://www.steinberg.net" target="_blank">
+					<u>Steinberg Media Technologies GmbH</u></a>. All Rights Reserved.
+			</div>
+			<br>
+		</div>
+		<br>
+	</body>
+</html>

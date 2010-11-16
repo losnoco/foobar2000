@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    		<base target="vstdoc">
+  <title>Apple Macintosh</title>
+             		 		         
+  <link rel="stylesheet" type="text/css" href="../../../sdkdoc.css">
+</head>
+  <body>
+   
+<div>  		   
+<h2>Apple Macintosh</h2>
+    		   
+<h2>AudioEffect :</h2>
+
+<ul>
+<li><h4>Mac OS X</h4>
+<p>On Mac OS X, a VST Plug-In is a Bundle. You define the plug's name in the plist.info file with
+the CFBundleName key. It is also possible to use the old Mac OS 9 format (see below) on OS X,
+but it is not recommended.</p>
+<p>To create an Audio Effect create a bundle with the file extension '<i>.vst</i>'.
+<p>The only symbol searched for is:</p>
+    		   
+<p><code>AEffect *main_macho (float (*audioMaster)(AEffect *effect, long opcode, 
+ long index,  				long value, void *ptr, float opt));</code></p>
+
+</li>
+<li><h4>Mac OS 9</h4> 		   
+<p>On Mac OS 9, it's a raw Code resource. Note that the plug's name 
+ as seen  			by the user is the resource name (not the file name). A folder 
+ labeled  			'VstPlugIns' is searched for plugs, this should preferably be 
+ installed in the  			System Folder. Applications should additionally search 
+ the application folder.</p>
+    		   
+<p>To create an Audio Effect for power pc's, create a code resource :</p>
+    		   
+<ul>
+    			<li> 				file type: <code>'aPcs'</code></li>
+    			<li> 				resource type: <code>'aEff'</code></li>
+    			<li> 				ppc header: none (raw pef)</li>
+    		   
+</ul>
+    		   
+<p>The only symbol searched for is:</p>
+    		   
+<p><code>AEffect *main (float (*audioMaster)(AEffect *effect, long opcode, 
+ long index,  				long value, void *ptr, float opt));</code></p>
+
+</li>
+</ul>
+		   
+<h2>Pixmaps :</h2>
+    		   
+<p>Pixmap resources are <code>PICT</code>s in <code>.rsrc</code> mac resource 
+  			files. The resource ID is pointing to the pict in question.</p>
+<p>Note: On Mac OS X you can put the image files into the resources folder inside your bundle.
+You have to name the files like bmp00100.pict where 100 is the resource id.
+The following formats are supported : bmp, png, jpg, pict.</p>
+    		   
+<hr noshade="noshade" size="4"> 		   
+<div align="center">Copyright &copy;2003 <a
+ href="http://www.steinberg.net" target="_blank"><u>Steinberg  					Media 
+ Technologies GmbH</u></a>. All Rights Reserved. 		</div>
+    	<br>
+   </div>
+    <br>
+ 
+</body>
+</html>

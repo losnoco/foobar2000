@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+   		<base target="vstdoc">
+  <title>AEffect</title>
+         		 		      
+  <link rel="stylesheet" type="text/css" href="../../../sdkdoc.css">
+</head>
+  	<body>
+   		  
+<div> 			  
+<h3>AEffect</h3>
+   			   
+<div class="cpp">struct AEffect;</div>
+   			   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="magic">magic</a></h4>
+   			   
+<div class="cpp">long magic;</div>
+   			   			  
+<p>Must be <code>kEffectMagic</code> ('VstP').</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="dispatcher">dispatcher</a></h4>
+   			   
+<div class="cpp">long (VSTCALLBACK *dispatcher)(AEffect *effect, long opCode, long index, long value, void *ptr, float opt);</div>
+   			   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="process">process</a></h4>
+   			   
+<div class="cpp">void (VSTCALLBACK *process)(AEffect *effect, float **inputs, float **outputs, long sampleframes);</div>
+   			   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="setParameter">setParameter</a></h4>
+   			   
+<div class="cpp">void (VSTCALLBACK *setParameter)(AEffect *effect, long index, float parameter);</div>
+   			   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="getParameter"></a>getParameter</h4>
+   			   
+<div class="cpp">float (VSTCALLBACK *getParameter)(AEffect *effect, long index);</div>
+   			   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="numPrograms">numPrograms</a></h4>
+   			   
+<div class="cpp">long numPrograms;</div>
+   			   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="numParams">numParams</a></h4>
+   			   
+<div class="cpp">long numParams;</div>
+   			   			  
+<p>All programs are assumed to have numParams parameters.</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="numInputs">numInputs</a></h4>
+   			   
+<div class="cpp">long numInputs;</div>
+   			   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="numOutputs">numOutputs</a></h4>
+   			   
+<div class="cpp">long numOutputs;</div>
+   			   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="flags">flags</a></h4>
+   			   
+<div class="cpp">long flags;</div>
+   			   			  
+<p>See constants.</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="resvd1">resvd1</a></h4>
+   			   
+<div class="cpp">long resvd1;</div>
+   			   			  
+<p>Reserved, must be 0.</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="resvd2">resvd2</a></h4>
+   			   
+<div class="cpp">long resvd2;</div>
+   			   			  
+<p>Reserved, must be 0.</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="initialDelay">initialDelay</a></h4>
+   			   
+<div class="cpp">long initialDelay;</div>
+   			   			  
+<p>For algorithms which need input in the first place.</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="realQualities">realQualities</a></h4>
+   			   
+<div class="cpp">long realQualities;</div>
+   			   			  
+<p>Number of realtime qualities (0: realtime).</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="offQualities">offQualities</a></h4>
+   			   
+<div class="cpp">long offQualities;</div>
+   			   			  
+<p>Number of offline qualities (0: realtime only).</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="ioRatio">ioRatio</a></h4>
+   			   
+<div class="cpp">float ioRatio;</div>
+   			   			  
+<p>Input samplerate to output samplerate ratio, not used yet.</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="object">object</a></h4>
+   			   
+<div class="cpp">void *object;</div>
+   			   			  
+<p>For class access (see AudioEffect.hpp), MUST be 0 else!</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="user">user</a></h4>
+   			   
+<div class="cpp">void *user;</div>
+   			   			  
+<p>User access.</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="uniqueID">uniqueID</a></h4>
+   			   
+<div class="cpp">long uniqueID;</div>
+   			   			  
+<p>Please choose 4 character as unique as possible. This is used to identify
+ an  				effect for save+load.</p>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="version">version</a></h4>
+   			   
+<div class="cpp">long version;</div>
+   			   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="processReplacing">processReplacing</a></h4>
+   			   
+<div class="cpp">void (VSTCALLBACK *processReplacing)(AEffect *effect, float **inputs, float **outputs, long sampleframes);</div>
+   			   			  
+<hr noshade="noshade" size="4"> 			  
+<h4><a name="future">future</a></h4>
+   			   
+<div class="cpp">char future[60];</div>
+   			   			  
+<p>Please zero.</p>
+   			<br>
+   			  
+<hr noshade="noshade" size="4"> 			  
+<div align="center">Copyright &copy;2003 <a
+ href="http://www.steinberg.net" target="_blank"> 					<u>Steinberg Media
+ Technologies GmbH</u></a>. All Rights Reserved. 			</div>
+   			<br>
+   		</div>
+   		<br>
+   	<br>
+   
+</body>
+</html>
