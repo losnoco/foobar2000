@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.20"
+#define MYVERSION "0.9.9.21"
 
 /*
 	changelog
+
+2010-11-20 20:43 UTC - kode54
+- Changed zlib dependency to use standard zlib1.dll
+- Version is now 0.9.9.21
 
 2010-10-03 01:15 UTC - kode54
 - Added range checking for XM global volume command

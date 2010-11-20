@@ -1,7 +1,11 @@
-#define MYVERSION "1.106"
+#define MYVERSION "1.107"
 
 /*
 	change log
+
+2010-11-20 20:59 UTC - kode54
+- Changed zlib dependency to use standard zlib1.dll
+- Version is now 1.107
 
 2010-11-10 08:34 UTC - kode54
 - Added GEP Control to modeless dialog manager properly, fixes tab navigation

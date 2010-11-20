@@ -1,7 +1,11 @@
-#define MY_VERSION "1.4"
+#define MY_VERSION "1.5"
 
 /*
 	changelog
+
+2010-11-20 21:06 UTC - kode54
+- Changed zlib dependency to use standard zlib1.dll
+- Version is now 1.5
 
 2010-04-16 10:19 UTC - kode54
 - Removed component version spam

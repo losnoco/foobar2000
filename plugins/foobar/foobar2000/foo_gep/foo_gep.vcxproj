@@ -88,7 +88,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../SDK;../../../Game_Music_Emu;../../../File_Extractor;../../../File_Extractor/fex;../../../zlib;../foo_festalon/dfc;../..;../shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../SDK;../../../Game_Music_Emu;../../../File_Extractor;../../../File_Extractor/fex;../../zlib;../foo_festalon/dfc;../..;../shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FOO_GEP_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -134,7 +134,7 @@
       <Optimization>MinSpace</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../SDK;../../../Game_Music_Emu;../../../File_Extractor;../../../File_Extractor/fex;../../../zlib;../foo_festalon/dfc;../..;../shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../SDK;../../../Game_Music_Emu;../../../File_Extractor;../../../File_Extractor/fex;../../zlib;../foo_festalon/dfc;../..;../shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_GEP_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -179,7 +179,7 @@
       <Optimization>MinSpace</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../SDK;../../../Game_Music_Emu;../../../File_Extractor;../../../File_Extractor/fex;../../../zlib;../foo_festalon/dfc;../..;../shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../SDK;../../../Game_Music_Emu;../../../File_Extractor;../../../File_Extractor/fex;../../zlib;../foo_festalon/dfc;../..;../shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_GEP_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -270,11 +270,11 @@
     <ProjectReference Include="..\..\..\Game_Music_Emu\msvc\Game_Music_Emu.vcxproj">
       <Project>{c3e262d2-2d15-4a46-98f1-2ce8a74f3590}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\zlib\win32\zlib\zlib.vcxproj">
-      <Project>{fbf00162-1b31-4cd0-9f78-3ada304e325f}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\pfc\pfc.vcxproj">
       <Project>{ebfffb4e-261d-44d3-b89c-957b31a0bf9c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\zlib\zlib.vcxproj">
+      <Project>{b91fdb47-3784-46cc-b23f-e863b60e87d4}</Project>
     </ProjectReference>
     <ProjectReference Include="..\foobar2000_component_client\foobar2000_component_client.vcxproj">
       <Project>{71ad2674-065b-48f5-b8b0-e1f9d3892081}</Project>

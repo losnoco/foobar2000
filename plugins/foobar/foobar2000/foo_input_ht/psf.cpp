@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.17"
+#define MYVERSION "2.0.18"
 
 /*
 	changelog
+
+2010-11-20 21:11 UTC - kode54
+- Changed zlib dependency to use standard zlib1.dll
+- Version is now 2.0.18
 
 2010-07-13 03:03 UTC - kode54
 - Implemented better end silence detection
