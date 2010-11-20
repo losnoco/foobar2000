@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="upse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-container-xsf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-eventloop.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-filesystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-module.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-bios-base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-bios-private.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-counters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-dma-manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-executive.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-gpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-hal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-memory-manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-spu-abstract.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-spu-adsr-filter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-spu-base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-spu-dma-handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-spu-features.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-spu-register-io.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps1-spu-reverb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-ps2-iop-private.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-r3000-abstract.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-spu-internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-string.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="upse-types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="upse_bios_manager.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_container_xsf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_eventloop.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_filesystem.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_loader.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_loader_psf1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_loader_psf2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_module.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_bios_base.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_counters.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_dma_manager.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_executive.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_gpu.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_hal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_memory_manager.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_spu_adsr_filter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_spu_base.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_spu_dma_handler.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_spu_lowpass_filter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_spu_nyquist_filter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_spu_register_io.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps1_spu_reverb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_ps2_iop_base.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_r3000_abstract.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_r3000_bytecode_evaluator.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_string.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="upse_util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

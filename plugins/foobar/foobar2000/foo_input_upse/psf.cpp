@@ -1,7 +1,11 @@
-#define MYVERSION "1.1"
+#define MYVERSION "1.2"
 
 /*
 	changelog
+
+2010-11-20 22:06 UTC - kode54
+- Updated fully reentrant libupse
+- Version is now 1.2
 
 2010-11-05 00:05 UTC - kode54
 - Updated to latest libupse2
@@ -465,7 +469,7 @@ const upse_iofuncs_t foo_io = { foo_open, foo_read, foo_seek, foo_close, foo_tel
 
 class input_psf
 {
-	upse * emu;
+	upse emu;
 
 	s16 * sample_buffer;
 
@@ -476,15 +480,9 @@ class input_psf
 	file_info_impl m_info;
 
 public:
-	input_psf()
-	{
-		emu = NULL;
-	}
+	input_psf() { }
 
-	~input_psf()
-	{
-		delete emu;
-	}
+	~input_psf() { }
 
 	void open( service_ptr_t<file> p_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
@@ -494,13 +492,7 @@ public:
 
 		p_file.release();
 
-		pfc::string8 emu_path = core_api::get_my_full_path();
-		emu_path.truncate( emu_path.scan_filename() );
-		emu_path += "upse.dll";
-		
-		emu = new upse( emu_path );
-
-		upse_psf_t * the_psf = emu->get_psf_metadata( p_path, &foo_io );
+		upse_psf_t * the_psf = upse_get_psf_metadata( p_path, &foo_io );
 		if ( !the_psf ) throw exception_io_data();
 
 		filename = p_path;
@@ -508,11 +500,11 @@ public:
 		try
 		{
 			info_read( the_psf, m_info );
-			emu->free_psf_metadata( the_psf );
+			upse_free_psf_metadata( the_psf );
 		}
 		catch (...)
 		{
-			emu->free_psf_metadata( the_psf );
+			upse_free_psf_metadata( the_psf );
 			throw;
 		}
 	}
@@ -530,13 +522,13 @@ public:
 	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
 		int play_forever = !( p_flags & input_flag_no_looping ) && cfg_infinite;
-		if ( !emu->open( filename, &foo_io, play_forever, cfg_deflength, cfg_deffade ) )
+		if ( !emu.open( filename, &foo_io, play_forever, cfg_deflength, cfg_deffade ) )
 			throw exception_io_data();
 	}
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
-		int samples_rendered = emu->render( &sample_buffer );
+		int samples_rendered = emu.render( &sample_buffer );
 
 		if ( samples_rendered <= 0 )
 			return false;
@@ -550,7 +542,7 @@ public:
 	{
 		unsigned int howmany = ( int )( audio_math::time_to_samples( p_seconds, 1000 ) );
 
-		if ( !emu->seek( howmany ) )
+		if ( !emu.seek( howmany ) )
 			throw exception_io_data();
 	}
 

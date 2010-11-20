@@ -1,0 +1,142 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="upse-container-xsf.h" />
+    <ClInclude Include="upse-debug.h" />
+    <ClInclude Include="upse-eventloop.h" />
+    <ClInclude Include="upse-filesystem.h" />
+    <ClInclude Include="upse-internal.h" />
+    <ClInclude Include="upse-loader.h" />
+    <ClInclude Include="upse-module.h" />
+    <ClInclude Include="upse-ps1-bios-base.h" />
+    <ClInclude Include="upse-ps1-bios-private.h" />
+    <ClInclude Include="upse-ps1-counters.h" />
+    <ClInclude Include="upse-ps1-dma-manager.h" />
+    <ClInclude Include="upse-ps1-executive.h" />
+    <ClInclude Include="upse-ps1-gpu.h" />
+    <ClInclude Include="upse-ps1-hal.h" />
+    <ClInclude Include="upse-ps1-memory-manager.h" />
+    <ClInclude Include="upse-ps1-spu-abstract.h" />
+    <ClInclude Include="upse-ps1-spu-adsr-filter.h" />
+    <ClInclude Include="upse-ps1-spu-base.h" />
+    <ClInclude Include="upse-ps1-spu-dma-handler.h" />
+    <ClInclude Include="upse-ps1-spu-features.h" />
+    <ClInclude Include="upse-ps1-spu-register-io.h" />
+    <ClInclude Include="upse-ps1-spu-reverb.h" />
+    <ClInclude Include="upse-ps2-iop-private.h" />
+    <ClInclude Include="upse-r3000-abstract.h" />
+    <ClInclude Include="upse-spu-internal.h" />
+    <ClInclude Include="upse-string.h" />
+    <ClInclude Include="upse-types.h" />
+    <ClInclude Include="upse.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="upse_bios_manager.c" />
+    <ClCompile Include="upse_container_xsf.c" />
+    <ClCompile Include="upse_eventloop.c" />
+    <ClCompile Include="upse_filesystem.c" />
+    <ClCompile Include="upse_loader.c" />
+    <ClCompile Include="upse_loader_psf1.c" />
+    <ClCompile Include="upse_loader_psf2.c" />
+    <ClCompile Include="upse_module.c" />
+    <ClCompile Include="upse_ps1_bios_base.c" />
+    <ClCompile Include="upse_ps1_counters.c" />
+    <ClCompile Include="upse_ps1_dma_manager.c" />
+    <ClCompile Include="upse_ps1_executive.c" />
+    <ClCompile Include="upse_ps1_gpu.c" />
+    <ClCompile Include="upse_ps1_hal.c" />
+    <ClCompile Include="upse_ps1_memory_manager.c" />
+    <ClCompile Include="upse_ps1_spu_adsr_filter.c" />
+    <ClCompile Include="upse_ps1_spu_base.c" />
+    <ClCompile Include="upse_ps1_spu_dma_handler.c" />
+    <ClCompile Include="upse_ps1_spu_lowpass_filter.c" />
+    <ClCompile Include="upse_ps1_spu_nyquist_filter.c" />
+    <ClCompile Include="upse_ps1_spu_register_io.c" />
+    <ClCompile Include="upse_ps1_spu_reverb.c" />
+    <ClCompile Include="upse_ps2_iop_base.c" />
+    <ClCompile Include="upse_r3000_abstract.c" />
+    <ClCompile Include="upse_r3000_bytecode_evaluator.c" />
+    <ClCompile Include="upse_string.c" />
+    <ClCompile Include="upse_util.c" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{24A0B662-B326-495C-80D5-29FF06158E0C}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libupse</RootNamespace>
+    <SccProjectName>SAK</SccProjectName>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32_MSC;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>../../../zlib</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32_MSC;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <AdditionalIncludeDirectories>../../../zlib</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
