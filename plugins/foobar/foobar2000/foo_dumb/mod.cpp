@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.21"
+#define MYVERSION "0.9.9.22"
 
 /*
 	changelog
+
+2010-11-22 01:12 UTC - kode54
+- Changed a break to row behavior in DUMB, hopefully it doesn't break anything
+- Version is now 0.9.9.22
 
 2010-11-20 20:43 UTC - kode54
 - Changed zlib dependency to use standard zlib1.dll
