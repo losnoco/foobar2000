@@ -253,7 +253,9 @@ int delete_fluid_defsfont(fluid_defsfont_t* sfont, int force)
     preset = sfont->preset;
   }
 
-  FLUID_FCLOSE(sfont->file_handle);
+  if (sfont->file_handle != NULL) {
+    FLUID_FCLOSE(sfont->file_handle);
+  }
 
   FLUID_FREE(sfont);
   return FLUID_OK;
