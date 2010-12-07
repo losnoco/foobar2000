@@ -1,7 +1,11 @@
-#define MY_VERSION "1.4"
+#define MY_VERSION "1.5"
 
 /*
 	changelog
+
+2010-12-06 08:38 UTC - kode54
+- Updated File_Extractor to LZMA SDK v9.20 to support more filters, LZMA2, and PPMd
+- Version is now 1.5
 
 2010-01-14 01:45 UTC - kode54
 - Fixed componentversion about message declaration
