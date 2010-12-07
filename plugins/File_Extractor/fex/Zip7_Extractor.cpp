@@ -2,9 +2,11 @@
 
 #include "Zip7_Extractor.h"
 
-#include "7z_C/7zExtract.h"
+extern "C" {
+#include "7z_C/7z.h"
 #include "7z_C/7zAlloc.h"
 #include "7z_C/7zCrc.h"
+}
 
 #include <time.h>
 
@@ -228,8 +230,17 @@ blargg_err_t Zip7_Extractor::next_v()
 					(( ( tm.tm_year - 80 ) & 0x7F ) << 25 );
 			}
 
-			set_name( item.Name );
-			set_info( item.Size, 0, (item.FileCRCDefined ? item.FileCRC : 0) );
+			size_t name_length = SzArEx_GetFileNameUtf16( &impl->db, index, 0 );
+			name16.resize( name_length );
+			SzArEx_GetFileNameUtf16( &impl->db, index, ( UInt16 * ) name16.begin() );
+			char * temp = blargg_to_utf8( name16.begin() );
+			if ( !temp ) temp = "";
+			size_t utf8_length = strlen( temp );
+			name8.resize( utf8_length + 1 );
+			memcpy( name8.begin(), temp, utf8_length + 1 );
+			free( temp );
+			set_name( name8.begin(), name16.begin() );
+			set_info( item.Size, 0, (item.CrcDefined ? item.Crc : 0) );
 			break;
 		}
 	}
@@ -260,7 +271,7 @@ blargg_err_t Zip7_Extractor::data_v( void const** out )
 	impl->in_err = NULL;
 	size_t offset = 0;
 	size_t count  = 0;
-	RETURN_ERR( zip7_err( SzAr_Extract( &impl->db, &impl->look.s, index,
+	RETURN_ERR( zip7_err( SzArEx_Extract( &impl->db, &impl->look.s, index,
 			&impl->block_index, &impl->buf, &impl->buf_size,
 			&offset, &count, &zip7_alloc, &zip7_alloc_temp ) ) );
 	assert( count == (size_t) size() );

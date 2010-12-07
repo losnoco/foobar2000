@@ -82,6 +82,36 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\7z_C\7zAlloc.c" />
+    <ClCompile Include="..\..\7z_C\7zBuf.c" />
+    <ClCompile Include="..\..\7z_C\7zBuf2.c" />
+    <ClCompile Include="..\..\7z_C\7zCrc.c" />
+    <ClCompile Include="..\..\7z_C\7zCrcOpt.c" />
+    <ClCompile Include="..\..\7z_C\7zDec.c" />
+    <ClCompile Include="..\..\7z_C\7zFile.c" />
+    <ClCompile Include="..\..\7z_C\7zIn.c" />
+    <ClCompile Include="..\..\7z_C\7zStream.c" />
+    <ClCompile Include="..\..\7z_C\Alloc.c" />
+    <ClCompile Include="..\..\7z_C\Bcj2.c" />
+    <ClCompile Include="..\..\7z_C\Bra.c" />
+    <ClCompile Include="..\..\7z_C\Bra86.c" />
+    <ClCompile Include="..\..\7z_C\BraIA64.c" />
+    <ClCompile Include="..\..\7z_C\CpuArch.c" />
+    <ClCompile Include="..\..\7z_C\Delta.c" />
+    <ClCompile Include="..\..\7z_C\LzFind.c" />
+    <ClCompile Include="..\..\7z_C\LzFindMt.c" />
+    <ClCompile Include="..\..\7z_C\Lzma2Dec.c" />
+    <ClCompile Include="..\..\7z_C\Lzma2Enc.c" />
+    <ClCompile Include="..\..\7z_C\Lzma86Dec.c" />
+    <ClCompile Include="..\..\7z_C\Lzma86Enc.c" />
+    <ClCompile Include="..\..\7z_C\LzmaDec.c" />
+    <ClCompile Include="..\..\7z_C\LzmaEnc.c" />
+    <ClCompile Include="..\..\7z_C\LzmaLib.c" />
+    <ClCompile Include="..\..\7z_C\MtCoder.c" />
+    <ClCompile Include="..\..\7z_C\Ppmd7.c" />
+    <ClCompile Include="..\..\7z_C\Ppmd7Dec.c" />
+    <ClCompile Include="..\..\7z_C\Ppmd7Enc.c" />
+    <ClCompile Include="..\..\7z_C\Threads.c" />
     <ClCompile Include="..\..\fex\Binary_Extractor.cpp" />
     <ClCompile Include="..\..\fex\blargg_common.cpp" />
     <ClCompile Include="..\..\fex\blargg_errors.cpp" />
@@ -94,18 +124,6 @@
     <ClCompile Include="..\..\fex\Zip7_Extractor.cpp" />
     <ClCompile Include="..\..\fex\Zip_Extractor.cpp" />
     <ClCompile Include="..\..\fex\Zlib_Inflater.cpp" />
-    <ClCompile Include="..\..\7z_C\7zAlloc.c" />
-    <ClCompile Include="..\..\7z_C\7zBuf.c" />
-    <ClCompile Include="..\..\7z_C\7zCrc.c" />
-    <ClCompile Include="..\..\7z_C\7zDecode.c" />
-    <ClCompile Include="..\..\7z_C\7zExtract.c" />
-    <ClCompile Include="..\..\7z_C\7zHeader.c" />
-    <ClCompile Include="..\..\7z_C\7zIn.c" />
-    <ClCompile Include="..\..\7z_C\7zItem.c" />
-    <ClCompile Include="..\..\7z_C\7zStream.c" />
-    <ClCompile Include="..\..\7z_C\Bcj2.c" />
-    <ClCompile Include="..\..\7z_C\Bra86.c" />
-    <ClCompile Include="..\..\7z_C\LzmaDec.c" />
     <ClCompile Include="..\..\unrar\archive.cpp" />
     <ClCompile Include="..\..\unrar\arcread.cpp" />
     <ClCompile Include="..\..\unrar\coder.cpp" />
@@ -127,6 +145,32 @@
     <ClCompile Include="..\..\unrar\unrar_open.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\7z_C\7z.h" />
+    <ClInclude Include="..\..\7z_C\7zAlloc.h" />
+    <ClInclude Include="..\..\7z_C\7zBuf.h" />
+    <ClInclude Include="..\..\7z_C\7zCrc.h" />
+    <ClInclude Include="..\..\7z_C\7zFile.h" />
+    <ClInclude Include="..\..\7z_C\7zVersion.h" />
+    <ClInclude Include="..\..\7z_C\Alloc.h" />
+    <ClInclude Include="..\..\7z_C\Bcj2.h" />
+    <ClInclude Include="..\..\7z_C\Bra.h" />
+    <ClInclude Include="..\..\7z_C\CpuArch.h" />
+    <ClInclude Include="..\..\7z_C\Delta.h" />
+    <ClInclude Include="..\..\7z_C\LzFind.h" />
+    <ClInclude Include="..\..\7z_C\LzFindMt.h" />
+    <ClInclude Include="..\..\7z_C\LzHash.h" />
+    <ClInclude Include="..\..\7z_C\Lzma2Dec.h" />
+    <ClInclude Include="..\..\7z_C\Lzma2Enc.h" />
+    <ClInclude Include="..\..\7z_C\Lzma86.h" />
+    <ClInclude Include="..\..\7z_C\LzmaDec.h" />
+    <ClInclude Include="..\..\7z_C\LzmaEnc.h" />
+    <ClInclude Include="..\..\7z_C\LzmaLib.h" />
+    <ClInclude Include="..\..\7z_C\MtCoder.h" />
+    <ClInclude Include="..\..\7z_C\Ppmd.h" />
+    <ClInclude Include="..\..\7z_C\Ppmd7.h" />
+    <ClInclude Include="..\..\7z_C\RotateDefs.h" />
+    <ClInclude Include="..\..\7z_C\Threads.h" />
+    <ClInclude Include="..\..\7z_C\Types.h" />
     <ClInclude Include="..\..\fex\Binary_Extractor.h" />
     <ClInclude Include="..\..\fex\blargg_common.h" />
     <ClInclude Include="..\..\fex\blargg_config.h" />
@@ -142,21 +186,6 @@
     <ClInclude Include="..\..\fex\Zip7_Extractor.h" />
     <ClInclude Include="..\..\fex\Zip_Extractor.h" />
     <ClInclude Include="..\..\fex\Zlib_Inflater.h" />
-    <ClInclude Include="..\..\7z_C\7zAlloc.h" />
-    <ClInclude Include="..\..\7z_C\7zBuf.h" />
-    <ClInclude Include="..\..\7z_C\7zCrc.h" />
-    <ClInclude Include="..\..\7z_C\7zDecode.h" />
-    <ClInclude Include="..\..\7z_C\7zExtract.h" />
-    <ClInclude Include="..\..\7z_C\7zHeader.h" />
-    <ClInclude Include="..\..\7z_C\7zIn.h" />
-    <ClInclude Include="..\..\7z_C\7zItem.h" />
-    <ClInclude Include="..\..\7z_C\7zTypes.h" />
-    <ClInclude Include="..\..\7z_C\Bcj2.h" />
-    <ClInclude Include="..\..\7z_C\Bra.h" />
-    <ClInclude Include="..\..\7z_C\CpuArch.h" />
-    <ClInclude Include="..\..\7z_C\LzmaDec.h" />
-    <ClInclude Include="..\..\7z_C\LzmaTypes.h" />
-    <ClInclude Include="..\..\7z_C\Types.h" />
     <ClInclude Include="..\..\unrar\archive.hpp" />
     <ClInclude Include="..\..\unrar\array.hpp" />
     <ClInclude Include="..\..\unrar\coder.hpp" />
@@ -174,10 +203,6 @@
     <ClInclude Include="..\..\unrar\unrar.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\7z_C\7zC.txt" />
-    <None Include="..\..\7z_C\changes.txt" />
-    <None Include="..\..\7z_C\lzma.txt" />
-    <None Include="..\..\7z_C\readme.txt" />
     <None Include="..\..\unrar\changes.txt" />
     <None Include="..\..\unrar\license.txt" />
     <None Include="..\..\unrar\readme.txt" />

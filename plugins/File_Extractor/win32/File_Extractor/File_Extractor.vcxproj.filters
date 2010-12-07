@@ -1,0 +1,330 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\fex\Binary_Extractor.cpp" />
+    <ClCompile Include="..\..\fex\blargg_common.cpp" />
+    <ClCompile Include="..\..\fex\blargg_errors.cpp" />
+    <ClCompile Include="..\..\fex\Data_Reader.cpp" />
+    <ClCompile Include="..\..\fex\fex.cpp" />
+    <ClCompile Include="..\..\fex\File_Extractor.cpp" />
+    <ClCompile Include="..\..\fex\Gzip_Extractor.cpp" />
+    <ClCompile Include="..\..\fex\Gzip_Reader.cpp" />
+    <ClCompile Include="..\..\fex\Rar_Extractor.cpp" />
+    <ClCompile Include="..\..\fex\Zip7_Extractor.cpp" />
+    <ClCompile Include="..\..\fex\Zip_Extractor.cpp" />
+    <ClCompile Include="..\..\fex\Zlib_Inflater.cpp" />
+    <ClCompile Include="..\..\7z_C\7zAlloc.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\7zBuf.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\7zBuf2.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\7zCrc.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\7zCrcOpt.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\7zDec.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\7zFile.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\7zIn.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\7zStream.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Alloc.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Bcj2.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Bra.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Bra86.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\BraIA64.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\CpuArch.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Delta.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\LzFind.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\LzFindMt.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Lzma2Dec.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Lzma2Enc.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Lzma86Dec.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Lzma86Enc.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\LzmaDec.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\LzmaEnc.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\LzmaLib.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\MtCoder.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Ppmd7.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Ppmd7Dec.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Ppmd7Enc.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\7z_C\Threads.c">
+      <Filter>7z_C</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\archive.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\arcread.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\coder.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\crc.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\encname.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\extract.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\getbits.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\model.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\rarvm.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\rarvmtbl.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\rawread.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\suballoc.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\unicode.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\unpack.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\unpack15.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\unpack20.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\unrar.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\unrar_misc.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unrar\unrar_open.cpp">
+      <Filter>unrar</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\fex\Binary_Extractor.h" />
+    <ClInclude Include="..\..\fex\blargg_common.h" />
+    <ClInclude Include="..\..\fex\blargg_config.h" />
+    <ClInclude Include="..\..\fex\blargg_endian.h" />
+    <ClInclude Include="..\..\fex\blargg_errors.h" />
+    <ClInclude Include="..\..\fex\blargg_source.h" />
+    <ClInclude Include="..\..\fex\Data_Reader.h" />
+    <ClInclude Include="..\..\fex\fex.h" />
+    <ClInclude Include="..\..\fex\File_Extractor.h" />
+    <ClInclude Include="..\..\fex\Gzip_Extractor.h" />
+    <ClInclude Include="..\..\fex\Gzip_Reader.h" />
+    <ClInclude Include="..\..\fex\Rar_Extractor.h" />
+    <ClInclude Include="..\..\fex\Zip7_Extractor.h" />
+    <ClInclude Include="..\..\fex\Zip_Extractor.h" />
+    <ClInclude Include="..\..\fex\Zlib_Inflater.h" />
+    <ClInclude Include="..\..\7z_C\7z.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\7zAlloc.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\7zBuf.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\7zCrc.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\7zFile.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\7zVersion.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\Alloc.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\Bcj2.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\Bra.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\CpuArch.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\Delta.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\LzFind.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\LzFindMt.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\LzHash.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\Lzma2Dec.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\Lzma2Enc.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\Lzma86.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\LzmaDec.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\LzmaEnc.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\LzmaLib.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\MtCoder.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\Ppmd.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\Ppmd7.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\RotateDefs.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\Threads.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\7z_C\Types.h">
+      <Filter>7z_C</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\archive.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\array.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\coder.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\compress.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\encname.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\getbits.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\headers.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\model.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\rar.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\rarvm.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\rawread.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\suballoc.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\unicode.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\unpack.hpp">
+      <Filter>unrar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\unrar\unrar.h">
+      <Filter>unrar</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+    <None Include="..\..\unrar\changes.txt">
+      <Filter>unrar</Filter>
+    </None>
+    <None Include="..\..\unrar\license.txt">
+      <Filter>unrar</Filter>
+    </None>
+    <None Include="..\..\unrar\readme.txt">
+      <Filter>unrar</Filter>
+    </None>
+    <None Include="..\..\unrar\technote.txt">
+      <Filter>unrar</Filter>
+    </None>
+    <None Include="..\..\unrar\whatsnew.txt">
+      <Filter>unrar</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="7z_C">
+      <UniqueIdentifier>{9e0b3a4b-81d0-480f-80c2-dc00ee34005a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="unrar">
+      <UniqueIdentifier>{f61126bf-a904-46b9-ad0b-e7a6aaf0e8ec}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
