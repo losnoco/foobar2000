@@ -2,432 +2,180 @@
 #include "main.h"
 #include "config_interface.h"
 
-#if 0
-class menu_item_osd_enable : public menu_item_node
+static const GUID guid_mainmenu_group_osd = { 0x623337f4, 0xe5ce, 0x4a1f, { 0xa4, 0xf8, 0x72, 0xbc, 0xff, 0x52, 0xa4, 0x29 } };
+
+static mainmenu_group_popup_factory g_mainmenu_group_osd( guid_mainmenu_group_osd, mainmenu_groups::view, mainmenu_commands::sort_priority_dontcare, "On-Screen Display" );
+
+class mainmenu_node_command_osd : public mainmenu_node_command
 {
+	t_uint32 overlay_index, overlay_command;
+
 public:
-	bool get_display_data( pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
+	mainmenu_node_command_osd( t_uint32 p_index, t_uint32 p_command ) : overlay_index( p_index ), overlay_command( p_command ) { }
+
+	virtual void get_display( pfc::string_base & text, t_uint32 & flags )
 	{
-		p_displayflags = cfg_enable ? FLAG_CHECKED : 0;
-		p_out = "Enable";
+		static const char * names[] = { "Show current track", "Show active playlist", "Show volume level", "Hide" };
+		flags = 0;
+		text = names[ overlay_command ];
+	}
+
+	virtual bool get_description( pfc::string_base & out )
+	{
+		static const char * descriptions[] = { "Displays the current track", "Displays the active playlist", "Displays the volume level", "Hides the overlay" };
+		out = descriptions[ overlay_command ];
 		return true;
 	}
 
-	t_type get_type() {return TYPE_COMMAND;}
-
-	void execute(const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
+	virtual GUID get_guid()
 	{
-		if (cfg_enable)
+		static const GUID guids[4] = {
+			{ 0x56b4fb47, 0xdfa, 0x4c98, { 0xa4, 0x2a, 0x6, 0x58, 0x3d, 0x51, 0x30, 0x38 } },
+			{ 0xadee0de, 0xefaf, 0x40a6, { 0x83, 0xdd, 0x3b, 0xb9, 0x92, 0x25, 0x56, 0x9 } },
+			{ 0xe88b5dc5, 0xa4be, 0x4778, { 0x9a, 0x3d, 0x49, 0x15, 0xc0, 0x93, 0x6c, 0x4f } },
+			{ 0x1b52b71f, 0x24c5, 0x46e0, { 0x8e, 0x45, 0xb1, 0x31, 0x87, 0xa1, 0xca, 0xa8 } }
+		};
+
+		return guids[ overlay_command ];
+	}
+
+	void execute(service_ptr_t<service_base>)
+	{
+		switch ( overlay_command )
 		{
-			g_osd.quit();
-			cfg_enable = 0;
-		}
-		else
-		{
-			cfg_enable = g_osd.init();
-		}
-	}
+		case 0:
+			g_osd.show_track( overlay_index );
+			break;
 
-	unsigned get_children_count() {return 0;}
+		case 1:
+			g_osd.show_playlist( overlay_index );
+			break;
 
-	menu_item_node * get_child(unsigned p_index) {return 0;}
+		case 2:
+			g_osd.show_volume( overlay_index );
+			break;
 
-	bool get_description(pfc::string_base & p_out)
-	{
-		if (cfg_enable) p_out = "Disable";
-		else p_out = "Enable";
-		p_out += "s the On-Screen Display system";
-		return true;
-	}
-
-	GUID get_guid()
-	{
-		return g_guid;
-	}
-
-	bool is_mappable_shortcut() {return true;}
-
-	static const GUID g_guid;
-};
-
-const GUID menu_item_osd_enable::g_guid =
-{ 0xccf56f, 0xeb00, 0x4ffe, { 0xa6, 0xb4, 0xff, 0x8c, 0x30, 0x4f, 0x1f, 0x13 } };
-
-static GUID guid_from_string(const char * p_string)
-{
-	return static_api_ptr_t<hasher_md5>()->process_single_guid(p_string,strlen(p_string));
-}
-
-// mmkay!
-static GUID guid_from_guid(const GUID & p_guid)
-{
-	return static_api_ptr_t<hasher_md5>()->process_single_guid(&p_guid,sizeof(p_guid));
-}
-
-class menu_item_osd_show_track : public menu_item_node
-{
-public:
-	void set_data(unsigned p_index, const GUID & p_guid)
-	{
-		m_index = p_index;
-		m_guid = p_guid;
-	}
-
-	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
-	{
-		p_displayflags = 0;
-		p_out = "Show current track";
-		return true;
-	}
-
-	t_type get_type() {return TYPE_COMMAND;}
-
-	void execute(const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
-	{
-		g_osd.show_track(m_index);
-	}
-
-	unsigned get_children_count() {return 0;}
-
-	menu_item_node * get_child(unsigned p_index) {return 0;}
-
-	bool get_description(pfc::string_base & p_out)
-	{
-		p_out = "Displays the current track";
-		return true;
-	}
-
-	GUID get_guid() {return m_guid;}
-
-	bool is_mappable_shortcut() {return true;}
-private:
-	unsigned m_index;
-	GUID m_guid;
-};
-
-class menu_item_osd_show_playlist : public menu_item_node
-{
-public:
-	void set_data(unsigned p_index, const GUID & p_guid)
-	{
-		m_index = p_index;
-		m_guid = p_guid;
-	}
-
-	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
-	{
-		p_displayflags = 0;
-		p_out = "Show active playlist";
-		return true;
-	}
-
-	t_type get_type() {return TYPE_COMMAND;}
-
-	void execute(const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
-	{
-		g_osd.show_playlist(m_index);
-	}
-
-	unsigned get_children_count() {return 0;}
-
-	menu_item_node * get_child(unsigned p_index) {return 0;}
-
-	bool get_description(pfc::string_base & p_out)
-	{
-		p_out = "Displays the active playlist";
-		return true;
-	}
-
-	GUID get_guid() {return m_guid;}
-
-	bool is_mappable_shortcut() {return true;}
-private:
-	unsigned m_index;
-	GUID m_guid;
-};
-
-class menu_item_osd_show_volume : public menu_item_node
-{
-public:
-	void set_data(unsigned p_index, const GUID & p_guid)
-	{
-		m_index = p_index;
-		m_guid = p_guid;
-	}
-
-	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
-	{
-		p_displayflags = 0;
-		p_out = "Show volume level";
-		return true;
-	}
-
-	t_type get_type() {return TYPE_COMMAND;}
-
-	void execute(const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
-	{
-		g_osd.show_volume(m_index);
-	}
-
-	unsigned get_children_count() {return 0;}
-
-	menu_item_node * get_child(unsigned p_index) {return 0;}
-
-	bool get_description(pfc::string_base & p_out)
-	{
-		p_out = "Displays the volume level";
-		return true;
-	}
-
-	GUID get_guid() {return m_guid;}
-
-	bool is_mappable_shortcut() {return true;}
-private:
-	unsigned m_index;
-	GUID m_guid;
-};
-
-class menu_item_osd_hide : public menu_item_node
-{
-public:
-	void set_data(unsigned p_index, const GUID & p_guid)
-	{
-		m_index = p_index;
-		m_guid = p_guid;
-	}
-
-	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
-	{
-		p_displayflags = 0;
-		p_out = "Hide";
-		return true;
-	}
-
-	t_type get_type() {return TYPE_COMMAND;}
-
-	void execute(const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
-	{
-		g_osd.hide(m_index);
-	}
-
-	unsigned get_children_count() {return 0;}
-
-	menu_item_node * get_child(unsigned p_index) {return 0;}
-
-	bool get_description(pfc::string_base & p_out)
-	{
-		p_out = "Hides the overlay";
-		return true;
-	}
-
-	GUID get_guid() {return m_guid;}
-
-	bool is_mappable_shortcut() {return true;}
-private:
-	unsigned m_index;
-	GUID m_guid;
-};
-
-class menu_item_osd : public menu_item_node
-{
-public:
-	bool is_mappable_shortcut() {return false;}
-
-	void set_data(unsigned p_index, const char * p_info)
-	{
-		m_config = p_info;
-
-		GUID p_guid = guid_from_string(m_config);
-		m_c_track.set_data(p_index, p_guid);
-
-		// whee!
-		GUID x_guid = guid_from_guid(p_guid);
-		m_c_playlist.set_data(p_index, x_guid);
-		p_guid = guid_from_guid(x_guid);
-		m_c_volume.set_data(p_index, p_guid);
-		x_guid = guid_from_guid(p_guid);
-		m_c_hide.set_data(p_index, x_guid);
-	}
-
-	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
-	{
-		p_displayflags = 0;
-		p_out = m_config;
-		return true;
-	}
-
-	t_type get_type() {return TYPE_POPUP;}
-
-	void execute(const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller) {}
-	unsigned get_children_count() {return 4;}
-
-	menu_item_node * get_child(unsigned p_index)
-	{
-		switch (p_index)
-		{
-		case 0: return &m_c_track;
-		case 1: return &m_c_playlist;
-		case 2: return &m_c_volume;
-		case 3: return &m_c_hide;
-		}
-
-		return 0;
-	}
-
-	bool get_description(pfc::string_base & p_out)
-	{
-		p_out = "Controls an OSD preset : \"";
-		p_out += m_config;
-		p_out += "\"";
-		return true;
-	}
-	GUID get_guid() {return pfc::guid_null;}
-private:
-	const char * m_config;
-
-	menu_item_osd_show_track    m_c_track;
-	menu_item_osd_show_playlist m_c_playlist;
-	menu_item_osd_show_volume   m_c_volume;
-	menu_item_osd_hide          m_c_hide;
-};
-
-class menu_item_osd_root : public menu_item_node_root
-{
-public:
-	bool is_mappable_shortcut() {return false;}
-
-	menu_item_osd_root()
-	{
-		g_osd.get_names(m_config);
-
-		unsigned n, m = m_config.get_size();
-		m_children.set_size(m);
-		for(n=0;n<m;n++)
-		{
-			m_children[n].set_data(n, m_config[n]);
+		case 3:
+			g_osd.hide( overlay_index );
+			break;
 		}
 	}
-
-	bool get_display_data(pfc::string_base & p_out,unsigned & p_displayflags,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
-	{
-		if (m_children.get_size() == 0) return false;
-		p_displayflags = 0;
-		p_out = "On-Screen Display";
-		return true;
-	}
-
-	t_type get_type()
-	{
-		return TYPE_POPUP;
-	}
-	void execute(const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller) {}
-	unsigned get_children_count()
-	{
-		return m_children.get_size() + 1;
-	}
-	menu_item_node * get_child(unsigned p_index)
-	{
-		if (p_index) return &m_children[p_index-1];
-		else return &m_c_enable;
-	}
-	bool get_description(pfc::string_base & p_out)
-	{
-		p_out = "Controls the On-Screen Display.";
-		return true;
-	}
-	GUID get_guid() {return pfc::guid_null;}
-private:
-	pfc::array_t<string_simple> m_config;
-	pfc::array_t<menu_item_osd> m_children;
-	menu_item_osd_enable   m_c_enable;
 };
 
-class menu_osd_control : public menu_item
+class mainmenu_node_group_osd : public mainmenu_node_group
 {
+	t_uint32 overlay_index;
+
 public:
-	type get_type() {return TYPE_MAIN;}
-	unsigned get_num_items() {return 1;}
-	menu_item_node_root * instantiate_item(unsigned p_index,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
+	mainmenu_node_group_osd( t_uint32 p_index ) : overlay_index( p_index ) { }
+
+	virtual void get_display( pfc::string_base & text, t_uint32 & flags )
 	{
-		assert(p_index == 0);
-		if (core_api::assert_main_thread())
-		{
-			return new menu_item_osd_root;
-		}
-		else return 0;
+		pfc::array_t< pfc::string_simple > names;
+		flags = 0;
+		g_osd.get_names( names );
+		text = names[ overlay_index ];
 	}
 
-	GUID get_item_guid(unsigned p_index)
+	virtual t_size get_children_count()
 	{
-		assert(p_index == 0);
-		// {4BF7726A-AD44-404b-9391-84A41AC1F4C2}
+		return 4;
+	}
+
+	virtual ptr get_child( t_size index )
+	{
+		return new service_impl_t< mainmenu_node_command_osd > ( overlay_index, index );
+	}
+};
+
+class mainmenu_commands_osd : public mainmenu_commands_v2
+{
+public:
+	virtual t_uint32 get_command_count()
+	{
+		pfc::array_t<pfc::string_simple> names;
+		g_osd.get_names( names );
+		if ( names.get_count() ) return 2 + names.get_count();
+		return 1;
+	}
+
+	virtual GUID get_command( t_uint32 p_index )
+	{
+		// {CEBCFC86-7AAF-472D-9047-4EFE795BAE2B}
 		static const GUID guid = 
-		{ 0x4bf7726a, 0xad44, 0x404b, { 0x93, 0x91, 0x84, 0xa4, 0x1a, 0xc1, 0xf4, 0xc2 } };
-		return guid;
+		{ 0xcebcfc86, 0x7aaf, 0x472d, { 0x90, 0x47, 0x4e, 0xfe, 0x79, 0x5b, 0xae, 0x2b } };
+		if ( !p_index ) return guid;
+
+		hasher_md5_state m_state;
+		static_api_ptr_t< hasher_md5 > p_hasher;
+		p_hasher->initialize( m_state );
+		p_hasher->process( m_state, &guid, sizeof( guid ) );
+		p_index = pfc::byteswap_if_be_t( p_index );
+		p_hasher->process( m_state, &p_index, sizeof( p_index ) );
+
+		return p_hasher->get_result_guid( m_state );
 	}
 
-	void get_item_name(unsigned p_index,pfc::string_base & p_out)
+	virtual void get_name( t_uint32 p_index, pfc::string_base & p_out )
 	{
-		assert(p_index == 0);
-		p_out = "On-Screen Display";
+		if ( !p_index ) p_out = "Enable";
+		else if ( p_index > 1 )
+		{
+			pfc::array_t< pfc::string_simple > names;
+			g_osd.get_names( names );
+			p_out = names[ p_index - 2 ];
+		}
 	}
 
-	void get_item_default_path(unsigned p_index,pfc::string_base & p_out)
+	virtual bool get_description( t_uint32 p_index, pfc::string_base & p_out )
 	{
-		assert(p_index == 0);
-		p_out = "Components";
-	}
-
-	bool get_item_description(unsigned p_index,pfc::string_base & p_out)
-	{
+		if ( !p_index )
+		{
+			p_out = "Controls the On-Screen Display.";
+			return true;
+		}
 		return false;
 	}
 
-	t_enabled_state get_enabled_state(unsigned p_index)
+	virtual GUID get_parent()
 	{
-		return DEFAULT_ON;
+		return guid_mainmenu_group_osd;
 	}
 
-	void item_execute_simple(unsigned p_index,const GUID & p_node,const list_base_const_t<metadb_handle_ptr> & p_data,const GUID & p_caller)
+	virtual bool get_display( t_uint32 p_index, pfc::string_base & p_text, t_uint32 & p_flags )
 	{
-		if (core_api::assert_main_thread())
+		p_flags = ( !p_index && cfg_enable ) ? flag_checked : 0;
+		get_name( p_index, p_text );
+		return true;
+	}
+
+	virtual void execute( t_uint32 p_index, service_ptr_t<service_base> p_callback )
+	{
+		if ( !p_index )
 		{
-			if (p_node == menu_item_osd_enable::g_guid)
+			if (cfg_enable)
 			{
-				if (cfg_enable)
-				{
-					g_osd.quit();
-					cfg_enable = 0;
-				}
-				else
-				{
-					cfg_enable = g_osd.init();
-				}
-
-				return;
+				g_osd.quit();
+				cfg_enable = 0;
 			}
-
-			pfc::array_t<string_simple> m_names;
-			g_osd.get_names(m_names);
-			unsigned n, m = m_names.get_size();
-			for(n = 0; n < m; n++)
+			else
 			{
-				GUID p_guid = guid_from_string(m_names[n]);
-				if (p_node == p_guid) { g_osd.show_track(n); break; }
-
-				GUID x_guid = guid_from_guid(p_guid);
-				if (p_node == x_guid) { g_osd.show_playlist(n); break; }
-
-				p_guid = guid_from_guid(x_guid);
-				if (p_node == p_guid) { g_osd.show_volume(n); break; }
-
-				x_guid = guid_from_guid(p_guid);
-				if (p_node == x_guid) { g_osd.hide(n); break; }
+				cfg_enable = g_osd.init();
 			}
 		}
 	}
 
+	virtual bool is_command_dynamic( t_uint32 index )
+	{
+		return !!index;
+	}
+
+	virtual mainmenu_node::ptr dynamic_instantiate( t_uint32 index )
+	{
+		if ( index == 1 ) return new service_impl_t< mainmenu_node_separator >;
+		else if ( index > 1 ) return new service_impl_t< mainmenu_node_group_osd > ( index - 2 );
+		throw pfc::exception_invalid_params();
+	}
 };
 
-static menu_item_factory_t<menu_osd_control> g_menu_item_osd_control_factory;
-#endif
+static service_factory_single_t< mainmenu_commands_osd > g_mainmenu_commands_osd_factory;

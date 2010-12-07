@@ -32,7 +32,7 @@
 
  */
 
-#define VERSION "1.67"
+#define VERSION "1.68"
 
 /*
 #define GDIPLUS
@@ -41,6 +41,11 @@
 
 /*
 	change log
+
+2010-11-23 06:36 UTC - kode54
+- Menu commands, and thus keyboard shortcuts, are back. Although I don't know why the dynamic
+  commands don't appear in the UI's main menu.
+- Version is now 1.68
 
 2010-10-27 23:34 UTC - kode54
 - Fixed hide until idle constantly popping the overlay up
