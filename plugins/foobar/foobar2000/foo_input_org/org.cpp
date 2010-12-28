@@ -1,7 +1,11 @@
-#define MYVERSION "1.0"
+#define MYVERSION "1.1"
 
 /*
 	changelog
+
+2010-12-28 19:48 UTC - kode54
+- Fixed a crash on input destruction when no decoder was allocated
+- Version is now 1.1
 
 2010-12-28 18:44 UTC - kode54
 - Initial release
@@ -31,7 +35,7 @@ public:
 
 	~input_org()
 	{
-		org_decoder_destroy( m_tune );
+		if ( m_tune ) org_decoder_destroy( m_tune );
 	}
 
 	void open( service_ptr_t<file> m_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )

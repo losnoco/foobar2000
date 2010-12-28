@@ -340,7 +340,7 @@ org_decoder_t *org_decoder_create(service_ptr_t<file> & org_file, const char *re
 
 void org_decoder_destroy(org_decoder_t *decoder) {
 	// Toss the file
-	_org_file_destroy(decoder->file);
+	if ( decoder->file ) _org_file_destroy(decoder->file);
 	
 	// Free up the sample data
 	for (uint8_t i = 0; i < 16; i++) {
