@@ -1,10 +1,15 @@
-#define MYVERSION "1.1"
+#define MYVERSION "1.2"
 
 /*
 	changelog
 
+2010-12-28 21:50 UTC - kode54
+- Added an option to enable or disable looping
+- Version is now 1.2
+
 2010-12-28 19:48 UTC - kode54
 - Fixed a crash on input destruction when no decoder was allocated
+- Fixed a potential crash on invalid file or file read error
 - Version is now 1.1
 
 2010-12-28 18:44 UTC - kode54
@@ -16,6 +21,12 @@
 
 #include "liborganya/organya.h"
 #include "liborganya/decoder.h"
+
+// {E67B2244-D778-4B67-B8E0-63F851985DA5}
+static const GUID guid_cfg_loop = 
+{ 0xe67b2244, 0xd778, 0x4b67, { 0xb8, 0xe0, 0x63, 0xf8, 0x51, 0x98, 0x5d, 0xa5 } };
+
+advconfig_checkbox_factory cfg_loop("Organya - Loop indefinitely", guid_cfg_loop, advconfig_branch::guid_branch_playback, 0, false);
 
 class input_org
 {
@@ -75,7 +86,7 @@ public:
 
 		sample_buffer.set_size( 2048 );
 
-		bool dont_loop = !! ( p_flags & input_flag_no_looping );
+		bool dont_loop = !cfg_loop || !! ( p_flags & input_flag_no_looping );
 
 		m_tune->state.loop_count = dont_loop ? 1 : 0;
 	}
