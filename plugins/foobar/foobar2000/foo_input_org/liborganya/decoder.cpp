@@ -17,6 +17,21 @@
 
 const uint32_t sample_rate = 44100;
 
+static short cubicA0[1025], cubicA1[1025];
+
+static struct init_cubic
+{
+	init_cubic()
+	{
+		unsigned int t; /* 3*1024*1024*1024 is within range if it's unsigned */
+		for (t = 0; t < 1025; t++) {
+			/* int casts to pacify warnings about negating unsigned values */
+			cubicA0[t] = -(int)(  t*t*t >> 17) + (int)(  t*t >> 6) - (int)(t << 3);
+			cubicA1[t] =  (int)(3*t*t*t >> 17) - (int)(5*t*t >> 7)                 + (int)(1 << 14);
+		}
+	}
+} initializer;
+
 // Advance the decoder by one beat
 void _org_advance_beat(org_decoder_t *decoder) {
 	// Update the current beat
@@ -139,16 +154,64 @@ size_t org_decode_samples(org_decoder_t *decoder, int16_t *buffer, size_t num_sa
 			// Calculate the offset into the sample data
 			uint32_t note_start_beat = note.start;
 			uint32_t note_sample_pos = (decoder->state.current_sample - ((note_start_beat * decoder->file->header.tempo)*sample_rate)/1000);
+			uint32_t note_sample_pos_fraction = (uint32_t)(uint16_t)(note_sample_pos * freq * 65536.0);
 			note_sample_pos = (uint32_t)(note_sample_pos * freq);
 			
-			int16_t sample = 0;
+			int32_t sample = 0;
+			int32_t sample_temp[4];
 			if (is_melody && !decoder->file->instruments[j].disable_sustain) { // Loop the sample
-				note_sample_pos %=  sample_data.length;
-				sample = sample_data.wave[note_sample_pos];
+				note_sample_pos %= sample_data.length;
+				switch (decoder->state.interpolation_method)
+				{
+				default:
+					sample = sample_data.wave[note_sample_pos];
+					break;
+				case 1:
+					sample_temp[0] = sample_data.wave[note_sample_pos];
+					sample_temp[1] = sample_data.wave[(note_sample_pos + 1) % sample_data.length];
+					sample = ( int32_t ) ( ( int64_t ) ( sample_temp[1] - sample_temp[0] ) * note_sample_pos_fraction / 65536 ) + sample_temp[0];
+					break;
+				case 2:
+					sample_temp[0] = sample_data.wave[note_sample_pos];
+					sample_temp[1] = sample_data.wave[(note_sample_pos + 1) % sample_data.length];
+					sample_temp[2] = sample_data.wave[(note_sample_pos + 2) % sample_data.length];
+					sample_temp[3] = sample_data.wave[(note_sample_pos + 3) % sample_data.length];
+					sample = ( sample_temp[0] * cubicA0[note_sample_pos_fraction >> 6] +
+						sample_temp[1] * cubicA1[note_sample_pos_fraction >> 6] +
+						sample_temp[2] * cubicA1[1 + (note_sample_pos_fraction >> 6 ^ 1023)] +
+						sample_temp[3] * cubicA0[1 + (note_sample_pos_fraction >> 6 ^ 1023)] ) >> 14;
+					if ((int16_t)sample != sample) sample = 0x7FFF ^ (sample >> 31);
+					break;
+				}
 			}
 			else { // Do not loop the sample
 				if (note_sample_pos < sample_data.length) {
-					sample = sample_data.wave[note_sample_pos];
+					switch (decoder->state.interpolation_method)
+					{
+					default:
+						sample = sample_data.wave[note_sample_pos];
+						break;
+					case 1:
+						sample_temp[0] = sample_data.wave[note_sample_pos];
+						sample_temp[1] = 0;
+						if (note_sample_pos + 1 < sample_data.length) sample_temp[1] = sample_data.wave[note_sample_pos + 1];
+						sample = ( int32_t ) ( ( int64_t ) ( sample_temp[1] - sample_temp[0] ) * note_sample_pos_fraction / 65536 ) + sample_temp[0];
+						break;
+					case 2:
+						sample_temp[0] = sample_data.wave[note_sample_pos];
+						sample_temp[1] = 0;
+						sample_temp[2] = 0;
+						sample_temp[3] = 0;
+						if (note_sample_pos + 1 < sample_data.length) sample_temp[1] = sample_data.wave[note_sample_pos + 1];
+						if (note_sample_pos + 2 < sample_data.length) sample_temp[2] = sample_data.wave[note_sample_pos + 2];
+						if (note_sample_pos + 3 < sample_data.length) sample_temp[3] = sample_data.wave[note_sample_pos + 3];
+						sample = ( sample_temp[0] * cubicA0[note_sample_pos_fraction >> 6] +
+							sample_temp[1] * cubicA1[note_sample_pos_fraction >> 6] +
+							sample_temp[2] * cubicA1[1 + (note_sample_pos_fraction >> 6 ^ 1023)] +
+							sample_temp[3] * cubicA0[1 + (note_sample_pos_fraction >> 6 ^ 1023)] ) >> 14;
+						if ((int16_t)sample != sample) sample = 0x7FFF ^ (sample >> 31);
+						break;
+					}
 				}
 			}
 		

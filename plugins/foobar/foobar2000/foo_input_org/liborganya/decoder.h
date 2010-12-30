@@ -28,6 +28,8 @@ typedef struct {
 
 	uint32_t current_loop; // The current loop number
 	uint32_t loop_count; // The total number of times we will loop. This is passed in org_decoder_create. 
+
+	uint32_t interpolation_method;
 	
 	org_track_t tracks[16]; // 16 tracks for each org file
 } org_decoder_state_t;

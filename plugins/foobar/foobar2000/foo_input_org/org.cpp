@@ -1,7 +1,12 @@
-#define MYVERSION "1.2"
+#define MYVERSION "1.3"
 
 /*
 	changelog
+
+2010-12-30 15:42 UTC - kode54
+- Cleaned up advanced preferences a bit
+- Added linear and cubic interpolation methods
+- Version is now 1.3
 
 2010-12-28 21:50 UTC - kode54
 - Added an option to enable or disable looping
@@ -22,11 +27,39 @@
 #include "liborganya/organya.h"
 #include "liborganya/decoder.h"
 
+// {0F3F30D3-19E2-49BC-AE54-90A8AACDBC5F}
+static const GUID guid_cfg_parent_organya = 
+{ 0xf3f30d3, 0x19e2, 0x49bc, { 0xae, 0x54, 0x90, 0xa8, 0xaa, 0xcd, 0xbc, 0x5f } };
+
+// {9511C513-4A9B-4699-898D-CD7925F45E27}
+static const GUID guid_cfg_parent_interpolation = 
+{ 0x9511c513, 0x4a9b, 0x4699, { 0x89, 0x8d, 0xcd, 0x79, 0x25, 0xf4, 0x5e, 0x27 } };
+
 // {E67B2244-D778-4B67-B8E0-63F851985DA5}
 static const GUID guid_cfg_loop = 
 { 0xe67b2244, 0xd778, 0x4b67, { 0xb8, 0xe0, 0x63, 0xf8, 0x51, 0x98, 0x5d, 0xa5 } };
 
-advconfig_checkbox_factory cfg_loop("Organya - Loop indefinitely", guid_cfg_loop, advconfig_branch::guid_branch_playback, 0, false);
+// {E9B3CE2C-4472-4F9C-8D32-6D88CDC02738}
+static const GUID guid_cfg_interpolation_none = 
+{ 0xe9b3ce2c, 0x4472, 0x4f9c, { 0x8d, 0x32, 0x6d, 0x88, 0xcd, 0xc0, 0x27, 0x38 } };
+
+// {FAEC0E6E-4D56-40DE-812B-2D1C4D732248}
+static const GUID guid_cfg_interpolation_linear = 
+{ 0xfaec0e6e, 0x4d56, 0x40de, { 0x81, 0x2b, 0x2d, 0x1c, 0x4d, 0x73, 0x22, 0x48 } };
+
+// {695AED6C-DE2C-4840-A86B-E07423232EF0}
+static const GUID guid_cfg_interpolation_cubic = 
+{ 0x695aed6c, 0xde2c, 0x4840, { 0xa8, 0x6b, 0xe0, 0x74, 0x23, 0x23, 0x2e, 0xf0 } };
+
+advconfig_branch_factory cfg_organya_parent("Organya decoder", guid_cfg_parent_organya, advconfig_branch::guid_branch_playback, 0);
+
+advconfig_branch_factory cfg_interpolation_parent("Interpolation method", guid_cfg_parent_interpolation, guid_cfg_parent_organya, 1.0);
+
+advconfig_checkbox_factory cfg_loop("Loop indefinitely", guid_cfg_loop, guid_cfg_parent_organya, 0, false);
+
+advconfig_radio_factory cfg_interpolation_none("None", guid_cfg_interpolation_none, guid_cfg_parent_interpolation, 0, true);
+advconfig_radio_factory cfg_interpolation_linear("Linear", guid_cfg_interpolation_linear, guid_cfg_parent_interpolation, 1, false);
+advconfig_radio_factory cfg_interpolation_cubic("Cubic", guid_cfg_interpolation_cubic, guid_cfg_parent_interpolation, 2, false);
 
 class input_org
 {
@@ -88,7 +121,10 @@ public:
 
 		bool dont_loop = !cfg_loop || !! ( p_flags & input_flag_no_looping );
 
+		unsigned interpolation_method = cfg_interpolation_none ? 0 : cfg_interpolation_cubic ? 2 : cfg_interpolation_linear ? 1 : 0;
+
 		m_tune->state.loop_count = dont_loop ? 1 : 0;
+		m_tune->state.interpolation_method = interpolation_method;
 	}
 
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
