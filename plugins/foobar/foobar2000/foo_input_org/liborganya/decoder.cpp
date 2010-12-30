@@ -180,7 +180,6 @@ size_t org_decode_samples(org_decoder_t *decoder, int16_t *buffer, size_t num_sa
 						sample_temp[1] * cubicA1[note_sample_pos_fraction >> 6] +
 						sample_temp[2] * cubicA1[1 + (note_sample_pos_fraction >> 6 ^ 1023)] +
 						sample_temp[3] * cubicA0[1 + (note_sample_pos_fraction >> 6 ^ 1023)] ) >> 14;
-					if ((int16_t)sample != sample) sample = 0x7FFF ^ (sample >> 31);
 					break;
 				}
 			}
@@ -209,7 +208,6 @@ size_t org_decode_samples(org_decoder_t *decoder, int16_t *buffer, size_t num_sa
 							sample_temp[1] * cubicA1[note_sample_pos_fraction >> 6] +
 							sample_temp[2] * cubicA1[1 + (note_sample_pos_fraction >> 6 ^ 1023)] +
 							sample_temp[3] * cubicA0[1 + (note_sample_pos_fraction >> 6 ^ 1023)] ) >> 14;
-						if ((int16_t)sample != sample) sample = 0x7FFF ^ (sample >> 31);
 						break;
 					}
 				}
@@ -229,20 +227,12 @@ size_t org_decode_samples(org_decoder_t *decoder, int16_t *buffer, size_t num_sa
 			// Actually combine the sample data
 			left_wave += (sample*volume*left_pan);
 			right_wave += (sample*volume*right_pan); 
-			
-			// Clip instead of overflow.
-			if(left_wave > 0x7FFF)
-				left_wave = 0x7FFF;
-			else if(left_wave < -0x8000)
-				left_wave = -0x8000;
-			
-			if(right_wave > 0x7FFF)
-				right_wave = 0x7FFF;
-			else if(right_wave < -0x8000)
-				right_wave = -0x8000;
-			
 		}
 		
+		// Clip instead of overflow.
+		if((int16_t)left_wave  != left_wave)  left_wave  = 0x7FFF ^ (left_wave >> 31);
+		if((int16_t)right_wave != right_wave) right_wave = 0x7FFF ^ (right_wave >> 31);
+
 		buffer[2*i] = left_wave;
 		buffer[2*i + 1] = right_wave;
 		
