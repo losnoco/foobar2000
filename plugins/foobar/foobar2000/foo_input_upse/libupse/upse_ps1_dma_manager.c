@@ -27,11 +27,11 @@ void psxDma4(upse_module_instance_t *ins, u32 madr, u32 bcr, u32 chcr)
 	  bcr = (bcr >> 16) * (bcr & 0xffff) * 2;
 
 	  //printf("%08x, %08x\n",madr,bcr);
-	  SPUwriteDMAMem(ins->spu, madr, bcr);
+	  upse_ps1_spu_dma_write_memory(ins->spu, madr, bcr);
 	  break;
       case 0x01000200:		//spu to cpu transfer
 	  //printf("%08x\n",madr);
-	  SPUreadDMAMem(ins->spu, madr, (bcr >> 16) * (bcr & 0xffff) * 2);
+	  upse_ps1_spu_dma_read_memory(ins->spu, madr, (bcr >> 16) * (bcr & 0xffff) * 2);
 	  break;
     }
 }

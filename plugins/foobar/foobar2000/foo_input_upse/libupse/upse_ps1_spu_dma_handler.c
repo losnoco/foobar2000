@@ -30,7 +30,7 @@
 // READ DMA (many values)
 ////////////////////////////////////////////////////////////////////////
 
-void SPUreadDMAMem(upse_spu_state_t *spu, u32 usPSXMem, int iSize)
+void upse_ps1_spu_dma_read_memory(upse_spu_state_t *spu, u32 usPSXMem, int iSize)
 {
     int i;
 
@@ -56,7 +56,7 @@ void SPUreadDMAMem(upse_spu_state_t *spu, u32 usPSXMem, int iSize)
 // WRITE DMA (many values)
 ////////////////////////////////////////////////////////////////////////
 
-void SPUwriteDMAMem(upse_spu_state_t *spu, u32 usPSXMem, int iSize)
+void upse_ps1_spu_dma_write_memory(upse_spu_state_t *spu, u32 usPSXMem, int iSize)
 {
     int i;
 

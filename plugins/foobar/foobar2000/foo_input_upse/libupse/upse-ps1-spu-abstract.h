@@ -32,10 +32,10 @@
 
 
 void SPUirq(upse_module_instance_t *ins);
-u16 SPUreadRegister(upse_spu_state_t *spu, u32 reg);
-void SPUwriteRegister(upse_spu_state_t *spu, u32 reg, u16 val);
+u16 upse_ps1_spu_read_register(upse_spu_state_t *spu, u32 reg);
+void upse_ps1_spu_write_register(upse_spu_state_t *spu, u32 reg, u16 val);
 int upse_ps1_spu_render(upse_spu_state_t *spu, u32 cycle);
-void SPUwriteDMAMem(upse_spu_state_t *spu, u32 usPSXMem, int iSize);
-void SPUreadDMAMem(upse_spu_state_t *spu, u32 usPSXMem, int iSize);
+void upse_ps1_spu_dma_read_memory(upse_spu_state_t *spu, u32 usPSXMem, int iSize);
+void upse_ps1_spu_dma_write_memory(upse_spu_state_t *spu, u32 usPSXMem, int iSize);
 
 #endif

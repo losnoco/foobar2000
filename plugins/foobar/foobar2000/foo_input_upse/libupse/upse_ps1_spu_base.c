@@ -398,7 +398,7 @@ int upse_ps1_spu_render(upse_spu_state_t *spu, u32 cycles)
 						       (spu->pSpuIrq > spu->s_chan[ch].pLoop - 16 && spu->pSpuIrq <= spu->s_chan[ch].pLoop)))
 			    {
 				spu->s_chan[ch].iIrqDone = 1;	// -> debug flag
-				SPUirq(spu->ins);
+				upse_ps1_spu_irq_callback(spu->ins);
 			    }
 			}
 
@@ -470,7 +470,7 @@ int upse_ps1_spu_render(upse_spu_state_t *spu, u32 cycles)
 		    fa = vr;
 		}
 
-		spu->s_chan[ch].sval = (MixADSR(spu, ch) * fa) >> 15;
+		spu->s_chan[ch].sval = (MixADSR(spu, ch) * fa) >> 14;
 		if (spu->s_chan[ch].bFMod == 2)	// fmod freq channel
 		{
                     int srate;

@@ -32,16 +32,16 @@ typedef struct
     u32 psxNextCounter, psxNextsCounter, last;
 } upse_psx_counter_state_t;
 
-void psxRcntInit(upse_module_instance_t *ins);
-void psxRcntUpdate(upse_module_instance_t *ins);
-void psxRcntWcount(upse_module_instance_t *ins, u32 index, u32 value);
-void psxRcntWmode(upse_module_instance_t *ins, u32 index, u32 value);
-void psxRcntWtarget(upse_module_instance_t *ins, u32 index, u32 value);
-u32 psxRcntRcount(upse_module_instance_t *ins, u32 index);
+void upse_ps1_counter_init(upse_module_instance_t *ins);
+void upse_ps1_counter_update(upse_module_instance_t *ins);
+void upse_ps1_counter_set_count(upse_module_instance_t *ins, u32 index, u32 value);
+void upse_ps1_counter_set_mode(upse_module_instance_t *ins, u32 index, u32 value);
+void upse_ps1_counter_set_target(upse_module_instance_t *ins, u32 index, u32 value);
+u32 upse_ps1_counter_get_count(upse_module_instance_t *ins, u32 index);
 
-void psxUpdateVSyncRate(upse_module_instance_t *ins);
+void upse_ps1_set_vsync(upse_module_instance_t *ins);
 
-int CounterSPURun(upse_module_instance_t *ins);
-void CounterDeadLoopSkip(upse_module_instance_t *ins);
+int upse_ps1_counter_run(upse_module_instance_t *ins);
+void upse_ps1_counter_sleep(upse_module_instance_t *ins);
 
 #endif /* __PSXCOUNTERS_H__ */

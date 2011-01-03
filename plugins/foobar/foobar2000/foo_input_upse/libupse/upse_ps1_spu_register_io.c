@@ -29,7 +29,7 @@
 // WRITE REGISTERS: called by main emu
 ////////////////////////////////////////////////////////////////////////
 
-void SPUwriteRegister(upse_spu_state_t *spu, u32 reg, u16 val)
+void upse_ps1_spu_write_register(upse_spu_state_t *spu, u32 reg, u16 val)
 {
     const u32 r = reg & 0xfff;
     spu->regArea[(r - 0xc00) >> 1] = val;
@@ -332,7 +332,7 @@ void SPUwriteRegister(upse_spu_state_t *spu, u32 reg, u16 val)
 // READ REGISTER: called by main emu
 ////////////////////////////////////////////////////////////////////////
 
-u16 SPUreadRegister(upse_spu_state_t *spu, u32 reg)
+u16 upse_ps1_spu_read_register(upse_spu_state_t *spu, u32 reg)
 {
     const u32 r = reg & 0xfff;
 

@@ -9,7 +9,7 @@ void upse_ps1_spu_close(upse_spu_state_t *spu);
 void upse_ps1_spu_finalize(upse_spu_state_t *spu);
 
 // External, called by SPU code.
-void SPUirq(upse_module_instance_t *ins);
+void upse_ps1_spu_irq_callback(upse_module_instance_t *ins);
 void upse_ps1_spu_setvolume(upse_spu_state_t *spu, int volume);
 void upse_ps1_spu_stop(upse_module_instance_t *ins);
 

@@ -55,7 +55,7 @@ static void delayRead(upse_module_instance_t *ins, int reg, u32 bpc)
 
     ins->cpustate.pc = bpc;
 
-    psxBranchTest(ins);
+    upse_ps1_branch_test(ins);
 
     ins->cpustate.GPR.r[reg] = rold;
     execI(ins);
@@ -73,7 +73,7 @@ static void delayWrite(upse_module_instance_t *ins, int reg, u32 bpc)
     ins->cpustate.branch = 0;
     ins->cpustate.pc = bpc;
 
-    psxBranchTest(ins);
+    upse_ps1_branch_test(ins);
 }
 
 static void delayReadWrite(upse_module_instance_t *ins, int reg, u32 bpc)
@@ -85,7 +85,7 @@ static void delayReadWrite(upse_module_instance_t *ins, int reg, u32 bpc)
     ins->cpustate.branch = 0;
     ins->cpustate.pc = bpc;
 
-    psxBranchTest(ins);
+    upse_ps1_branch_test(ins);
 }
 
 // this defines shall be used with the tmp 
@@ -389,7 +389,7 @@ static void psxDelayTest(upse_module_instance_t *ins, u32 reg, u32 bpc)
     ins->cpustate.branch = 0;
     ins->cpustate.pc = bpc;
 
-    psxBranchTest(ins);
+    upse_ps1_branch_test(ins);
 }
 
 static void psxNULL(upse_module_instance_t *ins);
@@ -434,12 +434,12 @@ static INLINE void doBranch(upse_module_instance_t *ins, u32 tar)
     psxBSC[ins->cpustate.code >> 26] (ins);
 
     if ((ins->cpustate.pc - 8) == ins->cpustate.branchPC && !(ins->cpustate.code >> 26))
-        CounterDeadLoopSkip(ins);
+        upse_ps1_counter_sleep(ins);
 
     ins->cpustate.branch = 0;
     ins->cpustate.pc = ins->cpustate.branchPC;
 
-    psxBranchTest(ins);
+    upse_ps1_branch_test(ins);
 }
 
 /*********************************************************
@@ -718,7 +718,7 @@ static void psxBREAK(upse_module_instance_t *ins)
 static void psxSYSCALL(upse_module_instance_t *ins)
 {
     ins->cpustate.pc -= 4;
-    psxException(ins, 0x20, ins->cpustate.branch);
+    upse_ps1_exception(ins, 0x20, ins->cpustate.branch);
 }
 
 static void psxRFE(upse_module_instance_t *ins)
@@ -974,7 +974,7 @@ static INLINE void MTC0(upse_module_instance_t *ins, int reg, u32 val)
 	  // tell me if it works ok or not (linuzappz)
 	  if (ins->cpustate.CP0.n.Cause & ins->cpustate.CP0.n.Status & 0x0300 && ins->cpustate.CP0.n.Status & 0x1)
 	  {
-	      psxException(ins, ins->cpustate.CP0.n.Cause, 0);
+	      upse_ps1_exception(ins, ins->cpustate.CP0.n.Cause, 0);
 	  }
 	  break;
 
@@ -1073,9 +1073,9 @@ void upse_r3000_cpu_execute(upse_module_instance_t *ins)
 {
     for (;;)
     {
-	if (!CounterSPURun(ins))
+	if (!upse_ps1_counter_run(ins))
 	{
-	    psxShutdown(ins);
+	    upse_ps1_shutdown(ins);
 	    return;
 	}
 	upse_ps1_spu_finalize(ins->spu);
@@ -1089,9 +1089,9 @@ int upse_r3000_cpu_execute_render(upse_module_instance_t *ins, s16 **s)
     {
         int r;
 
-        if (!CounterSPURun(ins))
+        if (!upse_ps1_counter_run(ins))
         {
-            psxShutdown(ins);
+            upse_ps1_shutdown(ins);
             return 0;
         }
 

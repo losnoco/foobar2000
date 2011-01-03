@@ -80,7 +80,7 @@ void upse_ps1_memory_write_8(upse_module_instance_t *ins, u32 mem, u8 value);
 void upse_ps1_memory_write_16(upse_module_instance_t *ins, u32 mem, u16 value);
 void upse_ps1_memory_write_32(upse_module_instance_t *ins, u32 mem, u32 value);
 
-void LoadPSXMem(upse_module_instance_t *ins, u32 address, s32 length, unsigned char *data);
-void ClearPSXMem(upse_module_instance_t *ins, u32 address, s32 length);
+void upse_ps1_memory_load(upse_module_instance_t *ins, u32 address, s32 length, unsigned char *data);
+void upse_ps1_memory_clear(upse_module_instance_t *ins, u32 address, s32 length);
 
 #endif /* __PSXMEMORY_H__ */

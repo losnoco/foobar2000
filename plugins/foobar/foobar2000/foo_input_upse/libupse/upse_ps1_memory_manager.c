@@ -22,8 +22,18 @@
 
 #include "upse-internal.h"
 
-void LoadPSXMem(upse_module_instance_t *ins, u32 address, s32 length, unsigned char *data)
+void upse_ps1_memory_load(upse_module_instance_t *ins, u32 address, s32 length, unsigned char *data)
 {
+    /* track lowest and highest address size for debugging functions. */
+    if (!ins->lowest_addr || address < ins->lowest_addr)
+        ins->lowest_addr = address;
+
+    if (!ins->highest_addr || address > ins->highest_addr)
+    {
+        ins->highest_addr = address;
+        ins->highest_addr_size = length;
+    }
+
     while (length > 0)
     {
 	if (address & 65535)
@@ -48,7 +58,7 @@ void LoadPSXMem(upse_module_instance_t *ins, u32 address, s32 length, unsigned c
     }
 }
 
-void ClearPSXMem(upse_module_instance_t *ins, u32 address, s32 length)
+void upse_ps1_memory_clear(upse_module_instance_t *ins, u32 address, s32 length)
 {
     while (length > 0)
     {

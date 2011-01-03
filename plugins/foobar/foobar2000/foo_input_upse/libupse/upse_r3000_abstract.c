@@ -23,7 +23,7 @@
 
 #include "upse-internal.h"
 
-int psxInit(upse_module_instance_t *ins)
+int upse_ps1_init(upse_module_instance_t *ins)
 {
     int ret;
 
@@ -35,7 +35,7 @@ int psxInit(upse_module_instance_t *ins)
     return ret;
 }
 
-void psxReset(upse_module_instance_t *ins, upse_psx_revision_t rev)
+void upse_ps1_reset(upse_module_instance_t *ins, upse_psx_revision_t rev)
 {
     upse_r3000_cpu_reset(ins);
     upse_ps1_memory_reset(ins);
@@ -62,10 +62,10 @@ void psxReset(upse_module_instance_t *ins, upse_psx_revision_t rev)
 
     /* start up the bios */
     if (upse_has_custom_bios())
-        psxExecuteBios(ins);
+        upse_ps1_execute_bios(ins);
 }
 
-void psxShutdown(upse_module_instance_t *ins)
+void upse_ps1_shutdown(upse_module_instance_t *ins)
 {
     upse_ps1_memory_shutdown(ins);
     upse_ps1_bios_shutdown(ins);
@@ -76,7 +76,7 @@ void psxShutdown(upse_module_instance_t *ins)
     ins->spu = NULL;
 }
 
-void psxException(upse_module_instance_t *ins, u32 code, u32 bd)
+void upse_ps1_exception(upse_module_instance_t *ins, u32 code, u32 bd)
 {
     _DEBUG("exception, code %d bd %d.", code, bd);
 
@@ -108,27 +108,27 @@ void psxException(upse_module_instance_t *ins, u32 code, u32 bd)
         upse_ps1_bios_exception(ins);
 }
 
-void psxBranchTest(upse_module_instance_t *ins)
+void upse_ps1_branch_test(upse_module_instance_t *ins)
 {
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
 
     _ENTER;
 
     if ((ins->cpustate.cycle - ctrstate->psxNextsCounter) >= ctrstate->psxNextCounter)
-	psxRcntUpdate(ins);
+	upse_ps1_counter_update(ins);
 
     if (psxHu32(ins, 0x1070) & psxHu32(ins, 0x1074))
     {
 	if ((ins->cpustate.CP0.n.Status & 0x401) == 0x401)
 	{
-	    psxException(ins, 0x400, 0);
+	    upse_ps1_exception(ins, 0x400, 0);
 	}
     }
 
     _LEAVE;
 }
 
-void psxExecuteBios(upse_module_instance_t *ins)
+void upse_ps1_execute_bios(upse_module_instance_t *ins)
 {
     while (ins->cpustate.pc != 0x80030000)
         upse_r3000_cpu_execute_block(ins);

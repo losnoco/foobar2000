@@ -41,7 +41,7 @@
 #include <sys/types.h>
 #include "upse-types.h"
 
-#ifndef WIN32_MSC
+#ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 

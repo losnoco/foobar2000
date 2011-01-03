@@ -60,12 +60,18 @@ typedef struct {
 
     char psxM[0x200000];
     char psxP[0x10000];
-    char psxR[0x10000];
-    char psxH[0x80000];
+    char psxR[0x80000];
+    char psxH[0x10000];
     char *upse_ps1_memory_LUT[0x10000];
     int writeok;
 
     upse_r3000_cpu_registers_t cpustate;
+
+    u32 lowest_addr;
+    u32 highest_addr;
+    u32 highest_addr_size;
+
+    void (*spu_irq_callback)(void);
 } upse_module_instance_t;
 
 typedef void (*upse_eventloop_func_t)(upse_module_instance_t *ins);

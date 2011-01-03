@@ -86,7 +86,7 @@ int MixADSR(upse_spu_state_t *spu, int ch)		// MIX ADSR
 	    spu->s_chan[ch].bNoise = 0;
 	}
 
-	spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 16;
+	spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 17;
 	return spu->s_chan[ch].ADSRX.lVolume;
     }
     else			// not stopped yet?
@@ -111,7 +111,7 @@ int MixADSR(upse_spu_state_t *spu, int ch)		// MIX ADSR
 		spu->s_chan[ch].ADSRX.State = 1;
 	    }
 
-	    spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 16;
+	    spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 17;
 	    return spu->s_chan[ch].ADSRX.lVolume;
 	}
 	//--------------------------------------------------//
@@ -126,7 +126,7 @@ int MixADSR(upse_spu_state_t *spu, int ch)		// MIX ADSR
 		spu->s_chan[ch].ADSRX.State = 2;
 	    }
 
-	    spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 16;
+	    spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 17;
 	    return spu->s_chan[ch].ADSRX.lVolume;
 	}
 	//--------------------------------------------------//
@@ -163,7 +163,7 @@ int MixADSR(upse_spu_state_t *spu, int ch)		// MIX ADSR
 		    spu->s_chan[ch].ADSRX.EnvelopeVol = 0;
 		}
 	    }
-	    spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 16;
+	    spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 17;
 	    return spu->s_chan[ch].ADSRX.lVolume;
 	}
     }

@@ -72,12 +72,12 @@ typedef enum
 
 #define _SetLink(x)     ins->cpustate.GPR.r[x] = _PC_ + 4;	// Sets the return address in the link register
 
-int psxInit(upse_module_instance_t *ins);
-void psxReset(upse_module_instance_t *ins, upse_psx_revision_t rev);
-void psxShutdown(upse_module_instance_t *ins);
-void psxException(upse_module_instance_t *ins, u32 code, u32 bd);
-void psxBranchTest(upse_module_instance_t *ins);
-void psxExecuteBios(upse_module_instance_t *ins);
+int upse_ps1_init(upse_module_instance_t *ins);
+void upse_ps1_reset(upse_module_instance_t *ins, upse_psx_revision_t rev);
+void upse_ps1_shutdown(upse_module_instance_t *ins);
+void upse_ps1_exception(upse_module_instance_t *ins, u32 code, u32 bd);
+void upse_ps1_branch_test(upse_module_instance_t *ins);
+void upse_ps1_execute_bios(upse_module_instance_t *ins);
 
 int upse_r3000_cpu_init(upse_module_instance_t *ins);
 void upse_r3000_cpu_reset(upse_module_instance_t *ins);
@@ -86,5 +86,7 @@ int upse_r3000_cpu_execute_render(upse_module_instance_t *ins, s16 **);
 void upse_r3000_cpu_execute_block(upse_module_instance_t *ins);
 void upse_r3000_cpu_clear(upse_module_instance_t *ins, u32 Addr, u32 Size);
 void upse_r3000_cpu_shutdown(upse_module_instance_t *ins);
+
+int upse_r3000_disassemble_insn(char *buf, int bufsize, u32 pc, u32 insn);
 
 #endif /* __R3000A_H__ */

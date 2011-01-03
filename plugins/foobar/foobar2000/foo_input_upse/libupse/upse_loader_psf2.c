@@ -209,7 +209,7 @@ upse_parse_psf2_elf(upse_module_instance_t *ins, u8 *start, u32 len)
             break;
 
         case 1:
-            LoadPSXMem(ins, loadAddr + addr, size, start + offset);
+            upse_ps1_memory_load(ins, loadAddr + addr, size, start + offset);
             totallen += size;
             break;
 
@@ -218,7 +218,7 @@ upse_parse_psf2_elf(upse_module_instance_t *ins, u8 *start, u32 len)
             break;
 
         case 8:
-            ClearPSXMem(ins, loadAddr + addr, size);
+            upse_ps1_memory_clear(ins, loadAddr + addr, size);
             totallen += size;
             break;
 
@@ -368,8 +368,8 @@ upse_load_psf2(void *fp, const char *path, const upse_iofuncs_t *iofuncs)
     if (buf == NULL)
         return NULL;
 
-    psxInit(ins);
-    psxReset(ins, UPSE_PSX_REV_PS2_IOP);
+    upse_ps1_init(ins);
+    upse_ps1_reset(ins, UPSE_PSX_REV_PS2_IOP);
 
     initialPC = upse_parse_psf2_elf(&ret->instance, buf, buflen);
     initialSP = 0x801ffff0;

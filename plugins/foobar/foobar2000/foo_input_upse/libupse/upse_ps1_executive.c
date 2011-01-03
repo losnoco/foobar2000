@@ -32,7 +32,7 @@ static void upse_ps1_executive_dummy(upse_module_instance_t *ins)
 {
     ins->cpustate.pc = ins->cpustate.GPR.n.ra;
 
-    psxBranchTest(ins);
+    upse_ps1_branch_test(ins);
 }
 
 static void upse_ps1_executive_run_bios_A0(upse_module_instance_t *ins)
@@ -41,7 +41,7 @@ static void upse_ps1_executive_run_bios_A0(upse_module_instance_t *ins)
 
     _CALL(ins, biosA0, biosA0n);
 
-    psxBranchTest(ins);
+    upse_ps1_branch_test(ins);
 }
 
 static void upse_ps1_executive_run_bios_B0(upse_module_instance_t *ins)
@@ -50,7 +50,7 @@ static void upse_ps1_executive_run_bios_B0(upse_module_instance_t *ins)
 
     _CALL(ins, biosB0, biosB0n);
 
-    psxBranchTest(ins);
+    upse_ps1_branch_test(ins);
 }
 
 static void upse_ps1_executive_run_bios_C0(upse_module_instance_t *ins)
@@ -59,7 +59,7 @@ static void upse_ps1_executive_run_bios_C0(upse_module_instance_t *ins)
 
     _CALL(ins, biosC0, biosC0n);
 
-    psxBranchTest(ins);
+    upse_ps1_branch_test(ins);
 }
 
 static void upse_ps1_executive_bootstrap(upse_module_instance_t *ins)

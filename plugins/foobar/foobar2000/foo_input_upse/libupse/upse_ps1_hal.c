@@ -32,7 +32,7 @@
 void upse_ps1_hal_reset(upse_module_instance_t *ins)
 {
     memset(ins->psxH, 0, 0x10000);
-    psxRcntInit(ins);
+    upse_ps1_counter_init(ins);
 }
 
 u8 upse_ps1_hal_read_8(upse_module_instance_t *ins, u32 add)
@@ -56,7 +56,7 @@ u16 upse_ps1_hal_read_16(upse_module_instance_t *ins, u32 add)
     switch (add)
     {
       case 0x1f801100:
-	  hard = psxRcntRcount(ins, 0);
+	  hard = upse_ps1_counter_get_count(ins, 0);
 	  return hard;
       case 0x1f801104:
 	  hard = ctrstate->psxCounters[0].mode;
@@ -65,7 +65,7 @@ u16 upse_ps1_hal_read_16(upse_module_instance_t *ins, u32 add)
 	  hard = ctrstate->psxCounters[0].target;
 	  return hard;
       case 0x1f801110:
-	  hard = psxRcntRcount(ins, 1);
+	  hard = upse_ps1_counter_get_count(ins, 1);
 	  return hard;
       case 0x1f801114:
 	  hard = ctrstate->psxCounters[1].mode;
@@ -74,7 +74,7 @@ u16 upse_ps1_hal_read_16(upse_module_instance_t *ins, u32 add)
 	  hard = ctrstate->psxCounters[1].target;
 	  return hard;
       case 0x1f801120:
-	  hard = psxRcntRcount(ins, 2);
+	  hard = upse_ps1_counter_get_count(ins, 2);
 	  return hard;
       case 0x1f801124:
 	  hard = ctrstate->psxCounters[2].mode;
@@ -97,7 +97,7 @@ u16 upse_ps1_hal_read_16(upse_module_instance_t *ins, u32 add)
       default:
 	  if (add >= 0x1f801c00 && add < 0x1f801e00)
 	  {
-	      hard = SPUreadRegister(ins->spu, add);
+	      hard = upse_ps1_spu_read_register(ins->spu, add);
 	  }
 	  else
 	  {
@@ -121,7 +121,7 @@ u32 upse_ps1_hal_read_32(upse_module_instance_t *ins, u32 add)
           return hard;
 	  // time for rootcounters :)
       case 0x1f801100:
-	  hard = psxRcntRcount(ins, 0);
+	  hard = upse_ps1_counter_get_count(ins, 0);
 	  return hard;
       case 0x1f801104:
 	  hard = ctrstate->psxCounters[0].mode;
@@ -130,7 +130,7 @@ u32 upse_ps1_hal_read_32(upse_module_instance_t *ins, u32 add)
 	  hard = ctrstate->psxCounters[0].target;
 	  return hard;
       case 0x1f801110:
-	  hard = psxRcntRcount(ins, 1);
+	  hard = upse_ps1_counter_get_count(ins, 1);
 	  return hard;
       case 0x1f801114:
 	  hard = ctrstate->psxCounters[1].mode;
@@ -139,7 +139,7 @@ u32 upse_ps1_hal_read_32(upse_module_instance_t *ins, u32 add)
 	  hard = ctrstate->psxCounters[1].target;
 	  return hard;
       case 0x1f801120:
-	  hard = psxRcntRcount(ins, 2);
+	  hard = upse_ps1_counter_get_count(ins, 2);
 	  return hard;
       case 0x1f801124:
 	  hard = ctrstate->psxCounters[2].mode;
@@ -186,33 +186,33 @@ void upse_ps1_hal_write_16(upse_module_instance_t *ins, u32 add, u16 value)
     switch (add)
     {
       case 0x1f801100:
-	  psxRcntWcount(ins, 0, value);
+	  upse_ps1_counter_set_count(ins, 0, value);
 	  return;
       case 0x1f801104:
-	  psxRcntWmode(ins, 0, value);
+	  upse_ps1_counter_set_mode(ins, 0, value);
 	  return;
       case 0x1f801108:
-	  psxRcntWtarget(ins, 0, value);
+	  upse_ps1_counter_set_target(ins, 0, value);
 	  return;
 
       case 0x1f801110:
-	  psxRcntWcount(ins, 1, value);
+	  upse_ps1_counter_set_count(ins, 1, value);
 	  return;
       case 0x1f801114:
-	  psxRcntWmode(ins, 1, value);
+	  upse_ps1_counter_set_mode(ins, 1, value);
 	  return;
       case 0x1f801118:
-	  psxRcntWtarget(ins, 1, value);
+	  upse_ps1_counter_set_target(ins, 1, value);
 	  return;
 
       case 0x1f801120:
-	  psxRcntWcount(ins, 2, value);
+	  upse_ps1_counter_set_count(ins, 2, value);
 	  return;
       case 0x1f801124:
-	  psxRcntWmode(ins, 2, value);
+	  upse_ps1_counter_set_mode(ins, 2, value);
 	  return;
       case 0x1f801128:
-	  psxRcntWtarget(ins, 2, value);
+	  upse_ps1_counter_set_target(ins, 2, value);
 	  return;
 
       case 0x1f801070:
@@ -228,7 +228,7 @@ void upse_ps1_hal_write_16(upse_module_instance_t *ins, u32 add, u16 value)
       default:
 	  if (add >= 0x1f801c00 && add < 0x1f801e00)
 	  {
-	      SPUwriteRegister(ins->spu, add, value);
+	      upse_ps1_spu_write_register(ins->spu, add, value);
 	      return;
 	  }
 
@@ -269,34 +269,33 @@ void upse_ps1_hal_write_32(upse_module_instance_t *ins, u32 add, u32 value)
       }
 
       case 0x1f801100:
-	  psxRcntWcount(ins, 0, value & 0xffff);
+	  upse_ps1_counter_set_count(ins, 0, value);
 	  return;
       case 0x1f801104:
-	  psxRcntWmode(ins, 0, value);
+	  upse_ps1_counter_set_mode(ins, 0, value);
 	  return;
       case 0x1f801108:
-	  psxRcntWtarget(ins, 0, value & 0xffff);
+	  upse_ps1_counter_set_target(ins, 0, value);
 	  return;
-	  //  HW_DMA_ICR&= (~value)&0xff000000;
 
       case 0x1f801110:
-	  psxRcntWcount(ins, 1, value & 0xffff);
+	  upse_ps1_counter_set_count(ins, 1, value);
 	  return;
       case 0x1f801114:
-	  psxRcntWmode(ins, 1, value);
+	  upse_ps1_counter_set_mode(ins, 1, value);
 	  return;
       case 0x1f801118:
-	  psxRcntWtarget(ins, 1, value & 0xffff);
+	  upse_ps1_counter_set_target(ins, 1, value);
 	  return;
 
       case 0x1f801120:
-	  psxRcntWcount(ins, 2, value & 0xffff);
+	  upse_ps1_counter_set_count(ins, 2, value);
 	  return;
       case 0x1f801124:
-	  psxRcntWmode(ins, 2, value);
+	  upse_ps1_counter_set_mode(ins, 2, value);
 	  return;
       case 0x1f801128:
-	  psxRcntWtarget(ins, 2, value & 0xffff);
+	  upse_ps1_counter_set_target(ins, 2, value);
 	  return;
 
       case 0x1f8010c0:
@@ -329,7 +328,10 @@ void upse_ps1_hal_write_32(upse_module_instance_t *ins, u32 add, u32 value)
     psxHu32(ins, add) = BFLIP32(value);
 }
 
-void SPUirq(upse_module_instance_t *ins)
+void upse_ps1_spu_irq_callback(upse_module_instance_t *ins)
 {
+    if (ins->spu_irq_callback)
+        return ins->spu_irq_callback();
+
     psxHu32(ins, 0x1070) |= BFLIP32(0x200);
 }

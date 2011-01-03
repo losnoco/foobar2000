@@ -151,7 +151,7 @@ _upse_load_psf(upse_module_instance_t *ins, void *fp, const char *path, int leve
     /* we are loading a psflib */
     if (level && !type)
     {
-        LoadPSXMem(ins, BFLIP32(tmpHead.t_addr), BFLIP32(tmpHead.t_size), out + 0x800);
+        upse_ps1_memory_load(ins, BFLIP32(tmpHead.t_addr), BFLIP32(tmpHead.t_size), out + 0x800);
         free(in);
         free(out);
 
@@ -181,7 +181,7 @@ _upse_load_psf(upse_module_instance_t *ins, void *fp, const char *path, int leve
         int i;
         u32 ba[3]; /* table holding base addresses for restore after loading aux libs */
 
-        LoadPSXMem(ins, BFLIP32(tmpHead.t_addr), BFLIP32(tmpHead.t_size), out + 0x800);
+        upse_ps1_memory_load(ins, BFLIP32(tmpHead.t_addr), BFLIP32(tmpHead.t_size), out + 0x800);
         free(in);
         free(out);
 
@@ -281,12 +281,12 @@ upse_load_psf(void *fp, const char *path, const upse_iofuncs_t * iofuncs)
     ret = (upse_module_t *) calloc(sizeof(upse_module_t), 1);
     ins = &ret->instance;
 
-    psxInit(ins);
-    psxReset(ins, UPSE_PSX_REV_PS1);
+    upse_ps1_init(ins);
+    upse_ps1_reset(ins, UPSE_PSX_REV_PS1);
 
     if (!(psf = _upse_load_psf(ins, fp, path, 0, 0, iofuncs)))
     {
-	psxShutdown(ins);
+	upse_ps1_shutdown(ins);
         free(ret);
 	return NULL;
     }

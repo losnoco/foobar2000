@@ -154,7 +154,3 @@ void NoiseOn(upse_spu_state_t *spu, int start, int end, u16 val);
 void SetVolumeLR(upse_spu_state_t *spu, int right, u8 ch, s16 vol);
 
 void SetPitch(upse_spu_state_t *spu, int ch, u16 val);
-
-void SPUwriteRegister(upse_spu_state_t *spu, u32 reg, u16 val);
-
-

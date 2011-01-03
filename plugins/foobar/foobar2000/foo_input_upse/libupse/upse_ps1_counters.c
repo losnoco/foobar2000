@@ -21,7 +21,7 @@
 
 #include "upse-internal.h"
 
-static void psxRcntUpd(upse_module_instance_t *ins, u32 index)
+static void upse_ps1_counter_update_fast(upse_module_instance_t *ins, u32 index)
 {
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
 
@@ -41,12 +41,12 @@ static void psxRcntUpd(upse_module_instance_t *ins, u32 index)
 	ctrstate->psxCounters[index].Cycle = 0xffffffff;
 }
 
-static void psxRcntReset(upse_module_instance_t *ins, u32 index)
+static void upse_ps1_counter_reset(upse_module_instance_t *ins, u32 index)
 {
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
 
     ctrstate->psxCounters[index].count = 0;
-    psxRcntUpd(ins, index);
+    upse_ps1_counter_update_fast(ins, index);
 
     psxHu32(ins, 0x1070) |= BFLIP32(ctrstate->psxCounters[index].interrupt);
     if (!(ctrstate->psxCounters[index].mode & 0x40))
@@ -55,7 +55,7 @@ static void psxRcntReset(upse_module_instance_t *ins, u32 index)
     }
 }
 
-static void psxRcntSet(upse_module_instance_t *ins)
+static void upse_ps1_counter_set(upse_module_instance_t *ins)
 {
     int i;
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
@@ -85,7 +85,7 @@ static void psxRcntSet(upse_module_instance_t *ins)
     }
 }
 
-void psxRcntInit(upse_module_instance_t *ins)
+void upse_ps1_counter_init(upse_module_instance_t *ins)
 {
     upse_psx_counter_state_t *ctrstate;
 
@@ -104,17 +104,17 @@ void psxRcntInit(upse_module_instance_t *ins)
 
     ins->ctrstate = ctrstate;
 
-    psxUpdateVSyncRate(ins);
+    upse_ps1_set_vsync(ins);
 
-    psxRcntUpd(ins, 0);
-    psxRcntUpd(ins, 1);
-    psxRcntUpd(ins, 2);
-    psxRcntUpd(ins, 3);
-    psxRcntSet(ins);
+    upse_ps1_counter_update_fast(ins, 0);
+    upse_ps1_counter_update_fast(ins, 1);
+    upse_ps1_counter_update_fast(ins, 2);
+    upse_ps1_counter_update_fast(ins, 3);
+    upse_ps1_counter_set(ins);
     ctrstate->last = 0;
 }
 
-void CounterDeadLoopSkip(upse_module_instance_t *ins)
+void upse_ps1_counter_sleep(upse_module_instance_t *ins)
 {
     s32 min, x, lmin;
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
@@ -136,7 +136,7 @@ void CounterDeadLoopSkip(upse_module_instance_t *ins)
         ins->cpustate.cycle += lmin;
 }
 
-int CounterSPURun(upse_module_instance_t *ins)
+int upse_ps1_counter_run(upse_module_instance_t *ins)
 {
     u32 cycles;
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
@@ -158,50 +158,50 @@ int CounterSPURun(upse_module_instance_t *ins)
     return (1);
 }
 
-void psxUpdateVSyncRate(upse_module_instance_t *ins)
+void upse_ps1_set_vsync(upse_module_instance_t *ins)
 {
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
 
     ctrstate->psxCounters[3].rate = (PSXCLK / 60);
 }
 
-void psxRcntUpdate(upse_module_instance_t *ins)
+void upse_ps1_counter_update(upse_module_instance_t *ins)
 {
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
 
     if ((ins->cpustate.cycle - ctrstate->psxCounters[3].sCycle) >= ctrstate->psxCounters[3].Cycle)
     {
-	psxRcntUpd(ins, 3);
+	upse_ps1_counter_update_fast(ins, 3);
 	psxHu32(ins, 0x1070) |= BFLIP32(1);
     }
     if ((ins->cpustate.cycle - ctrstate->psxCounters[0].sCycle) >= ctrstate->psxCounters[0].Cycle)
     {
-	psxRcntReset(ins, 0);
+	upse_ps1_counter_reset(ins, 0);
     }
 
     if ((ins->cpustate.cycle - ctrstate->psxCounters[1].sCycle) >= ctrstate->psxCounters[1].Cycle)
     {
-	psxRcntReset(ins, 1);
+	upse_ps1_counter_reset(ins, 1);
     }
 
     if ((ins->cpustate.cycle - ctrstate->psxCounters[2].sCycle) >= ctrstate->psxCounters[2].Cycle)
     {
-	psxRcntReset(ins, 2);
+	upse_ps1_counter_reset(ins, 2);
     }
 
-    psxRcntSet(ins);
+    upse_ps1_counter_set(ins);
 }
 
-void psxRcntWcount(upse_module_instance_t *ins, u32 index, u32 value)
+void upse_ps1_counter_set_count(upse_module_instance_t *ins, u32 index, u32 value)
 {
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
 
     ctrstate->psxCounters[index].count = value;
-    psxRcntUpd(ins, index);
-    psxRcntSet(ins);
+    upse_ps1_counter_update_fast(ins, index);
+    upse_ps1_counter_set(ins);
 }
 
-void psxRcntWmode(upse_module_instance_t *ins, u32 index, u32 value)
+void upse_ps1_counter_set_mode(upse_module_instance_t *ins, u32 index, u32 value)
 {
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
 
@@ -245,20 +245,20 @@ void psxRcntWmode(upse_module_instance_t *ins, u32 index, u32 value)
     }
 
     // Need to set a rate and target
-    psxRcntUpd(ins, index);
-    psxRcntSet(ins);
+    upse_ps1_counter_update_fast(ins, index);
+    upse_ps1_counter_set(ins);
 }
 
-void psxRcntWtarget(upse_module_instance_t *ins, u32 index, u32 value)
+void upse_ps1_counter_set_target(upse_module_instance_t *ins, u32 index, u32 value)
 {
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
 
     ctrstate->psxCounters[index].target = value;
-    psxRcntUpd(ins, index);
-    psxRcntSet(ins);
+    upse_ps1_counter_update_fast(ins, index);
+    upse_ps1_counter_set(ins);
 }
 
-u32 psxRcntRcount(upse_module_instance_t *ins, u32 index)
+u32 upse_ps1_counter_get_count(upse_module_instance_t *ins, u32 index)
 {
     u32 ret;
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
