@@ -116,6 +116,7 @@ _upse_load_psf(upse_module_instance_t *ins, void *fp, const char *path, int leve
     upse_exe_header_t tmpHead;
     unsigned char *in, *out = 0;
     u64 outlen;
+	u32 t_size;
     upse_psf_t *psfi;
     upse_xsf_t *xsf;
     u32 inlen;
@@ -125,7 +126,9 @@ _upse_load_psf(upse_module_instance_t *ins, void *fp, const char *path, int leve
     in = upse_get_buffer(fp, funcs, &inlen);
     xsf = upse_xsf_decode(in, inlen, &out, &outlen);
 
-    memcpy(&tmpHead, out, sizeof(upse_exe_header_t));
+    memcpy(&tmpHead, out, min(outlen, sizeof(upse_exe_header_t)));
+	if (outlen < sizeof(upse_exe_header_t)) memset(((u8*)&tmpHead)+outlen, 0, sizeof(upse_exe_header_t)-outlen);
+	if (outlen < 0x800) t_size = 0; else t_size = outlen - 0x800;
 
     psfi = calloc(sizeof(upse_psf_t), 1);
     psfi->xsf = xsf;
@@ -151,7 +154,7 @@ _upse_load_psf(upse_module_instance_t *ins, void *fp, const char *path, int leve
     /* we are loading a psflib */
     if (level && !type)
     {
-        upse_ps1_memory_load(ins, BFLIP32(tmpHead.t_addr), BFLIP32(tmpHead.t_size), out + 0x800);
+        upse_ps1_memory_load(ins, BFLIP32(tmpHead.t_addr), t_size, out + 0x800);
         free(in);
         free(out);
 
@@ -181,7 +184,7 @@ _upse_load_psf(upse_module_instance_t *ins, void *fp, const char *path, int leve
         int i;
         u32 ba[3]; /* table holding base addresses for restore after loading aux libs */
 
-        upse_ps1_memory_load(ins, BFLIP32(tmpHead.t_addr), BFLIP32(tmpHead.t_size), out + 0x800);
+        upse_ps1_memory_load(ins, BFLIP32(tmpHead.t_addr), t_size, out + 0x800);
         free(in);
         free(out);
 

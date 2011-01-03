@@ -55,7 +55,7 @@ int upse::reopen()
 		upse_spu_state_t * p_spu = reinterpret_cast<upse_spu_state_t *> ( m_module->instance.spu );
 		upse_ps1_spu_setvolume( p_spu, 32 );
 		if ( m_play_forever ) upse_ps1_spu_setlength( p_spu, 0, 0 );
-		else if ( m_module->metadata->length == ~0 ) upse_ps1_spu_setlength( p_spu, m_default_length, m_default_fade );
+		else if ( m_module->metadata->length == 0 ) upse_ps1_spu_setlength( p_spu, m_default_length, m_default_fade );
 		m_stopped = false;
 	}
 	return !!m_module;

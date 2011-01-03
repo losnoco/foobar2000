@@ -67,6 +67,7 @@ void upse_ps1_spu_write_register(upse_spu_state_t *spu, u32 reg, u16 val)
 	      spu->s_chan[ch].ADSRX.AttackRate = (lval >> 8) & 0x007f;
 	      spu->s_chan[ch].ADSRX.DecayRate = (lval >> 4) & 0x000f;
 	      spu->s_chan[ch].ADSRX.SustainLevel = lval & 0x000f;
+		  spu->s_chan[ch].ADSRX.EnvelopeMax = 0;
 	      //---------------------------------------------//
 	  }
 	      break;
@@ -81,6 +82,7 @@ void upse_ps1_spu_write_register(upse_spu_state_t *spu, u32 reg, u16 val)
 	      spu->s_chan[ch].ADSRX.SustainRate = (lval >> 6) & 0x007f;
 	      spu->s_chan[ch].ADSRX.ReleaseModeExp = (lval & 0x0020) ? 1 : 0;
 	      spu->s_chan[ch].ADSRX.ReleaseRate = lval & 0x001f;
+		  spu->s_chan[ch].ADSRX.EnvelopeMax = 0;
 	      //----------------------------------------------//
 	  }
 	      break;
@@ -348,7 +350,7 @@ u16 upse_ps1_spu_read_register(upse_spu_state_t *spu, u32 reg)
 	      if (spu->s_chan[ch].ADSRX.lVolume &&	// same here... we haven't decoded one sample yet, so no envelope yet. return 1 as well
 		  !spu->s_chan[ch].ADSRX.EnvelopeVol)
 		  return 1;
-	      return (u16) (spu->s_chan[ch].ADSRX.EnvelopeVol >> 16);
+		  return (u16) (spu->s_chan[ch].ADSRX.lVolume);
 	  }
 
 	  case 0xE:		// get loop address
@@ -408,7 +410,7 @@ void SoundOn(upse_spu_state_t *spu, int start, int end, u16 val)	// SOUND ON PSX
 	if ((val & 1) && spu->s_chan[ch].pStart)	// mmm... start has to be set before key on !?!
 	{
 	    spu->s_chan[ch].bIgnoreLoop = 0;
-	    spu->s_chan[ch].bNew = 1;
+	    spu->s_chan[ch].bNew = spu->s_chan[ch].bOn ? 64 : 1;
 	}
     }
 }
@@ -425,6 +427,7 @@ void SoundOff(upse_spu_state_t *spu, int start, int end, u16 val)	// SOUND OFF P
 	if (val & 1)		// && spu->s_chan[i].bOn)  mmm...
 	{
 	    spu->s_chan[ch].bStop = 1;
+		spu->s_chan[ch].ADSRX.EnvelopeMax = 0;
 	}
     }
 }

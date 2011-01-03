@@ -25,31 +25,27 @@
 
 void InitADSR(upse_spu_state_t *spu)		// INIT ADSR
 {
-    u32 r, rs, rd;
     int i;
 
-    memset(spu->RateTable, 0, sizeof(u32) * 160);	// build the rate table according to Neill's rules (see at bottom of file)
+    memset(spu->RateTable, 0, sizeof(spu->RateTable));
 
-    r = 3;
-    rs = 1;
-    rd = 0;
-
-    for (i = 32; i < 160; i++)	// we start at pos 32 with the real values... everything before is 0
+    spu->RateTable[32-8] = 1;
+    spu->RateTable[32-7] = 1;
+    spu->RateTable[32-6] = 1;
+    spu->RateTable[32-5] = 1;
+    spu->RateTable[32-4] = 2;
+    spu->RateTable[32-3] = 2;
+    spu->RateTable[32-2] = 3;
+    spu->RateTable[32-1] = 3;
+    spu->RateTable[32+0] = 4;
+    spu->RateTable[32+1] = 5;
+    spu->RateTable[32+2] = 6;
+    spu->RateTable[32+3] = 7;
+    for(i = 4; i < 128; i++)
     {
-	if (r < 0x3FFFFFFF)
-	{
-	    r += rs;
-	    rd++;
-	    if (rd == 5)
-	    {
-		rd = 1;
-		rs *= 2;
-	    }
-	}
-	if (r > 0x3FFFFFFF)
-	    r = 0x3FFFFFFF;
-
-	spu->RateTable[i] = r;
+        u32 n = 2 * spu->RateTable[32+i-4];
+        if(n > 0x20000000) n = 0x20000000;
+        spu->RateTable[32+i] = n;
     }
 }
 
@@ -60,114 +56,200 @@ void StartADSR(upse_spu_state_t *spu, int ch)		// MIX ADSR
     spu->s_chan[ch].ADSRX.lVolume = 1;	// and init some adsr vars
     spu->s_chan[ch].ADSRX.State = 0;
     spu->s_chan[ch].ADSRX.EnvelopeVol = 0;
+	spu->s_chan[ch].ADSRX.EnvelopeDelta = 1;
+	spu->s_chan[ch].ADSRX.EnvelopeMax = 0;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+int EnvelopeDo(upse_spu_state_t *spu, int ch)
+{
+	int target = 0;
+	SPUCHAN * chan = &spu->s_chan[ch];
+	ADSRInfoEx * env = &chan->ADSRX;
+
+	switch(((env->EnvelopeVol) >> 30) & 3)
+	{
+	case 2: env->EnvelopeVol = 0x7FFFFFFF; break;
+	case 3: env->EnvelopeVol = 0x00000000; break;
+	}
+	if (!chan->bOn)
+	{
+		env->EnvelopeVol = 0;
+		env->EnvelopeDelta = 0;
+		return 1;
+	}
+	if (chan->bStop) goto release;
+	switch(env->State)
+	{
+	case 0: goto attack;
+	case 1: goto decay;
+	case 2: goto sustain;
+	}
+	return 1;
+
+attack:
+	if (env->EnvelopeVol == 0x7FFFFFFF)
+	{
+		env->State = 1;
+		goto decay;
+	}
+	if (env->AttackModeExp)
+	{
+		if(env->EnvelopeVol < 0x60000000)
+		{
+			target = 0x60000000;
+			env->EnvelopeDelta = spu->RateTable[32+(env->AttackRate^0x7F)-0x10];
+		}
+		else
+		{
+			target = 0x7FFFFFFF;
+			env->EnvelopeDelta = spu->RateTable[32+(env->AttackRate^0x7F)-0x18];
+		}
+	}
+	else
+	{
+		target = 0x7FFFFFFF;
+		env->EnvelopeDelta = spu->RateTable[32+(env->AttackRate^0x7F)-0x10];
+	}
+	goto domax;
+
+decay:
+	if((((env->EnvelopeVol)>>27)&0xF) <= ((s32)(env->SustainLevel)))
+	{
+		env->State = 2;
+		goto sustain;
+	}
+	target = env->EnvelopeVol & (~0x07FFFFFF);
+	switch (((env->EnvelopeVol)>>28)&7)
+	{
+	case 0: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->DecayRate^0x1F))-0x18+0];  break;
+	case 1: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->DecayRate^0x1F))-0x18+4];  break;
+	case 2: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->DecayRate^0x1F))-0x18+6];  break;
+	case 3: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->DecayRate^0x1F))-0x18+8];  break;
+	case 4: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->DecayRate^0x1F))-0x18+9];  break;
+	case 5: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->DecayRate^0x1F))-0x18+10]; break;
+	case 6: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->DecayRate^0x1F))-0x18+11]; break;
+	case 7: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->DecayRate^0x1F))-0x18+12]; break;
+	}
+	goto domax;
+
+sustain:
+	if (env->SustainIncrease)
+	{
+		if (env->EnvelopeVol == 0x7FFFFFFF)
+		{
+			env->EnvelopeDelta = 0;
+			return 0x7FFFFFFF;
+		}
+		if (env->SustainModeExp)
+		{
+			if (env->EnvelopeVol < 0x60000000)
+			{
+				target = 0x60000000;
+				env->EnvelopeDelta = spu->RateTable[32+(env->SustainRate^0x7F)-0x10];
+			}
+			else
+			{
+				target = 0x7FFFFFFF;
+				env->EnvelopeDelta = spu->RateTable[32+(env->SustainRate^0x7F)-0x18];
+			}
+		}
+		else
+		{
+			target = 0x7FFFFFFF;
+			env->EnvelopeDelta = spu->RateTable[32+(env->SustainRate^0x7F)-0x10];
+		}
+	}
+	else
+	{
+		if (env->EnvelopeVol == 0)
+		{
+			env->EnvelopeDelta = 0;
+			return 0x7FFFFFFF;
+		}
+		if (env->SustainModeExp)
+		{
+			target = ((env->EnvelopeVol)&(~0x0FFFFFFF));
+			switch (((env->EnvelopeVol)>>28)&7)
+			{
+			case 0: env->EnvelopeDelta = -spu->RateTable[32+(env->SustainRate^0x7F)-0x1B+0];  break;
+			case 1: env->EnvelopeDelta = -spu->RateTable[32+(env->SustainRate^0x7F)-0x1B+4];  break;
+			case 2: env->EnvelopeDelta = -spu->RateTable[32+(env->SustainRate^0x7F)-0x1B+6];  break;
+			case 3: env->EnvelopeDelta = -spu->RateTable[32+(env->SustainRate^0x7F)-0x1B+8];  break;
+			case 4: env->EnvelopeDelta = -spu->RateTable[32+(env->SustainRate^0x7F)-0x1B+9];  break;
+			case 5: env->EnvelopeDelta = -spu->RateTable[32+(env->SustainRate^0x7F)-0x1B+10];  break;
+			case 6: env->EnvelopeDelta = -spu->RateTable[32+(env->SustainRate^0x7F)-0x1B+11];  break;
+			case 7: env->EnvelopeDelta = -spu->RateTable[32+(env->SustainRate^0x7F)-0x1B+12];  break;
+			}
+		}
+		else
+		{
+			target = 0;
+			env->EnvelopeDelta = -spu->RateTable[32+(env->SustainRate^0x7F)-0x0F];
+		}
+	}
+	goto domax;
+
+release:
+	if (env->EnvelopeVol == 0)
+	{
+		env->EnvelopeDelta = 0;
+		chan->bOn = 0;
+		return 1;
+	}
+	if (env->ReleaseModeExp)
+	{
+		target = ((env->EnvelopeVol) & (~0x0FFFFFFF));
+		switch (((env->EnvelopeVol)>>28)&7)
+		{
+		case 0: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->ReleaseRate^0x1F))-0x18+0];  break;
+		case 1: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->ReleaseRate^0x1F))-0x18+4];  break;
+		case 2: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->ReleaseRate^0x1F))-0x18+6];  break;
+		case 3: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->ReleaseRate^0x1F))-0x18+8];  break;
+		case 4: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->ReleaseRate^0x1F))-0x18+9];  break;
+		case 5: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->ReleaseRate^0x1F))-0x18+10];  break;
+		case 6: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->ReleaseRate^0x1F))-0x18+11];  break;
+		case 7: env->EnvelopeDelta = -spu->RateTable[32+(4*(env->ReleaseRate^0x1F))-0x18+12];  break;
+		}
+	}
+	else
+	{
+		target = 0;
+		env->EnvelopeDelta = -spu->RateTable[32+(4*(env->ReleaseRate^0x1F))-0x0C];
+	}
+	goto domax;
+
+domax:
+	{
+		int max;
+		if (env->EnvelopeDelta) max = (target - (env->EnvelopeVol)) / (env->EnvelopeDelta);
+		else max = 0x7FFFFFFF;
+		max--;
+		if (max < 1) max = 1;
+		return max;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////
 
 int MixADSR(upse_spu_state_t *spu, int ch)		// MIX ADSR
 {
-    static const int sexytable[8] = { 0, 4, 6, 8, 9, 10, 11, 12 };
-
-    if (spu->s_chan[ch].bStop)	// should be stopped:
-    {				// do release
-	if (spu->s_chan[ch].ADSRX.ReleaseModeExp)
+	SPUCHAN * chan = &spu->s_chan[ch];
+	ADSRInfoEx * env = &chan->ADSRX;
+	int max = env->EnvelopeMax;
+	int level;
+	if (!chan->bOn)
 	{
-	    spu->s_chan[ch].ADSRX.EnvelopeVol -= spu->RateTable[(4 * (spu->s_chan[ch].ADSRX.ReleaseRate ^ 0x1F)) - 0x18 + 32 + sexytable[(spu->s_chan[ch].ADSRX.EnvelopeVol >> 28) & 0x7]];
+		env->lVolume = 0;
+		return 0;
 	}
-	else
-	{
-	    spu->s_chan[ch].ADSRX.EnvelopeVol -= spu->RateTable[(4 * (spu->s_chan[ch].ADSRX.ReleaseRate ^ 0x1F)) - 0x0C + 32];
-	}
-
-	if (spu->s_chan[ch].ADSRX.EnvelopeVol < 0)
-	{
-	    spu->s_chan[ch].ADSRX.EnvelopeVol = 0;
-	    spu->s_chan[ch].bOn = 0;
-	    spu->s_chan[ch].bNoise = 0;
-	}
-
-	spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 17;
-	return spu->s_chan[ch].ADSRX.lVolume;
-    }
-    else			// not stopped yet?
-    {
-	if (spu->s_chan[ch].ADSRX.State == 0)	// -> attack
-	{
-	    if (spu->s_chan[ch].ADSRX.AttackModeExp)
-	    {
-		if (spu->s_chan[ch].ADSRX.EnvelopeVol < 0x60000000)
-		    spu->s_chan[ch].ADSRX.EnvelopeVol += spu->RateTable[(spu->s_chan[ch].ADSRX.AttackRate ^ 0x7F) - 0x10 + 32];
-		else
-		    spu->s_chan[ch].ADSRX.EnvelopeVol += spu->RateTable[(spu->s_chan[ch].ADSRX.AttackRate ^ 0x7F) - 0x18 + 32];
-	    }
-	    else
-	    {
-		spu->s_chan[ch].ADSRX.EnvelopeVol += spu->RateTable[(spu->s_chan[ch].ADSRX.AttackRate ^ 0x7F) - 0x10 + 32];
-	    }
-
-	    if (spu->s_chan[ch].ADSRX.EnvelopeVol < 0)
-	    {
-		spu->s_chan[ch].ADSRX.EnvelopeVol = 0x7FFFFFFF;
-		spu->s_chan[ch].ADSRX.State = 1;
-	    }
-
-	    spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 17;
-	    return spu->s_chan[ch].ADSRX.lVolume;
-	}
-	//--------------------------------------------------//
-	if (spu->s_chan[ch].ADSRX.State == 1)	// -> decay
-	{
-	    spu->s_chan[ch].ADSRX.EnvelopeVol -= spu->RateTable[(4 * (spu->s_chan[ch].ADSRX.DecayRate ^ 0x1F)) - 0x18 + 32 + sexytable[(spu->s_chan[ch].ADSRX.EnvelopeVol >> 28) & 0x7]];
-
-	    if (spu->s_chan[ch].ADSRX.EnvelopeVol < 0)
-		spu->s_chan[ch].ADSRX.EnvelopeVol = 0;
-	    if (((spu->s_chan[ch].ADSRX.EnvelopeVol >> 27) & 0xF) <= spu->s_chan[ch].ADSRX.SustainLevel)
-	    {
-		spu->s_chan[ch].ADSRX.State = 2;
-	    }
-
-	    spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 17;
-	    return spu->s_chan[ch].ADSRX.lVolume;
-	}
-	//--------------------------------------------------//
-	if (spu->s_chan[ch].ADSRX.State == 2)	// -> sustain
-	{
-	    if (spu->s_chan[ch].ADSRX.SustainIncrease)
-	    {
-		if (spu->s_chan[ch].ADSRX.SustainModeExp)
-		{
-		    if (spu->s_chan[ch].ADSRX.EnvelopeVol < 0x60000000)
-			spu->s_chan[ch].ADSRX.EnvelopeVol += spu->RateTable[(spu->s_chan[ch].ADSRX.SustainRate ^ 0x7F) - 0x10 + 32];
-		    else
-			spu->s_chan[ch].ADSRX.EnvelopeVol += spu->RateTable[(spu->s_chan[ch].ADSRX.SustainRate ^ 0x7F) - 0x18 + 32];
-		}
-		else
-		{
-		    spu->s_chan[ch].ADSRX.EnvelopeVol += spu->RateTable[(spu->s_chan[ch].ADSRX.SustainRate ^ 0x7F) - 0x10 + 32];
-		}
-
-		if (spu->s_chan[ch].ADSRX.EnvelopeVol < 0)
-		{
-		    spu->s_chan[ch].ADSRX.EnvelopeVol = 0x7FFFFFFF;
-		}
-	    }
-	    else
-	    {
-		if (spu->s_chan[ch].ADSRX.SustainModeExp)
-		    spu->s_chan[ch].ADSRX.EnvelopeVol -= spu->RateTable[((spu->s_chan[ch].ADSRX.SustainRate ^ 0x7F)) - 0x1B + 32 + sexytable[(spu->s_chan[ch].ADSRX.EnvelopeVol >> 28) & 0x7]];
-		else
-		    spu->s_chan[ch].ADSRX.EnvelopeVol -= spu->RateTable[((spu->s_chan[ch].ADSRX.SustainRate ^ 0x7F)) - 0x0F + 32];
-
-		if (spu->s_chan[ch].ADSRX.EnvelopeVol < 0)
-		{
-		    spu->s_chan[ch].ADSRX.EnvelopeVol = 0;
-		}
-	    }
-	    spu->s_chan[ch].ADSRX.lVolume = spu->s_chan[ch].ADSRX.EnvelopeVol >> 17;
-	    return spu->s_chan[ch].ADSRX.lVolume;
-	}
-    }
-    return 0;
+	if (!max) max = EnvelopeDo(spu, ch);
+	level = env->EnvelopeVol >> 16;
+	env->EnvelopeVol += env->EnvelopeDelta;
+	env->EnvelopeMax = --max;
+	env->lVolume = level;
+	return level;
 }
 
 /*

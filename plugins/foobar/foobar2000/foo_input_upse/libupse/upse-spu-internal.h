@@ -77,8 +77,8 @@ typedef struct
     int ReleaseRate;
     int EnvelopeVol;
     s32 lVolume;
-    s32 lDummy1;
-    s32 lDummy2;
+    s32 EnvelopeDelta;
+    s32 EnvelopeMax;
 } ADSRInfoEx;
 
 ///////////////////////////////////////////////////////////
@@ -244,7 +244,7 @@ typedef struct {
     s32 upbuf[2][8];
     int dbpos, ubpos;
 
-    u32 RateTable[160];
+    s32 RateTable[160];
 } upse_spu_state_t;
 
 extern void upse_spu_lowpass_filter_reset(upse_spu_state_t *spu);

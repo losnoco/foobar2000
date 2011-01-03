@@ -22,5 +22,6 @@
 void InitADSR(upse_spu_state_t *spu);
 void StartADSR(upse_spu_state_t *spu, int ch);
 int MixADSR(upse_spu_state_t *spu, int ch);
+int EnvelopeDo(upse_spu_state_t *spu, int ch);
 
 #endif

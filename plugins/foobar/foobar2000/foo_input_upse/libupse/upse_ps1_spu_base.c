@@ -314,7 +314,7 @@ int upse_ps1_spu_render(upse_spu_state_t *spu, u32 cycles)
 	{
 	    for (ch = 0; ch < MAXCHAN; ch++)	// loop em all.
 	    {
-		if (spu->s_chan[ch].bNew)
+		if (spu->s_chan[ch].bNew && !--spu->s_chan[ch].bNew)
 		    StartSound(spu, ch);
 		if (!spu->s_chan[ch].bOn)
 		    continue;
@@ -343,6 +343,8 @@ int upse_ps1_spu_render(upse_spu_state_t *spu, u32 cycles)
 			    spu->s_chan[ch].bOn = 0;	// -> turn everything off
 			    spu->s_chan[ch].ADSRX.lVolume = 0;
 			    spu->s_chan[ch].ADSRX.EnvelopeVol = 0;
+				spu->s_chan[ch].ADSRX.EnvelopeDelta = 0;
+				spu->s_chan[ch].ADSRX.EnvelopeMax = 1;
 			    goto ENDX;	// -> and done for this channel
 			}
 
@@ -470,7 +472,9 @@ int upse_ps1_spu_render(upse_spu_state_t *spu, u32 cycles)
 		    fa = vr;
 		}
 
-		spu->s_chan[ch].sval = (MixADSR(spu, ch) * fa) >> 14;
+		if (spu->s_chan[ch].bNew) fa = fa * spu->s_chan[ch].bNew / 64;
+
+		spu->s_chan[ch].sval = (MixADSR(spu, ch) * fa) >> 15;
 		if (spu->s_chan[ch].bFMod == 2)	// fmod freq channel
 		{
                     int srate;

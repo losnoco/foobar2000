@@ -1,7 +1,14 @@
-#define MYVERSION "1.2"
+#define MYVERSION "1.3"
 
 /*
 	changelog
+
+2011-01-03 18:47 UTC - kode54
+- Optimized ADSR envelope calculation for a 16.6% speed boost
+- Fixed a crash bug when loading PSF1 files that specify a larger size in the EXE header than
+  is present in the actual PSF file
+- Fixed PSF files with no length tags playing forever when they weren't supposed to
+- Version is now 1.3
 
 2010-11-20 22:06 UTC - kode54
 - Updated fully reentrant libupse
