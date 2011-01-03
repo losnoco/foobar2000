@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="License">
+      <UniqueIdentifier>{fafe5c67-77c7-400d-b126-95b06d379270}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="COPYING">
+      <Filter>License</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dts.cpp" />
+    <ClCompile Include="packet_decoder.cpp" />
+    <ClCompile Include="decode_postprocessor.cpp" />
+  </ItemGroup>
+</Project>

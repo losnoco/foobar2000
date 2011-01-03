@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Private Header Files">
+      <UniqueIdentifier>{a437ab21-2aa4-4ac7-99f4-f2f75ffca758}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protected Header Files">
+      <UniqueIdentifier>{cb53388e-2332-48b0-afc5-8870e72c8933}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public Header Files">
+      <UniqueIdentifier>{a4bd7ff6-9cd8-4a42-9f51-b4071be30b7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{39dae7df-16bc-46cb-b31d-9105f4fa5a70}</UniqueIdentifier>
+      <Extensions>c</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="file_decoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="file_encoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ogg_decoder_aspect.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ogg_encoder_aspect.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ogg_helper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ogg_mapping.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="seekable_stream_decoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="seekable_stream_encoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stream_decoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stream_encoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\OggFLAC\all.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\OggFLAC\export.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\OggFLAC\file_decoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\OggFLAC\file_encoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\OggFLAC\seekable_stream_decoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\OggFLAC\seekable_stream_encoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\OggFLAC\stream_decoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\OggFLAC\stream_encoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\all.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\ogg_decoder_aspect.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\ogg_encoder_aspect.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\ogg_helper.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\ogg_mapping.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\all.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\file_decoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\file_encoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\seekable_stream_decoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\seekable_stream_encoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\stream_decoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\stream_encoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

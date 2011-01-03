@@ -1,0 +1,279 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{ab31d8c4-89ff-4930-8511-5474f9a074f6}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Compress %28h%29">
+      <UniqueIdentifier>{f237ce0a-ded9-424b-8aa6-8744cc1d274b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Decompress %28h%29">
+      <UniqueIdentifier>{d0bc3d10-5098-4257-a15c-f269eccd0d48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Decompress %28h%29\Old %28h%29">
+      <UniqueIdentifier>{99996636-db14-4901-aee0-6c0cc89e5ce5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Info %28h%29">
+      <UniqueIdentifier>{ab6dad46-f621-4ce4-95e0-772156eeafd7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Prediction %28h%29">
+      <UniqueIdentifier>{9e7cfc03-d724-4044-a1c9-bc755870c6a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Prediction %28h%29\Filters %28h%29">
+      <UniqueIdentifier>{a426e63e-0bc6-471b-b035-3dbb2634e7e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Tools %28h%29">
+      <UniqueIdentifier>{931578d5-32a2-4463-bf2d-27ae0e22905d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Tools %28h%29\IO %28h%29">
+      <UniqueIdentifier>{9868f4be-da14-402b-9be4-e1678640e69f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{88d4f449-4564-4d51-8925-57c6f254a028}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Compress">
+      <UniqueIdentifier>{048e69dc-c5c6-41ec-9d2d-a50b609e466d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Decompress">
+      <UniqueIdentifier>{07cc3bac-37a5-455f-92b2-952d3d02523f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Decompress\Old">
+      <UniqueIdentifier>{2ac360c9-a595-4087-9094-6f48a59583a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Info">
+      <UniqueIdentifier>{f3530afc-1478-4539-af6c-b7444a4c5fa9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Prediction">
+      <UniqueIdentifier>{eb93bf98-686b-4ee4-9405-382fed5d331a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Prediction\Filters">
+      <UniqueIdentifier>{4ce71a9a-5b02-452d-953b-2a9e9c9ee930}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Tools">
+      <UniqueIdentifier>{c45b734a-1ac9-4f52-ac06-aa576e487069}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Tools\IO">
+      <UniqueIdentifier>{36e1a1df-8d77-4903-bb79-f47baf951ac3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Shared\CharacterHelper.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\CircleBuffer.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\GlobalFunctions.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\StdLibFileIO.cpp">
+      <Filter>Source Files\Tools\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\WinFileIO.cpp">
+      <Filter>Source Files\Tools\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="APECompress.cpp">
+      <Filter>Source Files\Compress</Filter>
+    </ClCompile>
+    <ClCompile Include="APECompressCore.cpp">
+      <Filter>Source Files\Compress</Filter>
+    </ClCompile>
+    <ClCompile Include="APECompressCreate.cpp">
+      <Filter>Source Files\Compress</Filter>
+    </ClCompile>
+    <ClCompile Include="APEDecompress.cpp">
+      <Filter>Source Files\Decompress</Filter>
+    </ClCompile>
+    <ClCompile Include="APEHeader.cpp">
+      <Filter>Source Files\Info</Filter>
+    </ClCompile>
+    <ClCompile Include="APEInfo.cpp">
+      <Filter>Source Files\Info</Filter>
+    </ClCompile>
+    <ClCompile Include="APELink.cpp">
+      <Filter>Source Files\Info</Filter>
+    </ClCompile>
+    <ClCompile Include="APESimple.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="APETag.cpp">
+      <Filter>Source Files\Info</Filter>
+    </ClCompile>
+    <ClCompile Include="BitArray.cpp">
+      <Filter>Source Files\Compress</Filter>
+    </ClCompile>
+    <ClCompile Include="MACLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MACProgressHelper.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="MD5.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="NewPredictor.cpp">
+      <Filter>Source Files\Prediction</Filter>
+    </ClCompile>
+    <ClCompile Include="NNFilter.cpp">
+      <Filter>Source Files\Prediction\Filters</Filter>
+    </ClCompile>
+    <ClCompile Include="Old\Anti-Predictor.cpp">
+      <Filter>Source Files\Decompress\Old</Filter>
+    </ClCompile>
+    <ClCompile Include="Old\AntiPredictorExtraHigh.cpp">
+      <Filter>Source Files\Decompress\Old</Filter>
+    </ClCompile>
+    <ClCompile Include="Old\AntiPredictorFast.cpp">
+      <Filter>Source Files\Decompress\Old</Filter>
+    </ClCompile>
+    <ClCompile Include="Old\AntiPredictorHigh.cpp">
+      <Filter>Source Files\Decompress\Old</Filter>
+    </ClCompile>
+    <ClCompile Include="Old\AntiPredictorNormal.cpp">
+      <Filter>Source Files\Decompress\Old</Filter>
+    </ClCompile>
+    <ClCompile Include="Old\APEDecompressCore.cpp">
+      <Filter>Source Files\Decompress\Old</Filter>
+    </ClCompile>
+    <ClCompile Include="Old\APEDecompressOld.cpp">
+      <Filter>Source Files\Decompress\Old</Filter>
+    </ClCompile>
+    <ClCompile Include="Old\UnBitArrayOld.cpp">
+      <Filter>Source Files\Decompress\Old</Filter>
+    </ClCompile>
+    <ClCompile Include="Old\UnMAC.cpp">
+      <Filter>Source Files\Decompress\Old</Filter>
+    </ClCompile>
+    <ClCompile Include="Prepare.cpp">
+      <Filter>Source Files\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="UnBitArray.cpp">
+      <Filter>Source Files\Decompress</Filter>
+    </ClCompile>
+    <ClCompile Include="UnBitArrayBase.cpp">
+      <Filter>Source Files\Decompress</Filter>
+    </ClCompile>
+    <ClCompile Include="WAVInputSource.cpp">
+      <Filter>Source Files\Info</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Shared\All.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\CharacterHelper.h">
+      <Filter>Header Files\Tools %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\CircleBuffer.h">
+      <Filter>Header Files\Tools %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\GlobalFunctions.h">
+      <Filter>Header Files\Tools %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\IO.h">
+      <Filter>Header Files\Tools %28h%29\IO %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\NoWindows.h">
+      <Filter>Header Files\Tools %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\RollBuffer.h">
+      <Filter>Header Files\Prediction %28h%29\Filters %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\SmartPtr.h">
+      <Filter>Header Files\Tools %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\StdLibFileIO.h">
+      <Filter>Header Files\Tools %28h%29\IO %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\WinFileIO.h">
+      <Filter>Header Files\Tools %28h%29\IO %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="APECompress.h">
+      <Filter>Header Files\Compress %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="APECompressCore.h">
+      <Filter>Header Files\Compress %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="APECompressCreate.h">
+      <Filter>Header Files\Compress %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="APEDecompress.h">
+      <Filter>Header Files\Decompress %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="APEHeader.h">
+      <Filter>Header Files\Info %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="APEInfo.h">
+      <Filter>Header Files\Info %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="APELink.h">
+      <Filter>Header Files\Info %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="APETag.h">
+      <Filter>Header Files\Info %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Assembly\Assembly.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BitArray.h">
+      <Filter>Header Files\Compress %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="MACLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MACProgressHelper.h">
+      <Filter>Header Files\Tools %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="md5.h">
+      <Filter>Header Files\Tools %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="NewPredictor.h">
+      <Filter>Header Files\Prediction %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="NNFilter.h">
+      <Filter>Header Files\Prediction %28h%29\Filters %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Old\Anti-Predictor.h">
+      <Filter>Header Files\Decompress %28h%29\Old %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Old\APEDecompressCore.h">
+      <Filter>Header Files\Decompress %28h%29\Old %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Old\APEDecompressOld.h">
+      <Filter>Header Files\Decompress %28h%29\Old %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Old\UnBitArrayOld.h">
+      <Filter>Header Files\Decompress %28h%29\Old %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Old\UnMAC.h">
+      <Filter>Header Files\Decompress %28h%29\Old %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Predictor.h">
+      <Filter>Header Files\Prediction %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Prepare.h">
+      <Filter>Header Files\Tools %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="ScaledFirstOrderFilter.h">
+      <Filter>Header Files\Prediction %28h%29\Filters %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="UnBitArray.h">
+      <Filter>Header Files\Decompress %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="UnBitArrayBase.h">
+      <Filter>Header Files\Decompress %28h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="WAVInputSource.h">
+      <Filter>Header Files\Info %28h%29</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="Assembly\Assembly.obj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Credits.txt" />
+    <None Include="..\History.txt" />
+  </ItemGroup>
+</Project>

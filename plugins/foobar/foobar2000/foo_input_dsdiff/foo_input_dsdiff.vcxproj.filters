@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="DST">
+      <UniqueIdentifier>{fdb5248e-c69c-40b9-ac76-2b59b6b1f90d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dsdiff.cpp" />
+    <ClCompile Include="DST\ccp_calc.cpp">
+      <Filter>DST</Filter>
+    </ClCompile>
+    <ClCompile Include="DST\DSTData.cpp">
+      <Filter>DST</Filter>
+    </ClCompile>
+    <ClCompile Include="DST\DSTDecoder.cpp">
+      <Filter>DST</Filter>
+    </ClCompile>
+    <ClCompile Include="DST\dst_ac.cpp">
+      <Filter>DST</Filter>
+    </ClCompile>
+    <ClCompile Include="DST\dst_fram.cpp">
+      <Filter>DST</Filter>
+    </ClCompile>
+    <ClCompile Include="DST\dst_init.cpp">
+      <Filter>DST</Filter>
+    </ClCompile>
+    <ClCompile Include="DST\UnpackDST.cpp">
+      <Filter>DST</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DST\ccp_calc.h">
+      <Filter>DST</Filter>
+    </ClInclude>
+    <ClInclude Include="DST\conststr.h">
+      <Filter>DST</Filter>
+    </ClInclude>
+    <ClInclude Include="DST\DSTData.h">
+      <Filter>DST</Filter>
+    </ClInclude>
+    <ClInclude Include="DST\DSTDecoder.h">
+      <Filter>DST</Filter>
+    </ClInclude>
+    <ClInclude Include="DST\dst_ac.h">
+      <Filter>DST</Filter>
+    </ClInclude>
+    <ClInclude Include="DST\dst_fram.h">
+      <Filter>DST</Filter>
+    </ClInclude>
+    <ClInclude Include="DST\dst_init.h">
+      <Filter>DST</Filter>
+    </ClInclude>
+    <ClInclude Include="DST\types.h">
+      <Filter>DST</Filter>
+    </ClInclude>
+    <ClInclude Include="DST\UnpackDST.h">
+      <Filter>DST</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="foo_input_dsdiff.rc" />
+  </ItemGroup>
+</Project>

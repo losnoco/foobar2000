@@ -1,0 +1,42 @@
+1.4 (Apr 24 2004):
+
+1) Switched to using actual played amount to calculate update point.  i.e., Previously,
+the percentage complete was based on position in the track; once the seekbar passed
+the set percentage amount, the update took place.  Now, the update only happens when
+the correct percentage has actually been played.
+
+2) Fix issue when "Restart playback after restart" is on, and Foobar is shutdown while
+a track is playing, after restart, the counter could have been updated twice.  This was
+actually fixed by change #1 (above).
+
+3) Added option in preferences to disable skipping of tracks not in the DB.
+
+
+1.3 (Apr 16 2004):
+
+1) Added support for specifying the date/time tags and format.  The tag name can be
+specified, or left blank to skip.  For either field, a format string can be specified.
+
+1.2 (Apr 14 2004):
+
+1) Replaced option to update at play start vs completion with a slider bar so that
+a playback percentage can be specified instead.
+
+
+1.1 (Apr 14 2004):
+
+1) Added option to update counter when playback starts (as opposed to when playback 
+completes).  If disabled, the counter does not update until playback completes normally;
+manually stopping playback (or switching to another track) will not update the counter.
+
+2) Added "DB only mask" to compensate for lack of support for determining files that
+don't support tags.  i.e., WAV files.  In version 1.0, a DB update was done for all
+files, but this only defers updating the file (the next tag update will also write
+the play counters).  The default value is "*.wav", which will cause it to not attempt
+updates to WAV files.  If the method used in 1.0 is desired, a mask of *.* can be
+used instead.
+
+
+1.0:
+
+Initial release

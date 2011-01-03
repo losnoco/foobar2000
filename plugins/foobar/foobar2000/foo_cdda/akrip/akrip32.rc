@@ -1,0 +1,26 @@
+#include <windows.h>
+
+1 VERSIONINFO
+  FILEVERSION 0,0,1,0
+  PRODUCTVERSION 0,0,1,0
+  FILEFLAGS 0x2L
+  FILEOS 0x10004
+  FILETYPE 0x2
+  FILESUBTYPE 0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "Comments", "Release Candidate 2 - 13 Sep 2001"
+      VALUE "CompanyName", "AKSoft"
+      VALUE "FileDescription", "Generic audio extraction library layered over ASPI.\0"
+      VALUE "FileVersion", "1.0rc2"
+      VALUE "InternalName", "AKRip32"
+      VALUE "LegalCopyright", "Copyright (c) Jay A. Key 1999-2001: Released under the LGPL"
+      VALUE "OriginalFilename","AKRip32.dll"
+      VALUE "ProductName", "AKRip CD-DA Audio Extraction Library"
+      VALUE "ProductVersion", "1.0rc2"
+    END
+  END
+END  

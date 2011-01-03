@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ms code">
+      <UniqueIdentifier>{8e00ba07-7b71-4b96-b923-ae2676c6e855}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ms\audfilter.cpp">
+      <Filter>ms code</Filter>
+    </ClCompile>
+    <ClCompile Include="ms\audpin.cpp">
+      <Filter>ms code</Filter>
+    </ClCompile>
+    <ClCompile Include="ms\enum.cpp">
+      <Filter>ms code</Filter>
+    </ClCompile>
+    <ClCompile Include="ms\filter.cpp">
+      <Filter>ms code</Filter>
+    </ClCompile>
+    <ClCompile Include="ms\irptgt.cpp">
+      <Filter>ms code</Filter>
+    </ClCompile>
+    <ClCompile Include="ms\node.cpp">
+      <Filter>ms code</Filter>
+    </ClCompile>
+    <ClCompile Include="ms\pin.cpp">
+      <Filter>ms code</Filter>
+    </ClCompile>
+    <ClCompile Include="ms\util.cpp">
+      <Filter>ms code</Filter>
+    </ClCompile>
+    <ClCompile Include="out_ks.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ms\audfilter.h">
+      <Filter>ms code</Filter>
+    </ClInclude>
+    <ClInclude Include="ms\audpin.h">
+      <Filter>ms code</Filter>
+    </ClInclude>
+    <ClInclude Include="ms\enum.h">
+      <Filter>ms code</Filter>
+    </ClInclude>
+    <ClInclude Include="ms\filter.h">
+      <Filter>ms code</Filter>
+    </ClInclude>
+    <ClInclude Include="ms\irptgt.h">
+      <Filter>ms code</Filter>
+    </ClInclude>
+    <ClInclude Include="ms\kssample.h">
+      <Filter>ms code</Filter>
+    </ClInclude>
+    <ClInclude Include="ms\node.h">
+      <Filter>ms code</Filter>
+    </ClInclude>
+    <ClInclude Include="ms\pin.h">
+      <Filter>ms code</Filter>
+    </ClInclude>
+    <ClInclude Include="ms\tlist.h">
+      <Filter>ms code</Filter>
+    </ClInclude>
+    <ClInclude Include="ms\util.h">
+      <Filter>ms code</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="foo_out_ks.rc" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,187 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_MP3FIX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 217
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 152
+    END
+
+    IDD_CUE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 323
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 238
+    END
+
+    IDD_MP3TAG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 133
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 81
+    END
+
+    IDD_PREFERENCES_MP3TAG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 325
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 281
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MP3FIX DIALOG DISCARDABLE  0, 0, 224, 159
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Fix MP3 header"
+FONT 8, "Tahoma"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,104,142,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,160,142,50,14
+    GROUPBOX        "Encoder delay (default 576 samples for LAME)",
+                    IDC_STATIC,4,0,216,32
+    EDITTEXT        IDC_DELAY,16,12,194,12,ES_CENTER | ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    GROUPBOX        "Padding",IDC_STATIC,4,36,216,36
+    CTEXT           "Enter desired length of track (in samples, 0 to disable padding):",
+                    IDC_STATIC,9,46,208,9
+    EDITTEXT        IDC_TOTAL,16,56,152,12,ES_CENTER | ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    PUSHBUTTON      "down",IDC_DOWN,170,56,22,12
+    PUSHBUTTON      "up",IDC_UP,194,56,19,12
+    CONTROL         "Rebuild entire stream",IDC_REBUILD,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,80,100,10
+    GROUPBOX        "Info",IDC_STATIC,4,94,216,44
+    LTEXT           "This feature allows you to correct reported length of MP3 files and manually remove gaps at the beginning/end of track.\nFor tracks ripped from CDs, length should be a multiple of 588 samples (size of one CD sector).",
+                    IDC_STATIC,8,102,208,33
+END
+
+IDD_CUE DIALOGEX 0, 0, 330, 245
+STYLE WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+EXSTYLE WS_EX_ACCEPTFILES
+CAPTION "Embedded cue sheet editor"
+FONT 8, "Lucida Console"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,240,230,41,14
+    PUSHBUTTON      "Cancel",IDCANCEL,288,230,41,14
+    EDITTEXT        IDC_CUESHEET,0,0,332,227,ES_MULTILINE | ES_WANTRETURN | 
+                    WS_VSCROLL | WS_HSCROLL
+    CONTROL         "Enable embedded cue sheet on this file",IDC_ENABLED,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,4,232,184,10
+    PUSHBUTTON      "Load...",IDC_LOAD,192,230,41,14
+END
+
+IDD_MP3TAG DIALOG DISCARDABLE  0, 0, 140, 88
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "MP3 tag types"
+FONT 8, "Tahoma"
+BEGIN
+    DEFPUSHBUTTON   "Update files",IDOK,12,64,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,80,64,50,14
+    CONTROL         "ID3v1",IDC_ID3v1,"Button",BS_AUTO3STATE | WS_TABSTOP,16,
+                    12,40,10
+    CONTROL         "ID3v2",IDC_ID3v2,"Button",BS_AUTO3STATE | WS_TABSTOP,16,
+                    28,40,10
+    CONTROL         "APEv2",IDC_APEv2,"Button",BS_AUTO3STATE | WS_TABSTOP,16,
+                    44,40,10
+END
+
+IDD_PREFERENCES_MP3TAG DIALOG DISCARDABLE  0, 0, 332, 288
+STYLE WS_CHILD
+FONT 8, "Tahoma"
+BEGIN
+    LTEXT           "When tagging an MP3 file that has no tags:",
+                    IDC_STATIC_NOTAGACTION,8,12,159,8
+    COMBOBOX        IDC_NOTAGACTION,8,20,316,108,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "When retagging an MP3 file that has only ID3v1 tag and ID3v1 is insufficient to store all info:",
+                    IDC_STATIC_ID3v1ACTION,8,52,299,8
+    COMBOBOX        IDC_ID3v1ACTION,8,60,316,108,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Advanced - perform same action on all MP3 files regardless of existing tags:",
+                    IDC_FORCETAG,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,98,
+                    292,9
+    COMBOBOX        IDC_FORCETAGTYPE,8,108,316,108,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "",IDC_ID3v2_NOTICE,12,148,220,28
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

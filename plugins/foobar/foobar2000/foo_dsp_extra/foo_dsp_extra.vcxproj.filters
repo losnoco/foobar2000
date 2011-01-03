@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="SSRC">
+      <UniqueIdentifier>{79101cc9-52ae-4fbe-a287-3061bbc0cb5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SuperEQ">
+      <UniqueIdentifier>{a0667ae6-4feb-49ae-9153-9167f15382c7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dsp_standard.cpp" />
+    <ClCompile Include="hardlimit.cpp" />
+    <ClCompile Include="ssrc\dbesi0.c">
+      <Filter>SSRC</Filter>
+    </ClCompile>
+    <ClCompile Include="ssrc\ssrc.cpp">
+      <Filter>SSRC</Filter>
+    </ClCompile>
+    <ClCompile Include="ssrc\ssrc_foobar.cpp">
+      <Filter>SSRC</Filter>
+    </ClCompile>
+    <ClCompile Include="supereq\supereq_foobar.cpp">
+      <Filter>SuperEQ</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="math_shared.h" />
+    <ClInclude Include="ssrc\ssrc.h">
+      <Filter>SSRC</Filter>
+    </ClInclude>
+    <ClInclude Include="supereq\paramlist.h">
+      <Filter>SuperEQ</Filter>
+    </ClInclude>
+    <ClInclude Include="supereq\supereq.h">
+      <Filter>SuperEQ</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="foo_dsp_extra.rc" />
+  </ItemGroup>
+</Project>

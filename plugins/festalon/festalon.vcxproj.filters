@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{92f04060-bb39-4fb7-b6b7-a6e6d27e24bf}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{f7eaaad0-dbdd-414a-b446-65a53f755565}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Source Files\fidlib">
+      <UniqueIdentifier>{9971aac0-03b6-46c0-b6d7-301ba4693b52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nes">
+      <UniqueIdentifier>{02159198-7aab-496e-a1de-30ed59a738b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nes\ext">
+      <UniqueIdentifier>{c41b67fa-34c3-4a0d-b104-e5ab66c62823}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\pce">
+      <UniqueIdentifier>{a7a9695e-a65c-4f3d-827f-b5ec448949cb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\cputest.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\festalon.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\fidlib\fidlib.c">
+      <Filter>Source Files\fidlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\filter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\cart.c">
+      <Filter>Source Files\nes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\ext\ay.c">
+      <Filter>Source Files\nes\ext</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\ext\emu2413.c">
+      <Filter>Source Files\nes\ext</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\ext\fds.c">
+      <Filter>Source Files\nes\ext</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\ext\mmc5.c">
+      <Filter>Source Files\nes\ext</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\ext\n106.c">
+      <Filter>Source Files\nes\ext</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\ext\vrc6.c">
+      <Filter>Source Files\nes\ext</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\ext\vrc7.c">
+      <Filter>Source Files\nes\ext</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\nsf.c">
+      <Filter>Source Files\nes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\nsfe.c">
+      <Filter>Source Files\nes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\sound.c">
+      <Filter>Source Files\nes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nes\x6502.c">
+      <Filter>Source Files\nes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pce\h6280.c">
+      <Filter>Source Files\pce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pce\hes.c">
+      <Filter>Source Files\pce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pce\pce.c">
+      <Filter>Source Files\pce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pce\psg.c">
+      <Filter>Source Files\pce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pce\system.c">
+      <Filter>Source Files\pce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pce\vdc.c">
+      <Filter>Source Files\pce</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\driver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\festalon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\fidlib\fidlib.h">
+      <Filter>Source Files\fidlib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\fidlib\fidrf_cmdlist.h">
+      <Filter>Source Files\fidlib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\nes\ops.h">
+      <Filter>Source Files\nes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="alloca.obj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,90 @@
+%{
+
+typedef void (* t_process_callback)(const char *, const char *);
+
+typedef bool (* t_validate)(struct id3_frame *);
+typedef void (* t_process)(struct id3_frame *, t_callback);
+typedef void (* t_render)(struct id3_frame *, int, const char **);
+
+#define DECLAREFUNCS(type) extern t_validate type##_validate; extern t_process type##_process; extern t_render type##_render;
+#define DECLAREFUNCSNV(type) extern t_process type##_process; extern t_render type##_render;
+
+DECLAREFUNCSNV(text)
+DECLAREFUNCS(url)
+DECLAREFUNCS(urlx)
+DECLAREFUNCS(comment)
+DECLAREFUNCS(uniqueid)
+DECLAREFUNCS(unsyncedlyrics)
+
+typedef struct t_id3_lookup {
+    const char * short;
+    const char * long;
+    t_validate validate;
+    t_process process;
+    t_render render;
+};
+
+#define FV(t)    t##_validate, t##_process, t##_render
+#define FN(t)               0, t##_process, t##_render
+
+%}
+struct t_id3_lookup;
+%%
+COMM, "comment", FV(comment)
+TALB, "album", FN(text)
+TBPM, "beats_per_minute", FN(text)
+TCOM, "composer", FN(text)
+TCON, "genre", FN(text)
+TCOP, "copyright", FN(text)
+TDLY, "playlist_delay", FN(text)
+TENC, "encoded_by", FN(text)
+TEXT, "lyricist", FN(text)
+TFLT, "file_type", FN(text)
+TIT1, "content_group_description", FN(text)
+TIT2, "title", FN(text)
+TIT3, "subtitle", FN(text)
+TKEY, "initial_key", FN(text)
+TLAN, "language", FN(text)
+TLEN, "length", FN(text)
+TMED, "media_type", FN(text)
+TOAL, "original_album_title", FN(text)
+TOFN, "original_filename", FN(text)
+TOLY, "original_lyricist", FN(text)
+TOPE, "original_artist", FN(text)
+TOWN, "file_owner", FN(text)
+TPE1, "artist", FN(text)
+TPE2, "band", FN(text)
+TPE3, "conductor", FN(text)
+TPE4, "remixer", FN(text)
+TPOS, "part_of_set", FN(text)
+TPUB, "publisher", FN(text)
+TRCK, "tracknumber", FN(text)
+TRSN, "internet_radio_station_name", FN(text)
+TRSO, "internet_radio_station_owner", FN(text)
+TSRC, "isrc", FN(text)
+TSSE, "encoder_settings", FN(text)
+TXXX, "user_text", FN(text)
+UFID, "unique_file_identifier", FV(uniqueid)
+USLT, "unsynchronised_lyrics", FV(unsyncedlyrics)
+WCOM, "commercial", FV(url)
+WCOP, "copyright_information", FV(url)
+WOAF, "url_file", FV(url)
+WOAR, "url_artist", FV(url)
+WOAS, "url_source", FV(url)
+WORS, "url_station", FV(url)
+WPAY, "payment", FV(url)
+WPUB, "url_publisher", FV(url)
+WXXX, "url_user", FV(urlx)
+TDEN, "encoding_time", FN(text)
+TDOR, "original_release_time", FN(text)
+TDRC, "recording_time", FN(text)
+TDRL, "release_time", FN(text)
+TDTG, "tagging_time", FN(text)
+TIPL, "involved_people_list", FN(text)
+TMCL, "musician_credits_list", FN(text)
+TMOO, "mood", FN(text)
+TPRO, "produced_notice", FN(text)
+TSOA, "album_sort_order", FN(text)
+TSOP, "performer_sort_order", FN(text)
+TSOT, "title_sort_order", FN(text)
+TSST, "set_subtitle", FN(text)

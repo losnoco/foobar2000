@@ -1,0 +1,192 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Private Header Files">
+      <UniqueIdentifier>{fe485ff9-2160-4d22-bc59-fdf27b698b26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protected Header Files">
+      <UniqueIdentifier>{deb6f62c-0465-4595-8e26-f9a8f47e8e55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public Header Files">
+      <UniqueIdentifier>{8c75383f-b9d7-4cfd-b9db-5cf0a3177b0f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{8d334d78-a7ce-45c8-b84d-5f9680a89ea3}</UniqueIdentifier>
+      <Extensions>c</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Assembly Files %28ia32%29">
+      <UniqueIdentifier>{5a571ebb-2f7f-48bf-aa03-507edeaa426b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="bitbuffer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bitmath.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cpu.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="file_decoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="file_encoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fixed.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="float.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="format.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lpc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="md5.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="memory.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="metadata_iterators.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="metadata_object.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="seekable_stream_decoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="seekable_stream_encoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stream_decoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stream_encoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stream_encoder_framing.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\FLAC\all.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\FLAC\assert.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\FLAC\export.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\FLAC\file_decoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\FLAC\file_encoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\FLAC\format.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\FLAC\metadata.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\FLAC\ordinals.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\FLAC\seekable_stream_decoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\FLAC\seekable_stream_encoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\FLAC\stream_decoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\FLAC\stream_encoder.h">
+      <Filter>Public Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ia32\nasm.h">
+      <Filter>Source Files\Assembly Files %28ia32%29</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\all.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\bitbuffer.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\bitmath.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\cpu.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\crc.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\fixed.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\float.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\format.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\lpc.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\md5.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\memory.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\metadata.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\stream_encoder_framing.h">
+      <Filter>Private Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\all.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\file_decoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\file_encoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\seekable_stream_decoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\seekable_stream_encoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\stream_decoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\protected\stream_encoder.h">
+      <Filter>Protected Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="ia32\cpu_asm.nasm">
+      <Filter>Source Files\Assembly Files %28ia32%29</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ia32\fixed_asm.nasm">
+      <Filter>Source Files\Assembly Files %28ia32%29</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ia32\lpc_asm.nasm">
+      <Filter>Source Files\Assembly Files %28ia32%29</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

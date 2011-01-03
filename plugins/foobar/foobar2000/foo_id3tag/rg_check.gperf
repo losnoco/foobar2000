@@ -1,0 +1,18 @@
+%{
+
+#include <string.h>
+
+%}
+%%
+replaygain_track_gain
+replaygain_album_gain
+replaygain_track_peak
+replaygain_album_peak
+%%
+
+int is_replaygain(const char * name)
+{
+	const char * s = rg_check(name, strlen(name));
+	if (s) return 1;
+	else return 0;
+}

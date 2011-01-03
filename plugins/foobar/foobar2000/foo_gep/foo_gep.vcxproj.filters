@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="monitor">
+      <UniqueIdentifier>{629106c3-d2ff-451b-9fb5-42c18da78a1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="players">
+      <UniqueIdentifier>{d317f9f2-306e-4209-bac7-6f310ebc56c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="players\NSFE">
+      <UniqueIdentifier>{f665c49d-fd8e-4048-9ba1-5c0bc6fc7f99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="visualizers">
+      <UniqueIdentifier>{ec43998d-a748-4d95-9e44-61fd5c55ed7e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="base.cpp" />
+    <ClCompile Include="config.cpp" />
+    <ClCompile Include="gbs.cpp">
+      <Filter>players</Filter>
+    </ClCompile>
+    <ClCompile Include="generic.cpp">
+      <Filter>players</Filter>
+    </ClCompile>
+    <ClCompile Include="gym.cpp">
+      <Filter>players</Filter>
+    </ClCompile>
+    <ClCompile Include="hes.cpp">
+      <Filter>players</Filter>
+    </ClCompile>
+    <ClCompile Include="loadpic.cpp" />
+    <ClCompile Include="logo.cpp" />
+    <ClCompile Include="monitor.cpp">
+      <Filter>monitor</Filter>
+    </ClCompile>
+    <ClCompile Include="nsf.cpp">
+      <Filter>players</Filter>
+    </ClCompile>
+    <ClCompile Include="NSF_File.cpp">
+      <Filter>players\NSFE</Filter>
+    </ClCompile>
+    <ClCompile Include="PlaylistDlg.cpp">
+      <Filter>players\NSFE</Filter>
+    </ClCompile>
+    <ClCompile Include="reader.cpp" />
+    <ClCompile Include="spc.cpp">
+      <Filter>players</Filter>
+    </ClCompile>
+    <ClCompile Include="vgm.cpp">
+      <Filter>players</Filter>
+    </ClCompile>
+    <ClCompile Include="vis_spc.cpp">
+      <Filter>visualizers</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="base.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="loadpic.h" />
+    <ClInclude Include="logo.h" />
+    <ClInclude Include="monitor.h">
+      <Filter>monitor</Filter>
+    </ClInclude>
+    <ClInclude Include="NSF_File.h">
+      <Filter>players\NSFE</Filter>
+    </ClInclude>
+    <ClInclude Include="PlaylistDlg.h">
+      <Filter>players\NSFE</Filter>
+    </ClInclude>
+    <ClInclude Include="reader.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="coleco.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cough.wav" />
+    <None Include="gep1.jpg" />
+    <None Include="gep2.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="foo_gep.rc" />
+  </ItemGroup>
+</Project>
