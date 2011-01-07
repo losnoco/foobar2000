@@ -88,9 +88,20 @@
     <ClInclude Include="layout\layout.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="layout\mtaf_block.c" />
+    <ClCompile Include="layout\ps2_iab_blocked.c" />
+    <ClCompile Include="layout\ps2_strlr_blocked.c" />
+    <ClCompile Include="layout\tra_blocked.c" />
+    <ClCompile Include="meta\ngca.c" />
     <ClCompile Include="meta\nub.c" />
+    <ClCompile Include="meta\ps2_iab.c" />
+    <ClCompile Include="meta\ps2_mtaf.c" />
+    <ClCompile Include="meta\ps2_spm.c" />
+    <ClCompile Include="meta\ps2_strlr.c" />
     <ClCompile Include="meta\ps3_past.c" />
     <ClCompile Include="meta\ps3_sgh_sgb.c" />
+    <ClCompile Include="meta\wii_ras.c" />
+    <ClCompile Include="meta\x360_tra.c" />
     <ClCompile Include="streamfile.c" />
     <ClCompile Include="util.c" />
     <ClCompile Include="vgmstream.c" />

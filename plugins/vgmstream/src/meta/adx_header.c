@@ -283,6 +283,41 @@ static struct {
 	 * Neon Genesis Evangelion: Koutetsu no Girlfriend 2nd (PS2) */
     /* confirmed unique with guessadx */
 	{0x481d,0x4f25,0x5243},
+
+	/* Developer: Marvelous
+	 * Futakoi Alternative (PS2) */
+    /* confirmed unique with guessadx */
+	{0x413b,0x543b,0x57d1},
+
+	/* Developer: Marvelous
+	 * Gakuen Utopia - Manabi Straight! KiraKira Happy Festa! (PS2)
+	 * Second guess from guessadx, other was 
+	 *   {0x440b,0x4327,0x564b} 
+	 **/
+	 {0x440d,0x4327,0x4fff},
+
+	/* Developer: Datam Polystar
+	 * Soshite Kono Uchuu ni Kirameku Kimi no Shi XXX (PS2) */
+    /* confirmed unique with guessadx */
+	{0x5f5d,0x552b,0x5507},
+
+	/* Developer: Sega
+	 * Sakura Taisen: Atsuki Chishio Ni (PS2) */
+    /* confirmed unique with guessadx */
+	{0x645d,0x6011,0x5c29},
+
+	/* Developer: Sega
+	 * Sakura Taisen 3 ~Paris wa Moeteiru ka~ (PS2) */
+    /* confirmed unique with guessadx */
+	{0x62ad,0x4b13,0x5957},
+
+	/* Developer: Jinx
+	 * Sotsugyou 2nd Generation (PS2)
+     * First guess from guessadx, other was 
+	 *   {0x6307,0x509f,0x2ac5} 
+	 */
+	{0x6305,0x509f,0x4c01},
+
 };
 
 static const int key_count = sizeof(keys)/sizeof(keys[0]);

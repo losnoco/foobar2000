@@ -175,6 +175,10 @@ typedef enum {
     layout_aix,             /* CRI AIX's wheels within wheels */
     layout_aax,             /* CRI AAX's wheels within databases */
 	layout_ivaud_blocked,	/* GTA IV .ivaud blocks */
+	layout_tra_blocked,		/* DefJam Rapstar .tra blocks */
+	layout_mtaf_blocked,
+	layout_ps2_iab_blocked,
+	layout_ps2_strlr_blocked,
 } layout_t;
 
 /* The meta type specifies how we know what we know about the file. We may know because of a header we read, some of it may have been guessed from filenames, etc. */
@@ -222,6 +226,7 @@ typedef enum {
     meta_ADX_05,            /* ADX "type 05" */
     meta_AIX,               /* CRI AIX */
     meta_AAX,               /* CRI AAX */
+    meta_UTF_DSP,           /* CRI ADPCM_WII, like AAX with DSP */
 
     /* etc */
     meta_NGC_ADPDTK,        /* NGC DTK/ADP, no header (.adp) */
@@ -394,6 +399,7 @@ typedef enum {
     meta_OGG_SLI2,          /* Ogg Vorbis file w/ different styled .sli for looping */
     meta_OGG_SFL,           /* Ogg Vorbis file w/ .sfl (RIFF SFPL) for looping */
     meta_um3_ogg,           /* Ogg Vorbis with first 0x800 bytes XOR 0xFF */
+    meta_KOVS_ogg,          /* Ogg Vorbis with exta header and 0x100 bytes XOR */
 #endif
 
     meta_AIFC,              /* Audio Interchange File Format AIFF-C */
@@ -495,6 +501,13 @@ typedef enum {
 	meta_NUB_VAG,           /* VAG from Nub archives */
 	meta_PS3_PAST,          /* Bakugan Battle Brawlers (PS3) */
 	meta_PS3_SGH_SGB,       /* Folklore (PS3) */
+	meta_NGCA,              /* GoldenEye 007 (Wii) */
+	meta_WII_RAS,           /* Donkey Kong Country Returns (Wii) */
+	meta_PS2_SPM,            /* Lethal Skies Elite Pilot: Team SW */
+	meta_X360_TRA,			/* Def Jam Rapstar */
+	meta_PS2_VGS,			// Princess Soft PS2 games
+	meta_PS2_IAB,			// Ueki no Housoku - Taosu ze Robert Juudan!! (PS2)
+	meta_PS2_STRLR,
 } meta_t;
 
 typedef struct {

@@ -199,6 +199,7 @@ VGMSTREAM * (*init_vgmstream_fcns[])(STREAMFILE *streamFile) = {
     init_vgmstream_wii_sng,
     init_vgmstream_ngc_dsp_iadp,
     init_vgmstream_aax,
+    init_vgmstream_utf_dsp,
     init_vgmstream_ngc_ffcc_str,
     init_vgmstream_sat_baka,
     init_vgmstream_nds_swav,
@@ -291,6 +292,12 @@ VGMSTREAM * (*init_vgmstream_fcns[])(STREAMFILE *streamFile) = {
 	init_vgmstream_nub_vag,
 	init_vgmstream_ps3_past,
     init_vgmstream_ps3_sgh_sgb,
+	init_vgmstream_ngca,
+	init_vgmstream_wii_ras,
+	init_vgmstream_ps2_spm,
+	init_vgmstream_x360_tra,
+	init_vgmstream_ps2_iab,
+	init_vgmstream_ps2_strlr,
 };
 
 #define INIT_VGMSTREAM_FCNS (sizeof(init_vgmstream_fcns)/sizeof(init_vgmstream_fcns[0]))
@@ -326,6 +333,7 @@ VGMSTREAM * init_vgmstream_internal(STREAMFILE *streamFile, int do_dfs) {
 						 (vgmstream->meta_type == meta_DSP_YGO) ||
                         (vgmstream->meta_type == meta_DSP_AGSC) ||
 						 (vgmstream->meta_type == meta_PS2_SMPL) ||
+						 (vgmstream->meta_type == meta_NGCA) ||
 		                (vgmstream->meta_type == meta_NUB_VAG) ||
                         (vgmstream->meta_type == meta_SPT_SPD)
                         ) && vgmstream->channels == 1) {
@@ -731,6 +739,10 @@ void render_vgmstream(sample * buffer, int32_t sample_count, VGMSTREAM * vgmstre
         case layout_psx_mgav_blocked:
         case layout_ps2_adm_blocked:
         case layout_dsp_bdsp_blocked:
+		case layout_tra_blocked:
+		case layout_mtaf_blocked:
+		case layout_ps2_iab_blocked:
+		case layout_ps2_strlr_blocked:
             render_vgmstream_blocked(buffer,sample_count,vgmstream);
             break;
         case layout_interleave_byte:
@@ -1856,6 +1868,18 @@ void describe_vgmstream(VGMSTREAM * vgmstream, char * desc, int length) {
         case layout_ivaud_blocked:
             snprintf(temp,TEMPSIZE,"GTA IV blocked");
             break;
+		case layout_mtaf_blocked:
+            snprintf(temp,TEMPSIZE,"MTAF blocked");
+            break;
+		case layout_ps2_iab_blocked:
+            snprintf(temp,TEMPSIZE,"IAB blocked");
+            break;
+		case layout_ps2_strlr_blocked:
+            snprintf(temp,TEMPSIZE,"The Bouncer STR blocked");
+            break;
+		case layout_tra_blocked:
+            snprintf(temp,TEMPSIZE,"TRA blocked");
+            break;
         default:
             snprintf(temp,TEMPSIZE,"INCONCEIVABLE");
     }
@@ -1900,6 +1924,9 @@ void describe_vgmstream(VGMSTREAM * vgmstream, char * desc, int length) {
             break;
         case meta_AAX:
             snprintf(temp,TEMPSIZE,"CRI AAX header");
+            break;
+        case meta_UTF_DSP:
+            snprintf(temp,TEMPSIZE,"CRI ADPCM_WII header");
             break;
         case meta_DSP_AGSC:
             snprintf(temp,TEMPSIZE,"Retro Studios AGSC header");
@@ -2075,6 +2102,9 @@ void describe_vgmstream(VGMSTREAM * vgmstream, char * desc, int length) {
             break;
         case meta_um3_ogg:
             snprintf(temp,TEMPSIZE,"Ogg Vorbis, Ultramarine3 \"encryption\"");
+            break;
+        case meta_KOVS_ogg:
+            snprintf(temp,TEMPSIZE,"Ogg Vorbis, KOVS header");
             break;
 #endif
         case meta_DSP_SADB:
@@ -2710,6 +2740,27 @@ void describe_vgmstream(VGMSTREAM * vgmstream, char * desc, int length) {
             break;
 	    case meta_PS3_SGH_SGB:
             snprintf(temp,TEMPSIZE,"SGH+SGB SGXD header");
+            break;
+	    case meta_NGCA:
+            snprintf(temp,TEMPSIZE,"NGCA header");
+            break;
+	    case meta_WII_RAS:
+            snprintf(temp,TEMPSIZE,"RAS header");
+            break;
+	    case meta_PS2_SPM:
+            snprintf(temp,TEMPSIZE,"SPM header");
+            break;
+	    case meta_X360_TRA:
+            snprintf(temp,TEMPSIZE,"assumed DefJam Rapstar Audio File by .tra extension");
+            break;
+	    case meta_PS2_VGS:
+            snprintf(temp,TEMPSIZE,"Princess Soft VGS header");
+            break;
+	    case meta_PS2_IAB:
+            snprintf(temp,TEMPSIZE,"IAB header");
+            break;
+	    case meta_PS2_STRLR:
+            snprintf(temp,TEMPSIZE,"STR L/R header");
             break;
 		default:
            snprintf(temp,TEMPSIZE,"THEY SHOULD HAVE SENT A POET");

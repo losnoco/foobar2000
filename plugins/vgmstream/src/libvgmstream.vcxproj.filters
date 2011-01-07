@@ -853,5 +853,38 @@
     <ClCompile Include="meta\ps3_sgh_sgb.c">
       <Filter>meta\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="meta\ngca.c">
+      <Filter>meta\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="meta\ps2_mtaf.c">
+      <Filter>meta\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="meta\ps2_spm.c">
+      <Filter>meta\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="meta\ps2_strlr.c">
+      <Filter>meta\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="meta\wii_ras.c">
+      <Filter>meta\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="meta\x360_tra.c">
+      <Filter>meta\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="meta\ps2_iab.c">
+      <Filter>meta\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="layout\ps2_strlr_blocked.c">
+      <Filter>layout\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="layout\mtaf_block.c">
+      <Filter>layout\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="layout\ps2_iab_blocked.c">
+      <Filter>layout\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="layout\tra_blocked.c">
+      <Filter>layout\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
