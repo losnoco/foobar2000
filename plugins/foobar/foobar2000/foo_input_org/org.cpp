@@ -1,7 +1,11 @@
-#define MYVERSION "1.3"
+#define MYVERSION "1.4"
 
 /*
 	changelog
+
+2011-01-08 20:38 UTC - kode54
+- Added sample rate configuration
+- Version is now 1.4
 
 2010-12-30 15:42 UTC - kode54
 - Cleaned up advanced preferences a bit
@@ -51,6 +55,10 @@ static const GUID guid_cfg_interpolation_linear =
 static const GUID guid_cfg_interpolation_cubic = 
 { 0x695aed6c, 0xde2c, 0x4840, { 0xa8, 0x6b, 0xe0, 0x74, 0x23, 0x23, 0x2e, 0xf0 } };
 
+// {0EBB3585-F5DF-4730-B456-18ED6A4B1137}
+static const GUID guid_cfg_sample_rate = 
+{ 0xebb3585, 0xf5df, 0x4730, { 0xb4, 0x56, 0x18, 0xed, 0x6a, 0x4b, 0x11, 0x37 } };
+
 advconfig_branch_factory cfg_organya_parent("Organya decoder", guid_cfg_parent_organya, advconfig_branch::guid_branch_playback, 0);
 
 advconfig_branch_factory cfg_interpolation_parent("Interpolation method", guid_cfg_parent_interpolation, guid_cfg_parent_organya, 1.0);
@@ -61,13 +69,19 @@ advconfig_radio_factory cfg_interpolation_none("None", guid_cfg_interpolation_no
 advconfig_radio_factory cfg_interpolation_linear("Linear", guid_cfg_interpolation_linear, guid_cfg_parent_interpolation, 1, false);
 advconfig_radio_factory cfg_interpolation_cubic("Cubic", guid_cfg_interpolation_cubic, guid_cfg_parent_interpolation, 2, false);
 
+advconfig_integer_factory cfg_sample_rate("Sample rate", guid_cfg_sample_rate, guid_cfg_parent_organya, 0, 44100, 8000, 192000 );
+
 class input_org
 {
 	org_decoder_t * m_tune;
 
 	t_filestats m_stats;
 
-	unsigned length;
+	unsigned length, sample_rate;
+
+	size_t samples_decoded;
+
+	bool first_frame;
 
 	pfc::array_t< t_int16 > sample_buffer;
 
@@ -97,15 +111,17 @@ public:
 		m_tune = org_decoder_create( m_file, my_path, 1, p_abort );
 		if ( !m_tune ) throw exception_io_data();
 
+		sample_rate = cfg_sample_rate;
+		m_tune->state.sample_rate = sample_rate;
+
 		length = org_decoder_get_total_samples( m_tune );
 	}
 
 	void get_info( file_info & p_info, abort_callback & p_abort )
 	{
 		p_info.info_set( "encoding", "synthesized" );
-		p_info.info_set_int( "samplerate", 44100 );
 		p_info.info_set_int( "channels", 2 );
-		p_info.set_length( ( double ) length / 44100. );
+		p_info.set_length( ( double ) length / ( double ) sample_rate );
 	}
 
 	t_filestats get_file_stats( abort_callback & p_abort )
@@ -125,22 +141,25 @@ public:
 
 		m_tune->state.loop_count = dont_loop ? 1 : 0;
 		m_tune->state.interpolation_method = interpolation_method;
+
+		first_frame = true;
 	}
 
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 	{
 		t_int16 * ptr = sample_buffer.get_ptr();
 
-		size_t samples_decoded = org_decode_samples( m_tune, ptr, 1024 );
+		samples_decoded = org_decode_samples( m_tune, ptr, 1024 );
 
-		if ( samples_decoded ) p_chunk.set_data_fixedpoint( ptr, samples_decoded * 2 * 2, 44100, 2, 16, audio_chunk::channel_config_stereo );
+		if ( samples_decoded ) p_chunk.set_data_fixedpoint( ptr, samples_decoded * 2 * 2, sample_rate, 2, 16, audio_chunk::channel_config_stereo );
 		
 		return !!samples_decoded;
 	}
 
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
-		unsigned sample = unsigned ( audio_math::time_to_samples( p_seconds, 44100 ) );
+		first_frame = true;
+		unsigned sample = unsigned ( audio_math::time_to_samples( p_seconds, sample_rate ) );
 		org_decoder_seek_sample( m_tune, sample );
 	}
 
@@ -151,6 +170,13 @@ public:
 
 	bool decode_get_dynamic_info(file_info & p_out, double & p_timestamp_delta)
 	{
+		if ( first_frame )
+		{
+			first_frame = false;
+			p_out.info_set_int( "samplerate", sample_rate );
+			p_timestamp_delta = - ( ( double ) samples_decoded / ( double ) sample_rate );
+			return true;
+		}
 		return false;
 	}
 
