@@ -44,7 +44,7 @@ void _org_advance_beat(org_decoder_t *decoder) {
 			if (should_loop) {
 				decoder->state.current_loop++;
 				decoder->state.current_beat = decoder->file->header.loop_start;
-				decoder->state.current_sample = decoder->state.current_beat * (decoder->file->header.tempo * decoder->state.sample_rate)/1000; // reset the sample
+				decoder->state.current_sample = decoder->state.current_beat * (uint32_t)(((uint64_t)decoder->file->header.tempo * (uint64_t)decoder->state.sample_rate)/(uint64_t)1000); // reset the sample
 				for (int i = 0; i < 16; i++) {
 					decoder->state.tracks[i].playing = 0;
 					for (int j = 0; j < decoder->file->instruments[i].note_count; j++) {
@@ -114,11 +114,12 @@ size_t org_decode_samples(org_decoder_t *decoder, int16_t *buffer, size_t num_sa
 {
 	//const uint8_t bits_per_sample = 16;
 	//const uint8_t channels = 2;
+	uint32_t samples_per_beat = (uint32_t)((uint64_t)decoder->file->header.tempo * (uint64_t)decoder->state.sample_rate / (uint64_t)1000);
 	for (int i = 0; i < num_samples; i++) {
 		int32_t left_wave = 0;
 		int32_t right_wave = 0;
 		
-		if (decoder->state.current_sample % ((decoder->file->header.tempo*decoder->state.sample_rate)/1000) == 0) { // we are done sampling the current beat, on to the next
+		if (decoder->state.current_sample % samples_per_beat == 0) { // we are done sampling the current beat, on to the next
 			_org_advance_beat(decoder);
 			
 			// Check if we are done decoding the file.
@@ -143,17 +144,18 @@ size_t org_decode_samples(org_decoder_t *decoder, int16_t *buffer, size_t num_sa
 			}
 			
 			// Determine frequency adjustment
-			double freq = (decoder->file->instruments[j].pitch - 1000.0)/(double)decoder->state.sample_rate;
+			double freq = (double)decoder->file->instruments[j].pitch - 1000.0;
 			if (is_melody) {
-				freq += 8363*pow(2.0,note.key/12.0)/(double)decoder->state.sample_rate/2;
+				freq += 8363*pow(2.0,note.key/12.0)/2;
 			}
 			else {
-				freq += (800*note.key + 100)/(double)decoder->state.sample_rate;
+				freq += (800*note.key + 100);
 			}
+			freq /= (double)decoder->state.sample_rate;
 			
 			// Calculate the offset into the sample data
 			uint32_t note_start_beat = note.start;
-			uint32_t note_sample_pos = (decoder->state.current_sample - ((note_start_beat * decoder->file->header.tempo)*decoder->state.sample_rate)/1000);
+			uint32_t note_sample_pos = decoder->state.current_sample - note_start_beat * samples_per_beat;
 			uint32_t note_sample_pos_fraction = (uint32_t)(uint16_t)(note_sample_pos * freq * 65536.0);
 			note_sample_pos = (uint32_t)(note_sample_pos * freq);
 			
@@ -307,7 +309,7 @@ size_t org_decoder_get_total_samples(org_decoder_t *decoder)
 	}
 	
 	uint32_t total_beats = loop_start + loop_count * (loop_end - loop_start);
-	size_t total_samples = total_beats * (decoder->file->header.tempo * (decoder->state.sample_rate/1000.0));
+	size_t total_samples = total_beats * (uint32_t)(((uint64_t)decoder->file->header.tempo * (uint64_t)decoder->state.sample_rate) / (uint64_t)1000);
 	
 	return total_samples;
 }
@@ -315,7 +317,8 @@ size_t org_decoder_get_total_samples(org_decoder_t *decoder)
 // Really might as well create a new decoder and throw away samples.
 void org_decoder_seek_sample(org_decoder_t *decoder, size_t sample)
 {
-	uint32_t beat = sample/((decoder->state.sample_rate*decoder->file->header.tempo)/1000);
+	uint32_t samples_per_beat = (uint32_t)((uint64_t)decoder->state.sample_rate*(uint64_t)decoder->file->header.tempo/(uint64_t)1000);
+	uint32_t beat = sample/samples_per_beat;
 	
 	// Reset the decoder state
 	decoder->state.primed = 0;
@@ -334,7 +337,7 @@ void org_decoder_seek_sample(org_decoder_t *decoder, size_t sample)
 		_org_advance_beat(decoder);
 	}
 	// In == 0 case, the first call to decode samples will advance the beat
-	if (sample % ((decoder->file->header.tempo*decoder->state.sample_rate)/1000) != 0) {
+	if (sample % samples_per_beat != 0) {
 		_org_advance_beat(decoder);
 	}
 
@@ -345,7 +348,7 @@ void org_decoder_seek_sample(org_decoder_t *decoder, size_t sample)
 	else {
 		// The beat the current loop would be if played from the beginning
 		uint32_t looped_beats = (decoder->state.current_loop - 1) * (decoder->file->header.loop_end - decoder->file->header.loop_start);
-		decoder->state.current_sample = sample - (looped_beats * (decoder->file->header.tempo * (decoder->state.sample_rate/1000.0))); // reset the sample
+		decoder->state.current_sample = sample - (looped_beats * samples_per_beat); // reset the sample
 	}
 }
 

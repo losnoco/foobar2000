@@ -1,7 +1,12 @@
-#define MYVERSION "1.4"
+#define MYVERSION "1.5"
 
 /*
 	changelog
+
+2011-01-09 16:14 UTC - kode54
+- Fixed beat to sample conversion so sample positions are calculated correctly for the full
+  song lengths of all feasible .ORG files, even up to 192KHz
+- Version is now 1.5
 
 2011-01-08 20:38 UTC - kode54
 - Added sample rate configuration
