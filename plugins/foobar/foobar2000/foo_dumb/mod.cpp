@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.22"
+#define MYVERSION "0.9.9.23"
 
 /*
 	changelog
+
+2011-01-09 12:44 UTC - kode54
+- Replaced old aliased resampling mode with a 65536x oversampling sinc resampler
+- Version is now 0.9.9.23
 
 2010-11-22 01:12 UTC - kode54
 - Changed a break to row behavior in DUMB, hopefully it doesn't break anything
