@@ -1,7 +1,11 @@
-#define MYVERSION "1.5"
+#define MYVERSION "1.6"
 
 /*
 	changelog
+
+2011-01-11 05:21 UTC - kode54
+- Implemented band-limited synthesis using blargg's blip_buf library
+- Version is now 1.6
 
 2010-04-13 14:55 UTC - kode54
 - Amended preferences WM_INITDIALOG handler
@@ -24,6 +28,8 @@
 - Version is now 1.1
 
 */
+
+#define _WIN32_WINNT 0x0501
 
 #include <foobar2000.h>
 #include "../helpers/dropdown_helper.h"
@@ -70,7 +76,7 @@ class input_hvl
 
 	pfc::array_t< t_uint8 > file_buffer;
 
-	pfc::array_t< t_int16 > sample_buffer;
+	pfc::array_t< t_int32 > sample_buffer;
 
 public:
 	input_hvl()
@@ -176,11 +182,19 @@ public:
 	{
 		if ( dont_loop && m_tune->ht_SongEndReached ) return false;
 
+		int const sample_count = srate / 50;
+
 		t_int8 * ptr = ( t_int8 * ) sample_buffer.get_ptr();
 
-		hvl_DecodeFrame( m_tune, ptr, ptr + 2, 4 );
+		hvl_DecodeFrame( m_tune, ptr, ptr + 4, 8 );
 
-		p_chunk.set_data_fixedpoint( ptr, srate / 50 * 4, srate, 2, 16, audio_chunk::channel_config_stereo );
+		p_chunk.set_data_size( sample_count * 2 );
+
+		audio_math::convert_from_int32( (t_int32 *)ptr, sample_count * 2, p_chunk.get_data(), 1 << 8 );
+		
+		p_chunk.set_srate( srate );
+		p_chunk.set_channels( 2, audio_chunk::channel_config_stereo );
+		p_chunk.set_sample_count( sample_count );
 		
 		return true;
 	}

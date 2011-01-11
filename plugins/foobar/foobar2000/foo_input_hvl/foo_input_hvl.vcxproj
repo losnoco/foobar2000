@@ -222,10 +222,12 @@
     <ResourceCompile Include="foo_input_hvl.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="blip_buf.c" />
     <ClCompile Include="hvl.cpp" />
     <ClCompile Include="hvl_replay.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="blip_buf.h" />
     <ClInclude Include="hvl_replay.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

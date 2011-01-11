@@ -3,6 +3,8 @@
 extern "C" {
 #endif
 
+#include "blip_buf.h"
+
 typedef char int8;
 typedef unsigned char uint8;
 typedef short int16;
@@ -19,7 +21,7 @@ typedef int BOOL;
 // Woohoo!
 #define MAX_CHANNELS 16
 
-#define Period2Freq(period) ((3546897.f * 65536.f) / (period)) 
+#define Period2Freq(period) (3546897.f / (period)) 
 
 struct hvl_envelope
 {
@@ -179,6 +181,8 @@ struct hvl_voice
   uint8                  vc_RingWaveform;
   uint8                  vc_RingFixedPeriod;
   int8                   vc_RingVoiceBuffer[0x282*4];
+  int32                  vc_LastAmp[2];
+  uint32                 vc_LastClock[2];
 };
 
 struct hvl_tune
@@ -212,6 +216,7 @@ struct hvl_tune
   struct hvl_step        ht_Tracks[256][64];
   struct hvl_instrument *ht_Instruments;
   struct hvl_voice       ht_Voices[MAX_CHANNELS];
+  blip_t                *ht_BlipBuffers[2];
   int32                  ht_defstereo;
   int32                  ht_defpanleft;
   int32                  ht_defpanright;

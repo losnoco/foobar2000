@@ -316,6 +316,14 @@
 	</References>
 	<Files>
 		<File
+			RelativePath=".\blip_buf.c"
+			>
+		</File>
+		<File
+			RelativePath=".\blip_buf.h"
+			>
+		</File>
+		<File
 			RelativePath=".\foo_input_hvl.rc"
 			>
 		</File>

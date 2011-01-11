@@ -259,7 +259,7 @@ void hvl_reset_some_stuff( struct hvl_tune *ht )
 
   for( i=0; i<MAX_CHANNELS; i++ )
   {
-    ht->ht_Voices[i].vc_Delta=1;
+    ht->ht_Voices[i].vc_Delta=~0;
     ht->ht_Voices[i].vc_OverrideTranspose=1000;  // 1.5
     ht->ht_Voices[i].vc_SamplePos=ht->ht_Voices[i].vc_Track=ht->ht_Voices[i].vc_Transpose=ht->ht_Voices[i].vc_NextTrack = ht->ht_Voices[i].vc_NextTranspose = 0;
     ht->ht_Voices[i].vc_ADSRVolume=ht->ht_Voices[i].vc_InstrPeriod=ht->ht_Voices[i].vc_TrackPeriod=ht->ht_Voices[i].vc_VibratoPeriod=ht->ht_Voices[i].vc_NoteMaxVolume=ht->ht_Voices[i].vc_PerfSubVolume=ht->ht_Voices[i].vc_TrackMasterVolume=0;
@@ -291,7 +291,15 @@ void hvl_reset_some_stuff( struct hvl_tune *ht )
     ht->ht_Voices[i].vc_TrackMasterVolume = 0x40;
     ht->ht_Voices[i].vc_TrackOn           = 1;
     ht->ht_Voices[i].vc_MixSource         = ht->ht_Voices[i].vc_VoiceBuffer;
+
+	ht->ht_Voices[i].vc_LastAmp[0]        = 0;
+	ht->ht_Voices[i].vc_LastAmp[1]        = 0;
+	ht->ht_Voices[i].vc_LastClock[0]      = 0;
+	ht->ht_Voices[i].vc_LastClock[1]      = 0;
   }
+
+  blip_clear(ht->ht_BlipBuffers[0]);
+  blip_clear(ht->ht_BlipBuffers[1]);
 }
 
 BOOL hvl_InitSubsong( struct hvl_tune *ht, uint32 nr )
@@ -384,6 +392,7 @@ struct hvl_tune *hvl_load_ahx( uint8 *buf, uint32 buflen, uint32 defstereo, uint
   hs += sizeof( struct hvl_position ) * posn;
   hs += sizeof( struct hvl_instrument ) * (insn+1);
   hs += sizeof( uint16 ) * ssn;
+  hs += blip_size( 256 ) * 2;
 
   // Calculate the size of all instrument PList buffers
   bptr = &buf[14];
@@ -411,10 +420,17 @@ struct hvl_tune *hvl_load_ahx( uint8 *buf, uint32 buflen, uint32 defstereo, uint
   ht->ht_Frequency       = freq;
   ht->ht_FreqF           = (float64)freq;
   
-  ht->ht_Positions   = (struct hvl_position *)(&ht[1]);
-  ht->ht_Instruments = (struct hvl_instrument *)(&ht->ht_Positions[posn]);
-  ht->ht_Subsongs    = (uint16 *)(&ht->ht_Instruments[(insn+1)]);
-  ple                = (struct hvl_plsentry *)(&ht->ht_Subsongs[ssn]);
+  ht->ht_Positions      = (struct hvl_position *)(&ht[1]);
+  ht->ht_Instruments    = (struct hvl_instrument *)(&ht->ht_Positions[posn]);
+  ht->ht_Subsongs       = (uint16 *)(&ht->ht_Instruments[(insn+1)]);
+  ht->ht_BlipBuffers[0] = (blip_t *)(&ht->ht_Subsongs[ssn]);
+  ht->ht_BlipBuffers[1] = (blip_t *)((uint8 *)(ht->ht_BlipBuffers[0]) + blip_size(256));
+  ple                   = (struct hvl_plsentry *)(((uint8 *)ht->ht_BlipBuffers[1]) + blip_size(256));
+
+  blip_new_inplace(ht->ht_BlipBuffers[0], 256);
+  blip_new_inplace(ht->ht_BlipBuffers[1], 256);
+  blip_set_rates(ht->ht_BlipBuffers[0], 65536, 1);
+  blip_set_rates(ht->ht_BlipBuffers[1], 65536, 1);
 
   ht->ht_WaveformTab[0]  = &waves[WO_TRIANGLE_04];
   ht->ht_WaveformTab[1]  = &waves[WO_SAWTOOTH_04];
@@ -618,6 +634,7 @@ struct hvl_tune *hvl_LoadTune( uint8 *buf, uint32 buflen, uint32 freq, uint32 de
   hs += sizeof( struct hvl_position ) * posn;
   hs += sizeof( struct hvl_instrument ) * (insn+1);
   hs += sizeof( uint16 ) * ssn;
+  hs += blip_size(256) * 2;
 
   // Calculate the size of all instrument PList buffers
   bptr = &buf[16];
@@ -665,7 +682,14 @@ struct hvl_tune *hvl_LoadTune( uint8 *buf, uint32 buflen, uint32 freq, uint32 de
   ht->ht_Positions       = (struct hvl_position *)(&ht[1]);
   ht->ht_Instruments     = (struct hvl_instrument *)(&ht->ht_Positions[posn]);
   ht->ht_Subsongs        = (uint16 *)(&ht->ht_Instruments[(insn+1)]);
-  ple                    = (struct hvl_plsentry *)(&ht->ht_Subsongs[ssn]);
+  ht->ht_BlipBuffers[0]  = (blip_t *)(&ht->ht_Subsongs[ssn]);
+  ht->ht_BlipBuffers[1]  = (blip_t *)(((uint8 *)ht->ht_BlipBuffers[0]) + blip_size(256));
+  ple                    = (struct hvl_plsentry *)(((uint8 *)ht->ht_BlipBuffers[1]) + blip_size(256));
+
+  blip_new_inplace(ht->ht_BlipBuffers[0], 256);
+  blip_new_inplace(ht->ht_BlipBuffers[1], 256);
+  blip_set_rates(ht->ht_BlipBuffers[0], 65536, 1);
+  blip_set_rates(ht->ht_BlipBuffers[1], 65536, 1);
 
   ht->ht_WaveformTab[0]  = &waves[WO_TRIANGLE_04];
   ht->ht_WaveformTab[1]  = &waves[WO_SAWTOOTH_04];
@@ -1779,17 +1803,16 @@ void hvl_set_audio( struct hvl_voice *voice, float64 freqf )
   if( voice->vc_PlantPeriod )
   {
     float64 freq2;
-    uint32  delta;
+	uint32  idelta;
     
     voice->vc_PlantPeriod = 0;
     voice->vc_VoicePeriod = voice->vc_AudioPeriod;
     
     freq2 = Period2Freq( voice->vc_AudioPeriod );
-    delta = (uint32)(freq2 / freqf);
+	idelta = (uint32)(freqf / freq2 * 65536.f);
 
-    if( delta > (0x280<<16) ) delta -= (0x280<<16);
-    if( delta == 0 ) delta = 1;
-    voice->vc_Delta = delta;
+    if( idelta == 0 ) idelta = 1;
+    voice->vc_Delta = idelta;
   }
   
   if( voice->vc_NewWaveform )
@@ -1818,15 +1841,14 @@ void hvl_set_audio( struct hvl_voice *voice, float64 freqf )
   if( voice->vc_RingPlantPeriod )
   {
     float64 freq2;
-    uint32  delta;
+    uint32  idelta;
     
     voice->vc_RingPlantPeriod = 0;
     freq2 = Period2Freq( voice->vc_RingAudioPeriod );
-    delta = (uint32)(freq2 / freqf);
+    idelta = (uint32)(freqf / freq2 * 65536.f);
     
-    if( delta > (0x280<<16) ) delta -= (0x280<<16);
-    if( delta == 0 ) delta = 1;
-    voice->vc_RingDelta = delta;
+    if( idelta == 0 ) idelta = 1;
+    voice->vc_RingDelta = idelta;
   }
   
   if( voice->vc_RingNewWaveform )
@@ -1923,7 +1945,10 @@ void hvl_mixchunk( struct hvl_tune *ht, uint32 samples, int8 *buf1, int8 *buf2, 
   int32   panl[MAX_CHANNELS];
   int32   panr[MAX_CHANNELS];
 //  uint32  vu[MAX_CHANNELS];
-  int32   a=0, b=0, j;
+  int32   last_amp[MAX_CHANNELS][2];
+  uint32  last_clock[MAX_CHANNELS][2];
+  uint32  clock, rclock, next_clock, current_clock, target_clock;
+  int32   j, blip_deltal, blip_deltar, last_ampl, last_ampr;
   uint32  i, chans, loops;
   
   chans = ht->ht_Channels;
@@ -1940,6 +1965,11 @@ void hvl_mixchunk( struct hvl_tune *ht, uint32 samples, int8 *buf1, int8 *buf2, 
     rdelta[i]= ht->ht_Voices[i].vc_RingDelta;
     rpos[i]  = ht->ht_Voices[i].vc_RingSamplePos;
     rsrc[i]  = ht->ht_Voices[i].vc_RingMixSource;
+
+	last_amp[i][0]   = ht->ht_Voices[i].vc_LastAmp[0];
+	last_amp[i][1]   = ht->ht_Voices[i].vc_LastAmp[1];
+	last_clock[i][0] = ht->ht_Voices[i].vc_LastClock[0];
+	last_clock[i][1] = ht->ht_Voices[i].vc_LastClock[1];
     
 //    vu[i] = 0;
   }
@@ -1947,63 +1977,76 @@ void hvl_mixchunk( struct hvl_tune *ht, uint32 samples, int8 *buf1, int8 *buf2, 
   do
   {
     loops = samples;
-    for( i=0; i<chans; i++ )
-    {
-      if( pos[i] >= (0x280 << 16)) pos[i] -= 0x280<<16;
-      cnt = ((0x280<<16) - pos[i] - 1) / delta[i] + 1;
-      if( cnt < loops ) loops = cnt;
-      
-      if( rsrc[i] )
-      {
-        if( rpos[i] >= (0x280<<16)) rpos[i] -= 0x280<<16;
-        cnt = ((0x280<<16) - rpos[i] - 1) / rdelta[i] + 1;
-        if( cnt < loops ) loops = cnt;
-      }
-      
-    }
-    
+	if (loops > 256) loops = 256;
+
     samples -= loops;
+
+	target_clock = loops << 16;
     
     // Inner loop
-    do
-    {
-      a=0;
-      b=0;
       for( i=0; i<chans; i++ )
       {
-        if( rsrc[i] )
-        {
-          /* Ring Modulation */
-          j = ((src[i][pos[i]>>16]*rsrc[i][rpos[i]>>16])>>7)*vol[i];
-          rpos[i] += rdelta[i];
-        } else {
-          j = src[i][pos[i]>>16]*vol[i];
-        }
+		if( delta[i] == ~0 ) continue;
+		last_ampl = last_amp[i][0];
+		last_ampr = last_amp[i][1];
+		clock = last_clock[i][0];
+        rclock = last_clock[i][1];
+		current_clock = clock;
+		if( rsrc[i] && rclock < clock ) current_clock = rclock;
+		while (current_clock < target_clock)
+		{
+		  clock += delta[i];
+		  next_clock = clock;
+          if( rsrc[i] )
+          {
+			rclock += rdelta[i];
+		    if( rclock < next_clock ) next_clock = rclock;
+            /* Ring Modulation */
+            j = ((src[i][pos[i]]*rsrc[i][rpos[i]])>>7)*vol[i];
+			if( rclock == next_clock ) rpos[i] = (rpos[i] + 1) % 0x280;
+          } else {
+            j = src[i][pos[i]]*vol[i];
+          }
         
+		  if( clock == next_clock ) pos[i] = (pos[i] + 1) % 0x280;
+
 //        if( abs( j ) > vu[i] ) vu[i] = abs( j );
 
-        a += (j * panl[i]) >> 7;
-        b += (j * panr[i]) >> 7;
-        pos[i] += delta[i];
+          blip_deltal = ((j * panl[i]) >> 7) - last_ampl;
+          blip_deltar = ((j * panr[i]) >> 7) - last_ampr;
+		  last_ampl += blip_deltal;
+		  last_ampr += blip_deltar;
+		  if( blip_deltal ) blip_add_delta( ht->ht_BlipBuffers[0], current_clock, blip_deltal );
+		  if( blip_deltar ) blip_add_delta( ht->ht_BlipBuffers[1], current_clock, blip_deltar );
+
+		  current_clock = next_clock;
+		}
+		clock -= target_clock;
+		if( rsrc[i] ) rclock -= target_clock;
+		last_clock[i][0] = clock;
+		last_clock[i][1] = rclock;
+		last_amp[i][0] = last_ampl;
+		last_amp[i][1] = last_ampr;
       }
-      
-      a = (a*ht->ht_mixgain)>>8;
-      b = (b*ht->ht_mixgain)>>8;
-      
-      *(int16 *)buf1 = a;
-      *(int16 *)buf2 = b;
-      
-      loops--;
-      
-      buf1 += bufmod;
-      buf2 += bufmod;
-    } while( loops > 0 );
+
+	  blip_end_frame( ht->ht_BlipBuffers[0], target_clock );
+	  blip_end_frame( ht->ht_BlipBuffers[1], target_clock );
+
+	  blip_read_samples( ht->ht_BlipBuffers[0], (int*)buf1, loops, ht->ht_mixgain );
+	  blip_read_samples( ht->ht_BlipBuffers[1], (int*)buf2, loops, ht->ht_mixgain );
+
+	  buf1 += bufmod * loops;
+	  buf2 += bufmod * loops;
   } while( samples > 0 );
 
   for( i=0; i<chans; i++ )
   {
     ht->ht_Voices[i].vc_SamplePos = pos[i];
     ht->ht_Voices[i].vc_RingSamplePos = rpos[i];
+	ht->ht_Voices[i].vc_LastAmp[0] = last_amp[i][0];
+	ht->ht_Voices[i].vc_LastAmp[1] = last_amp[i][1];
+	ht->ht_Voices[i].vc_LastClock[0] = last_clock[i][0];
+	ht->ht_Voices[i].vc_LastClock[1] = last_clock[i][1];
 //    ht->ht_Voices[i].vc_VUMeter = vu[i];
   }
 }
@@ -2019,8 +2062,8 @@ void hvl_DecodeFrame( struct hvl_tune *ht, int8 *buf1, int8 *buf2, int32 bufmod 
   {
     hvl_play_irq( ht );
     hvl_mixchunk( ht, samples, buf1, buf2, bufmod );
-    buf1 += samples * 4;
-    buf2 += samples * 4;
+    buf1 += samples * 8;
+    buf2 += samples * 8;
     loops--;
   } while( loops );
 }
