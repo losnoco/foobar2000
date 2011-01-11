@@ -1,7 +1,14 @@
-#define MYVERSION "0.9.9.23"
+#define MYVERSION "0.9.9.24"
 
 /*
 	changelog
+
+2011-01-11 16:11 UTC - kode54
+- Changed aliased resampler loop conditions a bit to fix some bugs
+- Removed resampler loop unrolling, as it actually made things slightly slower
+- Fixed a bug with songs triggering notes on the first order with instrument
+  changes before any note commands have been triggered
+- Version is now 0.9.9.24
 
 2011-01-09 12:44 UTC - kode54
 - Replaced old aliased resampling mode with a 65536x oversampling sinc resampler
