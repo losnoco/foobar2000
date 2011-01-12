@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.24"
+#define MYVERSION "0.9.9.25"
 
 /*
 	changelog
+
+2011-01-12 01:45 UTC - kode54
+- Changed unlooped sample end volume ramping rules a bit
+- Version is now 0.9.9.25
 
 2011-01-11 16:11 UTC - kode54
 - Changed aliased resampler loop conditions a bit to fix some bugs
@@ -1993,10 +1997,10 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 					{
 						double rate = 1. / double( sample->C5_speed );
 						double length = double( sample->length ) * rate;
-						if ( length >= .1 )
+						if ( length >= .001 )
 						{
 							int k, l = sample->length;
-							if ( ramp_mode == 1 && ( ( rate * 16. ) < .01 ) )
+							if ( ( ramp_mode == 1 || length < .1 ) && ( sample->length > (sample->flags & IT_SAMPLE_16BIT ? 64 : 32) ) && ( ( rate * 16. ) < .01 ) )
 							{
 								if (sample->flags & IT_SAMPLE_16BIT)
 								{
@@ -2039,7 +2043,7 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 									}
 								}
 							}
-							else
+							else if ( length > .1 )
 							{
 								int m = int( .01 * double( sample->C5_speed ) + .5 );
 								k = l - m;
