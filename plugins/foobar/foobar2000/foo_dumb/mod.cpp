@@ -1,7 +1,20 @@
-#define MYVERSION "0.9.9.25"
+#define MYVERSION "0.9.9.28"
 
 /*
 	changelog
+
+2011-01-13 23:11 UTC - kode54
+- Implemented ASYLUM instrument base semitone offset
+- Fixed ASYLUM effect number translation
+- Version is now 0.9.9.28
+
+2011-01-13 21:28 UTC - kode54
+- Quick fix for PT2 invert loop effect
+- Version is now 0.9.9.27
+
+2011-01-13 20:37 UTC - kode54
+- Implemented PT2 invert loop effect
+- Version is now 0.9.9.26
 
 2011-01-12 01:45 UTC - kode54
 - Changed unlooped sample end volume ramping rules a bit
