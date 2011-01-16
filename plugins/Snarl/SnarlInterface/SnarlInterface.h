@@ -55,7 +55,8 @@ namespace Snarl {
 			NotificationAck = 34,          // Notification was left-clicked by user
 			NotificationMenu = 35,         // Menu item selected (V39)
 			NotificationMiddleButton = 36, // Notification middle-clicked by user (V39)
-			NotificationClosed = 37        // User clicked the close gadget (V39)
+			NotificationClosed = 37,       // User clicked the close gadget (V39)
+			NotificationAction = 38        // User triggered an action command (V42)
 		};
 
 		/// <summary>
@@ -104,7 +105,11 @@ namespace Snarl {
 			UpdateNotification,
 			HideNotification,
 			IsNotificationVisible,
-			LastError                  // deprecated but retained for backwards compatability
+			LastError,                 // deprecated but retained for backwards compatability
+			AddAction,
+			ClearActions,
+			Request,
+			Parse
 		};
 	}
 
@@ -158,6 +163,14 @@ namespace Snarl {
 			/// <summary>Remove all notification classes in one call.</summary>
 			/// <returns>0 on failure.</returns>
 			LONG32 RemoveAllClasses(bool forgetSettings = false);
+
+			/// <summary>Add an action to a given notification.</summary>
+			/// <returns>0 on failure.</returns>
+			LONG32 AddAction(LONG32 token, LPCSTR label = NULL, LPCSTR command = NULL);
+
+			/// <summary>Remove all actions from a given notification.</summary>
+			/// <returns>0 on failure.</returns>
+			LONG32 RemoveAllActions(LONG32 token);
 			
 			/// <summary>Show a Snarl notification.</summary>
 			/// <returns>Returns the notification token or 0 on failure.</returns>
@@ -263,6 +276,12 @@ namespace Snarl {
 			/// <param name="format">The format string. Can be NULL or "" to just zero PackedData!</param>
 			/// <param name="...">Variable number of objects to convert</param>
 			void   PackData(BYTE* data, LPCSTR format, ...);
+
+			/// <summary>Pack data into a string and return it.</summary>
+			/// <returns>Returns pointer to the new string - Remember to delete [] returned string!</returns>
+			/// <param name="format">The format string. Can be NULL or "" to just zero PackedData!</param>
+			/// <param name="...">Variable number of objects to convert</param>
+			LPSTR  PackData(LPCSTR format, ...);
 
 			LONG32 appToken;
 			LONG32 lastMsgToken;

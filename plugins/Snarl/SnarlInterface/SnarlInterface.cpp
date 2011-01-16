@@ -194,6 +194,46 @@ LONG32 SnarlInterface::RemoveAllClasses(bool forgetSettings /* = false */)
 	return Send(msg);
 }
 
+LONG32 SnarlInterface::AddAction(LONG32 token, LPCSTR label /* = NULL */, LPCSTR command /* = NULL */)
+{
+	SnarlMessage msg;
+	msg.Command = SnarlEnums::AddAction;
+	msg.Token = token;
+
+	// Create packed data
+	errno_t err = 0;
+	ZeroMemory(msg.PacketData, sizeof(msg.PacketData));
+	char* pData = reinterpret_cast<char*>(msg.PacketData);
+
+	if (label != NULL) {
+		err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?label::" : "label::", _TRUNCATE); //StringCbCat(tmp, SnarlPacketDataSize, "title::%s");
+		err |= strncat_s(pData, SnarlPacketDataSize, label, _TRUNCATE);
+	}
+	if (command != NULL) {
+		err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?command::" : "command::", _TRUNCATE); //StringCbCat(tmp, SnarlPacketDataSize, "title::%s");
+		err |= strncat_s(pData, SnarlPacketDataSize, command, _TRUNCATE);
+	}
+
+	// Check for strcat errors and exit on error
+	if (err != 0) {
+		localError = SnarlEnums::ErrorFailed;
+		return 0;
+	}
+
+	return Send(msg);
+}
+
+LONG32 SnarlInterface::RemoveAllActions(LONG32 token)
+{
+	SnarlMessage msg;
+	msg.Command = SnarlEnums::ClearActions;
+	msg.Token = token;
+
+	ZeroMemory(msg.PacketData, sizeof(msg.PacketData));
+
+	return Send(msg);
+}
+
 LONG32 SnarlInterface::EZNotify(LPCSTR className, LPCSTR title, LPCSTR text, LONG32 timeout /* = -1 */, LPCSTR icon /* = NULL */, LONG32 priority /* = 0 */, LPCSTR acknowledge /* = NULL */, LPCSTR value /* = NULL */)
 {
 	SnarlMessage msg;
@@ -512,6 +552,32 @@ void SnarlInterface::PackData(BYTE* data, LPCSTR format, ...)
 	_vsnprintf_s((char*)data, SnarlPacketDataSize, _TRUNCATE, format, args);
 
 	va_end(args);
+}
+
+LPSTR SnarlInterface::PackData(LPCSTR format, ...)
+{
+	// Return if format string is empty
+	if (format == NULL || format[0] == 0)
+		return NULL;
+
+	int cchStrTextLen = 0;
+	va_list args;
+	va_start(args, format);
+	
+	// Get size of buffer
+	cchStrTextLen = _vscprintf(format, args) + 1; // + NULL
+	if (cchStrTextLen <= 1)
+		return NULL;
+
+	// Allocate the string
+	LPSTR rval = new char[cchStrTextLen];
+
+	// Create formated string - _TRUNCATE will ensure zero terminated
+	_vsnprintf_s((char*)rval, cchStrTextLen, _TRUNCATE, format, args);
+
+	va_end(args);
+
+	return rval;
 }
 
 }} // namespace Snarl::V41
