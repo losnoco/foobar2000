@@ -1,4 +1,4 @@
-#define MYVERSION "1.6"
+#define MYVERSION "1.7"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -35,6 +35,11 @@
 /*
 
 	change log
+
+2011-01-17 11:01 UTC - kode54
+- HDCD postprocessor service will only start outputting decoded data if the HDCD
+  signal continues for a full five seconds
+- Version is now 1.7
 
 2011-01-17 08:45 UTC - kode54
 - HDCD info reporter now removes HDCD fields if HDCD times out and turns off
@@ -298,7 +303,7 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 
 	unsigned srate, nch, channel_config;
 
-	bool gave_up;
+	bool gave_up, sustained;
 
 	void init()
 	{
@@ -321,6 +326,7 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 		nch = 0;
 		channel_config = 0;
 		gave_up = false;
+		sustained = false;
 	}
 
 	unsigned flush_chunks( dsp_chunk_list & p_chunk_list, unsigned insert_point )
@@ -407,7 +413,7 @@ public:
 				enabled |= decoders[ j ].get_sample_counter();
 			}
 
-			if ( enabled )
+			if ( enabled && sustained )
 			{
 				i += flush_chunks( p_chunk_list, i );
 				process_chunk( chunk );
@@ -426,10 +432,14 @@ public:
 
 			if ( original_chunks.get_duration() >= 5.0 && original_chunks.get_count() > 1 )
 			{
-				flush_chunks( p_chunk_list, i );
-				cleanup();
-				gave_up = true;
-				break;
+				if ( !enabled )
+				{
+					flush_chunks( p_chunk_list, i );
+					cleanup();
+					gave_up = true;
+					break;
+				}
+				else sustained = true;
 			}
 		}
 
