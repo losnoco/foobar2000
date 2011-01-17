@@ -88,10 +88,12 @@
     <ClInclude Include="layout\layout.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="coding\lsf_decoder.c" />
     <ClCompile Include="layout\mtaf_block.c" />
     <ClCompile Include="layout\ps2_iab_blocked.c" />
     <ClCompile Include="layout\ps2_strlr_blocked.c" />
     <ClCompile Include="layout\tra_blocked.c" />
+    <ClCompile Include="meta\lsf.c" />
     <ClCompile Include="meta\ngca.c" />
     <ClCompile Include="meta\nub.c" />
     <ClCompile Include="meta\ps2_iab.c" />

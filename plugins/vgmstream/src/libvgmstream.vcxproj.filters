@@ -886,5 +886,11 @@
     <ClCompile Include="layout\tra_blocked.c">
       <Filter>layout\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="coding\lsf_decoder.c">
+      <Filter>coding\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="meta\lsf.c">
+      <Filter>meta\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

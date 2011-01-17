@@ -298,6 +298,7 @@ VGMSTREAM * (*init_vgmstream_fcns[])(STREAMFILE *streamFile) = {
 	init_vgmstream_x360_tra,
 	init_vgmstream_ps2_iab,
 	init_vgmstream_ps2_strlr,
+    init_vgmstream_lsf_n1nj4n,
 };
 
 #define INIT_VGMSTREAM_FCNS (sizeof(init_vgmstream_fcns)/sizeof(init_vgmstream_fcns[0]))
@@ -829,7 +830,7 @@ int get_vgmstream_samples_per_frame(VGMSTREAM * vgmstream) {
             return 28;
         case coding_XBOX:
 		case coding_INT_XBOX:
-        case coding_BLUR_ADPCM:
+        case coding_BAF_ADPCM:
             return 64;
         case coding_EAXA:
             return 28;
@@ -857,6 +858,8 @@ int get_vgmstream_samples_per_frame(VGMSTREAM * vgmstream) {
         case coding_G7221:
             return 16000/50;
 #endif
+        case coding_LSF:
+            return 54;
         default:
             return 0;
     }
@@ -942,8 +945,10 @@ int get_vgmstream_frame_size(VGMSTREAM * vgmstream) {
             return 1; 
         case coding_APPLE_IMA4:
             return 34;
-        case coding_BLUR_ADPCM:
+        case coding_BAF_ADPCM:
             return 33;
+        case coding_LSF:
+            return 28;
 #ifdef VGM_USE_G7221
         case coding_G7221C:
         case coding_G7221:
@@ -1176,9 +1181,9 @@ void decode_vgmstream(VGMSTREAM * vgmstream, int samples_written, int samples_to
                         samples_to_do);
             }
             break;
-        case coding_BLUR_ADPCM:
+        case coding_BAF_ADPCM:
             for (chan=0;chan<vgmstream->channels;chan++) {
-                decode_blur_adpcm(&vgmstream->ch[chan],buffer+samples_written*vgmstream->channels+chan,
+                decode_baf_adpcm(&vgmstream->ch[chan],buffer+samples_written*vgmstream->channels+chan,
                         vgmstream->channels,vgmstream->samples_into_block,
                         samples_to_do);
             }
@@ -1376,6 +1381,13 @@ void decode_vgmstream(VGMSTREAM * vgmstream, int samples_written, int samples_to
                         samples_to_do);
             }
 
+            break;
+        case coding_LSF:
+            for (chan=0;chan<vgmstream->channels;chan++) {
+                decode_lsf(&vgmstream->ch[chan],buffer+samples_written*vgmstream->channels+chan,
+                        vgmstream->channels,vgmstream->samples_into_block,
+                        samples_to_do);
+            }
             break;
     }
 }
@@ -1606,8 +1618,8 @@ void describe_vgmstream(VGMSTREAM * vgmstream, char * desc, int length) {
         case coding_FFXI:
             snprintf(temp,TEMPSIZE,"FFXI Playstation-ish 4-bit ADPCM");
             break;
-        case coding_BLUR_ADPCM:
-            snprintf(temp,TEMPSIZE,"Blur Playstation-ish 4-bit ADPCM");
+        case coding_BAF_ADPCM:
+            snprintf(temp,TEMPSIZE,"Bizarre Creations Playstation-ish 4-bit ADPCM");
             break;
         case coding_XA:
             snprintf(temp,TEMPSIZE,"CD-ROM XA 4-bit ADPCM");
@@ -1745,10 +1757,13 @@ void describe_vgmstream(VGMSTREAM * vgmstream, char * desc, int length) {
             snprintf(temp,TEMPSIZE,"Procyon Studio Digital Sound Elements NDS 4-bit APDCM");
             break;
         case coding_L5_555:
-            snprintf(temp,TEMPSIZE,"Level-5 0x555 ADPCM");
+            snprintf(temp,TEMPSIZE,"Level-5 0x555 4-bit ADPCM");
             break;
         case coding_SASSC:
             snprintf(temp,TEMPSIZE,"Activision / EXAKT SASSC 8-bit DPCM");
+            break;
+        case coding_LSF:
+            snprintf(temp,TEMPSIZE,"lsf 4-bit ADPCM");
             break;
         default:
             snprintf(temp,TEMPSIZE,"CANNOT DECODE");
@@ -2761,6 +2776,9 @@ void describe_vgmstream(VGMSTREAM * vgmstream, char * desc, int length) {
             break;
 	    case meta_PS2_STRLR:
             snprintf(temp,TEMPSIZE,"STR L/R header");
+            break;
+        case meta_LSF_N1NJ4N:
+            snprintf(temp,TEMPSIZE,".lsf !n1nj4n header");
             break;
 		default:
            snprintf(temp,TEMPSIZE,"THEY SHOULD HAVE SENT A POET");
