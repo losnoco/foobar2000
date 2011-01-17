@@ -1,4 +1,4 @@
-#define MYVERSION "1.5"
+#define MYVERSION "1.6"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -35,6 +35,10 @@
 /*
 
 	change log
+
+2011-01-17 08:45 UTC - kode54
+- HDCD info reporter now removes HDCD fields if HDCD times out and turns off
+- Version is now 1.6
 
 2010-07-31 01:00 UTC - kode54
 - Added real-time HDCD feature reporting
@@ -465,6 +469,17 @@ public:
 			temp.add_byte( '0' + ( gain & 1 ) * 5 );
 			temp += " dB";
 			p_out.info_set( "hdcd_gain", temp );
+
+			return true;
+		}
+		else if ( p_out.info_get( "hdcd" ) )
+		{
+			p_out.info_set_int( "bitspersample", 16 );
+			p_out.info_remove( "decoded_bitspersample" );
+
+			p_out.info_remove( "hdcd" );
+			p_out.info_remove( "hdcd_peak_extend" );
+			p_out.info_remove( "hdcd_transient_filter" );
 
 			return true;
 		}
