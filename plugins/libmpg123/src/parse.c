@@ -557,6 +557,19 @@ init_resync:
 		}
 		hd = fr->rd->head_read(fr,&nexthead);
 		if(hd==MPG123_NEED_MORE){ debug("need more?"); ret = hd; goto read_frame_bad; }
+		if (!head_check(nexthead))
+		{
+			long try = 0;
+			long limit = 64;
+			
+			do
+			{
+				++try;
+				if(limit >= 0 && try >= limit) break;				
+
+				if((ret=fr->rd->head_shift(fr,&nexthead)) <= 0) break;
+			} while (!head_check(newhead));
+		}
 		if((ret=fr->rd->back_bytes(fr, fr->rd->tell(fr)-start))<0)
 		{
 			if(ret==READER_ERROR && NOQUIET) error("cannot seek!");
