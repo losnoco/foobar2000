@@ -1,0 +1,156 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7E75BC78-8568-4A0F-AFAC-91CD39198880}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libmpg123</RootNamespace>
+    <ProjectName>libmpg123-0</ProjectName>
+    <SccProjectName>SAK</SccProjectName>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBMPG123_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;../src</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ModuleDefinitionFile>libmpg123-0.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMPG123_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;../src</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FloatingPointModel>Fast</FloatingPointModel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ModuleDefinitionFile>libmpg123-0.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\compat.c" />
+    <ClCompile Include="..\src\dct64.c" />
+    <ClCompile Include="..\src\dither.c" />
+    <ClCompile Include="..\src\equalizer.c" />
+    <ClCompile Include="..\src\feature.c" />
+    <ClCompile Include="..\src\format.c" />
+    <ClCompile Include="..\src\frame.c" />
+    <ClCompile Include="..\src\icy.c" />
+    <ClCompile Include="..\src\icy2utf8.c" />
+    <ClCompile Include="..\src\id3.c" />
+    <ClCompile Include="..\src\index.c" />
+    <ClCompile Include="..\src\layer1.c" />
+    <ClCompile Include="..\src\layer2.c" />
+    <ClCompile Include="..\src\layer3.c" />
+    <ClCompile Include="..\src\libmpg123.c" />
+    <ClCompile Include="..\src\ntom.c" />
+    <ClCompile Include="..\src\optimize.c" />
+    <ClCompile Include="..\src\parse.c" />
+    <ClCompile Include="..\src\readers.c" />
+    <ClCompile Include="..\src\stringbuf.c" />
+    <ClCompile Include="..\src\synth.c" />
+    <ClCompile Include="..\src\synth_8bit.c" />
+    <ClCompile Include="..\src\synth_real.c" />
+    <ClCompile Include="..\src\synth_s32.c" />
+    <ClCompile Include="..\src\tabinit.c" />
+    <ClCompile Include="msvc.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\compat.h" />
+    <ClInclude Include="..\src\debug.h" />
+    <ClInclude Include="..\src\decode.h" />
+    <ClInclude Include="..\src\dither.h" />
+    <ClInclude Include="..\src\frame.h" />
+    <ClInclude Include="..\src\getbits.h" />
+    <ClInclude Include="..\src\getcpuflags.h" />
+    <ClInclude Include="..\src\huffman.h" />
+    <ClInclude Include="..\src\icy.h" />
+    <ClInclude Include="..\src\icy2utf8.h" />
+    <ClInclude Include="..\src\id3.h" />
+    <ClInclude Include="..\src\index.h" />
+    <ClInclude Include="..\src\intsym.h" />
+    <ClInclude Include="..\src\l12_integer_tables.h" />
+    <ClInclude Include="..\src\l2tables.h" />
+    <ClInclude Include="..\src\l3_integer_tables.h" />
+    <ClInclude Include="..\src\mangle.h" />
+    <ClInclude Include="..\src\mpg123lib_intern.h" />
+    <ClInclude Include="..\src\optimize.h" />
+    <ClInclude Include="..\src\parse.h" />
+    <ClInclude Include="..\src\reader.h" />
+    <ClInclude Include="..\src\sample.h" />
+    <ClInclude Include="..\src\synth.h" />
+    <ClInclude Include="..\src\synths.h" />
+    <ClInclude Include="..\src\synth_8bit.h" />
+    <ClInclude Include="..\src\synth_mono.h" />
+    <ClInclude Include="..\src\synth_ntom.h" />
+    <ClInclude Include="..\src\synth_sse3d.h" />
+    <ClInclude Include="..\src\true.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="mpg123.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\mpg123.h.in" />
+    <None Include="libmpg123-0.def" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
