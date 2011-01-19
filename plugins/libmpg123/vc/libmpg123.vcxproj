@@ -101,13 +101,11 @@
     <ClCompile Include="..\src\layer2.c" />
     <ClCompile Include="..\src\layer3.c" />
     <ClCompile Include="..\src\libmpg123.c" />
-    <ClCompile Include="..\src\ntom.c" />
     <ClCompile Include="..\src\optimize.c" />
     <ClCompile Include="..\src\parse.c" />
     <ClCompile Include="..\src\readers.c" />
     <ClCompile Include="..\src\stringbuf.c" />
     <ClCompile Include="..\src\synth.c" />
-    <ClCompile Include="..\src\synth_8bit.c" />
     <ClCompile Include="..\src\synth_real.c" />
     <ClCompile Include="..\src\synth_s32.c" />
     <ClCompile Include="..\src\tabinit.c" />
@@ -138,7 +136,6 @@
     <ClInclude Include="..\src\sample.h" />
     <ClInclude Include="..\src\synth.h" />
     <ClInclude Include="..\src\synths.h" />
-    <ClInclude Include="..\src\synth_8bit.h" />
     <ClInclude Include="..\src\synth_mono.h" />
     <ClInclude Include="..\src\synth_ntom.h" />
     <ClInclude Include="..\src\synth_sse3d.h" />

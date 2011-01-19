@@ -630,7 +630,7 @@ init_resync:
 			long limit = fr->p.resync_limit;
 			
 			/* If a resync is needed the bitreservoir of previous frames is no longer valid */
-			fr->bitreservoir = 0;
+			/* fr->bitreservoir = 0; */
 
 			/* TODO: make this more robust, I'd like to cat two mp3 fragments together (in a dirty way) and still have mpg123 beign able to decode all it somehow. */
 			if(NOQUIET && fr->silent_resync == 0) fprintf(stderr, "Note: Trying to resync...\n");
@@ -680,8 +680,14 @@ init_resync:
 			}
 			else
 			{
-				debug1("Found valid header 0x%lx... unsetting firsthead to reinit stream.", newhead);
-				fr->firsthead = 0;
+#ifdef BLIND_RESYNC
+				if (try >= 16)
+#endif
+				{
+					debug1("Found valid header 0x%lx... unsetting firsthead to reinit stream.", newhead);
+					fr->bitreservoir = 0;
+					fr->firsthead = 0;
+				}
 				goto init_resync;
 			}
 		}

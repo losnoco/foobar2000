@@ -60,9 +60,6 @@
     <ClCompile Include="..\src\libmpg123.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\ntom.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\optimize.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -78,19 +75,16 @@
     <ClCompile Include="..\src\synth.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\synth_real.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\synth_s32.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\tabinit.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="msvc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\synth_8bit.c">
+    <ClCompile Include="..\src\synth_real.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\synth_s32.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -162,9 +156,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\synth.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\synth_8bit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\synth_mono.h">

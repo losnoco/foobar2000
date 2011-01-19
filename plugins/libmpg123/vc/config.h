@@ -36,6 +36,15 @@
 
 #define OPT_GENERIC
 
+#define NO_ICY
+#define NO_WARNING
+#define NO_ERROR
+#define NO_ID3V2
+#define NO_8BIT
+#define NO_DOWNSAMPLE
+#define NO_NTOM
+
+#define BLIND_RESYNC
 
 typedef signed __int8  int8_t;
 typedef signed __int16 int16_t;
