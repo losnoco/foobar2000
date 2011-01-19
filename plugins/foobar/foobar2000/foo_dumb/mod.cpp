@@ -1,7 +1,12 @@
-#define MYVERSION "0.9.9.30"
+#define MYVERSION "0.9.9.31"
 
 /*
 	changelog
+
+2011-01-19 18:26 UTC - kode54
+- Fixed static sample end ramping for samples with sustain loops but no
+  normal loops
+- Version is now 0.9.9.31
 
 2011-01-19 14:23 UTC - kode54
 - Made Oktalyzer reader more tolerant of truncated files
@@ -2024,6 +2029,7 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 					{
 						double rate = 1. / double( sample->C5_speed );
 						double length = double( sample->length ) * rate;
+						if ( sample->flags & IT_SAMPLE_SUS_LOOP ) length -= double( sample->sus_loop_end ) * rate;
 						if ( length >= .001 )
 						{
 							int k, l = sample->length;
@@ -2032,10 +2038,16 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 								if (sample->flags & IT_SAMPLE_16BIT)
 								{
 									k = l - 15;
+									unsigned step = 1;
+									if ( sample->flags & IT_SAMPLE_SUS_LOOP && k < sample->sus_loop_end )
+									{
+										k = sample->sus_loop_end;
+										step = 15 / (sample->length - k);
+									}
 									signed short * data = (signed short *) sample->data;
 									if (sample->flags & IT_SAMPLE_STEREO)
 									{
-										for (int shift = 1; k < l; k++, shift++)
+										for (int shift = 1; k < l; k++, shift += step)
 										{
 											data [k * 2] >>= shift;
 											data [k * 2 + 1] >>= shift;
@@ -2043,7 +2055,7 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 									}
 									else
 									{
-										for (int shift = 1; k < l; k++, shift++)
+										for (int shift = 1; k < l; k++, shift += step)
 										{
 											data [k] >>= shift;
 										}
@@ -2052,10 +2064,16 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 								else
 								{
 									k = l - 7;
+									unsigned step = 1;
+									if ( sample->flags & IT_SAMPLE_SUS_LOOP && k < sample->sus_loop_end )
+									{
+										k = sample->sus_loop_end;
+										step = 7 / (sample->length - k);
+									}
 									signed char * data = (signed char *) sample->data;
 									if (sample->flags & IT_SAMPLE_STEREO)
 									{
-										for (int shift = 1; k < l; k++, shift++)
+										for (int shift = 1; k < l; k++, shift += step)
 										{
 											data [k * 2] >>= shift;
 											data [k * 2 + 1] >>= shift;
@@ -2063,7 +2081,7 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 									}
 									else
 									{
-										for (int shift = 1; k < l; k++, shift++)
+										for (int shift = 1; k < l; k++, shift += step)
 										{
 											data [k] >>= shift;
 										}
@@ -2074,6 +2092,11 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 							{
 								int m = int( .01 * double( sample->C5_speed ) + .5 );
 								k = l - m;
+								if ( sample->flags & IT_SAMPLE_SUS_LOOP && k < sample->sus_loop_end )
+								{
+									k = sample->sus_loop_end;
+									m = sample->length - k;
+								}
 								if (sample->flags & IT_SAMPLE_16BIT)
 								{
 									signed short * data = (signed short *) sample->data;
