@@ -102,6 +102,7 @@
     <ClCompile Include="meta\ps2_strlr.c" />
     <ClCompile Include="meta\ps3_past.c" />
     <ClCompile Include="meta\ps3_sgh_sgb.c" />
+    <ClCompile Include="meta\ps3_vawx.c" />
     <ClCompile Include="meta\wii_ras.c" />
     <ClCompile Include="meta\x360_tra.c" />
     <ClCompile Include="streamfile.c" />
