@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.29"
+#define MYVERSION "0.9.9.30"
 
 /*
 	changelog
+
+2011-01-19 14:23 UTC - kode54
+- Made Oktalyzer reader more tolerant of truncated files
+- Version is now 0.9.9.30
 
 2011-01-19 06:23 UTC - kode54
 - Implemented Oktalyzer format loader
