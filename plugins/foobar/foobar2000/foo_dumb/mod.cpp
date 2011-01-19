@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.28"
+#define MYVERSION "0.9.9.29"
 
 /*
 	changelog
+
+2011-01-19 06:23 UTC - kode54
+- Implemented Oktalyzer format loader
+- Version is now 0.9.9.29
 
 2011-01-13 23:11 UTC - kode54
 - Implemented ASYLUM instrument base semitone offset
@@ -866,6 +870,7 @@ static const char * exts[]=
 	"AM","J2B",
 	"DSM",
 	"AMF",
+	"OKT","OKTA",
 	"MO3",
 };
 
@@ -1959,6 +1964,11 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 		ptr[2] == 'F')
 	{
 		duh = dumb_read_amf_quick(f);
+	}
+	else if ( size >= 8 &&
+		!memcmp( ptr, "OKTASONG", 8 ) )
+	{
+		duh = dumb_read_okt_quick(f);
 	}
 
 	if ( ! duh )
