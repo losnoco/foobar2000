@@ -20,7 +20,7 @@ extern advconfig_string_factory g_advconfig_icon_default;
 
 //extern advconfig_checkbox_factory_t<false> g_advconfig_stopcheck;
 
-/*Copyright (c) 2008, Skyler Kehren
+/*Copyright (c) 2008-2011, Skyler Kehren
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted 

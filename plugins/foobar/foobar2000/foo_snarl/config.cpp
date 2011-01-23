@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "config.h"
 /*
-Copyright (c) 2008, Skyler Kehren
+Copyright (c) 2008-2011, Skyler Kehren
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted 
