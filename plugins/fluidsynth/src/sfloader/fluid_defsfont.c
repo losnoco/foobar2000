@@ -782,7 +782,7 @@ fluid_defpreset_import_sfont(fluid_defpreset_t* preset,
   } else {
     FLUID_SPRINTF(preset->name, "Bank%d,Preset%d", sfpreset->bank, sfpreset->prenum);
   }
-  preset->bank = sfpreset->bank;
+  preset->bank = (sfpreset->bank == 128) ? 16256 : sfpreset->bank * 128;
   preset->num = sfpreset->prenum;
   p = sfpreset->zone;
   count = 0;
@@ -1563,7 +1563,7 @@ fluid_sample_import_sfont(fluid_sample_t* sample, SFSample* sfsample, fluid_defs
 {
   FLUID_STRCPY(sample->name, sfsample->name);
   sample->data = NULL;
-  sample->start = sfsample->start * 2 + sfont->samplepos;
+  sample->start = sfsample->start;
   sample->end = sfsample->end;
   sample->loopstart = sfsample->loopstart;
   sample->loopend = sfsample->loopend;
@@ -1590,6 +1590,7 @@ fluid_sample_import_sfont(fluid_sample_t* sample, SFSample* sfsample, fluid_defs
 /*        FLUID_LOG(FLUID_WARN, "Fixing sample %s: at least 8 data points required after loop end", sample->name);     */
 /*        sample->loopend = sample->end - 8; */
 /*      } */
+    sample->start = sample->start * 2 + sfont->samplepos;
   }
   return FLUID_OK;
 }

@@ -396,7 +396,7 @@ fluid_synth_init(void)
 		       );
   fluid_mod_set_source2(&default_reverb_mod, 0, 0);              /* No second source */
   fluid_mod_set_dest(&default_reverb_mod, GEN_REVERBSEND);       /* Target: Reverb send */
-  fluid_mod_set_amount(&default_reverb_mod, 200);                /* Amount: 200 ('tenths of a percent') */
+  fluid_mod_set_amount(&default_reverb_mod, 1000);                /* Amount: 200 ('tenths of a percent') */
 
 
 
@@ -409,7 +409,7 @@ fluid_synth_init(void)
 		       );
   fluid_mod_set_source2(&default_chorus_mod, 0, 0);              /* No second source */
   fluid_mod_set_dest(&default_chorus_mod, GEN_CHORUSSEND);       /* Target: Chorus */
-  fluid_mod_set_amount(&default_chorus_mod, 200);                /* Amount: 200 ('tenths of a percent') */
+  fluid_mod_set_amount(&default_chorus_mod, 1000);                /* Amount: 200 ('tenths of a percent') */
 
 
 
@@ -2371,10 +2371,17 @@ fluid_synth_program_change(fluid_synth_t* synth, int chan, int prognum)
       /* Melodic instrument? */
       if (channel->channum != 9 && banknum != DRUM_INST_BANK)
       {
-        subst_bank = 0;
+        subst_bank = banknum & 0x3F80;
 
-        /* Fallback first to bank 0:prognum */
-        preset = fluid_synth_find_preset(synth, 0, prognum);
+        /* Fallback first to bank MSB:prognum */
+        preset = fluid_synth_find_preset(synth, subst_bank, prognum);
+
+        if (!preset)
+        {
+          subst_bank = 0;
+          /* Fallback to bank 0:prognum */
+          preset = fluid_synth_find_preset(synth, 0, prognum);
+        }
 
         /* Fallback to first preset in bank 0 */
         if (!preset && prognum != 0)

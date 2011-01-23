@@ -47,7 +47,7 @@
  *                         DEFINES
  */
 #define FLUID_NUM_PROGRAMS      128
-#define DRUM_INST_BANK		128
+#define DRUM_INST_BANK		16256
 
 #define FLUID_UNSET_PROGRAM     128     /* Program number used to unset a preset */
 
