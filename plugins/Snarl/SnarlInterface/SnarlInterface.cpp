@@ -39,6 +39,7 @@
 /// </example>
 ///----------------------------------------------------------------------------
 /// <VersionHistory>
+///  2011-01-02 : mingw-w64 patch by Patrick von Reth
 ///  2010-08-13 : First release of V41 Snarl API implementation
 /// </VersionHistory>
 
@@ -49,6 +50,15 @@
 
 namespace Snarl {
 namespace V41 {
+
+
+// workaround for mingw-w64 bug
+#ifdef __MINGW64_VERSION_MAJOR
+	extern "C" {
+		__declspec(dllimport) errno_t __cdecl strncat_s(char *_Dst, size_t _DstSizeInChars, const char *_Src, size_t _MaxCount);
+	}
+#endif //__MINGW64_VERSION_MAJOR
+
 
 //-----------------------------------------------------------------------------
 // Constructor/Destructor
@@ -66,14 +76,33 @@ SnarlInterface::~SnarlInterface()
 
 LONG32 SnarlInterface::RegisterApp(LPCSTR signature, LPCSTR title, LPCSTR icon, HWND hWndReply /* = NULL */, LONG32 msgReply /* = 0 */, SnarlEnums::AppFlags flags /* = SnarlEnums::AppDefault */)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::RegisterApp;
-	msg.Token = 0;
-	PackData(msg.PacketData, 
-		"id::%s#?title::%s#?icon::%s#?hwnd::%d#?umsg::%d#?flags::%d", 
-		signature, title, icon, hWndReply, msgReply, flags);
+	LONG32 version = SendRequest("version");
 
-	appToken = Send(msg);
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("reg?app-sig=%s&title=%s&icon=%s&reply-to=%d&reply=%d&flags=%d", signature, title, icon, hWndReply, msgReply, flags);
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		appToken = SendRequest(msg);
+		delete [] msg;
+
+		if (!appToken && localError == SnarlEnums::Success) localError = SnarlEnums::ErrorNotRunning;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::RegisterApp;
+		msg.Token = 0;
+		PackData(msg.PacketData, 
+			"id::%s#?title::%s#?icon::%s#?hwnd::%d#?umsg::%d#?flags::%d", 
+			signature, title, icon, hWndReply, msgReply, flags);
+
+		appToken = Send(msg);
+	}
+
 	lastMsgToken = 0;
 
 	return appToken;
@@ -96,15 +125,36 @@ LONG32 SnarlInterface::RegisterApp(LPCWSTR signature, LPCWSTR title, LPCWSTR ico
 
 LONG32 SnarlInterface::UnregisterApp()
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::UnregisterApp;
-	msg.Token = appToken;
-	PackData(msg.PacketData, NULL);
+	LONG32 rval;
+	LONG32 version = SendRequest("version");
+
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("unreg?token=%d", appToken);
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		rval = SendRequest(msg);
+		delete [] msg;
+
+		rval = rval ? 0 : -1;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::UnregisterApp;
+		msg.Token = appToken;
+		PackData(msg.PacketData, NULL);
+
+		rval = Send(msg);
+	}
 
 	appToken = 0;
 	lastMsgToken = 0;
 
-	return Send(msg);
+	return rval;
 }
 
 LONG32 SnarlInterface::UpdateApp(LPCSTR title /* = NULL */, LPCSTR icon /* = NULL */)
@@ -112,19 +162,44 @@ LONG32 SnarlInterface::UpdateApp(LPCSTR title /* = NULL */, LPCSTR icon /* = NUL
 	if (title == NULL && icon == NULL)
 		return 0;
 
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::UpdateApp;
-	msg.Token = appToken;
+	bool has_title = title != NULL && title[0] != 0;
+	bool has_icon = icon != NULL && icon[0] != 0;
+
+	LONG32 rval;
+	LONG32 version = SendRequest("version");
+
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("updateapp?token=%d%s%s%s%s", has_title ? "&title=" : "", has_title ? title : "", has_icon ? "&icon=" : "", has_icon ? icon : "");
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+
+		rval = SendRequest(msg);
+		delete [] msg;
+
+		rval = rval ? 0 : -1;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::UpdateApp;
+		msg.Token = appToken;
+
+		// TODO: Uckly code ahead
+		if (has_title && has_icon)
+			PackData(msg.PacketData, "title::%s#?icon::%s", title, icon);
+		else if (has_title)
+			PackData(msg.PacketData, "title::%s", title);
+		else if (has_icon)
+			PackData(msg.PacketData, "icon::%s", icon);
 	
-	// TODO: Uckly code ahead
-	if (title != NULL && title[0] != 0 && icon != NULL && icon[0] != 0)
-		PackData(msg.PacketData, "title::%s#?icon::%s", title, icon);
-	else if (title != NULL && title[0] != 0)
-		PackData(msg.PacketData, "title::%s", title);
-	else if (icon != NULL && icon[0] != 0)
-		PackData(msg.PacketData, "icon::%s", icon);
-	
-	return Send(msg);
+		rval = Send(msg);
+	}
+
+	return rval;
 }
 
 LONG32 SnarlInterface::UpdateApp(LPCWSTR title /* = NULL */, LPCWSTR icon /* = NULL */)
@@ -142,12 +217,32 @@ LONG32 SnarlInterface::UpdateApp(LPCWSTR title /* = NULL */, LPCWSTR icon /* = N
 
 LONG32 SnarlInterface::AddClass(LPCSTR className, LPCSTR description, bool enabled /* = true */)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::AddClass;
-	msg.Token = appToken;
-	PackData(msg.PacketData, "id::%s#?name::%s#?enabled::%d", className, description, (enabled ? 1 : 0));
+	LONG32 rval;
+	LONG32 version = SendRequest("version");
 
-	return Send(msg);
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("addclass?token=%d&id=%s&name=%s&enabled=%d", appToken, className, description, (enabled ? 1 : 0));
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		rval = SendRequest(msg);
+		delete [] msg;
+
+		rval = rval ? 0 : -1;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::AddClass;
+		msg.Token = appToken;
+		PackData(msg.PacketData, "id::%s#?name::%s#?enabled::%d", className, description, (enabled ? 1 : 0));
+		rval = Send(msg);
+	}
+
+	return rval;
 }
 
 LONG32 SnarlInterface::AddClass(LPCWSTR className, LPCWSTR description, bool enabled /* = true */)
@@ -165,12 +260,33 @@ LONG32 SnarlInterface::AddClass(LPCWSTR className, LPCWSTR description, bool ena
 
 LONG32 SnarlInterface::RemoveClass(LPCSTR className, bool forgetSettings /* = false */)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::RemoveClass;
-	msg.Token = appToken;
-	PackData(msg.PacketData, "id::%s#?forget::%d", className, (forgetSettings ? 1 : 0));
+	LONG32 rval;
+	LONG32 version = SendRequest("version");
 
-	return Send(msg);
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("remclass?token=%d&id=%s&forget=%d", appToken, className, (forgetSettings ? 1 : 0));
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		rval = SendRequest(msg);
+		delete [] msg;
+
+		rval = rval ? 0 : -1;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::RemoveClass;
+		msg.Token = appToken;
+		PackData(msg.PacketData, "id::%s#?forget::%d", className, (forgetSettings ? 1 : 0));
+
+		rval = Send(msg);
+	}
+
+	return rval;
 }
 
 LONG32 SnarlInterface::RemoveClass(LPCWSTR className, bool forgetSettings /* = false */)
@@ -186,64 +302,143 @@ LONG32 SnarlInterface::RemoveClass(LPCWSTR className, bool forgetSettings /* = f
 
 LONG32 SnarlInterface::RemoveAllClasses(bool forgetSettings /* = false */)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::RemoveClass;
-	msg.Token = appToken;
-	PackData(msg.PacketData, "all::1#?forget::%d", (forgetSettings ? 1 : 0));
+	LONG32 rval;
+	LONG32 version = SendRequest("version");
 
-	return Send(msg);
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("clearclasses?token=%d&forget=%d", appToken, (forgetSettings ? 1 : 0));
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		rval = SendRequest(msg);
+		delete [] msg;
+
+		rval = rval ? 0 : -1;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::RemoveClass;
+		msg.Token = appToken;
+		PackData(msg.PacketData, "all::1#?forget::%d", (forgetSettings ? 1 : 0));
+
+		rval = Send(msg);
+	}
+
+	return rval;
 }
 
 LONG32 SnarlInterface::AddAction(LONG32 token, LPCSTR label /* = NULL */, LPCSTR command /* = NULL */)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::AddAction;
-	msg.Token = token;
+	if ( label == NULL || command == NULL )
+		return 0;
 
-	// Create packed data
-	errno_t err = 0;
-	ZeroMemory(msg.PacketData, sizeof(msg.PacketData));
-	char* pData = reinterpret_cast<char*>(msg.PacketData);
+	LONG32 rval;
+	LONG32 version = SendRequest("version");
 
-	if (label != NULL) {
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("addaction?token=%d&label=%s&cmd=%s", token, label, command);
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		rval = SendRequest(msg);
+		delete [] msg;
+
+		rval = rval ? 0 : -1;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::AddAction;
+		msg.Token = token;
+
+		// Create packed data
+		errno_t err = 0;
+		ZeroMemory(msg.PacketData, sizeof(msg.PacketData));
+		char* pData = reinterpret_cast<char*>(msg.PacketData);
+
 		err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?label::" : "label::", _TRUNCATE); //StringCbCat(tmp, SnarlPacketDataSize, "title::%s");
 		err |= strncat_s(pData, SnarlPacketDataSize, label, _TRUNCATE);
-	}
-	if (command != NULL) {
 		err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?command::" : "command::", _TRUNCATE); //StringCbCat(tmp, SnarlPacketDataSize, "title::%s");
 		err |= strncat_s(pData, SnarlPacketDataSize, command, _TRUNCATE);
+
+		// Check for strcat errors and exit on error
+		if (err != 0) {
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+
+		rval = Send(msg);
 	}
 
-	// Check for strcat errors and exit on error
-	if (err != 0) {
-		localError = SnarlEnums::ErrorFailed;
-		return 0;
-	}
-
-	return Send(msg);
+	return rval;
 }
 
 LONG32 SnarlInterface::RemoveAllActions(LONG32 token)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::ClearActions;
-	msg.Token = token;
+	LONG32 rval;
+	LONG32 version = SendRequest("version");
 
-	ZeroMemory(msg.PacketData, sizeof(msg.PacketData));
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("clearactions?token=%d", token);
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		rval = SendRequest(msg);
+		delete [] msg;
 
-	return Send(msg);
+		rval = rval ? 0 : -1;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::ClearActions;
+		msg.Token = token;
+
+		ZeroMemory(msg.PacketData, sizeof(msg.PacketData));
+
+		rval = Send(msg);
+	}
+
+	return rval;
 }
 
 LONG32 SnarlInterface::EZNotify(LPCSTR className, LPCSTR title, LPCSTR text, LONG32 timeout /* = -1 */, LPCSTR icon /* = NULL */, LONG32 priority /* = 0 */, LPCSTR acknowledge /* = NULL */, LPCSTR value /* = NULL */)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::Notify;
-	msg.Token = appToken;
-	PackData(msg.PacketData,
-		"id::%s#?title::%s#?text::%s#?timeout::%d#?icon::%s#?priority::%d#?ack::%s#?value::%s",
-		className, title, text, timeout, (icon ? icon : ""), priority, (acknowledge ? acknowledge : ""), (value ? value : ""));
+	LONG32 version = SendRequest("version");
 
-	lastMsgToken = Send(msg);
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("notify?token=%d&id=%s&title=%s&text=%s&timeout=%d%s%s&priority=%d%s%s%s%s", appToken, className, title, text, timeout, icon ? "&icon=" : "", icon ? icon : "", priority, acknowledge ? "&ack=" : "", acknowledge ? acknowledge : "", value ? "&value=" : "", value ? value : "");
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		lastMsgToken = SendRequest(msg);
+		delete [] msg;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::Notify;
+		msg.Token = appToken;
+		PackData(msg.PacketData,
+			"id::%s#?title::%s#?text::%s#?timeout::%d#?icon::%s#?priority::%d#?ack::%s#?value::%s",
+			className, title, text, timeout, (icon ? icon : ""), priority, (acknowledge ? acknowledge : ""), (value ? value : ""));
+
+		lastMsgToken = Send(msg);
+	}
+
 	return lastMsgToken;
 }
 
@@ -266,12 +461,29 @@ LONG32 SnarlInterface::EZNotify(LPCWSTR className, LPCWSTR title, LPCWSTR text, 
 
 LONG32 SnarlInterface::Notify(LPCSTR className, LPCSTR packetData)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::Notify;
-	msg.Token = appToken;
-	PackData(msg.PacketData, "id::%s#?%s", className, packetData);
+	LONG32 version = SendRequest("version");
 
-	lastMsgToken = Send(msg);
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("notify?token=%d&id=%s&%s", appToken, className, packetData);
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		lastMsgToken = SendRequest(msg);
+		delete [] msg;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::Notify;
+		msg.Token = appToken;
+		PackData(msg.PacketData, "id::%s#?%s", className, packetData);
+
+		lastMsgToken = Send(msg);
+	}
+
 	return lastMsgToken;
 }
 
@@ -289,42 +501,66 @@ LONG32 SnarlInterface::Notify(LPCWSTR className, LPCWSTR packetData)
 
 LONG32 SnarlInterface::EZUpdate(LONG32 msgToken, LPCSTR title /* = NULL */, LPCSTR text /* = NULL */, LONG32 timeout /* = -1 */, LPCSTR icon /* = NULL */)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::UpdateNotification;
-	msg.Token = msgToken;
-	
-	// Create packed data
-	errno_t err = 0;
-	ZeroMemory(msg.PacketData, sizeof(msg.PacketData));
-	char* pData = reinterpret_cast<char*>(msg.PacketData);
+	bool has_title = title != NULL && title[0] != 0;
+	bool has_text = text != NULL && text[0] != 0;
+	bool has_icon = icon != NULL && icon[0] != 0;
+	CHAR ttimeout[16];
+	if (timeout != -1) _itoa_s(timeout, ttimeout, 10);
 
-	if (title != NULL) {
-		err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?title::" : "title::", _TRUNCATE); //StringCbCat(tmp, SnarlPacketDataSize, "title::%s");
-		err |= strncat_s(pData, SnarlPacketDataSize, title, _TRUNCATE);
+	LONG32 rval;
+	LONG32 version = SendRequest("version");
+
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("update?token=%d%s%s%s%s%s%s%s%s", msgToken, has_title ? "&title=" : "", has_title ? title : "", has_text ? "&text=" : "", has_text ? text : "", has_icon ? "&icon=" : "", has_icon ? icon : "", timeout != -1 ? "&timeout=" : "", timeout != -1 ? ttimeout : "");
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		rval = SendRequest(msg);
+		delete [] msg;
+
+		rval = rval ? 0 : -1;
 	}
-	if (text != NULL) {
-		err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?text::" : "text::", _TRUNCATE);
-		err |= strncat_s(pData, SnarlPacketDataSize, text, _TRUNCATE);
-	}
-	if (icon != NULL) {
-		err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?icon::" : "icon::", _TRUNCATE);
-		err |= strncat_s(pData, SnarlPacketDataSize, icon, _TRUNCATE);
-	}
-	if (timeout != -1) {
-		char tmp[32];
-		_itoa_s(timeout, tmp, 10);
-		
-		err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?timeout::" : "timeout::", _TRUNCATE);
-		err |= strncat_s(pData, SnarlPacketDataSize, tmp, _TRUNCATE);
-	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::UpdateNotification;
+		msg.Token = msgToken;
 	
-	// Check for strcat errors and exit on error
-	if (err != 0) {
-		localError = SnarlEnums::ErrorFailed;
-		return 0;
+		// Create packed data
+		errno_t err = 0;
+		ZeroMemory(msg.PacketData, sizeof(msg.PacketData));
+		char* pData = reinterpret_cast<char*>(msg.PacketData);
+
+		if (has_title) {
+			err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?title::" : "title::", _TRUNCATE); //StringCbCat(tmp, SnarlPacketDataSize, "title::%s");
+			err |= strncat_s(pData, SnarlPacketDataSize, title, _TRUNCATE);
+		}
+		if (has_text) {
+			err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?text::" : "text::", _TRUNCATE);
+			err |= strncat_s(pData, SnarlPacketDataSize, text, _TRUNCATE);
+		}
+		if (has_icon) {
+			err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?icon::" : "icon::", _TRUNCATE);
+			err |= strncat_s(pData, SnarlPacketDataSize, icon, _TRUNCATE);
+		}
+		if (timeout != -1) {
+			err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?timeout::" : "timeout::", _TRUNCATE);
+			err |= strncat_s(pData, SnarlPacketDataSize, ttimeout, _TRUNCATE);
+		}
+	
+		// Check for strcat errors and exit on error
+		if (err != 0) {
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+
+		rval = Send(msg);
 	}
 
-	return Send(msg);
+	return rval;
 }
 
 LONG32 SnarlInterface::EZUpdate(LONG32 msgToken, LPCWSTR title /* = NULL */, LPCWSTR text /* = NULL */, LONG32 timeout /* = -1 */, LPCWSTR icon /* = NULL */)
@@ -342,12 +578,33 @@ LONG32 SnarlInterface::EZUpdate(LONG32 msgToken, LPCWSTR title /* = NULL */, LPC
 
 LONG32 SnarlInterface::Update(LONG32 msgToken, LPCSTR packetData)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::UpdateNotification;
-	msg.Token = msgToken;
-	PackData(msg.PacketData, packetData);
+	LONG32 rval;
+	LONG32 version = SendRequest("version");
 
-	return Send(msg);
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("update?token=%d&%s", msgToken, packetData);
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		rval = SendRequest(msg);
+		delete [] msg;
+
+		rval = rval ? 0 : -1;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::UpdateNotification;
+		msg.Token = msgToken;
+		PackData(msg.PacketData, packetData);
+
+		rval = Send(msg);
+	}
+
+	return rval;
 }
 
 LONG32 SnarlInterface::Update(LONG32 msgToken, LPCWSTR packetData)
@@ -363,22 +620,65 @@ LONG32 SnarlInterface::Update(LONG32 msgToken, LPCWSTR packetData)
 
 LONG32 SnarlInterface::Hide(LONG32 msgToken)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::HideNotification;
-	msg.Token = msgToken;
-	PackData(msg.PacketData, NULL);
+	LONG32 rval;
+	LONG32 version = SendRequest("version");
 
-	return Send(msg);
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("hide?token=%d", msgToken);
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+
+		LONG32 rval = SendRequest(msg);
+		delete [] msg;
+
+		rval = rval ? 0 : -1;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::HideNotification;
+		msg.Token = msgToken;
+		PackData(msg.PacketData, NULL);
+
+		rval = Send(msg);
+	}
+
+	return rval;
 }
 
 LONG32 SnarlInterface::IsVisible(LONG32 msgToken)
 {
-	SnarlMessage msg;
-	msg.Command = SnarlEnums::IsNotificationVisible;
-	msg.Token = msgToken;
-	PackData(msg.PacketData, NULL);
+	LONG32 rval;
+	LONG32 version = SendRequest("version");
 
-	return Send(msg);
+	if (version >= 42)
+	{
+		LPSTR msg = PackData("isvisible?token=%d", msgToken);
+		if (!msg)
+		{
+			localError = SnarlEnums::ErrorFailed;
+			return 0;
+		}
+		rval = SendRequest(msg);
+		delete [] msg;
+
+		rval = rval <= 0 ? 0 : -1;
+	}
+	else
+	{
+		SnarlMessage msg;
+		msg.Command = SnarlEnums::IsNotificationVisible;
+		msg.Token = msgToken;
+		PackData(msg.PacketData, NULL);
+
+		rval = Send(msg);
+	}
+
+	return rval;
 }
 
 SnarlEnums::SnarlStatus SnarlInterface::GetLastError()
@@ -510,6 +810,41 @@ LONG32 SnarlInterface::Send(SnarlMessage msg)
 	// return result and cache LastError
 	HANDLE hProp = GetProp(hWnd, _T("last_error"));
 	localError = static_cast<SnarlEnums::SnarlStatus>(reinterpret_cast<int>(hProp));
+
+	return nReturn;
+}
+
+//-----------------------------------------------------------------------------
+
+LONG32 SnarlInterface::SendRequest(LPCSTR szMsg)
+{
+	DWORD_PTR nReturn = 0; // Failure
+
+	HWND hWnd = GetSnarlWindow();
+	if (!IsWindow(hWnd))
+	{
+		localError = SnarlEnums::ErrorNotRunning;
+		return 0;
+	}
+
+	COPYDATASTRUCT cds;
+	cds.dwData = 0x534E4C03; // "SNL",3;
+	cds.cbData = lstrlenA(szMsg) + 1;
+	cds.lpData = (PVOID) szMsg;
+
+	if (SendMessageTimeout(hWnd, WM_COPYDATA, (WPARAM)GetCurrentProcessId(), (LPARAM)&cds, SMTO_ABORTIFHUNG | SMTO_NOTIMEOUTIFNOTHUNG, 500, &nReturn) == 0)
+	{
+		// return zero on failure
+		if (GetLastError() == ERROR_TIMEOUT)
+			localError = SnarlEnums::ErrorTimedOut;
+		else
+			localError = SnarlEnums::ErrorFailed;
+		
+		return 0;
+	}
+
+	if (nReturn < 0) localError = (SnarlEnums::SnarlStatus)-nReturn;
+	else localError = SnarlEnums::Success;
 
 	return nReturn;
 }

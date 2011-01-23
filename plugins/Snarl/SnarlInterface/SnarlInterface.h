@@ -1,6 +1,10 @@
 ﻿#ifndef SNARL_INTERFACE_V41
 #define SNARL_INTERFACE_V41
 
+#ifdef __MINGW32__
+	#define MINGW_HAS_SECURE_API
+#endif 
+
 #include <tchar.h>
 #include <windows.h>
 #include <cstdio>
@@ -38,14 +42,21 @@ namespace Snarl {
 		{
 			SnarlLaunched = 1,      // Snarl has just started running*
 			SnarlQuit = 2,          // Snarl is about to stop running*
-			SnarlAskAppletVer = 3,  // (R1.5) Reserved for future use
-			SnarlShowAppUi = 4      // (R1.6) Application should show its UI
+			SnarlStopped = 3,       // Snarl was stopped by user
+			SnarlStarted = 4        // Snarl was started by user
+		};
+
+		enum AppEvent
+		{
+			SnarlAppDoPrefs = 1,
+			SnarlAppDoAbout = 2
 		};
 
 		/// <summary>
 		/// Message event identifiers.
 		/// These are sent by Snarl to the window specified in RegisterApp() when the
 		/// Snarl Notification raised times out or the user clicks on it.
+		/// These are deprecated in V42
 		/// </summary>
 		enum MessageEvent
 		{
@@ -56,7 +67,16 @@ namespace Snarl {
 			NotificationMenu = 35,         // Menu item selected (V39)
 			NotificationMiddleButton = 36, // Notification middle-clicked by user (V39)
 			NotificationClosed = 37,       // User clicked the close gadget (V39)
-			NotificationAction = 38        // User triggered an action command (V42)
+			NotificationAction = 38,       // User triggered an action command (V42)
+
+			NewNotificationGone = 301,
+			NewNotificationClick,
+			NewNotificationExpired,
+			NewNotificationInvoked,
+			NewNotificationMenu,
+			NewNotificationExClick,
+			NewNotificationClosed,
+			NewNotificationAction
 		};
 
 		/// <summary>
@@ -70,6 +90,9 @@ namespace Snarl {
 			ErrorUnknownCommand,      // specified command not recognised
 			ErrorTimedOut,            // Snarl took too long to respond
 
+			ErrorBadSocket = 106,     // invalid socket (or some other socket-related error)
+			ErrorBadPacket,           // badly formed request
+
 			ErrorArgMissing = 109,    // required argument missing
 			ErrorSystem,              // internal system error
 
@@ -79,7 +102,13 @@ namespace Snarl {
 			ErrorClassAlreadyExists,  // not used yet; AddClass() returns existing token
 			ErrorClassBlocked,
 			ErrorClassNotFound,
-			ErrorNotificationNotFound
+			ErrorNotificationNotFound,
+			ErrorFlooding,
+			ErrorDoNotDisturb,
+			ErrorCouldNotDisplay,
+			ErrorAuthFailure,
+
+			InfoWasMerged = 251
 		};
 
 		/// <summary>
@@ -106,10 +135,8 @@ namespace Snarl {
 			HideNotification,
 			IsNotificationVisible,
 			LastError,                 // deprecated but retained for backwards compatability
-			AddAction,
-			ClearActions,
-			Request,
-			Parse
+			AddAction,                 // Added but then deprecated in V42
+			ClearActions               // "
 		};
 	}
 
@@ -265,6 +292,10 @@ namespace Snarl {
 			/// <summary>Send message to Snarl.</summary>
 			/// <returns>Return zero on failure.</returns>
 			LONG32 Send(SnarlMessage msg);
+
+			/// <summary>Send request to Snarl.</summary>
+			/// <returns>Return zero on failure.</returns>
+			LONG32 SendRequest(LPCSTR szMsg);
 
 			/// <summary>Convert a unicode string to UTF8</summary>
 			/// <returns>Returns pointer to the new string - Remember to delete [] returned string !</returns>
