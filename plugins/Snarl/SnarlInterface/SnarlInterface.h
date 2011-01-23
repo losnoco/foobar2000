@@ -317,7 +317,7 @@ namespace Snarl {
 			LONG32 appToken;
 			LONG32 lastMsgToken;
 			SnarlEnums::SnarlStatus localError;
-
+			LONG32 v42Version;
 	}; // class
 
 	} // namespace V41

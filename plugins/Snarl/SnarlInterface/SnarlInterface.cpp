@@ -64,7 +64,7 @@ namespace V41 {
 // Constructor/Destructor
 //-----------------------------------------------------------------------------
 SnarlInterface::SnarlInterface()
-	: appToken(0), lastMsgToken(0), localError(SnarlEnums::Success)
+	: appToken(0), lastMsgToken(0), localError(SnarlEnums::Success), v42Version(0)
 {
 }
 
@@ -76,9 +76,9 @@ SnarlInterface::~SnarlInterface()
 
 LONG32 SnarlInterface::RegisterApp(LPCSTR signature, LPCSTR title, LPCSTR icon, HWND hWndReply /* = NULL */, LONG32 msgReply /* = 0 */, SnarlEnums::AppFlags flags /* = SnarlEnums::AppDefault */)
 {
-	LONG32 version = SendRequest("version");
+	v42Version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("reg?app-sig=%s&title=%s&icon=%s&reply-to=%d&reply=%d&flags=%d", signature, title, icon, hWndReply, msgReply, flags);
 		if (!msg)
@@ -126,9 +126,8 @@ LONG32 SnarlInterface::RegisterApp(LPCWSTR signature, LPCWSTR title, LPCWSTR ico
 LONG32 SnarlInterface::UnregisterApp()
 {
 	LONG32 rval;
-	LONG32 version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("unreg?token=%d", appToken);
 		if (!msg)
@@ -166,9 +165,8 @@ LONG32 SnarlInterface::UpdateApp(LPCSTR title /* = NULL */, LPCSTR icon /* = NUL
 	bool has_icon = icon != NULL && icon[0] != 0;
 
 	LONG32 rval;
-	LONG32 version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("updateapp?token=%d%s%s%s%s", has_title ? "&title=" : "", has_title ? title : "", has_icon ? "&icon=" : "", has_icon ? icon : "");
 		if (!msg)
@@ -218,9 +216,8 @@ LONG32 SnarlInterface::UpdateApp(LPCWSTR title /* = NULL */, LPCWSTR icon /* = N
 LONG32 SnarlInterface::AddClass(LPCSTR className, LPCSTR description, bool enabled /* = true */)
 {
 	LONG32 rval;
-	LONG32 version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("addclass?token=%d&id=%s&name=%s&enabled=%d", appToken, className, description, (enabled ? 1 : 0));
 		if (!msg)
@@ -261,9 +258,8 @@ LONG32 SnarlInterface::AddClass(LPCWSTR className, LPCWSTR description, bool ena
 LONG32 SnarlInterface::RemoveClass(LPCSTR className, bool forgetSettings /* = false */)
 {
 	LONG32 rval;
-	LONG32 version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("remclass?token=%d&id=%s&forget=%d", appToken, className, (forgetSettings ? 1 : 0));
 		if (!msg)
@@ -303,9 +299,8 @@ LONG32 SnarlInterface::RemoveClass(LPCWSTR className, bool forgetSettings /* = f
 LONG32 SnarlInterface::RemoveAllClasses(bool forgetSettings /* = false */)
 {
 	LONG32 rval;
-	LONG32 version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("clearclasses?token=%d&forget=%d", appToken, (forgetSettings ? 1 : 0));
 		if (!msg)
@@ -337,9 +332,8 @@ LONG32 SnarlInterface::AddAction(LONG32 token, LPCSTR label /* = NULL */, LPCSTR
 		return 0;
 
 	LONG32 rval;
-	LONG32 version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("addaction?token=%d&label=%s&cmd=%s", token, label, command);
 		if (!msg)
@@ -383,9 +377,8 @@ LONG32 SnarlInterface::AddAction(LONG32 token, LPCSTR label /* = NULL */, LPCSTR
 LONG32 SnarlInterface::RemoveAllActions(LONG32 token)
 {
 	LONG32 rval;
-	LONG32 version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("clearactions?token=%d", token);
 		if (!msg)
@@ -414,9 +407,7 @@ LONG32 SnarlInterface::RemoveAllActions(LONG32 token)
 
 LONG32 SnarlInterface::EZNotify(LPCSTR className, LPCSTR title, LPCSTR text, LONG32 timeout /* = -1 */, LPCSTR icon /* = NULL */, LONG32 priority /* = 0 */, LPCSTR acknowledge /* = NULL */, LPCSTR value /* = NULL */)
 {
-	LONG32 version = SendRequest("version");
-
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("notify?token=%d&id=%s&title=%s&text=%s&timeout=%d%s%s&priority=%d%s%s%s%s", appToken, className, title, text, timeout, icon ? "&icon=" : "", icon ? icon : "", priority, acknowledge ? "&ack=" : "", acknowledge ? acknowledge : "", value ? "&value=" : "", value ? value : "");
 		if (!msg)
@@ -461,9 +452,7 @@ LONG32 SnarlInterface::EZNotify(LPCWSTR className, LPCWSTR title, LPCWSTR text, 
 
 LONG32 SnarlInterface::Notify(LPCSTR className, LPCSTR packetData)
 {
-	LONG32 version = SendRequest("version");
-
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("notify?token=%d&id=%s&%s", appToken, className, packetData);
 		if (!msg)
@@ -508,9 +497,8 @@ LONG32 SnarlInterface::EZUpdate(LONG32 msgToken, LPCSTR title /* = NULL */, LPCS
 	if (timeout != -1) _itoa_s(timeout, ttimeout, 10);
 
 	LONG32 rval;
-	LONG32 version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("update?token=%d%s%s%s%s%s%s%s%s", msgToken, has_title ? "&title=" : "", has_title ? title : "", has_text ? "&text=" : "", has_text ? text : "", has_icon ? "&icon=" : "", has_icon ? icon : "", timeout != -1 ? "&timeout=" : "", timeout != -1 ? ttimeout : "");
 		if (!msg)
@@ -579,9 +567,8 @@ LONG32 SnarlInterface::EZUpdate(LONG32 msgToken, LPCWSTR title /* = NULL */, LPC
 LONG32 SnarlInterface::Update(LONG32 msgToken, LPCSTR packetData)
 {
 	LONG32 rval;
-	LONG32 version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("update?token=%d&%s", msgToken, packetData);
 		if (!msg)
@@ -621,9 +608,8 @@ LONG32 SnarlInterface::Update(LONG32 msgToken, LPCWSTR packetData)
 LONG32 SnarlInterface::Hide(LONG32 msgToken)
 {
 	LONG32 rval;
-	LONG32 version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("hide?token=%d", msgToken);
 		if (!msg)
@@ -653,9 +639,8 @@ LONG32 SnarlInterface::Hide(LONG32 msgToken)
 LONG32 SnarlInterface::IsVisible(LONG32 msgToken)
 {
 	LONG32 rval;
-	LONG32 version = SendRequest("version");
 
-	if (version >= 42)
+	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("isvisible?token=%d", msgToken);
 		if (!msg)
