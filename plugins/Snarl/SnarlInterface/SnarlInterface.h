@@ -288,6 +288,11 @@ namespace Snarl {
 			/// <remarks>This is now the preferred way to test if Snarl is actually running.</remarks>
 			static HWND GetSnarlWindow();
 		
+			/// <summary>URL encode a string</summary>
+			/// <returns>Returns pointer to the new string - Remember to delete [] returned string !</returns>
+			/// <remarks>Remember to delete [] returned string !!!</remarks>
+			LPSTR  URLEncode(LPCSTR szStr);
+
 		private:
 			/// <summary>Send message to Snarl.</summary>
 			/// <returns>Return zero on failure.</returns>
@@ -313,6 +318,10 @@ namespace Snarl {
 			/// <param name="format">The format string. Can be NULL or "" to just zero PackedData!</param>
 			/// <param name="...">Variable number of objects to convert</param>
 			LPSTR  PackData(LPCSTR format, ...);
+
+			/// <summary>Convert a nibble to hexadecimal character</summary>
+			/// <returns>Returns a single hexadecimal character</returns>
+			inline CHAR ToHex(BYTE code);
 
 			LONG32 appToken;
 			LONG32 lastMsgToken;

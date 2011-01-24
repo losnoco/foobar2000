@@ -78,14 +78,13 @@ LONG32 SnarlInterface::RegisterApp(LPCSTR signature, LPCSTR title, LPCSTR icon, 
 {
 	v42Version = SendRequest("version");
 
+	LPSTR esignature = URLEncode(signature);
+	LPSTR etitle     = URLEncode(title);
+	LPSTR eicon      = URLEncode(icon);
+
 	if (v42Version >= 42)
 	{
-		LPSTR msg = PackData("reg?app-sig=%s&title=%s&icon=%s&reply-to=%d&reply=%d&flags=%d", signature, title, icon, hWndReply, msgReply, flags);
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
+		LPSTR msg = PackData("reg?app-sig=%s&title=%s&icon=%s&reply-to=%d&reply=%d&flags=%d", esignature, etitle, eicon, hWndReply, msgReply, flags);
 		appToken = SendRequest(msg);
 		delete [] msg;
 
@@ -104,6 +103,8 @@ LONG32 SnarlInterface::RegisterApp(LPCSTR signature, LPCSTR title, LPCSTR icon, 
 	}
 
 	lastMsgToken = 0;
+
+	delete [] eicon; delete [] etitle; delete [] esignature;
 
 	return appToken;
 }
@@ -130,11 +131,6 @@ LONG32 SnarlInterface::UnregisterApp()
 	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("unreg?token=%d", appToken);
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
 		rval = SendRequest(msg);
 		delete [] msg;
 
@@ -164,17 +160,14 @@ LONG32 SnarlInterface::UpdateApp(LPCSTR title /* = NULL */, LPCSTR icon /* = NUL
 	bool has_title = title != NULL && title[0] != 0;
 	bool has_icon = icon != NULL && icon[0] != 0;
 
+	LPSTR etitle = URLEncode(title);
+	LPSTR eicon  = URLEncode(icon);
+
 	LONG32 rval;
 
 	if (v42Version >= 42)
 	{
-		LPSTR msg = PackData("updateapp?token=%d%s%s%s%s", has_title ? "&title=" : "", has_title ? title : "", has_icon ? "&icon=" : "", has_icon ? icon : "");
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
-
+		LPSTR msg = PackData("updateapp?token=%d%s%s%s%s", has_title ? "&title=" : "", has_title ? etitle : "", has_icon ? "&icon=" : "", has_icon ? eicon : "");
 		rval = SendRequest(msg);
 		delete [] msg;
 
@@ -188,14 +181,16 @@ LONG32 SnarlInterface::UpdateApp(LPCSTR title /* = NULL */, LPCSTR icon /* = NUL
 
 		// TODO: Uckly code ahead
 		if (has_title && has_icon)
-			PackData(msg.PacketData, "title::%s#?icon::%s", title, icon);
+			PackData(msg.PacketData, "title::%s#?icon::%s", etitle, eicon);
 		else if (has_title)
-			PackData(msg.PacketData, "title::%s", title);
+			PackData(msg.PacketData, "title::%s", etitle);
 		else if (has_icon)
-			PackData(msg.PacketData, "icon::%s", icon);
+			PackData(msg.PacketData, "icon::%s", eicon);
 	
 		rval = Send(msg);
 	}
+
+	delete [] eicon; delete [] etitle;
 
 	return rval;
 }
@@ -217,14 +212,12 @@ LONG32 SnarlInterface::AddClass(LPCSTR className, LPCSTR description, bool enabl
 {
 	LONG32 rval;
 
+	LPSTR eclassName   = URLEncode(className);
+	LPSTR edescription = URLEncode(description);
+
 	if (v42Version >= 42)
 	{
-		LPSTR msg = PackData("addclass?token=%d&id=%s&name=%s&enabled=%d", appToken, className, description, (enabled ? 1 : 0));
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
+		LPSTR msg = PackData("addclass?token=%d&id=%s&name=%s&enabled=%d", appToken, eclassName, edescription, (enabled ? 1 : 0));
 		rval = SendRequest(msg);
 		delete [] msg;
 
@@ -235,9 +228,11 @@ LONG32 SnarlInterface::AddClass(LPCSTR className, LPCSTR description, bool enabl
 		SnarlMessage msg;
 		msg.Command = SnarlEnums::AddClass;
 		msg.Token = appToken;
-		PackData(msg.PacketData, "id::%s#?name::%s#?enabled::%d", className, description, (enabled ? 1 : 0));
+		PackData(msg.PacketData, "id::%s#?name::%s#?enabled::%d", eclassName, edescription, (enabled ? 1 : 0));
 		rval = Send(msg);
 	}
+
+	delete [] edescription; delete [] eclassName;
 
 	return rval;
 }
@@ -259,14 +254,11 @@ LONG32 SnarlInterface::RemoveClass(LPCSTR className, bool forgetSettings /* = fa
 {
 	LONG32 rval;
 
+	LPSTR eclassName = URLEncode(className);
+
 	if (v42Version >= 42)
 	{
-		LPSTR msg = PackData("remclass?token=%d&id=%s&forget=%d", appToken, className, (forgetSettings ? 1 : 0));
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
+		LPSTR msg = PackData("remclass?token=%d&id=%s&forget=%d", appToken, eclassName, (forgetSettings ? 1 : 0));
 		rval = SendRequest(msg);
 		delete [] msg;
 
@@ -277,10 +269,12 @@ LONG32 SnarlInterface::RemoveClass(LPCSTR className, bool forgetSettings /* = fa
 		SnarlMessage msg;
 		msg.Command = SnarlEnums::RemoveClass;
 		msg.Token = appToken;
-		PackData(msg.PacketData, "id::%s#?forget::%d", className, (forgetSettings ? 1 : 0));
+		PackData(msg.PacketData, "id::%s#?forget::%d", eclassName, (forgetSettings ? 1 : 0));
 
 		rval = Send(msg);
 	}
+
+	delete [] eclassName;
 
 	return rval;
 }
@@ -303,11 +297,6 @@ LONG32 SnarlInterface::RemoveAllClasses(bool forgetSettings /* = false */)
 	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("clearclasses?token=%d&forget=%d", appToken, (forgetSettings ? 1 : 0));
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
 		rval = SendRequest(msg);
 		delete [] msg;
 
@@ -333,14 +322,12 @@ LONG32 SnarlInterface::AddAction(LONG32 token, LPCSTR label /* = NULL */, LPCSTR
 
 	LONG32 rval;
 
+	LPSTR elabel   = URLEncode(label);
+	LPSTR ecommand = URLEncode(command);
+
 	if (v42Version >= 42)
 	{
-		LPSTR msg = PackData("addaction?token=%d&label=%s&cmd=%s", token, label, command);
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
+		LPSTR msg = PackData("addaction?token=%d&label=%s&cmd=%s", token, elabel, ecommand);
 		rval = SendRequest(msg);
 		delete [] msg;
 
@@ -358,9 +345,9 @@ LONG32 SnarlInterface::AddAction(LONG32 token, LPCSTR label /* = NULL */, LPCSTR
 		char* pData = reinterpret_cast<char*>(msg.PacketData);
 
 		err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?label::" : "label::", _TRUNCATE); //StringCbCat(tmp, SnarlPacketDataSize, "title::%s");
-		err |= strncat_s(pData, SnarlPacketDataSize, label, _TRUNCATE);
+		err |= strncat_s(pData, SnarlPacketDataSize, elabel, _TRUNCATE);
 		err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?command::" : "command::", _TRUNCATE); //StringCbCat(tmp, SnarlPacketDataSize, "title::%s");
-		err |= strncat_s(pData, SnarlPacketDataSize, command, _TRUNCATE);
+		err |= strncat_s(pData, SnarlPacketDataSize, ecommand, _TRUNCATE);
 
 		// Check for strcat errors and exit on error
 		if (err != 0) {
@@ -370,6 +357,8 @@ LONG32 SnarlInterface::AddAction(LONG32 token, LPCSTR label /* = NULL */, LPCSTR
 
 		rval = Send(msg);
 	}
+
+	delete [] ecommand; delete [] elabel;
 
 	return rval;
 }
@@ -381,11 +370,6 @@ LONG32 SnarlInterface::RemoveAllActions(LONG32 token)
 	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("clearactions?token=%d", token);
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
 		rval = SendRequest(msg);
 		delete [] msg;
 
@@ -407,14 +391,16 @@ LONG32 SnarlInterface::RemoveAllActions(LONG32 token)
 
 LONG32 SnarlInterface::EZNotify(LPCSTR className, LPCSTR title, LPCSTR text, LONG32 timeout /* = -1 */, LPCSTR icon /* = NULL */, LONG32 priority /* = 0 */, LPCSTR acknowledge /* = NULL */, LPCSTR value /* = NULL */)
 {
+	LPSTR eclassName   = URLEncode(className);
+	LPSTR etitle       = URLEncode(title);
+	LPSTR etext        = URLEncode(text);
+	LPSTR eicon        = URLEncode(icon);
+	LPSTR eacknowledge = URLEncode(acknowledge);
+	LPSTR evalue       = URLEncode(value);
+
 	if (v42Version >= 42)
 	{
-		LPSTR msg = PackData("notify?token=%d&id=%s&title=%s&text=%s&timeout=%d%s%s&priority=%d%s%s%s%s", appToken, className, title, text, timeout, icon ? "&icon=" : "", icon ? icon : "", priority, acknowledge ? "&ack=" : "", acknowledge ? acknowledge : "", value ? "&value=" : "", value ? value : "");
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
+		LPSTR msg = PackData("notify?token=%d&id=%s&title=%s&text=%s&timeout=%d%s%s&priority=%d%s%s%s%s", appToken, eclassName, etitle, etext, timeout, eicon ? "&icon=" : "", eicon ? eicon : "", priority, eacknowledge ? "&ack=" : "", eacknowledge ? eacknowledge : "", evalue ? "&value=" : "", evalue ? evalue : "");
 		lastMsgToken = SendRequest(msg);
 		delete [] msg;
 	}
@@ -425,10 +411,13 @@ LONG32 SnarlInterface::EZNotify(LPCSTR className, LPCSTR title, LPCSTR text, LON
 		msg.Token = appToken;
 		PackData(msg.PacketData,
 			"id::%s#?title::%s#?text::%s#?timeout::%d#?icon::%s#?priority::%d#?ack::%s#?value::%s",
-			className, title, text, timeout, (icon ? icon : ""), priority, (acknowledge ? acknowledge : ""), (value ? value : ""));
+			eclassName, etitle, etext, timeout, (eicon ? eicon : ""), priority, (eacknowledge ? eacknowledge : ""), (evalue ? evalue : ""));
 
 		lastMsgToken = Send(msg);
 	}
+
+	delete [] evalue; delete [] eacknowledge; delete [] eicon;
+	delete [] etext;  delete [] etitle;       delete [] eclassName;
 
 	return lastMsgToken;
 }
@@ -455,11 +444,6 @@ LONG32 SnarlInterface::Notify(LPCSTR className, LPCSTR packetData)
 	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("notify?token=%d&id=%s&%s", appToken, className, packetData);
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
 		lastMsgToken = SendRequest(msg);
 		delete [] msg;
 	}
@@ -498,14 +482,13 @@ LONG32 SnarlInterface::EZUpdate(LONG32 msgToken, LPCSTR title /* = NULL */, LPCS
 
 	LONG32 rval;
 
+	LPSTR etitle = URLEncode(title);
+	LPSTR etext  = URLEncode(text);
+	LPSTR eicon  = URLEncode(icon);
+
 	if (v42Version >= 42)
 	{
-		LPSTR msg = PackData("update?token=%d%s%s%s%s%s%s%s%s", msgToken, has_title ? "&title=" : "", has_title ? title : "", has_text ? "&text=" : "", has_text ? text : "", has_icon ? "&icon=" : "", has_icon ? icon : "", timeout != -1 ? "&timeout=" : "", timeout != -1 ? ttimeout : "");
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
+		LPSTR msg = PackData("update?token=%d%s%s%s%s%s%s%s%s", msgToken, has_title ? "&title=" : "", has_title ? etitle : "", has_text ? "&text=" : "", has_text ? etext : "", has_icon ? "&icon=" : "", has_icon ? eicon : "", timeout != -1 ? "&timeout=" : "", timeout != -1 ? ttimeout : "");
 		rval = SendRequest(msg);
 		delete [] msg;
 
@@ -524,15 +507,15 @@ LONG32 SnarlInterface::EZUpdate(LONG32 msgToken, LPCSTR title /* = NULL */, LPCS
 
 		if (has_title) {
 			err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?title::" : "title::", _TRUNCATE); //StringCbCat(tmp, SnarlPacketDataSize, "title::%s");
-			err |= strncat_s(pData, SnarlPacketDataSize, title, _TRUNCATE);
+			err |= strncat_s(pData, SnarlPacketDataSize, etitle, _TRUNCATE);
 		}
 		if (has_text) {
 			err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?text::" : "text::", _TRUNCATE);
-			err |= strncat_s(pData, SnarlPacketDataSize, text, _TRUNCATE);
+			err |= strncat_s(pData, SnarlPacketDataSize, etext, _TRUNCATE);
 		}
 		if (has_icon) {
 			err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?icon::" : "icon::", _TRUNCATE);
-			err |= strncat_s(pData, SnarlPacketDataSize, icon, _TRUNCATE);
+			err |= strncat_s(pData, SnarlPacketDataSize, eicon, _TRUNCATE);
 		}
 		if (timeout != -1) {
 			err |= strncat_s(pData, SnarlPacketDataSize, (pData[0] != NULL) ? "#?timeout::" : "timeout::", _TRUNCATE);
@@ -541,12 +524,15 @@ LONG32 SnarlInterface::EZUpdate(LONG32 msgToken, LPCSTR title /* = NULL */, LPCS
 	
 		// Check for strcat errors and exit on error
 		if (err != 0) {
+			delete [] eicon; delete [] etext; delete [] etitle;
 			localError = SnarlEnums::ErrorFailed;
 			return 0;
 		}
 
 		rval = Send(msg);
 	}
+
+	delete [] eicon; delete [] etext; delete [] etitle;
 
 	return rval;
 }
@@ -571,11 +557,6 @@ LONG32 SnarlInterface::Update(LONG32 msgToken, LPCSTR packetData)
 	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("update?token=%d&%s", msgToken, packetData);
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
 		rval = SendRequest(msg);
 		delete [] msg;
 
@@ -612,11 +593,6 @@ LONG32 SnarlInterface::Hide(LONG32 msgToken)
 	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("hide?token=%d", msgToken);
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
 
 		LONG32 rval = SendRequest(msg);
 		delete [] msg;
@@ -643,11 +619,6 @@ LONG32 SnarlInterface::IsVisible(LONG32 msgToken)
 	if (v42Version >= 42)
 	{
 		LPSTR msg = PackData("isvisible?token=%d", msgToken);
-		if (!msg)
-		{
-			localError = SnarlEnums::ErrorFailed;
-			return 0;
-		}
 		rval = SendRequest(msg);
 		delete [] msg;
 
@@ -814,7 +785,7 @@ LONG32 SnarlInterface::SendRequest(LPCSTR szMsg)
 
 	COPYDATASTRUCT cds;
 	cds.dwData = 0x534E4C03; // "SNL",3;
-	cds.cbData = lstrlenA(szMsg) + 1;
+	cds.cbData = strlen(szMsg) + 1;
 	cds.lpData = (PVOID) szMsg;
 
 	if (SendMessageTimeout(hWnd, WM_COPYDATA, (WPARAM)GetCurrentProcessId(), (LPARAM)&cds, SMTO_ABORTIFHUNG | SMTO_NOTIMEOUTIFNOTHUNG, 500, &nReturn) == 0)
@@ -898,6 +869,42 @@ LPSTR SnarlInterface::PackData(LPCSTR format, ...)
 	va_end(args);
 
 	return rval;
+}
+
+//-----------------------------------------------------------------------------
+
+CHAR SnarlInterface::ToHex(BYTE code)
+{
+	static const char hex[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+	return hex[code & 15];
+}
+
+LPSTR SnarlInterface::URLEncode(LPCSTR szStr)
+{
+	if (!szStr) return NULL;
+
+	LPCSTR pstr = szStr;
+	LPSTR buf = new char[strlen(szStr) * 3 + 1];
+	LPSTR pbuf = buf;
+	while (*pstr)
+	{
+#if 0
+		if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' || *pstr == '~')
+			*pbuf++ = *pstr;
+		else if (*pstr == ' ')
+			*pbuf++ = '+';
+#else
+		// Snarl only needs a tiny set of characters encoded, and the local message protocol only (currently)
+		// supports this many characters anyway.
+		if (*pstr != '#' && *pstr != '%' && *pstr != '&' && *pstr != ':' && *pstr != '=' && *pstr != '?')
+			*pbuf++ = *pstr;
+#endif
+		else
+			*pbuf++ = '%', *pbuf++ = ToHex(*pstr >> 4), *pbuf++ = ToHex(*pstr & 15);
+		pstr++;
+	}
+	*pbuf = '\0';
+	return buf;
 }
 
 }} // namespace Snarl::V41
