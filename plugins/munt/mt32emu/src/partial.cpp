@@ -362,6 +362,13 @@ Bit16s *Partial::mixBuffersRingMix(Bit16s *buf1, Bit16s *buf2, unsigned long len
 	}
 
 	Bit16s *outBuf = buf1;
+#if MT32EMU_USE_MMX >= 1
+	// KG: This seems to be fine
+	int donelen = i386_mixBuffersRingMix(buf1, buf2, len);
+	len -= donelen;
+	buf1 += donelen;
+	buf2 += donelen;
+#endif
 	while (len--) {
 		Bit32s result = calcRingMod(*buf1, *buf2) + *buf1;
 
@@ -385,6 +392,13 @@ Bit16s *Partial::mixBuffersRing(Bit16s *buf1, Bit16s *buf2, unsigned long len) {
 	}
 
 	Bit16s *outBuf = buf1;
+#if MT32EMU_USE_MMX >= 1
+	// FIXME:KG: Not really checked as working
+	int donelen = i386_mixBuffersRing(buf1, buf2, len);
+	len -= donelen;
+	buf1 += donelen;
+	buf2 += donelen;
+#endif
 	while (len--) {
 		Bit32s result = calcRingMod(*buf1, *buf2);
 
@@ -461,6 +475,14 @@ bool Partial::produceOutput(Bit16s *partialBuf, unsigned long length) {
 		}
 	}
 
+#if MT32EMU_USE_MMX >= 2
+	// FIXME:KG: This appears to introduce crackle
+	int donelen = i386_partialProductOutput(numGenerated, stereoVolume.leftvol, stereoVolume.rightvol, partialBuf, myBuf);
+	length -= donelen;
+	numGenerated -= donelen;
+	myBuf += donelen;
+	partialBuf += donelen * 2;
+#endif
 	for (unsigned int i = 0; i < numGenerated; i++) {
 		*partialBuf++ = (Bit16s)(((Bit32s)*myBuf * (Bit32s)stereoVolume.leftvol) >> 16);
 		*partialBuf++ = (Bit16s)(((Bit32s)*myBuf * (Bit32s)stereoVolume.rightvol) >> 16);

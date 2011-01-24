@@ -550,6 +550,26 @@ bool Synth::open(SynthProperties &useProp) {
 
 	iirFilter = &iir_filter_normal;
 
+#ifdef MT32EMU_HAVE_X86
+	bool availableSSE = DetectSIMD();
+	bool available3DNow = Detect3DNow();
+
+	if (availableSSE)
+		report(ReportType_availableSSE, NULL);
+	if (available3DNow)
+		report(ReportType_available3DNow, NULL);
+
+	if (available3DNow) {
+		printDebug("Detected and using SIMD (AMD 3DNow) extensions");
+		iirFilter = &iir_filter_3dnow;
+		report(ReportType_using3DNow, NULL);
+	} else if (availableSSE) {
+		printDebug("Detected and using SIMD (Intel SSE) extensions");
+		iirFilter = &iir_filter_sse;
+		report(ReportType_usingSSE, NULL);
+	}
+#endif
+
 	isOpen = true;
 	isEnabled = false;
 
@@ -1172,6 +1192,13 @@ int Synth::dumpTimbres(const char *filename, int start, int len) {
 }
 
 void ProduceOutput1(Bit16s *useBuf, Bit16s *stream, Bit32u len) {
+#if MT32EMU_USE_MMX >= 1
+	//FIXME:KG: This appears to introduce crackle
+	int donelen = i386_mixBuffers(stream, useBuf, len * 2) / 2; //i386_produceOutput1(useBuf, stream, len, volume);
+	len -= donelen;
+	stream += donelen * 2;
+	useBuf += donelen * 2;
+#endif
 	int end = len * 2;
 	while (end--) {
 		*stream = clipBit16s((Bit32s)*stream + ((Bit32s)*useBuf++));
