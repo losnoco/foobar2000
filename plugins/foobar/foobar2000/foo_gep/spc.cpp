@@ -2,6 +2,8 @@
 #include "reader.h"
 #include "config.h"
 
+#include "archive_renamer.h"
+
 #include <gme/blargg_endian.h>
 #include <gme/Spc_Emu.h>
 //#include <gme/SPC_Filter.h>
@@ -929,114 +931,6 @@ public:
 	}
 };
 
-class archive_rsn : public archive_impl
-{
-	class archive_rsn_callback : public archive_callback
-	{
-		archive_callback & m_callback;
-		pfc::string8       m_extension;
-
-	public:
-		archive_rsn_callback( archive_callback & p_callback, const char * p_extension ) : m_callback( p_callback ), m_extension( p_extension ) { }
-
-		virtual bool on_entry( archive * owner, const char * url, const t_filestats & p_stats, const service_ptr_t<file> & p_reader )
-		{
-			pfc::string8 m_url, archive, file;
-			archive_impl::g_parse_unpack_path( url, archive, file );
-			archive_impl::g_make_unpack_path( m_url, pfc::string_replace_extension( archive, m_extension ), file, "rar" );
-			return m_callback.on_entry( owner, m_url, p_stats, p_reader );
-		}
-
-		bool is_aborting() const {return m_callback.is_aborting();}
-		abort_callback_event get_abort_event() const {return m_callback.get_abort_event();}
-	};
-
-	static bool g_query_rar_service( service_ptr_t<archive> & p_arch, pfc::string8 & p_path, const char * p_archive, const char * p_file )
-	{
-		g_make_unpack_path( p_path, p_archive, p_file, "rar" );
-
-		service_enum_t<filesystem> e;
-		service_ptr_t<filesystem> f;
-		while( e.next( f ) )
-		{
-			service_ptr_t<archive> arch;
-			if (f->service_query_t(arch))
-			{
-				if (arch->is_our_path(p_path))
-				{
-					p_arch = arch;
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-public:
-	virtual bool supports_content_types()
-	{
-		return false;
-	}
-
-	virtual const char * get_archive_type()
-	{
-		return "rsn";
-	}
-
-	virtual t_filestats get_stats_in_archive( const char * p_archive, const char * p_file, abort_callback & p_abort )
-	{
-#if 0
-		pfc::string8 m_path;
-		service_ptr_t< archive > m_arch;
-		if (g_query_rar_service( m_arch, m_path, p_archive, p_file ))
-		{
-			bool dummy;
-			t_filestats m_stats;
-			m_arch->get_stats( m_path, m_stats, dummy, p_abort );
-			return m_stats;
-		}
-		else
-#endif
-			throw exception_io_unsupported_format();
-	}
-
-	virtual void open_archive( service_ptr_t< file > & p_out, const char * p_archive, const char * p_file, abort_callback & p_abort )
-	{
-#if 0
-		pfc::string8 m_path;
-		service_ptr_t< archive > m_arch;
-		if (g_query_rar_service( m_arch, m_path, p_archive, p_file ))
-		{
-			m_arch->open( p_out, m_path, open_mode_read, p_abort );
-		}
-		else
-#endif
-			throw exception_io_unsupported_format();
-	}
-
-	virtual void archive_list( const char * path, const service_ptr_t< file > & p_reader, archive_callback & p_out, bool p_want_readers )
-	{
-		pfc::string_extension p_extension( path );
-		if ( stricmp_utf8( p_extension, "rsn" ) )
-			throw exception_io_unsupported_format();
-
-		pfc::string8 m_path;
-		service_ptr_t< archive > m_arch;
-		if (g_query_rar_service( m_arch, m_path, path, "rsn" ))
-		{
-			service_ptr_t< file > m_file = p_reader;
-			if ( m_file.is_empty() )
-				filesystem::g_open( m_file, path, filesystem::open_mode_read, p_out );
-
-			archive_rsn_callback m_out( p_out, p_extension );
-
-			m_arch->archive_list( pfc::string_replace_extension(path, "rar"), m_file, m_out, p_want_readers );
-		}
-		else throw exception_io_unsupported_format();
-	}
-};
-
 typedef struct
 {
 	unsigned song, fade;
@@ -1255,5 +1149,6 @@ namespace a { DECLARE_FILE_TYPE("SPC files", "*.SPC"); }
 namespace b { DECLARE_FILE_TYPE("RSN files", "*.RSN"); }
 
 static input_factory_t           <input_spc>   g_input_spc_factory;
-static archive_factory_t         <archive_rsn> g_archive_rsn_factory;
 static contextmenu_item_factory_t<context_spc> g_contextmenu_item_spc_factory;
+
+archive_renamed_factory(rsn, rar);

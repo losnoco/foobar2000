@@ -1,7 +1,11 @@
-#define MYVERSION "1.108"
+#define MYVERSION "1.109"
 
 /*
 	change log
+
+2011-01-24 02:00 UTC - kode54
+- Implemented VGM7Z support
+- Version is now 1.109
 
 2011-01-17 05:44 UTC - kode54
 - Added a SPC echo buffer clearing hack for when it's first enabled post-load

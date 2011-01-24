@@ -71,6 +71,7 @@
     <ClInclude Include="reader.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="coleco.h" />
+    <ClInclude Include="archive_renamer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cough.wav" />
