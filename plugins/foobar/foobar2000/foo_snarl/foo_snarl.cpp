@@ -29,6 +29,8 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF S
 #include <map>
 #include <strsafe.h>
 
+#pragma comment(lib, "../shared/shared.lib")
+
 using namespace Snarl::V41;
 using namespace pfc;
 
