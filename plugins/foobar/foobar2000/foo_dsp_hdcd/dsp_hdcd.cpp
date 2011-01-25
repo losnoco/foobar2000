@@ -1,4 +1,4 @@
-#define MYVERSION "1.7"
+#define MYVERSION "1.8"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -35,6 +35,12 @@
 /*
 
 	change log
+
+2011-01-25 18:28 UTC - kode54
+- Removed sort header setting from HDCD tester results dialog
+- Improved HDCD tester to accept all files and only skip unacceptable files when
+  invoking the scanner
+- Version is now 1.8
 
 2011-01-17 11:01 UTC - kode54
 - HDCD postprocessor service will only start outputting decoded data if the HDCD

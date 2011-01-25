@@ -106,11 +106,15 @@ class hdcd_scanner : public threaded_process_callback
 				input_list.remove_by_idx( 0 );
 			}
 
-			if ( check_hdcd( m_current_file, *m_abort ) )
+			try
 			{
-				insync( lock_output_list );
-				output_list.add_item( m_current_file );
+				if ( check_hdcd( m_current_file, *m_abort ) )
+				{
+					insync( lock_output_list );
+					output_list.add_item( m_current_file );
+				}
 			}
+			catch (exception_io & e) { }
 
 			InterlockedDecrement( &input_items_remaining );
 
@@ -200,7 +204,11 @@ public:
 
 		if ( thread_count > 1 ) threads_start( thread_count - 1 );
 
-		scanner_process();
+		try
+		{
+			scanner_process();
+		}
+		catch (...) { }
 
 		threads_stop();
 	}
@@ -212,6 +220,8 @@ public:
 		if ( !p_was_aborted )
 		{
 			ShowWindow( p_wnd, SW_HIDE );
+
+			status_callback->set_progress( threaded_process_status::progress_min );
 
 			RunHDCDResultsPopup( output_list, p_wnd );
 		}
@@ -357,27 +367,6 @@ public:
 	virtual bool context_get_display(unsigned n,const pfc::list_base_const_t<metadb_handle_ptr> & data,pfc::string_base & out,unsigned & displayflags,const GUID &)
 	{
 		if (n) uBugCheck();
-		unsigned i, j;
-		i = data.get_count();
-		for (j = 0; j < i; j++)
-		{
-			file_info_impl info;
-			if ( !data.get_item( j )->get_info_async( info ) )
-			{
-				return false;
-			}
-
-			if ( info.info_get_decoded_bps() != 16 )
-			{
-				return false;
-			}
-
-			const char * encoding = info.info_get( "encoding" );
-			if ( !encoding || pfc::stricmp_ascii( encoding, "lossless" ) )
-			{
-				return false;
-			}
-		}
 		out = "Scan for HDCD tracks";
 		return true;
 	}
@@ -387,9 +376,33 @@ public:
 		metadb_handle_list input_files = data;
 		input_files.remove_duplicates();
 
-		service_ptr_t<threaded_process_callback> p_callback = new service_impl_t< hdcd_scanner >( input_files );
+		unsigned i, j;
+		i = input_files.get_count();
+		for (j = 0; j < i; j++)
+		{
+			const char * encoding;
+			file_info_impl info;
+			if ( !input_files.get_item( j )->get_info_async( info ) ||
+				info.info_get_decoded_bps() != 16 ||
+				!( encoding = info.info_get( "encoding" ) ) ||
+				pfc::stricmp_ascii( encoding, "lossless" ) )
+			{
+				input_files.remove_by_idx( j );
+				j--;
+				i--;
+			}
+		}
 
-		threaded_process::g_run_modeless( p_callback, threaded_process::flag_show_abort | threaded_process::flag_show_progress | threaded_process::flag_show_item | threaded_process::flag_show_delayed, core_api::get_main_window(), "HDCD Scanner" );
+		if ( i )
+		{
+			service_ptr_t<threaded_process_callback> p_callback = new service_impl_t< hdcd_scanner >( input_files );
+
+			threaded_process::g_run_modeless( p_callback, threaded_process::flag_show_abort | threaded_process::flag_show_progress | threaded_process::flag_show_item | threaded_process::flag_show_delayed, core_api::get_main_window(), "HDCD Scanner" );
+		}
+		else
+		{
+			uMessageBox( core_api::get_main_window(), "No valid files to scan.", "HDCD Scanner", MB_ICONEXCLAMATION );
+		}
 	}
 };
 
