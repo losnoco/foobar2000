@@ -293,14 +293,14 @@ namespace Snarl {
 			/// <remarks>Remember to delete [] returned string !!!</remarks>
 			LPSTR  URLEncode(LPCSTR szStr);
 
+			/// <summary>Send request to Snarl.</summary>
+			/// <returns>Return zero on failure.</returns>
+			LONG32 SendRequest(LPCSTR szMsg);
+
 		private:
 			/// <summary>Send message to Snarl.</summary>
 			/// <returns>Return zero on failure.</returns>
 			LONG32 Send(SnarlMessage msg);
-
-			/// <summary>Send request to Snarl.</summary>
-			/// <returns>Return zero on failure.</returns>
-			LONG32 SendRequest(LPCSTR szMsg);
 
 			/// <summary>Convert a unicode string to UTF8</summary>
 			/// <returns>Returns pointer to the new string - Remember to delete [] returned string !</returns>
