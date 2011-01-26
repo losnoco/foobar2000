@@ -4,10 +4,16 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.8"
+#define MY_VERSION "1.9"
 
 /*
 	change log
+
+2011-01-26 09:32 UTC - kode54
+- Fixed mixed up infinity/NaN in ebur128.cpp
+- Fixed rg_offset to return the correct invalid gain constant when the result is
+  invalid or out of range
+- Version is now 1.9
 
 2011-01-26 08:47 UTC - kode54
 - Implemented support for mid-file and mid-album sample rate changes
@@ -61,7 +67,11 @@
 
 */
 
-static inline double rg_offset(double lu) { return -18.0 - lu; }
+static inline double rg_offset(double lu)
+{
+	if ( lu == std::numeric_limits<double>::quiet_NaN() || lu == std::numeric_limits<double>::infinity() || lu < -70 ) return replaygain_info::gain_invalid;
+	else return -18.0 - lu;
+}
 
 static const GUID guid_r128_branch = { 0x168d8789, 0xd829, 0x47a8, { 0xb4, 0x53, 0x7e, 0x84, 0x62, 0x61, 0xdb, 0x40 } };
 static const GUID guid_cfg_album_pattern = { 0x75ebec52, 0xfdc0, 0x43f0, { 0xb1, 0x95, 0xf8, 0x3f, 0x2f, 0x7e, 0x1, 0xeb } };

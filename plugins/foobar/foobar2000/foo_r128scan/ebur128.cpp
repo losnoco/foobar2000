@@ -362,8 +362,8 @@ double ebur128_gated_loudness(ebur128_state* st,
   double relative_threshold = 0.0;
   double gated_loudness = 0.0;
   size_t above_thresh_counter = 0;
-  if ((st->mode & EBUR128_MODE_I) != EBUR128_MODE_I) return std::numeric_limits<double>::infinity();
-  if (SLIST_EMPTY(&st->block_list)) return std::numeric_limits<double>::quiet_NaN();
+  if ((st->mode & EBUR128_MODE_I) != EBUR128_MODE_I) return std::numeric_limits<double>::quiet_NaN();
+  if (SLIST_EMPTY(&st->block_list)) return std::numeric_limits<double>::infinity();
 
   SLIST_FOREACH(it, &st->block_list, entries) {
     if (above_thresh_counter >= block_count) break;
@@ -381,7 +381,7 @@ double ebur128_gated_loudness(ebur128_state* st,
     }
     --block_count;
   }
-  if (!above_thresh_counter) return std::numeric_limits<double>::quiet_NaN();
+  if (!above_thresh_counter) return std::numeric_limits<double>::infinity();
   gated_loudness /= (double) (above_thresh_counter * frames_per_block);
   return ebur128_energy_to_loudness(gated_loudness);
 }
@@ -397,7 +397,7 @@ double ebur128_gated_loudness_segment(ebur128_state* st) {
 double ebur128_energy_in_interval(ebur128_state* st, size_t interval_frames) {
   double loudness;
 
-  if (interval_frames > st->audio_data_frames) return std::numeric_limits<double>::infinity();
+  if (interval_frames > st->audio_data_frames) return std::numeric_limits<double>::quiet_NaN();
   ebur128_calc_gating_block(st, interval_frames, &loudness);
   loudness /= (double) (interval_frames);
   return loudness;
@@ -442,7 +442,7 @@ double ebur128_loudness_range(ebur128_state* st) {
   }
   if (!stl_size) return 0.0;
   stl_vector = (double *) calloc(stl_size, sizeof(double));
-  if (!stl_vector) return std::numeric_limits<double>::infinity();
+  if (!stl_vector) return std::numeric_limits<double>::quiet_NaN();
   i = 0;
   SLIST_FOREACH(it, &st->short_term_block_list, entries) {
     stl_vector[i] = it->z;
