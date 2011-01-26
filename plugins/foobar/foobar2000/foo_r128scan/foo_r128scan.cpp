@@ -4,10 +4,23 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.6"
+#define MY_VERSION "1.8"
 
 /*
 	change log
+
+2011-01-26 08:47 UTC - kode54
+- Implemented support for mid-file and mid-album sample rate changes
+- Version is now 1.8
+
+2011-01-26 08:15 UTC - kode54
+- Fixed albums-by-tags scanning mode to include the last album detected in the batch
+- Disabled multi-threading in debug builds
+- Fixed "true" peak calculation to instantiate the resampler for more than just the
+  first track in the album
+- Restructured "true" peak calculation resampler code to properly handle the last
+  chunk produced by the decoder
+- Version is now 1.7
 
 2011-01-26 06:03 UTC - kode54
 - Implemented thread priority control
@@ -64,26 +77,26 @@ static const int thread_priority_levels[7] = { THREAD_PRIORITY_IDLE, THREAD_PRIO
 
 struct last_chunk_info
 {
-	unsigned last_srate, last_channels, last_channel_config;
+	unsigned running_srate, last_srate, last_channels, last_channel_config;
 
 	last_chunk_info()
 	{
+		running_srate = 0;
 		last_srate = 0;
 		last_channels = 0;
 		last_channel_config = 0;
 	}
 };
 
-double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info & last_info, metadb_handle_ptr p_handle, double & p_progress, unsigned track_total, threaded_process_status & p_status, critical_section & p_critsec, abort_callback & p_abort )
+double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info & last_info, metadb_handle_ptr p_handle, service_ptr_t<dsp> & m_resampler, double & p_progress, unsigned track_total, threaded_process_status & p_status, critical_section & p_critsec, abort_callback & p_abort )
 {
 	input_helper               m_decoder;
 	service_ptr_t<file>        m_file;
-	audio_chunk_impl_temporary m_chunk;
-	service_ptr_t<dsp>         m_resampler;
+	audio_chunk_impl_temporary m_chunk, m_previous_chunk;
 	file_info_impl             m_info;
 
 	bool first_chunk = true;
-	unsigned last_srate, last_channels, last_channel_config;
+	unsigned running_srate, last_srate, last_channels, last_channel_config;
 
 	double duration = 0, length = 0;
 
@@ -94,13 +107,42 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 
 	while ( m_decoder.run( m_chunk, p_abort ) )
 	{
+		if ( ! first_chunk && m_resampler.is_valid() )
+		{
+			dsp_chunk_list_impl chunks; chunks.add_chunk( &m_previous_chunk );
+			m_resampler->run_abortable( &chunks, p_handle, 0, p_abort );
+
+			bool error = false;
+
+			for ( unsigned i = 0; i < chunks.get_count(); i++ )
+			{
+				const audio_chunk * chunk = chunks.get_item( i );
+				if ( ebur128_add_frames_float( state, chunk->get_data(), chunk->get_sample_count() ) )
+				{
+					error = true;
+					break;
+				}
+				audio_sample current_peak = audio_math::calculate_peak( chunk->get_data(), chunk->get_sample_count() * chunk->get_channels() );
+				peak = max( peak, current_peak );
+			}
+
+			if ( error ) break;
+		}
+
 		if ( ! state )
 		{
 			last_srate = m_chunk.get_srate();
 			last_channels = m_chunk.get_channels();
 			last_channel_config = m_chunk.get_channel_config();
 
-			state = ebur128_init( last_channels, last_srate, EBUR128_MODE_I );
+			if ( cfg_true_peak_scanning.get() )
+			{
+				resampler_entry::g_create( m_resampler, last_srate, 192000, 0 );
+				running_srate = 192000;
+			}
+			else running_srate = last_srate;
+
+			state = ebur128_init( last_channels, running_srate, EBUR128_MODE_I );
 			if ( !state ) throw std::bad_alloc();
 
 			pfc::array_t<int> channel_map;
@@ -122,11 +164,7 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 
 			ebur128_set_channel_map( state, channel_map.get_ptr() );
 
-			if ( cfg_true_peak_scanning.get() )
-			{
-				resampler_entry::g_create( m_resampler, last_srate, 192000, 0 );
-			}
-
+			last_info.running_srate = running_srate;
 			last_info.last_srate = last_srate;
 			last_info.last_channels = last_channels;
 			last_info.last_channel_config = last_channel_config;
@@ -134,32 +172,33 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 		}
 		else if ( first_chunk )
 		{
+			running_srate = last_info.running_srate;
 			last_srate = last_info.last_srate;
 			last_channels = last_info.last_channels;
 			last_channel_config = last_info.last_channel_config;
+
+			if ( cfg_true_peak_scanning.get() && m_resampler.is_empty() )
+			{
+				resampler_entry::g_create( m_resampler, last_srate, running_srate, 0 );
+			}
+
 			first_chunk = false;
 		}
-		else if ( last_srate != m_chunk.get_srate() || last_channels != m_chunk.get_channels() || last_channel_config != m_chunk.get_channel_config() )
+		else if ( last_channels != m_chunk.get_channels() || last_channel_config != m_chunk.get_channel_config() )
 		{
-			throw exception_io_data("Sample format changed mid-stream");
+			throw exception_io_data("Channel format changed mid-stream");
+		}
+		else if ( last_srate != m_chunk.get_srate() )
+		{
+			if ( !running_srate ) last_info.running_srate = running_srate = last_srate;
+			if ( m_resampler.is_empty() ) resampler_entry::g_create( m_resampler, m_chunk.get_srate(), running_srate, 0 );
+			last_info.last_srate = last_srate = m_chunk.get_srate();
 		}
 
-		if ( ebur128_add_frames_float( state, m_chunk.get_data(), m_chunk.get_sample_count() ) ) break;
-
-		if ( m_resampler.is_valid() )
-		{
-			dsp_chunk_list_impl chunks; chunks.add_chunk( &m_chunk );
-			m_resampler->run_abortable( &chunks, p_handle, 0, p_abort );
-
-			for ( unsigned i = 0; i < chunks.get_count(); i++ )
-			{
-				const audio_chunk * chunk = chunks.get_item( i );
-				audio_sample current_peak = audio_math::calculate_peak( chunk->get_data(), chunk->get_sample_count() * chunk->get_channels() );
-				peak = max( peak, current_peak );
-			}
-		}
+		if ( m_resampler.is_valid() ) m_previous_chunk.copy( m_chunk );
 		else
 		{
+			if ( ebur128_add_frames_float( state, m_chunk.get_data(), m_chunk.get_sample_count() ) ) break;
 			audio_sample current_peak = audio_math::calculate_peak( m_chunk.get_data(), m_chunk.get_sample_count() * m_chunk.get_channels() );
 			peak = max( peak, current_peak );
 		}
@@ -176,12 +215,13 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 
 	if ( m_resampler.is_valid() )
 	{
-		dsp_chunk_list_impl chunks;
+		dsp_chunk_list_impl chunks; chunks.add_chunk( &m_previous_chunk );
 		m_resampler->run_abortable( &chunks, p_handle, dsp::END_OF_TRACK, p_abort );
 
 		for ( unsigned i = 0; i < chunks.get_count(); i++ )
 		{
 			const audio_chunk * chunk = chunks.get_item( i );
+			if ( ebur128_add_frames_float( state, chunk->get_data(), chunk->get_sample_count() ) ) break;
 			audio_sample current_peak = audio_math::calculate_peak( chunk->get_data(), chunk->get_sample_count() * chunk->get_channels() );
 			peak = max( peak, current_peak );
 		}
@@ -286,7 +326,8 @@ class r128_scanner : public threaded_process_callback
 				{
 					audio_sample m_current_peak = 0;
 					last_chunk_info last_info;
-					double duration = scan_track( state, m_current_peak, last_info, m_current_job->m_handles.get_item( 0 ), m_progress, input_items_total, *status_callback, lock_status, *m_abort );
+					service_ptr_t<dsp> m_resampler;
+					double duration = scan_track( state, m_current_peak, last_info, m_current_job->m_handles.get_item( 0 ), m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
 					r128_scanner_result * m_current_result = new r128_scanner_result(false, m_current_job->m_handles);
 					m_current_result->m_album_gain = ebur128_gated_loudness_global( state );
 					m_current_result->m_album_peak = m_current_peak;
@@ -314,10 +355,12 @@ class r128_scanner : public threaded_process_callback
 
 						last_chunk_info last_info;
 
+						service_ptr_t<dsp> m_resampler;
+
 						for ( unsigned i = 0; i < m_current_job->m_handles.get_count(); i++ )
 						{
 							audio_sample m_current_track_peak = 0;
-							double duration = scan_track( state, m_current_track_peak, last_info, m_current_job->m_handles.get_item( i ), m_progress, input_items_total, *status_callback, lock_status, *m_abort );
+							double duration = scan_track( state, m_current_track_peak, last_info, m_current_job->m_handles.get_item( i ), m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
 							double m_current_track_gain = ebur128_gated_loudness_segment( state );
 							m_current_result->m_track_gain.append_single( m_current_track_gain );
 							m_current_result->m_track_peak.append_single( m_current_track_peak );
@@ -510,13 +553,15 @@ public:
 
 		update_status();
 
-		unsigned thread_count = pfc::getOptimalWorkerThreadCountEx( 4 );
-
 		SetThreadPriority( GetCurrentThread(), thread_priority_levels[ cfg_thread_priority.get() - 1 ] );
 
 		GetSystemTimeAsFileTime( &start_time );
 
+#ifdef NDEBUG
+		unsigned thread_count = pfc::getOptimalWorkerThreadCountEx( 4 );
+
 		if ( thread_count > 1 ) threads_start( thread_count - 1 );
+#endif
 
 		try
 		{
@@ -998,7 +1043,7 @@ public:
 
 			metadb_handle_list list;
 
-			for ( unsigned i = 0; i < input_files.get_count(); i++ )
+			for ( unsigned i = 0, j = input_files.get_count(); i < j; i++ )
 			{
 				metadb_handle_ptr ptr = input_files.get_item( i );
 				if (!ptr->format_title(NULL, temp_album, m_script, NULL)) temp_album.reset();
@@ -1010,6 +1055,7 @@ public:
 				}
 				list.add_item( ptr );
 			}
+			if ( list.get_count() ) p_callback->add_job_album( list );
 		}
 
 		threaded_process::g_run_modeless( p_callback, threaded_process::flag_show_abort | threaded_process::flag_show_progress | threaded_process::flag_show_item | threaded_process::flag_show_delayed, core_api::get_main_window(), "EBU R128 Gain Scanner" );
