@@ -1,13 +1,17 @@
-exc/* See LICENSE file for copyright and license details. */
+/* See LICENSE file for copyright and license details. */
 
 #include "stdafx.h"
 
 #include "resource.h"
 
-#define MY_VERSION "1.5"
+#define MY_VERSION "1.6"
 
 /*
 	change log
+
+2011-01-26 06:03 UTC - kode54
+- Implemented thread priority control
+- Version is now 1.6
 
 2011-01-26 05:53 UTC - kode54
 - Implemented finer grained progress indicating
@@ -49,10 +53,14 @@ static inline double rg_offset(double lu) { return -18.0 - lu; }
 static const GUID guid_r128_branch = { 0x168d8789, 0xd829, 0x47a8, { 0xb4, 0x53, 0x7e, 0x84, 0x62, 0x61, 0xdb, 0x40 } };
 static const GUID guid_cfg_album_pattern = { 0x75ebec52, 0xfdc0, 0x43f0, { 0xb1, 0x95, 0xf8, 0x3f, 0x2f, 0x7e, 0x1, 0xeb } };
 static const GUID guid_cfg_true_peak_scanning = { 0x6d7153f9, 0x8ee6, 0x4e88, { 0x9a, 0xe8, 0xfa, 0xae, 0xf4, 0x99, 0x14, 0x15 } };
+static const GUID guid_cfg_thread_priority = { 0x2b01ea31, 0x2524, 0x481d, { 0xaf, 0xa, 0x42, 0x52, 0x76, 0x6c, 0x53, 0xd1 } };
 
 static advconfig_branch_factory r128_tools_branch("EBU R128 Gain Scanner", guid_r128_branch, advconfig_branch::guid_branch_tools, 0);
 static advconfig_string_factory cfg_album_pattern("Album grouping pattern", guid_cfg_album_pattern, guid_r128_branch, 0, "%album artist% | %date% | %album%");
 static advconfig_checkbox_factory cfg_true_peak_scanning("\"True\" peak scanning", guid_cfg_true_peak_scanning, guid_r128_branch, 0, false);
+static advconfig_integer_factory cfg_thread_priority("Thread priority (1-7)", guid_cfg_thread_priority, guid_r128_branch, 0, 2, 1, 7 );
+
+static const int thread_priority_levels[7] = { THREAD_PRIORITY_IDLE, THREAD_PRIORITY_LOWEST, THREAD_PRIORITY_BELOW_NORMAL, THREAD_PRIORITY_NORMAL, THREAD_PRIORITY_ABOVE_NORMAL, THREAD_PRIORITY_HIGHEST, THREAD_PRIORITY_TIME_CRITICAL };
 
 struct last_chunk_info
 {
@@ -503,6 +511,8 @@ public:
 		update_status();
 
 		unsigned thread_count = pfc::getOptimalWorkerThreadCountEx( 4 );
+
+		SetThreadPriority( GetCurrentThread(), thread_priority_levels[ cfg_thread_priority.get() - 1 ] );
 
 		GetSystemTimeAsFileTime( &start_time );
 
