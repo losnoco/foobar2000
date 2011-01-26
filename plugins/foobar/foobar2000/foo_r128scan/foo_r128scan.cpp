@@ -4,10 +4,15 @@ exc/* See LICENSE file for copyright and license details. */
 
 #include "resource.h"
 
-#define MY_VERSION "1.3"
+#define MY_VERSION "1.4"
 
 /*
 	change log
+
+2011-01-26 05:16 UTC - kode54
+- Fixed RG scanner result display dialog showing the track gain in the album peak column when
+  scanning in track gain mode
+- Version is now 1.4
 
 2011-01-26 05:02 UTC - kode54
 - Made "true" peak scanning optional
@@ -766,6 +771,7 @@ private:
 							if ( replaygain_info::g_format_peak( result->m_album_peak, m_peak ) ) m_temp = m_peak;
 							else m_temp.reset();
 						}
+						else m_temp.reset();
 						m_convert.convert( m_temp );
 						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
 						break;
