@@ -181,6 +181,12 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 
 	if ( !state ) throw exception_io_data("File ended without producing any output");
 
+	{
+		insync(p_critsec);
+		p_progress += ( length ? ( ( length - duration ) / length ) : 1.0 ) / double(track_total);
+		p_status.set_progress_float( p_progress );
+	}
+
 	return duration;
 }
 
@@ -349,6 +355,11 @@ class r128_scanner : public threaded_process_callback
 					InterlockedDecrement( &input_items_remaining );
 				}
 
+				{
+					insync(lock_status);
+					m_progress += double( m_current_job->m_names.get_count() ) / double( input_items_total );
+				}
+
 				update_status();
 			}
 			catch (exception_aborted &) { }
@@ -382,8 +393,7 @@ class r128_scanner : public threaded_process_callback
 		{
 			insync( lock_status );
 			status_callback->set_item( paths );
-			m_progress = double( input_items_total - input_items_remaining ) / double( input_items_total );
-			status_callback->set_progress( input_items_total - input_items_remaining, input_items_total );
+			status_callback->set_progress_float( m_progress );
 		}
 	}
 
