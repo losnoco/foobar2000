@@ -4,10 +4,14 @@ exc/* See LICENSE file for copyright and license details. */
 
 #include "resource.h"
 
-#define MY_VERSION "1.2"
+#define MY_VERSION "1.3"
 
 /*
 	change log
+
+2011-01-26 05:02 UTC - kode54
+- Made "true" peak scanning optional
+- Version is now 1.3
 
 2011-01-26 04:24 UTC - kode54
 - Fixed RG result info display when there are results from more than one job in the batch
@@ -35,9 +39,11 @@ static inline double rg_offset(double lu) { return -18.0 - lu; }
 
 static const GUID guid_r128_branch = { 0x168d8789, 0xd829, 0x47a8, { 0xb4, 0x53, 0x7e, 0x84, 0x62, 0x61, 0xdb, 0x40 } };
 static const GUID guid_cfg_album_pattern = { 0x75ebec52, 0xfdc0, 0x43f0, { 0xb1, 0x95, 0xf8, 0x3f, 0x2f, 0x7e, 0x1, 0xeb } };
+static const GUID guid_cfg_true_peak_scanning = { 0x6d7153f9, 0x8ee6, 0x4e88, { 0x9a, 0xe8, 0xfa, 0xae, 0xf4, 0x99, 0x14, 0x15 } };
 
-static advconfig_branch_factory r128_tools_branch("EBU R128 Gain", guid_r128_branch, advconfig_branch::guid_branch_tools, 0);
-static advconfig_string_factory cfg_album_pattern("Enable APEv2 tag writing", guid_cfg_album_pattern, guid_r128_branch, 0, "%album artist% | %date% | %album%");
+static advconfig_branch_factory r128_tools_branch("EBU R128 Gain Scanner", guid_r128_branch, advconfig_branch::guid_branch_tools, 0);
+static advconfig_string_factory cfg_album_pattern("Album grouping pattern", guid_cfg_album_pattern, guid_r128_branch, 0, "%album artist% | %date% | %album%");
+static advconfig_checkbox_factory cfg_true_peak_scanning("\"True\" peak scanning", guid_cfg_true_peak_scanning, guid_r128_branch, 0, false);
 
 struct last_chunk_info
 {
@@ -95,7 +101,10 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 
 			ebur128_set_channel_map( state, channel_map.get_ptr() );
 
-			resampler_entry::g_create( m_resampler, last_srate, 192000, 0 );
+			if ( cfg_true_peak_scanning.get() )
+			{
+				resampler_entry::g_create( m_resampler, last_srate, 192000, 0 );
+			}
 
 			last_info.last_srate = last_srate;
 			last_info.last_channels = last_channels;
