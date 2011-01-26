@@ -434,6 +434,7 @@ public:
 	{
 		input_items_remaining = input_items_total = 0;
 		output_duration = 0;
+		m_progress = 0;
 	}
 
 	void add_job_track( const metadb_handle_ptr & p_input )
