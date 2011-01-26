@@ -1,13 +1,23 @@
-/* See LICENSE file for copyright and license details. */
+exc/* See LICENSE file for copyright and license details. */
 
 #include "stdafx.h"
 
 #include "resource.h"
 
-#define MY_VERSION "1.0"
+#define MY_VERSION "1.2"
 
 /*
 	change log
+
+2011-01-26 04:24 UTC - kode54
+- Fixed RG result info display when there are results from more than one job in the batch
+- Fixed RG scanner to remove the current job's track names and update the display on I/O error
+- Version is now 1.2
+
+2011-01-26 03:45 UTC - kode54
+- Fixed RG info applying filter result finding function to actually return the item indices
+  so that album set tags are written correctly
+- Version is now 1.1
 
 2011-01-26 02:31 UTC - kode54
 - Album scan mode now keeps track of the sample rate and channel information across tracks
@@ -300,7 +310,17 @@ class r128_scanner : public threaded_process_callback
 					}
 				}
 			}
-			catch (exception_io &) { }
+			catch (exception_io &)
+			{
+				insync(lock_input_name_list);
+				for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
+				{
+					input_name_list.delete_item( m_current_job->m_names.get_item( i ) );
+					InterlockedDecrement( &input_items_remaining );
+				}
+
+				update_status();
+			}
 			catch (exception_aborted &) { }
 			catch (...)
 			{
@@ -516,7 +536,7 @@ class rg_apply_filter : public file_info_filter
 {
 	pfc::ptr_list_t<r128_scanner_result> m_results;
 
-	bool find_offsets( metadb_handle_ptr p_location, unsigned result_offset, unsigned item_offset )
+	bool find_offsets( metadb_handle_ptr p_location, unsigned & result_offset, unsigned & item_offset )
 	{
 		for ( unsigned i = 0; i < m_results.get_count(); i++ )
 		{
@@ -552,7 +572,7 @@ public:
 
 	virtual bool apply_filter(metadb_handle_ptr p_location,t_filestats p_stats,file_info & p_info)
 	{
-		unsigned result_offset = 0, item_offset = 0;
+		unsigned result_offset, item_offset;
 		if (find_offsets(p_location, result_offset, item_offset))
 		{
 			r128_scanner_result * result = m_results.get_item( result_offset );
@@ -671,7 +691,7 @@ private:
 		for ( unsigned i = 0; i < m_initData.get_count(); i++ )
 		{
 			r128_scanner_result * result = m_initData.get_item( i );
-			if ( item > result->m_handles.get_count() ) item -= result->m_handles.get_count();
+			if ( item >= result->m_handles.get_count() ) item -= result->m_handles.get_count();
 			else
 			{
 				job_number = i;
