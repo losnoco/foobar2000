@@ -1,7 +1,12 @@
-#define MYVERSION "2.0.18"
+#define MYVERSION "2.0.19"
 
 /*
 	changelog
+
+2011-01-26 04:04 UTC - kode54
+- Fixed playback initialization for when files do not specify a
+  fade time
+- Version is now 2.0.19
 
 2010-11-20 21:11 UTC - kode54
 - Changed zlib dependency to use standard zlib1.dll
@@ -1030,6 +1035,7 @@ public:
 			else if (xsf_version == 2) InterlockedIncrement(&dsf_count);
 
 			tag_song_ms = 0;
+			tag_fade_ms = 0;
 
 			m_file = p_file;
 
