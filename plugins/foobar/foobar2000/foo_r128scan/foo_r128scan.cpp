@@ -4,10 +4,14 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.9"
+#define MY_VERSION "1.10"
 
 /*
 	change log
+
+2010-01-26 10:34 UTC - kode54
+- Changed "true" peak upsampling to 4x over-sampling instead of always 192KHz
+- Version is now 1.10
 
 2011-01-26 09:32 UTC - kode54
 - Fixed mixed up infinity/NaN in ebur128.cpp
@@ -147,8 +151,8 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 
 			if ( cfg_true_peak_scanning.get() )
 			{
-				resampler_entry::g_create( m_resampler, last_srate, 192000, 0 );
-				running_srate = 192000;
+				running_srate = last_srate * 4;
+				resampler_entry::g_create( m_resampler, last_srate, running_srate, 0 );
 			}
 			else running_srate = last_srate;
 
