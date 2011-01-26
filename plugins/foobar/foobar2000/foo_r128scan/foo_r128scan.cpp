@@ -4,10 +4,14 @@ exc/* See LICENSE file for copyright and license details. */
 
 #include "resource.h"
 
-#define MY_VERSION "1.4"
+#define MY_VERSION "1.5"
 
 /*
 	change log
+
+2011-01-26 05:53 UTC - kode54
+- Implemented finer grained progress indicating
+- Version is now 1.5
 
 2011-01-26 05:16 UTC - kode54
 - Fixed RG scanner result display dialog showing the track gain in the album peak column when
@@ -62,19 +66,23 @@ struct last_chunk_info
 	}
 };
 
-double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info & last_info, metadb_handle_ptr p_handle, abort_callback & p_abort )
+double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info & last_info, metadb_handle_ptr p_handle, double & p_progress, unsigned track_total, threaded_process_status & p_status, critical_section & p_critsec, abort_callback & p_abort )
 {
 	input_helper               m_decoder;
 	service_ptr_t<file>        m_file;
 	audio_chunk_impl_temporary m_chunk;
 	service_ptr_t<dsp>         m_resampler;
+	file_info_impl             m_info;
 
 	bool first_chunk = true;
 	unsigned last_srate, last_channels, last_channel_config;
 
-	double duration = 0;
+	double duration = 0, length = 0;
 
 	m_decoder.open( m_file, p_handle, input_flag_simpledecode, p_abort, false, true );
+
+	m_decoder.get_info( p_handle->get_subsong_index(), m_info, p_abort );
+	length = m_info.get_length();
 
 	while ( m_decoder.run( m_chunk, p_abort ) )
 	{
@@ -149,6 +157,13 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 		}
 
 		duration += m_chunk.get_duration();
+
+		if ( length )
+		{
+			insync(p_critsec);
+			p_progress += m_chunk.get_duration() / length / double(track_total);
+			p_status.set_progress_float( p_progress );
+		}
 	}
 
 	if ( m_resampler.is_valid() )
@@ -198,6 +213,7 @@ class r128_scanner : public threaded_process_callback
 {
 	critical_section lock_status;
 	threaded_process_status * status_callback;
+	double m_progress;
 
 	abort_callback * m_abort;
 
@@ -256,7 +272,7 @@ class r128_scanner : public threaded_process_callback
 				{
 					audio_sample m_current_peak = 0;
 					last_chunk_info last_info;
-					double duration = scan_track( state, m_current_peak, last_info, m_current_job->m_handles.get_item( 0 ), *m_abort );
+					double duration = scan_track( state, m_current_peak, last_info, m_current_job->m_handles.get_item( 0 ), m_progress, input_items_total, *status_callback, lock_status, *m_abort );
 					r128_scanner_result * m_current_result = new r128_scanner_result(false, m_current_job->m_handles);
 					m_current_result->m_album_gain = ebur128_gated_loudness_global( state );
 					m_current_result->m_album_peak = m_current_peak;
@@ -287,7 +303,7 @@ class r128_scanner : public threaded_process_callback
 						for ( unsigned i = 0; i < m_current_job->m_handles.get_count(); i++ )
 						{
 							audio_sample m_current_track_peak = 0;
-							double duration = scan_track( state, m_current_track_peak, last_info, m_current_job->m_handles.get_item( i ), *m_abort );
+							double duration = scan_track( state, m_current_track_peak, last_info, m_current_job->m_handles.get_item( i ), m_progress, input_items_total, *status_callback, lock_status, *m_abort );
 							double m_current_track_gain = ebur128_gated_loudness_segment( state );
 							m_current_result->m_track_gain.append_single( m_current_track_gain );
 							m_current_result->m_track_peak.append_single( m_current_track_peak );
@@ -366,6 +382,7 @@ class r128_scanner : public threaded_process_callback
 		{
 			insync( lock_status );
 			status_callback->set_item( paths );
+			m_progress = double( input_items_total - input_items_remaining ) / double( input_items_total );
 			status_callback->set_progress( input_items_total - input_items_remaining, input_items_total );
 		}
 	}
