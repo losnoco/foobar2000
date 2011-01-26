@@ -16,7 +16,11 @@
 #include <ddeml.h>
 #include <commctrl.h>
 #include <uxtheme.h>
+#if (NTDDI_VERSION >= NTDDI_VISTA)
+#include <vssym32.h>
+#else
 #include <tmschema.h>
+#endif
 
 #ifndef NOTHROW
 #ifdef _MSC_VER
