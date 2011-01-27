@@ -3,10 +3,24 @@
 
 #include "stdafx.h"
 
-#define MY_VERSION "1.1"
+#define MY_VERSION "1.4"
 
 /*
 	change log
+- And decreased latency to maintain at least 500ms worth of samples
+- Version is now 1.4
+
+2011-01-17 20:19 UTC - kode54
+- Increased latency to maintain a buffer of 3 seconds worth of samples
+
+2011-01-17 20:06 UTC - kode54
+- Reverted short-term gain level changes to instantaneous again
+- Version is now 1.3
+
+2011-01-27 19:58 UTC - kode54
+- Disabled momentary loudness polling and increased short-term loudness
+  polling frequency
+- Version is now 1.2
 
 2011-01-27 19:22 UTC - kode54
 - Adjusted gain level changes a bit
@@ -21,20 +35,30 @@
 
 */
 
+// #define ENABLE_MOMENTARY
+
 class dsp_r128 : public dsp_impl_base
 {
-	int m_rate, m_ch, m_ch_mask;
+	unsigned m_rate, m_ch, m_ch_mask;
 	ebur128_state * m_state;
 	dsp_chunk_list_impl sample_buffer;
 	bool startup_complete;
+#ifdef ENABLE_MOMENTARY
 	int frames_until_next_moment;
+#endif
 	int frames_until_next_shortterm;
+#ifdef ENABLE_MOMENTARY
 	double momentary_scale;
+#endif
 	double shortterm_scale;
 	double current_scale;
 	double target_scale;
 public:
-	dsp_r128() : momentary_scale(1.0), shortterm_scale(1.0), current_scale(1.0), target_scale(1.0), m_rate( 0 ), m_ch( 0 ), m_ch_mask( 0 ), m_state( NULL )
+	dsp_r128() :
+#ifdef ENABLE_MOMENTARY
+	  momentary_scale(1.0),
+#endif
+	  shortterm_scale(1.0), current_scale(1.0), target_scale(1.0), m_rate( 0 ), m_ch( 0 ), m_ch_mask( 0 ), m_state( NULL )
 	{
 	}
 
@@ -77,27 +101,51 @@ public:
 			startup_complete = true;
 		}
 
+#ifdef ENABLE_MOMENTARY
 		if ( frames_until_next_moment <= 0 )
 		{
 			frames_until_next_moment += m_rate / 10;
 			double new_momentary_scale = loudness_to_scale( ebur128_loudness_momentary( m_state ) );
-			momentary_scale = sqrt( sqrt( new_momentary_scale * momentary_scale * momentary_scale * momentary_scale ) );
+			momentary_scale = sqrt( new_momentary_scale * momentary_scale );
 			target_scale = sqrt( momentary_scale * shortterm_scale );
 		}
+#endif
 
 		if ( frames_until_next_shortterm <= 0 )
 		{
+#ifdef ENABLE_MOMENTARY
 			frames_until_next_shortterm += m_rate / 2;
-			double new_shortterm_scale = loudness_to_scale( ebur128_loudness_shortterm( m_state ) );
-			shortterm_scale = sqrt( shortterm_scale * new_shortterm_scale );
+#else
+			frames_until_next_shortterm += m_rate / 10;
+#endif
+			shortterm_scale = loudness_to_scale( ebur128_loudness_shortterm( m_state ) );
+#ifdef ENABLE_MOMENTARY
 			target_scale = sqrt( momentary_scale * shortterm_scale );
+#else
+			target_scale = shortterm_scale;
+#endif
 		}
 
+#ifdef ENABLE_MOMENTARY
 		frames_until_next_moment -= chunk->get_sample_count();
+#endif
 		frames_until_next_shortterm -= chunk->get_sample_count();
 
+#if 0
 		flush_buffer();
-
+#else
+		flush_buffer( 0.5 );
+		if ( sample_buffer.get_count() )
+		{
+			audio_chunk * copy_chunk = sample_buffer.insert_item( sample_buffer.get_count(), chunk->get_data_size() );
+			copy_chunk->copy( *chunk );
+			audio_chunk * output_chunk = sample_buffer.get_item( 0 );
+			process_chunk( output_chunk );
+			chunk->copy( *output_chunk );
+			sample_buffer.remove_by_idx( 0 );
+		}
+		else
+#endif
 		process_chunk( chunk );
 
 		return true;
@@ -111,7 +159,9 @@ public:
 		m_rate = 0;
 		m_ch = 0;
 		m_ch_mask = 0;
+#ifdef ENABLE_MOMENTARY
 		momentary_scale = 1.0;
+#endif
 		shortterm_scale = 1.0;
 		current_scale = 1.0;
 		target_scale = 1.0;
@@ -155,7 +205,9 @@ private:
 
 		ebur128_set_channel_map( m_state, channel_map.get_ptr() );
 
+#ifdef ENABLE_MOMENTARY
 		frames_until_next_moment = 0;
+#endif
 		frames_until_next_shortterm = 0;
 
 		startup_complete = false;
@@ -197,9 +249,9 @@ private:
 		}
 	}
 
-	void flush_buffer()
+	void flush_buffer( double latency = 0 )
 	{
-		while ( sample_buffer.get_count() )
+		while ( sample_buffer.get_duration() > latency )
 		{
 			audio_chunk * buffered_chunk = sample_buffer.get_item( 0 );
 			process_chunk( buffered_chunk );
