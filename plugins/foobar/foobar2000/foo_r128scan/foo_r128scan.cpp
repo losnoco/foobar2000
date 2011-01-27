@@ -4,12 +4,26 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.10"
+#define MY_VERSION "1.12"
 
 /*
 	change log
 
-2010-01-26 10:34 UTC - kode54
+2011-01-27 07:04 UTC - kode54
+- Scanner status now only lists the files currently being scanned
+- Scanner status window now shows the count of processed files and the total count
+- Limited thread count by the number of jobs to execute
+- Version is now 1.12
+
+2011-01-27 06:15 UTC - kode54
+- Fixed channel mapping setup
+- Added an abort check to the scanner processing loop just in case
+- Changed the scanner results to a modeless dialog to get rid of the Windows 7
+  taskbar progress indicator artifact
+- Changed all applicable get_item() calls to [] operators
+- Version is now 1.11
+
+2011-01-26 10:34 UTC - kode54
 - Changed "true" peak upsampling to 4x over-sampling instead of always 192KHz
 - Version is now 1.10
 
@@ -121,6 +135,8 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 
 	while ( m_decoder.run( m_chunk, p_abort ) )
 	{
+		p_abort.check();
+
 		if ( ! first_chunk && m_resampler.is_valid() )
 		{
 			dsp_chunk_list_impl chunks; chunks.add_chunk( &m_previous_chunk );
@@ -162,10 +178,10 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 			pfc::array_t<int> channel_map;
 			channel_map.set_count( last_channels );
 
-			for ( unsigned i = 0, j = 1; i < last_channels; i++, j <<= 1 )
+			for ( unsigned i = 0; i < last_channels; i++ )
 			{
 				int channel = EBUR128_UNUSED;
-				switch ( last_channel_config & j )
+				switch ( audio_chunk::g_extract_channel_flag( last_channel_config, i ) )
 				{
 				case audio_chunk::channel_front_left:   channel = EBUR128_LEFT;           break;
 				case audio_chunk::channel_front_right:  channel = EBUR128_RIGHT;          break;
@@ -264,14 +280,14 @@ struct r128_scanner_result
 	r128_scanner_result(bool p_is_album, const metadb_handle_list & p_handles)
 		: m_is_album(p_is_album), m_handles(p_handles), m_album_gain(0), m_album_peak(0) { }
 
-	r128_scanner_result(const r128_scanner_result & in)
+	r128_scanner_result(const r128_scanner_result * in)
 	{
-		m_is_album   = in.m_is_album;
-		m_handles    = in.m_handles;
-		m_album_gain = in.m_album_gain;
-		m_album_peak = in.m_album_peak;
-		m_track_gain = in.m_track_gain;
-		m_track_peak = in.m_track_peak;
+		m_is_album   = in->m_is_album;
+		m_handles    = in->m_handles;
+		m_album_gain = in->m_album_gain;
+		m_album_peak = in->m_album_peak;
+		m_track_gain = in->m_track_gain;
+		m_track_peak = in->m_track_peak;
 	}
 };
 
@@ -297,6 +313,11 @@ class r128_scanner : public threaded_process_callback
 		{
 			m_is_album = p_is_album;
 			m_handles = p_handles;
+		}
+
+		~job()
+		{
+			m_names.delete_all();
 		}
 	};
 
@@ -328,7 +349,7 @@ class r128_scanner : public threaded_process_callback
 
 				if ( ! input_job_list.get_count() ) break;
 
-				m_current_job = input_job_list.get_item( 0 );
+				m_current_job = input_job_list[ 0 ];
 				input_job_list.remove_by_idx( 0 );
 			}
 
@@ -338,10 +359,16 @@ class r128_scanner : public threaded_process_callback
 			{
 				if ( !m_current_job->m_is_album )
 				{
+					{
+						insync(lock_input_name_list);
+						input_name_list.add_item( m_current_job->m_names[ 0 ] );
+					}
+					update_status();
+
 					audio_sample m_current_peak = 0;
 					last_chunk_info last_info;
 					service_ptr_t<dsp> m_resampler;
-					double duration = scan_track( state, m_current_peak, last_info, m_current_job->m_handles.get_item( 0 ), m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
+					double duration = scan_track( state, m_current_peak, last_info, m_current_job->m_handles[ 0 ], m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
 					r128_scanner_result * m_current_result = new r128_scanner_result(false, m_current_job->m_handles);
 					m_current_result->m_album_gain = ebur128_gated_loudness_global( state );
 					m_current_result->m_album_peak = m_current_peak;
@@ -353,11 +380,9 @@ class r128_scanner : public threaded_process_callback
 
 					{
 						insync(lock_input_name_list);
-						input_name_list.delete_item( m_current_job->m_names.get_item( 0 ) );
+						input_name_list.remove_item( m_current_job->m_names[ 0 ] );
 					}
-
 					InterlockedDecrement( &input_items_remaining );
-
 					update_status();
 				}
 				else
@@ -373,8 +398,14 @@ class r128_scanner : public threaded_process_callback
 
 						for ( unsigned i = 0; i < m_current_job->m_handles.get_count(); i++ )
 						{
+							{
+								insync(lock_input_name_list);
+								input_name_list.add_item( m_current_job->m_names[ i ] );
+							}
+							update_status();
+
 							audio_sample m_current_track_peak = 0;
-							double duration = scan_track( state, m_current_track_peak, last_info, m_current_job->m_handles.get_item( i ), m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
+							double duration = scan_track( state, m_current_track_peak, last_info, m_current_job->m_handles[ i ], m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
 							double m_current_track_gain = ebur128_gated_loudness_segment( state );
 							m_current_result->m_track_gain.append_single( m_current_track_gain );
 							m_current_result->m_track_peak.append_single( m_current_track_peak );
@@ -383,16 +414,13 @@ class r128_scanner : public threaded_process_callback
 
 							{
 								insync(lock_input_name_list);
-								input_name_list.delete_item( m_current_job->m_names.get_item( i ) );
+								input_name_list.remove_item( m_current_job->m_names[ i ] );
 							}
-
 							{
 								insync(lock_output_list);
 								output_duration += duration;
 							}
-
 							InterlockedDecrement( &input_items_remaining );
-
 							update_status();
 						}
 
@@ -413,11 +441,13 @@ class r128_scanner : public threaded_process_callback
 			}
 			catch (exception_io &)
 			{
-				insync(lock_input_name_list);
-				for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
 				{
-					input_name_list.delete_item( m_current_job->m_names.get_item( i ) );
-					InterlockedDecrement( &input_items_remaining );
+					insync(lock_input_name_list);
+					for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
+					{
+						input_name_list.remove_item( m_current_job->m_names[ i ] );
+						InterlockedDecrement( &input_items_remaining );
+					}
 				}
 
 				{
@@ -427,36 +457,70 @@ class r128_scanner : public threaded_process_callback
 
 				update_status();
 			}
-			catch (exception_aborted &) { }
+			catch (exception_aborted &)
+			{
+				if (state) ebur128_destroy(&state);
+				{
+					insync(lock_input_name_list);
+					for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
+					{
+						input_name_list.remove_item( m_current_job->m_names[ i ] );
+					}
+				}
+				delete m_current_job;
+				break;
+			}
 			catch (...)
 			{
 				if (state) ebur128_destroy(&state);
+				{
+					insync(lock_input_name_list);
+					for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
+					{
+						input_name_list.remove_item( m_current_job->m_names[ i ] );
+					}
+				}
 				delete m_current_job;
 				throw;
 			}
 
 			if (state) ebur128_destroy(&state);
+			{
+				insync(lock_input_name_list);
+				for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
+				{
+					input_name_list.remove_item( m_current_job->m_names[ i ] );
+				}
+			}
 			delete m_current_job; m_current_job = NULL;
 		}
 	}
 
 	void update_status()
 	{
-		pfc::string8 paths;
+		pfc::string8 title, paths;
 
 		{
 			insync( lock_input_name_list );
 
 			for ( unsigned i = 0; i < input_name_list.get_count(); i++ )
 			{
-				const char * temp = input_name_list.get_item( i );
+				const char * temp = input_name_list[ i ];
 				if ( paths.length() ) paths += "; ";
 				paths.add_string( temp );
 			}
 		}
 
+		title = "EBU R128 Gain scan status";
+		title += " (";
+		title += pfc::format_int( input_items_total - input_items_remaining );
+		title += "/";
+		title += pfc::format_int( input_items_total );
+		title += ")";
+
 		{
 			insync( lock_status );
+			status_callback->set_title( title );
 			status_callback->set_item( paths );
 			status_callback->set_progress_float( m_progress );
 		}
@@ -524,7 +588,6 @@ public:
 		char * m_name = new char[length + 1];
 		strcpy_s(m_name, length + 1, m_path + filename);
 
-		input_name_list.add_item( m_name );
 		m_job->m_names.add_item( m_name );
 
 		input_job_list.add_item( m_job );
@@ -538,13 +601,12 @@ public:
 
 		for ( unsigned i = 0; i < p_input.get_count(); i++ )
 		{
-			const char * m_path = p_input.get_item( i )->get_path();
+			const char * m_path = p_input[ i ]->get_path();
 			t_size filename = pfc::scan_filename( m_path );
 			t_size length = strlen( m_path + filename );
 			char * m_name = new char[length + 1];
 			strcpy_s(m_name, length + 1, m_path + filename);
 
-			input_name_list.add_item( m_name );
 			m_job->m_names.add_item( m_name );
 		}
 
@@ -556,7 +618,6 @@ public:
 	~r128_scanner()
 	{
 		input_job_list.delete_all();
-		input_name_list.delete_all();
 		output_list.delete_all();
 	}
 
@@ -573,6 +634,8 @@ public:
 
 #ifdef NDEBUG
 		unsigned thread_count = pfc::getOptimalWorkerThreadCountEx( 4 );
+
+		if ( thread_count > input_job_list.get_count() ) thread_count = input_job_list.get_count();
 
 		if ( thread_count > 1 ) threads_start( thread_count - 1 );
 #endif
@@ -594,10 +657,6 @@ public:
 
 		if ( !p_was_aborted )
 		{
-			ShowWindow( p_wnd, SW_HIDE );
-
-			status_callback->set_progress( threaded_process_status::progress_min );
-
 			DWORD high = end_time.dwHighDateTime - start_time.dwHighDateTime;
 			DWORD low = end_time.dwLowDateTime - start_time.dwLowDateTime;
 
@@ -605,7 +664,7 @@ public:
 
 			unsigned __int64 timestamp = ((unsigned __int64)(high) << 32) + low;
 
-			RunR128ResultsPopup( output_list, output_duration, timestamp, p_wnd );
+			RunR128ResultsPopup( output_list, output_duration, timestamp, core_api::get_main_window() );
 		}
 	}
 };
@@ -651,10 +710,10 @@ class rg_apply_filter : public file_info_filter
 	{
 		for ( unsigned i = 0; i < m_results.get_count(); i++ )
 		{
-			r128_scanner_result * result = m_results.get_item( i );
+			r128_scanner_result * result = m_results[ i ];
 			for ( unsigned j = 0; j < result->m_handles.get_count(); j++ )
 			{
-				if ( result->m_handles.get_item( j ) == p_location )
+				if ( result->m_handles[ j ] == p_location )
 				{
 					result_offset = i;
 					item_offset = j;
@@ -671,7 +730,7 @@ public:
 	rg_apply_filter( const pfc::ptr_list_t<r128_scanner_result> & p_list )
 	{
 		for(t_size n = 0; n < p_list.get_count(); n++) {
-			r128_scanner_result * result = new r128_scanner_result( *p_list[n] );
+			r128_scanner_result * result = new r128_scanner_result( p_list[n] );
 			m_results.add_item(result);
 		}
 	}
@@ -686,7 +745,7 @@ public:
 		unsigned result_offset, item_offset;
 		if (find_offsets(p_location, result_offset, item_offset))
 		{
-			r128_scanner_result * result = m_results.get_item( result_offset );
+			r128_scanner_result * result = m_results[ result_offset ];
 
 			replaygain_info info = p_info.get_replaygain();
 			replaygain_info orig = info;
@@ -720,8 +779,20 @@ public:
 class CMyResultsPopup : public CDialogImpl<CMyResultsPopup>, public CDialogResize<CMyResultsPopup>
 {
 public:
-	CMyResultsPopup( pfc::ptr_list_t<r128_scanner_result> & initData, double sample_duration, unsigned __int64 processing_duration )
-		: m_initData( initData ), m_sample_duration( sample_duration ), m_processing_duration( processing_duration ) { }
+	CMyResultsPopup( const pfc::ptr_list_t<r128_scanner_result> & initData, double sample_duration, unsigned __int64 processing_duration )
+		: m_sample_duration( sample_duration ), m_processing_duration( processing_duration )
+	{
+		for ( unsigned i = 0; i < initData.get_count(); i++ )
+		{
+			r128_scanner_result * result = new r128_scanner_result( initData[ i ] );
+			m_initData.add_item( result );
+		}		
+	}
+
+	~CMyResultsPopup()
+	{
+		m_initData.delete_all();
+	}
 
 	enum { IDD = IDD_RESULTS };
 
@@ -781,7 +852,7 @@ private:
 
 		for ( unsigned i = 0, index = 0; i < m_initData.get_count(); i++ )
 		{
-			for ( unsigned j = 0; j < m_initData.get_item( i )->m_handles.get_count(); j++, index++ )
+			for ( unsigned j = 0; j < m_initData[ i ]->m_handles.get_count(); j++, index++ )
 			{
 				m_listview.InsertItem( index, LPSTR_TEXTCALLBACK );
 				m_listview.SetItemText( index, 1, LPSTR_TEXTCALLBACK );
@@ -794,6 +865,8 @@ private:
 		if ( !static_api_ptr_t<titleformat_compiler>()->compile( m_script, "%title%" ) )
 			m_script.release();
 
+		ShowWindow(SW_SHOW);
+
 		return TRUE;
 	}
 
@@ -801,7 +874,7 @@ private:
 	{
 		for ( unsigned i = 0; i < m_initData.get_count(); i++ )
 		{
-			r128_scanner_result * result = m_initData.get_item( i );
+			r128_scanner_result * result = m_initData[ i ];
 			if ( item >= result->m_handles.get_count() ) item -= result->m_handles.get_count();
 			else
 			{
@@ -827,12 +900,12 @@ private:
 					unsigned job_number = 0, item_number = 0;
 
 					get_offsets( pLvdi->item.iItem, job_number, item_number );
-					r128_scanner_result * result = m_initData.get_item( job_number );
+					r128_scanner_result * result = m_initData[ job_number ];
 
 					switch (pLvdi->item.iSubItem)
 					{
 					case 0:
-						if ( m_script.is_valid() ) result->m_handles.get_item( item_number )->format_title( NULL, m_temp, m_script, NULL );
+						if ( m_script.is_valid() ) result->m_handles[ item_number ]->format_title( NULL, m_temp, m_script, NULL );
 						else m_temp.reset();
 						m_convert.convert( m_temp );
 						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
@@ -894,31 +967,31 @@ private:
 
 	void OnAccept( UINT, int id, CWindow )
 	{
-		EndDialog( id );
-
 		metadb_handle_list list;
 
 		for ( unsigned i = 0; i < m_initData.get_count(); i++ )
 		{
-			r128_scanner_result * result = m_initData.get_item( i );
+			r128_scanner_result * result = m_initData[ i ];
 			for ( unsigned j = 0; j < result->m_handles.get_count(); j++ )
 			{
-				list.add_item( result->m_handles.get_item( j ) );
+				list.add_item( result->m_handles[ j ] );
 			}
 		}
 
 		static_api_ptr_t<metadb_io_v2>()->update_info_async( list, new service_impl_t< rg_apply_filter >( m_initData ), core_api::get_main_window(), 0, 0 );
+
+		DestroyWindow();
 	}
 
 	void OnCancel( UINT, int id, CWindow )
 	{
-		EndDialog( id );
+		DestroyWindow();
 	}
 
 	double m_sample_duration;
 	unsigned __int64 m_processing_duration;
 
-	pfc::ptr_list_t<r128_scanner_result> & m_initData;
+	pfc::ptr_list_t<r128_scanner_result> m_initData;
 
 	CListViewCtrl m_listview;
 	service_ptr_t<titleformat_object> m_script;
@@ -928,8 +1001,7 @@ private:
 
 static void RunR128ResultsPopup( pfc::ptr_list_t<r128_scanner_result> & p_data, double sample_duration, unsigned __int64 processing_duration, HWND p_parent )
 {
-	CMyResultsPopup popup( p_data, sample_duration, processing_duration );
-	popup.DoModal( p_parent );
+	CMyResultsPopup * popup = new CWindowAutoLifetime<ImplementModelessTracking<CMyResultsPopup>>( p_parent, p_data, sample_duration, processing_duration );
 }
 
 static const GUID guid_context_group_r128 = { 0x64b18d93, 0x7187, 0x48be, { 0x97, 0x7f, 0xa8, 0xb6, 0x2d, 0xe7, 0x85, 0xdf } };
@@ -1002,7 +1074,7 @@ public:
 			file_info_impl info;
 			replaygain_info rg_info;
 
-			if ( input_files.get_item( i )->get_info_async( info ) )
+			if ( input_files[ i ]->get_info_async( info ) )
 			{
 				rg_info = info.get_replaygain();
 
@@ -1027,7 +1099,7 @@ public:
 		{
 			for ( unsigned i = 0; i < input_files.get_count(); i++ )
 			{
-				p_callback->add_job_track( input_files.get_item( i ) );
+				p_callback->add_job_track( input_files[ i ] );
 			}
 		}
 		else if ( n == 1 )
@@ -1059,7 +1131,7 @@ public:
 
 			for ( unsigned i = 0, j = input_files.get_count(); i < j; i++ )
 			{
-				metadb_handle_ptr ptr = input_files.get_item( i );
+				metadb_handle_ptr ptr = input_files[ i ];
 				if (!ptr->format_title(NULL, temp_album, m_script, NULL)) temp_album.reset();
 				if (stricmp_utf8(current_album, temp_album))
 				{
@@ -1072,7 +1144,7 @@ public:
 			if ( list.get_count() ) p_callback->add_job_album( list );
 		}
 
-		threaded_process::g_run_modeless( p_callback, threaded_process::flag_show_abort | threaded_process::flag_show_progress | threaded_process::flag_show_item | threaded_process::flag_show_delayed, core_api::get_main_window(), "EBU R128 Gain Scanner" );
+		threaded_process::g_run_modeless( p_callback, threaded_process::flag_show_abort | threaded_process::flag_show_progress | threaded_process::flag_show_item | threaded_process::flag_show_delayed, core_api::get_main_window(), "EBU R128 Gain scan status" );
 	}
 };
 
