@@ -4,10 +4,18 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.12"
+#define MY_VERSION "1.14"
 
 /*
 	change log
+
+2011-01-28 05:48 UTC - kode54
+- Implemented proper track and album skipping
+- Version is now 1.14
+
+2011-01-28 05:04 UTC - kode54
+- Implemented multi-threaded album scanning
+- Version is now 1.13
 
 2011-01-27 07:04 UTC - kode54
 - Scanner status now only lists the files currently being scanned
@@ -113,6 +121,15 @@ struct last_chunk_info
 		last_srate = 0;
 		last_channels = 0;
 		last_channel_config = 0;
+	}
+
+	const last_chunk_info & operator= ( const last_chunk_info & in )
+	{
+		running_srate = in.running_srate;
+		last_srate = in.last_srate;
+		last_channels = in.last_channels;
+		last_channel_config = in.last_channel_config;
+		return *this;
 	}
 };
 
@@ -277,6 +294,9 @@ struct r128_scanner_result
 	pfc::array_t<double>       m_track_gain;
 	pfc::array_t<audio_sample> m_track_peak;
 
+	r128_scanner_result(bool p_is_album)
+		: m_is_album(p_is_album), m_album_gain(0), m_album_peak(0) { }
+
 	r128_scanner_result(bool p_is_album, const metadb_handle_list & p_handles)
 		: m_is_album(p_is_album), m_handles(p_handles), m_album_gain(0), m_album_peak(0) { }
 
@@ -299,25 +319,46 @@ class r128_scanner : public threaded_process_callback
 	threaded_process_status * status_callback;
 	double m_progress;
 
+	unsigned thread_count;
+
 	abort_callback * m_abort;
 
 	pfc::array_t<HANDLE> m_extra_threads;
 
 	struct job
 	{
-		bool                        m_is_album;
-		metadb_handle_list          m_handles;
-		pfc::ptr_list_t<const char> m_names;
+		bool                           m_is_album;
+		metadb_handle_list             m_handles;
+		pfc::ptr_list_t<const char>    m_names;
+
+		// Album mode stuff
+		critical_section               m_lock;
+		pfc::array_t<bool>             m_thread_in_use;
+		size_t                         m_tracks_left;
+		size_t                         m_current_thread;
+		pfc::array_t<last_chunk_info>  m_last_info;
+		pfc::ptr_list_t<ebur128_state> m_states;
+		service_list_t<dsp>            m_resamplers;
+		metadb_handle_list             m_handles_done;
+		r128_scanner_result          * m_scanner_result;
 
 		job( bool p_is_album, const metadb_handle_list & p_handles )
 		{
 			m_is_album = p_is_album;
 			m_handles = p_handles;
+			m_tracks_left = p_handles.get_count();
+			m_current_thread = 0;
+			m_scanner_result = NULL;
 		}
 
 		~job()
 		{
 			m_names.delete_all();
+			for ( unsigned i = 0; i < m_states.get_count(); i++ )
+			{
+				ebur128_state * state = m_states[ i ];
+				ebur128_destroy( &state );
+			}
 		}
 	};
 
@@ -350,10 +391,19 @@ class r128_scanner : public threaded_process_callback
 				if ( ! input_job_list.get_count() ) break;
 
 				m_current_job = input_job_list[ 0 ];
-				input_job_list.remove_by_idx( 0 );
+
+				if ( m_current_job->m_is_album )
+				{
+					insync( m_current_job->m_lock );
+					if ( m_current_job->m_handles.get_count() <= 1 )
+						input_job_list.remove_by_idx( 0 );
+					if ( m_current_job->m_handles.get_count() == 0 )
+						continue;
+				}
+				else input_job_list.remove_by_idx( 0 );
 			}
 
-			ebur128_state * state = NULL;
+			ebur128_state * m_state = NULL;
 
 			try
 			{
@@ -368,9 +418,9 @@ class r128_scanner : public threaded_process_callback
 					audio_sample m_current_peak = 0;
 					last_chunk_info last_info;
 					service_ptr_t<dsp> m_resampler;
-					double duration = scan_track( state, m_current_peak, last_info, m_current_job->m_handles[ 0 ], m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
+					double duration = scan_track( m_state, m_current_peak, last_info, m_current_job->m_handles[ 0 ], m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
 					r128_scanner_result * m_current_result = new r128_scanner_result(false, m_current_job->m_handles);
-					m_current_result->m_album_gain = ebur128_gated_loudness_global( state );
+					m_current_result->m_album_gain = ebur128_gated_loudness_global( m_state );
 					m_current_result->m_album_peak = m_current_peak;
 					{
 						insync(lock_output_list);
@@ -387,54 +437,128 @@ class r128_scanner : public threaded_process_callback
 				}
 				else
 				{
-					r128_scanner_result * m_current_result = new r128_scanner_result(true, m_current_job->m_handles);
+					size_t m_current_thread;
+					metadb_handle_ptr m_current_track;
+					const char * m_current_name = NULL;
+					r128_scanner_result * m_current_result = NULL;
+					last_chunk_info m_last_info;
+					service_ptr_t<dsp> m_resampler;
+					{
+						insync( m_current_job->m_lock );
+						m_current_result = m_current_job->m_scanner_result;
+						if ( !m_current_result )
+						{
+							m_current_result = new r128_scanner_result(true);
+							m_current_job->m_scanner_result = m_current_result;
+							m_current_job->m_thread_in_use.append_multi( false, thread_count );
+							m_current_job->m_last_info.set_count( thread_count );
+							m_current_job->m_states.add_items_repeat( NULL, thread_count );
+							m_current_job->m_resamplers.set_count( thread_count );
+						}
+						do
+						{
+							m_abort->check();
+							m_current_thread = m_current_job->m_current_thread;
+							m_current_job->m_current_thread = ( m_current_thread + 1 ) % thread_count;
+							Sleep(10);
+						}
+						while ( m_current_job->m_thread_in_use[ m_current_thread ] );
+						m_current_job->m_thread_in_use[ m_current_thread ] = true;
+						m_state = m_current_job->m_states[ m_current_thread ];
+						m_current_track = m_current_job->m_handles[ 0 ];
+						m_current_job->m_handles.remove_by_idx( 0 );
+						m_last_info = m_current_job->m_last_info[ m_current_thread ];
+						m_resampler = m_current_job->m_resamplers[ m_current_thread ];
+						{
+							insync(lock_input_name_list);
+							input_name_list.add_item( m_current_name = m_current_job->m_names[ 0 ] );
+							m_current_job->m_names.remove_by_idx( 0 );
+						}
+					}
 					try
 					{
-						audio_sample m_current_album_peak = 0;
+						update_status();
 
-						last_chunk_info last_info;
+						audio_sample m_current_track_peak = 0;
+						double duration = scan_track( m_state, m_current_track_peak, m_last_info, m_current_track, m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
+						double m_current_track_gain = ebur128_gated_loudness_segment( m_state );
 
-						service_ptr_t<dsp> m_resampler;
+						ebur128_start_new_segment( m_state );
 
-						for ( unsigned i = 0; i < m_current_job->m_handles.get_count(); i++ )
 						{
-							{
-								insync(lock_input_name_list);
-								input_name_list.add_item( m_current_job->m_names[ i ] );
-							}
-							update_status();
-
-							audio_sample m_current_track_peak = 0;
-							double duration = scan_track( state, m_current_track_peak, last_info, m_current_job->m_handles[ i ], m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
-							double m_current_track_gain = ebur128_gated_loudness_segment( state );
-							m_current_result->m_track_gain.append_single( m_current_track_gain );
-							m_current_result->m_track_peak.append_single( m_current_track_peak );
-							m_current_album_peak = max(m_current_album_peak, m_current_track_peak);
-							ebur128_start_new_segment( state );
-
-							{
-								insync(lock_input_name_list);
-								input_name_list.remove_item( m_current_job->m_names[ i ] );
-							}
-							{
-								insync(lock_output_list);
-								output_duration += duration;
-							}
-							InterlockedDecrement( &input_items_remaining );
-							update_status();
+							insync(lock_input_name_list);
+							input_name_list.delete_item( m_current_name );
+							m_current_name = NULL;
 						}
-
-						m_current_result->m_album_gain = ebur128_gated_loudness_global( state );
-						m_current_result->m_album_peak = m_current_album_peak;
-
 						{
 							insync(lock_output_list);
-							output_list.add_item( m_current_result );
+							output_duration += duration;
+						}
+						InterlockedDecrement( &input_items_remaining );
+						update_status();
+
+						try
+						{
+							m_current_job->m_lock.enter();
+
+							m_current_result->m_track_gain.append_single( m_current_track_gain );
+							m_current_result->m_track_peak.append_single( m_current_track_peak );
+							m_current_result->m_album_peak = max(m_current_result->m_album_peak, m_current_track_peak);
+							m_current_job->m_handles_done.add_item( m_current_track );
+
+							m_current_job->m_states.replace_item( m_current_thread, m_state );
+							m_current_job->m_last_info[ m_current_thread ] = m_last_info;
+							m_current_job->m_resamplers[ m_current_thread ] = m_resampler;
+
+							m_state = NULL;
+
+							if ( --m_current_job->m_tracks_left == 0 )
+							{
+								m_current_result->m_album_gain = ebur128_gated_loudness_global_multiple( m_current_job->m_states.get_ptr(), m_current_job->m_states.get_count() );
+
+								m_current_result->m_handles.add_items( m_current_job->m_handles_done );
+								{
+									insync(lock_output_list);
+									output_list.add_item( m_current_result );
+								}
+								{
+									insync( lock_input_job_list );
+									input_job_list.remove_item( m_current_job );
+									m_current_job->m_lock.leave();
+									delete m_current_job;
+								}
+							}
+							else
+							{
+								m_current_job->m_thread_in_use[ m_current_thread ] = false;
+								m_current_job->m_lock.leave();
+							}
+
+							m_current_job = NULL;
+						}
+						catch (...)
+						{
+							m_current_job->m_lock.leave();
+							throw;
 						}
 					}
 					catch (...)
 					{
-						delete m_current_result;
+						{
+							insync(lock_input_name_list);
+							input_name_list.delete_item( m_current_name );
+						}
+						{
+							insync( m_current_job->m_lock );
+							m_current_job->m_states.replace_item( m_current_thread, m_state );
+							m_current_job->m_thread_in_use[ m_current_thread ] = false;
+							if ( --m_current_job->m_tracks_left == 0 )
+							{
+								delete m_current_job;
+							}
+							m_current_job = NULL;
+						}
+						m_state = NULL;
 						throw;
 					}
 				}
@@ -459,7 +583,8 @@ class r128_scanner : public threaded_process_callback
 			}
 			catch (exception_aborted &)
 			{
-				if (state) ebur128_destroy(&state);
+				if (m_state) ebur128_destroy(&m_state);
+				if ( m_current_job )
 				{
 					insync(lock_input_name_list);
 					for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
@@ -472,7 +597,8 @@ class r128_scanner : public threaded_process_callback
 			}
 			catch (...)
 			{
-				if (state) ebur128_destroy(&state);
+				if (m_state) ebur128_destroy(&m_state);
+				if ( m_current_job )
 				{
 					insync(lock_input_name_list);
 					for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
@@ -484,7 +610,8 @@ class r128_scanner : public threaded_process_callback
 				throw;
 			}
 
-			if (state) ebur128_destroy(&state);
+			if (m_state) ebur128_destroy(&m_state);
+			if ( m_current_job )
 			{
 				insync(lock_input_name_list);
 				for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
@@ -632,12 +759,16 @@ public:
 
 		GetSystemTimeAsFileTime( &start_time );
 
-#ifdef NDEBUG
-		unsigned thread_count = pfc::getOptimalWorkerThreadCountEx( 4 );
+#if defined(NDEBUG) || 1
+		thread_count = 0;
 
-		if ( thread_count > input_job_list.get_count() ) thread_count = input_job_list.get_count();
+		for ( unsigned i = 0; i < input_job_list.get_count(); i++ ) thread_count += input_job_list[ i ]->m_handles.get_count();
+
+		thread_count = pfc::getOptimalWorkerThreadCountEx( min( thread_count, 4 ) );
 
 		if ( thread_count > 1 ) threads_start( thread_count - 1 );
+#else
+		thread_count = 1;
 #endif
 
 		try
@@ -1067,36 +1198,45 @@ public:
 			return;
 		}
 
-		bool tags_present = false;
-
-		for ( unsigned i = 0; i < input_files.get_count(); i++ )
-		{
-			file_info_impl info;
-			replaygain_info rg_info;
-
-			if ( input_files[ i ]->get_info_async( info ) )
-			{
-				rg_info = info.get_replaygain();
-
-				if ( rg_info.is_album_gain_present() || rg_info.is_album_peak_present() ||
-					rg_info.is_track_gain_present() || rg_info.is_track_peak_present() )
-				{
-					tags_present = true;
-					break;
-				}
-			}
-		}
-
-		if ( tags_present )
-		{
-			if ( uMessageBox( core_api::get_main_window(), "All tracks you have selected already have ReplayGain info. Would you like to scan them anyway?", "Information", MB_YESNO ) == IDNO )
-			{
-				return;
-			}
-		}
-
 		if ( n == 0 )
 		{
+			unsigned tags_present_count = 0;
+
+			bit_array_bittable rg_tracks( input_files.get_count() );
+
+			for ( unsigned i = 0; i < input_files.get_count(); i++ )
+			{
+				file_info_impl info;
+				replaygain_info rg_info;
+
+				if ( input_files[ i ]->get_info_async( info ) )
+				{
+					rg_info = info.get_replaygain();
+
+					if ( rg_info.is_album_gain_present() || rg_info.is_album_peak_present() ||
+						rg_info.is_track_gain_present() || rg_info.is_track_peak_present() )
+					{
+						tags_present_count++;
+						rg_tracks.set( i, true );
+					}
+				}
+			}
+
+			if ( tags_present_count )
+			{
+				if ( tags_present_count == input_files.get_count() )
+				{
+					if ( uMessageBox( core_api::get_main_window(), "All tracks you have selected already have ReplayGain info. Would you like to scan them anyway?", "Information", MB_YESNO ) == IDNO )
+					{
+						return;
+					}
+				}
+				else
+				{
+					input_files.remove_mask( rg_tracks );
+				}
+			}
+
 			for ( unsigned i = 0; i < input_files.get_count(); i++ )
 			{
 				p_callback->add_job_track( input_files[ i ] );
@@ -1104,6 +1244,33 @@ public:
 		}
 		else if ( n == 1 )
 		{
+			unsigned tags_present_count = 0;
+
+			for ( unsigned i = 0; i < input_files.get_count(); i++ )
+			{
+				file_info_impl info;
+				replaygain_info rg_info;
+
+				if ( input_files[ i ]->get_info_async( info ) )
+				{
+					rg_info = info.get_replaygain();
+
+					if ( rg_info.is_album_gain_present() && rg_info.is_album_peak_present() &&
+						rg_info.is_track_peak_present() )
+					{
+						tags_present_count++;
+					}
+				}
+			}
+
+			if ( tags_present_count == input_files.get_count() )
+			{
+				if ( uMessageBox( core_api::get_main_window(), "All tracks you have selected already have ReplayGain info. Would you like to scan them anyway?", "Information", MB_YESNO ) == IDNO )
+				{
+					return;
+				}
+			}
+
 			p_callback->add_job_album( input_files );
 		}
 		else if ( n == 2 )
@@ -1127,6 +1294,7 @@ public:
 
 			pfc::string8_fast current_album, temp_album;
 
+			pfc::list_t<metadb_handle_list> nested_list;
 			metadb_handle_list list;
 
 			for ( unsigned i = 0, j = input_files.get_count(); i < j; i++ )
@@ -1135,13 +1303,64 @@ public:
 				if (!ptr->format_title(NULL, temp_album, m_script, NULL)) temp_album.reset();
 				if (stricmp_utf8(current_album, temp_album))
 				{
-					if ( list.get_count() ) p_callback->add_job_album( list );
+					if ( list.get_count() ) nested_list.add_item( list );
 					list.remove_all();
 					current_album = temp_album;
 				}
 				list.add_item( ptr );
 			}
-			if ( list.get_count() ) p_callback->add_job_album( list );
+			if ( list.get_count() ) nested_list.add_item( list );
+
+			unsigned albums_have_all_tags = 0;
+
+			bit_array_bittable rg_albums( nested_list.get_count() );
+
+			for ( unsigned i = 0; i < nested_list.get_count(); i++ )
+			{
+				unsigned tags_present_count = 0;
+
+				metadb_handle_list & list = nested_list[ i ];
+
+				for ( unsigned j = 0; j < list.get_count(); j++ )
+				{
+					file_info_impl info;
+					replaygain_info rg_info;
+
+					if ( list[ j ]->get_info_async( info ) )
+					{
+						rg_info = info.get_replaygain();
+
+						if ( rg_info.is_album_gain_present() && rg_info.is_album_peak_present() &&
+							rg_info.is_track_peak_present() )
+						{
+							tags_present_count++;
+						}
+					}
+				}
+
+				if ( tags_present_count == list.get_count() )
+				{
+					albums_have_all_tags++;
+					rg_albums.set( i, true );
+				}
+			}
+
+			if ( albums_have_all_tags == nested_list.get_count() )
+			{
+				if ( uMessageBox( core_api::get_main_window(), "All tracks you have selected already have ReplayGain info. Would you like to scan them anyway?", "Information", MB_YESNO ) == IDNO )
+				{
+					return;
+				}
+			}
+			else
+			{
+				nested_list.remove_mask( rg_albums );
+			}
+
+			for ( unsigned i = 0; i < nested_list.get_count(); i++ )
+			{
+				p_callback->add_job_album( nested_list[ i ] );
+			}
 		}
 
 		threaded_process::g_run_modeless( p_callback, threaded_process::flag_show_abort | threaded_process::flag_show_progress | threaded_process::flag_show_item | threaded_process::flag_show_delayed, core_api::get_main_window(), "EBU R128 Gain scan status" );
