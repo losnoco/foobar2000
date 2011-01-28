@@ -3,10 +3,23 @@
 
 #include "stdafx.h"
 
-#define MY_VERSION "1.4"
+#define MY_VERSION "1.6"
 
 /*
 	change log
+
+2011-01-17 23:43 UTC - kode54
+- Now correctly flushes the buffer on playback termination
+- Version is now 1.6
+
+2011-01-17 23:07 UTC - kode54
+- Reenabled momentary loudness polling
+- Changed volume ramping to 1 dB every 50ms
+- Current scale is now forced to the detected target scale after the initial
+  buffering completes.
+- Version is now 1.5
+
+2011-01-17 21:13 UTC - kode54
 - And decreased latency to maintain at least 500ms worth of samples
 - Version is now 1.4
 
@@ -35,7 +48,7 @@
 
 */
 
-// #define ENABLE_MOMENTARY
+#define ENABLE_MOMENTARY
 
 class dsp_r128 : public dsp_impl_base
 {
@@ -53,6 +66,8 @@ class dsp_r128 : public dsp_impl_base
 	double shortterm_scale;
 	double current_scale;
 	double target_scale;
+	double scale_up;
+	double scale_down;
 public:
 	dsp_r128() :
 #ifdef ENABLE_MOMENTARY
@@ -98,15 +113,14 @@ public:
 				chunk_copy->copy( *chunk );
 				return false;
 			}
-			startup_complete = true;
 		}
 
 #ifdef ENABLE_MOMENTARY
 		if ( frames_until_next_moment <= 0 )
 		{
-			frames_until_next_moment += m_rate / 10;
+			frames_until_next_moment += m_rate / 20;
 			double new_momentary_scale = loudness_to_scale( ebur128_loudness_momentary( m_state ) );
-			momentary_scale = sqrt( new_momentary_scale * momentary_scale );
+			momentary_scale = sqrt( sqrt( new_momentary_scale * momentary_scale * momentary_scale * momentary_scale ) );
 			target_scale = sqrt( momentary_scale * shortterm_scale );
 		}
 #endif
@@ -114,11 +128,12 @@ public:
 		if ( frames_until_next_shortterm <= 0 )
 		{
 #ifdef ENABLE_MOMENTARY
-			frames_until_next_shortterm += m_rate / 2;
+			frames_until_next_shortterm += m_rate / 5;
 #else
 			frames_until_next_shortterm += m_rate / 10;
 #endif
-			shortterm_scale = loudness_to_scale( ebur128_loudness_shortterm( m_state ) );
+			double new_shortterm_scale = loudness_to_scale( ebur128_loudness_shortterm( m_state ) );
+			shortterm_scale = sqrt( new_shortterm_scale * shortterm_scale );
 #ifdef ENABLE_MOMENTARY
 			target_scale = sqrt( momentary_scale * shortterm_scale );
 #else
@@ -130,6 +145,12 @@ public:
 		frames_until_next_moment -= chunk->get_sample_count();
 #endif
 		frames_until_next_shortterm -= chunk->get_sample_count();
+
+		if ( !startup_complete )
+		{
+			startup_complete = true;
+			current_scale = target_scale;
+		}
 
 #if 0
 		flush_buffer();
@@ -151,7 +172,12 @@ public:
 		return true;
 	}
 
-	void on_endofplayback( abort_callback & ) { }
+	void on_endofplayback( abort_callback & )
+	{
+		flush_buffer();
+		flush();
+	}
+
 	void on_endoftrack( abort_callback & ) { }
 
 	void flush()
@@ -210,6 +236,10 @@ private:
 #endif
 		frames_until_next_shortterm = 0;
 
+		// Scale up or down by 1 dB every 50ms
+		scale_up   = pow( pow( 10.0,  1.0 / 20.0 ), 1.0 / ( 0.05 * double( m_rate ) ) );
+		scale_down = pow( pow( 10.0, -1.0 / 20.0 ), 1.0 / ( 0.05 * double( m_rate ) ) );
+
 		startup_complete = false;
 	}
 
@@ -224,12 +254,12 @@ private:
 	{
 		if ( current_scale < target_scale )
 		{
-			current_scale *= 1.00360429286956809;
+			current_scale *= scale_up; //1.00360429286956809;
 			if ( current_scale > target_scale ) current_scale = target_scale;
 		}
 		else if ( current_scale > target_scale )
 		{
-			current_scale *= 0.99955034255981445;
+			current_scale *= scale_down; //0.99955034255981445;
 			if ( current_scale < target_scale ) current_scale = target_scale;
 		}
 	}
