@@ -3,30 +3,34 @@
 
 #include "stdafx.h"
 
-#define MY_VERSION "1.6"
+#define MY_VERSION "1.7"
 
 /*
 	change log
 
-2011-01-17 23:43 UTC - kode54
+2011-01-28 06:19 UTC - kode54
+- Fixed initial gain values on startup, again.
+- Version is now 1.7
+
+2011-01-27 23:43 UTC - kode54
 - Now correctly flushes the buffer on playback termination
 - Version is now 1.6
 
-2011-01-17 23:07 UTC - kode54
+2011-01-27 23:07 UTC - kode54
 - Reenabled momentary loudness polling
 - Changed volume ramping to 1 dB every 50ms
 - Current scale is now forced to the detected target scale after the initial
   buffering completes.
 - Version is now 1.5
 
-2011-01-17 21:13 UTC - kode54
+2011-01-27 21:13 UTC - kode54
 - And decreased latency to maintain at least 500ms worth of samples
 - Version is now 1.4
 
-2011-01-17 20:19 UTC - kode54
+2011-01-27 20:19 UTC - kode54
 - Increased latency to maintain a buffer of 3 seconds worth of samples
 
-2011-01-17 20:06 UTC - kode54
+2011-01-27 20:06 UTC - kode54
 - Reverted short-term gain level changes to instantaneous again
 - Version is now 1.3
 
@@ -120,7 +124,8 @@ public:
 		{
 			frames_until_next_moment += m_rate / 20;
 			double new_momentary_scale = loudness_to_scale( ebur128_loudness_momentary( m_state ) );
-			momentary_scale = sqrt( sqrt( new_momentary_scale * momentary_scale * momentary_scale * momentary_scale ) );
+			if ( startup_complete ) momentary_scale = sqrt( sqrt( new_momentary_scale * momentary_scale * momentary_scale * momentary_scale ) );
+			else momentary_scale = new_momentary_scale;
 			target_scale = sqrt( momentary_scale * shortterm_scale );
 		}
 #endif
@@ -133,7 +138,8 @@ public:
 			frames_until_next_shortterm += m_rate / 10;
 #endif
 			double new_shortterm_scale = loudness_to_scale( ebur128_loudness_shortterm( m_state ) );
-			shortterm_scale = sqrt( new_shortterm_scale * shortterm_scale );
+			if ( startup_complete ) shortterm_scale = sqrt( new_shortterm_scale * shortterm_scale );
+			else shortterm_scale = new_shortterm_scale;
 #ifdef ENABLE_MOMENTARY
 			target_scale = sqrt( momentary_scale * shortterm_scale );
 #else
