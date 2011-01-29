@@ -64,30 +64,51 @@ int ebur128_destroy(ebur128_state** st);
  *                  EBUR128_LEFT_SURROUND,
  *                  EBUR128_RIGHT_SURROUND} */
 void ebur128_set_channel_map(ebur128_state* st, int* channel_map);
+/* Set channel "channel_number" (zero based index) to value, where value is
+ * from the "channels" enum. Returns 1 if channel_number is invalid. */
+int ebur128_set_channel(ebur128_state* st, int channel_number, int value);
+/* Note that the channel map will be reset when setting a different number of
+ * channels. The current unfinished block will be lost.
+ * Returns 1 on memory allocation error. The state will be invalid then.
+ * Returns 2 if channels and samplerate where not changed. */
+int ebur128_change_parameters(ebur128_state* st,
+                              int channels,
+                              int samplerate);
 
-int ebur128_add_frames_short(ebur128_state* st, const short* src, size_t frames);
-int ebur128_add_frames_int(ebur128_state* st, const int* src, size_t frames);
-int ebur128_add_frames_float(ebur128_state* st, const float* src, size_t frames);
-int ebur128_add_frames_double(ebur128_state* st, const double* src, size_t frames);
+int ebur128_add_frames_short(ebur128_state* st,
+                             const short* src,
+                             size_t frames);
+int ebur128_add_frames_int(ebur128_state* st,
+                             const int* src,
+                             size_t frames);
+int ebur128_add_frames_float(ebur128_state* st,
+                             const float* src,
+                             size_t frames);
+int ebur128_add_frames_double(ebur128_state* st,
+                             const double* src,
+                             size_t frames);
 
+/* Note: The current unfinished block will be lost. */
 void ebur128_start_new_segment(ebur128_state* st);
 
 /* Get integrated loudness of the last segment/track. After this you should
- * start a new segment with ebur128_start_new_segment. Returns NaN if mode is
- * not EBUR128_MODE_M_I or EBUR128_MODE_M_S_I. */
-double ebur128_gated_loudness_segment(ebur128_state* st);
-/* Get integrated loudness of the whole programme. Returns NaN if mode is not
- * EBUR128_MODE_M_I or EBUR128_MODE_M_S_I. */
-double ebur128_gated_loudness_global(ebur128_state* st);
+ * start a new segment with ebur128_start_new_segment. Returns NaN if mode does
+ * not contain EBUR128_MODE_I. */
+double ebur128_loudness_segment(ebur128_state* st);
+/* Get integrated loudness of the whole programme. Returns NaN if mode does not
+ * contain EBUR128_MODE_I. */
+double ebur128_loudness_global(ebur128_state* st);
 /* Get integrated loudness of the whole programme across multiple instances.
-   Returns NaN if mode is not EBUR128_MODE_M_I or EBUR128_MODE_M_S_I. */
-double ebur128_gated_loudness_global_multiple(ebur128_state** sts, size_t size);
+   Returns NaN if mode does not contain EBUR128_MODE_I. */
+double ebur128_loudness_global_multiple(ebur128_state** sts, size_t size);
 /* Get momentary loudness (last 400ms) */
 double ebur128_loudness_momentary(ebur128_state* st);
-/* Get short-term loudness (last 3s). Will return NaN if mode is not
- * EBUR128_MODE_M_S_I or EBUR128_MODE_M_S. */
+/* Get short-term loudness (last 3s). Will return NaN if mode does not contain
+ * EBUR128_MODE_S or EBUR128_MODE_S. */
 double ebur128_loudness_shortterm(ebur128_state* st);
 
+/* Returns LRA according to EBU 3342. Will return NaN if memory allocation
+ * fails or if mode does not contain EBUR128_MODE_LRA. */
 double ebur128_loudness_range(ebur128_state* st);
 
 #ifdef __cplusplus

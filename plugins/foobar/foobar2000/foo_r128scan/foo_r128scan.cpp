@@ -4,10 +4,16 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.14"
+#define MY_VERSION "1.15"
 
 /*
 	change log
+
+2011-01-29 02:44 UTC - kode54
+- Updated to libebur128-0.1.9
+- Changed scanner function to reconfigure libebur128 instead of resampling or
+  failing outright
+- Version is now 1.15
 
 2011-01-28 05:48 UTC - kode54
 - Implemented proper track and album skipping
@@ -113,11 +119,10 @@ static const int thread_priority_levels[7] = { THREAD_PRIORITY_IDLE, THREAD_PRIO
 
 struct last_chunk_info
 {
-	unsigned running_srate, last_srate, last_channels, last_channel_config;
+	unsigned last_srate, last_channels, last_channel_config;
 
 	last_chunk_info()
 	{
-		running_srate = 0;
 		last_srate = 0;
 		last_channels = 0;
 		last_channel_config = 0;
@@ -125,13 +130,35 @@ struct last_chunk_info
 
 	const last_chunk_info & operator= ( const last_chunk_info & in )
 	{
-		running_srate = in.running_srate;
 		last_srate = in.last_srate;
 		last_channels = in.last_channels;
 		last_channel_config = in.last_channel_config;
 		return *this;
 	}
 };
+
+bool change_parameters( ebur128_state * state, unsigned sample_rate, unsigned channels, unsigned channel_config )
+{
+	int rval = ebur128_change_parameters( state, channels, sample_rate );
+
+	if ( rval != 0 && rval != 2 ) return false;
+
+	for ( unsigned i = 0; i < channels; i++ )
+	{
+		int channel = EBUR128_UNUSED;
+		switch ( audio_chunk::g_extract_channel_flag( channel_config, i ) )
+		{
+		case audio_chunk::channel_front_left:   channel = EBUR128_LEFT;           break;
+		case audio_chunk::channel_front_right:  channel = EBUR128_RIGHT;          break;
+		case audio_chunk::channel_front_center: channel = EBUR128_CENTER;         break;
+		case audio_chunk::channel_back_left:    channel = EBUR128_LEFT_SURROUND;  break;
+		case audio_chunk::channel_back_right:   channel = EBUR128_RIGHT_SURROUND; break;
+		}
+		ebur128_set_channel( state, i, channel );
+	}
+
+	return true;
+}
 
 double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info & last_info, metadb_handle_ptr p_handle, service_ptr_t<dsp> & m_resampler, double & p_progress, unsigned track_total, threaded_process_status & p_status, critical_section & p_critsec, abort_callback & p_abort )
 {
@@ -141,7 +168,7 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 	file_info_impl             m_info;
 
 	bool first_chunk = true;
-	unsigned running_srate, last_srate, last_channels, last_channel_config;
+	unsigned last_srate, last_channels, last_channel_config;
 
 	double duration = 0, length = 0;
 
@@ -159,21 +186,12 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 			dsp_chunk_list_impl chunks; chunks.add_chunk( &m_previous_chunk );
 			m_resampler->run_abortable( &chunks, p_handle, 0, p_abort );
 
-			bool error = false;
-
 			for ( unsigned i = 0; i < chunks.get_count(); i++ )
 			{
 				const audio_chunk * chunk = chunks.get_item( i );
-				if ( ebur128_add_frames_float( state, chunk->get_data(), chunk->get_sample_count() ) )
-				{
-					error = true;
-					break;
-				}
 				audio_sample current_peak = audio_math::calculate_peak( chunk->get_data(), chunk->get_sample_count() * chunk->get_channels() );
 				peak = max( peak, current_peak );
 			}
-
-			if ( error ) break;
 		}
 
 		if ( ! state )
@@ -184,34 +202,15 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 
 			if ( cfg_true_peak_scanning.get() )
 			{
-				running_srate = last_srate * 4;
-				resampler_entry::g_create( m_resampler, last_srate, running_srate, 0 );
+				resampler_entry::g_create( m_resampler, last_srate, last_srate * 4, 0 );
 			}
-			else running_srate = last_srate;
 
-			state = ebur128_init( last_channels, running_srate, EBUR128_MODE_I );
+			state = ebur128_init( last_channels, last_srate, EBUR128_MODE_I );
 			if ( !state ) throw std::bad_alloc();
 
-			pfc::array_t<int> channel_map;
-			channel_map.set_count( last_channels );
+			if ( !change_parameters( state, last_srate, last_channels, last_channel_config ) )
+				throw std::bad_alloc();
 
-			for ( unsigned i = 0; i < last_channels; i++ )
-			{
-				int channel = EBUR128_UNUSED;
-				switch ( audio_chunk::g_extract_channel_flag( last_channel_config, i ) )
-				{
-				case audio_chunk::channel_front_left:   channel = EBUR128_LEFT;           break;
-				case audio_chunk::channel_front_right:  channel = EBUR128_RIGHT;          break;
-				case audio_chunk::channel_front_center: channel = EBUR128_CENTER;         break;
-				case audio_chunk::channel_back_left:    channel = EBUR128_LEFT_SURROUND;  break;
-				case audio_chunk::channel_back_right:   channel = EBUR128_RIGHT_SURROUND; break;
-				}
-				channel_map[ i ] = channel;
-			}
-
-			ebur128_set_channel_map( state, channel_map.get_ptr() );
-
-			last_info.running_srate = running_srate;
 			last_info.last_srate = last_srate;
 			last_info.last_channels = last_channels;
 			last_info.last_channel_config = last_channel_config;
@@ -219,33 +218,33 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 		}
 		else if ( first_chunk )
 		{
-			running_srate = last_info.running_srate;
 			last_srate = last_info.last_srate;
 			last_channels = last_info.last_channels;
 			last_channel_config = last_info.last_channel_config;
 
-			if ( cfg_true_peak_scanning.get() && m_resampler.is_empty() )
+			if ( cfg_true_peak_scanning.get() && ( m_resampler.is_empty() || last_srate != m_chunk.get_srate() ) )
 			{
-				resampler_entry::g_create( m_resampler, last_srate, running_srate, 0 );
+				resampler_entry::g_create( m_resampler, last_srate, last_srate * 4, 0 );
 			}
 
 			first_chunk = false;
 		}
-		else if ( last_channels != m_chunk.get_channels() || last_channel_config != m_chunk.get_channel_config() )
+
+		if ( last_srate != m_chunk.get_srate() || last_channels != m_chunk.get_channels() || last_channel_config != m_chunk.get_channel_config() )
 		{
-			throw exception_io_data("Channel format changed mid-stream");
+			last_info.last_srate          = last_srate          = m_chunk.get_srate();
+			last_info.last_channels       = last_channels       = m_chunk.get_channels();
+			last_info.last_channel_config = last_channel_config = m_chunk.get_channel_config();
+
+			if ( !change_parameters( state, last_srate, last_channels, last_channel_config ) )
+				throw std::bad_alloc();
 		}
-		else if ( last_srate != m_chunk.get_srate() )
-		{
-			if ( !running_srate ) last_info.running_srate = running_srate = last_srate;
-			if ( m_resampler.is_empty() ) resampler_entry::g_create( m_resampler, m_chunk.get_srate(), running_srate, 0 );
-			last_info.last_srate = last_srate = m_chunk.get_srate();
-		}
+
+		if ( ebur128_add_frames_float( state, m_chunk.get_data(), m_chunk.get_sample_count() ) ) break;
 
 		if ( m_resampler.is_valid() ) m_previous_chunk.copy( m_chunk );
 		else
 		{
-			if ( ebur128_add_frames_float( state, m_chunk.get_data(), m_chunk.get_sample_count() ) ) break;
 			audio_sample current_peak = audio_math::calculate_peak( m_chunk.get_data(), m_chunk.get_sample_count() * m_chunk.get_channels() );
 			peak = max( peak, current_peak );
 		}
@@ -268,13 +267,12 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 		for ( unsigned i = 0; i < chunks.get_count(); i++ )
 		{
 			const audio_chunk * chunk = chunks.get_item( i );
-			if ( ebur128_add_frames_float( state, chunk->get_data(), chunk->get_sample_count() ) ) break;
 			audio_sample current_peak = audio_math::calculate_peak( chunk->get_data(), chunk->get_sample_count() * chunk->get_channels() );
 			peak = max( peak, current_peak );
 		}
 	}
 
-	if ( !state ) throw exception_io_data("File ended without producing any output");
+	if ( first_chunk ) throw exception_io_data("File ended without producing any output");
 
 	{
 		insync(p_critsec);
@@ -420,7 +418,7 @@ class r128_scanner : public threaded_process_callback
 					service_ptr_t<dsp> m_resampler;
 					double duration = scan_track( m_state, m_current_peak, last_info, m_current_job->m_handles[ 0 ], m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
 					r128_scanner_result * m_current_result = new r128_scanner_result(false, m_current_job->m_handles);
-					m_current_result->m_album_gain = ebur128_gated_loudness_global( m_state );
+					m_current_result->m_album_gain = ebur128_loudness_global( m_state );
 					m_current_result->m_album_peak = m_current_peak;
 					{
 						insync(lock_output_list);
@@ -481,7 +479,7 @@ class r128_scanner : public threaded_process_callback
 
 						audio_sample m_current_track_peak = 0;
 						double duration = scan_track( m_state, m_current_track_peak, m_last_info, m_current_track, m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
-						double m_current_track_gain = ebur128_gated_loudness_segment( m_state );
+						double m_current_track_gain = ebur128_loudness_segment( m_state );
 
 						ebur128_start_new_segment( m_state );
 
@@ -514,7 +512,7 @@ class r128_scanner : public threaded_process_callback
 
 							if ( --m_current_job->m_tracks_left == 0 )
 							{
-								m_current_result->m_album_gain = ebur128_gated_loudness_global_multiple( m_current_job->m_states.get_ptr(), m_current_job->m_states.get_count() );
+								m_current_result->m_album_gain = ebur128_loudness_global_multiple( m_current_job->m_states.get_ptr(), m_current_job->m_states.get_count() );
 
 								m_current_result->m_handles.add_items( m_current_job->m_handles_done );
 								{
