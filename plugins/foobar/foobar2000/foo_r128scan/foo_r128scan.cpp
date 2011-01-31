@@ -4,10 +4,31 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.15"
+#define MY_VERSION "1.20"
 
 /*
 	change log
+
+2011-01-31 01:33 UTC - kode54
+- Fixed album scanning results reporting
+- Version is now 1.20
+
+2011-01-31 01:22 UTC - kode54
+- Disabled apply tags button when there are no tags to apply results to
+- Version is now 1.19
+
+2011-01-30 23:53 UTC - kode54
+- Implemented full error reporting
+- Version is now 1.18
+
+2011-01-30 06:23 UTC - kode54
+- Fixed another crash issue with IO error handling in the scanner thread
+- Version is now 1.17
+
+2011-01-30 05:28 UTC - kode54
+- Fixed a potential problem with threaded album scanning where not all of the threads would
+  result in valid scanner instances
+- Version is now 1.16
 
 2011-01-29 02:44 UTC - kode54
 - Updated to libebur128-0.1.9
@@ -285,27 +306,36 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 
 struct r128_scanner_result
 {
-	bool                       m_is_album;
+	enum status
+	{
+		error = 0,
+		track,
+		album
+	};
+
+	status                     m_status;
+	pfc::string8               m_error_message;
 	metadb_handle_list         m_handles;
 	double                     m_album_gain;
 	audio_sample               m_album_peak;
 	pfc::array_t<double>       m_track_gain;
 	pfc::array_t<audio_sample> m_track_peak;
 
-	r128_scanner_result(bool p_is_album)
-		: m_is_album(p_is_album), m_album_gain(0), m_album_peak(0) { }
+	r128_scanner_result(status p_status)
+		: m_status(p_status), m_album_gain(0), m_album_peak(0) { }
 
-	r128_scanner_result(bool p_is_album, const metadb_handle_list & p_handles)
-		: m_is_album(p_is_album), m_handles(p_handles), m_album_gain(0), m_album_peak(0) { }
+	r128_scanner_result(status p_status, const metadb_handle_list & p_handles)
+		: m_status(p_status), m_handles(p_handles), m_album_gain(0), m_album_peak(0) { }
 
 	r128_scanner_result(const r128_scanner_result * in)
 	{
-		m_is_album   = in->m_is_album;
-		m_handles    = in->m_handles;
-		m_album_gain = in->m_album_gain;
-		m_album_peak = in->m_album_peak;
-		m_track_gain = in->m_track_gain;
-		m_track_peak = in->m_track_peak;
+		m_status        = in->m_status;
+		m_error_message = in->m_error_message;
+		m_handles       = in->m_handles;
+		m_album_gain    = in->m_album_gain;
+		m_album_peak    = in->m_album_peak;
+		m_track_gain    = in->m_track_gain;
+		m_track_peak    = in->m_track_peak;
 	}
 };
 
@@ -357,6 +387,7 @@ class r128_scanner : public threaded_process_callback
 				ebur128_state * state = m_states[ i ];
 				ebur128_destroy( &state );
 			}
+			delete m_scanner_result;
 		}
 	};
 
@@ -374,6 +405,44 @@ class r128_scanner : public threaded_process_callback
 	double output_duration;
 
 	FILETIME start_time, end_time;
+
+	void report_error( const char * message, metadb_handle_ptr track )
+	{
+		r128_scanner_result * result = NULL;
+		try
+		{
+			result = new r128_scanner_result( r128_scanner_result::error );
+			result->m_error_message = message;
+			result->m_handles.add_item( track );
+			{
+				insync( lock_output_list );
+				output_list.add_item( result );
+			}
+		}
+		catch (...)
+		{
+			delete result;
+		}
+	}
+
+	void report_error( const char * message, metadb_handle_list tracks )
+	{
+		r128_scanner_result * result = NULL;
+		try
+		{
+			result = new r128_scanner_result( r128_scanner_result::error );
+			result->m_error_message = message;
+			result->m_handles = tracks;
+			{
+				insync( lock_output_list );
+				output_list.add_item( result );
+			}
+		}
+		catch (...)
+		{
+			delete result;
+		}
+	}
 
 	void scanner_process()
 	{
@@ -417,7 +486,7 @@ class r128_scanner : public threaded_process_callback
 					last_chunk_info last_info;
 					service_ptr_t<dsp> m_resampler;
 					double duration = scan_track( m_state, m_current_peak, last_info, m_current_job->m_handles[ 0 ], m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
-					r128_scanner_result * m_current_result = new r128_scanner_result(false, m_current_job->m_handles);
+					r128_scanner_result * m_current_result = new r128_scanner_result(r128_scanner_result::track, m_current_job->m_handles);
 					m_current_result->m_album_gain = ebur128_loudness_global( m_state );
 					m_current_result->m_album_peak = m_current_peak;
 					{
@@ -446,7 +515,7 @@ class r128_scanner : public threaded_process_callback
 						m_current_result = m_current_job->m_scanner_result;
 						if ( !m_current_result )
 						{
-							m_current_result = new r128_scanner_result(true);
+							m_current_result = new r128_scanner_result(r128_scanner_result::album);
 							m_current_job->m_scanner_result = m_current_result;
 							m_current_job->m_thread_in_use.append_multi( false, thread_count );
 							m_current_job->m_last_info.set_count( thread_count );
@@ -512,12 +581,22 @@ class r128_scanner : public threaded_process_callback
 
 							if ( --m_current_job->m_tracks_left == 0 )
 							{
+								unsigned null_state = m_current_job->m_states.find_item( ( ebur128_state * ) NULL );
+								while ( null_state != ~0 )
+								{
+									m_current_job->m_states.remove_by_idx( null_state );
+									null_state = m_current_job->m_states.find_item( ( ebur128_state * ) NULL );
+								}
+								if ( !m_current_job->m_states.get_count() )
+									throw exception_io_data( "No tracks were successfully scanned" );
+
 								m_current_result->m_album_gain = ebur128_loudness_global_multiple( m_current_job->m_states.get_ptr(), m_current_job->m_states.get_count() );
 
 								m_current_result->m_handles.add_items( m_current_job->m_handles_done );
 								{
 									insync(lock_output_list);
 									output_list.add_item( m_current_result );
+									m_current_job->m_scanner_result = m_current_result = NULL;
 								}
 								{
 									insync( lock_input_job_list );
@@ -534,6 +613,12 @@ class r128_scanner : public threaded_process_callback
 
 							m_current_job = NULL;
 						}
+						catch (std::exception & e)
+						{
+							m_current_job->m_lock.leave();
+							report_error( e.what(), m_current_track );
+							throw;
+						}
 						catch (...)
 						{
 							m_current_job->m_lock.leave();
@@ -548,10 +633,25 @@ class r128_scanner : public threaded_process_callback
 						}
 						{
 							insync( m_current_job->m_lock );
-							m_current_job->m_states.replace_item( m_current_thread, m_state );
+							if ( m_state )
+								m_current_job->m_states.replace_item( m_current_thread, m_state );
 							m_current_job->m_thread_in_use[ m_current_thread ] = false;
-							if ( --m_current_job->m_tracks_left == 0 )
+							if ( m_current_job->m_tracks_left == 0 || --m_current_job->m_tracks_left == 0 )
 							{
+								{
+									insync(lock_input_name_list);
+									for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
+									{
+										input_name_list.remove_item( m_current_job->m_names[ i ] );
+										InterlockedDecrement( &input_items_remaining );
+									}
+								}
+
+								{
+									insync(lock_status);
+									m_progress += double( m_current_job->m_names.get_count() ) / double( input_items_total );
+								}
+
 								delete m_current_job;
 							}
 							m_current_job = NULL;
@@ -561,37 +661,63 @@ class r128_scanner : public threaded_process_callback
 					}
 				}
 			}
-			catch (exception_io &)
+			catch (exception_io & e)
 			{
+				if ( m_current_job )
 				{
-					insync(lock_input_name_list);
-					for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
+					report_error( e.what(), m_current_job->m_handles );
+
 					{
-						input_name_list.remove_item( m_current_job->m_names[ i ] );
-						InterlockedDecrement( &input_items_remaining );
+						insync(lock_input_name_list);
+						for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
+						{
+							input_name_list.remove_item( m_current_job->m_names[ i ] );
+							InterlockedDecrement( &input_items_remaining );
+						}
 					}
-				}
 
-				{
-					insync(lock_status);
-					m_progress += double( m_current_job->m_names.get_count() ) / double( input_items_total );
-				}
+					{
+						insync(lock_status);
+						m_progress += double( m_current_job->m_names.get_count() ) / double( input_items_total );
+					}
 
-				update_status();
+					update_status();
+				}
 			}
-			catch (exception_aborted &)
+			catch (exception_aborted & e)
 			{
 				if (m_state) ebur128_destroy(&m_state);
 				if ( m_current_job )
 				{
-					insync(lock_input_name_list);
-					for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
+					report_error( e.what(), m_current_job->m_handles );
+
 					{
-						input_name_list.remove_item( m_current_job->m_names[ i ] );
+						insync(lock_input_name_list);
+						for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
+						{
+							input_name_list.remove_item( m_current_job->m_names[ i ] );
+						}
 					}
 				}
 				delete m_current_job;
 				break;
+			}
+			catch (std::exception & e)
+			{
+				if (m_state) ebur128_destroy(&m_state);
+				if ( m_current_job )
+				{
+					report_error( e.what(), m_current_job->m_handles );
+					{
+						insync(lock_input_name_list);
+						for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
+						{
+							input_name_list.remove_item( m_current_job->m_names[ i ] );
+						}
+					}
+				}
+				delete m_current_job;
+				throw;
 			}
 			catch (...)
 			{
@@ -636,7 +762,7 @@ class r128_scanner : public threaded_process_callback
 			}
 		}
 
-		title = "EBU R128 Gain scan status";
+		title = "EBU R128 Gain Scan Progress";
 		title += " (";
 		title += pfc::format_int( input_items_total - input_items_remaining );
 		title += "/";
@@ -859,8 +985,12 @@ public:
 	rg_apply_filter( const pfc::ptr_list_t<r128_scanner_result> & p_list )
 	{
 		for(t_size n = 0; n < p_list.get_count(); n++) {
-			r128_scanner_result * result = new r128_scanner_result( p_list[n] );
-			m_results.add_item(result);
+			r128_scanner_result * in_result = p_list[n];
+			if ( in_result->m_status != r128_scanner_result::error )
+			{
+				r128_scanner_result * result = new r128_scanner_result( in_result );
+				m_results.add_item(result);
+			}
 		}
 	}
 
@@ -879,7 +1009,7 @@ public:
 			replaygain_info info = p_info.get_replaygain();
 			replaygain_info orig = info;
 
-			if ( result->m_is_album )
+			if ( result->m_status == r128_scanner_result::album )
 			{
 				info.m_album_gain = float(rg_offset(result->m_album_gain));
 				info.m_album_peak = result->m_album_peak;
@@ -967,17 +1097,20 @@ private:
 		lvc.cx = 225;
 		lvc.iSubItem = 0;
 		m_listview.InsertColumn( 0, &lvc );
+		lvc.pszText = _T("Status");
+		lvc.cx = 150;
+		lvc.iSubItem = 1;
+		m_listview.InsertColumn( 1, &lvc );
 		lvc.fmt = LVCFMT_RIGHT;
 		lvc.pszText = _T("Album gain");
 		lvc.cx = 75;
-		lvc.iSubItem = 1;
-		m_listview.InsertColumn( 1, &lvc );
-		lvc.pszText = _T("Track gain");
 		m_listview.InsertColumn( 2, &lvc );
-		lvc.pszText = _T("Album peak");
+		lvc.pszText = _T("Track gain");
 		m_listview.InsertColumn( 3, &lvc );
-		lvc.pszText = _T("Track peak");
+		lvc.pszText = _T("Album peak");
 		m_listview.InsertColumn( 4, &lvc );
+		lvc.pszText = _T("Track peak");
+		m_listview.InsertColumn( 5, &lvc );
 
 		for ( unsigned i = 0, index = 0; i < m_initData.get_count(); i++ )
 		{
@@ -988,6 +1121,7 @@ private:
 				m_listview.SetItemText( index, 2, LPSTR_TEXTCALLBACK );
 				m_listview.SetItemText( index, 3, LPSTR_TEXTCALLBACK );
 				m_listview.SetItemText( index, 4, LPSTR_TEXTCALLBACK );
+				m_listview.SetItemText( index, 5, LPSTR_TEXTCALLBACK );
 			}
 		}
 
@@ -995,6 +1129,26 @@ private:
 			m_script.release();
 
 		ShowWindow(SW_SHOW);
+
+		unsigned error_tracks = 0;
+		unsigned total_tracks = 0;
+
+		for ( unsigned i = 0; i < m_initData.get_count(); i++ )
+		{
+			unsigned count = m_initData[ i ]->m_handles.get_count();
+			if ( m_initData[ i ]->m_status == r128_scanner_result::error )
+			{
+				error_tracks += count;
+			}
+			total_tracks += count;
+		}
+
+		if ( error_tracks )
+		{
+			if ( error_tracks == total_tracks ) GetDlgItem( IDOK ).EnableWindow( FALSE );
+
+			popup_message::g_show( pfc::string_formatter() << pfc::format_int( error_tracks ) << " out of " << pfc::format_int( total_tracks ) << " items could not be processed.", "EBU R128 Gain Scan - warning", popup_message::icon_error );
+		}
 
 		return TRUE;
 	}
@@ -1041,10 +1195,21 @@ private:
 						break;
 
 					case 1:
-						if ( result->m_is_album )
+						if ( result->m_status != r128_scanner_result::error ) m_temp = "Success";
+						else m_temp = result->m_error_message;
+						m_convert.convert( m_temp );
+						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
+						break;
+
+					case 2:
+						if ( result->m_status != r128_scanner_result::error )
 						{
-							char m_gain[32];
-							if ( replaygain_info::g_format_gain( float(rg_offset(result->m_album_gain)), m_gain ) ) m_temp = m_gain;
+							if ( result->m_status == r128_scanner_result::album )
+							{
+								char m_gain[32];
+								if ( replaygain_info::g_format_gain( float(rg_offset(result->m_album_gain)), m_gain ) ) m_temp = m_gain;
+								else m_temp.reset();
+							}
 							else m_temp.reset();
 						}
 						else m_temp.reset();
@@ -1052,22 +1217,12 @@ private:
 						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
 						break;
 
-					case 2:
+					case 3:
+						if ( result->m_status != r128_scanner_result::error )
 						{
-							double m_track_gain = (result->m_is_album ? result->m_track_gain[ item_number ] : result->m_album_gain);
+							double m_track_gain = (result->m_status == r128_scanner_result::album ? result->m_track_gain[ item_number ] : result->m_album_gain);
 							char m_gain[32];
 							if ( replaygain_info::g_format_gain( float(rg_offset(m_track_gain)), m_gain ) ) m_temp = m_gain;
-							else m_temp.reset();
-						}
-						m_convert.convert( m_temp );
-						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
-						break;
-
-					case 3:
-						if ( result->m_is_album )
-						{
-							char m_peak[32];
-							if ( replaygain_info::g_format_peak( result->m_album_peak, m_peak ) ) m_temp = m_peak;
 							else m_temp.reset();
 						}
 						else m_temp.reset();
@@ -1076,12 +1231,30 @@ private:
 						break;
 
 					case 4:
+						if ( result->m_status != r128_scanner_result::error )
 						{
-							audio_sample m_track_peak = (result->m_is_album ? result->m_track_peak[ item_number ] : result->m_album_peak);
+							if ( result->m_status == r128_scanner_result::album )
+							{
+								char m_peak[32];
+								if ( replaygain_info::g_format_peak( result->m_album_peak, m_peak ) ) m_temp = m_peak;
+								else m_temp.reset();
+							}
+							else m_temp.reset();
+						}
+						else m_temp.reset();
+						m_convert.convert( m_temp );
+						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
+						break;
+
+					case 5:
+						if ( result->m_status != r128_scanner_result::error )
+						{
+							audio_sample m_track_peak = (result->m_status == r128_scanner_result::album ? result->m_track_peak[ item_number ] : result->m_album_peak);
 							char m_peak[32];
 							if ( replaygain_info::g_format_peak( m_track_peak, m_peak ) ) m_temp = m_peak;
 							else m_temp.reset();
 						}
+						else m_temp.reset();
 						m_convert.convert( m_temp );
 						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
 						break;
@@ -1101,9 +1274,9 @@ private:
 		for ( unsigned i = 0; i < m_initData.get_count(); i++ )
 		{
 			r128_scanner_result * result = m_initData[ i ];
-			for ( unsigned j = 0; j < result->m_handles.get_count(); j++ )
+			if ( result->m_status != r128_scanner_result::error )
 			{
-				list.add_item( result->m_handles[ j ] );
+				list.add_items( result->m_handles );
 			}
 		}
 
