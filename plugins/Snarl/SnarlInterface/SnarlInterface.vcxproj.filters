@@ -1,13 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="V41">
+      <UniqueIdentifier>{a26a1e95-7f1c-4a18-959a-85fe1d8d3719}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    <Filter Include="V42">
+      <UniqueIdentifier>{5df2020b-0acd-4409-82bf-828bd37bbf91}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -15,13 +13,19 @@
     <None Include="_Readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SnarlInterface.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="V42\SnarlInterface_V42.cpp">
+      <Filter>V42</Filter>
+    </ClCompile>
+    <ClCompile Include="V41\SnarlInterface_V41.cpp">
+      <Filter>V41</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SnarlInterface.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="V42\SnarlInterface.h">
+      <Filter>V42</Filter>
+    </ClInclude>
+    <ClInclude Include="V41\SnarlInterface.h">
+      <Filter>V41</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

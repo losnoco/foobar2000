@@ -15,10 +15,12 @@
     <None Include="_Readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SnarlInterface.cpp" />
+    <ClCompile Include="V41\SnarlInterface_V41.cpp" />
+    <ClCompile Include="V42\SnarlInterface_V42.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SnarlInterface.h" />
+    <ClInclude Include="V41\SnarlInterface.h" />
+    <ClInclude Include="V42\SnarlInterface.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1B46AFAE-79D7-4099-A1AC-62E282BF7A4F}</ProjectGuid>

@@ -24,14 +24,15 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF S
 */
 
 #include "stdafx.h"
-#include "SnarlInterface.h"
+#include "V41/SnarlInterface.h"
+#include "V42/SnarlInterface.h"
 #include "config.h"
 #include <map>
 #include <strsafe.h>
+#include <time.h>
 
 #pragma comment(lib, "../shared/shared.lib")
 
-using namespace Snarl::V41;
 using namespace pfc;
 
 DECLARE_COMPONENT_VERSION(
@@ -46,7 +47,10 @@ DECLARE_COMPONENT_VERSION(
 
 string8 foobarIcon;
 
-SnarlInterface sn;
+bool using_v42 = false;
+Snarl::V41::SnarlInterface sn41;
+Snarl::V42::SnarlInterface sn42;
+string8 snarl_password;
 UINT SNARL_GLOBAL_MSG = 0;
 HWND hwndFooSnarlMsg;
 std::map<int,char *> FSMsgClassDecode;
@@ -67,16 +71,62 @@ enum FSMsgClass : int {
 //	Stop,
 //};
 
+inline char base64_char(unsigned char in)
+{
+	static const char base64_chars[64] = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
+										  'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f',
+										  'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v',
+										  'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'};
+	return base64_chars[in];
+}
+
+void base64_encode(pfc::string_base & out, const unsigned char * data, unsigned size)
+{
+	out.reset();
+
+	while (size >= 3)
+	{
+		out.add_byte( base64_char( data[0] >> 2 ) );
+		out.add_byte( base64_char( ( ( data[0] & 3 ) << 4 ) + ( data[1] >> 4 ) ) );
+		out.add_byte( base64_char( ( ( data[1] & 15 ) << 2 ) + ( data[2] >> 6 ) ) );
+		out.add_byte( base64_char( data[2] & 63 ) );
+		data += 3;
+		size -= 3;
+	}
+	if (size == 2)
+	{
+		out.add_byte( base64_char( data[0] >> 2 ) );
+		out.add_byte( base64_char( ( ( data[0] & 3 ) << 4 ) + ( data[1] >> 4 ) ) );
+		out.add_byte( base64_char( ( data[1] & 15 ) << 2 ) );
+		out.add_byte( '%' );
+	}
+	else if (size == 1)
+	{
+		out.add_byte( base64_char( data[0] >> 2 ) );
+		out.add_byte( base64_char( ( data[0] & 3 ) << 4 ) );
+		out.add_byte( '%' );
+		out.add_byte( '%' );
+	}
+}
+
 void FSRegisterClass(int intClass){
-	if(sn.AddClass(FSMsgClassDecode[intClass],FSMsgClassDecode[intClass],true) == 0){
-		/*LPSTR error = "Unable to register ";
-		LPSTR szClass = FSMsgClassDecode[intClass];
-		error = strcat(error,szClass);
-		error = strcat(error," class");
-		popup_message::g_complain("FooSnarl",error);*/
-		if (sn.GetLastError() != SnarlEnums::ErrorClassAlreadyExists)
+	bool error;
+	if(using_v42)
+	{
+		LONG32 ret = sn42.AddClass(FSMsgClassDecode[intClass], FSMsgClassDecode[intClass], snarl_password.get_ptr());
+		if ( ret < 0 && ret != -Snarl::V42::SnarlEnums::ErrorAlreadyRegistered )
 		{
-			popup_message::g_complain("FooSnarl",string_formatter() << "Unable to register class " << intClass);
+			console::formatter() << "[FooSnarl] Unable to register class " << intClass;
+		}
+	}
+	else
+	{
+		if (sn41.AddClass(FSMsgClassDecode[intClass], FSMsgClassDecode[intClass], true) == 0)
+		{
+			if (sn41.GetLastError() != Snarl::V41::SnarlEnums::ErrorClassAlreadyExists)
+			{
+				console::formatter() << "[FooSnarl] Unable to register class " << intClass;
+			}
 		}
 	}
 }
@@ -84,41 +134,83 @@ void FSRegisterClass(int intClass){
 void try_register()
 {
 	//Register Foobar2000 with Snarl
-	if(sn.IsSnarlRunning()){
-		//Display appropriate message depending on registration state with Snarl
-		if(sn.RegisterApp("Foobar2000","Foobar2000",foobarIcon,hwndFooSnarlMsg,WM_USER,SnarlEnums::AppHasAbout)!=0){
+	using_v42 = sn42.GetVersion() >= 42;
+
+	if (using_v42)
+	{
+		service_ptr_t<genrand_service> g_rand = genrand_service::g_create();
+		g_rand->seed( time( NULL ) );
+		array_t<unsigned> junk;
+		junk.set_count( 4 );
+		for ( unsigned i = 0; i < 4; i++ ) junk[ i ] = g_rand->genrand( ~0 );
+		base64_encode( snarl_password, junk.get_ptr(), 16 );
+
+		LONG32 ret = sn42.RegisterApp("Foobar2000", "Foobar2000", foobarIcon, snarl_password.get_ptr(), hwndFooSnarlMsg, WM_USER, Snarl::V42::SnarlEnums::AppHasAbout);
+		if (ret > 0)
+		{
 			FSRegisterClass(Play);
 			FSRegisterClass(Pause);
 			FSRegisterClass(Stop);
 			FSRegisterClass(Seek);
-		}else{
-			if (sn.GetLastError() != SnarlEnums::ErrorNotRunning)
-				popup_message::g_show("FooSnarl:Unable to register with Snarl","",popup_message::icon_error);
 		}
-
-		if(hwndFooSnarlMsg == NULL){
-			popup_message::g_show("FooSnarl:Unable to create message window","",popup_message::icon_error);
+		else
+		{
+			if (ret != -Snarl::V42::SnarlEnums::ErrorNotRunning)
+			{
+				console::formatter() << "[FooSnarl] Unable to register with Snarl";
+			}
 		}
-	} else { 
-		/*Snarl not running */
-		//popup_message::g_show("Popup Test","Test",popup_message::icon_information);
+	}
+	else
+	{
+		if(sn41.RegisterApp("Foobar2000", "Foobar2000", foobarIcon, hwndFooSnarlMsg, WM_USER, Snarl::V41::SnarlEnums::AppHasAbout) != 0)
+		{
+			FSRegisterClass(Play);
+			FSRegisterClass(Pause);
+			FSRegisterClass(Stop);
+			FSRegisterClass(Seek);
+		}
+		else
+		{
+			if (sn41.GetLastError() != Snarl::V41::SnarlEnums::ErrorNotRunning)
+				console::formatter() << "[FooSnarl] Unable to register with Snarl";
+		}
 	}
 }
 
 void try_unregister()
 {
 	//Unregister foosnarl
-	if(sn.RemoveAllClasses(false)==0){
-		//Failed to remove registered classes
-		if (sn.GetLastError() != SnarlEnums::ErrorNotRunning)
-			sn.EZNotify("","Error","FooSnarl failed to remove registered classes",10,foobarIcon,0,0,0);
-	}
+	if (using_v42)
+	{
+		LONG32 ret = sn42.KillClasses(snarl_password.get_ptr());
+		if (ret < 0 && ret != -Snarl::V42::SnarlEnums::ErrorNotRunning)
+		{
+			console::formatter() << "[FooSnarl] Failed to remove registered classes";
+		}
 
-	if(sn.UnregisterApp()==0){
-		//FooSnarl failed to unregister
-		if (sn.GetLastError() != SnarlEnums::ErrorNotRunning)
-			sn.EZNotify("","Error","FooSnarl failed to unregister with Snarl",10,foobarIcon,0,0,0);
-	};
+		ret = sn42.UnregisterApp("Foobar2000", snarl_password.get_ptr());
+		if (ret < 0 && ret != -Snarl::V42::SnarlEnums::ErrorNotRunning)
+		{
+			console::formatter() << "[FooSnarl] Failed to unregister with Snarl";
+		}
+	}
+	else
+	{
+		if(sn41.RemoveAllClasses(false)==0)
+		{
+			//Failed to remove registered classes
+			if (sn41.GetLastError() != Snarl::V41::SnarlEnums::ErrorNotRunning)
+				console::formatter() << "[FooSnarl] Failed to remove registered classes";
+		}
+
+		if(sn41.UnregisterApp()==0)
+		{
+			//FooSnarl failed to unregister
+			if (sn41.GetLastError() != Snarl::V41::SnarlEnums::ErrorNotRunning)
+				console::formatter() << "[FooSnarl] Failed to unregister with Snarl";
+		}
+	}
 }
 
 LRESULT CALLBACK WndProcFooSnarl(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam){
@@ -135,13 +227,19 @@ LRESULT CALLBACK WndProcFooSnarl(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		{
 			switch(wParam)
 			{
-			case SnarlEnums::SnarlLaunched:
-			case SnarlEnums::SnarlStarted:
+			case Snarl::V41::SnarlEnums::SnarlLaunched:
+#if Snarl::V41::SnarlEnums::SnarlLaunched != Snarl::V42::SnarlEnums::SnarlLaunched
+			case Snarl::V42::SnarlEnums::SnarlLaunched:
+#endif
+			case Snarl::V42::SnarlEnums::SnarlStarted:
 				try_register();
 				return 0;
 
-			case SnarlEnums::SnarlQuit:
-			case SnarlEnums::SnarlStopped:
+			case Snarl::V41::SnarlEnums::SnarlQuit:
+#if Snarl::V41::SnarlEnums::SnarlQuit != Snarl::V42::SnarlEnums::SnarlQuit
+			case Snarl::V42::SnarlEnums::SnarlQuit:
+#endif
+			case Snarl::V42::SnarlEnums::SnarlStopped:
 				try_unregister();
 				return 0;
 			}
@@ -150,29 +248,37 @@ LRESULT CALLBACK WndProcFooSnarl(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 	case WM_USER:
 		switch(LOWORD(wParam))
 		{
-		case SnarlEnums::SnarlQuit:
+		case Snarl::V41::SnarlEnums::SnarlQuit:
+#if Snarl::V41::SnarlEnums::SnarlQuit != Snarl::V42::SnarlEnums::SnarlQuit
+		case Snarl::V42::SnarlEnums::SnarlQuit:
+#endif
 			{
 				try_unregister();
 				return 0;
 			}
-		case SnarlEnums::NotificationClicked:
-		case SnarlEnums::NewNotificationClick:
+		case Snarl::V41::SnarlEnums::NotificationClicked:
+#if Snarl::V41::SnarlEnums::NotificationClicked != Snarl::V42::SnarlEnums::NotificationClicked
+		case Snarl::V42::SnarlEnums::NotificationClicked:
+#endif
 			{
 				static_api_ptr_t<ui_control>()->activate();
 				return 0;
 			}
-		case SnarlEnums::NotificationAck:
-		case SnarlEnums::NewNotificationInvoked:
+		case Snarl::V41::SnarlEnums::NotificationAck:
+#if Snarl::V41::SnarlEnums::NotificationAck != Snarl::V42::SnarlEnums::NotificationAck
+		case Snarl::V42::SnarlEnums::NotificationAck:
+#endif
 			{
 				return 0;
 			}
-		case SnarlEnums::NotificationTimedOut:
-		case SnarlEnums::NewNotificationExpired:
+		case Snarl::V41::SnarlEnums::NotificationTimedOut:
+#if Snarl::V41::SnarlEnums::NotificationTimedOut != Snarl::V42::SnarlEnums::NotificationTimedOut
+		case Snarl::V42::SnarlEnums::NotificationTimedOut:
+#endif
 			{
 				return 0;
 			}
-		case SnarlEnums::NotificationAction:
-		case SnarlEnums::NewNotificationAction:
+		case Snarl::V42::SnarlEnums::NotifyAction:
 			int action = HIWORD(wParam);
 			switch(action){
 			case 1:
@@ -248,10 +354,14 @@ public:
 	uGetModuleFileName(NULL, foobarIcon);
 	foobarIcon += ",105";
 
-	::SNARL_GLOBAL_MSG = sn.Broadcast();
+	::SNARL_GLOBAL_MSG = sn41.Broadcast(); // XXX
 
 	hwndFooSnarlMsg = CreateWindowEx(0,_T("FooSnarlMsg"),_T("FooSnarl Msg"),0,0,0,0,0,GetDesktopWindow(),0,0,0);
 
+	if(hwndFooSnarlMsg == NULL)
+	{
+		console::formatter() << "[FooSnarl] Unable to create message window (Error 0x" << pfc::format_int(GetLastError(),0,16) << ")";
+	}
 	//sn.EZNotify("","HWND",(LPCSTR)hwndFooSnarlMsg,5,0,0,0,0);
 
 		//Register Playcallback module
@@ -291,6 +401,7 @@ void on_playback_event(int alertClass){
 	string snarl_title;
 	string snarl_msg;
 	string snarl_icon;
+	string8 snarl_icon_data;
 	long snarl_time;
 
 	if(pc->get_now_playing(handle)){
@@ -324,19 +435,27 @@ void on_playback_event(int alertClass){
 		album_art_data_ptr art = art_instance->query( album_art_ids::cover_front, moo );
 		if ( art->get_size() )
 		{
-			string8 temp_path;
-			if ( temp_file.get_length() ) uDeleteFile( temp_file );
-			if ( uGetTempPath( temp_path ) && uGetTempFileName( temp_path, "snl", 0, temp_file ) )
+			if (using_v42)
 			{
-				snarl_icon = temp_file;
-				temp_path = "file://";
-				temp_path += temp_file;
-				file::ptr icon_file;
-				filesystem::g_open( icon_file, temp_path, filesystem::open_mode_write_new, moo );
-				icon_file->write_object( art->get_ptr(), art->get_size(), moo );
-				icon_file.release();
+				base64_encode( snarl_icon_data, art->get_ptr(), art->get_size() );
+				//snarl_icon = "";
 			}
-			else throw exception_album_art_not_found();
+			//else // MEH
+			{
+				string8 temp_path;
+				if ( temp_file.get_length() ) uDeleteFile( temp_file );
+				if ( uGetTempPath( temp_path ) && uGetTempFileName( temp_path, "snl", 0, temp_file ) )
+				{
+					snarl_icon = temp_file;
+					temp_path = "file://";
+					temp_path += temp_file;
+					file::ptr icon_file;
+					filesystem::g_open( icon_file, temp_path, filesystem::open_mode_write_new, moo );
+					icon_file->write_object( art->get_ptr(), art->get_size(), moo );
+					icon_file.release();
+				}
+				else throw exception_album_art_not_found();
+			}
 		}
 	}
 	catch (...)
@@ -365,28 +484,47 @@ void on_playback_event(int alertClass){
 
 	//Send Snarl Message
 	if(FSLastMsgClass != alertClass){
-		sn.Hide(sn.GetLastMsgToken());
+		if (using_v42) sn42.Hide(sn42.GetLastMsgToken(), snarl_password.get_ptr());
+		else sn41.Hide(sn41.GetLastMsgToken());
 	}
 	FSLastMsgClass = alertClass;
 
-	if(sn.IsVisible(lastClassMsg[alertClass]) == -1){
-		//Update existing message from same class
-		sn.EZUpdate(lastClassMsg[alertClass],snarl_title.get_ptr(),snarl_msg.get_ptr(),snarl_time,snarl_icon.get_ptr());
-	} else {
-		//Create new message
-		sn.EZNotify(FSClass(alertClass),snarl_title.get_ptr(),snarl_msg.get_ptr(),snarl_time,snarl_icon.get_ptr(),0,0,0);
-		if(sn.GetLastMsgToken() != 0){
-			FSAddActions();
+	if (using_v42)
+	{
+		if (sn42.IsVisible(lastClassMsg[alertClass]) > 0)
+		{
+			sn42.EZUpdate(lastClassMsg[alertClass], FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, snarl_icon.get_ptr(), snarl_icon_data.get_ptr(), 0, 0, snarl_password.get_ptr());
 		}
-		lastClassMsg[alertClass] = sn.GetLastMsgToken();
+		else
+		{
+			LONG32 ret = sn42.EZNotify(FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, snarl_icon.get_ptr(), snarl_icon_data.get_ptr(), 0, 0, snarl_password.get_ptr());
+			if (ret > 0)
+			{
+				FSAddActions();
+			}
+			lastClassMsg[alertClass] = ret;
+		}
+	}
+	else
+	{
+		if(sn41.IsVisible(lastClassMsg[alertClass]) == -1)
+		{
+			//Update existing message from same class
+			sn41.EZUpdate(lastClassMsg[alertClass],snarl_title.get_ptr(),snarl_msg.get_ptr(),snarl_time,snarl_icon.get_ptr());
+		} else {
+			//Create new message
+			sn41.EZNotify(FSClass(alertClass),snarl_title.get_ptr(),snarl_msg.get_ptr(),snarl_time,snarl_icon.get_ptr(),0,0,0);
+			lastClassMsg[alertClass] = sn41.GetLastMsgToken();
+		}
 	}	
 
 }
 
 LONG32 FSAddActions(){
-	sn.AddAction(sn.GetLastMsgToken(),"Back","@1");
-	sn.AddAction(sn.GetLastMsgToken(),"Next","@2");
-	sn.AddAction(sn.GetLastMsgToken(),"Stop","@3");
+	LONG32 token = sn42.GetLastMsgToken();
+	sn42.AddAction(token,"Back","@1");
+	sn42.AddAction(token,"Next","@2");
+	sn42.AddAction(token,"Stop","@3");
 	return 0;
 }
 

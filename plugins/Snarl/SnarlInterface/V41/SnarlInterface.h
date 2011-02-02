@@ -42,21 +42,14 @@ namespace Snarl {
 		{
 			SnarlLaunched = 1,      // Snarl has just started running*
 			SnarlQuit = 2,          // Snarl is about to stop running*
-			SnarlStopped = 3,       // Snarl was stopped by user
-			SnarlStarted = 4        // Snarl was started by user
-		};
-
-		enum AppEvent
-		{
-			SnarlAppDoPrefs = 1,
-			SnarlAppDoAbout = 2
+			SnarlAskAppletVer = 3,  // (R1.5) Reserved for future use
+			SnarlShowAppUi = 4      // (R1.6) Application should show its UI
 		};
 
 		/// <summary>
 		/// Message event identifiers.
 		/// These are sent by Snarl to the window specified in RegisterApp() when the
 		/// Snarl Notification raised times out or the user clicks on it.
-		/// These are deprecated in V42
 		/// </summary>
 		enum MessageEvent
 		{
@@ -66,17 +59,7 @@ namespace Snarl {
 			NotificationAck = 34,          // Notification was left-clicked by user
 			NotificationMenu = 35,         // Menu item selected (V39)
 			NotificationMiddleButton = 36, // Notification middle-clicked by user (V39)
-			NotificationClosed = 37,       // User clicked the close gadget (V39)
-			NotificationAction = 38,       // User triggered an action command (V42)
-
-			NewNotificationGone = 301,
-			NewNotificationClick,
-			NewNotificationExpired,
-			NewNotificationInvoked,
-			NewNotificationMenu,
-			NewNotificationExClick,
-			NewNotificationClosed,
-			NewNotificationAction
+			NotificationClosed = 37        // User clicked the close gadget (V39)
 		};
 
 		/// <summary>
@@ -90,9 +73,6 @@ namespace Snarl {
 			ErrorUnknownCommand,      // specified command not recognised
 			ErrorTimedOut,            // Snarl took too long to respond
 
-			ErrorBadSocket = 106,     // invalid socket (or some other socket-related error)
-			ErrorBadPacket,           // badly formed request
-
 			ErrorArgMissing = 109,    // required argument missing
 			ErrorSystem,              // internal system error
 
@@ -102,13 +82,7 @@ namespace Snarl {
 			ErrorClassAlreadyExists,  // not used yet; AddClass() returns existing token
 			ErrorClassBlocked,
 			ErrorClassNotFound,
-			ErrorNotificationNotFound,
-			ErrorFlooding,
-			ErrorDoNotDisturb,
-			ErrorCouldNotDisplay,
-			ErrorAuthFailure,
-
-			InfoWasMerged = 251
+			ErrorNotificationNotFound
 		};
 
 		/// <summary>
@@ -134,9 +108,7 @@ namespace Snarl {
 			UpdateNotification,
 			HideNotification,
 			IsNotificationVisible,
-			LastError,                 // deprecated but retained for backwards compatability
-			AddAction,                 // Added but then deprecated in V42
-			ClearActions               // "
+			LastError                  // deprecated but retained for backwards compatability
 		};
 	}
 
@@ -190,14 +162,6 @@ namespace Snarl {
 			/// <summary>Remove all notification classes in one call.</summary>
 			/// <returns>0 on failure.</returns>
 			LONG32 RemoveAllClasses(bool forgetSettings = false);
-
-			/// <summary>Add an action to a given notification.</summary>
-			/// <returns>0 on failure.</returns>
-			LONG32 AddAction(LONG32 token, LPCSTR label = NULL, LPCSTR command = NULL);
-
-			/// <summary>Remove all actions from a given notification.</summary>
-			/// <returns>0 on failure.</returns>
-			LONG32 RemoveAllActions(LONG32 token);
 			
 			/// <summary>Show a Snarl notification.</summary>
 			/// <returns>Returns the notification token or 0 on failure.</returns>
@@ -288,15 +252,6 @@ namespace Snarl {
 			/// <remarks>This is now the preferred way to test if Snarl is actually running.</remarks>
 			static HWND GetSnarlWindow();
 		
-			/// <summary>URL encode a string</summary>
-			/// <returns>Returns pointer to the new string - Remember to delete [] returned string !</returns>
-			/// <remarks>Remember to delete [] returned string !!!</remarks>
-			LPSTR  URLEncode(LPCSTR szStr);
-
-			/// <summary>Send request to Snarl.</summary>
-			/// <returns>Return zero on failure.</returns>
-			LONG32 SendRequest(LPCSTR szMsg);
-
 		private:
 			/// <summary>Send message to Snarl.</summary>
 			/// <returns>Return zero on failure.</returns>
@@ -313,20 +268,10 @@ namespace Snarl {
 			/// <param name="...">Variable number of objects to convert</param>
 			void   PackData(BYTE* data, LPCSTR format, ...);
 
-			/// <summary>Pack data into a string and return it.</summary>
-			/// <returns>Returns pointer to the new string - Remember to delete [] returned string!</returns>
-			/// <param name="format">The format string. Can be NULL or "" to just zero PackedData!</param>
-			/// <param name="...">Variable number of objects to convert</param>
-			LPSTR  PackData(LPCSTR format, ...);
-
-			/// <summary>Convert a nibble to hexadecimal character</summary>
-			/// <returns>Returns a single hexadecimal character</returns>
-			inline CHAR ToHex(BYTE code);
-
 			LONG32 appToken;
 			LONG32 lastMsgToken;
 			SnarlEnums::SnarlStatus localError;
-			LONG32 v42Version;
+
 	}; // class
 
 	} // namespace V41
