@@ -46,6 +46,19 @@ void monitor_start( gme_t * p_emu, const char * p_path )
 	}
 }
 
+void monitor_apply( gme_t * p_emu )
+{
+	insync( lock );
+
+	bool enabled = !!cfg_control_override;
+	double t = enabled ? ( static_cast<double> (cfg_control_tempo) / 10000 ) : 1;
+	int mask = enabled ? mute_mask : 0;
+
+	p_emu->set_tempo( t );
+	p_emu->mute_voices( mask );
+	p_emu->ignore_silence( enabled );
+}
+
 void monitor_update( gme_t * p_emu )
 {
 	insync( lock );

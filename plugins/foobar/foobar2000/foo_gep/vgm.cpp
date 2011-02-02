@@ -310,7 +310,8 @@ public:
 			m_file.release();
 		}
 
-		/*if ( p_flags & input_flag_playback )*/ monitor_start();
+		is_normal_playback = !!( p_flags & input_flag_playback );
+		monitor_start();
 
 		emu->start_track( 0 );
 		handle_warning();

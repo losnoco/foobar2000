@@ -42,6 +42,7 @@ protected:
 	bool                        first_block;
 
 	bool                        monitoring;
+	bool                        is_normal_playback;
 
 	bool                        effects_enable;
 	int                         effects_bass;

@@ -1,7 +1,11 @@
-#define MYVERSION "1.109"
+#define MYVERSION "1.110"
 
 /*
 	change log
+
+2011-02-02 04:36 UTC - kode54
+- Fixed the GEP Control dialog so background decoding won't interfere with it
+- Version is now 1.110
 
 2011-01-24 02:00 UTC - kode54
 - Implemented VGM7Z support
