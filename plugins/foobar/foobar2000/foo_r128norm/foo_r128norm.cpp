@@ -1,12 +1,13 @@
-// foo_r128norm.cpp : Defines the exported functions for the DLL application.
-//
-
 #include "stdafx.h"
 
-#define MY_VERSION "1.7"
+#define MY_VERSION "1.8"
 
 /*
 	change log
+
+2011-02-04 13:44 UTC - kode54
+- Disabled increasing the gain level, for now
+- Version is now 1.8
 
 2011-01-28 06:19 UTC - kode54
 - Fixed initial gain values on startup, again.
@@ -151,6 +152,8 @@ public:
 		frames_until_next_moment -= chunk->get_sample_count();
 #endif
 		frames_until_next_shortterm -= chunk->get_sample_count();
+
+		if ( target_scale > 1.0 ) target_scale = 1.0;
 
 		if ( !startup_complete )
 		{
