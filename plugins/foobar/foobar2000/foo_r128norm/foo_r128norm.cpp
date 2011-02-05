@@ -1,9 +1,14 @@
 #include "stdafx.h"
 
-#define MY_VERSION "1.8"
+#define MY_VERSION "1.9"
 
 /*
 	change log
+
+2011-02-05 06:11 UTC - kode54
+- Re-enabled increasing the gain level
+- Changed momentary and short-term loudness to gated loudness
+- Version is now 1.9
 
 2011-02-04 13:44 UTC - kode54
 - Disabled increasing the gain level, for now
@@ -148,12 +153,12 @@ public:
 #endif
 		}
 
+		ebur128_gated_loudness_cleanup( m_state, 8 );
+
 #ifdef ENABLE_MOMENTARY
 		frames_until_next_moment -= chunk->get_sample_count();
 #endif
 		frames_until_next_shortterm -= chunk->get_sample_count();
-
-		if ( target_scale > 1.0 ) target_scale = 1.0;
 
 		if ( !startup_complete )
 		{
@@ -218,7 +223,7 @@ private:
 	{
 		if ( m_state ) ebur128_destroy( &m_state );
 
-		m_state = ebur128_init( m_ch, m_rate, EBUR128_MODE_S | EBUR128_MODE_M );
+		m_state = ebur128_init( m_ch, m_rate, EBUR128_MODE_I );
 		if ( !m_state ) throw std::bad_alloc();
 
 		pfc::array_t<int> channel_map;

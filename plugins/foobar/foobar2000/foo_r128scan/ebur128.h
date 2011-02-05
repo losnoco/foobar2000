@@ -101,11 +101,15 @@ double ebur128_loudness_global(ebur128_state* st);
 /* Get integrated loudness of the whole programme across multiple instances.
    Returns NaN if mode does not contain EBUR128_MODE_I. */
 double ebur128_loudness_global_multiple(ebur128_state** sts, size_t size);
-/* Get momentary loudness (last 400ms) */
+/* Get momentary loudness (last 400ms). Will return NaN if mode does not contain
+   EBUR128_MODE_I. */
 double ebur128_loudness_momentary(ebur128_state* st);
 /* Get short-term loudness (last 3s). Will return NaN if mode does not contain
- * EBUR128_MODE_S or EBUR128_MODE_S. */
+ * EBUR128_MODE_I. */
 double ebur128_loudness_shortterm(ebur128_state* st);
+/* Reduce the gating block list to no more than this many blocks over the
+   threshold. Does nothing if mode does not contain EBUR128_MODE_I. */
+void ebur128_gated_loudness_cleanup(ebur128_state* st, size_t block_count);
 
 /* Returns LRA according to EBU 3342. Will return NaN if memory allocation
  * fails or if mode does not contain EBUR128_MODE_LRA. */
