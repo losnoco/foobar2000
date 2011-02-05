@@ -1,4 +1,4 @@
-#define MYVERSION "1.9"
+#define MYVERSION "1.10"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -35,6 +35,11 @@
 /*
 
 	change log
+
+2011-02-05 10:40 UTC - kode54
+- Added advanced configuration option to negate volume halving normally applied
+  by HDCD decoding
+- Version is now 1.10
 
 2011-02-04 17:21 UTC - kode54
 - Added full feature detection to HDCD scanner
@@ -93,12 +98,21 @@
 
 #include "hdcd_decode.h"
 
+static const GUID guid_cfg_parent_hdcd = { 0x1067a697, 0x31ab, 0x416a, { 0x9e, 0x94, 0x56, 0xbc, 0x6e, 0x68, 0xda, 0xad } };
+static const GUID guid_cfg_hdcd_amp = { 0x2858e67, 0x3522, 0x4486, { 0x9d, 0xaf, 0xbb, 0xa5, 0x25, 0x9a, 0xff, 0xb0 } };
+
+advconfig_branch_factory cfg_hdcd_parent("HDCD decoder", guid_cfg_parent_hdcd, advconfig_branch::guid_branch_decoding, 0);
+
+advconfig_checkbox_factory cfg_hdcd_amp("Don't halve output volume", guid_cfg_hdcd_amp, guid_cfg_parent_hdcd, 0, false);
+
 class hdcd_dsp : public dsp_impl_base {
 	pfc::array_t<hdcd_decode> decoders;
 
 	dsp_chunk_list_impl original_chunks;
 	dsp_chunk_list_impl output_chunks;
 	pfc::array_t<t_int32> buffer;
+
+	bool amp;
 
 	unsigned srate, nch, channel_config;
 
@@ -151,6 +165,7 @@ class hdcd_dsp : public dsp_impl_base {
 
 	void process_chunk( audio_chunk * chunk )
 	{
+		const audio_sample target_scale = amp ? ( 1 << ( 32 - 19 ) ) : ( 1 << ( 32 - 20 ) );
 		int data = chunk->get_sample_count() * nch;
 		buffer.grow_size( data );
 		audio_math::convert_to_int32( chunk->get_data(), data, buffer.get_ptr(), 1. / 65536. );
@@ -164,12 +179,13 @@ class hdcd_dsp : public dsp_impl_base {
 			}
 		}
 
-		audio_math::convert_from_int32( buffer.get_ptr(), data, chunk->get_data(), 1 << ( 32 - 20 ) );
+		audio_math::convert_from_int32( buffer.get_ptr(), data, chunk->get_data(), target_scale );
 	}
 
 public:
 	hdcd_dsp()
 	{
+		amp = cfg_hdcd_amp.get();
 		cleanup();
 	}
 
@@ -315,6 +331,8 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 	dsp_chunk_list_impl output_chunks;
 	pfc::array_t<t_int32> buffer;
 
+	bool amp;
+
 	unsigned srate, nch, channel_config;
 
 	bool gave_up, sustained;
@@ -375,6 +393,8 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 
 	void process_chunk( audio_chunk * chunk )
 	{
+		const audio_sample target_scale = amp ? ( 1 << ( 32 - 19 ) ) : ( 1 << ( 32 - 20 ) );
+
 		int data = chunk->get_sample_count() * nch;
 		buffer.grow_size( data );
 		audio_math::convert_to_int32( chunk->get_data(), data, buffer.get_ptr(), 1. / 65536. );
@@ -388,12 +408,13 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 			}
 		}
 
-		audio_math::convert_from_int32( buffer.get_ptr(), data, chunk->get_data(), 1 << ( 32 - 20 ) );
+		audio_math::convert_from_int32( buffer.get_ptr(), data, chunk->get_data(), target_scale );
 	}
 
 public:
 	hdcd_postprocessor_instance()
 	{
+		amp = cfg_hdcd_amp.get();
 		cleanup();
 	}
 
