@@ -65,7 +65,7 @@ void hdcd_decode::process_sample_lsb( int sample )
 			if ( ! ( bits_b & 0xC8 ) )
 			{
 				status = ( bits_b & 0x30 ) | ( ( bits_b & 0x07 ) * 2 );
-				sample_counter = sample_rate + 1;
+				sample_counter = sample_rate * 10 + 1;
 			}
 			step_counter = 0;
 		}
@@ -90,7 +90,7 @@ void hdcd_decode::process_sample_lsb( int sample )
 			if ( ! ( unsigned char ) ( bit + 1 ) )
 			{
 				status = bits_b >> 8;
-				sample_counter = sample_rate + 1;
+				sample_counter = sample_rate * 10 + 1;
 			}
 			step_counter = 0;
 		}
@@ -134,13 +134,13 @@ int hdcd_decode::decode_sample( int sample )
 
 		if ( gain_running > gain_current )
 		{
-			gain_running *= 0.99955034255981445;
+			gain_running *= 0.99955034255981445; // decrease gain by 1 dB every 256 samples
 			if ( gain_running < gain_current ) gain_running = gain_current;
 			gain_fixed = (int)( ( gain_running * 4096 ) + .5 );
 		}
 		else if ( gain_running < gain_current )
 		{
-			gain_running *= 1.00360429286956809;
+			gain_running *= 1.00360429286956809; // increase gain by 1 dB every 32 samples
 			if ( gain_running > gain_current ) gain_running = gain_current;
 			gain_fixed = (int)( ( gain_running * 4096 ) + .5 );
 		}

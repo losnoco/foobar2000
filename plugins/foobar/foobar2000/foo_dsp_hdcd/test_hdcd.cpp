@@ -35,13 +35,60 @@
 #include <foobar2000.h>
 #include "../ATLHelpers/ATLHelpers.h"
 
+#include <atlframe.h>
+
 #include "../helpers/helpers.h"
 
 #include "resource.h"
 
-static void RunHDCDResultsPopup( const metadb_handle_list & p_data, HWND p_parent );
+struct hdcd_results
+{
+	metadb_handle_list m_handles;
+	
+	struct hdcd_data
+	{
+		enum status
+		{
+			disabled = 0,
+			intermittent,
+			enabled
+		};
 
-bool check_hdcd( metadb_handle_ptr p_handle, abort_callback & p_abort )
+		status peak_extension, transient_filter;
+
+		float min_gain, max_gain;
+
+		hdcd_data()
+		{
+			peak_extension = disabled;
+			transient_filter = disabled;
+			min_gain = 0.0f;
+			max_gain = 0.0f;
+		}
+
+		hdcd_data( const hdcd_data & in )
+		{
+			peak_extension = in.peak_extension;
+			transient_filter = in.transient_filter;
+			min_gain = in.min_gain;
+			max_gain = in.max_gain;
+		}
+	};
+
+	pfc::array_t<hdcd_data> m_data;
+
+	hdcd_results() { }
+
+	hdcd_results( const hdcd_results & in )
+	{
+		m_handles = in.m_handles;
+		m_data = in.m_data;
+	}
+};
+
+static void RunHDCDResultsPopup( const hdcd_results & p_data, HWND p_parent );
+
+bool check_hdcd( metadb_handle_ptr p_handle, abort_callback & p_abort, hdcd_results::hdcd_data & p_out )
 {
 	input_helper               m_decoder;
 	service_ptr_t<file>        m_file;
@@ -51,24 +98,56 @@ bool check_hdcd( metadb_handle_ptr p_handle, abort_callback & p_abort )
 	double                     m_temp;
 	const char *               m_tag;
 
+	bool                       m_hdcd = false;
+	unsigned                   m_chunk_count = 0;
+	unsigned                   m_peak_extension_count = 0;
+	unsigned                   m_transient_filter_count = 0;
+	float                      m_minimum_gain = 0.0f;
+	float                      m_maximum_gain = -8.0f;
+	float                      m_gain;
+
 	m_decoder.open( m_file, p_handle, input_flag_simpledecode, p_abort, false, true );
 
-	while ( m_duration < 5. )
+	while ( m_decoder.run( m_chunk, p_abort ) )
 	{
 		p_abort.check();
-
-		m_decoder.run( m_chunk, p_abort );
 
 		if ( m_decoder.get_dynamic_info( m_info, m_temp ) )
 		{
 			m_tag = m_info.info_get( "hdcd" );
-			if ( m_tag && !pfc::stricmp_ascii( m_tag, "yes" ) ) return true;
+			if ( m_tag && !pfc::stricmp_ascii( m_tag, "yes" ) )
+			{
+				m_chunk_count++;
+
+				m_hdcd = true;
+				m_tag = m_info.info_get( "hdcd_peak_extend" );
+				if ( m_tag && !pfc::stricmp_ascii( m_tag, "yes" ) ) m_peak_extension_count++;
+				m_tag = m_info.info_get( "hdcd_transient_filter" );
+				if ( m_tag && !pfc::stricmp_ascii( m_tag, "yes" ) ) m_transient_filter_count++;
+				m_tag = m_info.info_get( "hdcd_gain" );
+				if ( m_tag )
+				{
+					m_gain = atof( m_tag );
+					if ( m_minimum_gain > m_gain ) m_minimum_gain = m_gain;
+					if ( m_maximum_gain < m_gain ) m_maximum_gain = m_gain;
+				}
+			}
 		}
 
 		m_duration += m_chunk.get_duration();
+
+		if ( !m_hdcd && m_duration >= 5.0 ) break;
 	}
 
-	return false;
+	if ( m_hdcd )
+	{
+		p_out.peak_extension = ( !m_peak_extension_count ) ? hdcd_results::hdcd_data::disabled : ( m_peak_extension_count < m_chunk_count ) ? hdcd_results::hdcd_data::intermittent : hdcd_results::hdcd_data::enabled;
+		p_out.transient_filter = ( !m_transient_filter_count ) ? hdcd_results::hdcd_data::disabled : ( m_transient_filter_count < m_chunk_count ) ? hdcd_results::hdcd_data::intermittent : hdcd_results::hdcd_data::enabled;
+		p_out.min_gain = m_minimum_gain;
+		p_out.max_gain = m_maximum_gain;
+	}
+
+	return m_hdcd;
 }
 
 class hdcd_scanner : public threaded_process_callback
@@ -87,7 +166,7 @@ class hdcd_scanner : public threaded_process_callback
 	metadb_handle_list input_list;
 
 	critical_section lock_output_list;
-	metadb_handle_list output_list;
+	hdcd_results output_list;
 
 	void scanner_process()
 	{
@@ -108,13 +187,15 @@ class hdcd_scanner : public threaded_process_callback
 
 			try
 			{
-				if ( check_hdcd( m_current_file, *m_abort ) )
+				hdcd_results::hdcd_data m_data;
+				if ( check_hdcd( m_current_file, *m_abort, m_data ) )
 				{
 					insync( lock_output_list );
-					output_list.add_item( m_current_file );
+					output_list.m_handles.add_item( m_current_file );
+					output_list.m_data.append_single( m_data );
 				}
 			}
-			catch (exception_io & e) { }
+			catch (exception_io &) { }
 
 			InterlockedDecrement( &input_items_remaining );
 
@@ -219,19 +300,15 @@ public:
 
 		if ( !p_was_aborted )
 		{
-			ShowWindow( p_wnd, SW_HIDE );
-
-			status_callback->set_progress( threaded_process_status::progress_min );
-
-			RunHDCDResultsPopup( output_list, p_wnd );
+			RunHDCDResultsPopup( output_list, core_api::get_main_window() );
 		}
 	}
 };
 
-class CMyResultsPopup : public CDialogImpl<CMyResultsPopup>
+class CMyResultsPopup : public CDialogImpl<CMyResultsPopup>, public CDialogResize<CMyResultsPopup>
 {
 public:
-	CMyResultsPopup( const metadb_handle_list & initData ) : m_initData( initData ) { }
+	CMyResultsPopup( const hdcd_results & initData ) : m_initData( initData ) { }
 
 	enum { IDD = IDD_RESULTS };
 
@@ -239,11 +316,18 @@ public:
 		MSG_WM_INITDIALOG( OnInitDialog )
 		COMMAND_HANDLER_EX( IDCANCEL, BN_CLICKED, OnButton )
 		MSG_WM_NOTIFY( OnNotify )
+		CHAIN_MSG_MAP(CDialogResize<CMyResultsPopup>)
 	END_MSG_MAP()
+
+	BEGIN_DLGRESIZE_MAP( CMyResultsPopup )
+		DLGRESIZE_CONTROL( IDC_LISTVIEW, DLSZ_SIZE_X | DLSZ_SIZE_Y )
+	END_DLGRESIZE_MAP()
 
 private:
 	BOOL OnInitDialog(CWindow, LPARAM)
 	{
+		DlgResize_Init();
+
 		m_listview = GetDlgItem( IDC_LISTVIEW );
 		pfc::string8_fast temp;
 
@@ -254,19 +338,39 @@ private:
 		lvc.cx = m_listview.GetStringWidth( lvc.pszText ) + 200;
 		lvc.iSubItem = 0;
 		m_listview.InsertColumn( 0, &lvc );
+		lvc.fmt = LVCFMT_RIGHT;
 		lvc.pszText = _T("Subsong");
 		lvc.cx = m_listview.GetStringWidth( lvc.pszText ) + 15;
 		lvc.iSubItem = 1;
 		m_listview.InsertColumn( 1, &lvc );
+		lvc.fmt = LVCFMT_LEFT;
 		lvc.pszText = _T("Name");
 		lvc.cx = m_listview.GetStringWidth( lvc.pszText ) + 150;
 		m_listview.InsertColumn( 2, &lvc );
+		lvc.fmt = LVCFMT_RIGHT;
+		lvc.pszText = _T("Minimum gain");
+		lvc.cx = m_listview.GetStringWidth( lvc.pszText ) + 15;
+		m_listview.InsertColumn( 3, &lvc );
+		lvc.pszText = _T("Maximum gain");
+		lvc.cx = m_listview.GetStringWidth( lvc.pszText ) + 15;
+		m_listview.InsertColumn( 4, &lvc );
+		lvc.fmt = LVCFMT_CENTER;
+		lvc.pszText = _T("Peak extension");
+		lvc.cx = m_listview.GetStringWidth( lvc.pszText ) + 15;
+		m_listview.InsertColumn( 5, &lvc );
+		lvc.pszText = _T("Transient filter");
+		lvc.cx = m_listview.GetStringWidth( lvc.pszText ) + 15;
+		m_listview.InsertColumn( 6, &lvc );
 
-		for ( unsigned i = 0; i < m_initData.get_count(); i++ )
+		for ( unsigned i = 0; i < m_initData.m_handles.get_count(); i++ )
 		{
 			m_listview.InsertItem( i, LPSTR_TEXTCALLBACK );
 			m_listview.SetItemText( i, 1, LPSTR_TEXTCALLBACK );
 			m_listview.SetItemText( i, 2, LPSTR_TEXTCALLBACK );
+			m_listview.SetItemText( i, 3, LPSTR_TEXTCALLBACK );
+			m_listview.SetItemText( i, 4, LPSTR_TEXTCALLBACK );
+			m_listview.SetItemText( i, 5, LPSTR_TEXTCALLBACK );
+			m_listview.SetItemText( i, 6, LPSTR_TEXTCALLBACK );
 		}
 
 		if ( !static_api_ptr_t<titleformat_compiler>()->compile( m_script, "%title%" ) )
@@ -285,7 +389,8 @@ private:
 				{
 					LV_DISPINFO *pLvdi = (LV_DISPINFO *)message;
 
-					const metadb_handle_ptr p_file = m_initData.get_item( pLvdi->item.iItem );
+					const metadb_handle_ptr p_file = m_initData.m_handles.get_item( pLvdi->item.iItem );
+					const hdcd_results::hdcd_data & p_data = m_initData.m_data[ pLvdi->item.iItem ];
 					switch (pLvdi->item.iSubItem)
 					{
 					case 0:
@@ -305,6 +410,44 @@ private:
 						m_convert.convert( m_temp );
 						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
 						break;
+
+					case 3:
+						m_temp = pfc::format_float( p_data.min_gain, 0, 1 );
+						m_temp += " dB";
+						m_convert.convert( m_temp );
+						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
+						break;
+
+					case 4:
+						m_temp = pfc::format_float( p_data.max_gain, 0, 1 );
+						m_temp += " dB";
+						m_convert.convert( m_temp );
+						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
+						break;
+
+					case 5:
+						m_temp.reset();
+						switch ( p_data.peak_extension )
+						{
+						case hdcd_results::hdcd_data::disabled:     m_temp = "Disabled";     break;
+						case hdcd_results::hdcd_data::intermittent: m_temp = "Intermittent"; break;
+						case hdcd_results::hdcd_data::enabled:      m_temp = "Enabled";      break;
+						}
+						m_convert.convert( m_temp );
+						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
+						break;
+
+					case 6:
+						m_temp.reset();
+						switch ( p_data.transient_filter )
+						{
+						case hdcd_results::hdcd_data::disabled:     m_temp = "Disabled";     break;
+						case hdcd_results::hdcd_data::intermittent: m_temp = "Intermittent"; break;
+						case hdcd_results::hdcd_data::enabled:      m_temp = "Enabled";      break;
+						}
+						m_convert.convert( m_temp );
+						pLvdi->item.pszText = (TCHAR *) m_convert.get_ptr();
+						break;
 					}
 				}
 				break;
@@ -316,10 +459,10 @@ private:
 
 	void OnButton( UINT, int id, CWindow )
 	{
-		EndDialog( id );
+		DestroyWindow();
 	}
 
-	const metadb_handle_list & m_initData;
+	hdcd_results m_initData;
 
 	CListViewCtrl m_listview;
 	service_ptr_t<titleformat_object> m_script;
@@ -327,10 +470,9 @@ private:
 	pfc::stringcvt::string_os_from_utf8_fast m_convert;
 };
 
-static void RunHDCDResultsPopup( const metadb_handle_list & p_data, HWND p_parent )
+static void RunHDCDResultsPopup( const hdcd_results & p_data, HWND p_parent )
 {
-	CMyResultsPopup popup( p_data );
-	popup.DoModal( p_parent );
+	CMyResultsPopup * popup = new CWindowAutoLifetime<ImplementModelessTracking<CMyResultsPopup>>( p_parent, p_data );
 }
 
 class context_hdcd : public contextmenu_item_simple

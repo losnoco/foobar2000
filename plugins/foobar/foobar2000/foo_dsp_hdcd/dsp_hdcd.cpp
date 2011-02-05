@@ -1,4 +1,4 @@
-#define MYVERSION "1.8"
+#define MYVERSION "1.9"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -35,6 +35,14 @@
 /*
 
 	change log
+
+2011-02-04 17:21 UTC - kode54
+- Added full feature detection to HDCD scanner
+- Version is now 1.9
+
+2011-02-04 15:49 UTC - kode54
+- Increased HDCD packet life to 10 seconds
+- Added more comments to HDCD decoder
 
 2011-01-25 18:28 UTC - kode54
 - Removed sort header setting from HDCD tester results dialog
