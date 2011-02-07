@@ -480,7 +480,7 @@ LONG32 SnarlInterface::Send(SnarlMessage msg)
 	HANDLE hProp = GetProp(hWnd, _T("last_error"));
 	localError = static_cast<SnarlEnums::SnarlStatus>(reinterpret_cast<int>(hProp));
 
-	return nReturn;
+	return (LONG32)nReturn;
 }
 
 //-----------------------------------------------------------------------------

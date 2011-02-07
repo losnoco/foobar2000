@@ -145,7 +145,7 @@ void try_register()
 		for ( unsigned i = 0; i < 4; i++ ) junk[ i ] = g_rand->genrand( ~0 );
 		base64_encode( snarl_password, junk.get_ptr(), 16 );
 
-		LONG32 ret = sn42.RegisterApp("Foobar2000", "Foobar2000", foobarIcon, snarl_password.get_ptr(), hwndFooSnarlMsg, WM_USER, Snarl::V42::SnarlEnums::AppHasAbout);
+		LONG32 ret = sn42.Register("Foobar2000", "Foobar2000", foobarIcon, snarl_password.get_ptr(), hwndFooSnarlMsg, WM_USER);
 		if (ret > 0)
 		{
 			FSRegisterClass(Play);
@@ -183,13 +183,13 @@ void try_unregister()
 	//Unregister foosnarl
 	if (using_v42)
 	{
-		LONG32 ret = sn42.KillClasses(snarl_password.get_ptr());
+		LONG32 ret = sn42.ClearClasses();
 		if (ret < 0 && ret != -Snarl::V42::SnarlEnums::ErrorNotRunning)
 		{
 			console::formatter() << "[FooSnarl] Failed to remove registered classes";
 		}
 
-		ret = sn42.UnregisterApp("Foobar2000", snarl_password.get_ptr());
+		ret = sn42.Unregister("Foobar2000");
 		if (ret < 0 && ret != -Snarl::V42::SnarlEnums::ErrorNotRunning)
 		{
 			console::formatter() << "[FooSnarl] Failed to unregister with Snarl";
@@ -484,7 +484,7 @@ void on_playback_event(int alertClass){
 
 	//Send Snarl Message
 	if(FSLastMsgClass != alertClass){
-		if (using_v42) sn42.Hide(sn42.GetLastMsgToken(), snarl_password.get_ptr());
+		if (using_v42) sn42.Hide(sn42.GetLastMsgToken());
 		else sn41.Hide(sn41.GetLastMsgToken());
 	}
 	FSLastMsgClass = alertClass;
@@ -493,16 +493,17 @@ void on_playback_event(int alertClass){
 	{
 		if (sn42.IsVisible(lastClassMsg[alertClass]) > 0)
 		{
-			sn42.EZUpdate(lastClassMsg[alertClass], FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, snarl_icon.get_ptr(), snarl_icon_data.get_ptr(), 0, 0, snarl_password.get_ptr());
+			sn42.Update(lastClassMsg[alertClass], FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, snarl_icon.get_ptr(), snarl_icon_data.get_ptr());
 		}
 		else
 		{
-			LONG32 ret = sn42.EZNotify(FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, snarl_icon.get_ptr(), snarl_icon_data.get_ptr(), 0, 0, snarl_password.get_ptr());
+			LONG32 ret = sn42.Notify(FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, snarl_icon.get_ptr(), snarl_icon_data.get_ptr());
 			if (ret > 0)
 			{
 				FSAddActions();
+				lastClassMsg[alertClass] = ret;
 			}
-			lastClassMsg[alertClass] = ret;
+			else lastClassMsg[alertClass] = 0;
 		}
 	}
 	else
