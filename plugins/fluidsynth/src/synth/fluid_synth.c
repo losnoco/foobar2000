@@ -396,7 +396,7 @@ fluid_synth_init(void)
 		       );
   fluid_mod_set_source2(&default_reverb_mod, 0, 0);              /* No second source */
   fluid_mod_set_dest(&default_reverb_mod, GEN_REVERBSEND);       /* Target: Reverb send */
-  fluid_mod_set_amount(&default_reverb_mod, 1000);                /* Amount: 200 ('tenths of a percent') */
+  fluid_mod_set_amount(&default_reverb_mod, 200);                /* Amount: 200 ('tenths of a percent') */
 
 
 
@@ -409,7 +409,7 @@ fluid_synth_init(void)
 		       );
   fluid_mod_set_source2(&default_chorus_mod, 0, 0);              /* No second source */
   fluid_mod_set_dest(&default_chorus_mod, GEN_CHORUSSEND);       /* Target: Chorus */
-  fluid_mod_set_amount(&default_chorus_mod, 1000);                /* Amount: 200 ('tenths of a percent') */
+  fluid_mod_set_amount(&default_chorus_mod, 200);                /* Amount: 200 ('tenths of a percent') */
 
 
 
