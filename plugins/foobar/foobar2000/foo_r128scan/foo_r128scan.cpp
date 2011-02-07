@@ -4,10 +4,14 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.20"
+#define MY_VERSION "1.21"
 
 /*
 	change log
+
+2011-02-07 14:12 UTC - kode54
+- Fixed a stupid bug in libebur128 when handling weird sample rates
+- Version is now 1.21
 
 2011-01-31 01:33 UTC - kode54
 - Fixed album scanning results reporting

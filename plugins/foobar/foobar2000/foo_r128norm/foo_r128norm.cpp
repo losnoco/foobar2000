@@ -1,9 +1,13 @@
 #include "stdafx.h"
 
-#define MY_VERSION "1.9"
+#define MY_VERSION "1.10"
 
 /*
 	change log
+
+2011-02-07 14:12 UTC - kode54
+- Fixed a stupid bug in libebur128 when handling weird sample rates
+- Version is now 1.10
 
 2011-02-05 06:11 UTC - kode54
 - Re-enabled increasing the gain level

@@ -139,7 +139,7 @@ ebur128_state* ebur128_init(int channels, int samplerate, size_t mode) {
   if ((mode & EBUR128_MODE_S) == EBUR128_MODE_S) {
     state->audio_data_frames = state->samplerate * 3;
   } else if ((mode & EBUR128_MODE_M) == EBUR128_MODE_M) {
-    state->audio_data_frames = state->samplerate * 2 / 5;
+    state->audio_data_frames = state->samplerate / 5 * 2;
   } else {
     return NULL;
   }
@@ -159,7 +159,7 @@ ebur128_state* ebur128_init(int channels, int samplerate, size_t mode) {
   state->block_counter = 0;
 
   /* the first block needs 400ms of audio data */
-  state->needed_frames = state->samplerate * 2 / 5;
+  state->needed_frames = state->samplerate / 5 * 2;
   /* start at the beginning of the buffer */
   state->audio_data_index = 0;
 
@@ -330,7 +330,7 @@ int ebur128_change_parameters(ebur128_state* st,
   if ((st->mode & EBUR128_MODE_S) == EBUR128_MODE_S) {
     st->audio_data_frames = st->samplerate * 3;
   } else if ((st->mode & EBUR128_MODE_M) == EBUR128_MODE_M) {
-    st->audio_data_frames = st->samplerate * 2 / 5;
+    st->audio_data_frames = st->samplerate / 5 * 2;
   } else {
     return 1;
   }
@@ -343,7 +343,7 @@ int ebur128_change_parameters(ebur128_state* st,
   CHECK_ERROR(errcode, "Could not allocate memory!\n", 1, free_audio_data)
 
   /* the first block needs 400ms of audio data */
-  st->needed_frames = st->samplerate * 2 / 5;
+  st->needed_frames = st->samplerate / 5 * 2;
   /* start at the beginning of the buffer */
   st->audio_data_index = 0;
   /* reset short term frame counter */
@@ -381,7 +381,7 @@ int ebur128_add_frames_##type(ebur128_state* st,                               \
       st->audio_data_index += st->needed_frames * st->channels;                \
       /* calculate the new gating block */                                     \
       if ((st->mode & EBUR128_MODE_I) == EBUR128_MODE_I) {                     \
-        errcode = ebur128_calc_gating_block(st, st->samplerate * 2 / 5, NULL); \
+        errcode = ebur128_calc_gating_block(st, st->samplerate / 5 * 2, NULL); \
         if (errcode == -1) return 1;                                           \
       }                                                                        \
       if ((st->mode & EBUR128_MODE_LRA) == EBUR128_MODE_LRA) {                 \
@@ -423,7 +423,7 @@ EBUR128_ADD_FRAMES(double)
 void ebur128_start_new_segment(ebur128_state* st) {
   st->block_counter = 0;
   /* the first block needs 400ms of audio data */
-  st->needed_frames = st->samplerate * 2 / 5;
+  st->needed_frames = st->samplerate / 5 * 2;
   /* start at the beginning of the buffer */
   st->audio_data_index = 0;
   memset(st->audio_data, '\0', st->audio_data_frames *
