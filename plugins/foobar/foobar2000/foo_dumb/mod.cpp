@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.33"
+#define MYVERSION "0.9.9.34"
 
 /*
 	changelog
+
+2011-02-08 13:50 UTC - kode54
+- Fixed STM sample reading
+- Version is now 0.9.9.34
 
 2011-02-08 11:19 UTC - kode54
 - Implemented support for STM 1.x format
