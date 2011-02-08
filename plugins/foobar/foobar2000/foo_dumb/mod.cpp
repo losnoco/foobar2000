@@ -1,7 +1,13 @@
-#define MYVERSION "0.9.9.31"
+#define MYVERSION "0.9.9.32"
 
 /*
 	changelog
+
+2011-02-08 07:44 UTC - kode54
+- Fixed scanner cache reordering
+- Changed scanner to repeat the module loading process because invert loops
+  modify the sample data
+- Version is now 0.9.9.32
 
 2011-01-19 18:26 UTC - kode54
 - Fixed static sample end ramping for samples with sustain loops but no
@@ -2407,7 +2413,7 @@ public:
 		if ( duh ) unload_duh( duh );
 	}
 
-	void run( const t_uint8 * ptr, unsigned size, DUH * p_duh, const char * ext, abort_callback & p_abort )
+	void run( const t_uint8 * ptr, unsigned size, const char * ext, abort_callback & p_abort )
 	{
 		dumbfile_mem_status memdata;
 
@@ -2451,9 +2457,10 @@ public:
 		{
 			//start_order = 0;
 			//duh = g_open_module(ptr, size, ext, start_order, is_it, is_dos);
-			duh = p_duh;
-
 			callback_info cdata = { m_info, p_abort };
+
+			start_order = 0;
+			duh = g_open_module( ptr, size, ext, start_order, is_it, is_dos ); // Need to open our own copy as invert loop effect modifies the samples
 
 			start_order = dumb_it_scan_for_playable_orders( duh_get_it_sigdata( duh ), scan_callback, & cdata );
 
@@ -2502,7 +2509,7 @@ public:
 		m_cache.delete_all();
 	}
 
-	void run( const t_uint8 * ptr, unsigned size, DUH * duh, const char * p_path, t_filetimestamp p_timestamp, pfc::ptr_list_t< dumb_subsong_info > & p_out, abort_callback & p_abort )
+	void run( const t_uint8 * ptr, unsigned size, const char * p_path, t_filetimestamp p_timestamp, pfc::ptr_list_t< dumb_subsong_info > & p_out, abort_callback & p_abort )
 	{
 		insync( sync );
 
@@ -2520,7 +2527,10 @@ public:
 				}
 
 				if ( i != m_cache.get_count() - 1 )
-					m_cache.swap_items( i, m_cache.get_count() - 1 );
+				{
+					m_cache.remove_by_idx( i );
+					m_cache.add_item( item );
+				}
 
 				return;
 			}
@@ -2530,7 +2540,7 @@ public:
 		dumb_info_scanner scanner;
 		try
 		{
-			scanner.run( ptr, size, duh, pfc::string_extension( p_path ), p_abort );
+			scanner.run( ptr, size, pfc::string_extension( p_path ), p_abort );
 		}
 		catch (...)
 		{
@@ -3095,7 +3105,7 @@ public:
 		else ReadDUH(duh, *m_info, !read_tag, is_dos);
 
 		// subsong magic time
-		g_cache.run( ptr, size, duh, p_path, m_file->get_timestamp( p_abort ), m_subsong_info, p_abort );
+		g_cache.run( ptr, size, p_path, m_file->get_timestamp( p_abort ), m_subsong_info, p_abort );
 
 		if ( p_reason == input_open_info_write ) this->m_file = m_file;
 	}
