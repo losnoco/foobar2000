@@ -1,7 +1,12 @@
-#define MYVERSION "0.9.9.32"
+#define MYVERSION "0.9.9.33"
 
 /*
 	changelog
+
+2011-02-08 11:19 UTC - kode54
+- Implemented support for STM 1.x format
+- Flagged STM files as stereo, as they should be
+- Version is now 0.9.9.33
 
 2011-02-08 07:44 UTC - kode54
 - Fixed scanner cache reordering
