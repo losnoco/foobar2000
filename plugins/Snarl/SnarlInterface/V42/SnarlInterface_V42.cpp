@@ -281,10 +281,10 @@ LONG32 SnarlInterface::AddClass(LPCSTR classId, LPCSTR name, LPCSTR title, LPCST
 	spl.Add("name", name);
 	spl.Add("enabled", appToken);
 	spl.Add("callback", classId);
-	spl.Add("title", name);
-	spl.Add("text", name);
-	spl.Add("icon", name);
-	spl.Add("sound", name);
+	spl.Add("title", title);
+	spl.Add("text", text);
+	spl.Add("icon", icon);
+	spl.Add("sound", sound);
 	if (duration != -1) spl.Add("duration", duration);
 
 	return DoRequest(Requests::AddClassA(), spl);
@@ -300,10 +300,10 @@ LONG32 SnarlInterface::AddClass(LPCWSTR classId, LPCWSTR name, LPCWSTR title, LP
 	spl.Add(L"name", name);
 	spl.Add(L"enabled", appToken);
 	spl.Add(L"callback", classId);
-	spl.Add(L"title", name);
-	spl.Add(L"text", name);
-	spl.Add(L"icon", name);
-	spl.Add(L"sound", name);
+	spl.Add(L"title", title);
+	spl.Add(L"text", text);
+	spl.Add(L"icon", icon);
+	spl.Add(L"sound", sound);
 	if (duration != -1)	spl.Add(L"duration", duration);
 
 	return DoRequest(Requests::AddClassW(), spl);

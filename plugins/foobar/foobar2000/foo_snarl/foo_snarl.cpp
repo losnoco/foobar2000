@@ -113,7 +113,7 @@ void FSRegisterClass(int intClass){
 	bool error;
 	if(using_v42)
 	{
-		LONG32 ret = sn42.AddClass(FSMsgClassDecode[intClass], FSMsgClassDecode[intClass], snarl_password.get_ptr());
+		LONG32 ret = sn42.AddClass(FSMsgClassDecode[intClass], FSMsgClassDecode[intClass]);
 		if ( ret < 0 && ret != -Snarl::V42::SnarlEnums::ErrorAlreadyRegistered )
 		{
 			console::formatter() << "[FooSnarl] Unable to register class " << intClass;
