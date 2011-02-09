@@ -70,7 +70,7 @@ fluid_channel_init(fluid_channel_t* chan)
   int prognum, banknum;
 
   prognum = 0;
-  banknum = (chan->channum == 9)? 128 : 0; /* ?? */
+  banknum = (chan->channum == 9)? DRUM_INST_BANK : 0; /* ?? */
 
   chan->sfont_bank_prog = 0 << SFONT_SHIFTVAL | banknum << BANK_SHIFTVAL
     | prognum << PROG_SHIFTVAL;
