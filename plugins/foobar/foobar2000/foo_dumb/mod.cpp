@@ -1,7 +1,13 @@
-#define MYVERSION "0.9.9.34"
+#define MYVERSION "0.9.9.35"
 
 /*
 	changelog
+
+2011-02-08 15:49 UTC - kode54
+- Added a workaround for bad sample offsets in STM files
+- Disabled inserting note cut commands in STM files, as there is no such
+  command in the format
+- Version is now 0.9.9.35
 
 2011-02-08 13:50 UTC - kode54
 - Fixed STM sample reading
