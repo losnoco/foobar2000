@@ -692,11 +692,15 @@ LRESULT CALLBACK COsdWnd::WindowProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 				{
 					if (m_dissolve)
 					{
-						if (m_dissolve->draw())
+						BITMAP bm;
+						if ( GetObject( m_hBitmap, sizeof(BITMAP), &bm ) == sizeof(BITMAP) && bm.bmBits )
 						{
-							m_iFadeNow = m_iFadeTo;
-							delete m_dissolve;
-							m_dissolve = NULL;
+							if (m_dissolve->draw(bm.bmBits))
+							{
+								m_iFadeNow = m_iFadeTo;
+								delete m_dissolve;
+								m_dissolve = NULL;
+							}
 						}
 					}
 					else
@@ -858,7 +862,7 @@ void COsdWnd::Repaint()
 		delete m_dissolve;
 		m_dissolve = NULL;
 	}
-	if ((p_config.flags & osd_dissolve) && m_bFade) m_dissolve = new dissolve(gfx, m_sSize.cx, m_sSize.cy, p_config.dissolve_decay);
+	if ((p_config.flags & osd_dissolve) && m_bFade) m_dissolve = new dissolve(m_sSize.cx, m_sSize.cy, p_config.dissolve_decay);
 
 #ifdef GDIPLUS
 	BOOL bShitFixed = FALSE;
@@ -1035,7 +1039,7 @@ bool COsdWnd::RepaintVolume(int volume)
 		delete m_dissolve;
 		m_dissolve = NULL;
 	}
-	if ((p_config.flags & osd_dissolve) && m_bFade) m_dissolve = new dissolve(gfx, m_sSize.cx, m_sSize.cy, p_config.dissolve_decay);
+	if ((p_config.flags & osd_dissolve) && m_bFade) m_dissolve = new dissolve(m_sSize.cx, m_sSize.cy, p_config.dissolve_decay);
 
 	DWORD color = p_config.color, ocolor = 0;
 

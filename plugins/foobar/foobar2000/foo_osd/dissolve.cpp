@@ -24,15 +24,14 @@ typedef struct tag_rgba
 	};
 } rgba, *prgba;
 
-dissolve::dissolve(void * in, unsigned w, unsigned h, unsigned d)
+dissolve::dissolve(unsigned w, unsigned h, unsigned d)
 {
-	ptr = in;
 	width = w;
 	height = h;
 	decay = d;
 }
 
-bool dissolve::draw()
+bool dissolve::draw(void * ptr)
 {
 	prgba pt = (prgba) ptr;
 	rgba v;

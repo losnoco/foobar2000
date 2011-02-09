@@ -32,7 +32,7 @@
 
  */
 
-#define VERSION "1.68"
+#define VERSION "1.69"
 
 /*
 #define GDIPLUS
@@ -41,6 +41,11 @@
 
 /*
 	change log
+
+2011-02-09 11:40 UTC - kode54
+- Dissolve function now locks down bitmap bits pointer every frame instead of assuming it
+  remains constant
+- Version is now 1.69
 
 2010-11-23 06:36 UTC - kode54
 - Menu commands, and thus keyboard shortcuts, are back. Although I don't know why the dynamic
