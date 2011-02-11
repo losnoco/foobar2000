@@ -144,7 +144,6 @@
     <ClCompile Include="meta\exakt_sc.c" />
     <ClCompile Include="meta\ffw.c" />
     <ClCompile Include="meta\fsb.c" />
-    <ClCompile Include="meta\fsb_test.c" />
     <ClCompile Include="meta\gca.c" />
     <ClCompile Include="meta\gcsw.c" />
     <ClCompile Include="meta\genh.c" />
@@ -242,7 +241,6 @@
     <ClCompile Include="meta\ps2_rstm.c" />
     <ClCompile Include="meta\ps2_rws.c" />
     <ClCompile Include="meta\ps2_rxw.c" />
-    <ClCompile Include="meta\ps2_seg.c" />
     <ClCompile Include="meta\ps2_sfs.c" />
     <ClCompile Include="meta\ps2_sl3.c" />
     <ClCompile Include="meta\ps2_smpl.c" />
@@ -288,7 +286,6 @@
     <ClCompile Include="meta\sat_sap.c" />
     <ClCompile Include="meta\sd9.c" />
     <ClCompile Include="meta\sdt.c" />
-    <ClCompile Include="meta\se_scd.c" />
     <ClCompile Include="meta\sfl.c" />
     <ClCompile Include="meta\sli.c" />
     <ClCompile Include="meta\spt_spd.c" />
