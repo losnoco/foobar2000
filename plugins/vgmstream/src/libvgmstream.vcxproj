@@ -96,6 +96,7 @@
     <ClCompile Include="meta\lsf.c" />
     <ClCompile Include="meta\ngca.c" />
     <ClCompile Include="meta\nub.c" />
+    <ClCompile Include="meta\pc_snds.c" />
     <ClCompile Include="meta\ps2_iab.c" />
     <ClCompile Include="meta\ps2_mtaf.c" />
     <ClCompile Include="meta\ps2_spm.c" />
@@ -103,6 +104,8 @@
     <ClCompile Include="meta\ps3_past.c" />
     <ClCompile Include="meta\ps3_sgh_sgb.c" />
     <ClCompile Include="meta\ps3_vawx.c" />
+    <ClCompile Include="meta\seg.c" />
+    <ClCompile Include="meta\sqex_scd.c" />
     <ClCompile Include="meta\wii_ras.c" />
     <ClCompile Include="meta\x360_tra.c" />
     <ClCompile Include="streamfile.c" />

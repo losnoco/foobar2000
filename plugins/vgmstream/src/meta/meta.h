@@ -307,7 +307,7 @@ VGMSTREAM * init_vgmstream_ps2_ass(STREAMFILE * streamFile);
 
 VGMSTREAM * init_vgmstream_waa_wac_wad_wam(STREAMFILE * streamFile);
 
-VGMSTREAM * init_vgmstream_ps2_seg(STREAMFILE * streamFile);
+VGMSTREAM * init_vgmstream_seg(STREAMFILE * streamFile);
 
 VGMSTREAM * init_vgmstream_nds_strm_ffta2(STREAMFILE * streamFile);
 
@@ -525,7 +525,7 @@ VGMSTREAM * init_vgmstream_ps3_xvag(STREAMFILE* streamFile);
 
 VGMSTREAM * init_vgmstream_ps3_cps(STREAMFILE* streamFile);
 
-VGMSTREAM * init_vgmstream_se_scd(STREAMFILE* streamFile);
+VGMSTREAM * init_vgmstream_sqex_scd(STREAMFILE* streamFile);
 
 VGMSTREAM * init_vgmstream_ngc_nst_dsp(STREAMFILE* streamFile);
 
@@ -556,5 +556,7 @@ VGMSTREAM * init_vgmstream_ps2_strlr(STREAMFILE* streamFile);
 VGMSTREAM * init_vgmstream_lsf_n1nj4n(STREAMFILE* streamFile);
 
 VGMSTREAM * init_vgmstream_ps3_vawx(STREAMFILE* streamFile);
+
+VGMSTREAM * init_vgmstream_pc_snds(STREAMFILE* streamFile);
 
 #endif

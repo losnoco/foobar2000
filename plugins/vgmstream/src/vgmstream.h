@@ -89,6 +89,7 @@ typedef enum {
     coding_RAD_IMA_mono,    /* "Radical ADPCM" IMA, mono (for interleave) */
     coding_APPLE_IMA4,      /* Apple Quicktime IMA4 */
     coding_DAT4_IMA,        /* Eurocom 'DAT4' IMA ADPCM */
+    coding_SNDS_IMA,        /* Heavy Iron Studios .snds IMA ADPCM */
     coding_WS,              /* Westwood Studios' custom VBR ADPCM */
 #ifdef VGM_USE_MPEG
     coding_fake_MPEG2_L2,   /* MPEG-2 Layer 2 (AHX), with lying headers */
@@ -353,6 +354,7 @@ typedef enum {
 
     meta_PS2_ASS,			/* ASS */
     meta_PS2_SEG,			/* Eragon */
+    meta_XBOX_SEG,
     meta_NDS_STRM_FFTA2,	/* Final Fantasy Tactics A2 */
     meta_STR_ASR,			/* Donkey Kong Jet Race */
     meta_ZWDSP,				/* Zack and Wiki */
@@ -492,7 +494,7 @@ typedef enum {
     meta_FFW,               /* Freedom Fighters [NGC] */
     meta_DSP_DSPW,          /* Sengoku Basara 3 [WII] */
     meta_PS2_JSTM,          /* Tantei Jinguji Saburo - Kind of Blue (PS2) */
-    meta_SE_SCD,            /* Square-Enix SCD */
+    meta_SQEX_SCD,            /* Square-Enix SCD */
     meta_NGC_NST_DSP,       /* Animaniacs [NGC] */
     meta_BAF,               /* .baf (Blur) */
 	meta_PS3_XVAG,          /* Ratchet & Clank Future: Quest for Booty (PS3) */
@@ -511,6 +513,7 @@ typedef enum {
 	meta_PS2_STRLR,
     meta_LSF_N1NJ4N,        /* .lsf n1nj4n Fastlane Street Racing (iPhone) */
 	meta_PS3_VAWX,			// No More Heroes: Heroes Paradise (PS3)
+    meta_PC_SNDS,           // Incredibles PC .snds
 } meta_t;
 
 typedef struct {

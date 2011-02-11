@@ -57,6 +57,15 @@ void input_vgmstream::open(service_ptr_t<file> p_filehint,const char * p_path,t_
 	currentreason = p_reason;
 	if(p_path) strcpy(filename, p_path);
 
+	/* KLUDGE */
+	if ( pfc::stricmp_ascii( pfc::string_extension( p_path ), "MUS" ) )
+	{
+		unsigned char buffer[ 4 ];
+		if ( p_filehint.is_empty() ) input_open_file_helper( p_filehint, p_path, p_reason, p_abort );
+		p_filehint->read_object_t( buffer, p_abort );
+		if ( !memcmp( buffer, "MUS\x1A", 4 ) ) throw exception_io_unsupported_format();
+	}
+
 	switch(p_reason) {
 		case input_open_decode:
 			vgmstream = init_vgmstream_foo(p_path, p_abort);
@@ -435,6 +444,7 @@ bool input_vgmstream::g_is_our_path(const char * p_path,const char * p_extension
 	if(!stricmp_utf8(p_extension,"smp")) return 1;
 	if(!stricmp_utf8(p_extension,"smpl")) return 1;
 	if(!stricmp_utf8(p_extension,"snd")) return 1;
+	if(!stricmp_utf8(p_extension,"snds")) return 1;
 	if(!stricmp_utf8(p_extension,"sng")) return 1;
 	if(!stricmp_utf8(p_extension,"sns")) return 1;
 	if(!stricmp_utf8(p_extension,"spd")) return 1;
@@ -735,6 +745,7 @@ DECLARE_MULTIPLE_FILE_TYPE("SLI Audio File (*.SLI)", sli);
 DECLARE_MULTIPLE_FILE_TYPE("SMP Audio File (*.SMP)", smp);
 DECLARE_MULTIPLE_FILE_TYPE("SMPL Audio File (*.SMPL)", smpl);
 DECLARE_MULTIPLE_FILE_TYPE("SND Audio File (*.SND)", snd);
+DECLARE_MULTIPLE_FILE_TYPE("SNDS Audio File (*.SNDS)", snds);
 DECLARE_MULTIPLE_FILE_TYPE("SNG Audio File (*.SNG)", sng);
 DECLARE_MULTIPLE_FILE_TYPE("SNS Audio File (*.SNS)", sns);
 DECLARE_MULTIPLE_FILE_TYPE("SPD Audio File (*.SPD)", spd);
