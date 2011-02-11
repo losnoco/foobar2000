@@ -58,7 +58,7 @@ void input_vgmstream::open(service_ptr_t<file> p_filehint,const char * p_path,t_
 	if(p_path) strcpy(filename, p_path);
 
 	/* KLUDGE */
-	if ( pfc::stricmp_ascii( pfc::string_extension( p_path ), "MUS" ) )
+	if ( !pfc::stricmp_ascii( pfc::string_extension( p_path ), "MUS" ) )
 	{
 		unsigned char buffer[ 4 ];
 		if ( p_filehint.is_empty() ) input_open_file_helper( p_filehint, p_path, p_reason, p_abort );
