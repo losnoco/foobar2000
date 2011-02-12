@@ -2392,8 +2392,8 @@ fluid_synth_program_change(fluid_synth_t* synth, int chan, int prognum)
       }
       else /* Percussion: Fallback to preset 0 in percussion bank */
       {
-        preset = fluid_synth_find_preset(synth, DRUM_INST_BANK, 0);
-        subst_prog = 0;
+		  for (subst_prog = prognum - 1; subst_prog >= 0 && !preset; subst_prog--)
+			preset = fluid_synth_find_preset(synth, DRUM_INST_BANK, subst_prog);
       }
 
       if (preset)
