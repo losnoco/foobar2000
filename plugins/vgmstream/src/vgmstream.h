@@ -13,7 +13,7 @@
 #define VGM_USE_VORBIS
 #define VGM_USE_MPEG
 /* disabled by default, defined for builds that support it */
-#define VGM_USE_G7221
+//#define VGM_USE_G7221
 
 #include "streamfile.h"
 #include "coding/g72x_state.h"
