@@ -33,8 +33,6 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF S
 
 #pragma comment(lib, "../shared/shared.lib")
 
-using namespace pfc;
-
 DECLARE_COMPONENT_VERSION(
 		"foo_snarl",
 		"1.1.0", 
@@ -45,12 +43,12 @@ DECLARE_COMPONENT_VERSION(
 		"Copyright (C) 2008-2011 Skyler Kehren\n"
 		"Released under BSD License");
 
-string8 foobarIcon;
+pfc::string8 foobarIcon;
 
 bool using_v42 = false;
 Snarl::V41::SnarlInterface sn41;
 Snarl::V42::SnarlInterface sn42;
-string8 snarl_password;
+pfc::string8 snarl_password;
 UINT SNARL_GLOBAL_MSG = 0;
 HWND hwndFooSnarlMsg;
 std::map<int,char *> FSMsgClassDecode;
@@ -78,35 +76,6 @@ inline char base64_char(unsigned char in)
 										  'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v',
 										  'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'};
 	return base64_chars[in];
-}
-
-void base64_encode(pfc::string_base & out, const unsigned char * data, unsigned size)
-{
-	out.reset();
-
-	while (size >= 3)
-	{
-		out.add_byte( base64_char( data[0] >> 2 ) );
-		out.add_byte( base64_char( ( ( data[0] & 3 ) << 4 ) + ( data[1] >> 4 ) ) );
-		out.add_byte( base64_char( ( ( data[1] & 15 ) << 2 ) + ( data[2] >> 6 ) ) );
-		out.add_byte( base64_char( data[2] & 63 ) );
-		data += 3;
-		size -= 3;
-	}
-	if (size == 2)
-	{
-		out.add_byte( base64_char( data[0] >> 2 ) );
-		out.add_byte( base64_char( ( ( data[0] & 3 ) << 4 ) + ( data[1] >> 4 ) ) );
-		out.add_byte( base64_char( ( data[1] & 15 ) << 2 ) );
-		out.add_byte( '%' );
-	}
-	else if (size == 1)
-	{
-		out.add_byte( base64_char( data[0] >> 2 ) );
-		out.add_byte( base64_char( ( data[0] & 3 ) << 4 ) );
-		out.add_byte( '%' );
-		out.add_byte( '%' );
-	}
 }
 
 void FSRegisterClass(int intClass){
@@ -140,10 +109,11 @@ void try_register()
 	{
 		service_ptr_t<genrand_service> g_rand = genrand_service::g_create();
 		g_rand->seed( time( NULL ) );
-		array_t<unsigned> junk;
+		pfc::array_t<unsigned> junk;
 		junk.set_count( 4 );
 		for ( unsigned i = 0; i < 4; i++ ) junk[ i ] = g_rand->genrand( ~0 );
-		base64_encode( snarl_password, junk.get_ptr(), 16 );
+		pfc::base64_encode( snarl_password, junk.get_ptr(), 16 );
+		snarl_password.replace_byte( '=', '%', snarl_password.get_length() - 2 );
 
 		LONG32 ret = sn42.Register("Foobar2000", "Foobar2000", foobarIcon, snarl_password.get_ptr(), hwndFooSnarlMsg, WM_USER);
 		if (ret > 0)
@@ -305,7 +275,6 @@ public:
 // initquit metods
  void on_init()
 {
-	string8 image;
 	static_api_ptr_t<play_callback_manager> playCBM;
 	static_api_ptr_t<ui_control> uiMain;
 	WNDCLASSEX wcex = {0};
@@ -390,18 +359,18 @@ public:
 
 protected:
 metadb_handle_ptr lastSong;
-string8 temp_file;
+pfc::string8 temp_file;
 
 void on_playback_event(int alertClass){
 	static_api_ptr_t<playback_control> pc;
 	metadb_handle_ptr handle;
-	string8 format;
+	pfc::string8 format;
 	service_ptr_t<titleformat_object> script;
-	string_formatter text;
-	string snarl_title;
-	string snarl_msg;
-	string snarl_icon;
-	string8 snarl_icon_data;
+	pfc::string_formatter text;
+	pfc::string snarl_title;
+	pfc::string snarl_msg;
+	pfc::string snarl_icon;
+	pfc::string8 snarl_icon_data;
 	long snarl_time;
 
 	if(pc->get_now_playing(handle)){
@@ -425,7 +394,7 @@ void on_playback_event(int alertClass){
 	snarl_title = text.toString();
 
 	metadb_handle_list handle_list;
-	list_t<GUID> guid_list;
+	pfc::list_t<GUID> guid_list;
 	handle_list.add_item(handle);
 	guid_list.add_item( album_art_ids::cover_front );
 	try
@@ -437,12 +406,12 @@ void on_playback_event(int alertClass){
 		{
 			if (using_v42)
 			{
-				base64_encode( snarl_icon_data, art->get_ptr(), art->get_size() );
-				//snarl_icon = "";
+				pfc::base64_encode( snarl_icon_data, art->get_ptr(), art->get_size() );
+				snarl_icon_data.replace_byte( '=', '%', snarl_icon_data.length() - 2 );
 			}
-			//else // MEH
+			else
 			{
-				string8 temp_path;
+				pfc::string8 temp_path;
 				if ( temp_file.get_length() ) uDeleteFile( temp_file );
 				if ( uGetTempPath( temp_path ) && uGetTempFileName( temp_path, "snl", 0, temp_file ) )
 				{
@@ -468,9 +437,11 @@ void on_playback_event(int alertClass){
 	}
 
 	//Test for existance of folder.jpg picture file
-	DWORD attrib = GetFileAttributes(stringcvt::string_os_from_utf8(snarl_icon.get_ptr()));
-	if((snarl_icon.get_ptr()=="" )||(0xFFFFFFFF == attrib)){
-		snarl_icon = foobarIcon;
+	if (!using_v42){
+		DWORD attrib = GetFileAttributes(pfc::stringcvt::string_os_from_utf8(snarl_icon.get_ptr()));
+		if((snarl_icon.get_ptr()=="" )||(0xFFFFFFFF == attrib)){
+			snarl_icon = foobarIcon;
+		}
 	}
 
 	//Get display timeout from user settings. If invalid, send error. Shouldn't happen max and min are set. 
@@ -493,11 +464,11 @@ void on_playback_event(int alertClass){
 	{
 		if (sn42.IsVisible(lastClassMsg[alertClass]) > 0)
 		{
-			sn42.Update(lastClassMsg[alertClass], FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, snarl_icon.get_ptr(), snarl_icon_data.get_ptr());
+			sn42.Update(lastClassMsg[alertClass], FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, NULL, snarl_icon_data.get_ptr());
 		}
 		else
 		{
-			LONG32 ret = sn42.Notify(FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, snarl_icon.get_ptr(), snarl_icon_data.get_ptr());
+			LONG32 ret = sn42.Notify(FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, NULL, snarl_icon_data.get_ptr());
 			if (ret > 0)
 			{
 				FSAddActions();
