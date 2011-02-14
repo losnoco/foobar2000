@@ -74,9 +74,22 @@ public:
 	}
 };
 
+static const char * extensions[] = { "mid", "s3m", "msc", "lds" };
+
 binistream * CProvider_foobar2000::open(std::string filename) const
 {
 	service_ptr_t<file> p_file;
+
+	pfc::string_extension ext( filename.c_str() );
+
+	for ( unsigned i = 0; i < _countof( extensions ); ++i )
+	{
+		if ( !pfc::stricmp_ascii( ext, extensions[ i ] ) )
+		{
+			filename += "a";
+			break;
+		}
+	}
 
 	if ( m_file_hint.is_valid() )
 	{

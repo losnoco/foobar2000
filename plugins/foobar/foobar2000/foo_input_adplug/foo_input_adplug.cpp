@@ -1,9 +1,13 @@
-#define MYVERSION "1.37"
+#define MYVERSION "1.38"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2011-02-14 11:43 UTC - kode54
+- Shunted out LDS extension to make way for the new support in foo_midi
+- Version is now 1.38
 
 2010-08-18 00:19 UTC - kode54
 - Implemented support for the Adlib Surround virtual emulator core
@@ -228,6 +232,14 @@ public:
 		if ( cfg_adlib_surround ) m_emu = create_adlib_surround( cfg_adlib_core, srate );
 		else m_emu = create_adlib( cfg_adlib_core, srate );
 
+		pfc::string8 path = p_path;
+		pfc::string_extension p_extension( p_path );
+
+		if ( !pfc::stricmp_ascii( p_extension, "mida" ) || !pfc::stricmp_ascii( p_extension, "s3ma" ) || !pfc::stricmp_ascii( p_extension, "msca" ) || !pfc::stricmp_ascii( p_extension, "ldsa" ) )
+		{
+			path.truncate( path.length() - 1 );
+		}
+
 		{
 			insync( g_database_lock );
 
@@ -237,7 +249,7 @@ public:
 			}
 			catch ( const exception_io_not_found & ) {}
 
-			m_player = CAdPlug::factory( std::string( p_path ), m_emu, CAdPlug::players, CProvider_foobar2000( std::string( p_path ), m_file, p_abort ) );
+			m_player = CAdPlug::factory( std::string( path ), m_emu, CAdPlug::players, CProvider_foobar2000( std::string( p_path ), m_file, p_abort ) );
 			if ( ! m_player )
 				throw exception_io_data();
 		}
@@ -403,7 +415,7 @@ public:
 
 	static bool g_is_our_path( const char * p_path, const char * p_extension )
 	{
-		if ( !stricmp_utf8( p_extension, "mid" ) || !stricmp_utf8( p_extension, "s3m" ) || !stricmp_utf8( p_extension, "msc" ) )
+		if ( !pfc::stricmp_ascii( p_extension, "mid" ) || !pfc::stricmp_ascii( p_extension, "s3m" ) || !pfc::stricmp_ascii( p_extension, "msc" ) || !pfc::stricmp_ascii( p_extension, "lds" ) )
 			return false;
 
 #ifdef DISABLE_ADL
@@ -411,7 +423,7 @@ public:
 			return false;
 #endif
 
-		if ( !stricmp_utf8( p_extension, "mida" ) || !stricmp_utf8( p_extension, "s3ma" ) || !stricmp_utf8( p_extension, "msca" ) )
+		if ( !pfc::stricmp_ascii( p_extension, "mida" ) || !pfc::stricmp_ascii( p_extension, "s3ma" ) || !pfc::stricmp_ascii( p_extension, "msca" ) || !pfc::stricmp_ascii( p_extension, "ldsa" ) )
 			return true;
 
 		const CPlayers & pl = CAdPlug::players;
@@ -467,7 +479,7 @@ class adplug_file_types : public input_file_type
 			if ( i ) out.add_byte( ';' );
 			out.add_byte( '*' );
 			out += ext;
-			if ( !stricmp( ext + 1, "s3m" ) || !stricmp( ext + 1, "mid" ) || !stricmp( ext + 1, "msc" ) )
+			if ( !pfc::stricmp_ascii( ext + 1, "s3m" ) || !pfc::stricmp_ascii( ext + 1, "mid" ) || !pfc::stricmp_ascii( ext + 1, "msc" ) || pfc::stricmp_ascii( ext + 1, "lds" ) )
 				out.add_byte( 'a' );
 		}
 		return true;
