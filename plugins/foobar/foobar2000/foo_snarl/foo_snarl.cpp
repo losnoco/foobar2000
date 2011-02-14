@@ -404,7 +404,7 @@ void on_playback_event(int alertClass){
 		album_art_data_ptr art = art_instance->query( album_art_ids::cover_front, moo );
 		if ( art->get_size() )
 		{
-			if (using_v42 && art->get_size() <= 40 * 1024)
+			if (using_v42 && art->get_size() <= 22 * 1024)
 			{
 				pfc::base64_encode( snarl_icon_data, art->get_ptr(), art->get_size() );
 				snarl_icon_data.replace_byte( '=', '%', snarl_icon_data.length() - 2 );
