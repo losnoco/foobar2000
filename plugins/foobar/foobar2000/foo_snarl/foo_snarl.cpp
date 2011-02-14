@@ -404,7 +404,7 @@ void on_playback_event(int alertClass){
 		album_art_data_ptr art = art_instance->query( album_art_ids::cover_front, moo );
 		if ( art->get_size() )
 		{
-			if (using_v42)
+			if (using_v42 && art->get_size() <= 40 * 1024)
 			{
 				pfc::base64_encode( snarl_icon_data, art->get_ptr(), art->get_size() );
 				snarl_icon_data.replace_byte( '=', '%', snarl_icon_data.length() - 2 );
@@ -437,7 +437,7 @@ void on_playback_event(int alertClass){
 	}
 
 	//Test for existance of folder.jpg picture file
-	if (!using_v42){
+	if (!using_v42 || snarl_icon.get_length()){
 		DWORD attrib = GetFileAttributes(pfc::stringcvt::string_os_from_utf8(snarl_icon.get_ptr()));
 		if((snarl_icon.get_ptr()=="" )||(0xFFFFFFFF == attrib)){
 			snarl_icon = foobarIcon;
@@ -464,11 +464,11 @@ void on_playback_event(int alertClass){
 	{
 		if (sn42.IsVisible(lastClassMsg[alertClass]) > 0)
 		{
-			sn42.Update(lastClassMsg[alertClass], FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, NULL, snarl_icon_data.get_ptr());
+			sn42.Update(lastClassMsg[alertClass], FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, snarl_icon.get_ptr(), snarl_icon_data.get_ptr());
 		}
 		else
 		{
-			LONG32 ret = sn42.Notify(FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, NULL, snarl_icon_data.get_ptr());
+			LONG32 ret = sn42.Notify(FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, snarl_icon.get_ptr(), snarl_icon_data.get_ptr());
 			if (ret > 0)
 			{
 				FSAddActions();
