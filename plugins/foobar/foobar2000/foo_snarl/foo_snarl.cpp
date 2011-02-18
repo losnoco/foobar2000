@@ -453,7 +453,7 @@ void on_playback_event(int alertClass){
 
 	if (using_v42)
 	{
-		if (sn42.IsVisible(lastClassMsg[alertClass]) > 0)
+		if (sn42.IsVisible(lastClassMsg[alertClass]) == Snarl::V42::SnarlEnums::Success)
 		{
 			sn42.Update(lastClassMsg[alertClass], FSClass(alertClass), snarl_title.get_ptr(), snarl_msg.get_ptr(), snarl_time, snarl_icon.get_ptr(), snarl_icon_data.get_ptr());
 		}
