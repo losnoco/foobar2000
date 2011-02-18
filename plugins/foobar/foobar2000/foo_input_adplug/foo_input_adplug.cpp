@@ -1,9 +1,14 @@
-#define MYVERSION "1.38"
+#define MYVERSION "1.39"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2011-02-14 17:48 UTC - kode54
+- Fixed string compare which caused "a" to be added to all reported file name
+  extensions except for .LDS
+- Version is now 1.39
 
 2011-02-14 11:43 UTC - kode54
 - Shunted out LDS extension to make way for the new support in foo_midi
@@ -479,7 +484,7 @@ class adplug_file_types : public input_file_type
 			if ( i ) out.add_byte( ';' );
 			out.add_byte( '*' );
 			out += ext;
-			if ( !pfc::stricmp_ascii( ext + 1, "s3m" ) || !pfc::stricmp_ascii( ext + 1, "mid" ) || !pfc::stricmp_ascii( ext + 1, "msc" ) || pfc::stricmp_ascii( ext + 1, "lds" ) )
+			if ( !pfc::stricmp_ascii( ext + 1, "s3m" ) || !pfc::stricmp_ascii( ext + 1, "mid" ) || !pfc::stricmp_ascii( ext + 1, "msc" ) || !pfc::stricmp_ascii( ext + 1, "lds" ) )
 				out.add_byte( 'a' );
 		}
 		return true;
