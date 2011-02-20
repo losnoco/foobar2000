@@ -1,1 +1,1 @@
-#define VERSION		"r925"
+#define VERSION		"r927"

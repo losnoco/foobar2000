@@ -901,5 +901,8 @@
     <ClCompile Include="meta\mattel_hyperscan.c">
       <Filter>meta\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="meta\ios_psnd.c">
+      <Filter>meta\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
