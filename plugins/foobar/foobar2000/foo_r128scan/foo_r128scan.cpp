@@ -4,10 +4,16 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.21"
+#define MY_VERSION "1.22"
 
 /*
 	change log
+
+2011-02-21 20:41 UTC - kode54
+- Scanner now precaches files up to 4MB at a time, which hopefully fixes
+  most bottlenecks with multithreaded scanning. It does not work with
+  CUE referenced files and such, though.
+- Version is now 1.22
 
 2011-02-07 14:12 UTC - kode54
 - Fixed a stupid bug in libebur128 when handling weird sample rates
@@ -188,7 +194,7 @@ bool change_parameters( ebur128_state * state, unsigned sample_rate, unsigned ch
 double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info & last_info, metadb_handle_ptr p_handle, service_ptr_t<dsp> & m_resampler, double & p_progress, unsigned track_total, threaded_process_status & p_status, critical_section & p_critsec, abort_callback & p_abort )
 {
 	input_helper               m_decoder;
-	service_ptr_t<file>        m_file;
+	service_ptr_t<file>        m_file, m_file_cached;
 	audio_chunk_impl_temporary m_chunk, m_previous_chunk;
 	file_info_impl             m_info;
 
@@ -196,6 +202,17 @@ double scan_track( ebur128_state * & state, audio_sample & peak, last_chunk_info
 	unsigned last_srate, last_channels, last_channel_config;
 
 	double duration = 0, length = 0;
+
+	try
+	{
+		filesystem::g_open_precache( m_file, p_handle->get_path(), p_abort );
+		file_cached::g_create( m_file_cached, m_file, p_abort, 4 * 1024 * 1024 );
+		m_file = m_file_cached;
+	}
+	catch (...)
+	{
+		m_file.release();
+	}
 
 	m_decoder.open( m_file, p_handle, input_flag_simpledecode, p_abort, false, true );
 
