@@ -1,4 +1,4 @@
-#define MYVERSION "1.10"
+#define MYVERSION "1.11"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -35,6 +35,11 @@
 /*
 
 	change log
+
+2011-02-22 14:14 UTC - kode54
+- Changed advanced configuration option to a radio selection, defaulting to only
+  halving the volume if peak extension is enabled
+- Version is now 1.11
 
 2011-02-05 10:40 UTC - kode54
 - Added advanced configuration option to negate volume halving normally applied
@@ -99,11 +104,17 @@
 #include "hdcd_decode.h"
 
 static const GUID guid_cfg_parent_hdcd = { 0x1067a697, 0x31ab, 0x416a, { 0x9e, 0x94, 0x56, 0xbc, 0x6e, 0x68, 0xda, 0xad } };
-static const GUID guid_cfg_hdcd_amp = { 0x2858e67, 0x3522, 0x4486, { 0x9d, 0xaf, 0xbb, 0xa5, 0x25, 0x9a, 0xff, 0xb0 } };
+static const GUID guid_cfg_parent_amp = { 0xdf059409, 0xa5a3, 0x4155, { 0x9e, 0x9d, 0x13, 0x89, 0x61, 0x9b, 0x43, 0xcb } };
+static const GUID guid_cfg_hdcd_amp_never = { 0x590aa4fd, 0x26da, 0x4065, { 0x9f, 0xcb, 0xaf, 0xfc, 0xd1, 0x4, 0x27, 0xfd } };
+static const GUID guid_cfg_hdcd_amp_not_peak = { 0x9565b81f, 0x82d5, 0x4656, { 0xa0, 0x4, 0xbe, 0xc5, 0xd1, 0x7d, 0x2a, 0xe1 } };
+static const GUID guid_cfg_hdcd_amp_always = { 0xd4b8551, 0xa744, 0x49e0, { 0xa3, 0xa7, 0x7f, 0x25, 0xf1, 0xdd, 0xb, 0xf9 } };
 
 advconfig_branch_factory cfg_hdcd_parent("HDCD decoder", guid_cfg_parent_hdcd, advconfig_branch::guid_branch_decoding, 0);
+advconfig_branch_factory cfg_hdcd_amp_parent("Halve output volume", guid_cfg_parent_amp, guid_cfg_parent_hdcd, 0);
 
-advconfig_checkbox_factory cfg_hdcd_amp("Don't halve output volume", guid_cfg_hdcd_amp, guid_cfg_parent_hdcd, 0, false);
+advconfig_radio_factory cfg_hdcd_amp_never("Never", guid_cfg_hdcd_amp_never, guid_cfg_parent_amp, 0, false);
+advconfig_radio_factory cfg_hdcd_amp_not_peak("Only if peak extension is enabled", guid_cfg_hdcd_amp_not_peak, guid_cfg_parent_amp, 0, true);
+advconfig_radio_factory cfg_hdcd_amp_always("Always", guid_cfg_hdcd_amp_always, guid_cfg_parent_amp, 0, false);
 
 class hdcd_dsp : public dsp_impl_base {
 	pfc::array_t<hdcd_decode> decoders;
@@ -112,7 +123,7 @@ class hdcd_dsp : public dsp_impl_base {
 	dsp_chunk_list_impl output_chunks;
 	pfc::array_t<t_int32> buffer;
 
-	bool amp;
+	unsigned amp;
 
 	unsigned srate, nch, channel_config;
 
@@ -165,6 +176,9 @@ class hdcd_dsp : public dsp_impl_base {
 
 	void process_chunk( audio_chunk * chunk )
 	{
+		bool peak_extension = false;
+		for ( unsigned i = 0; i < nch; ++i ) peak_extension |= !!( decoders[ i ].get_status() & 16 );
+		bool amp = this->amp == 0 ? true : this->amp == 2 ? false : !peak_extension;
 		const audio_sample target_scale = amp ? ( 1 << ( 32 - 19 ) ) : ( 1 << ( 32 - 20 ) );
 		int data = chunk->get_sample_count() * nch;
 		buffer.grow_size( data );
@@ -185,7 +199,7 @@ class hdcd_dsp : public dsp_impl_base {
 public:
 	hdcd_dsp()
 	{
-		amp = cfg_hdcd_amp.get();
+		amp = cfg_hdcd_amp_never.get() ? 0 : cfg_hdcd_amp_not_peak.get() ? 1 : cfg_hdcd_amp_always.get() ? 2 : 0;
 		cleanup();
 	}
 
@@ -331,7 +345,7 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 	dsp_chunk_list_impl output_chunks;
 	pfc::array_t<t_int32> buffer;
 
-	bool amp;
+	unsigned amp;
 
 	unsigned srate, nch, channel_config;
 
@@ -393,6 +407,9 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 
 	void process_chunk( audio_chunk * chunk )
 	{
+		bool peak_extension = false;
+		for ( unsigned i = 0; i < nch; ++i ) peak_extension |= !!( decoders[ i ].get_status() & 16 );
+		bool amp = this->amp == 0 ? true : this->amp == 2 ? false : !peak_extension;
 		const audio_sample target_scale = amp ? ( 1 << ( 32 - 19 ) ) : ( 1 << ( 32 - 20 ) );
 
 		int data = chunk->get_sample_count() * nch;
@@ -414,7 +431,7 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 public:
 	hdcd_postprocessor_instance()
 	{
-		amp = cfg_hdcd_amp.get();
+		amp = cfg_hdcd_amp_never.get() ? 0 : cfg_hdcd_amp_not_peak.get() ? 1 : cfg_hdcd_amp_always.get() ? 2 : 0;
 		cleanup();
 	}
 
