@@ -1,7 +1,11 @@
-#define MYVERSION "1.110"
+#define MYVERSION "1.111"
 
 /*
 	change log
+
+2011-02-25 06:33 UTC - kode54
+- Added support for more M3U comment fields
+- Version is now 1.111
 
 2011-02-02 04:36 UTC - kode54
 - Fixed the GEP Control dialog so background decoding won't interfere with it

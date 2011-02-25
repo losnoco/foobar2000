@@ -156,9 +156,13 @@ public:
 		HEADER_STRING( p_info, "album", i.game );
 		HEADER_STRING( p_info, "title", i.song );
 		HEADER_STRING( p_info, "artist", i.author );
+		HEADER_STRING( p_info, "engineer", i.engineer );
+		HEADER_STRING( p_info, "composer", i.composer );
+		HEADER_STRING( p_info, "sequencer", i.sequencer );
 		HEADER_STRING( p_info, "copyright", i.copyright );
 		HEADER_STRING( p_info, "comment", i.comment );
 		HEADER_STRING( p_info, "dumper", i.dumper );
+		HEADER_STRING( p_info, "tagger", i.tagger );
 
 		p_info.set_length(dlength);
 	}
