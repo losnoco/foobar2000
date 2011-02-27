@@ -70,7 +70,12 @@ extern "C"
 		ISeekInStream* stream = STATIC_CAST(ISeekInStream*,vstream);
 		Zip7_Extractor_Impl* impl = STATIC_CAST(Zip7_Extractor_Impl*,stream);
 		
-		assert( mode != SZ_SEEK_CUR ); // never used
+		if ( mode == SZ_SEEK_CUR )
+		{
+			assert( *pos == 0 ); // only used to find the archive start position
+			*pos = impl->in->tell();
+			return SZ_OK;
+		}
 		
 		if ( mode == SZ_SEEK_END )
 		{
