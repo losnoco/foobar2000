@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.19"
+#define MYVERSION "2.0.20"
 
 /*
 	changelog
+
+2011-03-10 04:53 UTC - kode54
+- Fixed handling PSF1 refresh tags from PSFLIB files
+- Version is now 2.0.20
 
 2011-01-26 04:04 UTC - kode54
 - Fixed playback initialization for when files do not specify a
@@ -581,7 +585,7 @@ static void trim_whitespace( pfc::string_base & val )
 	val.truncate( end - start + 1 );
 }
 
-static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, int & tag_song_ms, int & tag_fade_ms)
+static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, unsigned & tag_refresh, int & tag_song_ms, int & tag_fade_ms)
 {
 	int pos, precede = 0, utf8 = 0;
 	pfc::string8 whole_tag( (const char *)ptr, len );
@@ -661,6 +665,10 @@ static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, i
 				{
 					DBG("found _refresh");
 					info.info_set(tag, value);
+					if ( !tag_refresh )
+					{
+						tag_refresh = atoi( value );
+					}
 				}
 				else if (tag[0] == '_')
 				{
@@ -688,6 +696,18 @@ static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, i
 					blah.add_byte('=');
 					blah.add_string(value);
 					info.meta_add(info.info_get("current"), value);
+				}
+				else if (!stricmp_utf8(tag, "_refresh"))
+				{
+					if ( !tag_refresh )
+					{
+						tag_refresh = atoi( value );
+					}
+				}
+				else if ( tag[0] == '_' )
+				{
+					console::formatter() << "Unsupported tag found: " << tag << ", required to play file.";
+					return -1;
 				}
 			}
 		}
@@ -879,7 +899,7 @@ private:
 			if (!memcmp(ptr, "[TAG]", 5))
 			{
 				r->read_object(ptr + 5, len - 5, m_abort);
-				precede = info_read(ptr, len, info, inherit, tag_song_ms, tag_fade_ms);
+				precede = info_read(ptr, len, info, inherit, tag_refresh, tag_song_ms, tag_fade_ms);
 				if (precede < 0) return 0;
 			}
 		}
@@ -1630,6 +1650,7 @@ int input_psf::load_psf(service_ptr_t<file> & r, const char * p_path, file_info 
 		int program_size;
 		int tag_ofs;
 		unsigned tag_bytes;
+		unsigned tag_refresh;
 
 		reserved_size =
 			((((int)(header[ 4])) & 0xFF) <<  0) |
@@ -1673,7 +1694,7 @@ int input_psf::load_psf(service_ptr_t<file> & r, const char * p_path, file_info 
 					if (r->read(ptr + 5, tag_bytes, p_abort) == tag_bytes)
 					{
 						ptr[tag_bytes + 5] = 0;
-						if (info_read(ptr, tag_bytes + 5, info, -1, tag_song_ms, tag_fade_ms) < 0)
+						if (info_read(ptr, tag_bytes + 5, info, -1, tag_refresh, tag_song_ms, tag_fade_ms) < 0)
 						{
 							throw exception_io_data();
 						}
@@ -1682,8 +1703,7 @@ int input_psf::load_psf(service_ptr_t<file> & r, const char * p_path, file_info 
 			}
 		}
 
-		const char * ref = info.info_get("_refresh");
-		if (ref) psx_set_refresh(psx_state.get_ptr(), atoi(ref));
+		if (tag_refresh) psx_set_refresh(psx_state.get_ptr(), tag_refresh);
 
 		DBG("setting length");
 		if (!tag_song_ms)
