@@ -1,7 +1,11 @@
-#define MYVERSION "1.3"
+#define MYVERSION "1.4"
 
 /*
 	changelog
+
+2011-03-10 05:14 UTC - kode54
+- Added support for _refresh tags
+- Version is now 1.4
 
 2011-01-03 18:47 UTC - kode54
 - Optimized ADSR envelope calculation for a 16.6% speed boost

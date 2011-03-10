@@ -104,7 +104,7 @@ void upse_ps1_counter_init(upse_module_instance_t *ins)
 
     ins->ctrstate = ctrstate;
 
-    upse_ps1_set_vsync(ins);
+    upse_ps1_set_vsync(ins, 60);
 
     upse_ps1_counter_update_fast(ins, 0);
     upse_ps1_counter_update_fast(ins, 1);
@@ -158,11 +158,15 @@ int upse_ps1_counter_run(upse_module_instance_t *ins)
     return (1);
 }
 
-void upse_ps1_set_vsync(upse_module_instance_t *ins)
+void upse_ps1_set_vsync(upse_module_instance_t *ins, int refresh)
 {
     upse_psx_counter_state_t *ctrstate = ins->ctrstate;
 
-    ctrstate->psxCounters[3].rate = (PSXCLK / 60);
+    ctrstate->psxCounters[3].rate = (PSXCLK / refresh);
+
+	ctrstate->lines = (refresh == 60) ? 262 : 312;
+	ctrstate->lines_visible = (refresh == 60) ? 224 : 240;
+	ctrstate->refresh_rate = refresh;
 }
 
 void upse_ps1_counter_update(upse_module_instance_t *ins)
@@ -213,7 +217,7 @@ void upse_ps1_counter_set_mode(upse_module_instance_t *ins, u32 index, u32 value
 	switch (value & 0x300)
 	{
 	  case 0x100:
-	      ctrstate->psxCounters[index].rate = ((ctrstate->psxCounters[3].rate /** BIAS*/ ) / 386) / 262;	// seems ok
+	      ctrstate->psxCounters[index].rate = ((ctrstate->psxCounters[3].rate /** BIAS*/ ) / 386) / ctrstate->lines;	// seems ok
 	      break;
 	  default:
 	      ctrstate->psxCounters[index].rate = 1;
@@ -224,8 +228,8 @@ void upse_ps1_counter_set_mode(upse_module_instance_t *ins, u32 index, u32 value
 	switch (value & 0x300)
 	{
 	  case 0x100:
-	      ctrstate->psxCounters[index].rate = (ctrstate->psxCounters[3].rate /** BIAS*/ ) / 262;	// seems ok
-	      //ctrstate->psxCounters[index].rate = (PSXCLK / 60)/262; //(ctrstate->psxCounters[3].rate*16/262);
+	      ctrstate->psxCounters[index].rate = (ctrstate->psxCounters[3].rate /** BIAS*/ ) / ctrstate->lines;	// seems ok
+	      //ctrstate->psxCounters[index].rate = (PSXCLK / 60)/262; //(ctrstate->psxCounters[3].rate*16/ctrstate->lines);
 	      //printf("%d\n",ctrstate->psxCounters[index].rate);
 	      break;
 	  default:

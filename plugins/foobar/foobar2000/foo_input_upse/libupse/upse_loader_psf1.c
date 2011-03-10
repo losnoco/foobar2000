@@ -120,6 +120,7 @@ _upse_load_psf(upse_module_instance_t *ins, void *fp, const char *path, int leve
     upse_psf_t *psfi;
     upse_xsf_t *xsf;
     u32 inlen;
+	u32 refresh;
 
     _ENTER;
 
@@ -140,6 +141,12 @@ _upse_load_psf(upse_module_instance_t *ins, void *fp, const char *path, int leve
     psfi->copyright = xsf->inf_copy;
     psfi->game = xsf->inf_game;
     psfi->year = xsf->inf_year;
+
+	if ( *xsf->inf_refresh != '\0' )
+	{
+		refresh = atoi( xsf->inf_refresh );
+		if ( refresh ) upse_ps1_set_vsync( ins, refresh );
+	}
 
     /* if querying information, we do not want to upset the emulator. */
     if (!type)
