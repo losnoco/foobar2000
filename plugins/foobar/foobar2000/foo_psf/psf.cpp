@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.21"
+#define MYVERSION "2.0.22"
 
 /*
 	changelog
+
+2011-03-12 04:13 UTC - kode54
+- Fixed a crash with loading files with refresh tags for the first time
+- Version is now 2.0.22
 
 2011-03-12 03:28 UTC - kode54
 - Enabled debugging information
@@ -1640,7 +1644,7 @@ int input_psf::load_psf(service_ptr_t<file> & r, const char * p_path, file_info 
 		
 		load_exe_recursive(psx_state.get_ptr(), r, p_path, info, base_path, errors, -1, refresh, tag_refresh, p_abort);
 
-		if (refresh || tag_refresh)
+		if (full_open && (refresh || tag_refresh))
 		{
 			if (tag_refresh) refresh = tag_refresh;
 			psx_set_refresh(psx_state.get_ptr(), refresh);
@@ -1707,7 +1711,7 @@ int input_psf::load_psf(service_ptr_t<file> & r, const char * p_path, file_info 
 			}
 		}
 
-		if (tag_refresh) psx_set_refresh(psx_state.get_ptr(), tag_refresh);
+		if (full_open && tag_refresh) psx_set_refresh(psx_state.get_ptr(), tag_refresh);
 
 		DBG("setting length");
 		if (!tag_song_ms)
