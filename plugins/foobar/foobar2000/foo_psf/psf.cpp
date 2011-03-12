@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.20"
+#define MYVERSION "2.0.21"
 
 /*
 	changelog
+
+2011-03-12 03:28 UTC - kode54
+- Enabled debugging information
+- Version is now 2.0.21
 
 2011-03-10 04:53 UTC - kode54
 - Fixed handling PSF1 refresh tags from PSFLIB files
