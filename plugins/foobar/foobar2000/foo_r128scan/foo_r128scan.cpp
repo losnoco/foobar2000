@@ -4,10 +4,14 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.22"
+#define MY_VERSION "1.23"
 
 /*
 	change log
+
+2011-03-13 08:54 UTC - kode54
+- Fixed a single unchecked call to ebur128_destroy
+- Version is now 1.23
 
 2011-02-21 20:41 UTC - kode54
 - Scanner now precaches files up to 4MB at a time, which hopefully fixes
@@ -406,7 +410,7 @@ class r128_scanner : public threaded_process_callback
 			for ( unsigned i = 0; i < m_states.get_count(); i++ )
 			{
 				ebur128_state * state = m_states[ i ];
-				ebur128_destroy( &state );
+				if ( state ) ebur128_destroy( &state );
 			}
 			delete m_scanner_result;
 		}
