@@ -155,9 +155,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_r128scan", "foo_r128sca
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_r128norm", "foo_r128norm\foo_r128norm.vcxproj", "{B17911F0-6734-4287-A677-360D230C263E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_tfmx", "foo_input_tfmx\foo_input_tfmx.vcxproj", "{12624259-3220-4697-AC35-BC5D3AEA2DC2}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 71
+		SccNumberOfProjects = 72
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = http://sabin:8080/tfs/defaultcollection
 		SccLocalPath0 = .
@@ -371,6 +373,9 @@ Global
 		SccProjectUniqueName70 = foo_r128norm\\foo_r128norm.vcxproj
 		SccProjectName70 = foo_r128norm
 		SccLocalPath70 = foo_r128norm
+		SccProjectUniqueName71 = foo_input_tfmx\\foo_input_tfmx.vcxproj
+		SccProjectName71 = foo_input_tfmx
+		SccLocalPath71 = foo_input_tfmx
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -1035,6 +1040,15 @@ Global
 		{B17911F0-6734-4287-A677-360D230C263E}.Release|Win32.ActiveCfg = Release|Win32
 		{B17911F0-6734-4287-A677-360D230C263E}.Release|Win32.Build.0 = Release|Win32
 		{B17911F0-6734-4287-A677-360D230C263E}.Release|x64.ActiveCfg = Release|Win32
+		{12624259-3220-4697-AC35-BC5D3AEA2DC2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{12624259-3220-4697-AC35-BC5D3AEA2DC2}.Debug|Win32.Build.0 = Debug|Win32
+		{12624259-3220-4697-AC35-BC5D3AEA2DC2}.Debug|x64.ActiveCfg = Debug|Win32
+		{12624259-3220-4697-AC35-BC5D3AEA2DC2}.Release staticlink|Win32.ActiveCfg = Release|Win32
+		{12624259-3220-4697-AC35-BC5D3AEA2DC2}.Release staticlink|Win32.Build.0 = Release|Win32
+		{12624259-3220-4697-AC35-BC5D3AEA2DC2}.Release staticlink|x64.ActiveCfg = Release|Win32
+		{12624259-3220-4697-AC35-BC5D3AEA2DC2}.Release|Win32.ActiveCfg = Release|Win32
+		{12624259-3220-4697-AC35-BC5D3AEA2DC2}.Release|Win32.Build.0 = Release|Win32
+		{12624259-3220-4697-AC35-BC5D3AEA2DC2}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
