@@ -3,11 +3,15 @@
 
 #include <stdafx.h>
 
-#define MYVERSION "0.3"
+#define MYVERSION "0.4"
 
 /*
 
 	change log
+
+2011-03-15 19:40 UTC - kode54
+- Worked around an issue with wave seekbar
+- Version is now 0.4
 
 2011-03-15 07:11 UTC - kode54
 - Fixed stereo separation and changed default to 83%
@@ -27,6 +31,8 @@
 */
 
 //static const char *compat_txt[4]={"default (Turrican ][ and most of other stuff)","old (Turrican 1, R-Type, X-Out)","emulate other TFMX players","new (Turrican 3)"};
+
+extern advconfig_integer_factory cfg_sample_rate;
 
 static bool tfmx_test_filename(const char * full_path,const char * extension)
 {
@@ -158,6 +164,7 @@ public:
 		p_src->init_song();
 		if ( p_flags & input_flag_no_looping ) p_src->has_len = true;
 		first_frame = true;
+		sample_rate = 0;
 	}
 
 	bool decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
@@ -174,6 +181,7 @@ public:
 	void decode_seek( double p_seconds, abort_callback & p_abort )
 	{
 		first_frame = true;
+		sample_rate = 0;
 		p_src->SetPosition( p_seconds );
 	}
 
@@ -187,6 +195,11 @@ public:
 		if ( first_frame )
 		{
 			first_frame = false;
+			if ( !sample_rate )
+			{
+				sample_rate = cfg_sample_rate.get();
+				console::formatter() << "[foo_input_tfmx] Somebody called decode_get_dynamic_info without calling decode_run first";
+			}
 			p_out.info_set_int( "samplerate", sample_rate );
 			p_timestamp_delta = 0;
 			return true;
