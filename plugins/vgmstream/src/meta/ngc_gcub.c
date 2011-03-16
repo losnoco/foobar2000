@@ -51,6 +51,9 @@ VGMSTREAM * init_vgmstream_ngc_gcub(STREAMFILE *streamFile) {
         }
     }
 
+    if (read_32bitBE(0x60,streamFile) == 0x47437878) /* "GCxx" */
+        start_offset = 0x88;
+
     /* open the file for reading */
     {
         int i;
