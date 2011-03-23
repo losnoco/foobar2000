@@ -1,7 +1,14 @@
-#define MYVERSION "0.9.9.35"
+#define MYVERSION "0.9.9.36"
 
 /*
 	changelog
+
+2011-03-23 05:28 UTC - kode54
+- Corrected volume slide behavior for S3M playback, and also adjusted the
+  slide volume level clipping range for S3M to 0-63
+- Updated S3M playback to share memory between DEFIJQRS effects
+- Adjusted S3M reader to a lower master volume level scale
+- Version is now 0.9.9.36
 
 2011-02-08 15:49 UTC - kode54
 - Added a workaround for bad sample offsets in STM files
