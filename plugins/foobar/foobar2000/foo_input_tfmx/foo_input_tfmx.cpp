@@ -3,11 +3,15 @@
 
 #include <stdafx.h>
 
-#define MYVERSION "0.4"
+#define MYVERSION "0.5"
 
 /*
 
 	change log
+
+2011-03-23 02:45 UTC - kode54
+- Implemented file stats collection properly for file size and modification time reporting
+- Version is now 0.5
 
 2011-03-15 19:40 UTC - kode54
 - Worked around an issue with wave seekbar
@@ -73,6 +77,8 @@ public:
 		if ( p_reason == input_open_info_write ) throw exception_io_data();
 
 		if ( m_file.is_empty() ) filesystem::g_open( m_file, p_path, filesystem::open_mode_read, p_abort );
+
+		m_stats = m_file->get_stats( p_abort );
 
 		p_src = new CTFMXSource();
 		if ( p_src->Open( m_file, p_path, 0, p_abort ) ) throw exception_io_data();
