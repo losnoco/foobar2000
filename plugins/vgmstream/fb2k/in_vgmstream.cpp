@@ -362,6 +362,7 @@ bool input_vgmstream::g_is_our_path(const char * p_path,const char * p_extension
 	if(!stricmp_utf8(p_extension,"kces")) return 1;
 	if(!stricmp_utf8(p_extension,"kcey")) return 1;
 	if(!stricmp_utf8(p_extension,"khv")) return 1;
+	if(!stricmp_utf8(p_extension,"klbs")) return 1;
 	if(!stricmp_utf8(p_extension,"kovs")) return 1;
 	if(!stricmp_utf8(p_extension,"kraw")) return 1;
 
@@ -443,6 +444,7 @@ bool input_vgmstream::g_is_our_path(const char * p_path,const char * p_extension
 	if(!stricmp_utf8(p_extension,"sfs")) return 1;
 	if(!stricmp_utf8(p_extension,"sfx")) return 1;
 	if(!stricmp_utf8(p_extension,"sgb")) return 1;
+	if(!stricmp_utf8(p_extension,"sgx")) return 1;
 	if(!stricmp_utf8(p_extension,"sl3")) return 1;
 	if(!stricmp_utf8(p_extension,"sli")) return 1;
 	if(!stricmp_utf8(p_extension,"smp")) return 1;
@@ -668,6 +670,7 @@ DECLARE_MULTIPLE_FILE_TYPE("JSTM Audio File (*.JSTM)", jstm);
 DECLARE_MULTIPLE_FILE_TYPE("KCES Audio File (*.KCES)", kces);
 DECLARE_MULTIPLE_FILE_TYPE("KCEY Audio File (*.KCEY)", kcey);
 DECLARE_MULTIPLE_FILE_TYPE("KHV Audio File (*.KHV)", khv);
+DECLARE_MULTIPLE_FILE_TYPE("KLBS Audio File (*.KLBS)", klbs);
 DECLARE_MULTIPLE_FILE_TYPE("KOVS Audio File (*.KOVS)", kovs);
 DECLARE_MULTIPLE_FILE_TYPE("KRAW Audio File (*.KRAW)", kraw);
 
@@ -749,6 +752,7 @@ DECLARE_MULTIPLE_FILE_TYPE("SFL Audio File (*.SFL)", sfl);
 DECLARE_MULTIPLE_FILE_TYPE("SFS Audio File (*.SFS)", sfs);
 DECLARE_MULTIPLE_FILE_TYPE("SFX Audio File (*.SFX)", sfx);
 DECLARE_MULTIPLE_FILE_TYPE("SGB Audio File (*.SGB)", sgb);
+DECLARE_MULTIPLE_FILE_TYPE("SGX Audio File (*.SGX)", sgx);
 DECLARE_MULTIPLE_FILE_TYPE("SL3 Audio File (*.SL3)", sl3);
 DECLARE_MULTIPLE_FILE_TYPE("SLI Audio File (*.SLI)", sli);
 DECLARE_MULTIPLE_FILE_TYPE("SMP Audio File (*.SMP)", smp);

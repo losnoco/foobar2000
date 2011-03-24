@@ -12,6 +12,7 @@ VGMSTREAM * init_vgmstream_eb_sfx(STREAMFILE *streamFile) {
     int loop_flag = 0;
 	int channel_count;
     int coding_type;
+
 	long body_size;
 	long header_size;
 
