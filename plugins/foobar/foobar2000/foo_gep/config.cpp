@@ -1,7 +1,13 @@
-#define MYVERSION "1.111"
+#define MYVERSION "1.112"
 
 /*
 	change log
+
+2011-03-28 09:34 UTC - kode54
+- Increased maximum initial silence to 15 seconds for all formats except for GBS,
+  which remains at 21 seconds, and VGM, which gets one second because all files
+  should already be trimmed anyway.
+- Version is now 1.112
 
 2011-02-25 06:33 UTC - kode54
 - Added support for more M3U comment fields
