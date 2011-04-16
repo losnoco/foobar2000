@@ -1,7 +1,12 @@
-#define MYVERSION "1.112"
+#define MYVERSION "1.113"
 
 /*
 	change log
+
+2011-04-16 08:49 UTC - kode54
+- Changed SPC-700 Status visualization from service_impl_t to window_service_impl_t,
+  fixing the crash which occurred when cutting the element in layout edit mode
+- Version is now 1.113
 
 2011-03-28 09:34 UTC - kode54
 - Increased maximum initial silence to 15 seconds for all formats except for GBS,

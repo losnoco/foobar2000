@@ -724,11 +724,11 @@ public:
 
 	~CVisWindowElementInstance()
 	{
-		if (m_hWnd) DestroyWindow();
 		{
 			insync(g_VisWindows_sync);
 			g_VisWindows.remove_item(this);
 		}
+		if (m_hWnd) DestroyWindow();
 	}
 
 	void UpdateLayout()
@@ -866,7 +866,7 @@ class CVisWindowElement : public ui_element_v2
 	virtual void get_name(pfc::string_base & p_out) { p_out = "SPC700 status"; }
 	virtual ui_element_instance_ptr instantiate(HWND p_parent,ui_element_config::ptr cfg,ui_element_instance_callback_ptr p_callback)
 	{
-		return new service_impl_t<CVisWindowElementInstance>( p_parent, cfg, p_callback );
+		return new window_service_impl_t<CVisWindowElementInstance>( p_parent, cfg, p_callback );
 	}
 	virtual ui_element_config::ptr get_default_configuration() { return new service_impl_t<CVisWindowElementConfig>; }
 	virtual ui_element_children_enumerator_ptr enumerate_children(ui_element_config::ptr cfg) { return NULL; }
