@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.36"
+#define MYVERSION "0.9.9.37"
 
 /*
 	changelog
+
+2011-05-05 12:29 UTC - kode54
+- Updated unmo3.dll to version 2.4.0.1
+- Version is now 0.9.9.37
 
 2011-03-23 05:28 UTC - kode54
 - Corrected volume slide behavior for S3M playback, and also adjusted the
