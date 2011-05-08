@@ -89,7 +89,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="coding\lsf_decoder.c" />
-    <ClCompile Include="layout\mtaf_block.c" />
+    <ClCompile Include="coding\mtaf_decoder.c" />
+    <ClCompile Include="layout\mtaf_blocked.c" />
     <ClCompile Include="layout\ps2_iab_blocked.c" />
     <ClCompile Include="layout\ps2_strlr_blocked.c" />
     <ClCompile Include="layout\tra_blocked.c" />

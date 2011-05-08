@@ -868,9 +868,6 @@
     <ClCompile Include="layout\ps2_strlr_blocked.c">
       <Filter>layout\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="layout\mtaf_block.c">
-      <Filter>layout\Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="layout\ps2_iab_blocked.c">
       <Filter>layout\Source Files</Filter>
     </ClCompile>
@@ -912,6 +909,12 @@
     </ClCompile>
     <ClCompile Include="meta\ps3_klbs.c">
       <Filter>meta\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="coding\mtaf_decoder.c">
+      <Filter>coding\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="layout\mtaf_blocked.c">
+      <Filter>layout\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
