@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.37"
+#define MYVERSION "0.9.9.38"
 
 /*
 	changelog
+
+2011-05-12 12:11 UTC - kode54
+- Fixed IT New Note Action duplicate check types for sample and instrument
+- Version is now 0.9.9.38
 
 2011-05-05 12:29 UTC - kode54
 - Updated unmo3.dll to version 2.4.0.1
