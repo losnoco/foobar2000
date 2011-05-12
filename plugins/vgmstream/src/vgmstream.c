@@ -755,7 +755,6 @@ void render_vgmstream(sample * buffer, int32_t sample_count, VGMSTREAM * vgmstre
 		case layout_tra_blocked:
 		case layout_ps2_iab_blocked:
 		case layout_ps2_strlr_blocked:
-        case layout_mtaf_blocked:
             render_vgmstream_blocked(buffer,sample_count,vgmstream);
             break;
         case layout_interleave_byte:
@@ -1920,9 +1919,6 @@ void describe_vgmstream(VGMSTREAM * vgmstream, char * desc, int length) {
         case layout_ivaud_blocked:
             snprintf(temp,TEMPSIZE,"GTA IV blocked");
             break;
-		case layout_mtaf_blocked:
-            snprintf(temp,TEMPSIZE,"MTAF blocked");
-            break;
 		case layout_ps2_iab_blocked:
             snprintf(temp,TEMPSIZE,"IAB blocked");
             break;
@@ -2851,7 +2847,13 @@ void describe_vgmstream(VGMSTREAM * vgmstream, char * desc, int length) {
             snprintf(temp,TEMPSIZE,"PS3 SGXD/WAVE header");
             break;
         case meta_PS2_MTAF:
-            snprintf(temp,TEMPSIZE,"PS2 MTAF header");
+            snprintf(temp,TEMPSIZE,"Konami MTAF header");
+            break;
+        case meta_PS2_VAG1:
+            snprintf(temp,TEMPSIZE,"Konami VAG Mono header (VAG1)");
+            break;
+        case meta_PS2_VAG2:
+            snprintf(temp,TEMPSIZE,"Konami VAG Stereo header (VAG2)");
             break;
 		default:
            snprintf(temp,TEMPSIZE,"THEY SHOULD HAVE SENT A POET");

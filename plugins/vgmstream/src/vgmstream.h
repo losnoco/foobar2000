@@ -160,7 +160,6 @@ typedef enum {
     layout_ps2_adm_blocked,
     layout_dsp_bdsp_blocked,
     layout_mxch_blocked,
-    layout_mtaf_blocked,
 
 #if 0
     layout_strm_blocked,    /* */
@@ -523,6 +522,8 @@ typedef enum {
 	meta_PS3_KLBS,          // L@VE ONCE (PS3)
 	meta_PS3_SGX,
     meta_PS2_MTAF,          // Metal Gear Solid 3 MTAF
+    meta_PS2_VAG1,          // Metal Gear Solid 3 VAG1
+    meta_PS2_VAG2,          // Metal Gear Solid 3 VAG2
 } meta_t;
 
 typedef struct {
