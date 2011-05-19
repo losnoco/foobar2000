@@ -1,7 +1,11 @@
-#define MYVERSION "1.3"
+#define MYVERSION "1.4"
 
 /*
 	changelog
+
+2011-05-19 03:00 UTC - kode54
+- Fixed MLFT/MRGT channel ordering
+- Version is now 1.4
 
 2010-04-13 14:54 UTC - kode54
 - Amended preferences WM_INITDIALOG handler
@@ -22,6 +26,8 @@
 - Began work.
 
 */
+
+#define _WIN32_WINNT 0x0501
 
 #include <foobar2000.h>
 #include "../helpers/dropdown_helper.h"
@@ -675,14 +681,14 @@ public:
 					{
 						const char * channel_id = ( const char * ) p_data.data.get_ptr() + 2 + i * 4;
 						unsigned channel_number = 0;
-						if ( !memcmp( channel_id, "SLFT", 4 ) ) channel_number = 0;
-						else if ( !memcmp( channel_id, "SRGT", 4 ) ) channel_number = 1;
+						if ( !memcmp( channel_id, "SLFT", 4 ) ||
+							!memcmp( channel_id, "MLFT", 4 ) ) channel_number = 0;
+						else if ( !memcmp( channel_id, "SRGT", 4 ) ||
+							!memcmp( channel_id, "MRGT", 4 ) ) channel_number = 1;
 						else if ( !memcmp( channel_id, "C   ", 4 ) ) channel_number = 2;
 						else if ( !memcmp( channel_id, "LFE ", 4 ) ) channel_number = 3;
 						else if ( !memcmp( channel_id, "LS  ", 4 ) ) channel_number = 4;
 						else if ( !memcmp( channel_id, "RS  ", 4 ) ) channel_number = 5;
-						else if ( !memcmp( channel_id, "MLFT", 4 ) ) channel_number = 9;
-						else if ( !memcmp( channel_id, "MRGT", 4 ) ) channel_number = 10;
 						else console::formatter() << "Unknown channel ID: " << pfc::string8( channel_id, 4 );
 						channel_mask |= 1 << channel_number;
 						channel_offsets[ i ] = channel_number;
