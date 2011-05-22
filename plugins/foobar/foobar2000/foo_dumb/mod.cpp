@@ -1,7 +1,12 @@
-#define MYVERSION "0.9.9.38"
+#define MYVERSION "0.9.9.39"
 
 /*
 	changelog
+
+2011-05-22 12:53 UTC - kode54
+- Fixed MOD files with both speed and tempo commands on the same row being detected
+  as VBlank timed
+- Version is now 0.9.9.39
 
 2011-05-12 12:11 UTC - kode54
 - Fixed IT New Note Action duplicate check types for sample and instrument
@@ -1839,6 +1844,39 @@ static bool g_test_extension(const char * ext)
 	return false;
 }
 
+bool dumb_it_test_for_speed_and_tempo( DUMB_IT_SIGDATA * itsd )
+{
+	unsigned char pattern_tested[ 256 ];
+	memset( pattern_tested, 0, sizeof( pattern_tested ) );
+	for ( unsigned i = 0, j = itsd->n_orders; i < j; i++ )
+	{
+		unsigned pattern_number = itsd->order[ i ];
+		if ( pattern_number < itsd->n_patterns && !pattern_tested[ pattern_number ] )
+		{
+			pattern_tested[ pattern_number ] = 1;
+			IT_PATTERN * pat = &itsd->pattern[ pattern_number ];
+			bool speed_found = false, tempo_found = false;
+			for ( unsigned k = 0, l = pat->n_entries; k < l; k++ )
+			{
+				IT_ENTRY * entry = &pat->entry[ k ];
+				if ( IT_IS_END_ROW( entry ) )
+				{
+					speed_found = false;
+					tempo_found = false;
+				}
+				else if ( entry->mask & IT_ENTRY_EFFECT &&
+					( entry->effect == IT_SET_SPEED || entry->effect == IT_SET_SONG_TEMPO ) )
+				{
+					if ( entry->effect == IT_SET_SPEED ) speed_found = true;
+					else tempo_found = true;
+					if ( speed_found && tempo_found ) return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 void dumb_it_convert_tempos( DUMB_IT_SIGDATA * itsd, bool vsync )
 {
 	for ( unsigned i = 0, j = itsd->n_patterns; i < j; i++ )
@@ -2024,19 +2062,22 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 		if ( duh )
 		{
 			DUMB_IT_SIGDATA * itsd = duh_get_it_sigdata( duh );
-			long length_original = dumb_it_build_checkpoints( itsd, 0 );
-			dumb_it_convert_tempos( itsd, true );
-			long length_vsync = dumb_it_build_checkpoints( itsd, 0 );
-			if ( !length_vsync || (length_original && length_original < length_vsync ) ) dumb_it_convert_tempos( itsd, false );
-			IT_CHECKPOINT *checkpoint = itsd->checkpoint;
-			while ( checkpoint )
+			if ( !dumb_it_test_for_speed_and_tempo( itsd ) )
 			{
-				IT_CHECKPOINT *next = checkpoint->next;
-				_dumb_it_end_sigrenderer( checkpoint->sigrenderer );
-				free( checkpoint );
-				checkpoint = next;
+				long length_original = dumb_it_build_checkpoints( itsd, 0 );
+				dumb_it_convert_tempos( itsd, true );
+				long length_vsync = dumb_it_build_checkpoints( itsd, 0 );
+				if ( !length_vsync || (length_original && length_original < length_vsync ) ) dumb_it_convert_tempos( itsd, false );
+				IT_CHECKPOINT *checkpoint = itsd->checkpoint;
+				while ( checkpoint )
+				{
+					IT_CHECKPOINT *next = checkpoint->next;
+					_dumb_it_end_sigrenderer( checkpoint->sigrenderer );
+					free( checkpoint );
+					checkpoint = next;
+				}
+				itsd->checkpoint = NULL;
 			}
-			itsd->checkpoint = NULL;
 		}
 	}
 
