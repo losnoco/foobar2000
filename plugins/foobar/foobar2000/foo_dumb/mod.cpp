@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.39"
+#define MYVERSION "0.9.9.40"
 
 /*
 	changelog
+
+2011-05-25 18:34 UTC - kode54
+- Added missing song restart position initialization to AM, AMFF, and DSM readers
+- Version is now 0.9.9.40
 
 2011-05-22 12:53 UTC - kode54
 - Fixed MOD files with both speed and tempo commands on the same row being detected
