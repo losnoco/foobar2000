@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.40"
+#define MYVERSION "0.9.9.41"
 
 /*
 	changelog
+
+2011-06-05 22:38 UTC - kode54
+- Fixed IT envelope reading for node counts over 25, which are invalid
+- Version is now 0.9.9.41
 
 2011-05-25 18:34 UTC - kode54
 - Added missing song restart position initialization to AM, AMFF, and DSM readers
