@@ -1,7 +1,12 @@
-#define MYVERSION "2.0.22"
+#define MYVERSION "2.0.23"
 
 /*
 	changelog
+
+2011-06-21 23:04 UTC - kode54
+- Fixed noise implementation
+- Changed resampler curve table and reverb downsampling impulse
+- Version is now 2.0.23
 
 2011-03-12 04:13 UTC - kode54
 - Fixed a crash with loading files with refresh tags for the first time

@@ -32,43 +32,76 @@
 /*
 ** Static information
 */
-static const sint32 gauss_shuffled_reverse_table[1024] = {
- 366,1305, 374,   0, 362,1304, 378,   0, 358,1304, 381,   0, 354,1304, 385,   0, 351,1304, 389,   0, 347,1304, 393,   0, 343,1303, 397,   0, 339,1303, 401,   0,
- 336,1303, 405,   0, 332,1302, 410,   0, 328,1302, 414,   0, 325,1301, 418,   0, 321,1300, 422,   0, 318,1300, 426,   0, 314,1299, 430,   0, 311,1298, 434,   0,
- 307,1297, 439,   1, 304,1297, 443,   1, 300,1296, 447,   1, 297,1295, 451,   1, 293,1294, 456,   1, 290,1293, 460,   1, 286,1292, 464,   1, 283,1291, 469,   1,
- 280,1290, 473,   1, 276,1288, 477,   1, 273,1287, 482,   1, 270,1286, 486,   2, 267,1284, 491,   2, 263,1283, 495,   2, 260,1282, 499,   2, 257,1280, 504,   2,
- 254,1279, 508,   2, 251,1277, 513,   2, 248,1275, 517,   3, 245,1274, 522,   3, 242,1272, 527,   3, 239,1270, 531,   3, 236,1269, 536,   3, 233,1267, 540,   4,
- 230,1265, 545,   4, 227,1263, 550,   4, 224,1261, 554,   4, 221,1259, 559,   4, 218,1257, 563,   5, 215,1255, 568,   5, 212,1253, 573,   5, 210,1251, 577,   5,
- 207,1248, 582,   6, 204,1246, 587,   6, 201,1244, 592,   6, 199,1241, 596,   6, 196,1239, 601,   7, 193,1237, 606,   7, 191,1234, 611,   7, 188,1232, 615,   8,
- 186,1229, 620,   8, 183,1227, 625,   8, 180,1224, 630,   9, 178,1221, 635,   9, 175,1219, 640,   9, 173,1216, 644,  10, 171,1213, 649,  10, 168,1210, 654,  10,
- 166,1207, 659,  11, 163,1205, 664,  11, 161,1202, 669,  11, 159,1199, 674,  12, 156,1196, 678,  12, 154,1193, 683,  13, 152,1190, 688,  13, 150,1186, 693,  14,
- 147,1183, 698,  14, 145,1180, 703,  15, 143,1177, 708,  15, 141,1174, 713,  15, 139,1170, 718,  16, 137,1167, 723,  16, 134,1164, 728,  17, 132,1160, 732,  17,
- 130,1157, 737,  18, 128,1153, 742,  19, 126,1150, 747,  19, 124,1146, 752,  20, 122,1143, 757,  20, 120,1139, 762,  21, 118,1136, 767,  21, 117,1132, 772,  22,
- 115,1128, 777,  23, 113,1125, 782,  23, 111,1121, 787,  24, 109,1117, 792,  24, 107,1113, 797,  25, 106,1109, 802,  26, 104,1106, 806,  27, 102,1102, 811,  27,
- 100,1098, 816,  28,  99,1094, 821,  29,  97,1090, 826,  29,  95,1086, 831,  30,  94,1082, 836,  31,  92,1078, 841,  32,  90,1074, 846,  32,  89,1070, 851,  33,
-  87,1066, 855,  34,  86,1061, 860,  35,  84,1057, 865,  36,  83,1053, 870,  36,  81,1049, 875,  37,  80,1045, 880,  38,  78,1040, 884,  39,  77,1036, 889,  40,
-  76,1032, 894,  41,  74,1027, 899,  42,  73,1023, 904,  43,  71,1019, 908,  44,  70,1014, 913,  45,  69,1010, 918,  46,  67,1005, 923,  47,  66,1001, 927,  48,
-  65, 997, 932,  49,  64, 992, 937,  50,  62, 988, 941,  51,  61, 983, 946,  52,  60, 978, 951,  53,  59, 974, 955,  54,  58, 969, 960,  55,  56, 965, 965,  56,
-  55, 960, 969,  58,  54, 955, 974,  59,  53, 951, 978,  60,  52, 946, 983,  61,  51, 941, 988,  62,  50, 937, 992,  64,  49, 932, 997,  65,  48, 927,1001,  66,
-  47, 923,1005,  67,  46, 918,1010,  69,  45, 913,1014,  70,  44, 908,1019,  71,  43, 904,1023,  73,  42, 899,1027,  74,  41, 894,1032,  76,  40, 889,1036,  77,
-  39, 884,1040,  78,  38, 880,1045,  80,  37, 875,1049,  81,  36, 870,1053,  83,  36, 865,1057,  84,  35, 860,1061,  86,  34, 855,1066,  87,  33, 851,1070,  89,
-  32, 846,1074,  90,  32, 841,1078,  92,  31, 836,1082,  94,  30, 831,1086,  95,  29, 826,1090,  97,  29, 821,1094,  99,  28, 816,1098, 100,  27, 811,1102, 102,
-  27, 806,1106, 104,  26, 802,1109, 106,  25, 797,1113, 107,  24, 792,1117, 109,  24, 787,1121, 111,  23, 782,1125, 113,  23, 777,1128, 115,  22, 772,1132, 117,
-  21, 767,1136, 118,  21, 762,1139, 120,  20, 757,1143, 122,  20, 752,1146, 124,  19, 747,1150, 126,  19, 742,1153, 128,  18, 737,1157, 130,  17, 732,1160, 132,
-  17, 728,1164, 134,  16, 723,1167, 137,  16, 718,1170, 139,  15, 713,1174, 141,  15, 708,1177, 143,  15, 703,1180, 145,  14, 698,1183, 147,  14, 693,1186, 150,
-  13, 688,1190, 152,  13, 683,1193, 154,  12, 678,1196, 156,  12, 674,1199, 159,  11, 669,1202, 161,  11, 664,1205, 163,  11, 659,1207, 166,  10, 654,1210, 168,
-  10, 649,1213, 171,  10, 644,1216, 173,   9, 640,1219, 175,   9, 635,1221, 178,   9, 630,1224, 180,   8, 625,1227, 183,   8, 620,1229, 186,   8, 615,1232, 188,
-   7, 611,1234, 191,   7, 606,1237, 193,   7, 601,1239, 196,   6, 596,1241, 199,   6, 592,1244, 201,   6, 587,1246, 204,   6, 582,1248, 207,   5, 577,1251, 210,
-   5, 573,1253, 212,   5, 568,1255, 215,   5, 563,1257, 218,   4, 559,1259, 221,   4, 554,1261, 224,   4, 550,1263, 227,   4, 545,1265, 230,   4, 540,1267, 233,
-   3, 536,1269, 236,   3, 531,1270, 239,   3, 527,1272, 242,   3, 522,1274, 245,   3, 517,1275, 248,   2, 513,1277, 251,   2, 508,1279, 254,   2, 504,1280, 257,
-   2, 499,1282, 260,   2, 495,1283, 263,   2, 491,1284, 267,   2, 486,1286, 270,   1, 482,1287, 273,   1, 477,1288, 276,   1, 473,1290, 280,   1, 469,1291, 283,
-   1, 464,1292, 286,   1, 460,1293, 290,   1, 456,1294, 293,   1, 451,1295, 297,   1, 447,1296, 300,   1, 443,1297, 304,   1, 439,1297, 307,   0, 434,1298, 311,
-   0, 430,1299, 314,   0, 426,1300, 318,   0, 422,1300, 321,   0, 418,1301, 325,   0, 414,1302, 328,   0, 410,1302, 332,   0, 405,1303, 336,   0, 401,1303, 339,
-   0, 397,1303, 343,   0, 393,1304, 347,   0, 389,1304, 351,   0, 385,1304, 354,   0, 381,1304, 358,   0, 378,1304, 362,   0, 374,1305, 366,   0, 370,1305, 370,
+static const sint16 gauss_shuffled_reverse_table[1024] = {
+ 0x12c7, 0x59b3, 0x1307, 0xffff, 0x1288, 0x59b2, 0x1347, 0xffff, 0x1249, 0x59b0, 0x1388, 0xffff, 0x120b, 0x59ad, 0x13c9, 0xffff,
+ 0x11cd, 0x59a9, 0x140b, 0xffff, 0x118f, 0x59a4, 0x144d, 0xffff, 0x1153, 0x599e, 0x1490, 0xffff, 0x1116, 0x5997, 0x14d4, 0xffff,
+ 0x10db, 0x598f, 0x1517, 0xffff, 0x109f, 0x5986, 0x155c, 0xffff, 0x1065, 0x597c, 0x15a0, 0xffff, 0x102a, 0x5971, 0x15e6, 0xffff,
+ 0x0ff1, 0x5965, 0x162c, 0xffff, 0x0fb7, 0x5958, 0x1672, 0xffff, 0x0f7f, 0x5949, 0x16b9, 0xffff, 0x0f46, 0x593a, 0x1700, 0xffff,
+ 0x0f0f, 0x592a, 0x1747, 0x0000, 0x0ed7, 0x5919, 0x1790, 0x0000, 0x0ea1, 0x5907, 0x17d8, 0x0000, 0x0e6b, 0x58f4, 0x1821, 0x0000,
+ 0x0e35, 0x58e0, 0x186b, 0x0000, 0x0e00, 0x58cb, 0x18b5, 0x0000, 0x0dcb, 0x58b5, 0x1900, 0x0000, 0x0d97, 0x589e, 0x194b, 0x0001,
+ 0x0d63, 0x5886, 0x1996, 0x0001, 0x0d30, 0x586d, 0x19e2, 0x0001, 0x0cfd, 0x5853, 0x1a2e, 0x0001, 0x0ccb, 0x5838, 0x1a7b, 0x0002,
+ 0x0c99, 0x581c, 0x1ac8, 0x0002, 0x0c68, 0x57ff, 0x1b16, 0x0002, 0x0c38, 0x57e2, 0x1b64, 0x0003, 0x0c07, 0x57c3, 0x1bb3, 0x0003,
+ 0x0bd8, 0x57a3, 0x1c02, 0x0003, 0x0ba9, 0x5782, 0x1c51, 0x0004, 0x0b7a, 0x5761, 0x1ca1, 0x0004, 0x0b4c, 0x573e, 0x1cf1, 0x0005,
+ 0x0b1e, 0x571b, 0x1d42, 0x0005, 0x0af1, 0x56f6, 0x1d93, 0x0006, 0x0ac4, 0x56d1, 0x1de5, 0x0007, 0x0a98, 0x56ab, 0x1e37, 0x0007,
+ 0x0a6c, 0x5684, 0x1e89, 0x0008, 0x0a40, 0x565b, 0x1edc, 0x0009, 0x0a16, 0x5632, 0x1f2f, 0x0009, 0x09eb, 0x5609, 0x1f82, 0x000a,
+ 0x09c1, 0x55de, 0x1fd6, 0x000b, 0x0998, 0x55b2, 0x202a, 0x000c, 0x096f, 0x5585, 0x207f, 0x000d, 0x0946, 0x5558, 0x20d4, 0x000e,
+ 0x091e, 0x5529, 0x2129, 0x000f, 0x08f7, 0x54fa, 0x217f, 0x0010, 0x08d0, 0x54ca, 0x21d5, 0x0011, 0x08a9, 0x5499, 0x222c, 0x0012,
+ 0x0883, 0x5467, 0x2282, 0x0013, 0x085d, 0x5434, 0x22da, 0x0015, 0x0838, 0x5401, 0x2331, 0x0016, 0x0813, 0x53cc, 0x2389, 0x0018,
+ 0x07ef, 0x5397, 0x23e1, 0x0019, 0x07cb, 0x5361, 0x2439, 0x001b, 0x07a7, 0x532a, 0x2492, 0x001c, 0x0784, 0x52f3, 0x24eb, 0x001e,
+ 0x0762, 0x52ba, 0x2545, 0x0020, 0x0740, 0x5281, 0x259e, 0x0021, 0x071e, 0x5247, 0x25f8, 0x0023, 0x06fd, 0x520c, 0x2653, 0x0025,
+ 0x06dc, 0x51d0, 0x26ad, 0x0027, 0x06bb, 0x5194, 0x2708, 0x0029, 0x069b, 0x5156, 0x2763, 0x002c, 0x067c, 0x5118, 0x27be, 0x002e,
+ 0x065c, 0x50da, 0x281a, 0x0030, 0x063e, 0x509a, 0x2876, 0x0033, 0x061f, 0x505a, 0x28d2, 0x0035, 0x0601, 0x5019, 0x292e, 0x0038,
+ 0x05e4, 0x4fd7, 0x298b, 0x003a, 0x05c7, 0x4f95, 0x29e7, 0x003d, 0x05aa, 0x4f52, 0x2a44, 0x0040, 0x058e, 0x4f0e, 0x2aa1, 0x0043,
+ 0x0572, 0x4ec9, 0x2aff, 0x0046, 0x0556, 0x4e84, 0x2b5c, 0x0049, 0x053b, 0x4e3e, 0x2bba, 0x004d, 0x0520, 0x4df7, 0x2c18, 0x0050,
+ 0x0506, 0x4db0, 0x2c76, 0x0054, 0x04ec, 0x4d68, 0x2cd4, 0x0057, 0x04d2, 0x4d20, 0x2d33, 0x005b, 0x04b9, 0x4cd7, 0x2d91, 0x005f,
+ 0x04a0, 0x4c8d, 0x2df0, 0x0063, 0x0488, 0x4c42, 0x2e4f, 0x0067, 0x0470, 0x4bf7, 0x2eae, 0x006b, 0x0458, 0x4bac, 0x2f0d, 0x006f,
+ 0x0441, 0x4b5f, 0x2f6c, 0x0074, 0x042a, 0x4b13, 0x2fcc, 0x0078, 0x0413, 0x4ac5, 0x302b, 0x007d, 0x03fc, 0x4a77, 0x308b, 0x0082,
+ 0x03e7, 0x4a29, 0x30ea, 0x0087, 0x03d1, 0x49d9, 0x314a, 0x008c, 0x03bc, 0x498a, 0x31aa, 0x0091, 0x03a7, 0x493a, 0x3209, 0x0096,
+ 0x0392, 0x48e9, 0x3269, 0x009c, 0x037e, 0x4898, 0x32c9, 0x00a1, 0x036a, 0x4846, 0x3329, 0x00a7, 0x0356, 0x47f4, 0x3389, 0x00ad,
+ 0x0343, 0x47a1, 0x33e9, 0x00b3, 0x0330, 0x474e, 0x3449, 0x00ba, 0x031d, 0x46fa, 0x34a9, 0x00c0, 0x030b, 0x46a6, 0x3509, 0x00c7,
+ 0x02f9, 0x4651, 0x3569, 0x00cd, 0x02e7, 0x45fc, 0x35c9, 0x00d4, 0x02d6, 0x45a6, 0x3629, 0x00db, 0x02c4, 0x4550, 0x3689, 0x00e3,
+ 0x02b4, 0x44fa, 0x36e8, 0x00ea, 0x02a3, 0x44a3, 0x3748, 0x00f2, 0x0293, 0x444c, 0x37a8, 0x00fa, 0x0283, 0x43f4, 0x3807, 0x0101,
+ 0x0273, 0x439c, 0x3867, 0x010a, 0x0264, 0x4344, 0x38c6, 0x0112, 0x0255, 0x42eb, 0x3926, 0x011b, 0x0246, 0x4292, 0x3985, 0x0123,
+ 0x0237, 0x4239, 0x39e4, 0x012c, 0x0229, 0x41df, 0x3a43, 0x0135, 0x021b, 0x4185, 0x3aa2, 0x013f, 0x020d, 0x412a, 0x3b00, 0x0148,
+ 0x0200, 0x40d0, 0x3b5f, 0x0152, 0x01f2, 0x4074, 0x3bbd, 0x015c, 0x01e5, 0x4019, 0x3c1b, 0x0166, 0x01d9, 0x3fbd, 0x3c79, 0x0171,
+ 0x01cc, 0x3f62, 0x3cd7, 0x017b, 0x01c0, 0x3f05, 0x3d35, 0x0186, 0x01b4, 0x3ea9, 0x3d92, 0x0191, 0x01a8, 0x3e4c, 0x3def, 0x019c,
+ 0x019c, 0x3def, 0x3e4c, 0x01a8, 0x0191, 0x3d92, 0x3ea9, 0x01b4, 0x0186, 0x3d35, 0x3f05, 0x01c0, 0x017b, 0x3cd7, 0x3f62, 0x01cc,
+ 0x0171, 0x3c79, 0x3fbd, 0x01d9, 0x0166, 0x3c1b, 0x4019, 0x01e5, 0x015c, 0x3bbd, 0x4074, 0x01f2, 0x0152, 0x3b5f, 0x40d0, 0x0200,
+ 0x0148, 0x3b00, 0x412a, 0x020d, 0x013f, 0x3aa2, 0x4185, 0x021b, 0x0135, 0x3a43, 0x41df, 0x0229, 0x012c, 0x39e4, 0x4239, 0x0237,
+ 0x0123, 0x3985, 0x4292, 0x0246, 0x011b, 0x3926, 0x42eb, 0x0255, 0x0112, 0x38c6, 0x4344, 0x0264, 0x010a, 0x3867, 0x439c, 0x0273,
+ 0x0101, 0x3807, 0x43f4, 0x0283, 0x00fa, 0x37a8, 0x444c, 0x0293, 0x00f2, 0x3748, 0x44a3, 0x02a3, 0x00ea, 0x36e8, 0x44fa, 0x02b4,
+ 0x00e3, 0x3689, 0x4550, 0x02c4, 0x00db, 0x3629, 0x45a6, 0x02d6, 0x00d4, 0x35c9, 0x45fc, 0x02e7, 0x00cd, 0x3569, 0x4651, 0x02f9,
+ 0x00c7, 0x3509, 0x46a6, 0x030b, 0x00c0, 0x34a9, 0x46fa, 0x031d, 0x00ba, 0x3449, 0x474e, 0x0330, 0x00b3, 0x33e9, 0x47a1, 0x0343,
+ 0x00ad, 0x3389, 0x47f4, 0x0356, 0x00a7, 0x3329, 0x4846, 0x036a, 0x00a1, 0x32c9, 0x4898, 0x037e, 0x009c, 0x3269, 0x48e9, 0x0392,
+ 0x0096, 0x3209, 0x493a, 0x03a7, 0x0091, 0x31aa, 0x498a, 0x03bc, 0x008c, 0x314a, 0x49d9, 0x03d1, 0x0087, 0x30ea, 0x4a29, 0x03e7,
+ 0x0082, 0x308b, 0x4a77, 0x03fc, 0x007d, 0x302b, 0x4ac5, 0x0413, 0x0078, 0x2fcc, 0x4b13, 0x042a, 0x0074, 0x2f6c, 0x4b5f, 0x0441,
+ 0x006f, 0x2f0d, 0x4bac, 0x0458, 0x006b, 0x2eae, 0x4bf7, 0x0470, 0x0067, 0x2e4f, 0x4c42, 0x0488, 0x0063, 0x2df0, 0x4c8d, 0x04a0,
+ 0x005f, 0x2d91, 0x4cd7, 0x04b9, 0x005b, 0x2d33, 0x4d20, 0x04d2, 0x0057, 0x2cd4, 0x4d68, 0x04ec, 0x0054, 0x2c76, 0x4db0, 0x0506,
+ 0x0050, 0x2c18, 0x4df7, 0x0520, 0x004d, 0x2bba, 0x4e3e, 0x053b, 0x0049, 0x2b5c, 0x4e84, 0x0556, 0x0046, 0x2aff, 0x4ec9, 0x0572,
+ 0x0043, 0x2aa1, 0x4f0e, 0x058e, 0x0040, 0x2a44, 0x4f52, 0x05aa, 0x003d, 0x29e7, 0x4f95, 0x05c7, 0x003a, 0x298b, 0x4fd7, 0x05e4,
+ 0x0038, 0x292e, 0x5019, 0x0601, 0x0035, 0x28d2, 0x505a, 0x061f, 0x0033, 0x2876, 0x509a, 0x063e, 0x0030, 0x281a, 0x50da, 0x065c,
+ 0x002e, 0x27be, 0x5118, 0x067c, 0x002c, 0x2763, 0x5156, 0x069b, 0x0029, 0x2708, 0x5194, 0x06bb, 0x0027, 0x26ad, 0x51d0, 0x06dc,
+ 0x0025, 0x2653, 0x520c, 0x06fd, 0x0023, 0x25f8, 0x5247, 0x071e, 0x0021, 0x259e, 0x5281, 0x0740, 0x0020, 0x2545, 0x52ba, 0x0762,
+ 0x001e, 0x24eb, 0x52f3, 0x0784, 0x001c, 0x2492, 0x532a, 0x07a7, 0x001b, 0x2439, 0x5361, 0x07cb, 0x0019, 0x23e1, 0x5397, 0x07ef,
+ 0x0018, 0x2389, 0x53cc, 0x0813, 0x0016, 0x2331, 0x5401, 0x0838, 0x0015, 0x22da, 0x5434, 0x085d, 0x0013, 0x2282, 0x5467, 0x0883,
+ 0x0012, 0x222c, 0x5499, 0x08a9, 0x0011, 0x21d5, 0x54ca, 0x08d0, 0x0010, 0x217f, 0x54fa, 0x08f7, 0x000f, 0x2129, 0x5529, 0x091e,
+ 0x000e, 0x20d4, 0x5558, 0x0946, 0x000d, 0x207f, 0x5585, 0x096f, 0x000c, 0x202a, 0x55b2, 0x0998, 0x000b, 0x1fd6, 0x55de, 0x09c1,
+ 0x000a, 0x1f82, 0x5609, 0x09eb, 0x0009, 0x1f2f, 0x5632, 0x0a16, 0x0009, 0x1edc, 0x565b, 0x0a40, 0x0008, 0x1e89, 0x5684, 0x0a6c,
+ 0x0007, 0x1e37, 0x56ab, 0x0a98, 0x0007, 0x1de5, 0x56d1, 0x0ac4, 0x0006, 0x1d93, 0x56f6, 0x0af1, 0x0005, 0x1d42, 0x571b, 0x0b1e,
+ 0x0005, 0x1cf1, 0x573e, 0x0b4c, 0x0004, 0x1ca1, 0x5761, 0x0b7a, 0x0004, 0x1c51, 0x5782, 0x0ba9, 0x0003, 0x1c02, 0x57a3, 0x0bd8,
+ 0x0003, 0x1bb3, 0x57c3, 0x0c07, 0x0003, 0x1b64, 0x57e2, 0x0c38, 0x0002, 0x1b16, 0x57ff, 0x0c68, 0x0002, 0x1ac8, 0x581c, 0x0c99,
+ 0x0002, 0x1a7b, 0x5838, 0x0ccb, 0x0001, 0x1a2e, 0x5853, 0x0cfd, 0x0001, 0x19e2, 0x586d, 0x0d30, 0x0001, 0x1996, 0x5886, 0x0d63,
+ 0x0001, 0x194b, 0x589e, 0x0d97, 0x0000, 0x1900, 0x58b5, 0x0dcb, 0x0000, 0x18b5, 0x58cb, 0x0e00, 0x0000, 0x186b, 0x58e0, 0x0e35,
+ 0x0000, 0x1821, 0x58f4, 0x0e6b, 0x0000, 0x17d8, 0x5907, 0x0ea1, 0x0000, 0x1790, 0x5919, 0x0ed7, 0x0000, 0x1747, 0x592a, 0x0f0f,
+ 0xffff, 0x1700, 0x593a, 0x0f46, 0xffff, 0x16b9, 0x5949, 0x0f7f, 0xffff, 0x1672, 0x5958, 0x0fb7, 0xffff, 0x162c, 0x5965, 0x0ff1,
+ 0xffff, 0x15e6, 0x5971, 0x102a, 0xffff, 0x15a0, 0x597c, 0x1065, 0xffff, 0x155c, 0x5986, 0x109f, 0xffff, 0x1517, 0x598f, 0x10db,
+ 0xffff, 0x14d4, 0x5997, 0x1116, 0xffff, 0x1490, 0x599e, 0x1153, 0xffff, 0x144d, 0x59a4, 0x118f, 0xffff, 0x140b, 0x59a9, 0x11cd,
+ 0xffff, 0x13c9, 0x59ad, 0x120b, 0xffff, 0x1388, 0x59b0, 0x1249, 0xffff, 0x1347, 0x59b2, 0x1288, 0xffff, 0x1307, 0x59b3, 0x12c7,
 };
 
 static sint32 ratelogtable[32+128];
 
+/*
 // v1.10 coefs - normalized from v1.04
 static const sint32 reverb_lowpass_coefs[8] = {
   (int)((-0.036346113709214548)*(2048.0)),
@@ -80,6 +113,7 @@ static const sint32 reverb_lowpass_coefs[8] = {
   (int)(( 0.044484956332843419)*(2048.0)),
   (int)((-0.036346113709214548)*(2048.0))
 };
+*/
 
 /*
 // test coefs - ganked from LAME's blackman function
@@ -93,9 +127,69 @@ static const sint32 reverb_new_lowpass_coefs[3] = {
 };
 */
 
-static const sint32 bit_reverse_table[16] = {
-  0, 8, 4, 12, 2, 10, 6, 14,
-  1, 9, 5, 13, 3, 11, 7, 15
+// PS1 reverb downsampling coefficients(as best as I could extract them at the moment, some of the even(non-zero/non-16384) ones *might* be off by 1.
+// -------------
+static const sint32 reverb_psx_lowpass_coefs[48] = {
+   -1,
+    0,
+    2,
+    0,
+  -10,
+    0,
+   35,
+    0,
+ -103,
+    0,
+  266,
+    0,
+ -616,
+    0,
+ 1332,
+    0,
+-2959,
+    0,
+10246,
+16384,
+10246,
+    0,
+-2959,
+    0,
+ 1332,
+    0,
+ -616,
+    0,
+  266,
+    0,
+ -103,
+    0,
+   35,
+    0,
+  -10,
+    0,
+    2,
+    0,
+   -1,
+    0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+};
+
+
+static const int noisetable[] = {
+    1, 0, 0, 1, 0, 1, 1, 0,
+    1, 0, 0, 1, 0, 1, 1, 0,
+    1, 0, 0, 1, 0, 1, 1, 0,
+    1, 0, 0, 1, 0, 1, 1, 0,
+    0, 1, 1, 0, 1, 0, 0, 1,
+    0, 1, 1, 0, 1, 0, 0, 1,
+    0, 1, 1, 0, 1, 0, 0, 1,
+    0, 1, 1, 0, 1, 0, 0, 1
 };
 
 /*
@@ -204,8 +298,8 @@ struct SPUCORE_CHAN {
 ** Reverb resample state
 */
 struct SPUCORE_REVERB_RESAMPLER {
-  sint32  in_queue_l[8];
-  sint32  in_queue_r[8];
+  sint32  in_queue_l[64];
+  sint32  in_queue_r[64];
   sint32 out_queue_l[16];
   sint32 out_queue_r[16];
   int queue_index;
@@ -309,7 +403,6 @@ void EMU_CALL spucore_clear_state(void *state) {
   spucore_setflag(state, SPUREG_FLAG_MSNDER, 1);
   spucore_setflag(state, SPUREG_FLAG_SINL, 1);
   spucore_setflag(state, SPUREG_FLAG_SINR, 1);
-  SPUCORESTATE->noiseval = 1;
   SPUCORESTATE->irq_triggered_cycle = 0xFFFFFFFF;
 }
 
@@ -517,7 +610,7 @@ static uint32 EMU_CALL resampler(
     uint32 t = 0;
     for(s = 0; s < n; s++) {
       sint32 *source_signal;
-      sint32 *mygauss;
+      sint16 *mygauss;
       sint32 sum;
       if(ph >= 0x1C000) {
         if(sample->state == SAMPLE_STATE_OFF) break;
@@ -528,7 +621,7 @@ static uint32 EMU_CALL resampler(
         ph -= 0x1C000;
       }
       source_signal = sample->array + (ph >> 12);
-      mygauss = (sint32*) (((uint8*)gauss_shuffled_reverse_table) + (ph & 0xFF0));
+      mygauss = (sint16*) (((uint8*)gauss_shuffled_reverse_table) + ((ph & 0xFF0) >> 1));
 
       { sum =
           (source_signal[0] * mygauss[0]) +
@@ -536,7 +629,7 @@ static uint32 EMU_CALL resampler(
           (source_signal[2] * mygauss[2]) +
           (source_signal[3] * mygauss[3]);
       }
-      sum >>= 11;
+      sum >>= 15;
 
       *dest++ = sum;
       ph += phase_inc;
@@ -590,7 +683,7 @@ static uint32 EMU_CALL resampler_modulated(
   } else {
     for(s = 0; s < n; s++) {
       sint32 *source_signal;
-      sint32 *mygauss;
+      sint16 *mygauss;
       sint32 sum;
       if(ph >= 0x1C000) {
         if(sample->state == SAMPLE_STATE_OFF) break;
@@ -601,7 +694,7 @@ static uint32 EMU_CALL resampler_modulated(
         ph -= 0x1C000;
       }
       source_signal = sample->array + (ph >> 12);
-      mygauss = (sint32*) (((uint8*)gauss_shuffled_reverse_table) + (ph & 0xFF0));
+      mygauss = (sint16*) (((uint8*)gauss_shuffled_reverse_table) + ((ph & 0xFF0) >> 1));
 
       { sum =
           (source_signal[0] * mygauss[0]) +
@@ -609,7 +702,7 @@ static uint32 EMU_CALL resampler_modulated(
           (source_signal[2] * mygauss[2]) +
           (source_signal[3] * mygauss[3]);
       }
-      sum >>= 11;
+      sum >>= 15;
 
       *dest++ = sum;
       pimod = ((*fmbuf++ + 32768) * phase_inc) / 32768;
@@ -1086,29 +1179,16 @@ static void EMU_CALL render_noise(
   sint32 *buf,
   sint32 samples
 ) {
-  int n, o;
-  uint32 noiseclock = state->noiseclock;
+  int n;
   uint32 noisecounter = state->noisecounter;
   sint32 noiseval = state->noiseval;
-  uint32 noisetemp = (noiseclock & 3) + 4;
-  uint32 noiserev;
-  noiseclock = (noiseclock >> 2) + 2;
-  noiseclock = noisetemp << noiseclock;
+  uint32 noiseinc = (uint16)(0x8000 >> (state->noiseclock << 6));
   for(n = 0; n < samples; n++) {
-    for(o = 0, noiserev = 0, noisetemp = noisecounter & 0xFFFFF; o < 5; o++) {
-      noiserev = (noiserev << 4) | bit_reverse_table[noisetemp & 0xF];
-      noisetemp >>= 4;
-    }
-    if(noiserev < noiseclock) {
-      noisetemp = 0;
-      if (noiseval & (1 << 31)) noisetemp = 1;
-      if (noiseval & (1 << 21)) noisetemp ^= 1;
-      if (noiseval & (1 <<  1)) noisetemp ^= 1;
-      if (noiseval & (1 <<  0)) noisetemp ^= 1;
-      noiseval = (noiseval << 1) | noisetemp;
-    }
-    noisecounter++;
-    if (buf) *buf++ = noiseval >> 16;
+    noisecounter += noiseinc;
+    noiseval += noisecounter + noisecounter + noisetable[(noisecounter >> 10) & 63];
+	if (noiseval < -32767) noiseval = -32767;
+	else if (noiseval > 32767) noiseval = 32767;
+    if (buf) *buf++ = noiseval;
   }
   state->noisecounter = noisecounter;
   state->noiseval = noiseval;
@@ -1372,6 +1452,7 @@ static void EMU_CALL reverb_engine22(struct SPUCORE_STATE *state, uint16 *ram, s
 ////////////////////////////////////////////////////////////////////////////////
 
 static void EMU_CALL reverb_process(struct SPUCORE_STATE *state, uint16 *ram, sint32 *buf, int samples) {
+  int n;
   int q = state->reverb.resampler.queue_index;
   /*
   ** Sample loop
@@ -1385,8 +1466,8 @@ static void EMU_CALL reverb_process(struct SPUCORE_STATE *state, uint16 *ram, si
     /*
     ** Put it in the input queue
     */
-    state->reverb.resampler.in_queue_l[q & 7] = l;
-    state->reverb.resampler.in_queue_r[q & 7] = r;
+    state->reverb.resampler.in_queue_l[q & 63] = l;
+    state->reverb.resampler.in_queue_r[q & 63] = r;
     /*
     ** If we're ready to create another output sample...
     */
@@ -1394,27 +1475,32 @@ static void EMU_CALL reverb_process(struct SPUCORE_STATE *state, uint16 *ram, si
       /*
       ** Lowpass/downsample
       */
+      l = 0;
+      r = 0;
 
-      l =
-        (state->reverb.resampler.in_queue_l[(q - 7) & 7]) * reverb_lowpass_coefs[0] +
-        (state->reverb.resampler.in_queue_l[(q - 6) & 7]) * reverb_lowpass_coefs[1] +
-        (state->reverb.resampler.in_queue_l[(q - 5) & 7]) * reverb_lowpass_coefs[2] +
-        (state->reverb.resampler.in_queue_l[(q - 4) & 7]) * reverb_lowpass_coefs[3] +
-        (state->reverb.resampler.in_queue_l[(q - 3) & 7]) * reverb_lowpass_coefs[4] +
-        (state->reverb.resampler.in_queue_l[(q - 2) & 7]) * reverb_lowpass_coefs[5] +
-        (state->reverb.resampler.in_queue_l[(q - 1) & 7]) * reverb_lowpass_coefs[6] +
-        (state->reverb.resampler.in_queue_l[(q - 0) & 7]) * reverb_lowpass_coefs[7];
-      l >>= 11;
-      r =
-        (state->reverb.resampler.in_queue_r[(q - 7) & 7]) * reverb_lowpass_coefs[0] +
-        (state->reverb.resampler.in_queue_r[(q - 6) & 7]) * reverb_lowpass_coefs[1] +
-        (state->reverb.resampler.in_queue_r[(q - 5) & 7]) * reverb_lowpass_coefs[2] +
-        (state->reverb.resampler.in_queue_r[(q - 4) & 7]) * reverb_lowpass_coefs[3] +
-        (state->reverb.resampler.in_queue_r[(q - 3) & 7]) * reverb_lowpass_coefs[4] +
-        (state->reverb.resampler.in_queue_r[(q - 2) & 7]) * reverb_lowpass_coefs[5] +
-        (state->reverb.resampler.in_queue_r[(q - 1) & 7]) * reverb_lowpass_coefs[6] +
-        (state->reverb.resampler.in_queue_r[(q - 0) & 7]) * reverb_lowpass_coefs[7];
-      r >>= 11;
+      for (n = 47; n >= 0; n -= 8) {
+        l +=
+          (state->reverb.resampler.in_queue_l[(q - n + 0) & 63]) * reverb_psx_lowpass_coefs[n - 0] +
+          (state->reverb.resampler.in_queue_l[(q - n + 1) & 63]) * reverb_psx_lowpass_coefs[n - 1] +
+          (state->reverb.resampler.in_queue_l[(q - n + 2) & 63]) * reverb_psx_lowpass_coefs[n - 2] +
+          (state->reverb.resampler.in_queue_l[(q - n + 3) & 63]) * reverb_psx_lowpass_coefs[n - 3] +
+          (state->reverb.resampler.in_queue_l[(q - n + 4) & 63]) * reverb_psx_lowpass_coefs[n - 4] +
+          (state->reverb.resampler.in_queue_l[(q - n + 5) & 63]) * reverb_psx_lowpass_coefs[n - 5] +
+          (state->reverb.resampler.in_queue_l[(q - n + 6) & 63]) * reverb_psx_lowpass_coefs[n - 6] +
+          (state->reverb.resampler.in_queue_l[(q - n + 7) & 63]) * reverb_psx_lowpass_coefs[n - 7];
+        r +=
+          (state->reverb.resampler.in_queue_r[(q - n + 0) & 63]) * reverb_psx_lowpass_coefs[n - 0] +
+          (state->reverb.resampler.in_queue_r[(q - n + 1) & 63]) * reverb_psx_lowpass_coefs[n - 1] +
+          (state->reverb.resampler.in_queue_r[(q - n + 2) & 63]) * reverb_psx_lowpass_coefs[n - 2] +
+          (state->reverb.resampler.in_queue_r[(q - n + 3) & 63]) * reverb_psx_lowpass_coefs[n - 3] +
+          (state->reverb.resampler.in_queue_r[(q - n + 4) & 63]) * reverb_psx_lowpass_coefs[n - 4] +
+          (state->reverb.resampler.in_queue_r[(q - n + 5) & 63]) * reverb_psx_lowpass_coefs[n - 5] +
+          (state->reverb.resampler.in_queue_r[(q - n + 6) & 63]) * reverb_psx_lowpass_coefs[n - 6] +
+          (state->reverb.resampler.in_queue_r[(q - n + 7) & 63]) * reverb_psx_lowpass_coefs[n - 7];
+      }
+
+      l >>= 15;
+      r >>= 15;
 
 /*
       l =
@@ -1466,26 +1552,26 @@ static void EMU_CALL reverb_process(struct SPUCORE_STATE *state, uint16 *ram, si
         (state->reverb.resampler.out_queue_l[(q - 4) & 15]) * gauss_table_0x180 +
         (state->reverb.resampler.out_queue_l[(q - 2) & 15]) * gauss_table_0x280 +
         (state->reverb.resampler.out_queue_l[(q - 0) & 15]) * gauss_table_0x380;
-      l >>= 11;
+      l >>= 15;
       r =
         (state->reverb.resampler.out_queue_r[(q - 6) & 15]) * gauss_table_0x080 +
         (state->reverb.resampler.out_queue_r[(q - 4) & 15]) * gauss_table_0x180 +
         (state->reverb.resampler.out_queue_r[(q - 2) & 15]) * gauss_table_0x280 +
         (state->reverb.resampler.out_queue_r[(q - 0) & 15]) * gauss_table_0x380;
-      r >>= 11;
+      r >>= 15;
     } else {
       l =
         (state->reverb.resampler.out_queue_l[(q - 7) & 15]) * gauss_table_0x000 +
         (state->reverb.resampler.out_queue_l[(q - 5) & 15]) * gauss_table_0x100 +
         (state->reverb.resampler.out_queue_l[(q - 3) & 15]) * gauss_table_0x200 +
         (state->reverb.resampler.out_queue_l[(q - 1) & 15]) * gauss_table_0x300;
-      l >>= 11;
+      l >>= 15;
       r =
         (state->reverb.resampler.out_queue_r[(q - 7) & 15]) * gauss_table_0x000 +
         (state->reverb.resampler.out_queue_r[(q - 5) & 15]) * gauss_table_0x100 +
         (state->reverb.resampler.out_queue_r[(q - 3) & 15]) * gauss_table_0x200 +
         (state->reverb.resampler.out_queue_r[(q - 1) & 15]) * gauss_table_0x300;
-      r >>= 11;
+      r >>= 15;
     }
     /*
     ** Advance queue position, write output, all that good stuff
