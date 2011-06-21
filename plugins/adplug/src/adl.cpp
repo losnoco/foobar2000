@@ -2397,10 +2397,10 @@ bool CadlPlayer::load(const std::string &filename, const CFileProvider &fp)
   // 	_soundFileLoaded = file;
 
   // find last subsong
-  for(int i = 199; i >= 0; i--)
+  numsubsongs = 0;
+  for(int i = 0; i <= 119; i++)
     if(_trackEntries[i] != 0xff) {
-      numsubsongs = i + 1;
-      break;
+      numsubsongs++;
     }
 
   fp.close(f);
@@ -2412,6 +2412,18 @@ bool CadlPlayer::load(const std::string &filename, const CFileProvider &fp)
 void CadlPlayer::rewind(int subsong)
 {
   if(subsong == -1) subsong = cursubsong;
+  else {
+    int j = subsong;
+    subsong = 2;
+    for (int i = 0; i <= 119; i++)
+      if (_trackEntries[i] != 0xff) {
+        if (!j) {
+          subsong = i;
+          break;
+        }
+        j--;
+      }
+  }
   opl->init();
   opl->write(1,32);
   playSoundEffect(subsong);
