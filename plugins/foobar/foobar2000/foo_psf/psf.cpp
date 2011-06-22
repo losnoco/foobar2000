@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.23"
+#define MYVERSION "2.0.24"
 
 /*
 	changelog
+
+2011-06-22 01:17 UTC - kode54
+- Changed reverb downsampling impulse again
+- Version is now 2.0.24
 
 2011-06-21 23:04 UTC - kode54
 - Fixed noise implementation
