@@ -83,7 +83,11 @@ VGMSTREAM * init_vgmstream_adx(STREAMFILE *streamFile) {
 
         header_type = meta_ADX_04;
         if (stream_offset-ainf_info_length-6 >= 0x38) {   /* enough space for loop info? */
-            loop_flag = (read_32bitBE(0x24,streamFile) != 0);
+		if (read_32bitBE(0x24,streamFile) == 0xFFFEFFFE)
+			loop_flag = 0;
+		else
+			loop_flag = (read_32bitBE(0x24,streamFile) != 0);
+
             loop_start_sample = read_32bitBE(0x28,streamFile);
             loop_start_offset = read_32bitBE(0x2c,streamFile);
             loop_end_sample = read_32bitBE(0x30,streamFile);
@@ -332,6 +336,11 @@ static struct {
      * Shakugan no Shana (2006)(Vridge)(Media Works)[PS2]
      * confirmed unique with guessadx */
     {0x5fc5,0x63d9,0x599f},
+
+    /*
+     * Uragiri wa Boku no Namae o Shitteiru (2010)(Kadokawa Shoten)[PS2]
+     * confirmed unique with guessadx */
+    {0x4c73,0x4d8d,0x5827},
 };
 
 static const int key_count = sizeof(keys)/sizeof(keys[0]);
