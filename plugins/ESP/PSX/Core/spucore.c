@@ -129,6 +129,30 @@ static const sint32 reverb_new_lowpass_coefs[3] = {
 
 // PS1 reverb downsampling coefficients(as best as I could extract them at the moment, some of the even(non-zero/non-16384) ones *might* be off by 1.
 // -------------
+#if 1
+static const sint32 reverb_psx_lowpass_coefs[11] = {
+   -1,
+//  0,
+    2,
+//  0,
+  -10,
+//  0,
+   35,
+//  0,
+ -103,
+//  0,
+  266,
+//  0,
+ -616,
+//  0,
+ 1332,
+//  0,
+-2960,
+//  0,
+10246,
+16384
+};
+#else
 static const sint32 reverb_psx_lowpass_coefs[48] = {
    -1,
     0,
@@ -170,15 +194,16 @@ static const sint32 reverb_psx_lowpass_coefs[48] = {
     0,
    -1,
     0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
 };
+#endif
 
 
 static const int noisetable[] = {
@@ -1475,6 +1500,52 @@ static void EMU_CALL reverb_process(struct SPUCORE_STATE *state, uint16 *ram, si
       /*
       ** Lowpass/downsample
       */
+#if 1
+      l =
+        (state->reverb.resampler.in_queue_l[(q - 38) & 63]) * reverb_psx_lowpass_coefs[0] +
+        (state->reverb.resampler.in_queue_l[(q - 36) & 63]) * reverb_psx_lowpass_coefs[1] +
+        (state->reverb.resampler.in_queue_l[(q - 34) & 63]) * reverb_psx_lowpass_coefs[2] +
+        (state->reverb.resampler.in_queue_l[(q - 32) & 63]) * reverb_psx_lowpass_coefs[3] +
+        (state->reverb.resampler.in_queue_l[(q - 30) & 63]) * reverb_psx_lowpass_coefs[4] +
+        (state->reverb.resampler.in_queue_l[(q - 28) & 63]) * reverb_psx_lowpass_coefs[5] +
+        (state->reverb.resampler.in_queue_l[(q - 26) & 63]) * reverb_psx_lowpass_coefs[6] +
+        (state->reverb.resampler.in_queue_l[(q - 24) & 63]) * reverb_psx_lowpass_coefs[7] +
+        (state->reverb.resampler.in_queue_l[(q - 22) & 63]) * reverb_psx_lowpass_coefs[8] +
+        (state->reverb.resampler.in_queue_l[(q - 20) & 63]) * reverb_psx_lowpass_coefs[9] +
+        (state->reverb.resampler.in_queue_l[(q - 19) & 63]) * reverb_psx_lowpass_coefs[10] +
+        (state->reverb.resampler.in_queue_l[(q - 18) & 63]) * reverb_psx_lowpass_coefs[9] +
+        (state->reverb.resampler.in_queue_l[(q - 16) & 63]) * reverb_psx_lowpass_coefs[8] +
+        (state->reverb.resampler.in_queue_l[(q - 14) & 63]) * reverb_psx_lowpass_coefs[7] +
+        (state->reverb.resampler.in_queue_l[(q - 12) & 63]) * reverb_psx_lowpass_coefs[6] +
+        (state->reverb.resampler.in_queue_l[(q - 10) & 63]) * reverb_psx_lowpass_coefs[5] +
+        (state->reverb.resampler.in_queue_l[(q - 8) & 63]) * reverb_psx_lowpass_coefs[4] +
+        (state->reverb.resampler.in_queue_l[(q - 6) & 63]) * reverb_psx_lowpass_coefs[3] +
+        (state->reverb.resampler.in_queue_l[(q - 4) & 63]) * reverb_psx_lowpass_coefs[2] +
+        (state->reverb.resampler.in_queue_l[(q - 2) & 63]) * reverb_psx_lowpass_coefs[1] +
+        (state->reverb.resampler.in_queue_l[(q - 0) & 63]) * reverb_psx_lowpass_coefs[0];
+      r =
+        (state->reverb.resampler.in_queue_r[(q - 38) & 63]) * reverb_psx_lowpass_coefs[0] +
+        (state->reverb.resampler.in_queue_r[(q - 36) & 63]) * reverb_psx_lowpass_coefs[1] +
+        (state->reverb.resampler.in_queue_r[(q - 34) & 63]) * reverb_psx_lowpass_coefs[2] +
+        (state->reverb.resampler.in_queue_r[(q - 32) & 63]) * reverb_psx_lowpass_coefs[3] +
+        (state->reverb.resampler.in_queue_r[(q - 30) & 63]) * reverb_psx_lowpass_coefs[4] +
+        (state->reverb.resampler.in_queue_r[(q - 28) & 63]) * reverb_psx_lowpass_coefs[5] +
+        (state->reverb.resampler.in_queue_r[(q - 26) & 63]) * reverb_psx_lowpass_coefs[6] +
+        (state->reverb.resampler.in_queue_r[(q - 24) & 63]) * reverb_psx_lowpass_coefs[7] +
+        (state->reverb.resampler.in_queue_r[(q - 22) & 63]) * reverb_psx_lowpass_coefs[8] +
+        (state->reverb.resampler.in_queue_r[(q - 20) & 63]) * reverb_psx_lowpass_coefs[9] +
+        (state->reverb.resampler.in_queue_r[(q - 19) & 63]) * reverb_psx_lowpass_coefs[10] +
+        (state->reverb.resampler.in_queue_r[(q - 18) & 63]) * reverb_psx_lowpass_coefs[9] +
+        (state->reverb.resampler.in_queue_r[(q - 16) & 63]) * reverb_psx_lowpass_coefs[8] +
+        (state->reverb.resampler.in_queue_r[(q - 14) & 63]) * reverb_psx_lowpass_coefs[7] +
+        (state->reverb.resampler.in_queue_r[(q - 12) & 63]) * reverb_psx_lowpass_coefs[6] +
+        (state->reverb.resampler.in_queue_r[(q - 10) & 63]) * reverb_psx_lowpass_coefs[5] +
+        (state->reverb.resampler.in_queue_r[(q - 8) & 63]) * reverb_psx_lowpass_coefs[4] +
+        (state->reverb.resampler.in_queue_r[(q - 6) & 63]) * reverb_psx_lowpass_coefs[3] +
+        (state->reverb.resampler.in_queue_r[(q - 4) & 63]) * reverb_psx_lowpass_coefs[2] +
+        (state->reverb.resampler.in_queue_r[(q - 2) & 63]) * reverb_psx_lowpass_coefs[1] +
+        (state->reverb.resampler.in_queue_r[(q - 0) & 63]) * reverb_psx_lowpass_coefs[0];
+#else
       l = 0;
       r = 0;
 
@@ -1498,6 +1569,7 @@ static void EMU_CALL reverb_process(struct SPUCORE_STATE *state, uint16 *ram, si
           (state->reverb.resampler.in_queue_r[(q - n + 6) & 63]) * reverb_psx_lowpass_coefs[n - 6] +
           (state->reverb.resampler.in_queue_r[(q - n + 7) & 63]) * reverb_psx_lowpass_coefs[n - 7];
       }
+#endif
 
       l >>= 15;
       r >>= 15;

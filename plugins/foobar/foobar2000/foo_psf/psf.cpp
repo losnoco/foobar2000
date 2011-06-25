@@ -1,7 +1,12 @@
-#define MYVERSION "2.0.24"
+#define MYVERSION "2.0.25"
 
 /*
 	changelog
+
+2011-06-25 18:27 UTC - kode54
+- Unrolled reverb downsampling function and removed processing of samples
+  which are effectively scaled to zero
+- Version is now 2.0.25
 
 2011-06-22 01:17 UTC - kode54
 - Changed reverb downsampling impulse again
