@@ -77,6 +77,8 @@
 
 */
 
+#define _WIN32_WINNT 0x0501
+
 #include <foobar2000.h>
 
 #include "../ATLHelpers/ATLHelpers.h"
