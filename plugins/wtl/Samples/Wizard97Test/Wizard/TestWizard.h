@@ -20,11 +20,11 @@ public:
 	void InitializeDefaultValues();
 	void StoreDefaultValues();
 
-	bool GetStringValue(ATL::CRegKey& regKey, LPCTSTR valueName, CString& value);
-	bool GetBoolValue(ATL::CRegKey& regKey, LPCTSTR valueName, bool& value);
+	bool GetStringValue(CRegKeyEx& regKey, LPCTSTR valueName, CString& value);
+	bool GetBoolValue(CRegKeyEx& regKey, LPCTSTR valueName, bool& value);
 
-	bool SetStringValue(ATL::CRegKey& regKey, LPCTSTR valueName, LPCTSTR value);
-	bool SetBoolValue(ATL::CRegKey& regKey, LPCTSTR valueName, bool value);
+	bool SetStringValue(CRegKeyEx& regKey, LPCTSTR valueName, LPCTSTR value);
+	bool SetBoolValue(CRegKeyEx& regKey, LPCTSTR valueName, bool value);
 };
 
 #endif // __TestWizard_h__

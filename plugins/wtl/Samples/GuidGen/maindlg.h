@@ -9,6 +9,8 @@
 #pragma once
 #endif // _MSC_VER >= 1000
 
+LPCTSTR _lpstrRegKey = _T("Software\\Microsoft\\WTL Samples\\GUIDGEN");
+
 class CMainDlg : public CDialogImpl<CMainDlg>, public CMessageFilter
 {
 public:
@@ -79,16 +81,12 @@ public:
 		CMessageLoop* pLoop = _Module.GetMessageLoop();
 		pLoop->AddMessageFilter(this);
 
-		CRegKey reg;
-		long lRet = reg.Open(HKEY_CURRENT_USER, _T("Software\\Microsoft\\ATL\\Samples\\GUIDGEN"), KEY_READ);
+		CRegKeyEx reg;
+		long lRet = reg.Open(HKEY_CURRENT_USER, _lpstrRegKey, KEY_READ);
 		if(lRet == ERROR_SUCCESS)
 		{
-			DWORD dwVal;
-#if (_ATL_VER >= 0x0700)
+			DWORD dwVal = 0;
 			lRet = reg.QueryDWORDValue(_T("GUID Type"), dwVal);
-#else
-			lRet = reg.QueryValue(dwVal, _T("GUID Type"));
-#endif
 			if(lRet == ERROR_SUCCESS)
 				m_nGuidType = (int)dwVal;
 		}
@@ -192,38 +190,13 @@ public:
 
 	LRESULT OnCancel(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 	{
-		CRegKey reg;
-		long lRet = reg.Open(HKEY_CURRENT_USER, _T("Software\\Microsoft\\ATL\\Samples\\GUIDGen"), KEY_WRITE);
-		if(lRet != ERROR_SUCCESS)
-		{
-			lRet = reg.Open(HKEY_CURRENT_USER, _T("Software\\Microsoft"), KEY_WRITE);
-			if(lRet == ERROR_SUCCESS)
-			{
-				CRegKey reg1;
-				lRet = reg1.Create(reg.m_hKey, _T("ATL"), REG_NONE, REG_OPTION_NON_VOLATILE, KEY_WRITE);
-				if(lRet == ERROR_SUCCESS)
-				{
-					CRegKey reg2;
-					lRet = reg2.Create(reg1.m_hKey, _T("Samples"), REG_NONE, REG_OPTION_NON_VOLATILE, KEY_WRITE);
-					if(lRet == ERROR_SUCCESS)
-					{
-						CRegKey reg3;
-						lRet = reg3.Create(reg2.m_hKey, _T("GUIDGen"), REG_NONE, REG_OPTION_NON_VOLATILE, KEY_WRITE);
-						reg.Close();
-						lRet = reg.Open(HKEY_CURRENT_USER, _T("Software\\Microsoft\\ATL\\Samples\\GUIDGen"), KEY_WRITE);
-					}
-				}
-			}
-		}
-
+		CRegKeyEx reg;
+		long lRet = reg.Create(HKEY_CURRENT_USER, _lpstrRegKey);
 		if(lRet == ERROR_SUCCESS)
 		{
-			DWORD dwVal = m_nGuidType;
-#if (_ATL_VER >= 0x0700)
-			reg.SetDWORDValue(_T("GUID Type"), dwVal);
-#else
-			reg.SetValue(dwVal, _T("GUID Type"));
-#endif
+//			DWORD dwVal = m_nGuidType;
+//			reg.SetDWORDValue(_T("GUID Type"), dwVal);
+			reg.SetDWORDValue(_T("GUID Type"), m_nGuidType);
 		}
 
 		CloseDialog(wID);

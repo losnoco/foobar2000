@@ -55,7 +55,7 @@ END
 IDD_ABOUTBOX DIALOG DISCARDABLE  0, 0, 187, 102
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,130,81,50,14
     CTEXT           "ATL GUIDGEN Application v1.0\n\n(c) Copyright 1998",
@@ -67,7 +67,7 @@ END
 IDD_GUIDGEN_DIALOG DIALOG DISCARDABLE  0, 0, 246, 193
 STYLE WS_MAXIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Create GUID"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT           "Choose the desired format below, then select ""Copy"" to copy the results to the clipboard (the results can then be pasted into your source code).  Choose ""Exit"" when done.",
                     IDC_STATIC,6,6,178,37
@@ -177,7 +177,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDP_ERR_CREATE_GUID     "Unable to create new GUID."
     IDP_ERR_OPEN_CLIP       "Clipboard is busy. Unable to copy result to clipboard."
-    IDS_ABOUTBOX            "&About Create GUID..."
+    IDS_ABOUTBOX            "&About Create GUID"
 END
 
 #endif    // English (U.S.) resources

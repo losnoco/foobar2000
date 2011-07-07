@@ -116,23 +116,16 @@ public:
 		LPCTSTR lpstrHomePageRegKey = _T("Software\\Microsoft\\Internet Explorer\\Main");
 		LPCTSTR lpstrHomePageRegValue = _T("Start Page");
 
-		ATL::CRegKey rk;
+		CRegKeyEx rk;
 		LONG lRet = rk.Open(HKEY_CURRENT_USER, lpstrHomePageRegKey);
 		ATLASSERT(lRet == ERROR_SUCCESS);
 		if(lRet != ERROR_SUCCESS)
 			return false;
 
-#if (_ATL_VER >= 0x0700)
 		ULONG ulLength = 0;
 		lRet = rk.QueryStringValue(lpstrHomePageRegValue, NULL, &ulLength);
 		if(lRet == ERROR_SUCCESS)
 			lRet = rk.QueryStringValue(lpstrHomePageRegValue, m_strHomePage.GetBuffer(ulLength), &ulLength);
-#else
-		DWORD dwLength = 0;
-		lRet = rk.QueryValue(NULL, lpstrHomePageRegValue, &dwLength);
-		if(lRet == ERROR_SUCCESS)
-			lRet = rk.QueryValue(m_strHomePage.GetBuffer(dwLength / sizeof(TCHAR)), lpstrHomePageRegValue, &dwLength);
-#endif
 		ATLASSERT(lRet == ERROR_SUCCESS);
 		m_strHomePage.ReleaseBuffer();
 
@@ -334,7 +327,6 @@ public:
 		// create address bar combo
 		RECT rcCombo = { 0, 0, 1, 300 };
 		m_cb.Create(m_hWnd, rcCombo, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBS_DROPDOWN | CBS_AUTOHSCROLL);
-		m_cb.SetFont(AtlGetDefaultGuiFont());
 
 		CString strAddress;
 		strAddress.LoadString(IDS_ADDRESS);

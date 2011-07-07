@@ -219,7 +219,6 @@ HWND CMainFrame::CreateAddressBarCtrl(HWND hWndParent)
 {
 	RECT rc = { 50, 0, 300, 100 };
 	m_wndCombo.Create(hWndParent, rc, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBS_DROPDOWN | CBS_AUTOHSCROLL);
-	m_wndCombo.SetFont(AtlGetDefaultGuiFont());
 
 	return m_wndCombo;
 }

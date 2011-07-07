@@ -55,7 +55,7 @@ END
 IDD_ABOUTDLG DIALOG DISCARDABLE  0, 0, 187, 102
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About MTPad"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,130,81,50,14
     CTEXT           "MTPad v2.0\nMultithreaded Notepad Sample\n\n\xA9 Microsoft 2007",
@@ -192,7 +192,7 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About MTPad...",             ID_APP_ABOUT
+        MENUITEM "&About MTPad",                ID_APP_ABOUT
     END
 END
 

@@ -53,7 +53,7 @@ public:
 			return;
 
 		CClientDC dc(m_hWnd);	// will not really paint
-		HFONT hFontOld = dc.SelectFont(AtlGetDefaultGuiFont());
+		HFONT hFontOld = dc.SelectFont(GetFont());
 
 		RECT rcText = rect;
 		dc.DrawText(m_lpstrFilePath, -1, &rcText, DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX | DT_CALCRECT);
@@ -99,7 +99,7 @@ public:
 
 			dc.SetTextColor(::GetSysColor(COLOR_WINDOWTEXT));
 			dc.SetBkMode(TRANSPARENT);
-			HFONT hFontOld = dc.SelectFont(AtlGetDefaultGuiFont());
+			HFONT hFontOld = dc.SelectFont(GetFont());
 
 #ifndef _WIN32_WCE
 			dc.DrawText(m_lpstrFilePath, -1, &rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_NOPREFIX | DT_PATH_ELLIPSIS);

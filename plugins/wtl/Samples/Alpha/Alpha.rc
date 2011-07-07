@@ -124,7 +124,7 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About Alpha...",             ID_APP_ABOUT
+        MENUITEM "&About Alpha",                ID_APP_ABOUT
     END
 END
 
@@ -146,7 +146,7 @@ IDR_MAINFRAME           ICON    DISCARDABLE     "res\\Alpha.ico"
 IDD_ABOUTBOX DIALOG DISCARDABLE  0, 0, 187, 102
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,130,81,50,14
     CTEXT           "Alpha WTL Sample v1.0\n\n(c) Copyright 2002",IDC_STATIC,

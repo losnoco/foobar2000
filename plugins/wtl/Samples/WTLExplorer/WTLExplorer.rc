@@ -56,43 +56,6 @@ END
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON    DISCARDABLE     "res\\WTLExplorer.ico"
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_ABOUTBOX DIALOG DISCARDABLE  0, 0, 187, 102
-STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "About"
-FONT 8, "MS Sans Serif"
-BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,130,81,50,14
-    CTEXT           "WTLExplorer Application v1.0\n\n(c) Copyright 1999",
-                    IDC_STATIC,25,57,78,32
-    ICON            IDR_MAINFRAME,IDC_STATIC,55,26,18,20
-    GROUPBOX        "",IDC_STATIC,7,7,115,88
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
-BEGIN
-    IDD_ABOUTBOX, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 180
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 95
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -190,7 +153,7 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About WTL Explorer...",      ID_APP_ABOUT
+        MENUITEM "&About WTL Explorer",         ID_APP_ABOUT
     END
 END
 

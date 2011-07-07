@@ -120,7 +120,7 @@ public:
 
 // Implementation
 // Helper class: image command registry key
-	class CImageTypeKey : public CRegKey
+	class CImageTypeKey : public CRegKeyEx
 	{
 	public:
 		CString m_sCmd;
@@ -147,22 +147,14 @@ public:
 
 		LPCTSTR GetCmd()
 		{
-#if _ATL_VER <0x800
-			QueryValue( m_sCmd.GetBuffer( size), L"", &size);
-#else
 			QueryStringValue(L"",  m_sCmd.GetBuffer( size), &size);
-#endif // _ATL_VER <0x800
 			m_sCmd.ReleaseBuffer();
 			return m_sCmd;
 		}
 
 		void SetCmd(LPCTSTR sCmd)
 		{
-#if _ATL_VER <0x800
-			SetValue( sCmd, L"");
-#else
 			SetStringValue(L"", sCmd);
-#endif // _ATL_VER <0x800
 		}
 	};
 

@@ -42,7 +42,7 @@ void CTestWizard::InitializeDefaultValues()
 	CString outputFileName;
 	TestWizardOutputFileEncoding outputFileEncoding = eEncoding_ASCII;
 
-	ATL::CRegKey regKey;
+	CRegKeyEx regKey;
 	LONG result = regKey.Open(HKEY_CURRENT_USER, g_lpcstrPrefRegKey);
 	if(result == ERROR_SUCCESS)
 	{
@@ -104,7 +104,7 @@ void CTestWizard::StoreDefaultValues()
 	TestWizardOutputType outputType = m_testWizardInfo.GetOutputType();
 	CString outputTypeDisplayName = m_testWizardInfo.GetOutputTypeDisplayName();
 
-	ATL::CRegKey regKey;
+	CRegKeyEx regKey;
 	LONG result = regKey.Open(HKEY_CURRENT_USER, g_lpcstrPrefRegKey);
 	if(result != ERROR_SUCCESS)
 	{
@@ -148,11 +148,10 @@ void CTestWizard::StoreDefaultValues()
 	regKey.Close();
 }
 
-bool CTestWizard::GetStringValue(ATL::CRegKey& regKey, LPCTSTR valueName, CString& value)
+bool CTestWizard::GetStringValue(CRegKeyEx& regKey, LPCTSTR valueName, CString& value)
 {
 	bool success = false;
 
-#if (_ATL_VER >= 0x0700)
 	DWORD cchValue = 0;
 	LONG result = regKey.QueryStringValue(valueName, NULL, &cchValue);
 	if((result == ERROR_SUCCESS) && (cchValue > 0))
@@ -161,30 +160,16 @@ bool CTestWizard::GetStringValue(ATL::CRegKey& regKey, LPCTSTR valueName, CStrin
 		value.ReleaseBuffer();
 		success = true;
 	}
-#else
-	DWORD cbValue = 0;
-	LONG result = regKey.QueryValue(NULL, valueName, &cbValue);
-	if((result == ERROR_SUCCESS) && (cbValue > 0))
-	{
-		regKey.QueryValue(value.GetBuffer((cbValue+1/sizeof(TCHAR))+1), valueName, &cbValue);
-		value.ReleaseBuffer();
-		success = true;
-	}
-#endif
 
 	return success;
 }
 
-bool CTestWizard::GetBoolValue(ATL::CRegKey& regKey, LPCTSTR valueName, bool& value)
+bool CTestWizard::GetBoolValue(CRegKeyEx& regKey, LPCTSTR valueName, bool& value)
 {
 	bool success = false;
 
 	DWORD dwValue = 0;
-#if (_ATL_VER >= 0x0700)
 	LONG result = regKey.QueryDWORDValue(valueName, dwValue);
-#else
-	LONG result = regKey.QueryValue(dwValue, valueName);
-#endif
 	if(result == ERROR_SUCCESS)
 	{
 		value = (dwValue != 0);
@@ -194,21 +179,13 @@ bool CTestWizard::GetBoolValue(ATL::CRegKey& regKey, LPCTSTR valueName, bool& va
 	return success;
 }
 
-bool CTestWizard::SetStringValue(ATL::CRegKey& regKey, LPCTSTR valueName, LPCTSTR value)
+bool CTestWizard::SetStringValue(CRegKeyEx& regKey, LPCTSTR valueName, LPCTSTR value)
 {
-#if (_ATL_VER >= 0x0700)
 	return (ERROR_SUCCESS == regKey.SetStringValue(valueName, value, REG_SZ));
-#else
-	return (ERROR_SUCCESS == regKey.SetValue(value, valueName));
-#endif
 }
 
-bool CTestWizard::SetBoolValue(ATL::CRegKey& regKey, LPCTSTR valueName, bool value)
+bool CTestWizard::SetBoolValue(CRegKeyEx& regKey, LPCTSTR valueName, bool value)
 {
-#if (_ATL_VER >= 0x0700)
 	return (ERROR_SUCCESS == regKey.SetDWORDValue(valueName, (value ? 1 : 0)));
-#else
-	return (ERROR_SUCCESS == regKey.SetValue((value ? 1 : 0), valueName));
-#endif
 }
 

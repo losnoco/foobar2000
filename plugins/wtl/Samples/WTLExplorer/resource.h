@@ -2,7 +2,6 @@
 // Microsoft Developer Studio generated include file.
 // Used by WTLExplorer.rc
 //
-#define IDD_ABOUTBOX                    100
 #define ID_COMBO_GO                     101
 #define ID_VIEW_ICONS                   102
 #define ID_VIEW_DETAILS                 103
