@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - implements a system clock based on 
 //       IReferenceClock.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -27,20 +27,20 @@ int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 #endif
 
 /* This goes in the factory template table to create new instances */
-CUnknown * WINAPI CSystemClock::CreateInstance(LPUNKNOWN pUnk,HRESULT *phr)
+CUnknown * WINAPI CSystemClock::CreateInstance(__inout_opt LPUNKNOWN pUnk, __inout HRESULT *phr)
 {
     return new CSystemClock(NAME("System reference clock"),pUnk, phr);
 }
 
 
-CSystemClock::CSystemClock(TCHAR *pName,LPUNKNOWN pUnk,HRESULT *phr) :
+CSystemClock::CSystemClock(__in_opt LPCTSTR pName, __inout_opt LPUNKNOWN pUnk, __inout HRESULT *phr) :
     CBaseReferenceClock(pName, pUnk, phr)
 {
 }
 
 STDMETHODIMP CSystemClock::NonDelegatingQueryInterface(
     REFIID riid,
-    void ** ppv)
+    __deref_out void ** ppv)
 {
     if (riid == IID_IPersist)
     {
@@ -58,7 +58,7 @@ STDMETHODIMP CSystemClock::NonDelegatingQueryInterface(
 
 /* Return the clock's clsid */
 STDMETHODIMP
-CSystemClock::GetClassID(CLSID *pClsID)
+CSystemClock::GetClassID(__out CLSID *pClsID)
 {
     CheckPointer(pClsID,E_POINTER);
     ValidateReadWritePtr(pClsID,sizeof(CLSID));

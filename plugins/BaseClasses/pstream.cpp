@@ -3,21 +3,22 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
 #include <streams.h>
+#include <strsafe.h>
 
 #ifdef PERF
 #include <measure.h>
 #endif
-
+// #include "pstream.h"  in streams.h
 
 //
 // Constructor
 //
-CPersistStream::CPersistStream(IUnknown *punk, HRESULT *phr)
+CPersistStream::CPersistStream(IUnknown *punk, __inout HRESULT *phr)
     : mPS_fDirty(FALSE)
 {
     mPS_dwFileVersion = GetSoftwareVersion();
@@ -38,10 +39,10 @@ SAMPLE CODE TO COPY - not active at the moment
 // NonDelegatingQueryInterface
 //
 // This object supports IPersist & IPersistStream
-STDMETHODIMP CPersistStream::NonDelegatingQueryInterface(REFIID riid, void **ppv)
+STDMETHODIMP CPersistStream::NonDelegatingQueryInterface(REFIID riid, __deref_out void **ppv)
 {
     if (riid == IID_IPersist) {
-        return GetInterface((IPersist *) this, ppv);
+        return GetInterface((IPersist *) this, ppv);      // ???
     }
     else if (riid == IID_IPersistStream) {
         return GetInterface((IPersistStream *) this, ppv);
@@ -128,7 +129,7 @@ STDMETHODIMP CPersistStream::Save(LPSTREAM pStm, BOOL fClearDirty)
 STDAPI WriteInt(IStream *pIStream, int n)
 {
     WCHAR Buff[13];  // Allows for trailing null that we don't write
-    wsprintfW(Buff, L"%011d ",n);
+    (void)StringCchPrintfW(Buff, NUMELMS(Buff),L"%011d ",n);
     return pIStream->Write(&(Buff[0]), 12*sizeof(WCHAR), NULL);
 } // WriteInt
 
@@ -140,7 +141,7 @@ STDAPI WriteInt(IStream *pIStream, int n)
 // where the value isn't actually truncated by squeezing it into 32 bits
 // Striped down subset of what sscanf can do (without dragging in the C runtime)
 
-STDAPI_(int) ReadInt(IStream *pIStream, HRESULT &hr)
+STDAPI_(int) ReadInt(IStream *pIStream, __out HRESULT &hr)
 {
 
     int Sign = 1;

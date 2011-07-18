@@ -4,7 +4,7 @@
 // Desc: DirectShow  base classes - implements CSource, which is a Quartz
 //       source filter 'template.'
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -26,14 +26,14 @@
 //
 // Initialise the pin count for the filter. The user will create the pins in
 // the derived class.
-CSource::CSource(TCHAR *pName, LPUNKNOWN lpunk, CLSID clsid)
+CSource::CSource(__in_opt LPCTSTR pName, __inout_opt LPUNKNOWN lpunk, CLSID clsid)
     : CBaseFilter(pName, lpunk, &m_cStateLock, clsid),
       m_iPins(0),
       m_paStreams(NULL)
 {
 }
 
-CSource::CSource(TCHAR *pName, LPUNKNOWN lpunk, CLSID clsid, HRESULT *phr)
+CSource::CSource(__in_opt LPCTSTR pName, __inout_opt LPUNKNOWN lpunk, CLSID clsid, __inout HRESULT *phr)
     : CBaseFilter(pName, lpunk, &m_cStateLock, clsid),
       m_iPins(0),
       m_paStreams(NULL)
@@ -42,14 +42,14 @@ CSource::CSource(TCHAR *pName, LPUNKNOWN lpunk, CLSID clsid, HRESULT *phr)
 }
 
 #ifdef UNICODE
-CSource::CSource(CHAR *pName, LPUNKNOWN lpunk, CLSID clsid)
+CSource::CSource(__in_opt LPCSTR pName, __inout_opt LPUNKNOWN lpunk, CLSID clsid)
     : CBaseFilter(pName, lpunk, &m_cStateLock, clsid),
       m_iPins(0),
       m_paStreams(NULL)
 {
 }
 
-CSource::CSource(CHAR *pName, LPUNKNOWN lpunk, CLSID clsid, HRESULT *phr)
+CSource::CSource(__in_opt LPCSTR pName, __inout_opt LPUNKNOWN lpunk, CLSID clsid, __inout HRESULT *phr)
     : CBaseFilter(pName, lpunk, &m_cStateLock, clsid),
       m_iPins(0),
       m_paStreams(NULL)
@@ -76,7 +76,7 @@ CSource::~CSource()
 //
 //  Add a new pin
 //
-HRESULT CSource::AddPin(CSourceStream *pStream)
+HRESULT CSource::AddPin(__in CSourceStream *pStream)
 {
     CAutoLock lock(&m_cStateLock);
 
@@ -100,7 +100,7 @@ HRESULT CSource::AddPin(CSourceStream *pStream)
 //
 //  Remove a pin - pStream is NOT deleted
 //
-HRESULT CSource::RemovePin(CSourceStream *pStream)
+HRESULT CSource::RemovePin(__in CSourceStream *pStream)
 {
     int i;
     for (i = 0; i < m_iPins; i++) {
@@ -125,7 +125,7 @@ HRESULT CSource::RemovePin(CSourceStream *pStream)
 //
 // Set *ppPin to the IPin* that has the id Id.
 // or to NULL if the Id cannot be matched.
-STDMETHODIMP CSource::FindPin(LPCWSTR Id, IPin **ppPin)
+STDMETHODIMP CSource::FindPin(LPCWSTR Id, __deref_out IPin **ppPin)
 {
     CheckPointer(ppPin,E_POINTER);
     ValidateReadWritePtr(ppPin,sizeof(IPin *));
@@ -145,7 +145,7 @@ STDMETHODIMP CSource::FindPin(LPCWSTR Id, IPin **ppPin)
 // FindPinNumber
 //
 // return the number of the pin with this IPin* or -1 if none
-int CSource::FindPinNumber(IPin *iPin) {
+int CSource::FindPinNumber(__in IPin *iPin) {
     int i;
     for (i=0; i<m_iPins; ++i) {
         if ((IPin *)(m_paStreams[i])==iPin) {
@@ -196,7 +196,7 @@ CBasePin *CSource::GetPin(int n) {
 
 //
 // Set Id to point to a CoTaskMemAlloc'd
-STDMETHODIMP CSourceStream::QueryId(LPWSTR *Id) {
+STDMETHODIMP CSourceStream::QueryId(__deref_out LPWSTR *Id) {
     CheckPointer(Id,E_POINTER);
     ValidateReadWritePtr(Id,sizeof(LPWSTR));
 
@@ -204,7 +204,7 @@ STDMETHODIMP CSourceStream::QueryId(LPWSTR *Id) {
     // FindPinNumber returns -1 for an invalid pin
     int i = 1+ m_pFilter->FindPinNumber(this);
     if (i<1) return VFW_E_NOT_FOUND;
-    *Id = (LPWSTR)CoTaskMemAlloc(8);
+    *Id = (LPWSTR)CoTaskMemAlloc(sizeof(WCHAR) * 12);
     if (*Id==NULL) {
        return E_OUTOFMEMORY;
     }
@@ -219,10 +219,10 @@ STDMETHODIMP CSourceStream::QueryId(LPWSTR *Id) {
 //
 // increments the number of pins present on the filter
 CSourceStream::CSourceStream(
-    TCHAR *pObjectName,
-    HRESULT *phr,
-    CSource *ps,
-    LPCWSTR pPinName)
+    __in_opt LPCTSTR pObjectName,
+    __inout HRESULT *phr,
+    __inout CSource *ps,
+    __in_opt LPCWSTR pPinName)
     : CBaseOutputPin(pObjectName, ps, ps->pStateLock(), phr, pPinName),
       m_pFilter(ps) {
 
@@ -231,10 +231,10 @@ CSourceStream::CSourceStream(
 
 #ifdef UNICODE
 CSourceStream::CSourceStream(
-    char *pObjectName,
-    HRESULT *phr,
-    CSource *ps,
-    LPCWSTR pPinName)
+    __in_opt LPCSTR pObjectName,
+    __inout HRESULT *phr,
+    __inout CSource *ps,
+    __in_opt LPCWSTR pPinName)
     : CBaseOutputPin(pObjectName, ps, ps->pStateLock(), phr, pPinName),
       m_pFilter(ps) {
 
@@ -275,7 +275,7 @@ HRESULT CSourceStream::CheckMediaType(const CMediaType *pMediaType) {
 //
 // By default we support only one type
 // iPosition indexes are 0-n
-HRESULT CSourceStream::GetMediaType(int iPosition, CMediaType *pMediaType) {
+HRESULT CSourceStream::GetMediaType(int iPosition, __inout CMediaType *pMediaType) {
 
     CAutoLock lock(m_pFilter->pStateLock());
 

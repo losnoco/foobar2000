@@ -113,7 +113,7 @@
       <AdditionalIncludeDirectories>.;..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_LIB;_WIN32_DCOM;WINVER=0x400;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>streams.h</PrecompiledHeaderFile>
@@ -125,6 +125,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -142,7 +143,7 @@
       <AdditionalIncludeDirectories>.;..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;_MBCS;_LIB;_WIN32_DCOM;DEBUG;WINVER=0x400;WIN32;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>streams.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>.\Debug_Unicode/baseclasses.pch</PrecompiledHeaderOutputFile>
@@ -171,7 +172,7 @@
       <AdditionalIncludeDirectories>.;..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_MBCS;_LIB;_WIN32_DCOM;WINVER=0x400;WIN32;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>streams.h</PrecompiledHeaderFile>
@@ -183,13 +184,14 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Lib>
-      <AdditionalOptions>..\..\..\..\lib\strmiids.lib  /nodefaultlib  %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>strmiids.lib  /nodefaultlib  %(AdditionalOptions)</AdditionalOptions>
       <OutputFile>Release_Unicode\STRMBASE.lib</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Lib>
@@ -241,6 +243,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -256,6 +259,7 @@
     <ClCompile Include="amextra.cpp" />
     <ClCompile Include="amfilter.cpp" />
     <ClCompile Include="amvideo.cpp" />
+    <ClCompile Include="arithutil.cpp" />
     <ClCompile Include="combase.cpp" />
     <ClCompile Include="cprop.cpp" />
     <ClCompile Include="ctlutil.cpp" />
@@ -270,6 +274,7 @@
     <ClCompile Include="dllsetup.cpp" />
     <ClCompile Include="mtype.cpp" />
     <ClCompile Include="outputq.cpp" />
+    <ClCompile Include="perflog.cpp" />
     <ClCompile Include="pstream.cpp" />
     <ClCompile Include="pullpin.cpp" />
     <ClCompile Include="refclock.cpp" />
@@ -294,18 +299,30 @@
     <None Include="activex.ver" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="amextra.h" />
+    <ClInclude Include="amfilter.h" />
+    <ClInclude Include="cache.h" />
+    <ClInclude Include="checkbmi.h" />
+    <ClInclude Include="combase.h" />
+    <ClInclude Include="cprop.h" />
+    <ClInclude Include="ctlutil.h" />
+    <ClInclude Include="ddmm.h" />
     <ClInclude Include="dllsetup.h" />
     <ClInclude Include="dsschedule.h" />
+    <ClInclude Include="dxmperf.h" />
     <ClInclude Include="fourcc.h" />
     <ClInclude Include="measure.h" />
     <ClInclude Include="msgthrd.h" />
     <ClInclude Include="mtype.h" />
     <ClInclude Include="outputq.h" />
+    <ClInclude Include="perflog.h" />
+    <ClInclude Include="perfstruct.h" />
     <ClInclude Include="pstream.h" />
     <ClInclude Include="pullpin.h" />
     <ClInclude Include="refclock.h" />
     <ClInclude Include="reftime.h" />
     <ClInclude Include="renbase.h" />
+    <ClInclude Include="schedule.h" />
     <ClInclude Include="seekpt.h" />
     <ClInclude Include="source.h" />
     <ClInclude Include="streams.h" />

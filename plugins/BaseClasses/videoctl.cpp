@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -15,7 +15,7 @@
 // buffer in the property page class and use it for all string loading. It
 // cannot be static as multiple property pages may be active simultaneously
 
-TCHAR *WINAPI StringFromResource(TCHAR *pBuffer, int iResourceID)
+LPTSTR WINAPI StringFromResource(__out_ecount(STR_MAX_LENGTH) LPTSTR pBuffer, int iResourceID)
 {
     if (LoadString(g_hInst,iResourceID,pBuffer,STR_MAX_LENGTH) == 0) {
         return TEXT("");
@@ -24,7 +24,7 @@ TCHAR *WINAPI StringFromResource(TCHAR *pBuffer, int iResourceID)
 }
 
 #ifdef UNICODE
-char *WINAPI StringFromResource(char *pBuffer, int iResourceID)
+LPSTR WINAPI StringFromResource(__out_ecount(STR_MAX_LENGTH) LPSTR pBuffer, int iResourceID)
 {
     if (LoadStringA(g_hInst,iResourceID,pBuffer,STR_MAX_LENGTH) == 0) {
         return "";
@@ -44,7 +44,7 @@ char *WINAPI StringFromResource(char *pBuffer, int iResourceID)
 
 #ifndef UNICODE
 
-WCHAR * WINAPI WideStringFromResource(WCHAR *pBuffer, int iResourceID)
+LPWSTR WINAPI WideStringFromResource(__out_ecount(STR_MAX_LENGTH) LPWSTR pBuffer, int iResourceID)
 {
     *pBuffer = 0;
 
@@ -71,7 +71,7 @@ WCHAR * WINAPI WideStringFromResource(WCHAR *pBuffer, int iResourceID)
 BOOL WINAPI GetDialogSize(int iResourceID,
                           DLGPROC pDlgProc,
                           LPARAM lParam,
-                          SIZE *pResult)
+                          __out SIZE *pResult)
 {
     RECT rc;
     HWND hwnd;
@@ -104,7 +104,7 @@ BOOL WINAPI GetDialogSize(int iResourceID,
 // graph manager also exposes IDirectDraw as a plug in distributor. For these
 // objects we provide these aggregation classes that republish the interfaces
 
-STDMETHODIMP CAggDirectDraw::NonDelegatingQueryInterface(REFIID riid, void **ppv)
+STDMETHODIMP CAggDirectDraw::NonDelegatingQueryInterface(REFIID riid, __deref_out void **ppv)
 {
     ASSERT(m_pDirectDraw);
 
@@ -125,42 +125,54 @@ STDMETHODIMP CAggDirectDraw::Compact()
 }
 
 
-STDMETHODIMP CAggDirectDraw::CreateClipper(DWORD dwFlags,LPDIRECTDRAWCLIPPER *lplpDDClipper,IUnknown *pUnkOuter)
+STDMETHODIMP CAggDirectDraw::CreateClipper(DWORD dwFlags, __deref_out LPDIRECTDRAWCLIPPER *lplpDDClipper, __inout_opt IUnknown *pUnkOuter)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->CreateClipper(dwFlags,lplpDDClipper,pUnkOuter);
 }
 
 
-STDMETHODIMP CAggDirectDraw::CreatePalette(DWORD dwFlags,LPPALETTEENTRY lpColorTable,LPDIRECTDRAWPALETTE *lplpDDPalette,IUnknown *pUnkOuter)
+STDMETHODIMP CAggDirectDraw::CreatePalette(DWORD dwFlags,
+                                           __in LPPALETTEENTRY lpColorTable,
+                                           __deref_out LPDIRECTDRAWPALETTE *lplpDDPalette,
+                                           __inout_opt IUnknown *pUnkOuter)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->CreatePalette(dwFlags,lpColorTable,lplpDDPalette,pUnkOuter);
 }
 
 
-STDMETHODIMP CAggDirectDraw::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc,LPDIRECTDRAWSURFACE *lplpDDSurface,IUnknown *pUnkOuter)
+STDMETHODIMP CAggDirectDraw::CreateSurface(__in LPDDSURFACEDESC lpDDSurfaceDesc,
+                                           __deref_out LPDIRECTDRAWSURFACE *lplpDDSurface,
+                                           __inout_opt IUnknown *pUnkOuter)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->CreateSurface(lpDDSurfaceDesc,lplpDDSurface,pUnkOuter);
 }
 
 
-STDMETHODIMP CAggDirectDraw::DuplicateSurface(LPDIRECTDRAWSURFACE lpDDSurface,LPDIRECTDRAWSURFACE *lplpDupDDSurface)
+STDMETHODIMP CAggDirectDraw::DuplicateSurface(__in LPDIRECTDRAWSURFACE lpDDSurface,
+                                              __deref_out LPDIRECTDRAWSURFACE *lplpDupDDSurface)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->DuplicateSurface(lpDDSurface,lplpDupDDSurface);
 }
 
 
-STDMETHODIMP CAggDirectDraw::EnumDisplayModes(DWORD dwSurfaceDescCount,LPDDSURFACEDESC lplpDDSurfaceDescList,LPVOID lpContext,LPDDENUMMODESCALLBACK lpEnumCallback)
+STDMETHODIMP CAggDirectDraw::EnumDisplayModes(DWORD dwSurfaceDescCount,
+                                              __in LPDDSURFACEDESC lplpDDSurfaceDescList,
+                                              __in LPVOID lpContext,
+                                              __in LPDDENUMMODESCALLBACK lpEnumCallback)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->EnumDisplayModes(dwSurfaceDescCount,lplpDDSurfaceDescList,lpContext,lpEnumCallback);
 }
 
 
-STDMETHODIMP CAggDirectDraw::EnumSurfaces(DWORD dwFlags,LPDDSURFACEDESC lpDDSD,LPVOID lpContext,LPDDENUMSURFACESCALLBACK lpEnumCallback)
+STDMETHODIMP CAggDirectDraw::EnumSurfaces(DWORD dwFlags,
+                                          __in LPDDSURFACEDESC lpDDSD,
+                                          __in LPVOID lpContext,
+                                          __in LPDDENUMSURFACESCALLBACK lpEnumCallback)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->EnumSurfaces(dwFlags,lpDDSD,lpContext,lpEnumCallback);
@@ -174,56 +186,56 @@ STDMETHODIMP CAggDirectDraw::FlipToGDISurface()
 }
 
 
-STDMETHODIMP CAggDirectDraw::GetCaps(LPDDCAPS lpDDDriverCaps,LPDDCAPS lpDDHELCaps)
+STDMETHODIMP CAggDirectDraw::GetCaps(__out LPDDCAPS lpDDDriverCaps,__out LPDDCAPS lpDDHELCaps)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->GetCaps(lpDDDriverCaps,lpDDHELCaps);
 }
 
 
-STDMETHODIMP CAggDirectDraw::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
+STDMETHODIMP CAggDirectDraw::GetDisplayMode(__out LPDDSURFACEDESC lpDDSurfaceDesc)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->GetDisplayMode(lpDDSurfaceDesc);
 }
 
 
-STDMETHODIMP CAggDirectDraw::GetFourCCCodes(LPDWORD lpNumCodes,LPDWORD lpCodes)
+STDMETHODIMP CAggDirectDraw::GetFourCCCodes(__inout LPDWORD lpNumCodes,__out_ecount(*lpNumCodes) LPDWORD lpCodes)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->GetFourCCCodes(lpNumCodes,lpCodes);
 }
 
 
-STDMETHODIMP CAggDirectDraw::GetGDISurface(LPDIRECTDRAWSURFACE *lplpGDIDDSurface)
+STDMETHODIMP CAggDirectDraw::GetGDISurface(__deref_out LPDIRECTDRAWSURFACE *lplpGDIDDSurface)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->GetGDISurface(lplpGDIDDSurface);
 }
 
 
-STDMETHODIMP CAggDirectDraw::GetMonitorFrequency(LPDWORD lpdwFrequency)
+STDMETHODIMP CAggDirectDraw::GetMonitorFrequency(__out LPDWORD lpdwFrequency)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->GetMonitorFrequency(lpdwFrequency);
 }
 
 
-STDMETHODIMP CAggDirectDraw::GetScanLine(LPDWORD lpdwScanLine)
+STDMETHODIMP CAggDirectDraw::GetScanLine(__out LPDWORD lpdwScanLine)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->GetScanLine(lpdwScanLine);
 }
 
 
-STDMETHODIMP CAggDirectDraw::GetVerticalBlankStatus(LPBOOL lpblsInVB)
+STDMETHODIMP CAggDirectDraw::GetVerticalBlankStatus(__out LPBOOL lpblsInVB)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->GetVerticalBlankStatus(lpblsInVB);
 }
 
 
-STDMETHODIMP CAggDirectDraw::Initialize(GUID *lpGUID)
+STDMETHODIMP CAggDirectDraw::Initialize(__in GUID *lpGUID)
 {
     ASSERT(m_pDirectDraw);
     return m_pDirectDraw->Initialize(lpGUID);
@@ -266,7 +278,7 @@ STDMETHODIMP CAggDirectDraw::WaitForVerticalBlank(DWORD dwFlags,HANDLE hEvent)
 // graph manager also exposes IDirectDraw as a plug in distributor. For these
 // objects we provide these aggregation classes that republish the interfaces
 
-STDMETHODIMP CAggDrawSurface::NonDelegatingQueryInterface(REFIID riid, void **ppv)
+STDMETHODIMP CAggDrawSurface::NonDelegatingQueryInterface(REFIID riid, __deref_out void **ppv)
 {
     ASSERT(m_pDirectDrawSurface);
 
@@ -280,70 +292,82 @@ STDMETHODIMP CAggDrawSurface::NonDelegatingQueryInterface(REFIID riid, void **pp
 }
 
 
-STDMETHODIMP CAggDrawSurface::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
+STDMETHODIMP CAggDrawSurface::AddAttachedSurface(__in LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->AddAttachedSurface(lpDDSAttachedSurface);
 }
 
 
-STDMETHODIMP CAggDrawSurface::AddOverlayDirtyRect(LPRECT lpRect)
+STDMETHODIMP CAggDrawSurface::AddOverlayDirtyRect(__in LPRECT lpRect)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->AddOverlayDirtyRect(lpRect);
 }
 
 
-STDMETHODIMP CAggDrawSurface::Blt(LPRECT lpDestRect,LPDIRECTDRAWSURFACE lpDDSrcSurface,LPRECT lpSrcRect,DWORD dwFlags,LPDDBLTFX lpDDBltFx)
+STDMETHODIMP CAggDrawSurface::Blt(__in LPRECT lpDestRect,
+                                  __in LPDIRECTDRAWSURFACE lpDDSrcSurface,
+                                  __in LPRECT lpSrcRect,
+                                  DWORD dwFlags,
+                                  __in LPDDBLTFX lpDDBltFx)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->Blt(lpDestRect,lpDDSrcSurface,lpSrcRect,dwFlags,lpDDBltFx);
 }
 
 
-STDMETHODIMP CAggDrawSurface::BltBatch(LPDDBLTBATCH lpDDBltBatch,DWORD dwCount,DWORD dwFlags)
+STDMETHODIMP CAggDrawSurface::BltBatch(__in_ecount(dwCount) LPDDBLTBATCH lpDDBltBatch,DWORD dwCount,DWORD dwFlags)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->BltBatch(lpDDBltBatch,dwCount,dwFlags);
 }
 
 
-STDMETHODIMP CAggDrawSurface::BltFast(DWORD dwX,DWORD dwY,LPDIRECTDRAWSURFACE lpDDSrcSurface,LPRECT lpSrcRect,DWORD dwTrans)
+STDMETHODIMP CAggDrawSurface::BltFast(DWORD dwX,DWORD dwY,
+                                      __in LPDIRECTDRAWSURFACE lpDDSrcSurface,
+                                      __in LPRECT lpSrcRect,
+                                      DWORD dwTrans)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->BltFast(dwX,dwY,lpDDSrcSurface,lpSrcRect,dwTrans);
 }
 
 
-STDMETHODIMP CAggDrawSurface::DeleteAttachedSurface(DWORD dwFlags,LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
+STDMETHODIMP CAggDrawSurface::DeleteAttachedSurface(DWORD dwFlags,
+                                                    __in LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->DeleteAttachedSurface(dwFlags,lpDDSAttachedSurface);
 }
 
 
-STDMETHODIMP CAggDrawSurface::EnumAttachedSurfaces(LPVOID lpContext,LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback)
+STDMETHODIMP CAggDrawSurface::EnumAttachedSurfaces(__in LPVOID lpContext,
+                                                   __in LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->EnumAttachedSurfaces(lpContext,lpEnumSurfacesCallback);
 }
 
 
-STDMETHODIMP CAggDrawSurface::EnumOverlayZOrders(DWORD dwFlags,LPVOID lpContext,LPDDENUMSURFACESCALLBACK lpfnCallback)
+STDMETHODIMP CAggDrawSurface::EnumOverlayZOrders(DWORD dwFlags,
+                                                 __in LPVOID lpContext,
+                                                 __in LPDDENUMSURFACESCALLBACK lpfnCallback)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->EnumOverlayZOrders(dwFlags,lpContext,lpfnCallback);
 }
 
 
-STDMETHODIMP CAggDrawSurface::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride,DWORD dwFlags)
+STDMETHODIMP CAggDrawSurface::Flip(__in LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride,DWORD dwFlags)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->Flip(lpDDSurfaceTargetOverride,dwFlags);
 }
 
 
-STDMETHODIMP CAggDrawSurface::GetAttachedSurface(LPDDSCAPS lpDDSCaps,LPDIRECTDRAWSURFACE *lplpDDAttachedSurface)
+STDMETHODIMP CAggDrawSurface::GetAttachedSurface(__in LPDDSCAPS lpDDSCaps,
+                                                 __deref_out LPDIRECTDRAWSURFACE *lplpDDAttachedSurface)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->GetAttachedSurface(lpDDSCaps,lplpDDAttachedSurface);
@@ -357,28 +381,28 @@ STDMETHODIMP CAggDrawSurface::GetBltStatus(DWORD dwFlags)
 }
 
 
-STDMETHODIMP CAggDrawSurface::GetCaps(LPDDSCAPS lpDDSCaps)
+STDMETHODIMP CAggDrawSurface::GetCaps(__out LPDDSCAPS lpDDSCaps)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->GetCaps(lpDDSCaps);
 }
 
 
-STDMETHODIMP CAggDrawSurface::GetClipper(LPDIRECTDRAWCLIPPER *lplpDDClipper)
+STDMETHODIMP CAggDrawSurface::GetClipper(__deref_out LPDIRECTDRAWCLIPPER *lplpDDClipper)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->GetClipper(lplpDDClipper);
 }
 
 
-STDMETHODIMP CAggDrawSurface::GetColorKey(DWORD dwFlags,LPDDCOLORKEY lpDDColorKey)
+STDMETHODIMP CAggDrawSurface::GetColorKey(DWORD dwFlags,__out LPDDCOLORKEY lpDDColorKey)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->GetColorKey(dwFlags,lpDDColorKey);
 }
 
 
-STDMETHODIMP CAggDrawSurface::GetDC(HDC *lphDC)
+STDMETHODIMP CAggDrawSurface::GetDC(__out HDC *lphDC)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->GetDC(lphDC);
@@ -392,21 +416,21 @@ STDMETHODIMP CAggDrawSurface::GetFlipStatus(DWORD dwFlags)
 }
 
 
-STDMETHODIMP CAggDrawSurface::GetOverlayPosition(LPLONG lpdwX,LPLONG lpdwY)
+STDMETHODIMP CAggDrawSurface::GetOverlayPosition(__out LPLONG lpdwX,__out LPLONG lpdwY)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->GetOverlayPosition(lpdwX,lpdwY);
 }
 
 
-STDMETHODIMP CAggDrawSurface::GetPalette(LPDIRECTDRAWPALETTE *lplpDDPalette)
+STDMETHODIMP CAggDrawSurface::GetPalette(__deref_out LPDIRECTDRAWPALETTE *lplpDDPalette)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->GetPalette(lplpDDPalette);
 }
 
 
-STDMETHODIMP CAggDrawSurface::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
+STDMETHODIMP CAggDrawSurface::GetPixelFormat(__out LPDDPIXELFORMAT lpDDPixelFormat)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->GetPixelFormat(lpDDPixelFormat);
@@ -423,7 +447,7 @@ STDMETHODIMP CAggDrawSurface::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 // access to the real IDirectDraw surface. A filter can call GetSurfaceDesc
 // and we will fill in the lpSurface pointer with the real underlying surface
 
-STDMETHODIMP CAggDrawSurface::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc)
+STDMETHODIMP CAggDrawSurface::GetSurfaceDesc(__out LPDDSURFACEDESC lpDDSurfaceDesc)
 {
     ASSERT(m_pDirectDrawSurface);
 
@@ -440,7 +464,7 @@ STDMETHODIMP CAggDrawSurface::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc)
 }
 
 
-STDMETHODIMP CAggDrawSurface::Initialize(LPDIRECTDRAW lpDD,LPDDSURFACEDESC lpDDSurfaceDesc)
+STDMETHODIMP CAggDrawSurface::Initialize(__in LPDIRECTDRAW lpDD,__in LPDDSURFACEDESC lpDDSurfaceDesc)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->Initialize(lpDD,lpDDSurfaceDesc);
@@ -454,7 +478,10 @@ STDMETHODIMP CAggDrawSurface::IsLost()
 }
 
 
-STDMETHODIMP CAggDrawSurface::Lock(LPRECT lpDestRect,LPDDSURFACEDESC lpDDSurfaceDesc,DWORD dwFlags,HANDLE hEvent)
+STDMETHODIMP CAggDrawSurface::Lock(__in LPRECT lpDestRect,
+                                   __inout LPDDSURFACEDESC lpDDSurfaceDesc,
+                                   DWORD dwFlags,
+                                   HANDLE hEvent)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->Lock(lpDestRect,lpDDSurfaceDesc,dwFlags,hEvent);
@@ -475,14 +502,14 @@ STDMETHODIMP CAggDrawSurface::Restore()
 }
 
 
-STDMETHODIMP CAggDrawSurface::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper)
+STDMETHODIMP CAggDrawSurface::SetClipper(__in LPDIRECTDRAWCLIPPER lpDDClipper)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->SetClipper(lpDDClipper);
 }
 
 
-STDMETHODIMP CAggDrawSurface::SetColorKey(DWORD dwFlags,LPDDCOLORKEY lpDDColorKey)
+STDMETHODIMP CAggDrawSurface::SetColorKey(DWORD dwFlags,__in LPDDCOLORKEY lpDDColorKey)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->SetColorKey(dwFlags,lpDDColorKey);
@@ -496,21 +523,25 @@ STDMETHODIMP CAggDrawSurface::SetOverlayPosition(LONG dwX,LONG dwY)
 }
 
 
-STDMETHODIMP CAggDrawSurface::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
+STDMETHODIMP CAggDrawSurface::SetPalette(__in LPDIRECTDRAWPALETTE lpDDPalette)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->SetPalette(lpDDPalette);
 }
 
 
-STDMETHODIMP CAggDrawSurface::Unlock(LPVOID lpSurfaceData)
+STDMETHODIMP CAggDrawSurface::Unlock(__in LPVOID lpSurfaceData)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->Unlock(lpSurfaceData);
 }
 
 
-STDMETHODIMP CAggDrawSurface::UpdateOverlay(LPRECT lpSrcRect,LPDIRECTDRAWSURFACE lpDDDestSurface,LPRECT lpDestRect,DWORD dwFlags,LPDDOVERLAYFX lpDDOverlayFX)
+STDMETHODIMP CAggDrawSurface::UpdateOverlay(__in LPRECT lpSrcRect,
+                                            __in LPDIRECTDRAWSURFACE lpDDDestSurface,
+                                            __in LPRECT lpDestRect,
+                                            DWORD dwFlags,
+                                            __in LPDDOVERLAYFX lpDDOverlayFX)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->UpdateOverlay(lpSrcRect,lpDDDestSurface,lpDestRect,dwFlags,lpDDOverlayFX);
@@ -524,7 +555,7 @@ STDMETHODIMP CAggDrawSurface::UpdateOverlayDisplay(DWORD dwFlags)
 }
 
 
-STDMETHODIMP CAggDrawSurface::UpdateOverlayZOrder(DWORD dwFlags,LPDIRECTDRAWSURFACE lpDDSReference)
+STDMETHODIMP CAggDrawSurface::UpdateOverlayZOrder(DWORD dwFlags,__in LPDIRECTDRAWSURFACE lpDDSReference)
 {
     ASSERT(m_pDirectDrawSurface);
     return m_pDirectDrawSurface->UpdateOverlayZOrder(dwFlags,lpDDSReference);
@@ -567,7 +598,7 @@ CLoadDirectDraw::~CLoadDirectDraw()
 // On a multi monitor system, we can get the DirectDraw object for any
 // monitor (device) with the optional szDevice parameter
 
-HRESULT CLoadDirectDraw::LoadDirectDraw(LPSTR szDevice)
+HRESULT CLoadDirectDraw::LoadDirectDraw(__in LPSTR szDevice)
 {
     PDRAWCREATE pDrawCreate;
     PDRAWENUM pDrawEnum;

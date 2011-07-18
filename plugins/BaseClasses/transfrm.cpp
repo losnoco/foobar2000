@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - implements class for simple transform
 //       filters such as video decompressors.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -16,8 +16,8 @@
 // Implements the CTransformFilter class
 // =================================================================
 
-CTransformFilter::CTransformFilter(TCHAR     *pName,
-                                   LPUNKNOWN pUnk,
+CTransformFilter::CTransformFilter(__in_opt LPCTSTR pName,
+                                   __inout_opt LPUNKNOWN pUnk,
                                    REFCLSID  clsid) :
     CBaseFilter(pName,pUnk,&m_csFilter, clsid),
     m_pInput(NULL),
@@ -32,8 +32,8 @@ CTransformFilter::CTransformFilter(TCHAR     *pName,
 }
 
 #ifdef UNICODE
-CTransformFilter::CTransformFilter(char     *pName,
-                                   LPUNKNOWN pUnk,
+CTransformFilter::CTransformFilter(__in_opt LPCSTR pName,
+                                   __inout_opt LPUNKNOWN pUnk,
                                    REFCLSID  clsid) :
     CBaseFilter(pName,pUnk,&m_csFilter, clsid),
     m_pInput(NULL),
@@ -140,7 +140,7 @@ CTransformFilter::GetPin(int n)
 // If Id is In or Out then return the IPin* for that pin
 // creating the pin if need be.  Otherwise return NULL with an error.
 
-STDMETHODIMP CTransformFilter::FindPin(LPCWSTR Id, IPin **ppPin)
+STDMETHODIMP CTransformFilter::FindPin(LPCWSTR Id, __deref_out IPin **ppPin)
 {
     CheckPointer(ppPin,E_POINTER);
     ValidateReadWritePtr(ppPin,sizeof(IPin *));
@@ -185,7 +185,7 @@ CTransformFilter::StopStreaming()
 // override this to grab extra interfaces on connection
 
 HRESULT
-CTransformFilter::CheckConnect(PIN_DIRECTION dir,IPin *pPin)
+CTransformFilter::CheckConnect(PIN_DIRECTION dir, IPin *pPin)
 {
     UNREFERENCED_PARAMETER(dir);
     UNREFERENCED_PARAMETER(pPin);
@@ -227,7 +227,7 @@ CTransformFilter::SetMediaType(PIN_DIRECTION direction,const CMediaType *pmt)
 
 // Set up our output sample
 HRESULT
-CTransformFilter::InitializeOutputSample(IMediaSample *pSample, IMediaSample **ppOutSample)
+CTransformFilter::InitializeOutputSample(IMediaSample *pSample, __deref_out IMediaSample **ppOutSample)
 {
     IMediaSample *pOutSample;
 
@@ -578,10 +578,10 @@ CTransformInputPin::CheckStreaming()
 // constructor
 
 CTransformInputPin::CTransformInputPin(
-    TCHAR *pObjectName,
-    CTransformFilter *pTransformFilter,
-    HRESULT * phr,
-    LPCWSTR pName)
+    __in_opt LPCTSTR pObjectName,
+    __inout CTransformFilter *pTransformFilter,
+    __inout HRESULT * phr,
+    __in_opt LPCWSTR pName)
     : CBaseInputPin(pObjectName, pTransformFilter, &pTransformFilter->m_csFilter, phr, pName)
 {
     DbgLog((LOG_TRACE,2,TEXT("CTransformInputPin::CTransformInputPin")));
@@ -590,10 +590,10 @@ CTransformInputPin::CTransformInputPin(
 
 #ifdef UNICODE
 CTransformInputPin::CTransformInputPin(
-    CHAR *pObjectName,
-    CTransformFilter *pTransformFilter,
-    HRESULT * phr,
-    LPCWSTR pName)
+    __in_opt LPCSTR pObjectName,
+    __inout CTransformFilter *pTransformFilter,
+    __inout HRESULT * phr,
+    __in_opt LPCWSTR pName)
     : CBaseInputPin(pObjectName, pTransformFilter, &pTransformFilter->m_csFilter, phr, pName)
 {
     DbgLog((LOG_TRACE,2,TEXT("CTransformInputPin::CTransformInputPin")));
@@ -791,10 +791,10 @@ CTransformInputPin::NewSegment(
 // constructor
 
 CTransformOutputPin::CTransformOutputPin(
-    TCHAR *pObjectName,
-    CTransformFilter *pTransformFilter,
-    HRESULT * phr,
-    LPCWSTR pPinName)
+    __in_opt LPCTSTR pObjectName,
+    __inout CTransformFilter *pTransformFilter,
+    __inout HRESULT * phr,
+    __in_opt LPCWSTR pPinName)
     : CBaseOutputPin(pObjectName, pTransformFilter, &pTransformFilter->m_csFilter, phr, pPinName),
       m_pPosition(NULL)
 {
@@ -805,10 +805,10 @@ CTransformOutputPin::CTransformOutputPin(
 
 #ifdef UNICODE
 CTransformOutputPin::CTransformOutputPin(
-    CHAR *pObjectName,
-    CTransformFilter *pTransformFilter,
-    HRESULT * phr,
-    LPCWSTR pPinName)
+    __in_opt LPCSTR pObjectName,
+    __inout CTransformFilter *pTransformFilter,
+    __inout HRESULT * phr,
+    __in_opt LPCWSTR pPinName)
     : CBaseOutputPin(pObjectName, pTransformFilter, &pTransformFilter->m_csFilter, phr, pPinName),
       m_pPosition(NULL)
 {
@@ -831,7 +831,7 @@ CTransformOutputPin::~CTransformOutputPin()
 // overriden to expose IMediaPosition and IMediaSeeking control interfaces
 
 STDMETHODIMP
-CTransformOutputPin::NonDelegatingQueryInterface(REFIID riid, void **ppv)
+CTransformOutputPin::NonDelegatingQueryInterface(REFIID riid, __deref_out void **ppv)
 {
     CheckPointer(ppv,E_POINTER);
     ValidateReadWritePtr(ppv,sizeof(PVOID));
@@ -958,7 +958,7 @@ CTransformOutputPin::SetMediaType(const CMediaType* pmtOut)
 HRESULT
 CTransformOutputPin::DecideBufferSize(
     IMemAllocator * pAllocator,
-    ALLOCATOR_PROPERTIES* pProp)
+    __inout ALLOCATOR_PROPERTIES* pProp)
 {
     return m_pTransformFilter->DecideBufferSize(pAllocator, pProp);
 }
@@ -970,7 +970,7 @@ CTransformOutputPin::DecideBufferSize(
 HRESULT
 CTransformOutputPin::GetMediaType(
     int iPosition,
-    CMediaType *pMediaType)
+    __inout CMediaType *pMediaType)
 {
     ASSERT(m_pTransformFilter->m_pInput != NULL);
 

@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1996-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -187,7 +187,7 @@ REFERENCE_TIME CAMSchedule::Advise( const REFERENCE_TIME & rtTime )
 
 /* Private methods */
 
-DWORD_PTR CAMSchedule::AddAdvisePacket( CAdvisePacket * pPacket )
+DWORD_PTR CAMSchedule::AddAdvisePacket( __inout CAdvisePacket * pPacket )
 {
     ASSERT(pPacket->m_rtEventTime >= 0 && pPacket->m_rtEventTime < MAX_TIME);
     ASSERT(CritCheckIn(&m_Serialize));
@@ -214,7 +214,7 @@ DWORD_PTR CAMSchedule::AddAdvisePacket( CAdvisePacket * pPacket )
     return Result;
 }
 
-void CAMSchedule::Delete( CAdvisePacket * pPacket )
+void CAMSchedule::Delete( __inout CAdvisePacket * pPacket )
 {
     if ( m_dwCacheCount >= dwCacheMax ) delete pPacket;
     else

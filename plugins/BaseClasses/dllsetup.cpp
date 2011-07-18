@@ -3,11 +3,12 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
 #include <streams.h>
+#include <strsafe.h>
 
 //---------------------------------------------------------------------------
 // defines
@@ -36,7 +37,7 @@ extern CFactoryTemplate g_Templates[];
 //---------------------------------------------------------------------------
 
 STDAPI
-EliminateSubKey( HKEY hkey, LPTSTR strSubKey )
+EliminateSubKey( HKEY hkey, LPCTSTR strSubKey )
 {
   HKEY hk;
   if (0 == lstrlen(strSubKey) ) {
@@ -129,7 +130,7 @@ AMovieSetupRegisterServer( CLSID   clsServer
   // create key
   //
   HKEY hkey;
-  wsprintf( achTemp, TEXT("CLSID\\%ls"), szCLSID );
+  (void)StringCchPrintf( achTemp, NUMELMS(achTemp), TEXT("CLSID\\%ls"), szCLSID );
   LONG lreturn = RegCreateKey( HKEY_CLASSES_ROOT
                              , (LPCTSTR)achTemp
                              , &hkey              );
@@ -141,7 +142,7 @@ AMovieSetupRegisterServer( CLSID   clsServer
   // set description string
   //
 
-  wsprintf( achTemp, TEXT("%ls"), szDescription );
+  (void)StringCchPrintf( achTemp, NUMELMS(achTemp), TEXT("%ls"), szDescription );
   lreturn = RegSetValue( hkey
                        , (LPCTSTR)NULL
                        , REG_SZ
@@ -159,7 +160,7 @@ AMovieSetupRegisterServer( CLSID   clsServer
   //
   HKEY hsubkey;
 
-  wsprintf( achTemp, TEXT("%ls"), szServerType );
+  (void)StringCchPrintf( achTemp, NUMELMS(achTemp), TEXT("%ls"), szServerType );
   lreturn = RegCreateKey( hkey
                         , achTemp
                         , &hsubkey     );
@@ -171,7 +172,7 @@ AMovieSetupRegisterServer( CLSID   clsServer
 
   // set Server string
   //
-  wsprintf( achTemp, TEXT("%ls"), szFileName );
+  (void)StringCchPrintf( achTemp, NUMELMS(achTemp), TEXT("%ls"), szFileName );
   lreturn = RegSetValue( hsubkey
                        , (LPCTSTR)NULL
                        , REG_SZ
@@ -184,7 +185,7 @@ AMovieSetupRegisterServer( CLSID   clsServer
     return AmHresultFromWin32(lreturn);
   }
 
-  wsprintf( achTemp, TEXT("%ls"), szThreadingModel );
+  (void)StringCchPrintf( achTemp, NUMELMS(achTemp), TEXT("%ls"), szThreadingModel );
   lreturn = RegSetValueEx( hsubkey
                          , TEXT("ThreadingModel")
                          , 0L
@@ -227,7 +228,7 @@ AMovieSetupUnregisterServer( CLSID clsServer )
   ASSERT( SUCCEEDED(hr) );
 
   TCHAR achBuffer[MAX_KEY_LEN];
-  wsprintf( achBuffer, TEXT("CLSID\\%ls"), szCLSID );
+  (void)StringCchPrintf( achBuffer, NUMELMS(achBuffer), TEXT("CLSID\\%ls"), szCLSID );
 
   // delete subkey
   //

@@ -3,13 +3,15 @@
 //
 // Desc: DirectShow base classes - implements generic window handler class.
 //
-// Copyright (c)  Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
 #include <streams.h>
 #include <limits.h>
 #include <dvdmedia.h>
+#include <strsafe.h>
+#include <checkbmi.h>
 
 static UINT MsgDestroy;
 
@@ -114,9 +116,17 @@ HRESULT CBaseWindow::DoneWithWindow()
 
         if (IsWindow(m_hwnd)) {
 
+            // This code should only be executed if the window exists and if the window's 
+            // messages are processed on a different thread.
+            ASSERT(GetWindowThreadProcessId(m_hwnd, NULL) != GetCurrentThreadId());
+
             if (m_bDoPostToDestroy) {
 
-                CAMEvent m_evDone;
+                HRESULT hr = S_OK;
+                CAMEvent m_evDone(FALSE, &hr);
+                if (FAILED(hr)) {
+                    return hr;
+                }
 
                 //  We must post a message to destroy the window
                 //  That way we can't be in the middle of processing a
@@ -415,7 +425,8 @@ LRESULT CALLBACK WndProc(HWND hwnd,         // Window handle
     // structure.  IF we get any messages before WM_NCCREATE we will
     // pass them to DefWindowProc.
 
-    CBaseWindow *pBaseWindow = (CBaseWindow *)GetWindowLongPtr(hwnd,0);
+    CBaseWindow *pBaseWindow = _GetWindowLongPtr<CBaseWindow*>(hwnd,0);
+
     if (pBaseWindow == NULL) {
 
         // Get the structure pointer from the create struct.
@@ -441,7 +452,10 @@ LRESULT CALLBACK WndProc(HWND hwnd,         // Window handle
 #ifdef DEBUG
         SetLastError(0);  // because of the way SetWindowLong works
 #endif
-        LONG_PTR rc = SetWindowLongPtr(hwnd, (DWORD) 0, (LONG_PTR) pBaseWindow);
+
+        LONG_PTR rc = _SetWindowLongPtr(hwnd, (DWORD) 0, pBaseWindow);
+
+
 #ifdef DEBUG
         if (0 == rc) {
             // SetWindowLong MIGHT have failed.  (Read the docs which admit
@@ -902,7 +916,7 @@ void CBaseWindow::DoSetWindowForeground(BOOL bFocus)
 // look after. We are given device context handles to use later on as well as
 // the source and destination rectangles (but reset them here just in case)
 
-CDrawImage::CDrawImage(CBaseWindow *pBaseWindow) :
+CDrawImage::CDrawImage(__inout CBaseWindow *pBaseWindow) :
     m_pBaseWindow(pBaseWindow),
     m_hdc(NULL),
     m_MemoryDC(NULL),
@@ -950,7 +964,7 @@ void CDrawImage::DisplaySampleTimes(IMediaSample *pSample)
 
     // Format the sample time stamps
 
-    wsprintf(szTimes,TEXT("%08d : %08d"),
+    (void)StringCchPrintf(szTimes,NUMELMS(szTimes),TEXT("%08d : %08d"),
              m_StartSample.Millisecs(),
              m_EndSample.Millisecs());
 
@@ -974,7 +988,7 @@ void CDrawImage::DisplaySampleTimes(IMediaSample *pSample)
 // palette cookie. We simply call the SetDIBColorTable Windows API with the
 // palette that is found after the BITMAPINFOHEADER - we return no errors
 
-void CDrawImage::UpdateColourTable(HDC hdc,BITMAPINFOHEADER *pbmi)
+void CDrawImage::UpdateColourTable(HDC hdc,__in BITMAPINFOHEADER *pbmi)
 {
     ASSERT(pbmi->biClrUsed);
     RGBQUAD *pColourTable = (RGBQUAD *)(pbmi+1);
@@ -1230,8 +1244,8 @@ BOOL CDrawImage::DrawImage(IMediaSample *pMediaSample)
 BOOL CDrawImage::DrawVideoImageHere(
     HDC hdc,
     IMediaSample *pMediaSample,
-    LPRECT lprcSrc,
-    LPRECT lprcDst
+    __in LPRECT lprcSrc,
+    __in LPRECT lprcDst
     )
 {
     ASSERT(m_pMediaType);
@@ -1301,7 +1315,7 @@ void CDrawImage::SetDrawContext()
 // called whenever a WM_SIZE message is retrieved from the message queue. We
 // simply store the rectangle and use it later when we do the drawing calls
 
-void CDrawImage::SetTargetRect(RECT *pTargetRect)
+void CDrawImage::SetTargetRect(__in RECT *pTargetRect)
 {
     ASSERT(pTargetRect);
     m_TargetRect = *pTargetRect;
@@ -1311,7 +1325,7 @@ void CDrawImage::SetTargetRect(RECT *pTargetRect)
 
 // Return the current target rectangle
 
-void CDrawImage::GetTargetRect(RECT *pTargetRect)
+void CDrawImage::GetTargetRect(__out RECT *pTargetRect)
 {
     ASSERT(pTargetRect);
     *pTargetRect = m_TargetRect;
@@ -1323,7 +1337,7 @@ void CDrawImage::GetTargetRect(RECT *pTargetRect)
 // see if the source and destination rectangles have the same dimensions. If
 // not we must stretch during the drawing rather than a direct pixel copy
 
-void CDrawImage::SetSourceRect(RECT *pSourceRect)
+void CDrawImage::SetSourceRect(__in RECT *pSourceRect)
 {
     ASSERT(pSourceRect);
     m_SourceRect = *pSourceRect;
@@ -1333,7 +1347,7 @@ void CDrawImage::SetSourceRect(RECT *pSourceRect)
 
 // Return the current source rectangle
 
-void CDrawImage::GetSourceRect(RECT *pSourceRect)
+void CDrawImage::GetSourceRect(__out RECT *pSourceRect)
 {
     ASSERT(pSourceRect);
     *pSourceRect = m_SourceRect;
@@ -1388,7 +1402,7 @@ BOOL CDrawImage::UsingImageAllocator()
 // from it. We use that in the calls to draw the image such as StretchDIBits
 // and also when updating the colour table held in shared memory DIBSECTIONs
 
-void CDrawImage::NotifyMediaType(CMediaType *pMediaType)
+void CDrawImage::NotifyMediaType(__in CMediaType *pMediaType)
 {
     m_pMediaType = pMediaType;
 }
@@ -1433,9 +1447,9 @@ void CDrawImage::IncrementPaletteVersion()
 // cookie much lower than the current version, this isn't a problem since it
 // will be seen by the window object and the versions will then be updated
 
-CImageAllocator::CImageAllocator(CBaseFilter *pFilter,
-                                 TCHAR *pName,
-                                 HRESULT *phr) :
+CImageAllocator::CImageAllocator(__inout CBaseFilter *pFilter,
+                                 __in_opt LPCTSTR pName,
+                                 __inout HRESULT *phr) :
     CBaseAllocator(pName,NULL,phr,TRUE,TRUE),
     m_pFilter(pFilter)
 {
@@ -1480,7 +1494,7 @@ void CImageAllocator::Free()
 
 // Prepare the allocator by checking all the input parameters
 
-STDMETHODIMP CImageAllocator::CheckSizes(ALLOCATOR_PROPERTIES *pRequest)
+STDMETHODIMP CImageAllocator::CheckSizes(__in ALLOCATOR_PROPERTIES *pRequest)
 {
     // Check we have a valid connection
 
@@ -1520,8 +1534,8 @@ STDMETHODIMP CImageAllocator::CheckSizes(ALLOCATOR_PROPERTIES *pRequest)
 // boundaries NOTE the buffers are not allocated until the Commit call
 
 STDMETHODIMP CImageAllocator::SetProperties(
-    ALLOCATOR_PROPERTIES * pRequest,
-    ALLOCATOR_PROPERTIES * pActual)
+    __in ALLOCATOR_PROPERTIES * pRequest,
+    __out ALLOCATOR_PROPERTIES * pActual)
 {
     ALLOCATOR_PROPERTIES Adjusted = *pRequest;
 
@@ -1566,7 +1580,7 @@ HRESULT CImageAllocator::Alloc(void)
 
         // Create and initialise a shared memory GDI buffer
 
-        HRESULT hr = CreateDIB(m_lSize,DibData);
+        hr = CreateDIB(m_lSize,DibData);
         if (FAILED(hr)) {
             return hr;
         }
@@ -1594,7 +1608,7 @@ HRESULT CImageAllocator::Alloc(void)
 // may override it and allocate more specialised sample objects. So long as it
 // derives its samples from CImageSample then all this code will still work ok
 
-CImageSample *CImageAllocator::CreateImageSample(LPBYTE pData,LONG Length)
+CImageSample *CImageAllocator::CreateImageSample(__in_bcount(Length) LPBYTE pData,LONG Length)
 {
     HRESULT hr = NOERROR;
     CImageSample *pSample;
@@ -1676,7 +1690,7 @@ HRESULT CImageAllocator::CreateDIB(LONG InSize,DIBDATA &DibData)
 
 // We use the media type during the DIBSECTION creation
 
-void CImageAllocator::NotifyMediaType(CMediaType *pMediaType)
+void CImageAllocator::NotifyMediaType(__in CMediaType *pMediaType)
 {
     m_pMediaType = pMediaType;
 }
@@ -1714,10 +1728,10 @@ STDMETHODIMP_(ULONG) CImageAllocator::NonDelegatingRelease()
 // the IMediaSample into one of your objects. Additional checks can be made
 // to ensure the sample's this pointer is known to be one of your own objects
 
-CImageSample::CImageSample(CBaseAllocator *pAllocator,
-                           TCHAR *pName,
-                           HRESULT *phr,
-                           LPBYTE pBuffer,
+CImageSample::CImageSample(__inout CBaseAllocator *pAllocator,
+                           __in_opt LPCTSTR pName,
+                           __inout HRESULT *phr,
+                           __in_bcount(length) LPBYTE pBuffer,
                            LONG length) :
     CMediaSample(pName,pAllocator,phr,pBuffer,length),
     m_bInit(FALSE)
@@ -1729,7 +1743,7 @@ CImageSample::CImageSample(CBaseAllocator *pAllocator,
 
 // Set the shared memory DIB information
 
-void CImageSample::SetDIBData(DIBDATA *pDibData)
+void CImageSample::SetDIBData(__in DIBDATA *pDibData)
 {
     ASSERT(pDibData);
     m_DibData = *pDibData;
@@ -1739,7 +1753,7 @@ void CImageSample::SetDIBData(DIBDATA *pDibData)
 
 // Retrieve the shared memory DIB data
 
-DIBDATA *CImageSample::GetDIBData()
+__out DIBDATA *CImageSample::GetDIBData()
 {
     ASSERT(m_bInit == TRUE);
     return &m_DibData;
@@ -1755,9 +1769,9 @@ DIBDATA *CImageSample::GetDIBData()
 // absolutely necessary as they typically require WM_PALETTECHANGED messages
 // to be sent to every window thread in the system which is very expensive
 
-CImagePalette::CImagePalette(CBaseFilter *pBaseFilter,
-                             CBaseWindow *pBaseWindow,
-                             CDrawImage *pDrawImage) :
+CImagePalette::CImagePalette(__inout CBaseFilter *pBaseFilter,
+                             __inout CBaseWindow *pBaseWindow,
+                             __inout CDrawImage *pDrawImage) :
     m_pBaseWindow(pBaseWindow),
     m_pFilter(pBaseFilter),
     m_pDrawImage(pDrawImage),
@@ -1830,7 +1844,7 @@ BOOL CImagePalette::ShouldUpdate(const VIDEOINFOHEADER *pNewInfo,
 
 HRESULT CImagePalette::PreparePalette(const CMediaType *pmtNew,
                                       const CMediaType *pmtOld,
-				      LPSTR szDevice)
+				                      __in LPSTR szDevice)
 {
     const VIDEOINFOHEADER *pNewInfo = (VIDEOINFOHEADER *) pmtNew->Format();
     const VIDEOINFOHEADER *pOldInfo = (VIDEOINFOHEADER *) pmtOld->Format();
@@ -1899,7 +1913,7 @@ HRESULT CImagePalette::PreparePalette(const CMediaType *pmtNew,
 // any buffer (eg YUV) and hand it back. We make a new palette out of that
 // format and then copy the palette colours into the current connection type
 
-HRESULT CImagePalette::CopyPalette(const CMediaType *pSrc,CMediaType *pDest)
+HRESULT CImagePalette::CopyPalette(const CMediaType *pSrc,__out CMediaType *pDest)
 {
     // Reset the destination palette before starting
 
@@ -1999,7 +2013,7 @@ HRESULT CImagePalette::RemovePalette()
 // We can be passed an optional device name if we wish to prepare a palette
 // for a specific monitor on a multi monitor system
 
-HPALETTE CImagePalette::MakePalette(const VIDEOINFOHEADER *pVideoInfo, LPSTR szDevice)
+HPALETTE CImagePalette::MakePalette(const VIDEOINFOHEADER *pVideoInfo, __in LPSTR szDevice)
 {
     ASSERT(ContainsPalette(pVideoInfo) == TRUE);
     ASSERT(pVideoInfo->bmiHeader.biClrUsed <= iPALETTE_COLORS);
@@ -2053,7 +2067,7 @@ HPALETTE CImagePalette::MakePalette(const VIDEOINFOHEADER *pVideoInfo, LPSTR szD
 // We can be passed an optional device name if we wish to prepare a palette
 // for a specific monitor on a multi monitor system
 
-HRESULT CImagePalette::MakeIdentityPalette(PALETTEENTRY *pEntry,INT iColours, LPSTR szDevice)
+HRESULT CImagePalette::MakeIdentityPalette(__inout_ecount_full(iColours) PALETTEENTRY *pEntry,INT iColours, __in LPSTR szDevice)
 {
     PALETTEENTRY SystemEntries[10];         // System palette entries
     BOOL bIdentityPalette = TRUE;           // Is an identity palette
@@ -2072,7 +2086,7 @@ HRESULT CImagePalette::MakeIdentityPalette(PALETTEENTRY *pEntry,INT iColours, LP
     // Get a DC on the right monitor - it's ugly, but this is the way you have
     // to do it
     HDC hdc;
-    if (szDevice == NULL || lstrcmpiA(szDevice, "DISPLAY") == 0)
+    if (szDevice == NULL || lstrcmpiLocaleIndependentA(szDevice, "DISPLAY") == 0)
         hdc = CreateDCA("DISPLAY", NULL, NULL, NULL);
     else
         hdc = CreateDCA(NULL, szDevice, NULL, NULL);
@@ -2149,7 +2163,7 @@ CImageDisplay::CImageDisplay()
 // The optional szDeviceName parameter tells us which monitor we are interested
 // in for a multi monitor system
 
-HRESULT CImageDisplay::RefreshDisplayType(LPSTR szDeviceName)
+HRESULT CImageDisplay::RefreshDisplayType(__in_opt LPSTR szDeviceName)
 {
     CAutoLock cDisplayLock(this);
 
@@ -2164,7 +2178,7 @@ HRESULT CImageDisplay::RefreshDisplayType(LPSTR szDeviceName)
     // get caps of whichever monitor they are interested in (multi monitor)
     HDC hdcDisplay;
     // it's ugly, but this is the way you have to do it
-    if (szDeviceName == NULL || lstrcmpiA(szDeviceName, "DISPLAY") == 0)
+    if (szDeviceName == NULL || lstrcmpiLocaleIndependentA(szDeviceName, "DISPLAY") == 0)
         hdcDisplay = CreateDCA("DISPLAY", NULL, NULL, NULL);
     else
         hdcDisplay = CreateDCA(NULL, szDeviceName, NULL, NULL);
@@ -2426,7 +2440,7 @@ WORD CImageDisplay::GetDisplayDepth()
 // palette). We set the base class media type before calling this function so
 // that the media types between the pins match after a connection is made
 
-HRESULT CImageDisplay::UpdateFormat(VIDEOINFO *pVideoInfo)
+HRESULT CImageDisplay::UpdateFormat(__inout VIDEOINFO *pVideoInfo)
 {
     ASSERT(pVideoInfo);
 
@@ -2601,9 +2615,9 @@ HRESULT CImageDisplay::CheckMediaType(const CMediaType *pmtIn)
 // 16 bit 5:6:5 display format uses 0xF8, 0xFC and 0xF8, therefore given any
 // RGB triplets we can AND them with these fields to find one that is valid
 
-BOOL CImageDisplay::GetColourMask(DWORD *pMaskRed,
-                                  DWORD *pMaskGreen,
-                                  DWORD *pMaskBlue)
+BOOL CImageDisplay::GetColourMask(__out DWORD *pMaskRed,
+                                  __out DWORD *pMaskGreen,
+                                  __out DWORD *pMaskBlue)
 {
     CAutoLock cDisplayLock(this);
     *pMaskRed = 0xFF;
@@ -2654,12 +2668,21 @@ BOOL CImageDisplay::GetColourMask(DWORD *pMaskRed,
 
 /*  Helper to convert to VIDEOINFOHEADER2
 */
-STDAPI ConvertVideoInfoToVideoInfo2(AM_MEDIA_TYPE *pmt)
+STDAPI ConvertVideoInfoToVideoInfo2(__inout AM_MEDIA_TYPE *pmt)
 {
-    ASSERT(pmt->formattype == FORMAT_VideoInfo);
+    if (pmt->formattype != FORMAT_VideoInfo) {
+        return E_INVALIDARG;
+    }
+    if (NULL == pmt->pbFormat || pmt->cbFormat < sizeof(VIDEOINFOHEADER)) {
+        return E_INVALIDARG;
+    }
     VIDEOINFO *pVideoInfo = (VIDEOINFO *)pmt->pbFormat;
-    PVOID pvNew = CoTaskMemAlloc(pmt->cbFormat + sizeof(VIDEOINFOHEADER2) -
-                                 sizeof(VIDEOINFOHEADER));
+    DWORD dwNewSize;
+    HRESULT hr = DWordAdd(pmt->cbFormat, sizeof(VIDEOINFOHEADER2) - sizeof(VIDEOINFOHEADER), &dwNewSize);
+    if (FAILED(hr)) {
+        return hr;
+    }
+    PVOID pvNew = CoTaskMemAlloc(dwNewSize);
     if (pvNew == NULL) {
         return E_OUTOFMEMORY;
     }
@@ -2671,10 +2694,53 @@ STDAPI ConvertVideoInfoToVideoInfo2(AM_MEDIA_TYPE *pmt)
                pmt->cbFormat - FIELD_OFFSET(VIDEOINFOHEADER, bmiHeader));
     VIDEOINFOHEADER2 *pVideoInfo2 = (VIDEOINFOHEADER2 *)pvNew;
     pVideoInfo2->dwPictAspectRatioX = (DWORD)pVideoInfo2->bmiHeader.biWidth;
-    pVideoInfo2->dwPictAspectRatioY = (DWORD)pVideoInfo2->bmiHeader.biHeight;
+    pVideoInfo2->dwPictAspectRatioY = (DWORD)abs(pVideoInfo2->bmiHeader.biHeight);
     pmt->formattype = FORMAT_VideoInfo2;
     CoTaskMemFree(pmt->pbFormat);
     pmt->pbFormat = (PBYTE)pvNew;
     pmt->cbFormat += sizeof(VIDEOINFOHEADER2) - sizeof(VIDEOINFOHEADER);
+    return S_OK;
+}
+
+
+//  Check a media type containing VIDEOINFOHEADER
+STDAPI CheckVideoInfoType(const AM_MEDIA_TYPE *pmt)
+{
+    if (NULL == pmt || NULL == pmt->pbFormat) {
+        return E_POINTER;
+    }
+    if (pmt->majortype != MEDIATYPE_Video || 
+        pmt->formattype != FORMAT_VideoInfo ||
+        pmt->cbFormat < sizeof(VIDEOINFOHEADER)) {
+        return VFW_E_TYPE_NOT_ACCEPTED;
+    }
+    const VIDEOINFOHEADER *pHeader = (const VIDEOINFOHEADER *)pmt->pbFormat;
+    if (!ValidateBitmapInfoHeader(
+             &pHeader->bmiHeader, 
+             pmt->cbFormat - FIELD_OFFSET(VIDEOINFOHEADER, bmiHeader))) {
+        return VFW_E_TYPE_NOT_ACCEPTED;
+    }
+
+    return S_OK;
+}
+
+//  Check a media type containing VIDEOINFOHEADER2
+STDAPI CheckVideoInfo2Type(const AM_MEDIA_TYPE *pmt)
+{
+    if (NULL == pmt || NULL == pmt->pbFormat) {
+        return E_POINTER;
+    }    
+    if (pmt->majortype != MEDIATYPE_Video || 
+        pmt->formattype != FORMAT_VideoInfo2 ||
+        pmt->cbFormat < sizeof(VIDEOINFOHEADER2)) {
+        return VFW_E_TYPE_NOT_ACCEPTED;
+    }
+    const VIDEOINFOHEADER2 *pHeader = (const VIDEOINFOHEADER2 *)pmt->pbFormat;
+    if (!ValidateBitmapInfoHeader(
+             &pHeader->bmiHeader, 
+             pmt->cbFormat - FIELD_OFFSET(VIDEOINFOHEADER2, bmiHeader))) {
+        return VFW_E_TYPE_NOT_ACCEPTED;
+    }
+
     return S_OK;
 }

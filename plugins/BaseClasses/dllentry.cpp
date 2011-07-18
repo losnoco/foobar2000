@@ -1,10 +1,10 @@
 //------------------------------------------------------------------------------
-// File: DllEntry.cpp
+// File: DlleEntry.cpp
 //
 // Desc: DirectShow base classes - implements classes used to support dll
 //       entry points for COM objects.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -20,6 +20,7 @@
 
 #include <tchar.h>
 #endif // DEBUG
+#include <strsafe.h>
 
 extern CFactoryTemplate g_Templates[];
 extern int g_cTemplates;
@@ -46,12 +47,12 @@ public:
     CClassFactory(const CFactoryTemplate *);
 
     // IUnknown
-    STDMETHODIMP QueryInterface(REFIID riid, void ** ppv);
+    STDMETHODIMP QueryInterface(REFIID riid, __deref_out void ** ppv);
     STDMETHODIMP_(ULONG)AddRef();
     STDMETHODIMP_(ULONG)Release();
 
     // IClassFactory
-    STDMETHODIMP CreateInstance(LPUNKNOWN pUnkOuter, REFIID riid, void **pv);
+    STDMETHODIMP CreateInstance(LPUNKNOWN pUnkOuter, REFIID riid, __deref_out void **pv);
     STDMETHODIMP LockServer(BOOL fLock);
 
     // allow DLLGetClassObject to know about global server lock status
@@ -72,7 +73,7 @@ CClassFactory::CClassFactory(const CFactoryTemplate *pTemplate)
 
 
 STDMETHODIMP
-CClassFactory::QueryInterface(REFIID riid,void **ppv)
+CClassFactory::QueryInterface(REFIID riid,__deref_out void **ppv)
 {
     CheckPointer(ppv,E_POINTER)
     ValidateReadWritePtr(ppv,sizeof(PVOID));
@@ -99,11 +100,12 @@ CClassFactory::AddRef()
 STDMETHODIMP_(ULONG)
 CClassFactory::Release()
 {
-    if (--m_cRef == 0) {
+    LONG lRef = InterlockedDecrement((volatile LONG *)&m_cRef);
+    if (lRef == 0) {
         delete this;
         return 0;
     } else {
-        return m_cRef;
+        return lRef;
     }
 }
 
@@ -111,15 +113,17 @@ STDMETHODIMP
 CClassFactory::CreateInstance(
     LPUNKNOWN pUnkOuter,
     REFIID riid,
-    void **pv)
+    __deref_out void **pv)
 {
     CheckPointer(pv,E_POINTER)
     ValidateReadWritePtr(pv,sizeof(void *));
+    *pv = NULL;
 
     /* Enforce the normal OLE rules regarding interfaces and delegation */
 
     if (pUnkOuter != NULL) {
         if (IsEqualIID(riid,IID_IUnknown) == FALSE) {
+            *pv = NULL;
             return ResultFromScode(E_NOINTERFACE);
         }
     }
@@ -130,6 +134,7 @@ CClassFactory::CreateInstance(
     CUnknown *pObj = m_pTemplate->CreateInstance(pUnkOuter, &hr);
 
     if (pObj == NULL) {
+        *pv = NULL;
 	if (SUCCEEDED(hr)) {
 	    hr = E_OUTOFMEMORY;
 	}
@@ -140,6 +145,7 @@ CClassFactory::CreateInstance(
 
     if (FAILED(hr)) {
         delete pObj;
+        *pv = NULL;
         return hr;
     }
 
@@ -180,12 +186,13 @@ CClassFactory::LockServer(BOOL fLock)
 // --- COM entrypoints -----------------------------------------
 
 //called by COM to get the class factory object for a given class
-STDAPI
+__control_entrypoint(DllExport) STDAPI
 DllGetClassObject(
-    REFCLSID rClsID,
-    REFIID riid,
-    void **pv)
+    __in REFCLSID rClsID,
+    __in REFIID riid,
+    __deref_out void **pv)
 {
+    *pv = NULL;
     if (!(riid == IID_IUnknown) && !(riid == IID_IClassFactory)) {
             return E_NOINTERFACE;
     }
@@ -254,10 +261,36 @@ DllCanUnloadNow()
 // --- standard WIN32 entrypoints --------------------------------------
 
 
-extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
+extern "C" void __cdecl __security_init_cookie(void);
+extern "C" BOOL WINAPI _DllEntryPoint(HINSTANCE, ULONG, __inout_opt LPVOID);
+#pragma comment(linker, "/merge:.CRT=.rdata")
 
-BOOL WINAPI
-DllEntryPoint(HINSTANCE hInstance, ULONG ulReason, LPVOID pv)
+extern "C"
+DECLSPEC_NOINLINE
+BOOL 
+WINAPI
+DllEntryPoint(
+    HINSTANCE hInstance, 
+    ULONG ulReason, 
+    __inout_opt LPVOID pv
+    )
+{
+    if ( ulReason == DLL_PROCESS_ATTACH ) {
+        // Must happen before any other code is executed.  Thankfully - it's re-entrant
+        __security_init_cookie();
+    }
+    return _DllEntryPoint(hInstance, ulReason, pv);
+}
+
+
+DECLSPEC_NOINLINE
+BOOL 
+WINAPI
+_DllEntryPoint(
+    HINSTANCE hInstance, 
+    ULONG ulReason, 
+    __inout_opt LPVOID pv
+    )
 {
 #ifdef DEBUG
     extern bool g_fDbgInDllEntryPoint;
@@ -309,10 +342,10 @@ DllEntryPoint(HINSTANCE hInstance, ULONG ulReason, LPVOID pv)
                 pName++;
             }
 
-	    DWORD cch = wsprintf(szInfo, TEXT("Executable: %s  Pid %x  Tid %x. "),
+            (void)StringCchPrintf(szInfo, NUMELMS(szInfo), TEXT("Executable: %s  Pid %x  Tid %x. "),
 			    pName, GetCurrentProcessId(), GetCurrentThreadId());
 
-            wsprintf(szInfo+cch, TEXT("Module %s, %d objects left active!"),
+            (void)StringCchPrintf(szInfo+lstrlen(szInfo), NUMELMS(szInfo) - lstrlen(szInfo), TEXT("Module %s, %d objects left active!"),
                      m_ModuleName, CBaseObject::ObjectsActive());
             DbgAssert(szInfo, TEXT(__FILE__),__LINE__);
 

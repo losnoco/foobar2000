@@ -4,13 +4,16 @@
 // Desc: DirectShow base classes - implements CPullPin class that pulls data
 //       from IAsyncReader.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
 #include <streams.h>
 #include "pullpin.h"
 
+#ifdef DXMPERF
+#include "dxmperf.h"
+#endif // DXMPERF
 
 
 CPullPin::CPullPin()
@@ -18,11 +21,20 @@ CPullPin::CPullPin()
     m_pAlloc(NULL),
     m_State(TM_Exit)
 {
+#ifdef DXMPERF
+	PERFLOG_CTOR( L"CPullPin", this );
+#endif // DXMPERF
+
 }
 
 CPullPin::~CPullPin()
 {
     Disconnect();
+
+#ifdef DXMPERF
+	PERFLOG_DTOR( L"CPullPin", this );
+#endif // DXMPERF
+
 }
 
 // returns S_OK if successfully connected to an IAsyncReader interface
@@ -40,12 +52,28 @@ CPullPin::Connect(IUnknown* pUnk, IMemAllocator* pAlloc, BOOL bSync)
 
     HRESULT hr = pUnk->QueryInterface(IID_IAsyncReader, (void**)&m_pReader);
     if (FAILED(hr)) {
+
+#ifdef DXMPERF
+		{
+		AM_MEDIA_TYPE *	pmt = NULL;
+		PERFLOG_CONNECT( this, pUnk, hr, pmt );
+		}
+#endif // DXMPERF
+
 	return(hr);
     }
 
     hr = DecideAllocator(pAlloc, NULL);
     if (FAILED(hr)) {
 	Disconnect();
+
+#ifdef DXMPERF
+		{
+		AM_MEDIA_TYPE *	pmt = NULL;
+		PERFLOG_CONNECT( this, pUnk, hr, pmt );
+		}
+#endif // DXMPERF
+
 	return hr;
     }
 
@@ -53,6 +81,14 @@ CPullPin::Connect(IUnknown* pUnk, IMemAllocator* pAlloc, BOOL bSync)
     hr = m_pReader->Length(&llTotal, &llAvail);
     if (FAILED(hr)) {
 	Disconnect();
+
+#ifdef DXMPERF
+		{
+		AM_MEDIA_TYPE *	pmt = NULL;
+		PERFLOG_CONNECT( this, pUnk, hr, pmt );
+		}
+#endif
+
 	return hr;
     }
 
@@ -62,6 +98,14 @@ CPullPin::Connect(IUnknown* pUnk, IMemAllocator* pAlloc, BOOL bSync)
     m_tStart = 0;
 
     m_bSync = bSync;
+
+#ifdef DXMPERF
+	{
+	AM_MEDIA_TYPE *	pmt = NULL;
+	PERFLOG_CONNECT( this, pUnk, S_OK, pmt );
+	}
+#endif // DXMPERF
+
 
     return S_OK;
 }
@@ -73,6 +117,12 @@ CPullPin::Disconnect()
     CAutoLock lock(&m_AccessLock);
 
     StopThread();
+
+
+#ifdef DXMPERF
+	PERFLOG_DISCONNECT( this, m_pReader, S_OK );
+#endif // DXMPERF
+
 
     if (m_pReader) {
 	m_pReader->Release();
@@ -95,7 +145,7 @@ CPullPin::Disconnect()
 HRESULT
 CPullPin::DecideAllocator(
     IMemAllocator * pAlloc,
-    ALLOCATOR_PROPERTIES * pProps)
+    __inout_opt ALLOCATOR_PROPERTIES * pProps)
 {
     ALLOCATOR_PROPERTIES *pRequest;
     ALLOCATOR_PROPERTIES Request;
@@ -157,7 +207,7 @@ CPullPin::Seek(REFERENCE_TIME tStart, REFERENCE_TIME tStop)
 }
 
 HRESULT
-CPullPin::Duration(REFERENCE_TIME* ptDuration)
+CPullPin::Duration(__out REFERENCE_TIME* ptDuration)
 {
     *ptDuration = m_tDuration;
     return S_OK;
@@ -284,7 +334,7 @@ CPullPin::ThreadProc(void)
 
 HRESULT
 CPullPin::QueueSample(
-    REFERENCE_TIME& tCurrent,
+    __inout REFERENCE_TIME& tCurrent,
     REFERENCE_TIME tAlignStop,
     BOOL bDiscontinuity
     )
@@ -352,16 +402,27 @@ CPullPin::DeliverSample(
 {
     // fix up sample if past actual stop (for sector alignment)
     REFERENCE_TIME t1, t2;
-    pSample->GetTime(&t1, &t2);
-    if (t2 > tStop) {
-	t2 = tStop;
+    if (S_OK == pSample->GetTime(&t1, &t2)) {
+        if (t2 > tStop) {
+            t2 = tStop;
+        }
+
+        // adjust times to be relative to (aligned) start time
+        t1 -= tStart;
+        t2 -= tStart;
+        HRESULT hr = pSample->SetTime(&t1, &t2);
+        if (FAILED(hr)) {
+            return hr;
+        }
     }
 
-    // adjust times to be relative to (aligned) start time
-    t1 -= tStart;
-    t2 -= tStart;
-    pSample->SetTime(&t1, &t2);
-
+#ifdef DXMPERF
+	{
+	AM_MEDIA_TYPE *	pmt = NULL;
+	pSample->GetMediaType( &pmt );
+	PERFLOG_RECEIVE( L"CPullPin", m_pReader, this, pSample, pmt );
+	}
+#endif
 
     HRESULT hr = Receive(pSample);
     pSample->Release();

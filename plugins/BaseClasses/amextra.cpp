@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes - implements CRenderedInputPin class.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -18,22 +18,22 @@
 
 //  Implements CRenderedInputPin class
 
-CRenderedInputPin::CRenderedInputPin(TCHAR *pObjectName,
-                                     CBaseFilter *pFilter,
-                                     CCritSec *pLock,
-                                     HRESULT *phr,
-                                     LPCWSTR pName) :
+CRenderedInputPin::CRenderedInputPin(__in_opt LPCTSTR pObjectName,
+                                     __in CBaseFilter *pFilter,
+                                     __in CCritSec *pLock,
+                                     __inout HRESULT *phr,
+                                     __in_opt LPCWSTR pName) :
     CBaseInputPin(pObjectName, pFilter, pLock, phr, pName),
     m_bAtEndOfStream(FALSE),
     m_bCompleteNotified(FALSE)
 {
 }
 #ifdef UNICODE
-CRenderedInputPin::CRenderedInputPin(CHAR *pObjectName,
-                                     CBaseFilter *pFilter,
-                                     CCritSec *pLock,
-                                     HRESULT *phr,
-                                     LPCWSTR pName) :
+CRenderedInputPin::CRenderedInputPin(__in_opt LPCSTR pObjectName,
+                                     __in CBaseFilter *pFilter,
+                                     __in CCritSec *pLock,
+                                     __inout HRESULT *phr,
+                                     __in_opt LPCWSTR pName) :
     CBaseInputPin(pObjectName, pFilter, pLock, phr, pName),
     m_bAtEndOfStream(FALSE),
     m_bCompleteNotified(FALSE)

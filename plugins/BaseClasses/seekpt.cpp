@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -17,13 +17,13 @@
 // and save it in a static variable so that forever after we can return that.
 //==================================================================
 
-CUnknown * CSeekingPassThru::CreateInstance(LPUNKNOWN pUnk, HRESULT *phr)
+CUnknown * CSeekingPassThru::CreateInstance(__inout_opt LPUNKNOWN pUnk, __inout HRESULT *phr)
 {
     return new CSeekingPassThru(NAME("Seeking PassThru"),pUnk, phr);
 }
 
 
-STDMETHODIMP CSeekingPassThru::NonDelegatingQueryInterface(REFIID riid, void ** ppv)
+STDMETHODIMP CSeekingPassThru::NonDelegatingQueryInterface(REFIID riid, __deref_out void ** ppv)
 {
     if (riid == IID_ISeekingPassThru) {
         return GetInterface((ISeekingPassThru *) this, ppv);
@@ -39,7 +39,7 @@ STDMETHODIMP CSeekingPassThru::NonDelegatingQueryInterface(REFIID riid, void ** 
 }
 
 
-CSeekingPassThru::CSeekingPassThru( TCHAR *pName, LPUNKNOWN pUnk, HRESULT *phr )
+CSeekingPassThru::CSeekingPassThru( __in_opt LPCTSTR pName, __inout_opt LPUNKNOWN pUnk, __inout HRESULT *phr )
                             : CUnknown(pName, pUnk, phr),
                             m_pPosPassThru(NULL)
 {

@@ -3,13 +3,16 @@
 //
 // Desc: DirectShow base classes - implements the IReferenceClock interface.
 //
-// Copyright (c)  Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
 #include <streams.h>
 #include <limits.h>
 
+#ifdef DXMPERF
+#include "dxmperf.h"
+#endif // DXMPERF
 
 
 // 'this' used in constructor list
@@ -18,13 +21,17 @@
 
 STDMETHODIMP CBaseReferenceClock::NonDelegatingQueryInterface(
     REFIID riid,
-    void ** ppv)
+    __deref_out void ** ppv)
 {
     HRESULT hr;
 
     if (riid == IID_IReferenceClock)
     {
         hr = GetInterface((IReferenceClock *) this, ppv);
+    }
+    else if (riid == IID_IReferenceClockTimerControl)
+    {
+        hr = GetInterface((IReferenceClockTimerControl *) this, ppv);
     }
     else
     {
@@ -35,10 +42,16 @@ STDMETHODIMP CBaseReferenceClock::NonDelegatingQueryInterface(
 
 CBaseReferenceClock::~CBaseReferenceClock()
 {
+#ifdef DXMPERF
+    PERFLOG_DTOR( L"CBaseReferenceClock", (IReferenceClock *) this );
+#endif // DXMPERF
 
     if (m_TimerResolution) timeEndPeriod(m_TimerResolution);
 
-    m_pSchedule->DumpLinkedList();
+    if (m_pSchedule)
+    {
+        m_pSchedule->DumpLinkedList();
+    }
 
     if (m_hThread)
     {
@@ -55,7 +68,10 @@ CBaseReferenceClock::~CBaseReferenceClock()
 // A derived class may supply a hThreadEvent if it has its own thread that will take care
 // of calling the schedulers Advise method.  (Refere to CBaseReferenceClock::AdviseThread()
 // to see what such a thread has to do.)
-CBaseReferenceClock::CBaseReferenceClock( TCHAR *pName, LPUNKNOWN pUnk, HRESULT *phr, CAMSchedule * pShed )
+CBaseReferenceClock::CBaseReferenceClock( __in_opt LPCTSTR pName, 
+                                          __inout_opt LPUNKNOWN pUnk, 
+                                          __inout HRESULT *phr, 
+                                          __inout_opt CAMSchedule * pShed )
 : CUnknown( pName, pUnk )
 , m_rtLastGotTime(0)
 , m_TimerResolution(0)
@@ -64,51 +80,55 @@ CBaseReferenceClock::CBaseReferenceClock( TCHAR *pName, LPUNKNOWN pUnk, HRESULT 
 , m_hThread(0)
 {
 
+#ifdef DXMPERF
+    PERFLOG_CTOR( pName ? pName : L"CBaseReferenceClock", (IReferenceClock *) this );
+#endif // DXMPERF
 
     ASSERT(m_pSchedule);
     if (!m_pSchedule)
     {
-	*phr = E_OUTOFMEMORY;
+        *phr = E_OUTOFMEMORY;
     }
     else
     {
-	// Set up the highest resolution timer we can manage
-	TIMECAPS tc;
-	m_TimerResolution = (TIMERR_NOERROR == timeGetDevCaps(&tc, sizeof(tc)))
-			    ? tc.wPeriodMin
-			    : 1;
+        // Set up the highest resolution timer we can manage
+        TIMECAPS tc;
+        m_TimerResolution = (TIMERR_NOERROR == timeGetDevCaps(&tc, sizeof(tc)))
+                            ? tc.wPeriodMin
+                            : 1;
 
-	timeBeginPeriod(m_TimerResolution);
+        timeBeginPeriod(m_TimerResolution);
 
-	/* Initialise our system times - the derived clock should set the right values */
-	m_dwPrevSystemTime = timeGetTime();
-	m_rtPrivateTime = (UNITS / MILLISECONDS) * m_dwPrevSystemTime;
+        /* Initialise our system times - the derived clock should set the right values */
+        m_dwPrevSystemTime = timeGetTime();
+        m_rtPrivateTime = (UNITS / MILLISECONDS) * m_dwPrevSystemTime;
 
-	#ifdef PERF
-	    m_idGetSystemTime = MSR_REGISTER(TEXT("CBaseReferenceClock::GetTime"));
-	#endif
+        #ifdef PERF
+            m_idGetSystemTime = MSR_REGISTER(TEXT("CBaseReferenceClock::GetTime"));
+        #endif
 
-	if ( !pShed )
-	{
-	    DWORD ThreadID;
-	    m_hThread = ::CreateThread(NULL,                  // Security attributes
-				       (DWORD) 0,             // Initial stack size
-				       AdviseThreadFunction,  // Thread start address
-				       (LPVOID) this,         // Thread parameter
-				       (DWORD) 0,             // Creation flags
-				       &ThreadID);            // Thread identifier
+        if ( !pShed )
+        {
+            DWORD ThreadID;
+            m_hThread = ::CreateThread(NULL,                  // Security attributes
+                                       (DWORD) 0,             // Initial stack size
+                                       AdviseThreadFunction,  // Thread start address
+                                       (LPVOID) this,         // Thread parameter
+                                       (DWORD) 0,             // Creation flags
+                                       &ThreadID);            // Thread identifier
 
-	    if (m_hThread)
-	    {
-		SetThreadPriority( m_hThread, THREAD_PRIORITY_TIME_CRITICAL );
-	    }
-	    else
-	    {
-		*phr = E_FAIL;
-		EXECUTE_ASSERT( CloseHandle(m_pSchedule->GetEvent()) );
-		delete m_pSchedule;
-	    }
-	}
+            if (m_hThread)
+            {
+                SetThreadPriority( m_hThread, THREAD_PRIORITY_TIME_CRITICAL );
+            }
+            else
+            {
+                *phr = E_FAIL;
+                EXECUTE_ASSERT( CloseHandle(m_pSchedule->GetEvent()) );
+                delete m_pSchedule;
+                m_pSchedule = NULL;
+            }
+        }
     }
 }
 
@@ -119,7 +139,7 @@ void CBaseReferenceClock::Restart (IN REFERENCE_TIME rtMinTime)
     Unlock();
 }
 
-STDMETHODIMP CBaseReferenceClock::GetTime(REFERENCE_TIME *pTime)
+STDMETHODIMP CBaseReferenceClock::GetTime(__out REFERENCE_TIME *pTime)
 {
     HRESULT hr;
     if (pTime)
@@ -139,6 +159,11 @@ STDMETHODIMP CBaseReferenceClock::GetTime(REFERENCE_TIME *pTime)
         *pTime = m_rtLastGotTime;
         Unlock();
         MSR_INTEGER(m_idGetSystemTime, LONG((*pTime) / (UNITS/MILLISECONDS)) );
+
+#ifdef DXMPERF
+        PERFLOG_GETTIME( (IReferenceClock *) this, *pTime );
+#endif // DXMPERF
+
     }
     else hr = E_POINTER;
 
@@ -150,8 +175,8 @@ STDMETHODIMP CBaseReferenceClock::GetTime(REFERENCE_TIME *pTime)
 STDMETHODIMP CBaseReferenceClock::AdviseTime(
     REFERENCE_TIME baseTime,         // base reference time
     REFERENCE_TIME streamTime,       // stream offset time
-    HEVENT hEvent,                  // advise via this event
-    DWORD_PTR *pdwAdviseCookie)         // where your cookie goes
+    HEVENT hEvent,                   // advise via this event
+    __out DWORD_PTR *pdwAdviseCookie)// where your cookie goes
 {
     CheckPointer(pdwAdviseCookie, E_POINTER);
     *pdwAdviseCookie = 0;
@@ -180,8 +205,8 @@ STDMETHODIMP CBaseReferenceClock::AdviseTime(
 STDMETHODIMP CBaseReferenceClock::AdvisePeriodic(
     REFERENCE_TIME StartTime,         // starting at this time
     REFERENCE_TIME PeriodTime,        // time between notifications
-    HSEMAPHORE hSemaphore,           // advise via a semaphore
-    DWORD_PTR *pdwAdviseCookie)          // where your cookie goes
+    HSEMAPHORE hSemaphore,            // advise via a semaphore
+    __out DWORD_PTR *pdwAdviseCookie) // where your cookie goes
 {
     CheckPointer(pdwAdviseCookie, E_POINTER);
     *pdwAdviseCookie = 0;
@@ -291,7 +316,7 @@ STDMETHODIMP CBaseReferenceClock::SetTimeDelta(const REFERENCE_TIME & TimeDelta)
 
 // Thread stuff
 
-DWORD __stdcall CBaseReferenceClock::AdviseThreadFunction(LPVOID p)
+DWORD __stdcall CBaseReferenceClock::AdviseThreadFunction(__in LPVOID p)
 {
     return DWORD(reinterpret_cast<CBaseReferenceClock*>(p)->AdviseThread());
 }
@@ -337,4 +362,41 @@ HRESULT CBaseReferenceClock::AdviseThread()
         dwWait = (llWait > REFERENCE_TIME(UINT_MAX)) ? UINT_MAX : DWORD(llWait);
     };
     return NOERROR;
+}
+
+HRESULT CBaseReferenceClock::SetDefaultTimerResolution(
+        REFERENCE_TIME timerResolution // in 100ns
+    )
+{
+    CAutoLock cObjectLock(this);
+    if( 0 == timerResolution  ) {
+        if( m_TimerResolution ) {
+           timeEndPeriod( m_TimerResolution );
+           m_TimerResolution = 0;
+        }
+    } else {
+        TIMECAPS tc;
+        DWORD dwMinResolution = (TIMERR_NOERROR == timeGetDevCaps(&tc, sizeof(tc)))
+                            ? tc.wPeriodMin
+                            : 1;
+        DWORD dwResolution = max( dwMinResolution, DWORD(timerResolution / 10000) );
+        if( dwResolution != m_TimerResolution ) {
+            timeEndPeriod(m_TimerResolution);
+            m_TimerResolution = dwResolution;
+            timeBeginPeriod( m_TimerResolution );
+        }
+    }
+    return S_OK;
+}
+
+HRESULT CBaseReferenceClock::GetDefaultTimerResolution(
+        __out REFERENCE_TIME* pTimerResolution // in 100ns
+    )
+{
+    if( !pTimerResolution ) {
+        return E_POINTER;
+    }
+    CAutoLock cObjectLock(this);
+    *pTimerResolution = m_TimerResolution * 10000;
+    return S_OK;
 }

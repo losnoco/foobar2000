@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - implements a class that holds and 
 //       manages media type information.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -35,7 +35,7 @@ CMediaType::CMediaType(const GUID * type)
 
 // copy constructor does a deep copy of the format block
 
-CMediaType::CMediaType(const AM_MEDIA_TYPE& rt, HRESULT* phr)
+CMediaType::CMediaType(const AM_MEDIA_TYPE& rt, __out_opt HRESULT* phr)
 {
     HRESULT hr = CopyMediaType(this, &rt);
     if (FAILED(hr) && (NULL != phr)) {
@@ -44,7 +44,7 @@ CMediaType::CMediaType(const AM_MEDIA_TYPE& rt, HRESULT* phr)
 }
 
 
-CMediaType::CMediaType(const CMediaType& rt, HRESULT* phr)
+CMediaType::CMediaType(const CMediaType& rt, __out_opt HRESULT* phr)
 {
     HRESULT hr = CopyMediaType(this, &rt);
     if (FAILED(hr) && (NULL != phr)) {
@@ -87,6 +87,7 @@ CMediaType::operator == (const CMediaType& rt) const
         (IsEqualGUID(formattype,rt.formattype) == TRUE) &&
         (cbFormat == rt.cbFormat) &&
         ( (cbFormat == 0) ||
+          pbFormat != NULL && rt.pbFormat != NULL &&
           (memcmp(pbFormat, rt.pbFormat, cbFormat) == 0)));
 }
 
@@ -179,7 +180,7 @@ CMediaType::SetTemporalCompression(BOOL bCompressed) {
 }
 
 BOOL
-CMediaType::SetFormat(BYTE * pformat, ULONG cb)
+CMediaType::SetFormat(__in_bcount(cb) BYTE * pformat, ULONG cb)
 {
     if (NULL == AllocFormatBuffer(cb))
 	return(FALSE);
@@ -349,7 +350,7 @@ CMediaType::MatchesPartial(const CMediaType* ppartial) const
 // implementation allocates the structures which you must later delete
 // the format block may also be a pointer to an interface to release
 
-void WINAPI DeleteMediaType(AM_MEDIA_TYPE *pmt)
+void WINAPI DeleteMediaType(__inout_opt AM_MEDIA_TYPE *pmt)
 {
     // allow NULL pointers for coding simplicity
 
@@ -393,7 +394,7 @@ AM_MEDIA_TYPE * WINAPI CreateMediaType(AM_MEDIA_TYPE const *pSrc)
 
 //  Copy 1 media type to another
 
-HRESULT WINAPI CopyMediaType(AM_MEDIA_TYPE *pmtTarget, const AM_MEDIA_TYPE *pmtSource)
+HRESULT WINAPI CopyMediaType(__out AM_MEDIA_TYPE *pmtTarget, const AM_MEDIA_TYPE *pmtSource)
 {
     //  We'll leak if we copy onto one that already exists - there's one
     //  case we can check like that - copying to itself.
@@ -419,7 +420,7 @@ HRESULT WINAPI CopyMediaType(AM_MEDIA_TYPE *pmtTarget, const AM_MEDIA_TYPE *pmtS
 
 //  Free an existing media type (ie free resources it holds)
 
-void WINAPI FreeMediaType(AM_MEDIA_TYPE& mt)
+void WINAPI FreeMediaType(__inout AM_MEDIA_TYPE& mt)
 {
     if (mt.cbFormat != 0) {
         CoTaskMemFree((PVOID)mt.pbFormat);
@@ -438,7 +439,7 @@ void WINAPI FreeMediaType(AM_MEDIA_TYPE& mt)
 
 STDAPI CreateAudioMediaType(
     const WAVEFORMATEX *pwfx,
-    AM_MEDIA_TYPE *pmt,
+    __out AM_MEDIA_TYPE *pmt,
     BOOL bSetFormat
 )
 {

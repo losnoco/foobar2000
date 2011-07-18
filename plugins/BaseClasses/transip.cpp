@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - implements class for simple Transform-
 //       In-Place filters such as audio.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -261,10 +261,10 @@
 // =================================================================
 
 CTransInPlaceFilter::CTransInPlaceFilter
-   ( TCHAR     *pName,
-     LPUNKNOWN  pUnk,
+   ( __in_opt LPCTSTR    pName,
+     __inout_opt LPUNKNOWN  pUnk,
      REFCLSID   clsid,
-     HRESULT   *phr,
+     __inout HRESULT   *phr,
      bool       bModifiesData
    )
    : CTransformFilter(pName, pUnk, clsid),
@@ -278,10 +278,10 @@ CTransInPlaceFilter::CTransInPlaceFilter
 
 #ifdef UNICODE
 CTransInPlaceFilter::CTransInPlaceFilter
-   ( CHAR     *pName,
-     LPUNKNOWN  pUnk,
+   ( __in_opt LPCSTR  pName,
+     __inout_opt LPUNKNOWN  pUnk,
      REFCLSID   clsid,
-     HRESULT   *phr,
+     __inout HRESULT   *phr,
      bool       bModifiesData
    )
    : CTransformFilter(pName, pUnk, clsid),
@@ -359,7 +359,7 @@ CTransInPlaceFilter::GetPin(int n)
 
 // dir is the direction of our pin.
 // pReceivePin is the pin we are connecting to.
-HRESULT CTransInPlaceFilter::CompleteConnect(PIN_DIRECTION dir,IPin *pReceivePin)
+HRESULT CTransInPlaceFilter::CompleteConnect(PIN_DIRECTION dir, IPin *pReceivePin)
 {
     UNREFERENCED_PARAMETER(pReceivePin);
     ASSERT(m_pInput);
@@ -414,7 +414,7 @@ HRESULT CTransInPlaceFilter::CompleteConnect(PIN_DIRECTION dir,IPin *pReceivePin
 
 HRESULT CTransInPlaceFilter::DecideBufferSize
             ( IMemAllocator *pAlloc
-            , ALLOCATOR_PROPERTIES *pProperties
+            , __inout ALLOCATOR_PROPERTIES *pProperties
             )
 {
     ALLOCATOR_PROPERTIES Request, Actual;
@@ -431,8 +431,8 @@ HRESULT CTransInPlaceFilter::DecideBufferSize
             return hr;
         }
     } else {
-        // We're reduced to blind guessing.  Let's guess one byte and if
-        // this isn't enough then when the other pin does get connected
+        // Propose one byte
+        // If this isn't enough then when the other pin does get connected
         // we can revise it.
         ZeroMemory(&Request, sizeof(Request));
         Request.cBuffers = 1;
@@ -479,7 +479,7 @@ HRESULT CTransInPlaceFilter::DecideBufferSize
 // Copy
 //
 // return a pointer to an identical copy of pSample
-IMediaSample * CTransInPlaceFilter::Copy(IMediaSample *pSource)
+__out_opt IMediaSample * CTransInPlaceFilter::Copy(IMediaSample *pSource)
 {
     IMediaSample * pDest;
 
@@ -502,11 +502,11 @@ IMediaSample * CTransInPlaceFilter::Copy(IMediaSample *pSource)
     ASSERT(pDest);
     IMediaSample2 *pSample2;
     if (SUCCEEDED(pDest->QueryInterface(IID_IMediaSample2, (void **)&pSample2))) {
-        HRESULT hr = pSample2->SetProperties(
+        HRESULT hrProps = pSample2->SetProperties(
             FIELD_OFFSET(AM_SAMPLE2_PROPERTIES, pbBuffer),
             (PBYTE)m_pInput->SampleProps());
         pSample2->Release();
-        if (FAILED(hr)) {
+        if (FAILED(hrProps)) {
             pDest->Release();
             return NULL;
         }
@@ -545,7 +545,10 @@ IMediaSample * CTransInPlaceFilter::Copy(IMediaSample *pSource)
     // Copy the actual data length and the actual data.
     {
         const long lDataLength = pSource->GetActualDataLength();
-        pDest->SetActualDataLength(lDataLength);
+        if (FAILED(pDest->SetActualDataLength(lDataLength))) {
+            pDest->Release();
+            return NULL;
+        }
 
         // Copy the sample data
         {
@@ -555,8 +558,13 @@ IMediaSample * CTransInPlaceFilter::Copy(IMediaSample *pSource)
 
             ASSERT(lDestSize >= lSourceSize && lDestSize >= lDataLength);
 
-            pSource->GetPointer(&pSourceBuffer);
-            pDest->GetPointer(&pDestBuffer);
+            if (FAILED(pSource->GetPointer(&pSourceBuffer)) ||
+                FAILED(pDest->GetPointer(&pDestBuffer)) ||
+                lDestSize < lDataLength ||
+                lDataLength < 0) {
+                pDest->Release();
+                return NULL;
+            }
             ASSERT(lDestSize == 0 || pSourceBuffer != NULL && pDestBuffer != NULL);
 
             CopyMemory( (PVOID) pDestBuffer, (PVOID) pSourceBuffer, lDataLength );
@@ -651,10 +659,10 @@ CTransInPlaceFilter::Receive(IMediaSample *pSample)
 // constructor
 
 CTransInPlaceInputPin::CTransInPlaceInputPin
-    ( TCHAR               *pObjectName
-    , CTransInPlaceFilter *pFilter
-    , HRESULT             *phr
-    , LPCWSTR              pName
+    ( __in_opt LPCTSTR             pObjectName
+    , __inout CTransInPlaceFilter *pFilter
+    , __inout HRESULT             *phr
+    , __in_opt LPCWSTR             pName
     )
     : CTransformInputPin(pObjectName,
                          pFilter,
@@ -683,7 +691,7 @@ CTransInPlaceInputPin::CTransInPlaceInputPin
 //     ) or it could mean offering the one from downstream
 // Else fail to offer any allocator at all.
 
-STDMETHODIMP CTransInPlaceInputPin::GetAllocator(IMemAllocator ** ppAllocator)
+STDMETHODIMP CTransInPlaceInputPin::GetAllocator(__deref_out IMemAllocator ** ppAllocator)
 {
     CheckPointer(ppAllocator,E_POINTER);
     ValidateReadWritePtr(ppAllocator,sizeof(IMemAllocator *));
@@ -807,7 +815,7 @@ CTransInPlaceInputPin::NotifyAllocator(
 
 // EnumMediaTypes
 // - pass through to our downstream filter
-STDMETHODIMP CTransInPlaceInputPin::EnumMediaTypes( IEnumMediaTypes **ppEnum )
+STDMETHODIMP CTransInPlaceInputPin::EnumMediaTypes( __deref_out IEnumMediaTypes **ppEnum )
 {
     // Can only pass through if connected
     if( !m_pTIPFilter->m_pOutput->IsConnected() )
@@ -839,7 +847,7 @@ HRESULT CTransInPlaceInputPin::CheckMediaType(const CMediaType *pmt )
 // If upstream asks us what our requirements are, we will try to ask downstream
 // if that doesn't work, we'll just take the defaults.
 STDMETHODIMP
-CTransInPlaceInputPin::GetAllocatorRequirements(ALLOCATOR_PROPERTIES *pProps)
+CTransInPlaceInputPin::GetAllocatorRequirements(__out ALLOCATOR_PROPERTIES *pProps)
 {
 
     if( m_pTIPFilter->m_pOutput->IsConnected() )
@@ -875,10 +883,10 @@ CTransInPlaceInputPin::CompleteConnect(IPin *pReceivePin)
 // constructor
 
 CTransInPlaceOutputPin::CTransInPlaceOutputPin(
-    TCHAR *pObjectName,
-    CTransInPlaceFilter *pFilter,
-    HRESULT * phr,
-    LPCWSTR pPinName)
+    __in_opt LPCTSTR pObjectName,
+    __inout CTransInPlaceFilter *pFilter,
+    __inout HRESULT * phr,
+    __in_opt LPCWSTR pPinName)
     : CTransformOutputPin( pObjectName
                          , pFilter
                          , phr
@@ -893,7 +901,7 @@ CTransInPlaceOutputPin::CTransInPlaceOutputPin(
 
 // EnumMediaTypes
 // - pass through to our upstream filter
-STDMETHODIMP CTransInPlaceOutputPin::EnumMediaTypes( IEnumMediaTypes **ppEnum )
+STDMETHODIMP CTransInPlaceOutputPin::EnumMediaTypes( __deref_out IEnumMediaTypes **ppEnum )
 {
     // Can only pass through if connected.
     if( ! m_pTIPFilter->m_pInput->IsConnected() )

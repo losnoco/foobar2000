@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -12,7 +12,7 @@
 // #include <vtransfr.h>         // now in precomp file streams.h
 
 CVideoTransformFilter::CVideoTransformFilter
-    ( TCHAR *pName, LPUNKNOWN pUnk, REFCLSID clsid)
+    ( __in_opt LPCTSTR pName, __inout_opt LPUNKNOWN pUnk, REFCLSID clsid)
     : CTransformFilter(pName, pUnk, clsid)
     , m_itrLate(0)
     , m_nKeyFramePeriod(0)      // No QM until we see at least 2 key frames

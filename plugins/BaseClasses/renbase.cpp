@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -28,15 +28,16 @@ int inline TimeDiff(REFERENCE_TIME rt)
 // Implements the CBaseRenderer class
 
 CBaseRenderer::CBaseRenderer(REFCLSID RenderClass, // CLSID for this renderer
-                             TCHAR *pName,         // Debug ONLY description
-                             LPUNKNOWN pUnk,       // Aggregated owner object
-                             HRESULT *phr) :       // General OLE return code
+                             __in_opt LPCTSTR pName,         // Debug ONLY description
+                             __inout_opt LPUNKNOWN pUnk,       // Aggregated owner object
+                             __inout HRESULT *phr) :       // General OLE return code
 
     CBaseFilter(pName,pUnk,&m_InterfaceLock,RenderClass),
-    m_evComplete(TRUE),
+    m_evComplete(TRUE, phr),
+    m_RenderEvent(FALSE, phr),
     m_bAbort(FALSE),
     m_pPosition(NULL),
-    m_ThreadSignal(TRUE),
+    m_ThreadSignal(TRUE, phr),
     m_bStreaming(FALSE),
     m_bEOS(FALSE),
     m_bEOSDelivered(FALSE),
@@ -49,12 +50,14 @@ CBaseRenderer::CBaseRenderer(REFCLSID RenderClass, // CLSID for this renderer
     m_bInReceive(FALSE),
     m_EndOfStreamTimer(0)
 {
-    Ready();
+    if (SUCCEEDED(*phr)) {
+        Ready();
 #ifdef PERF
-    m_idBaseStamp = MSR_REGISTER(TEXT("BaseRenderer: sample time stamp"));
-    m_idBaseRenderTime = MSR_REGISTER(TEXT("BaseRenderer: draw time (msec)"));
-    m_idBaseAccuracy = MSR_REGISTER(TEXT("BaseRenderer: Accuracy (msec)"));
+        m_idBaseStamp = MSR_REGISTER(TEXT("BaseRenderer: sample time stamp"));
+        m_idBaseRenderTime = MSR_REGISTER(TEXT("BaseRenderer: draw time (msec)"));
+        m_idBaseAccuracy = MSR_REGISTER(TEXT("BaseRenderer: Accuracy (msec)"));
 #endif
+    }
 }
 
 
@@ -93,11 +96,16 @@ CBaseRenderer::~CBaseRenderer()
 
 // This returns the IMediaPosition and IMediaSeeking interfaces
 
-HRESULT CBaseRenderer::GetMediaPositionInterface(REFIID riid,void **ppv)
+HRESULT CBaseRenderer::GetMediaPositionInterface(REFIID riid, __deref_out void **ppv)
 {
     CAutoLock cObjectCreationLock(&m_ObjectCreationLock);
     if (m_pPosition) {
         return m_pPosition->NonDelegatingQueryInterface(riid,ppv);
+    }
+
+    CBasePin *pPin = GetPin(0);
+    if (NULL == pPin) {
+        return E_OUTOFMEMORY;
     }
 
     HRESULT hr = NOERROR;
@@ -110,7 +118,7 @@ HRESULT CBaseRenderer::GetMediaPositionInterface(REFIID riid,void **ppv)
     m_pPosition = new CRendererPosPassThru(NAME("Renderer CPosPassThru"),
                                            CBaseFilter::GetOwner(),
                                            (HRESULT *) &hr,
-                                           GetPin(0));
+                                           pPin);
     if (m_pPosition == NULL) {
         return E_OUTOFMEMORY;
     }
@@ -126,7 +134,7 @@ HRESULT CBaseRenderer::GetMediaPositionInterface(REFIID riid,void **ppv)
 
 // Overriden to say what interfaces we support and where
 
-STDMETHODIMP CBaseRenderer::NonDelegatingQueryInterface(REFIID riid,void **ppv)
+STDMETHODIMP CBaseRenderer::NonDelegatingQueryInterface(REFIID riid, __deref_out void **ppv)
 {
     // Do we have this interface
 
@@ -287,7 +295,7 @@ void CBaseRenderer::WaitForReceiveToComplete()
         }
 
         MSG msg;
-        //  Receive all interthread sendmessages
+        //  Receive all interthread snedmessages
         PeekMessage(&msg, NULL, WM_NULL, WM_NULL, PM_NOREMOVE);
 
         Sleep(1);
@@ -582,7 +590,11 @@ STDMETHODIMP CBaseRenderer::Run(REFERENCE_TIME StartTime)
 
 int CBaseRenderer::GetPinCount()
 {
-    return 1;
+    if (m_pInputPin == NULL) {
+        //  Try to create it
+        (void)GetPin(0);
+    }
+    return m_pInputPin != NULL ? 1 : 0;
 }
 
 
@@ -625,14 +637,17 @@ CBasePin *CBaseRenderer::GetPin(int n)
 
 // If "In" then return the IPin for our input pin, otherwise NULL and error
 
-STDMETHODIMP CBaseRenderer::FindPin(LPCWSTR Id, IPin **ppPin)
+STDMETHODIMP CBaseRenderer::FindPin(LPCWSTR Id, __deref_out IPin **ppPin)
 {
     CheckPointer(ppPin,E_POINTER);
 
     if (0==lstrcmpW(Id,L"In")) {
         *ppPin = GetPin(0);
-        ASSERT(*ppPin);
-        (*ppPin)->AddRef();
+        if (*ppPin) {
+            (*ppPin)->AddRef();
+        } else {
+            return E_OUTOFMEMORY;
+        }
     } else {
         *ppPin = NULL;
         return VFW_E_NOT_FOUND;
@@ -814,8 +829,8 @@ HRESULT CBaseRenderer::BreakConnect()
 // which case the object should simply render the sample data immediately
 
 HRESULT CBaseRenderer::GetSampleTimes(IMediaSample *pMediaSample,
-                                      REFERENCE_TIME *pStartTime,
-                                      REFERENCE_TIME *pEndTime)
+                                      __out REFERENCE_TIME *pStartTime,
+                                      __out REFERENCE_TIME *pEndTime)
 {
     ASSERT(m_dwAdvise == 0);
     ASSERT(pMediaSample);
@@ -849,8 +864,8 @@ HRESULT CBaseRenderer::GetSampleTimes(IMediaSample *pMediaSample,
 // by the derived video renderer class in its quality management.
 
 HRESULT CBaseRenderer::ShouldDrawSampleNow(IMediaSample *pMediaSample,
-                                           REFERENCE_TIME *ptrStart,
-                                           REFERENCE_TIME *ptrEnd)
+                                           __out REFERENCE_TIME *ptrStart,
+                                           __out REFERENCE_TIME *ptrEnd)
 {
     return S_FALSE;
 }
@@ -1544,9 +1559,9 @@ void CBaseRenderer::OnRenderEnd(IMediaSample *pMediaSample)
 
 // Constructor must be passed the base renderer object
 
-CRendererInputPin::CRendererInputPin(CBaseRenderer *pRenderer,
-                                     HRESULT *phr,
-                                     LPCWSTR pPinName) :
+CRendererInputPin::CRendererInputPin(__inout CBaseRenderer *pRenderer,
+                                     __inout HRESULT *phr,
+                                     __in_opt LPCWSTR pPinName) :
     CBaseInputPin(NAME("Renderer pin"),
                   pRenderer,
                   &pRenderer->m_InterfaceLock,
@@ -1685,15 +1700,17 @@ HRESULT CRendererInputPin::CompleteConnect(IPin *pReceivePin)
 
 // Give the pin id of our one and only pin
 
-STDMETHODIMP CRendererInputPin::QueryId(LPWSTR *Id)
+STDMETHODIMP CRendererInputPin::QueryId(__deref_out LPWSTR *Id)
 {
     CheckPointer(Id,E_POINTER);
 
-    *Id = (LPWSTR)CoTaskMemAlloc(8);
+    const WCHAR szIn[] = L"In";
+
+    *Id = (LPWSTR)CoTaskMemAlloc(sizeof(szIn));
     if (*Id == NULL) {
         return E_OUTOFMEMORY;
     }
-    lstrcpyW(*Id, L"In");
+    CopyMemory(*Id, szIn, sizeof(szIn));
     return NOERROR;
 }
 
@@ -1752,9 +1769,9 @@ const TCHAR DRAWLATEFRAMES[] = TEXT("DrawLateFrames");
 
 CBaseVideoRenderer::CBaseVideoRenderer(
       REFCLSID RenderClass, // CLSID for this renderer
-      TCHAR *pName,         // Debug ONLY description
-      LPUNKNOWN pUnk,       // Aggregated owner object
-      HRESULT *phr) :       // General OLE return code
+      __in_opt LPCTSTR pName,         // Debug ONLY description
+      __inout_opt LPUNKNOWN pUnk,       // Aggregated owner object
+      __inout HRESULT *phr) :       // General OLE return code
 
     CBaseRenderer(RenderClass,pName,pUnk,phr),
     m_cFramesDropped(0),
@@ -1833,8 +1850,8 @@ HRESULT CBaseVideoRenderer::ResetStreamingTimes()
     m_iTotAcc = 0;
     m_iSumSqAcc = 0;
     m_iSumSqFrameTime = 0;
-    m_trFrame = 0;          // hygiene - not really needed
-    m_trLate = 0;           // hygiene - not really needed
+    m_trFrame = 0;          // hygeine - not really needed
+    m_trLate = 0;           // hygeine - not really needed
     m_iSumFrameTime = 0;
     m_nNormal = 0;
     m_trEarliness = 0;
@@ -2281,8 +2298,8 @@ HRESULT CBaseVideoRenderer::SendQuality(REFERENCE_TIME trLate,
 // to make the decision
 
 HRESULT CBaseVideoRenderer::ShouldDrawSampleNow(IMediaSample *pMediaSample,
-                                                REFERENCE_TIME *ptrStart,
-                                                REFERENCE_TIME *ptrEnd)
+                                                __inout REFERENCE_TIME *ptrStart,
+                                                __inout REFERENCE_TIME *ptrEnd)
 {
 
     // Don't call us unless there's a clock interface to synchronise with
@@ -2617,7 +2634,7 @@ BOOL CBaseVideoRenderer::ScheduleSample(IMediaSample *pMediaSample)
 // our IQualProp interface. The AddRef and Release are handled automatically
 // by the base class and will be passed on to the appropriate outer object
 
-STDMETHODIMP CBaseVideoRenderer::get_FramesDroppedInRenderer(int *pcFramesDropped)
+STDMETHODIMP CBaseVideoRenderer::get_FramesDroppedInRenderer(__out int *pcFramesDropped)
 {
     CheckPointer(pcFramesDropped,E_POINTER);
     CAutoLock cVideoLock(&m_InterfaceLock);
@@ -2668,7 +2685,7 @@ STDMETHODIMP CBaseVideoRenderer::get_AvgFrameRate( int *piAvgFrameRate)
 // in mSec.  The sync offset is the time in mSec between when the frame
 // should have been drawn and when the frame was actually drawn.
 
-STDMETHODIMP CBaseVideoRenderer::get_AvgSyncOffset( int *piAvg)
+STDMETHODIMP CBaseVideoRenderer::get_AvgSyncOffset(__out int *piAvg)
 {
     CheckPointer(piAvg,E_POINTER);
     CAutoLock cVideoLock(&m_InterfaceLock);
@@ -2736,7 +2753,7 @@ int isqrt(int x)
 //
 HRESULT CBaseVideoRenderer::GetStdDev(
     int nSamples,
-    int *piResult,
+    __out int *piResult,
     LONGLONG llSumSq,
     LONGLONG iTot
 )
@@ -2773,7 +2790,7 @@ HRESULT CBaseVideoRenderer::GetStdDev(
 // Set *piDev to the standard deviation in mSec of the sync offset
 // of each frame since streaming started.
 
-STDMETHODIMP CBaseVideoRenderer::get_DevSyncOffset( int *piDev)
+STDMETHODIMP CBaseVideoRenderer::get_DevSyncOffset(__out int *piDev)
 {
     // First frames have invalid stamps, so we get no stats for them
     // So we need 2 frames to get 1 datum, so N is cFramesDrawn-1
@@ -2787,7 +2804,7 @@ STDMETHODIMP CBaseVideoRenderer::get_DevSyncOffset( int *piDev)
 // Set *piJitter to the standard deviation in mSec of the inter-frame time
 // of frames since streaming started.
 
-STDMETHODIMP CBaseVideoRenderer::get_Jitter( int *piJitter)
+STDMETHODIMP CBaseVideoRenderer::get_Jitter(__out int *piJitter)
 {
     // First frames have invalid stamps, so we get no stats for them
     // So second frame gives invalid inter-frame time
@@ -2802,7 +2819,7 @@ STDMETHODIMP CBaseVideoRenderer::get_Jitter( int *piJitter)
 // Overidden to return our IQualProp interface
 
 STDMETHODIMP
-CBaseVideoRenderer::NonDelegatingQueryInterface(REFIID riid,VOID **ppv)
+CBaseVideoRenderer::NonDelegatingQueryInterface(REFIID riid,__deref_out VOID **ppv)
 {
     // We return IQualProp and delegate everything else
 
@@ -2819,7 +2836,7 @@ CBaseVideoRenderer::NonDelegatingQueryInterface(REFIID riid,VOID **ppv)
 // the graph we can send an EC_WINDOW_DESTROYED event
 
 STDMETHODIMP
-CBaseVideoRenderer::JoinFilterGraph(IFilterGraph *pGraph,LPCWSTR pName)
+CBaseVideoRenderer::JoinFilterGraph(__inout_opt IFilterGraph *pGraph, __in_opt LPCWSTR pName)
 {
     // Since we send EC_ACTIVATE, we also need to ensure
     // we send EC_WINDOW_DESTROYED or the resource manager may be
@@ -2828,10 +2845,8 @@ CBaseVideoRenderer::JoinFilterGraph(IFilterGraph *pGraph,LPCWSTR pName)
 
         // We were in a graph and now we're not
         // Do this properly in case we are aggregated
-        IBaseFilter* pFilter;
-        QueryInterface(IID_IBaseFilter,(void **) &pFilter);
+        IBaseFilter* pFilter = this;
         NotifyEvent(EC_WINDOW_DESTROYED, (LPARAM) pFilter, 0);
-        pFilter->Release();
     }
     return CBaseFilter::JoinFilterGraph(pGraph, pName);
 }

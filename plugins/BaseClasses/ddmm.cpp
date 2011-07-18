@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - implements routines for using DirectDraw
 //       on a multimonitor system.
 //
-// Copyright (c)  Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1995-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -22,7 +22,7 @@ typedef struct {
 	BOOL    fFound;
 }   FindDeviceData;
 
-BOOL CALLBACK FindDeviceCallback(GUID* lpGUID, LPSTR szName, LPSTR szDevice, LPVOID lParam)
+BOOL CALLBACK FindDeviceCallback(__in_opt GUID* lpGUID, __in LPSTR szName, __in LPSTR szDevice, __in LPVOID lParam)
 {
 	FindDeviceData *p = (FindDeviceData*)lParam;
 
@@ -40,7 +40,7 @@ BOOL CALLBACK FindDeviceCallback(GUID* lpGUID, LPSTR szName, LPSTR szDevice, LPV
 }
 
 
-BOOL CALLBACK FindDeviceCallbackEx(GUID* lpGUID, LPSTR szName, LPSTR szDevice, LPVOID lParam, HMONITOR hMonitor)
+BOOL CALLBACK FindDeviceCallbackEx(__in_opt GUID* lpGUID, __in LPSTR szName, __in LPSTR szDevice, __in LPVOID lParam, HMONITOR hMonitor)
 {
 	FindDeviceData *p = (FindDeviceData*)lParam;
 
@@ -63,7 +63,7 @@ BOOL CALLBACK FindDeviceCallbackEx(GUID* lpGUID, LPSTR szName, LPSTR szDevice, L
  *
  * create a DirectDraw object for a particular device
  */
-IDirectDraw * DirectDrawCreateFromDevice(LPSTR szDevice, PDRAWCREATE DirectDrawCreateP, PDRAWENUM DirectDrawEnumerateP)
+IDirectDraw * DirectDrawCreateFromDevice(__in_opt LPSTR szDevice, PDRAWCREATE DirectDrawCreateP, PDRAWENUM DirectDrawEnumerateP)
 {
 	IDirectDraw*    pdd = NULL;
 	FindDeviceData  find;
@@ -98,7 +98,7 @@ IDirectDraw * DirectDrawCreateFromDevice(LPSTR szDevice, PDRAWCREATE DirectDrawC
  *
  * create a DirectDraw object for a particular device
  */
-IDirectDraw * DirectDrawCreateFromDeviceEx(LPSTR szDevice, PDRAWCREATE DirectDrawCreateP, LPDIRECTDRAWENUMERATEEXA DirectDrawEnumerateExP)
+IDirectDraw * DirectDrawCreateFromDeviceEx(__in_opt LPSTR szDevice, PDRAWCREATE DirectDrawCreateP, LPDIRECTDRAWENUMERATEEXA DirectDrawEnumerateExP)
 {
 	IDirectDraw*    pdd = NULL;
 	FindDeviceData  find;

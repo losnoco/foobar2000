@@ -6,7 +6,7 @@
 //       separate thread and sometimes call Receive() directly on the input
 //       pin.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -42,7 +42,7 @@
 //
 COutputQueue::COutputQueue(
              IPin         *pInputPin,          //  Pin to send stuff to
-             HRESULT      *phr,                //  'Return code'
+             __inout HRESULT      *phr,        //  'Return code'
              BOOL          bAuto,              //  Ask pin if queue or not
              BOOL          bQueue,             //  Send through queue
              LONG          lBatchSize,         //  Batch
@@ -58,6 +58,7 @@ COutputQueue::COutputQueue(
                 m_pPin(pInputPin),
                 m_ppSamples(NULL),
                 m_lWaiting(0),
+                m_evFlushComplete(FALSE, phr),
                 m_pInputPin(NULL),
                 m_bSendAnyway(FALSE),
                 m_nBatched(0),
@@ -178,7 +179,7 @@ COutputQueue::~COutputQueue()
 //
 //  Call the real thread proc as a member function
 //
-DWORD WINAPI COutputQueue::InitialThreadProc(LPVOID pv)
+DWORD WINAPI COutputQueue::InitialThreadProc(__in LPVOID pv)
 {
     HRESULT hrCoInit = CAMThread::CoInitializeHelper();
     
@@ -591,10 +592,14 @@ HRESULT COutputQueue::Receive(IMediaSample *pSample)
 //
 
 HRESULT COutputQueue::ReceiveMultiple (
-    IMediaSample **ppSamples,
+    __in_ecount(nSamples) IMediaSample **ppSamples,
     long nSamples,
-    long *nSamplesProcessed)
+    __out long *nSamplesProcessed)
 {
+    if (nSamples < 0) {
+        return E_INVALIDARG;
+    }
+    
     CAutoLock lck(this);
     //  Either call directly or queue up the samples
 
@@ -632,7 +637,7 @@ HRESULT COutputQueue::ReceiveMultiple (
         //  Loop processing the samples in batches
 
         LONG iLost = 0;
-		long iDone;
+        long iDone = 0;
         for (iDone = 0;
              iDone < nSamples || (m_nBatched != 0 && m_bSendAnyway);
             ) {
@@ -698,9 +703,11 @@ void COutputQueue::Reset()
     if (!IsQueued()) {
         m_hr = S_OK;
     } else {
-        CAutoLock lck(this);
-        QueueSample(RESET_PACKET);
-        NotifyThread();
+        {
+            CAutoLock lck(this);
+            QueueSample(RESET_PACKET);
+            NotifyThread();
+        }
         m_evFlushComplete.Wait();
     }
 }

@@ -3,18 +3,19 @@
 //
 // Desc: DirectShow base classes.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1996-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
 #include <streams.h>
 #include <strmctl.h>
 
-CBaseStreamControl::CBaseStreamControl()
+CBaseStreamControl::CBaseStreamControl(__inout HRESULT *phr)
 : m_StreamState(STREAM_FLOWING)
 , m_StreamStateOnStop(STREAM_FLOWING) // means no pending stop
 , m_tStartTime(MAX_TIME)
 , m_tStopTime(MAX_TIME)
+, m_StreamEvent(FALSE, phr)
 , m_dwStartCookie(0)
 , m_dwStopCookie(0)
 , m_pRefClock(NULL)
@@ -120,7 +121,7 @@ STDMETHODIMP CBaseStreamControl::StartAt
 }
 
 //  Retrieve information about current settings
-STDMETHODIMP CBaseStreamControl::GetInfo(AM_STREAM_INFO *pInfo)
+STDMETHODIMP CBaseStreamControl::GetInfo(__out AM_STREAM_INFO *pInfo)
 {
     if (pInfo == NULL)
 	return E_POINTER;
@@ -231,7 +232,7 @@ void CBaseStreamControl::CancelStart()
 
 
 enum CBaseStreamControl::StreamControlState CBaseStreamControl::CheckSampleTimes
-( const REFERENCE_TIME * pSampleStart, const REFERENCE_TIME * pSampleStop )
+( __in const REFERENCE_TIME * pSampleStart, __in const REFERENCE_TIME * pSampleStop )
 {
     CAutoLock lck(&m_CritSec);
 

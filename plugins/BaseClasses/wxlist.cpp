@@ -3,8 +3,7 @@
 //
 // Desc: DirectShow base classes - implements a non-MFC based generic list
 //       template class.
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -78,7 +77,7 @@ for ( cursor = (list).GetTailPositionI()           \
    cache but no event object so the list cannot be used in calls
    to WaitForSingleObject
 */
-CBaseList::CBaseList(TCHAR *pName,    // Descriptive list name
+CBaseList::CBaseList(__in_opt LPCTSTR pName,    // Descriptive list name
                      INT iItems) :    // Node cache size
 #ifdef DEBUG
     CBaseObject(pName),
@@ -90,7 +89,7 @@ CBaseList::CBaseList(TCHAR *pName,    // Descriptive list name
 {
 } // constructor
 
-CBaseList::CBaseList(TCHAR *pName) :  // Descriptive list name
+CBaseList::CBaseList(__in_opt LPCTSTR pName) :  // Descriptive list name
 #ifdef DEBUG
     CBaseObject(pName),
 #endif
@@ -102,7 +101,7 @@ CBaseList::CBaseList(TCHAR *pName) :  // Descriptive list name
 } // constructor
 
 #ifdef UNICODE
-CBaseList::CBaseList(CHAR *pName,    // Descriptive list name
+CBaseList::CBaseList(__in_opt LPCSTR pName,    // Descriptive list name
                      INT iItems) :    // Node cache size
 #ifdef DEBUG
     CBaseObject(pName),
@@ -114,7 +113,7 @@ CBaseList::CBaseList(CHAR *pName,    // Descriptive list name
 {
 } // constructor
 
-CBaseList::CBaseList(CHAR *pName) :  // Descriptive list name
+CBaseList::CBaseList(__in_opt LPCSTR pName) :  // Descriptive list name
 #ifdef DEBUG
     CBaseObject(pName),
 #endif
@@ -181,14 +180,14 @@ void CBaseList::RemoveAll()
    enumerators that you have may be invalid (since the node
    may be gone).
 */
-POSITION CBaseList::GetHeadPositionI() const
+__out_opt POSITION CBaseList::GetHeadPositionI() const
 {
     return (POSITION) m_pFirst;
 } // GetHeadPosition
 
 
 
-POSITION CBaseList::GetTailPositionI() const
+__out_opt POSITION CBaseList::GetTailPositionI() const
 {
     return (POSITION) m_pLast;
 } // GetTailPosition
@@ -215,7 +214,7 @@ int CBaseList::GetCountI() const
    You may still call this function once we return NULL but
    we will continue to return a NULL position value
 */
-void *CBaseList::GetNextI(POSITION& rp) const
+__out void *CBaseList::GetNextI(__inout POSITION& rp) const
 {
     /* have we reached the end of the list */
 
@@ -249,7 +248,7 @@ void *CBaseList::GetNextI(POSITION& rp) const
    then locking would only result in a change from one bad
    behaviour to another.
 */
-void *CBaseList::GetI(POSITION p) const
+__out_opt void *CBaseList::GetI(__in_opt POSITION p) const
 {
     if (p == NULL) {
         return NULL;
@@ -261,12 +260,19 @@ void *CBaseList::GetI(POSITION p) const
     return pObject;
 } //Get
 
+__out void *CBaseList::GetValidI(__in POSITION p) const
+{
+    CNode * pn = (CNode *) p;
+    void *pObject = pn->GetData();
+    // ASSERT(pObject != NULL);    // NULL pointers in the list are allowed.
+    return pObject;
+} //Get
 
 
 /* Return the first position in the list which holds the given pointer.
    Return NULL if it's not found.
 */
-POSITION CBaseList::FindI( void * pObj) const
+__out_opt POSITION CBaseList::FindI( __in void * pObj) const
 {
     POSITION pn;
     INTERNALTRAVERSELIST(*this, pn){
@@ -283,7 +289,7 @@ POSITION CBaseList::FindI( void * pObj) const
    from the list, does not free the object itself).
    Return the pointer to its object or NULL if empty
 */
-void *CBaseList::RemoveHeadI()
+__out_opt void *CBaseList::RemoveHeadI()
 {
     /* All we do is get the head position and ask for that to be deleted.
        We could special case this since some of the code path checking
@@ -301,7 +307,7 @@ void *CBaseList::RemoveHeadI()
    from the list, does not free the object itself).
    Return the pointer to its object or NULL if empty
 */
-void *CBaseList::RemoveTailI()
+__out_opt void *CBaseList::RemoveTailI()
 {
     /* All we do is get the tail position and ask for that to be deleted.
        We could special case this since some of the code path checking
@@ -323,7 +329,7 @@ void *CBaseList::RemoveTailI()
    it can be used again.
    Remove(NULL) is a harmless no-op - but probably is a wart.
 */
-void *CBaseList::RemoveI(POSITION pos)
+__out_opt void *CBaseList::RemoveI(__in_opt POSITION pos)
 {
     /* Lock the critical section before continuing */
 
@@ -384,7 +390,7 @@ void *CBaseList::RemoveI(POSITION pos)
    Return the new tail position.
 */
 
-POSITION CBaseList::AddTailI(void *pObject)
+__out_opt POSITION CBaseList::AddTailI(__in void *pObject)
 {
     /* Lock the critical section before continuing */
 
@@ -435,7 +441,7 @@ POSITION CBaseList::AddTailI(void *pObject)
 /* Add this object to the head end of our list
    Return the new head position.
 */
-POSITION CBaseList::AddHeadI(void *pObject)
+__out_opt POSITION CBaseList::AddHeadI(__in void *pObject)
 {
     CNode *pNode;
     // ASSERT(pObject);  // NULL pointers in the list are allowed.
@@ -482,7 +488,7 @@ POSITION CBaseList::AddHeadI(void *pObject)
    Return TRUE if it all worked, FALSE if it didn't.
    If it fails some elements may have been added.
 */
-BOOL CBaseList::AddTail(CBaseList *pList)
+BOOL CBaseList::AddTail(__in CBaseList *pList)
 {
     /* lock the object before starting then enumerate
        each entry in the source list and add them one by one to
@@ -505,7 +511,7 @@ BOOL CBaseList::AddTail(CBaseList *pList)
    Return TRUE if it all worked, FALSE if it didn't.
    If it fails some elements may have been added.
 */
-BOOL CBaseList::AddHead(CBaseList *pList)
+BOOL CBaseList::AddHead(__in CBaseList *pList)
 {
     /* lock the object before starting then enumerate
        each entry in the source list and add them one by one to
@@ -518,7 +524,7 @@ BOOL CBaseList::AddHead(CBaseList *pList)
     POSITION pos;
 
     INTERNALREVERSETRAVERSELIST(*pList, pos) {
-        if (NULL== AddHeadI(pList->GetI(pos))){
+        if (NULL== AddHeadI(pList->GetValidI(pos))){
             return FALSE;
         }
     }
@@ -532,7 +538,7 @@ BOOL CBaseList::AddHead(CBaseList *pList)
    AddAfter(NULL,x) adds x to the start - same as AddHead
    Return the position of the new object, NULL if it failed
 */
-POSITION  CBaseList::AddAfterI(POSITION pos, void * pObj)
+__out_opt POSITION  CBaseList::AddAfterI(__in_opt POSITION pos, __in void * pObj)
 {
     if (pos==NULL)
         return AddHeadI(pObj);
@@ -584,12 +590,12 @@ POSITION  CBaseList::AddAfterI(POSITION pos, void * pObj)
 
 
 
-BOOL CBaseList::AddAfter(POSITION p, CBaseList *pList)
+BOOL CBaseList::AddAfter(__in_opt POSITION p, __in CBaseList *pList)
 {
     POSITION pos;
     INTERNALTRAVERSELIST(*pList, pos) {
         /* p follows along the elements being added */
-        p = AddAfterI(p, pList->GetI(pos));
+        p = AddAfterI(p, pList->GetValidI(pos));
         if (p==NULL) return FALSE;
     }
     return TRUE;
@@ -602,7 +608,7 @@ BOOL CBaseList::AddAfter(POSITION p, CBaseList *pList)
    p is still valid after the operation.
    AddBefore(NULL,x) adds x to the end - same as AddTail
 */
-POSITION CBaseList::AddBeforeI(POSITION pos, void * pObj)
+__out_opt POSITION CBaseList::AddBeforeI(__in_opt POSITION pos, __in void * pObj)
 {
     if (pos==NULL)
         return AddTailI(pObj);
@@ -652,12 +658,12 @@ POSITION CBaseList::AddBeforeI(POSITION pos, void * pObj)
 
 
 
-BOOL CBaseList::AddBefore(POSITION p, CBaseList *pList)
+BOOL CBaseList::AddBefore(__in_opt POSITION p, __in CBaseList *pList)
 {
     POSITION pos;
     INTERNALREVERSETRAVERSELIST(*pList, pos) {
         /* p follows along the elements being added */
-        p = AddBeforeI(p, pList->GetI(pos));
+        p = AddBeforeI(p, pList->GetValidI(pos));
         if (p==NULL) return FALSE;
     }
     return TRUE;
@@ -682,7 +688,7 @@ BOOL CBaseList::AddBefore(POSITION p, CBaseList *pList)
        MoveElementsFromHeadThroughPositionToOtherTail
 */
 BOOL CBaseList::MoveToTail
-        (POSITION pos, CBaseList *pList)
+        (__in_opt POSITION pos, __in CBaseList *pList)
 {
     /* Algorithm:
        Note that the elements (including their order) in the concatenation
@@ -756,7 +762,7 @@ BOOL CBaseList::MoveToTail
           concatenates foo onto the start of bar and empties foo.
 */
 BOOL CBaseList::MoveToHead
-        (POSITION pos, CBaseList *pList)
+        (__in_opt POSITION pos, __in CBaseList *pList)
 {
 
     /* See the comments on the algorithm in MoveToTail */

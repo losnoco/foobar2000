@@ -4,7 +4,7 @@
 // Desc: DirectShow base classes - implements class hierarchy for creating
 //       COM objects.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -19,7 +19,7 @@ LONG CBaseObject::m_cObjects = 0;
 
 /* Constructor */
 
-CBaseObject::CBaseObject(const TCHAR *pName)
+CBaseObject::CBaseObject(__in_opt LPCTSTR pName)
 {
     /* Increment the number of active objects */
     InterlockedIncrement(&m_cObjects);
@@ -85,7 +85,7 @@ HINSTANCE LoadOLEAut32()
 
 // We know we use "this" in the initialization list, we also know we don't modify *phr.
 #pragma warning( disable : 4355 4100 )
-CUnknown::CUnknown(const TCHAR *pName, LPUNKNOWN pUnk)
+CUnknown::CUnknown(__in_opt LPCTSTR pName, __in_opt LPUNKNOWN pUnk)
 : CBaseObject(pName)
 /* Start the object with a reference count of zero - when the      */
 /* object is queried for it's first interface this may be          */
@@ -107,7 +107,7 @@ CUnknown::CUnknown(const TCHAR *pName, LPUNKNOWN pUnk)
 
 // This does the same as above except it has a useless HRESULT argument
 // use the previous constructor, this is just left for compatibility...
-CUnknown::CUnknown(TCHAR *pName, LPUNKNOWN pUnk,HRESULT *phr) :
+CUnknown::CUnknown(__in_opt LPCTSTR pName, __in_opt LPUNKNOWN pUnk, __inout_opt HRESULT *phr) :
     CBaseObject(pName),
     m_cRef(0),
     m_pUnknown( pUnk != 0 ? pUnk : reinterpret_cast<LPUNKNOWN>( static_cast<PNDUNKNOWN>(this) ) )
@@ -115,12 +115,12 @@ CUnknown::CUnknown(TCHAR *pName, LPUNKNOWN pUnk,HRESULT *phr) :
 }
 
 #ifdef UNICODE
-CUnknown::CUnknown(const CHAR *pName, LPUNKNOWN pUnk)
+CUnknown::CUnknown(__in_opt LPCSTR pName, __in_opt LPUNKNOWN pUnk)
 : CBaseObject(pName), m_cRef(0),
     m_pUnknown( pUnk != 0 ? pUnk : reinterpret_cast<LPUNKNOWN>( static_cast<PNDUNKNOWN>(this) ) )
 { }
 
-CUnknown::CUnknown(CHAR *pName, LPUNKNOWN pUnk,HRESULT *phr) :
+CUnknown::CUnknown(__in_opt LPCSTR pName, __in_opt LPUNKNOWN pUnk, __inout_opt HRESULT *phr) :
     CBaseObject(pName), m_cRef(0),
     m_pUnknown( pUnk != 0 ? pUnk : reinterpret_cast<LPUNKNOWN>( static_cast<PNDUNKNOWN>(this) ) )
 { }
@@ -132,7 +132,7 @@ CUnknown::CUnknown(CHAR *pName, LPUNKNOWN pUnk,HRESULT *phr) :
 
 /* QueryInterface */
 
-STDMETHODIMP CUnknown::NonDelegatingQueryInterface(REFIID riid, void ** ppv)
+STDMETHODIMP CUnknown::NonDelegatingQueryInterface(REFIID riid, __deref_out void ** ppv)
 {
     CheckPointer(ppv,E_POINTER);
     ValidateReadWritePtr(ppv,sizeof(PVOID));
@@ -200,7 +200,9 @@ STDMETHODIMP_(ULONG) CUnknown::NonDelegatingRelease()
         delete this;
         return ULONG(0);
     } else {
-        return ourmax(ULONG(m_cRef), 1ul);
+        //  Don't touch m_cRef again even in this leg as the object
+        //  may have just been released on another thread too
+        return ourmax(ULONG(lRef), 1ul);
     }
 }
 
@@ -208,7 +210,7 @@ STDMETHODIMP_(ULONG) CUnknown::NonDelegatingRelease()
 /* Return an interface pointer to a requesting client
    performing a thread safe AddRef as necessary */
 
-STDAPI GetInterface(LPUNKNOWN pUnk, void **ppv)
+STDAPI GetInterface(LPUNKNOWN pUnk, __out void **ppv)
 {
     CheckPointer(ppv, E_POINTER);
     *ppv = pUnk;
@@ -240,16 +242,23 @@ BOOL WINAPI IsEqualObject(IUnknown *pFirst, IUnknown *pSecond)
     /* See if the IUnknown pointers match */
 
     hr = pFirst->QueryInterface(IID_IUnknown,(void **) &pUnknown1);
-    ASSERT(SUCCEEDED(hr));
+    if (FAILED(hr)) {
+        return FALSE;
+    }
     ASSERT(pUnknown1);
 
-    hr = pSecond->QueryInterface(IID_IUnknown,(void **) &pUnknown2);
-    ASSERT(SUCCEEDED(hr));
-    ASSERT(pUnknown2);
-
-    /* Release the extra interfaces we hold */
+    /* Release the extra interface we hold */
 
     pUnknown1->Release();
+
+    hr = pSecond->QueryInterface(IID_IUnknown,(void **) &pUnknown2);
+    if (FAILED(hr)) {
+        return FALSE;
+    }
+    ASSERT(pUnknown2);
+
+    /* Release the extra interface we hold */
+
     pUnknown2->Release();
     return (pUnknown1 == pUnknown2);
 }

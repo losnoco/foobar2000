@@ -4,69 +4,34 @@
 // Desc: DirectShow base classes - implements helper classes for building
 //       multimedia filters.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
 #include <streams.h>
+#define STRSAFE_NO_DEPRECATE
+#include <strsafe.h>
 
-//
-//  Declare function from largeint.h we need so that PPC can build
-//
-
-//
-// Enlarged integer divide - 64-bits / 32-bits > 32-bits
-//
-
-#ifndef _X86_
-
-#define LLtoU64(x) (*(unsigned __int64*)(void*)(&(x)))
-
-__inline
-ULONG
-WINAPI
-EnlargedUnsignedDivide (
-    IN ULARGE_INTEGER Dividend,
-    IN ULONG Divisor,
-    IN PULONG Remainder
-    )
-{
-        // return remainder if necessary
-        if (Remainder != NULL)
-                *Remainder = (ULONG)(LLtoU64(Dividend) % Divisor);
-        return (ULONG)(LLtoU64(Dividend) / Divisor);
-}
-
-#else
-__inline
-ULONG
-WINAPI
-EnlargedUnsignedDivide (
-    IN ULARGE_INTEGER Dividend,
-    IN ULONG Divisor,
-    IN PULONG Remainder
-    )
-{
-    ULONG ulResult;
-    _asm {
-        mov eax,Dividend.LowPart
-        mov edx,Dividend.HighPart
-        mov ecx,Remainder
-        div Divisor
-        or  ecx,ecx
-        jz  short label
-        mov [ecx],edx
-label:
-        mov ulResult,eax
-    }
-    return ulResult;
-}
-#endif
 
 // --- CAMEvent -----------------------
-CAMEvent::CAMEvent(BOOL fManualReset)
+CAMEvent::CAMEvent(BOOL fManualReset, __inout_opt HRESULT *phr)
 {
     m_hEvent = CreateEvent(NULL, fManualReset, FALSE, NULL);
+    if (NULL == m_hEvent) {
+        if (NULL != phr && SUCCEEDED(*phr)) {
+            *phr = E_OUTOFMEMORY;
+        }
+    }
+}
+
+CAMEvent::CAMEvent(__inout_opt HRESULT *phr)
+{
+    m_hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (NULL == m_hEvent) {
+        if (NULL != phr && SUCCEEDED(*phr)) {
+            *phr = E_OUTOFMEMORY;
+        }
+    }
 }
 
 CAMEvent::~CAMEvent()
@@ -79,6 +44,10 @@ CAMEvent::~CAMEvent()
 
 // --- CAMMsgEvent -----------------------
 // One routine.  The rest is handled in CAMEvent
+
+CAMMsgEvent::CAMMsgEvent(__inout_opt HRESULT *phr) : CAMEvent(FALSE, phr)
+{
+}
 
 BOOL CAMMsgEvent::WaitMsg(DWORD dwTimeout)
 {
@@ -127,8 +96,9 @@ BOOL CAMMsgEvent::WaitMsg(DWORD dwTimeout)
 // --- CAMThread ----------------------
 
 
-CAMThread::CAMThread()
-    : m_EventSend(TRUE)     // must be manual-reset for CheckRequest()
+CAMThread::CAMThread(__inout_opt HRESULT *phr)
+    : m_EventSend(TRUE, phr),     // must be manual-reset for CheckRequest()
+      m_EventComplete(FALSE, phr)
 {
     m_hThread = NULL;
 }
@@ -141,7 +111,7 @@ CAMThread::~CAMThread() {
 // when the thread starts, it calls this function. We unwrap the 'this'
 //pointer and call ThreadProc.
 DWORD WINAPI
-CAMThread::InitialThreadProc(LPVOID pv)
+CAMThread::InitialThreadProc(__inout LPVOID pv)
 {
     HRESULT hrCoInit = CAMThread::CoInitializeHelper();
     if(FAILED(hrCoInit)) {
@@ -218,7 +188,7 @@ CAMThread::GetRequest()
 
 // is there a request?
 BOOL
-CAMThread::CheckRequest(DWORD * pParam)
+CAMThread::CheckRequest(__out_opt DWORD * pParam)
 {
     if (!m_EventSend.Check()) {
 	return FALSE;
@@ -330,7 +300,7 @@ CMsgThread::CreateThread(
 
 DWORD WINAPI
 CMsgThread::DefaultThreadProc(
-    LPVOID lpParam
+    __inout LPVOID lpParam
     )
 {
     CMsgThread *lpThis = (CMsgThread *)lpParam;
@@ -359,7 +329,7 @@ CMsgThread::DefaultThreadProc(
 // Block until the next message is placed on the list m_ThreadQueue.
 // copies the message to the message pointed to by *pmsg
 void
-CMsgThread::GetThreadMsg(CMsg *msg)
+CMsgThread::GetThreadMsg(__out CMsg *msg)
 {
     CMsg * pmsg = NULL;
 
@@ -385,201 +355,22 @@ CMsgThread::GetThreadMsg(CMsg *msg)
 
 }
 
-
-// NOTE: as we need to use the same binaries on Win95 as on NT this code should
-// be compiled WITHOUT unicode being defined.  Otherwise we will not pick up
-// these internal routines and the binary will not run on Win95.
-
-#ifndef UNICODE
-// Windows 95 doesn't implement this, so we provide an implementation.
-LPWSTR
-WINAPI
-lstrcpyWInternal(
-    LPWSTR lpString1,
-    LPCWSTR lpString2
-    )
-{
-    LPWSTR  lpReturn = lpString1;
-    while (*lpString1++ = *lpString2++);
-
-    return lpReturn;
-}
-
-// Windows 95 doesn't implement this, so we provide an implementation.
-LPWSTR
-WINAPI
-lstrcpynWInternal(
-    LPWSTR lpString1,
-    LPCWSTR lpString2,
-    int     iMaxLength
-    )
-{
-    ASSERT(iMaxLength);
-    LPWSTR  lpReturn = lpString1;
-    if (iMaxLength) {
-        while (--iMaxLength && (*lpString1++ = *lpString2++));
-
-        // If we ran out of room (which will be the case if
-        // iMaxLength is now 0) we still need to terminate the
-        // string.
-        if (!iMaxLength) *lpString1 = L'\0';
-    }
-    return lpReturn;
-}
-
-int
-WINAPI
-lstrcmpWInternal(
-    LPCWSTR lpString1,
-    LPCWSTR lpString2
-    )
-{
-    do {
-	WCHAR c1 = *lpString1;
-	WCHAR c2 = *lpString2;
-	if (c1 != c2)
-	    return (int) c1 - (int) c2;
-    } while (*lpString1++ && *lpString2++);
-    return 0;
-}
-
-
-int
-WINAPI
-lstrcmpiWInternal(
-    LPCWSTR lpString1,
-    LPCWSTR lpString2
-    )
-{
-    do {
-	WCHAR c1 = *lpString1;
-	WCHAR c2 = *lpString2;
-	if (c1 >= L'A' && c1 <= L'Z')
-	    c1 -= (WCHAR) (L'A' - L'a');
-	if (c2 >= L'A' && c2 <= L'Z')
-	    c2 -= (WCHAR) (L'A' - L'a');
-	
-	if (c1 != c2)
-	    return (int) c1 - (int) c2;
-    } while (*lpString1++ && *lpString2++);
-
-    return 0;
-}
-
-
-int
-WINAPI
-lstrlenWInternal(
-    LPCWSTR lpString
-    )
-{
-    int i = -1;
-    while (*(lpString+(++i)))
-        ;
-    return i;
-}
-
-
-int WINAPIV wsprintfWInternal(LPWSTR wszOut, LPCWSTR pszFmt, ...)
-{
-    char fmt[256]; // !!!
-    char ach[256]; // !!!
-    int i;
-
-    va_list va;
-    va_start(va, pszFmt);
-    WideCharToMultiByte(GetACP(), 0, pszFmt, -1, fmt, 256, NULL, NULL);
-    i = wvsprintfA(ach, fmt, va);
-    va_end(va);
-
-    MultiByteToWideChar(CP_ACP, 0, ach, -1, wszOut, i+1);
-
-    return i;
-}
-#else
-
-// need to provide the implementations in unicode for non-unicode
-// builds linking with the unicode strmbase.lib
-LPWSTR WINAPI lstrcpyWInternal(
-    LPWSTR lpString1,
-    LPCWSTR lpString2
-    )
-{
-    return lstrcpyW(lpString1, lpString2);
-}
-
-LPWSTR WINAPI lstrcpynWInternal(
-    LPWSTR lpString1,
-    LPCWSTR lpString2,
-    int     iMaxLength
-    )
-{
-    return lstrcpynW(lpString1, lpString2, iMaxLength);
-}
-
-int WINAPI lstrcmpWInternal(
-    LPCWSTR lpString1,
-    LPCWSTR lpString2
-    )
-{
-    return lstrcmpW(lpString1, lpString2);
-}
-
-
-int WINAPI lstrcmpiWInternal(
-    LPCWSTR lpString1,
-    LPCWSTR lpString2
-    )
-{
-    return lstrcmpiW(lpString1, lpString2);
-}
-
-
-int WINAPI lstrlenWInternal(
-    LPCWSTR lpString
-    )
-{
-    return lstrlenW(lpString);
-}
-
-
-int WINAPIV wsprintfWInternal(
-    LPWSTR wszOut, LPCWSTR pszFmt, ...)
-{
-    va_list va;
-    va_start(va, pszFmt);
-    int i = wvsprintfW(wszOut, pszFmt, va);
-    va_end(va);
-    return i;
-}
-#endif
-
-
 // Helper function - convert int to WSTR
-void WINAPI IntToWstr(int i, LPWSTR wstr)
+void WINAPI IntToWstr(int i, __out_ecount(12) LPWSTR wstr)
 {
 #ifdef UNICODE
-    wsprintf(wstr, L"%d", i);
+    if (FAILED(StringCchPrintf(wstr, 12, L"%d", i))) {
+        wstr[0] = 0;
+    }
 #else
-    TCHAR temp[32];
-    wsprintf(temp, "%d", i);
-    MultiByteToWideChar(CP_ACP, 0, temp, -1, wstr, 32);
+    TCHAR temp[12];
+    if (FAILED(StringCchPrintf(temp, NUMELMS(temp), "%d", i))) {
+        wstr[0] = 0;
+    } else {
+        MultiByteToWideChar(CP_ACP, 0, temp, -1, wstr, 12);
+    }
 #endif
 } // IntToWstr
-
-
-#if 0
-void * memchrInternal(const void *pv, int c, size_t sz)
-{
-    BYTE *pb = (BYTE *) pv;
-    while (sz--) {
-	if (*pb == c)
-	    return (void *) pb;
-	pb++;
-    }
-    return NULL;
-}
-#endif
 
 
 #define MEMORY_ALIGNMENT        4
@@ -638,301 +429,33 @@ memmove_done:
     return ret;
 }
 
-/*  Arithmetic functions to help with time format conversions
-*/
-
-#ifdef _M_ALPHA
-// work around bug in version 12.00.8385 of the alpha compiler where
-// UInt32x32To64 sign-extends its arguments (?)
-#undef UInt32x32To64
-#define UInt32x32To64(a, b) (((ULONGLONG)((ULONG)(a)) & 0xffffffff) * ((ULONGLONG)((ULONG)(b)) & 0xffffffff))
-#endif
-
-/*   Compute (a * b + d) / c */
-LONGLONG WINAPI llMulDiv(LONGLONG a, LONGLONG b, LONGLONG c, LONGLONG d)
+HRESULT AMSafeMemMoveOffset(
+    __in_bcount(dst_size) void * dst,
+    __in size_t dst_size,
+    __in DWORD cb_dst_offset,
+    __in_bcount(src_size) const void * src,
+    __in size_t src_size,
+    __in DWORD cb_src_offset,
+    __in size_t count)
 {
-    /*  Compute the absolute values to avoid signed arithmetic problems */
-    ULARGE_INTEGER ua, ub;
-    DWORDLONG uc;
-
-    ua.QuadPart = (DWORDLONG)(a >= 0 ? a : -a);
-    ub.QuadPart = (DWORDLONG)(b >= 0 ? b : -b);
-    uc          = (DWORDLONG)(c >= 0 ? c : -c);
-    BOOL bSign = (a < 0) ^ (b < 0);
-
-    /*  Do long multiplication */
-    ULARGE_INTEGER p[2];
-    p[0].QuadPart  = UInt32x32To64(ua.LowPart, ub.LowPart);
-
-    /*  This next computation cannot overflow into p[1].HighPart because
-        the max number we can compute here is:
-
-                 (2 ** 32 - 1) * (2 ** 32 - 1) +  // ua.LowPart * ub.LowPart
-    (2 ** 32) *  (2 ** 31) * (2 ** 32 - 1) * 2    // x.LowPart * y.HighPart * 2
-
-    == 2 ** 96 - 2 ** 64 + (2 ** 64 - 2 ** 33 + 1)
-    == 2 ** 96 - 2 ** 33 + 1
-    < 2 ** 96
-    */
-
-    ULARGE_INTEGER x;
-    x.QuadPart     = UInt32x32To64(ua.LowPart, ub.HighPart) +
-                     UInt32x32To64(ua.HighPart, ub.LowPart) +
-                     p[0].HighPart;
-    p[0].HighPart  = x.LowPart;
-    p[1].QuadPart  = UInt32x32To64(ua.HighPart, ub.HighPart) + x.HighPart;
-
-    if (d != 0) {
-        ULARGE_INTEGER ud[2];
-        if (bSign) {
-            ud[0].QuadPart = (DWORDLONG)(-d);
-            if (d > 0) {
-                /*  -d < 0 */
-                ud[1].QuadPart = (DWORDLONG)(LONGLONG)-1;
-            } else {
-                ud[1].QuadPart = (DWORDLONG)0;
-            }
-        } else {
-            ud[0].QuadPart = (DWORDLONG)d;
-            if (d < 0) {
-                ud[1].QuadPart = (DWORDLONG)(LONGLONG)-1;
-            } else {
-                ud[1].QuadPart = (DWORDLONG)0;
-            }
-        }
-        /*  Now do extended addition */
-        ULARGE_INTEGER uliTotal;
-
-        /*  Add ls DWORDs */
-        uliTotal.QuadPart  = (DWORDLONG)ud[0].LowPart + p[0].LowPart;
-        p[0].LowPart       = uliTotal.LowPart;
-
-        /*  Propagate carry */
-        uliTotal.LowPart   = uliTotal.HighPart;
-        uliTotal.HighPart  = 0;
-
-        /*  Add 2nd most ls DWORDs */
-        uliTotal.QuadPart += (DWORDLONG)ud[0].HighPart + p[0].HighPart;
-        p[0].HighPart      = uliTotal.LowPart;
-
-        /*  Propagate carry */
-        uliTotal.LowPart   = uliTotal.HighPart;
-        uliTotal.HighPart  = 0;
-
-        /*  Add MS DWORDLONGs - no carry expected */
-        p[1].QuadPart     += ud[1].QuadPart + uliTotal.QuadPart;
-
-        /*  Now see if we got a sign change from the addition */
-        if ((LONG)p[1].HighPart < 0) {
-            bSign = !bSign;
-
-            /*  Negate the current value (ugh!) */
-            p[0].QuadPart  = ~p[0].QuadPart;
-            p[1].QuadPart  = ~p[1].QuadPart;
-            p[0].QuadPart += 1;
-            p[1].QuadPart += (p[0].QuadPart == 0);
-        }
+    // prevent read overruns
+    if( count + cb_src_offset < count ||   // prevent integer overflow
+        count + cb_src_offset > src_size)  // prevent read overrun
+    {
+        return E_INVALIDARG;
     }
 
-    /*  Now for the division */
-    if (c < 0) {
-        bSign = !bSign;
+    // prevent write overruns
+    if( count + cb_dst_offset < count ||   // prevent integer overflow
+        count + cb_dst_offset > dst_size)  // prevent write overrun
+    {
+        return E_INVALIDARG;
     }
 
-
-    /*  This will catch c == 0 and overflow */
-    if (uc <= p[1].QuadPart) {
-        return bSign ? (LONGLONG)0x8000000000000000 :
-                       (LONGLONG)0x7FFFFFFFFFFFFFFF;
-    }
-
-    DWORDLONG ullResult;
-
-    /*  Do the division */
-    /*  If the dividend is a DWORD_LONG use the compiler */
-    if (p[1].QuadPart == 0) {
-        ullResult = p[0].QuadPart / uc;
-        return bSign ? -(LONGLONG)ullResult : (LONGLONG)ullResult;
-    }
-
-    /*  If the divisor is a DWORD then its simpler */
-    ULARGE_INTEGER ulic;
-    ulic.QuadPart = uc;
-    if (ulic.HighPart == 0) {
-        ULARGE_INTEGER uliDividend;
-        ULARGE_INTEGER uliResult;
-        DWORD dwDivisor = (DWORD)uc;
-        // ASSERT(p[1].HighPart == 0 && p[1].LowPart < dwDivisor);
-        uliDividend.HighPart = p[1].LowPart;
-        uliDividend.LowPart = p[0].HighPart;
-#ifndef USE_LARGEINT
-        uliResult.HighPart = (DWORD)(uliDividend.QuadPart / dwDivisor);
-        p[0].HighPart = (DWORD)(uliDividend.QuadPart % dwDivisor);
-        uliResult.LowPart = 0;
-        uliResult.QuadPart = p[0].QuadPart / dwDivisor + uliResult.QuadPart;
-#else
-        /*  NOTE - this routine will take exceptions if
-            the result does not fit in a DWORD
-        */
-        if (uliDividend.QuadPart >= (DWORDLONG)dwDivisor) {
-            uliResult.HighPart = EnlargedUnsignedDivide(
-                                     uliDividend,
-                                     dwDivisor,
-                                     &p[0].HighPart);
-        } else {
-            uliResult.HighPart = 0;
-        }
-        uliResult.LowPart = EnlargedUnsignedDivide(
-                                 p[0],
-                                 dwDivisor,
-                                 NULL);
-#endif
-        return bSign ? -(LONGLONG)uliResult.QuadPart :
-                        (LONGLONG)uliResult.QuadPart;
-    }
-
-
-    ullResult = 0;
-
-    /*  OK - do long division */
-    for (int i = 0; i < 64; i++) {
-        ullResult <<= 1;
-
-        /*  Shift 128 bit p left 1 */
-        p[1].QuadPart <<= 1;
-        if ((p[0].HighPart & 0x80000000) != 0) {
-            p[1].LowPart++;
-        }
-        p[0].QuadPart <<= 1;
-
-        /*  Compare */
-        if (uc <= p[1].QuadPart) {
-            p[1].QuadPart -= uc;
-            ullResult += 1;
-        }
-    }
-
-    return bSign ? - (LONGLONG)ullResult : (LONGLONG)ullResult;
+    memmoveInternal( (BYTE *)dst+cb_dst_offset, (BYTE *)src+cb_src_offset, count);
+    return S_OK;
 }
 
-LONGLONG WINAPI Int64x32Div32(LONGLONG a, LONG b, LONG c, LONG d)
-{
-    ULARGE_INTEGER ua;
-    DWORD ub;
-    DWORD uc;
-
-    /*  Compute the absolute values to avoid signed arithmetic problems */
-    ua.QuadPart = (DWORDLONG)(a >= 0 ? a : -a);
-    ub = (DWORD)(b >= 0 ? b : -b);
-    uc = (DWORD)(c >= 0 ? c : -c);
-    BOOL bSign = (a < 0) ^ (b < 0);
-
-    /*  Do long multiplication */
-    ULARGE_INTEGER p0;
-    DWORD p1;
-    p0.QuadPart  = UInt32x32To64(ua.LowPart, ub);
-
-    if (ua.HighPart != 0) {
-        ULARGE_INTEGER x;
-        x.QuadPart     = UInt32x32To64(ua.HighPart, ub) + p0.HighPart;
-        p0.HighPart  = x.LowPart;
-        p1   = x.HighPart;
-    } else {
-        p1 = 0;
-    }
-
-    if (d != 0) {
-        ULARGE_INTEGER ud0;
-        DWORD ud1;
-
-        if (bSign) {
-            //
-            //  Cast d to LONGLONG first otherwise -0x80000000 sign extends
-            //  incorrectly
-            //
-            ud0.QuadPart = (DWORDLONG)(-(LONGLONG)d);
-            if (d > 0) {
-                /*  -d < 0 */
-                ud1 = (DWORD)-1;
-            } else {
-                ud1 = (DWORD)0;
-            }
-        } else {
-            ud0.QuadPart = (DWORDLONG)d;
-            if (d < 0) {
-                ud1 = (DWORD)-1;
-            } else {
-                ud1 = (DWORD)0;
-            }
-        }
-        /*  Now do extended addition */
-        ULARGE_INTEGER uliTotal;
-
-        /*  Add ls DWORDs */
-        uliTotal.QuadPart  = (DWORDLONG)ud0.LowPart + p0.LowPart;
-        p0.LowPart       = uliTotal.LowPart;
-
-        /*  Propagate carry */
-        uliTotal.LowPart   = uliTotal.HighPart;
-        uliTotal.HighPart  = 0;
-
-        /*  Add 2nd most ls DWORDs */
-        uliTotal.QuadPart += (DWORDLONG)ud0.HighPart + p0.HighPart;
-        p0.HighPart      = uliTotal.LowPart;
-
-        /*  Add MS DWORDLONGs - no carry expected */
-        p1 += ud1 + uliTotal.HighPart;
-
-        /*  Now see if we got a sign change from the addition */
-        if ((LONG)p1 < 0) {
-            bSign = !bSign;
-
-            /*  Negate the current value (ugh!) */
-            p0.QuadPart  = ~p0.QuadPart;
-            p1 = ~p1;
-            p0.QuadPart += 1;
-            p1 += (p0.QuadPart == 0);
-        }
-    }
-
-    /*  Now for the division */
-    if (c < 0) {
-        bSign = !bSign;
-    }
-
-
-    /*  This will catch c == 0 and overflow */
-    if (uc <= p1) {
-        return bSign ? (LONGLONG)0x8000000000000000 :
-                       (LONGLONG)0x7FFFFFFFFFFFFFFF;
-    }
-
-    /*  Do the division */
-
-    /*  If the divisor is a DWORD then its simpler */
-    ULARGE_INTEGER uliDividend;
-    ULARGE_INTEGER uliResult;
-    DWORD dwDivisor = uc;
-    uliDividend.HighPart = p1;
-    uliDividend.LowPart = p0.HighPart;
-    /*  NOTE - this routine will take exceptions if
-        the result does not fit in a DWORD
-    */
-    if (uliDividend.QuadPart >= (DWORDLONG)dwDivisor) {
-        uliResult.HighPart = EnlargedUnsignedDivide(
-                                 uliDividend,
-                                 dwDivisor,
-                                 &p0.HighPart);
-    } else {
-        uliResult.HighPart = 0;
-    }
-    uliResult.LowPart = EnlargedUnsignedDivide(
-                             p0,
-                             dwDivisor,
-                             NULL);
-    return bSign ? -(LONGLONG)uliResult.QuadPart :
-                    (LONGLONG)uliResult.QuadPart;
-}
 
 #ifdef DEBUG
 /******************************Public*Routine******************************\
@@ -1024,7 +547,7 @@ BOOL WINAPI CritCheckOut(const CCritSec * pcCrit)
 #endif
 
 
-STDAPI WriteBSTR(BSTR *pstrDest, LPCWSTR szSrc)
+STDAPI WriteBSTR(__deref_out BSTR *pstrDest, LPCWSTR szSrc)
 {
     *pstrDest = SysAllocString( szSrc );
     if( !(*pstrDest) ) return E_OUTOFMEMORY;
@@ -1032,9 +555,9 @@ STDAPI WriteBSTR(BSTR *pstrDest, LPCWSTR szSrc)
 }
 
 
-STDAPI FreeBSTR(BSTR* pstr)
+STDAPI FreeBSTR(__deref_in BSTR* pstr)
 {
-    if( *pstr == NULL ) return S_FALSE;
+    if( (PVOID)*pstr == NULL ) return S_FALSE;
     SysFreeString( *pstr );
     return NOERROR;
 }
@@ -1045,16 +568,21 @@ STDAPI FreeBSTR(BSTR* pstr)
 //    S_OK          - no error
 //    E_POINTER     - ppszReturn == NULL
 //    E_OUTOFMEMORY - can't allocate memory for returned string
-STDAPI AMGetWideString(LPCWSTR psz, LPWSTR *ppszReturn)
+STDAPI AMGetWideString(LPCWSTR psz, __deref_out LPWSTR *ppszReturn)
 {
     CheckPointer(ppszReturn, E_POINTER);
     ValidateReadWritePtr(ppszReturn, sizeof(LPWSTR));
-    DWORD nameLen = sizeof(WCHAR) * (lstrlenW(psz)+1);
-    *ppszReturn = (LPWSTR)CoTaskMemAlloc(nameLen);
+    *ppszReturn = NULL;
+    size_t nameLen;
+    HRESULT hr = StringCbLengthW(psz, 100000, &nameLen);
+    if (FAILED(hr)) {
+        return hr;
+    }
+    *ppszReturn = (LPWSTR)CoTaskMemAlloc(nameLen + sizeof(WCHAR));
     if (*ppszReturn == NULL) {
        return E_OUTOFMEMORY;
     }
-    CopyMemory(*ppszReturn, psz, nameLen);
+    CopyMemory(*ppszReturn, psz, nameLen + sizeof(WCHAR));
     return NOERROR;
 }
 
@@ -1170,7 +698,7 @@ HRESULT AmGetLastErrorToHResult()
     }
 }
 
-IUnknown* QzAtlComPtrAssign(IUnknown** pp, IUnknown* lp)
+IUnknown* QzAtlComPtrAssign(__deref_inout_opt IUnknown** pp, __in_opt IUnknown* lp)
 {
     if (lp != NULL)
         lp->AddRef();
@@ -1197,7 +725,7 @@ Return Value:
 the Platform SDK for more information.
 
 ******************************************************************************/
-MMRESULT CompatibleTimeSetEvent( UINT uDelay, UINT uResolution, LPTIMECALLBACK lpTimeProc, DWORD_PTR dwUser, UINT fuEvent )
+MMRESULT CompatibleTimeSetEvent( UINT uDelay, UINT uResolution, __in LPTIMECALLBACK lpTimeProc, DWORD_PTR dwUser, UINT fuEvent )
 {
     #if WINVER >= 0x0501
     {
@@ -1237,3 +765,5 @@ bool TimeKillSynchronousFlagAvailable( void )
 
     return false;
 }
+
+

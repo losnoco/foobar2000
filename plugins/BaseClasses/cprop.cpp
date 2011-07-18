@@ -3,7 +3,7 @@
 //
 // Desc: DirectShow base classes - implements CBasePropertyPage class.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) 1992-2001 Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
 
@@ -16,8 +16,8 @@
 // we call SetPageSite(NULL) and SetObjects(0,NULL) to release interfaces
 // previously obtained by the property page when it had SetObjects called
 
-CBasePropertyPage::CBasePropertyPage(TCHAR *pName,      // Debug only name
-                                     LPUNKNOWN pUnk,    // COM Delegator
+CBasePropertyPage::CBasePropertyPage(__in_opt LPCTSTR pName,   // Debug only name
+                                     __inout_opt LPUNKNOWN pUnk, // COM Delegator
                                      int DialogId,      // Resource ID
                                      int TitleId) :     // To get tital
     CUnknown(pName,pUnk),
@@ -32,8 +32,8 @@ CBasePropertyPage::CBasePropertyPage(TCHAR *pName,      // Debug only name
 }
 
 #ifdef UNICODE
-CBasePropertyPage::CBasePropertyPage(CHAR *pName,      // Debug only name
-                                     LPUNKNOWN pUnk,    // COM Delegator
+CBasePropertyPage::CBasePropertyPage(__in_opt LPCSTR pName,     // Debug only name
+                                     __inout_opt LPUNKNOWN pUnk,  // COM Delegator
                                      int DialogId,      // Resource ID
                                      int TitleId) :     // To get tital
     CUnknown(pName,pUnk),
@@ -64,14 +64,16 @@ STDMETHODIMP_(ULONG) CBasePropertyPage::NonDelegatingRelease()
 {
     // If the reference count drops to zero delete ourselves
 
-    if (InterlockedDecrement(&m_cRef) == 0) {
+    LONG lRef = InterlockedDecrement(&m_cRef);
+    if (lRef == 0) {
         m_cRef++;
         SetPageSite(NULL);
         SetObjects(0,NULL);
         delete this;
         return ULONG(0);
     } else {
-        return max(ULONG(m_cRef),1ul);
+        //  Don't touch m_cRef again here!
+        return max(ULONG(lRef),1ul);
     }
 }
 
@@ -79,7 +81,7 @@ STDMETHODIMP_(ULONG) CBasePropertyPage::NonDelegatingRelease()
 // Expose our IPropertyPage interface
 
 STDMETHODIMP
-CBasePropertyPage::NonDelegatingQueryInterface(REFIID riid,void **ppv)
+CBasePropertyPage::NonDelegatingQueryInterface(REFIID riid,__deref_out void **ppv)
 {
     if (riid == IID_IPropertyPage) {
         return GetInterface((IPropertyPage *)this,ppv);
@@ -91,7 +93,7 @@ CBasePropertyPage::NonDelegatingQueryInterface(REFIID riid,void **ppv)
 
 // Get the page info so that the page site can size itself
 
-STDMETHODIMP CBasePropertyPage::GetPageInfo(LPPROPPAGEINFO pPageInfo)
+STDMETHODIMP CBasePropertyPage::GetPageInfo(__out LPPROPPAGEINFO pPageInfo)
 {
     CheckPointer(pPageInfo,E_POINTER);
     WCHAR wszTitle[STR_MAX_LENGTH];
@@ -134,7 +136,7 @@ INT_PTR CALLBACK CBasePropertyPage::DialogProc(HWND hwnd,
 
         case WM_INITDIALOG:
 
-            SetWindowLongPtr(hwnd, DWLP_USER, lParam);
+            _SetWindowLongPtr(hwnd, DWLP_USER, lParam);
 
             // This pointer may be NULL when calculating size
 
@@ -147,7 +149,7 @@ INT_PTR CALLBACK CBasePropertyPage::DialogProc(HWND hwnd,
 
     // This pointer may be NULL when calculating size
 
-    pPropertyPage = (CBasePropertyPage *) GetWindowLongPtr(hwnd, DWLP_USER);
+    pPropertyPage = _GetWindowLongPtr<CBasePropertyPage*>(hwnd, DWLP_USER);
     if (pPropertyPage == NULL) {
         return (LRESULT) 1;
     }
@@ -157,7 +159,7 @@ INT_PTR CALLBACK CBasePropertyPage::DialogProc(HWND hwnd,
 
 // Tells us the object that should be informed of the property changes
 
-STDMETHODIMP CBasePropertyPage::SetObjects(ULONG cObjects,LPUNKNOWN *ppUnk)
+STDMETHODIMP CBasePropertyPage::SetObjects(ULONG cObjects,__in_ecount_opt(cObjects) LPUNKNOWN *ppUnk)
 {
     if (cObjects == 1) {
 
@@ -289,7 +291,7 @@ STDMETHODIMP CBasePropertyPage::Deactivate(void)
 
 // Tells the application property page site
 
-STDMETHODIMP CBasePropertyPage::SetPageSite(LPPROPERTYPAGESITE pPageSite)
+STDMETHODIMP CBasePropertyPage::SetPageSite(__in_opt LPPROPERTYPAGESITE pPageSite)
 {
     if (pPageSite) {
 
@@ -361,7 +363,8 @@ INT_PTR CBasePropertyPage::OnReceiveMessage(HWND hwnd,UINT uMsg,WPARAM wParam,LP
 
     CBasePropertyPage *pPropertyPage;
     {
-        pPropertyPage = (CBasePropertyPage *) GetWindowLongPtr(hwnd, DWLP_USER);
+        pPropertyPage = _GetWindowLongPtr<CBasePropertyPage*>(hwnd, DWLP_USER);
+
         if (pPropertyPage->m_hwnd == NULL) {
             return 0;
         }
