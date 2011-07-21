@@ -1,7 +1,11 @@
-#define MY_VERSION "1.3"
+#define MY_VERSION "1.4"
 
 /*
 	changelog
+
+2011-07-21 03:05 UTC - kode54
+- Fixed file modification timestamp reporting
+- Version is now 1.4
 
 2010-03-19 16:59 UTC - kode54
 - Updated zlib to version 1.2.4
@@ -25,6 +29,8 @@
 #include <fex/Gzip_Reader.h>
 
 #include "file_interface.h"
+
+#include "file_buffer.h"
 
 static void handle_error( const char * str )
 {
@@ -89,7 +95,7 @@ public:
 	{
 		service_ptr_t< file > m_file;
 		filesystem::g_open( m_file, p_archive, filesystem::open_mode_read, p_abort );
-		filesystem::g_open_tempmem( p_out, p_abort );
+		p_out = new service_impl_t<file_buffer>( m_file->get_timestamp( p_abort ) );
 		uncompressStream( m_file, p_out, p_abort );
 		p_out->reopen( p_abort );
 	}
@@ -105,14 +111,15 @@ public:
 
 		pfc::string8 m_path;
 		service_ptr_t<file> m_out_file;
+		t_filestats m_stats;
 
 		make_unpack_path( m_path, path, pfc::string_filename( path ) );
 
-		t_filestats m_stats = m_file->get_stats( p_out );
+		m_stats.m_timestamp = m_file->get_timestamp( p_out );
 
 		if ( p_want_readers )
 		{
-			filesystem::g_open_tempmem( m_out_file, p_out );
+			m_out_file = new service_impl_t<file_buffer>( m_stats.m_timestamp );
 			uncompressStream( m_file, m_out_file, p_out );
 			m_out_file->reopen( p_out );
 
@@ -134,7 +141,7 @@ public:
 	{
 		if ( p_source.is_empty() ) throw exception_io_data();
 
-		filesystem::g_open_tempmem( p_out, p_abort );
+		p_out = new service_impl_t<file_buffer>( p_source->get_timestamp( p_abort ) );
 
 		uncompressStream( p_source, p_out, p_abort );
 

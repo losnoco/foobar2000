@@ -1,7 +1,10 @@
-#define MY_VERSION "1.6"
+#define MY_VERSION "1.7"
 
 /*
 	changelog
+
+2011-07-21 02:52 UTC - kode54
+- Fixed file modification timestamp reporting
 
 2010-01-14 01:44 UTC - kode54
 - Fixed componentversion about message declaration
@@ -44,6 +47,8 @@
 #include "../helpers/file_cached.h"
 
 #include "unlha/unlha32.h"
+
+#include "file_buffer.h"
 
 extern const char *lha_methods[12];
 
@@ -307,7 +312,7 @@ protected:
 
 		walk_to_file( p_file, hdr, p_abort );
 
-		filesystem::g_open_tempmem( p_out, p_abort );
+		p_out = new service_impl_t<file_buffer>( get_stats_in_archive( hdr ).m_timestamp );
 
 		extract_file( hdr, p_out, p_abort );
 	}
@@ -351,7 +356,7 @@ protected:
 
 				if ( p_want_readers )
 				{
-					filesystem::g_open_tempmem( p_file, p_out );
+					p_file = new service_impl_t<file_buffer>( stats.m_timestamp );
 
 					extract_file( hdr, p_file, p_out );
 				}

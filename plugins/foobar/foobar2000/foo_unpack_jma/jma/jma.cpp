@@ -23,6 +23,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include "7z.h"
 #include "crc32.h"
 
+#include "file_buffer.h"
+
 class ISequentialInStream_File : public ISequentialInStream
 {
   service_ptr_t<file> data;
@@ -141,7 +143,7 @@ public:
       crc32( 0 ), total_offset( 0 ), total_offset_ret( 0 ), ISequentialOutStream_File( NULL, p_out )
   {
     it = set.begin();
-    filesystem::g_open_tempmem( data, m_abort );
+    data = new service_impl_t<file_buffer>( it->stats.m_timestamp );
   }
 
   bool overflow_get() const { return(overflow); }
@@ -196,7 +198,7 @@ public:
         else return(S_OK);
       }
 
-      filesystem::g_open_tempmem( data, m_abort );
+      data = new service_impl_t<file_buffer>( it->stats.m_timestamp );
 
       crc32 = 0;
       total_offset = total;
@@ -461,6 +463,7 @@ namespace JMA
     t_filesize size_to_skip = 0;
     t_filesize file_size = 0;
     t_uint32 crc32;
+	t_filetimestamp timestamp;
 
     for ( std::vector<jma_file_info>::iterator i = files.begin(); i != files.end(); ++i )
     {
@@ -468,6 +471,7 @@ namespace JMA
       {
         file_size = i->size;
         crc32 = i->crc32;
+		timestamp = uint_to_filetimestamp( i->date, i->time );
         break;
       }
 
@@ -478,7 +482,7 @@ namespace JMA
     if ( ! file_size )
       throw exception_jma_file_not_found();
 
-    filesystem::g_open_tempmem( p_out, p_abort );
+    p_out = new service_impl_t<file_buffer>( timestamp );
 
     ISequentialInStream_File compressed_data( &stream, p_abort );
 

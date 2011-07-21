@@ -37,6 +37,7 @@
       <Filter>unlha</Filter>
     </ClCompile>
     <ClCompile Include="unpack_lha.cpp" />
+    <ClCompile Include="file_buffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="unlha\LHARC.H">
@@ -51,5 +52,6 @@
     <ClInclude Include="unlha\lha_macro.h">
       <Filter>unlha</Filter>
     </ClInclude>
+    <ClInclude Include="file_buffer.h" />
   </ItemGroup>
 </Project>

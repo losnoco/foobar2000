@@ -1,7 +1,11 @@
-#define MY_VERSION "1.4"
+#define MY_VERSION "1.5"
 
 /*
 	changelog
+
+2011-07-21 02:45 UTC - kode54
+- Fixed file modification timestamp reporting
+- Version is now 1.5
 
 2010-11-14 02:48 UTC - kode54
 - Fixed invalid pointer reference in *_FileSet class used by archive_list function

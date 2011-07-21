@@ -148,12 +148,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="file_buffer.cpp" />
     <ClCompile Include="file_interface.cpp" />
     <ClCompile Include="unpack_bz2.cpp" />
     <ClCompile Include="unpack_gz.cpp" />
     <ClCompile Include="unpack_tar.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="file_buffer.h" />
     <ClInclude Include="file_interface.h" />
   </ItemGroup>
   <ItemGroup>

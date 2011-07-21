@@ -1,7 +1,11 @@
-#define MY_VERSION "1.5"
+#define MY_VERSION "1.6"
 
 /*
 	changelog
+
+2011-07-21 02:20 UTC - kode54
+- Fixed archive file timestamp reporting
+- Version is now 1.6
 
 2010-12-06 08:38 UTC - kode54
 - Updated File_Extractor to LZMA SDK v9.20 to support more filters, LZMA2, and PPMd
@@ -29,6 +33,7 @@
 
 #include <fex/Zip7_Extractor.h>
 
+#include "file_buffer.h"
 #include "file_interface.h"
 #include "timefn.h"
 
@@ -97,7 +102,7 @@ public:
 			handle_error( ex.next() );
 		}
 		if ( ex.done() ) throw exception_io_not_found();
-		filesystem::g_open_tempmem( p_out, p_abort );
+		p_out = new service_impl_t<file_buffer>( dostime_to_timestamp( ex.dos_date() ) );
 		transfer_file( ex.reader(), p_out, p_abort );
 		p_out->reopen( p_abort );
 	}
@@ -126,7 +131,7 @@ public:
 			m_stats.m_timestamp = dostime_to_timestamp( ex.dos_date() );
 			if ( p_want_readers )
 			{
-				filesystem::g_open_tempmem( m_out_file, p_out );
+				m_out_file = new service_impl_t<file_buffer>( m_stats.m_timestamp );
 				transfer_file( ex.reader(), m_out_file, p_out );
 				m_out_file->reopen( p_out );
 			}
@@ -162,7 +167,7 @@ public:
 			handle_error( ex.stat() );
 			if ( ! skip_ext( ex.name() ) )
 			{
-				filesystem::g_open_tempmem( p_out, p_abort );
+				p_out = new service_impl_t<file_buffer>( dostime_to_timestamp( ex.dos_date() ) );
 				transfer_file( ex.reader(), p_out, p_abort );
 				p_out->reopen( p_abort );
 				return;

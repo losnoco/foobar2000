@@ -1,7 +1,11 @@
-#define MY_VERSION "1.5"
+#define MY_VERSION "1.6"
 
 /*
 	changelog
+
+2011-07-21 03:17 UTC - kode54
+- Fixed file modification timestamp reporting
+- Version is now 1.6
 
 2010-11-20 21:06 UTC - kode54
 - Changed zlib dependency to use standard zlib1.dll
@@ -31,6 +35,8 @@
 */
 
 #include <foobar2000.h>
+
+#include "file_buffer.h"
 
 #include <string.h>
 
@@ -296,7 +302,7 @@ public:
 		{
 			if ( ! strcmp( ex.get_filename(), p_file ) )
 			{
-				filesystem::g_open_tempmem( p_out, p_abort );
+				p_out = new service_impl_t<file_buffer>( ex.get_timestamp() );
 				file::g_transfer_object( m_file, p_out, ex.get_size(), p_abort );
 				p_out->reopen( p_abort );
 				return;
@@ -323,7 +329,7 @@ public:
 			make_unpack_path( m_path, path, ex.get_filename() );
 			if ( p_want_readers )
 			{
-				filesystem::g_open_tempmem( m_out_file, p_out );
+				m_out_file = new service_impl_t<file_buffer>( ex.get_timestamp() );
 				file::g_transfer_object( m_file, m_out_file, ex.get_size(), p_out );
 				m_out_file->reopen( p_out );
 			}
@@ -355,7 +361,7 @@ public:
 		{
 			if ( ! skip_ext( ex.get_filename() ) )
 			{
-				filesystem::g_open_tempmem( p_out, p_abort );
+				p_out = new service_impl_t<file_buffer>( ex.get_timestamp() );
 				file::g_transfer_object( p_source, p_out, ex.get_size(), p_abort );
 				p_out->reopen( p_abort );
 				return;

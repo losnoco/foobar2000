@@ -1,4 +1,4 @@
-#define MY_VERSION "1.3"
+#define MY_VERSION "1.4"
 
 /* vi: set sw=4 ts=4: */
 /*	Small bzip2 deflate implementation, by Rob Landley (rob@landley.net).
@@ -34,6 +34,8 @@
 //#include <setjmp.h>
 
 #include <foobar2000.h>
+
+#include "file_buffer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -649,7 +651,8 @@ public:
 		filesystem::g_open_tempmem( m_temp, p_abort );
 		uncompressStream( m_file, m_temp, p_abort );
 
-		t_filestats ret = m_file->get_stats( p_abort );
+		t_filestats ret;
+		ret.m_timestamp = m_file->get_timestamp( p_abort );
 		ret.m_size = m_temp->get_size_ex( p_abort );
 
 		return ret;
@@ -659,7 +662,7 @@ public:
 	{
 		service_ptr_t< file > m_file;
 		filesystem::g_open( m_file, p_archive, filesystem::open_mode_read, p_abort );
-		filesystem::g_open_tempmem( p_out, p_abort );
+		p_out = new service_impl_t<file_buffer>( m_file->get_timestamp( p_abort ) );
 		uncompressStream( m_file, p_out, p_abort );
 		p_out->reopen( p_abort );
 	}
@@ -675,14 +678,16 @@ public:
 
 		pfc::string8 m_path;
 		service_ptr_t<file> m_out_file;
+		t_filestats m_stats;
 
 		make_unpack_path( m_path, path, pfc::string_filename( path ) );
 
-		filesystem::g_open_tempmem( m_out_file, p_out );
+		m_stats.m_timestamp = m_file->get_timestamp( p_out );
+
+		m_out_file = new service_impl_t<file_buffer>( m_stats.m_timestamp );
 		uncompressStream( m_file, m_out_file, p_out );
 		m_out_file->reopen( p_out );
 
-		t_filestats m_stats = m_file->get_stats( p_out );
 		m_stats.m_size = m_out_file->get_size_ex( p_out );
 
 		p_out.on_entry( this, m_path, m_stats, m_out_file );
@@ -696,7 +701,7 @@ public:
 	{
 		if ( p_source.is_empty() ) throw exception_io_data();
 
-		filesystem::g_open_tempmem( p_out, p_abort );
+		p_out = new service_impl_t<file_buffer>( p_source->get_timestamp( p_abort ) );
 		uncompressStream( p_source, p_out, p_abort );
 		p_out->reopen( p_abort );
 	}

@@ -18,5 +18,5 @@ uint64_t dostime_to_timestamp(unsigned long t)
     tm.tm_year = subbits(t, 25, 7) + 80;
     tm.tm_isdst = -1;
 
-    return ( mktime(&tm) * 1000000 ) + epoch;
+    return ( mktime(&tm) * 10000000 ) + epoch;
 }

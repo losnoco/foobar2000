@@ -221,6 +221,7 @@
   <ItemGroup>
     <ClCompile Include="jma\7zlzma.cpp" />
     <ClCompile Include="jma\crc32.cpp" />
+    <ClCompile Include="jma\file_buffer.cpp" />
     <ClCompile Include="jma\iiostrm.cpp" />
     <ClCompile Include="jma\inbyte.cpp" />
     <ClCompile Include="jma\jma.cpp" />
@@ -236,6 +237,7 @@
     <ClInclude Include="jma\ariprice.h" />
     <ClInclude Include="jma\btreecd.h" />
     <ClInclude Include="jma\crc32.h" />
+    <ClInclude Include="jma\file_buffer.h" />
     <ClInclude Include="jma\iiostrm.h" />
     <ClInclude Include="jma\inbyte.h" />
     <ClInclude Include="jma\jma.h" />

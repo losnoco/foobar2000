@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="file_buffer.cpp" />
     <ClCompile Include="file_interface.cpp" />
     <ClCompile Include="timefn.cpp" />
     <ClCompile Include="unpack_7z.cpp">
@@ -173,6 +174,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="file_buffer.h" />
     <ClInclude Include="file_interface.h" />
     <ClInclude Include="timefn.h" />
   </ItemGroup>

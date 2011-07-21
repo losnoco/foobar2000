@@ -34,6 +34,9 @@
       <Filter>jma</Filter>
     </ClCompile>
     <ClCompile Include="unpack_jma.cpp" />
+    <ClCompile Include="jma\file_buffer.cpp">
+      <Filter>jma</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="jma\7z.h">
@@ -85,6 +88,9 @@
       <Filter>jma\include</Filter>
     </ClInclude>
     <ClInclude Include="jma\winout.h">
+      <Filter>jma\include</Filter>
+    </ClInclude>
+    <ClInclude Include="jma\file_buffer.h">
       <Filter>jma\include</Filter>
     </ClInclude>
   </ItemGroup>
