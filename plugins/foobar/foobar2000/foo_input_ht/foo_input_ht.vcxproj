@@ -247,6 +247,9 @@
     <ProjectReference Include="..\..\..\ESP\Sega\Core\SegaCore.vcxproj">
       <Project>{d284d37a-bc6d-44ba-af92-c0713eb8be21}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\pfc\pfc.vcxproj">
+      <Project>{ebfffb4e-261d-44d3-b89c-957b31a0bf9c}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\zlib\zlib.vcxproj">
       <Project>{b91fdb47-3784-46cc-b23f-e863b60e87d4}</Project>
     </ProjectReference>
