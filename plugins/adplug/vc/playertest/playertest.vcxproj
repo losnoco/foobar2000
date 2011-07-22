@@ -100,6 +100,9 @@
     <ClCompile Include="..\..\test\playertest.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\libbinio\vc\libbinio\libbinio.vcxproj">
+      <Project>{b16466b3-ee96-460d-8129-8f1afecb298d}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\adplug\adplug.vcxproj">
       <Project>{ae2b269d-f864-450b-97ed-9023c95cb7e1}</Project>
     </ProjectReference>
