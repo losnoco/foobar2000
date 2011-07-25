@@ -1,7 +1,12 @@
-#define MYVERSION "1.113"
+#define MYVERSION "1.114"
 
 /*
 	change log
+
+2011-07-25 20:24 UTC - kode54
+- Added more header comment fields to the M3U parser
+- M3U parser now correctly clears all fields on reset
+- Version is now 1.114
 
 2011-04-16 08:49 UTC - kode54
 - Changed SPC-700 Status visualization from service_impl_t to window_service_impl_t,
