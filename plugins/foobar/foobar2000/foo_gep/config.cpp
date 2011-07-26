@@ -1,7 +1,11 @@
-#define MYVERSION "1.114"
+#define MYVERSION "1.115"
 
 /*
 	change log
+
+2011-07-26 03:14 UTC - kode54
+- Fixed VGM format handling bugs introduced by recent changes
+- Version is now 1.115
 
 2011-07-25 20:24 UTC - kode54
 - Added more header comment fields to the M3U parser
