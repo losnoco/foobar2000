@@ -1,7 +1,12 @@
-#define MYVERSION "0.9.9.41"
+#define MYVERSION "0.9.9.42"
 
 /*
 	changelog
+
+2011-07-26 19:15 UTC - kode54
+- Fixed subsong info scanner leaking song objects for most formats
+- Fixed decoder restart for modules which use the invert loop effect
+- Version is now 0.9.9.42
 
 2011-06-05 22:38 UTC - kode54
 - Fixed IT envelope reading for node counts over 25, which are invalid
@@ -2462,8 +2467,6 @@ class dumb_info_scanner
 {
 	pfc::ptr_list_t< dumb_subsong_info > m_info;
 
-	DUH * duh;
-
 	struct callback_info
 	{
 		pfc::ptr_list_t< dumb_subsong_info > & m_info;
@@ -2485,11 +2488,10 @@ class dumb_info_scanner
 	}
 
 public:
-	dumb_info_scanner() : duh( 0 ) {}
+	dumb_info_scanner() {}
 	~dumb_info_scanner()
 	{
 		m_info.delete_all();
-		if ( duh ) unload_duh( duh );
 	}
 
 	void run( const t_uint8 * ptr, unsigned size, const char * ext, abort_callback & p_abort )
@@ -2509,6 +2511,7 @@ public:
 
 		bool is_it, is_dos;
 		int start_order;
+		DUH * duh;
 
 		if ( subsongs )
 		{
@@ -2527,24 +2530,20 @@ public:
 				song->length = dumb_it_build_checkpoints( duh_get_it_sigdata( duh ), 0 );
 
 				unload_duh( duh );
-				duh = 0;
 
 				m_info.add_item( song );
 			}
 		}
 		else
 		{
-			//start_order = 0;
-			//duh = g_open_module(ptr, size, ext, start_order, is_it, is_dos);
 			callback_info cdata = { m_info, p_abort };
 
 			start_order = 0;
-			duh = g_open_module( ptr, size, ext, start_order, is_it, is_dos ); // Need to open our own copy as invert loop effect modifies the samples
+			duh = g_open_module( ptr, size, ext, start_order, is_it, is_dos );
 
 			start_order = dumb_it_scan_for_playable_orders( duh_get_it_sigdata( duh ), scan_callback, & cdata );
 
-			//unload_duh( duh );
-			duh = 0;
+			unload_duh( duh );
 
 			if ( start_order ) throw exception_io_data();
 		}
@@ -3266,11 +3265,11 @@ public:
 			sr = NULL;
 		}
 
-		/*if ( duh )
+		if ( duh )
 		{
 			unload_duh( duh );
 			duh = NULL;
-		}*/
+		}
 
 		interp = cfg_interp;
 		volramp = cfg_volramp;
@@ -3282,18 +3281,7 @@ public:
 		no_loop = ( p_flags & input_flag_no_looping ) || ( limit_info.loop_count < 0 );
 		start_order = p_subsong;
 
-		/*{
-			const t_uint8 * ptr = buffer.get_ptr();
-			unsigned size = buffer.get_size();
-			duh = g_open_module( ptr, size, extension, start_order, is_it, is_dos );
-		}*/
-		const char * fmt = duh_get_tag(duh, "FORMAT");
-		bool is_psm = fmt && !strcmp( fmt, "PSM" );
-
-		if ( is_psm )
 		{
-			unload_duh( duh );
-			duh = NULL;
 			const t_uint8 * ptr = buffer.get_ptr();
 			unsigned size = buffer.get_size();
 			duh = g_open_module( ptr, size, extension, start_order, is_it, is_dos );
