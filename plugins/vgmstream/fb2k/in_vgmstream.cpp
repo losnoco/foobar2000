@@ -73,7 +73,7 @@ void input_vgmstream::open(service_ptr_t<file> p_filehint,const char * p_path,t_
 			/* were we able to open it? */
 			if (!vgmstream) {
 				/* Generate exception if the file is unopenable*/
-				throw exception_io_data();
+				throw exception_io_unsupported_format();
 				return;
 			}
 
@@ -100,6 +100,8 @@ void input_vgmstream::open(service_ptr_t<file> p_filehint,const char * p_path,t_
 		case input_open_info_read:
 			if ( p_filehint.is_empty() ) input_open_file_helper( p_filehint, p_path, p_reason, p_abort );
 			stats = p_filehint->get_stats( p_abort );
+			vgmstream = init_vgmstream_foo(p_path, p_abort);
+			if (!vgmstream) throw exception_io_unsupported_format();
 			break;
 
 		case input_open_info_write:
@@ -379,6 +381,7 @@ bool input_vgmstream::g_is_our_path(const char * p_path,const char * p_extension
 	if(!stricmp_utf8(p_extension,"mib")) return 1;
 	if(!stricmp_utf8(p_extension,"mic")) return 1;
 	if(!stricmp_utf8(p_extension,"mihb")) return 1;
+	if(!stricmp_utf8(p_extension,"mnstr")) return 1;
 	if(!stricmp_utf8(p_extension,"mpdsp")) return 1;
 	if(!stricmp_utf8(p_extension,"mpds")) return 1;
 	if(!stricmp_utf8(p_extension,"msa")) return 1;
@@ -689,6 +692,7 @@ DECLARE_MULTIPLE_FILE_TYPE("PS2 MI4 Audio File (*.MI4)", mi4);
 DECLARE_MULTIPLE_FILE_TYPE("PS2 MIB Audio File (*.MIB)", mib);
 DECLARE_MULTIPLE_FILE_TYPE("PS2 MIC Audio File (*.MIC)", mic);
 DECLARE_MULTIPLE_FILE_TYPE("MIHB Audio File (*.MIHB)", mihb);
+DECLARE_MULTIPLE_FILE_TYPE("MNSTR Audio File (*.MNSTR)", mnstr);
 DECLARE_MULTIPLE_FILE_TYPE("MPDSP Audio File (*.MPDSP)", mpdsp);
 DECLARE_MULTIPLE_FILE_TYPE("MPDS Audio File (*.MPDS)", mpds);
 DECLARE_MULTIPLE_FILE_TYPE("MSA Audio File (*.MSA)", msa);
