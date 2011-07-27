@@ -79,6 +79,7 @@ protected:
 
 protected:
 	char *get_ptr;
+	unsigned int get_size;
 	unsigned short crc, bitbuf;
 	unsigned char subbitbuf, bitcount;
 	unsigned short crctable[256];
@@ -98,12 +99,12 @@ protected:
 	unsigned short left[2 * NC - 1], right[2 * NC - 1];
 
 protected:
-	void setup_get(char *p) { get_ptr = p; }
-	int get_byte() { return (*get_ptr++ & 0xff); }
+	void setup_get(char *p, unsigned int size) { get_ptr = p; get_size = size; }
+	int get_byte(bool & error) { if (get_size) { get_size--; return (*get_ptr++ & 0xff); } else { error = true; return 0; } }
 	int get_bytes( char * buf, int len, int size );
-	void skip_bytes( size_t len ) { get_ptr += len; }
-	unsigned short get_word() {	int b0, b1;	b0 = get_byte(); b1 = get_byte(); return (b1 << 8) + b0; }
-	long get_longword() { long b0, b1, b2, b3; b0 = get_byte(); b1 = get_byte(); b2 = get_byte(); b3 = get_byte(); return (b3 << 24) + (b2 << 16) + (b1 << 8) + b0; }
+	void skip_bytes( size_t len, bool & error ) { get_ptr += len; if (len > get_size) { get_size = 0; error = true; } else get_size -= len; }
+	unsigned short get_word(bool & error) {	int b0, b1;	b0 = get_byte(error); b1 = get_byte(error); return (b1 << 8) + b0; }
+	long get_longword(bool & error) { long b0, b1, b2, b3; b0 = get_byte(error); b1 = get_byte(error); b2 = get_byte(error); b3 = get_byte(error); return (b3 << 24) + (b2 << 16) + (b1 << 8) + b0; }
 
 	enum { I_HEADER_SIZE         = 0 };            /* levels 0, 1, 2 */
 	enum { I_HEADER_CHECKSUM     = 1 };            /* level 0,1     */

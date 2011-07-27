@@ -1,10 +1,15 @@
-#define MY_VERSION "1.7"
+#define MY_VERSION "1.8"
 
 /*
 	changelog
 
+2011-07-27 19:38 UTC - kode54
+- Added extra security to header parsing
+- Version is now 1.8
+
 2011-07-21 02:52 UTC - kode54
 - Fixed file modification timestamp reporting
+- Version is now 1.7
 
 2010-01-14 01:44 UTC - kode54
 - Fixed componentversion about message declaration
