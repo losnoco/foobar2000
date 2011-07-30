@@ -75,7 +75,7 @@ protected:
 	DWORD m_dwStreamPos;	// LHA file position
 	LPBYTE m_lpOutputFile;
 	DWORD m_dwOutputLen;*/
-	BYTE *m_pDecoderData;
+	BYTE *m_pDecoderData[2];
 
 protected:
 	char *get_ptr;

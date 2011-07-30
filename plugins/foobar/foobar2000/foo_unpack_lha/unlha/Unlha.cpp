@@ -68,7 +68,8 @@ CLhaArchive::CLhaArchive()
 	// File Write
 	/*m_lpOutputFile = 0;
 	m_dwOutputLen = 0;*/
-	m_pDecoderData = NULL;
+	m_pDecoderData[0] = NULL;
+	m_pDecoderData[1] = NULL;
 
 	gpHufData = NULL;
 }
@@ -82,10 +83,15 @@ CLhaArchive::~CLhaArchive()
 		GlobalFreePtr(m_lpOutputFile);
 		m_lpOutputFile = NULL;
 	}*/
-	if (m_pDecoderData)
+	if (m_pDecoderData[0])
 	{
-		delete m_pDecoderData;
-		m_pDecoderData = NULL;
+		delete m_pDecoderData[0];
+		m_pDecoderData[0] = NULL;
+	}
+	if (m_pDecoderData[1])
+	{
+		delete m_pDecoderData[1];
+		m_pDecoderData[1] = NULL;
 	}
 }
 

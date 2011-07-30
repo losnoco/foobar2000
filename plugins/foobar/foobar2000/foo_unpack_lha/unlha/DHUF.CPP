@@ -15,7 +15,11 @@
 
 void CLhaArchive::InitDecodeTables()
 {
-	short *pDecodeTables = (short *)m_pDecoderData;
+	if (!m_pDecoderData[0])
+	{
+		m_pDecoderData[0] = new BYTE[TREESIZE * 7 * sizeof(short)];
+	}
+	short *pDecodeTables = (short *)(m_pDecoderData[0]);
 	child = pDecodeTables;
 	parent = pDecodeTables + TREESIZE;
 	block = pDecodeTables + TREESIZE*2;
@@ -30,12 +34,12 @@ void CLhaArchive::start_c_dyn()
 {
 	int i, j, f;
 
-	n1 = ((int)n_max >= 256 + maxmatch - THRESHOLD + 1) ? 512 : n_max - 1;
+	n1 = (n_max >= 256 + maxmatch - THRESHOLD + 1) ? 512 : n_max - 1;
 	for (i = 0; i < TREESIZE_C; i++) {
 		stock[i] = i;
 		block[i] = 0;
 	}
-	for (i = 0, j = n_max * 2 - 2; i < (int)n_max; i++, j--) 
+	for (i = 0, j = n_max * 2 - 2; i < n_max; i++, j--) 
 	{
 		freq[j] = 1;
 		child[j] = ~i;

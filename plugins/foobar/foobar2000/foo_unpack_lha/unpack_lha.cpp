@@ -1,7 +1,12 @@
-#define MY_VERSION "1.8"
+#define MY_VERSION "1.9"
 
 /*
 	changelog
+
+2011-07-30 04:16 UTC - kode54
+- Separated dynamic and static huffman states for files using the lh1 compression
+  method
+- Version is now 1.9
 
 2011-07-27 19:38 UTC - kode54
 - Added extra security to header parsing
@@ -229,11 +234,8 @@ protected:
 		// safety
 		if ( ( hdr.unix_mode & UNIX_FILE_TYPEMASK ) != UNIX_FILE_REGULAR ) throw exception_io_data();
 
-		if ( ! m_pDecoderData )
+		if ( ! m_pDecoderData[0] )
 		{
-			// huf.c needs 9344 bytes, dhuf.c needs about 12KB
-			m_pDecoderData = new BYTE[16384]; // 16K of data - should be enough
-
 			// Init misc tables
 			InitDecodeTables();
 			InitHufTables();

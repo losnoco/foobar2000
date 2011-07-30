@@ -20,7 +20,11 @@ typedef struct _HUFDATA
 
 VOID CLhaArchive::InitHufTables()
 {
-	gpHufData = (HUFDATA *)m_pDecoderData;
+	if (!m_pDecoderData[1])
+	{
+		m_pDecoderData[1] = new BYTE[sizeof(HUFDATA)];
+	}
+	gpHufData = (HUFDATA *)m_pDecoderData[1];
 }
 
 
