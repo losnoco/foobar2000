@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.42"
+#define MYVERSION "0.9.9.43"
 
 /*
 	changelog
+
+2011-08-02 23:04 UTC - kode54
+- Fixed IT stereo samples
+- Version is now 0.9.9.43
 
 2011-07-26 19:15 UTC - kode54
 - Fixed subsong info scanner leaking song objects for most formats
