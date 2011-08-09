@@ -1,7 +1,12 @@
-#define MY_VERSION "1.5"
+#define MY_VERSION "1.6"
 
 /*
 	changelog
+
+2011-08-09 01:25 UTC - kode54
+- Decompression now pre-allocates the output file buffers rather than expanding them
+  gradually
+- Version is now 1.6
 
 2011-07-21 02:45 UTC - kode54
 - Fixed file modification timestamp reporting

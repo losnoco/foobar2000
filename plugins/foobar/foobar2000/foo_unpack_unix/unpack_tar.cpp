@@ -1,7 +1,12 @@
-#define MY_VERSION "1.6"
+#define MY_VERSION "1.7"
 
 /*
 	changelog
+
+2011-08-09 01:26 UTC - kode54
+- Decompression now pre-allocates the output file buffers rather than expanding them
+  gradually
+- Version is now 1.7
 
 2011-07-21 03:17 UTC - kode54
 - Fixed file modification timestamp reporting
@@ -302,7 +307,7 @@ public:
 		{
 			if ( ! strcmp( ex.get_filename(), p_file ) )
 			{
-				p_out = new service_impl_t<file_buffer>( ex.get_timestamp() );
+				p_out = new service_impl_t<file_buffer>( ex.get_size(), ex.get_timestamp() );
 				file::g_transfer_object( m_file, p_out, ex.get_size(), p_abort );
 				p_out->reopen( p_abort );
 				return;
@@ -329,7 +334,7 @@ public:
 			make_unpack_path( m_path, path, ex.get_filename() );
 			if ( p_want_readers )
 			{
-				m_out_file = new service_impl_t<file_buffer>( ex.get_timestamp() );
+				m_out_file = new service_impl_t<file_buffer>( ex.get_size(), ex.get_timestamp() );
 				file::g_transfer_object( m_file, m_out_file, ex.get_size(), p_out );
 				m_out_file->reopen( p_out );
 			}
@@ -361,7 +366,7 @@ public:
 		{
 			if ( ! skip_ext( ex.get_filename() ) )
 			{
-				p_out = new service_impl_t<file_buffer>( ex.get_timestamp() );
+				p_out = new service_impl_t<file_buffer>( ex.get_size(), ex.get_timestamp() );
 				file::g_transfer_object( p_source, p_out, ex.get_size(), p_abort );
 				p_out->reopen( p_abort );
 				return;

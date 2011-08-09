@@ -95,7 +95,7 @@ public:
 	{
 		service_ptr_t< file > m_file;
 		filesystem::g_open( m_file, p_archive, filesystem::open_mode_read, p_abort );
-		p_out = new service_impl_t<file_buffer>( m_file->get_timestamp( p_abort ) );
+		p_out = new service_impl_t<file_buffer>( 0, m_file->get_timestamp( p_abort ) );
 		uncompressStream( m_file, p_out, p_abort );
 		p_out->reopen( p_abort );
 	}
@@ -119,7 +119,7 @@ public:
 
 		if ( p_want_readers )
 		{
-			m_out_file = new service_impl_t<file_buffer>( m_stats.m_timestamp );
+			m_out_file = new service_impl_t<file_buffer>( 0, m_stats.m_timestamp );
 			uncompressStream( m_file, m_out_file, p_out );
 			m_out_file->reopen( p_out );
 
@@ -141,7 +141,7 @@ public:
 	{
 		if ( p_source.is_empty() ) throw exception_io_data();
 
-		p_out = new service_impl_t<file_buffer>( p_source->get_timestamp( p_abort ) );
+		p_out = new service_impl_t<file_buffer>( 0, p_source->get_timestamp( p_abort ) );
 
 		uncompressStream( p_source, p_out, p_abort );
 

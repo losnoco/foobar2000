@@ -3,9 +3,10 @@
 
 #include "file_buffer.h"
 
-file_buffer::file_buffer( t_filetimestamp p_timestamp )
+file_buffer::file_buffer( t_filesize p_size, t_filetimestamp p_timestamp )
 	: m_timestamp( p_timestamp ), m_position( 0 )
 {
+	m_buffer.grow_size( p_size );
 }
 
 t_size file_buffer::read( void * p_buffer, t_size p_bytes, abort_callback & )

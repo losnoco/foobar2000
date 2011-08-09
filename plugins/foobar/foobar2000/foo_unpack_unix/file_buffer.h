@@ -8,7 +8,7 @@ class file_buffer : public file
 	t_filetimestamp m_timestamp;
 
 public:
-	file_buffer( t_filetimestamp p_timestamp );
+	file_buffer( t_filesize p_size, t_filetimestamp p_timestamp );
 
 	// stream_reader
 	virtual t_size read( void *, t_size, abort_callback & );

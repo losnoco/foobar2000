@@ -1,7 +1,12 @@
-#define MY_VERSION "1.6"
+#define MY_VERSION "1.7"
 
 /*
 	changelog
+
+2011-08-09 01:17 UTC - kode54
+- Decompression now pre-allocates the output file buffers rather than expanding them
+  gradually
+- Version is now 1.7
 
 2011-07-21 02:20 UTC - kode54
 - Fixed archive file timestamp reporting
@@ -102,7 +107,7 @@ public:
 			handle_error( ex.next() );
 		}
 		if ( ex.done() ) throw exception_io_not_found();
-		p_out = new service_impl_t<file_buffer>( dostime_to_timestamp( ex.dos_date() ) );
+		p_out = new service_impl_t<file_buffer>( ex.size(), dostime_to_timestamp( ex.dos_date() ) );
 		transfer_file( ex.reader(), p_out, p_abort );
 		p_out->reopen( p_abort );
 	}
@@ -131,7 +136,7 @@ public:
 			m_stats.m_timestamp = dostime_to_timestamp( ex.dos_date() );
 			if ( p_want_readers )
 			{
-				m_out_file = new service_impl_t<file_buffer>( m_stats.m_timestamp );
+				m_out_file = new service_impl_t<file_buffer>( m_stats.m_size, m_stats.m_timestamp );
 				transfer_file( ex.reader(), m_out_file, p_out );
 				m_out_file->reopen( p_out );
 			}
@@ -167,7 +172,7 @@ public:
 			handle_error( ex.stat() );
 			if ( ! skip_ext( ex.name() ) )
 			{
-				p_out = new service_impl_t<file_buffer>( dostime_to_timestamp( ex.dos_date() ) );
+				p_out = new service_impl_t<file_buffer>( ex.size(), dostime_to_timestamp( ex.dos_date() ) );
 				transfer_file( ex.reader(), p_out, p_abort );
 				p_out->reopen( p_abort );
 				return;

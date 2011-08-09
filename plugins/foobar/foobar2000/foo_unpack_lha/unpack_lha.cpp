@@ -1,7 +1,12 @@
-#define MY_VERSION "1.9"
+#define MY_VERSION "1.10"
 
 /*
 	changelog
+
+2011-08-09 01:25 UTC - kode54
+- Decompression now pre-allocates the output file buffers rather than expanding them
+  gradually
+- Version is now 1.10
 
 2011-07-30 04:16 UTC - kode54
 - Separated dynamic and static huffman states for files using the lh1 compression
@@ -319,7 +324,8 @@ protected:
 
 		walk_to_file( p_file, hdr, p_abort );
 
-		p_out = new service_impl_t<file_buffer>( get_stats_in_archive( hdr ).m_timestamp );
+		t_filestats m_stats = get_stats_in_archive( hdr );
+		p_out = new service_impl_t<file_buffer>( m_stats.m_size, m_stats.m_timestamp );
 
 		extract_file( hdr, p_out, p_abort );
 	}
@@ -363,7 +369,7 @@ protected:
 
 				if ( p_want_readers )
 				{
-					p_file = new service_impl_t<file_buffer>( stats.m_timestamp );
+					p_file = new service_impl_t<file_buffer>( stats.m_size, stats.m_timestamp );
 
 					extract_file( hdr, p_file, p_out );
 				}

@@ -143,7 +143,7 @@ public:
       crc32( 0 ), total_offset( 0 ), total_offset_ret( 0 ), ISequentialOutStream_File( NULL, p_out )
   {
     it = set.begin();
-    data = new service_impl_t<file_buffer>( it->stats.m_timestamp );
+    data = new service_impl_t<file_buffer>( it->stats.m_size, it->stats.m_timestamp );
   }
 
   bool overflow_get() const { return(overflow); }
@@ -198,7 +198,7 @@ public:
         else return(S_OK);
       }
 
-      data = new service_impl_t<file_buffer>( it->stats.m_timestamp );
+      data = new service_impl_t<file_buffer>( it->stats.m_size, it->stats.m_timestamp );
 
       crc32 = 0;
       total_offset = total;
@@ -482,7 +482,7 @@ namespace JMA
     if ( ! file_size )
       throw exception_jma_file_not_found();
 
-    p_out = new service_impl_t<file_buffer>( timestamp );
+    p_out = new service_impl_t<file_buffer>( file_size, timestamp );
 
     ISequentialInStream_File compressed_data( &stream, p_abort );
 
