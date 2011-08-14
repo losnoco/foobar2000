@@ -1,7 +1,12 @@
-#define MY_VERSION "1.6"
+#define MY_VERSION "1.7"
 
 /*
 	changelog
+
+2011-08-13 21:56 UTC - kode54
+- Changed archive stats to report the modification timestamp of the archive itself
+  instead of each file's own modification time as contained in the archive
+- Version is now 1.7
 
 2011-08-09 01:25 UTC - kode54
 - Decompression now pre-allocates the output file buffers rather than expanding them

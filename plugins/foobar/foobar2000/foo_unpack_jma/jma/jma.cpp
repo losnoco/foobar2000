@@ -198,7 +198,7 @@ public:
         else return(S_OK);
       }
 
-      data = new service_impl_t<file_buffer>( it->stats.m_size, it->stats.m_timestamp );
+	  data = new service_impl_t<file_buffer>( it->stats.m_size, it->stats.m_timestamp );
 
       crc32 = 0;
       total_offset = total;
@@ -227,31 +227,6 @@ namespace JMA
   const unsigned char jma_version = 1;
   const unsigned int jma_version_length = 1;
   const unsigned int jma_total_header_length = jma_header_length + jma_version_length + UINT_SIZE;
-  
-  //Convert DOS/zip/JMA integer time to to t_filetimestamp
-  t_filetimestamp uint_to_filetimestamp(unsigned short date, unsigned short time)
-  {
-    SYSTEMTIME formatted_time = {0};
-    FILETIME local_time, utc_time;
-    t_filetimestamp ret;
-  
-    formatted_time.wDay    = date & 0x1F;
-    formatted_time.wMonth  = (date >> 5) & 0xF;
-    formatted_time.wYear   = ((date >> 9) & 0x7f) + 1980;
-    formatted_time.wSecond = (time & 0x1F) * 2;
-    formatted_time.wMinute = (time >> 5) & 0x3F;
-    formatted_time.wHour   = (time >> 11) & 0x1F;
-
-    if ( ! SystemTimeToFileTime( &formatted_time, &local_time ) ||
-         ! LocalFileTimeToFileTime( &local_time, &utc_time ) )
-      throw exception_win32( GetLastError() );
-
-    ret = ( t_filetimestamp ) utc_time.dwHighDateTime << 32;
-    ret |= utc_time.dwLowDateTime;
-
-    return ret;
-  }
-    
   
   //Retreive the file block
   void jma_open::retrieve_file_block( abort_callback & p_abort ) throw(std::exception)
@@ -389,6 +364,7 @@ namespace JMA
     }
 
     stream = p_file;
+	timestamp = stream->get_timestamp( p_abort );
 
     //Header is "JMA\0N"
     union
@@ -450,7 +426,7 @@ namespace JMA
       p_abort.check();
       if ( !strcmp( i->name, p_file ) )
       {
-        t_filestats ret = { i->size, uint_to_filetimestamp( i->date, i->time ) };
+        t_filestats ret = { i->size, timestamp };
         return ret;
       }
     }
@@ -463,7 +439,6 @@ namespace JMA
     t_filesize size_to_skip = 0;
     t_filesize file_size = 0;
     t_uint32 crc32;
-	t_filetimestamp timestamp;
 
     for ( std::vector<jma_file_info>::iterator i = files.begin(); i != files.end(); ++i )
     {
@@ -471,7 +446,6 @@ namespace JMA
       {
         file_size = i->size;
         crc32 = i->crc32;
-		timestamp = uint_to_filetimestamp( i->date, i->time );
         break;
       }
 
@@ -544,13 +518,13 @@ namespace JMA
     service_ptr_t<file> m_reader;
     pfc::string8_fastalloc m_url;
     t_filestats m_stats;
+	m_stats.m_timestamp = timestamp;
     if ( ! p_want_readers )
     {
       for ( std::vector<jma_file_info>::iterator i = files.begin(); i != files.end(); ++i )
       {
         p_out.check();
         m_stats.m_size = i->size;
-        m_stats.m_timestamp = uint_to_filetimestamp( i->date, i->time );
         archive_impl::g_make_unpack_path( m_url, path, i->name, "jma" );
         if ( !p_out.on_entry( owner, m_url, m_stats, m_reader ) ) break;
       }
@@ -560,13 +534,13 @@ namespace JMA
       std::vector< file_set > set;
 
       file_set file;
+	  file.stats.m_timestamp = timestamp;
 
       for ( std::vector<jma_file_info>::iterator i = files.begin(); i != files.end(); ++i )
       {
         p_out.check();
         file.name = i->name;
         file.stats.m_size = i->size;
-        file.stats.m_timestamp = uint_to_filetimestamp( i->date, i->time );
         file.crc32 = i->crc32;
         set.push_back( file );
       }

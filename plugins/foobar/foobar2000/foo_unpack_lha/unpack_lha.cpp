@@ -1,7 +1,12 @@
-#define MY_VERSION "1.10"
+#define MY_VERSION "1.11"
 
 /*
 	changelog
+
+2011-08-13 22:00 UTC - kode54
+- Changed archive stats to report the modification timestamp of the archive itself
+  instead of each file's own modification time as contained in the archive
+- Version is now 1.11
 
 2011-08-09 01:25 UTC - kode54
 - Decompression now pre-allocates the output file buffers rather than expanding them
@@ -79,18 +84,6 @@ void Log( LPCSTR fmt, ... )
 
 #define UNIX_FILE_TYPEMASK		0170000
 #define UNIX_FILE_REGULAR		0100000
-
-const t_filetimestamp SECS_BETWEEN_EPOCHS = 11644473600;
-const t_filetimestamp SECS_TO_100NS = 10000000;
-
-t_filetimestamp UnixTimeToFileTime( time_t sec )
-{
-	t_filetimestamp Ret;
-
-	Ret = ( ( t_filetimestamp ) sec + SECS_BETWEEN_EPOCHS ) * SECS_TO_100NS;
-
-	return Ret;
-}
 
 static bool is_hex( char c )
 {
@@ -176,6 +169,8 @@ class archive_lha_impl : private CLhaArchive
 	abort_callback * m_abort;
 
 	service_ptr_t< file > m_in, m_out;
+
+	t_filetimestamp m_timestamp;
 
 	bool table_initialized;
 
@@ -288,7 +283,7 @@ protected:
 		t_filestats ret;
 
 		ret.m_size = hdr.original_size;
-		ret.m_timestamp = UnixTimeToFileTime( hdr.unix_last_modified_stamp );
+		ret.m_timestamp = m_timestamp;
 
 		return ret;
 	}
@@ -301,6 +296,7 @@ protected:
 	{
 		service_ptr_t< file > p_temp;
 		filesystem::g_open( p_temp, p_archive, filesystem::open_mode_read, p_abort );
+		m_timestamp = p_temp->get_timestamp( p_abort );
 		file_cached::g_create( m_in, p_temp, p_abort, 4096 );
 
 		m_abort = &p_abort;
@@ -316,6 +312,7 @@ protected:
 	{
 		service_ptr_t< file > p_temp;
 		filesystem::g_open( p_temp, p_archive, filesystem::open_mode_read, p_abort );
+		m_timestamp = p_temp->get_timestamp( p_abort );
 		file_cached::g_create( m_in, p_temp, p_abort, 4096 );
 
 		LzHeader hdr;
@@ -339,6 +336,7 @@ protected:
 			p_temp->reopen( p_out );
 		}
 		else filesystem::g_open( p_temp, path, filesystem::open_mode_read, p_out );
+		m_timestamp = p_temp->get_timestamp( p_out );
 		file_cached::g_create( m_in, p_temp, p_out, 4096 );
 
 		if ( ! table_initialized )

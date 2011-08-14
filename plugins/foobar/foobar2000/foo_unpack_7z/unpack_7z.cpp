@@ -1,7 +1,12 @@
-#define MY_VERSION "1.7"
+#define MY_VERSION "1.8"
 
 /*
 	changelog
+
+2011-08-13 21:43 UTC - kode54
+- Changed archive stats to report the modification timestamp of the archive itself
+  instead of each file's own modification time as contained in the archive
+- Version is now 1.8
 
 2011-08-09 01:17 UTC - kode54
 - Decompression now pre-allocates the output file buffers rather than expanding them
@@ -40,7 +45,6 @@
 
 #include "file_buffer.h"
 #include "file_interface.h"
-#include "timefn.h"
 
 static void handle_error( const char * str )
 {
@@ -89,7 +93,7 @@ public:
 		if ( ex.done() ) throw exception_io_not_found();
 		t_filestats ret;
 		ret.m_size = ex.size();
-		ret.m_timestamp = dostime_to_timestamp( ex.dos_date() );
+		ret.m_timestamp = m_file->get_timestamp( p_abort );
 		return ret;
 	}
 
@@ -107,7 +111,7 @@ public:
 			handle_error( ex.next() );
 		}
 		if ( ex.done() ) throw exception_io_not_found();
-		p_out = new service_impl_t<file_buffer>( ex.size(), dostime_to_timestamp( ex.dos_date() ) );
+		p_out = new service_impl_t<file_buffer>( ex.size(), m_file->get_timestamp( p_abort ) );
 		transfer_file( ex.reader(), p_out, p_abort );
 		p_out->reopen( p_abort );
 	}
@@ -128,12 +132,12 @@ public:
 		pfc::string8_fastalloc m_path;
 		service_ptr_t<file> m_out_file;
 		t_filestats m_stats;
+		m_stats.m_timestamp = m_file->get_timestamp( p_out );
 		while ( ! ex.done() )
 		{
 			handle_error( ex.stat() );
 			make_unpack_path( m_path, path, ex.name() );
 			m_stats.m_size = ex.size();
-			m_stats.m_timestamp = dostime_to_timestamp( ex.dos_date() );
 			if ( p_want_readers )
 			{
 				m_out_file = new service_impl_t<file_buffer>( m_stats.m_size, m_stats.m_timestamp );
@@ -172,7 +176,7 @@ public:
 			handle_error( ex.stat() );
 			if ( ! skip_ext( ex.name() ) )
 			{
-				p_out = new service_impl_t<file_buffer>( ex.size(), dostime_to_timestamp( ex.dos_date() ) );
+				p_out = new service_impl_t<file_buffer>( ex.size(), p_source->get_timestamp( p_abort ) );
 				transfer_file( ex.reader(), p_out, p_abort );
 				p_out->reopen( p_abort );
 				return;

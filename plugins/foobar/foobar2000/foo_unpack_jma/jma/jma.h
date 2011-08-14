@@ -91,6 +91,7 @@ namespace JMA
     
     private:
     service_ptr_t<file> stream;
+	t_filetimestamp timestamp;
     std::vector<jma_file_info> files;
     size_t chunk_size;
   

@@ -1,7 +1,12 @@
-#define MY_VERSION "1.7"
+#define MY_VERSION "1.8"
 
 /*
 	changelog
+
+2011-08-13 23:03 UTC - kode54
+- Changed archive stats to report the modification timestamp of the archive itself
+  instead of each file's own modification time as contained in the archive
+- Version is now 1.8
 
 2011-08-09 01:26 UTC - kode54
 - Decompression now pre-allocates the output file buffers rather than expanding them
@@ -67,18 +72,6 @@ static struct init_base64_map
 		}
 	}
 } ibm;
-
-t_filetimestamp UnixTimeToFileTime( time_t sec )
-{
-	const t_filetimestamp SECS_BETWEEN_EPOCHS = 11644473600;
-	const t_filetimestamp SECS_TO_100NS = 10000000;
-
-	t_filetimestamp Ret;
-
-	Ret = ( ( t_filetimestamp ) sec + SECS_BETWEEN_EPOCHS ) * SECS_TO_100NS;
-
-	return Ret;
-}
 
 class tar_parser
 {
@@ -202,6 +195,7 @@ class tar_parser
 public:
 	tar_parser( const service_ptr_t<file> & p_file, abort_callback & p_abort ) : m_file( p_file ), m_abort( p_abort )
 	{
+		stats.m_timestamp = p_file->get_timestamp( p_abort );
 		reset();
 	}
 
@@ -228,7 +222,6 @@ public:
 
 				if ( !long_filename ) filename.set_string( header.filename, sizeof( header.filename ) );
 				stats.m_size = parse_number( header.size, sizeof( header.size ) );
-				stats.m_timestamp = UnixTimeToFileTime( parse_number( header.mtime, sizeof( header.mtime ) ) );
 
 				t_filesize size = get_size();
 				size = ( size + 511 ) & ~511;
