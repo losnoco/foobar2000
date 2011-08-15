@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.43"
+#define MYVERSION "0.9.9.44"
 
 /*
 	changelog
+
+2011-08-15 02:04 UTC - kode54
+- Updated unmo3.dll to version 2.4.0.2
+- Version is now 0.9.9.44
 
 2011-08-02 23:04 UTC - kode54
 - Fixed IT stereo samples
