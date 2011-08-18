@@ -1,7 +1,11 @@
-#define MYVERSION "1.6"
+#define MYVERSION "1.7"
 
 /*
 	changelog
+
+2011-08-18 19:59 UTC - kode54
+- Implemented stereo separation control for AHX files
+- Version is now 1.7
 
 2011-01-11 05:21 UTC - kode54
 - Implemented band-limited synthesis using blargg's blip_buf library
@@ -45,13 +49,18 @@ static const GUID guid_cfg_samplerate =
 // {84F70B27-7FE6-4a4a-A256-8C65429D354C}
 static const GUID guid_cfg_history_rate = 
 { 0x84f70b27, 0x7fe6, 0x4a4a, { 0xa2, 0x56, 0x8c, 0x65, 0x42, 0x9d, 0x35, 0x4c } };
+// {AED6518A-6445-4A24-888F-85DAAD98C2C0}
+static const GUID guid_cfg_ahx_stereo = 
+{ 0xaed6518a, 0x6445, 0x4a24, { 0x88, 0x8f, 0x85, 0xda, 0xad, 0x98, 0xc2, 0xc0 } };
 
 enum
 {
-	default_cfg_samplerate = 44100
+	default_cfg_samplerate = 44100,
+	default_cfg_ahx_stereo = 2
 };
 
 static cfg_int cfg_samplerate(guid_cfg_samplerate,default_cfg_samplerate);
+static cfg_int cfg_ahx_stereo(guid_cfg_ahx_stereo,default_cfg_ahx_stereo);
 
 static class init_stuff
 {
@@ -114,7 +123,7 @@ public:
 
 		m_file->read_object( ptr, size, p_abort );
 
-		m_tune = hvl_LoadTune( ptr, size, srate, 0 );
+		m_tune = hvl_LoadTune( ptr, size, srate, cfg_ahx_stereo );
 		if ( ! m_tune )
 			throw exception_io_data();
 	}
@@ -281,11 +290,13 @@ public:
 		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_EDITCHANGE, OnEditChange)
 		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_SELCHANGE, OnSelectionChange)
 		DROPDOWN_HISTORY_HANDLER(IDC_SAMPLERATE, cfg_history_rate)
+		MSG_WM_HSCROLL(OnHScroll)
 	END_MSG_MAP()
 private:
 	BOOL OnInitDialog(CWindow, LPARAM);
 	void OnEditChange(UINT, int, CWindow);
 	void OnSelectionChange(UINT, int, CWindow);
+	void OnHScroll(UINT, UINT, CScrollBar);
 	bool HasChanged();
 	void OnChanged();
 
@@ -311,6 +322,10 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 	w = GetDlgItem( IDC_SAMPLERATE );
 	cfg_history_rate.setup_dropdown( w );
 	::SendMessage( w, CB_SETCURSEL, 0, 0 );
+
+	w = GetDlgItem( IDC_AHX_STEREO );
+	w.SendMessage( TBM_SETRANGE, 0, MAKELONG( 0, 4 ) );
+	w.SendMessage( TBM_SETPOS, 1, cfg_ahx_stereo );
 	
 	return FALSE;
 }
@@ -323,6 +338,10 @@ void CMyPreferences::OnSelectionChange(UINT, int, CWindow) {
 	OnChanged();
 }
 
+void CMyPreferences::OnHScroll(UINT, UINT, CScrollBar) {
+	OnChanged();
+}
+
 t_uint32 CMyPreferences::get_state() {
 	t_uint32 state = preferences_state::resettable;
 	if (HasChanged()) state |= preferences_state::changed;
@@ -331,6 +350,7 @@ t_uint32 CMyPreferences::get_state() {
 
 void CMyPreferences::reset() {
 	SetDlgItemInt( IDC_SAMPLERATE, default_cfg_samplerate );
+	SendDlgItemMessage( IDC_AHX_STEREO, TBM_SETPOS, 1, default_cfg_ahx_stereo );
 	
 	OnChanged();
 }
@@ -344,12 +364,14 @@ void CMyPreferences::apply() {
 	itoa( t, temp, 10 );
 	cfg_history_rate.add_item( temp );
 	cfg_samplerate = t;
+	cfg_ahx_stereo = SendDlgItemMessage( IDC_AHX_STEREO, TBM_GETPOS );
 	
 	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
 }
 
 bool CMyPreferences::HasChanged() {
-	return GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE ) != cfg_samplerate;
+	return GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE ) != cfg_samplerate ||
+		SendDlgItemMessage( IDC_AHX_STEREO, TBM_GETPOS ) != cfg_ahx_stereo;
 }
 void CMyPreferences::OnChanged() {
 	//tell the host that our state has changed to enable/disable the apply button appropriately.
