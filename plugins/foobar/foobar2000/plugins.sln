@@ -157,9 +157,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "baseclasses", "..\..\basecl
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DXiClasses", "foo_midi\DXiClasses\DXiClasses.vcxproj", "{6D609010-D19F-4EA5-AF8F-08A474BB1408}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_gntp", "foo_gntp\foo_gntp.vcxproj", "{6C8DACFC-B68B-4EDF-BFFB-D4ADE68BE183}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 72
+		SccNumberOfProjects = 73
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = http://sabin:8080/tfs/defaultcollection
 		SccLocalPath0 = .
@@ -376,6 +378,9 @@ Global
 		SccProjectUniqueName71 = foo_midi\\DXiClasses\\DXiClasses.vcxproj
 		SccProjectName71 = foo_midi/DXiClasses
 		SccLocalPath71 = foo_midi\\DXiClasses
+		SccProjectUniqueName72 = foo_gntp\\foo_gntp.vcxproj
+		SccProjectName72 = foo_gntp
+		SccLocalPath72 = foo_gntp
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -826,6 +831,12 @@ Global
 		{6D609010-D19F-4EA5-AF8F-08A474BB1408}.Release|Win32.ActiveCfg = Release|Win32
 		{6D609010-D19F-4EA5-AF8F-08A474BB1408}.Release|Win32.Build.0 = Release|Win32
 		{6D609010-D19F-4EA5-AF8F-08A474BB1408}.Release|x64.ActiveCfg = Release|Win32
+		{6C8DACFC-B68B-4EDF-BFFB-D4ADE68BE183}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6C8DACFC-B68B-4EDF-BFFB-D4ADE68BE183}.Debug|Win32.Build.0 = Debug|Win32
+		{6C8DACFC-B68B-4EDF-BFFB-D4ADE68BE183}.Debug|x64.ActiveCfg = Debug|Win32
+		{6C8DACFC-B68B-4EDF-BFFB-D4ADE68BE183}.Release|Win32.ActiveCfg = Release|Win32
+		{6C8DACFC-B68B-4EDF-BFFB-D4ADE68BE183}.Release|Win32.Build.0 = Release|Win32
+		{6C8DACFC-B68B-4EDF-BFFB-D4ADE68BE183}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
