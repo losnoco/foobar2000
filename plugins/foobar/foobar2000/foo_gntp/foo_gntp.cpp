@@ -12,8 +12,25 @@ using namespace pfc;
 #define PLUGIN_NAME		"Foobar GNTP"
 #define PLUGIN_AUTHOR	"Daniel Dimovski <daniel.k.dimovski@gmail.com>"
 #define PLUGIN_DESC		"Plugin sends Foobar notifications to Growl."
-#define VERSION			"0.2.3"
+#define VERSION			"0.2.5"
 #define SERVER_IP 		"127.0.0.1:23053"
+
+// {6EC09DAD-0D5C-45CF-AC4A-E4AFE71F2C7C}
+static const GUID guid_cfg_parent_growl = 
+{ 0x6ec09dad, 0xd5c, 0x45cf, { 0xac, 0x4a, 0xe4, 0xaf, 0xe7, 0x1f, 0x2c, 0x7c } };
+
+// {C20102FF-19F9-4BEB-9733-C71E59014F8B}
+static const GUID guid_cfg_server_host = 
+{ 0xc20102ff, 0x19f9, 0x4beb, { 0x97, 0x33, 0xc7, 0x1e, 0x59, 0x1, 0x4f, 0x8b } };
+
+// {6FB4610E-A623-4553-93C4-9287D3754043}
+static const GUID guid_cfg_server_password = 
+{ 0x6fb4610e, 0xa623, 0x4553, { 0x93, 0xc4, 0x92, 0x87, 0xd3, 0x75, 0x40, 0x43 } };
+
+advconfig_branch_factory cfg_growl_parent("Growl notifier", guid_cfg_parent_growl, advconfig_branch::guid_branch_display, 0);
+
+advconfig_string_factory cfg_server_host("Server host[:port]", guid_cfg_server_host, guid_cfg_parent_growl, 0, SERVER_IP);
+advconfig_string_factory cfg_server_password("Server password", guid_cfg_server_password, guid_cfg_parent_growl, 1, "");
 
 char CurrentPath[_MAX_PATH];
 char AlbumArtPath[_MAX_PATH];
@@ -84,6 +101,12 @@ void growl(char* type, char* title, char* notice, bool hasAlbumArt)
 {
 	connect_to_dll();
 
+	string8 server_ip, server_password;
+	cfg_server_host.get(server_ip);
+	cfg_server_password.get(server_password);
+
+	const char * password = server_password.length() ? server_password.toString() : NULL;
+
 	if(!registered)
 	{
 		_getcwd(CurrentPath, _MAX_PATH);
@@ -91,17 +114,17 @@ void growl(char* type, char* title, char* notice, bool hasAlbumArt)
 
 		if(growl_register)
 		{
-			growl_register(SERVER_IP, PLUGIN_NAME, static_cast<const char **const>(notifications), 3, 0, CurrentPath);
-			registered = true;
+			if (growl_register(server_ip, PLUGIN_NAME, static_cast<const char **const>(notifications), 3, password, CurrentPath) >= 0)
+				registered = true;
 		}
 	}
 
-	if(growl_notify)
+	if(growl_notify && registered)
 	{
 		if(!hasAlbumArt)
-			growl_notify(SERVER_IP, PLUGIN_NAME, type, title, notice, NULL, NULL, CurrentPath);
+			growl_notify(server_ip, PLUGIN_NAME, type, title, notice, password, NULL, CurrentPath);
 		else
-			growl_notify(SERVER_IP, PLUGIN_NAME, type, title, notice, NULL, NULL, &AlbumArtPath[7]);
+			growl_notify(server_ip, PLUGIN_NAME, type, title, notice, password, NULL, &AlbumArtPath[7]);
 	}
 }
 
