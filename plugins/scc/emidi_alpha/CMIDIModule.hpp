@@ -19,6 +19,7 @@ private:
   int m_program[16];
   int m_pan[16];
   int m_bend[16];
+  int m_drum[16];
   // そのキーを発音しているチャンネル番号を格納する配列
   int m_keyon_table[16][128];
   // MIDIチャンネルで使用しているOPLLチャンネルの集合(発音順のキュー）
@@ -60,6 +61,8 @@ public:
   RESULT SendMIDIMsg(const CMIDIMsg &mes);
 // 音声のレンダリングを行う。
   RESULT Render(INT32 buf[2]);
+
+  RESULT SetDrumChannel(int midi_ch, int enable);
 };
 
 } // namespace dsa

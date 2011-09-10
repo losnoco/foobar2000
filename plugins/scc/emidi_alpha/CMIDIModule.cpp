@@ -29,10 +29,12 @@ RESULT CMIDIModule::Reset() {
     m_bend_range[i] = (2<<7);
     m_pan[i] = 64;
     m_RPN[i] = m_NRPN[i] = 0;
+	m_drum[i] = 0;
     for(int j=0;j<128;j++)
       m_keyon_table[i][j] = -1;
   }
   }
+  m_drum[9] = 1;
 
   m_entry_mode = 0;
 
@@ -89,7 +91,7 @@ void CMIDIModule::ChannelPressure(BYTE midi_ch, BYTE velo) {
 
 void CMIDIModule::NoteOn(BYTE midi_ch, BYTE note, BYTE velo) {
 
-  if(midi_ch == 9) {
+  if(m_drum[midi_ch]) {
     m_device->PercSetVelocity(note,velo);
     m_device->PercKeyOn(note);
     return;
@@ -148,7 +150,7 @@ void CMIDIModule::NoteOn(BYTE midi_ch, BYTE note, BYTE velo) {
 
 void CMIDIModule::NoteOff(BYTE midi_ch, BYTE note, BYTE velo) {
 
-  if(midi_ch == 9) {
+  if(m_drum[midi_ch]) {
     m_device->PercKeyOff(note);
   }
 
@@ -168,7 +170,7 @@ void CMIDIModule::MainVolume(BYTE midi_ch, bool is_fine, BYTE data) {
 
   if(is_fine) return;
 
-  if(midi_ch == 9) {
+  if(m_drum[midi_ch]) {
     m_device->PercSetVolume(data);
     return;
   }
@@ -324,4 +326,9 @@ RESULT CMIDIModule::SendMIDIMsg(const CMIDIMsg &msg) {
     ChannelPressure(msg.m_ch, msg.m_data[0]);
   }
   return SUCCESS;
+}
+
+RESULT CMIDIModule::SetDrumChannel(int midi_ch, int enable) {
+	m_drum[midi_ch] = enable;
+	return SUCCESS;
 }
