@@ -12,7 +12,7 @@ using namespace pfc;
 #define PLUGIN_NAME		"Foobar GNTP"
 #define PLUGIN_AUTHOR	"Daniel Dimovski <daniel.k.dimovski@gmail.com>"
 #define PLUGIN_DESC		"Plugin sends Foobar notifications to Growl."
-#define VERSION			"0.2.5"
+#define VERSION			"0.2.6"
 #define SERVER_IP 		"127.0.0.1:23053"
 
 // {6EC09DAD-0D5C-45CF-AC4A-E4AFE71F2C7C}
@@ -109,8 +109,10 @@ void growl(char* type, char* title, char* notice, bool hasAlbumArt)
 
 	if(!registered)
 	{
-		_getcwd(CurrentPath, _MAX_PATH);
-		strcat_s(CurrentPath, "/icons/foobar2000.png");
+		string8 my_path = core_api::get_my_full_path();
+		my_path.truncate(my_path.scan_filename());
+		my_path += "default.png";
+		strcpy_s(CurrentPath, pfc::stringcvt::string_ansi_from_utf8(my_path));
 
 		if(growl_register)
 		{
