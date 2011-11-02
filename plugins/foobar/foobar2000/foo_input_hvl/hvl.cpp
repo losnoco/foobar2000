@@ -1,7 +1,11 @@
-#define MYVERSION "1.7"
+#define MYVERSION "1.8"
 
 /*
 	changelog
+
+2011-11-01 23:59 UTC - kode54
+- Implemented looping control
+- Version is now 1.8
 
 2011-08-18 19:59 UTC - kode54
 - Implemented stereo separation control for AHX files
@@ -43,6 +47,9 @@
 
 #include "resource.h"
 
+// {04663052-17A5-4638-BAE6-1AD0C3E1733F}
+static const GUID guid_cfg_indefinite = 
+{ 0x4663052, 0x17a5, 0x4638, { 0xba, 0xe6, 0x1a, 0xd0, 0xc3, 0xe1, 0x73, 0x3f } };
 // {4BCFA055-4B91-4e3d-AD67-45A63EC15D87}
 static const GUID guid_cfg_samplerate = 
 { 0x4bcfa055, 0x4b91, 0x4e3d, { 0xad, 0x67, 0x45, 0xa6, 0x3e, 0xc1, 0x5d, 0x87 } };
@@ -55,10 +62,12 @@ static const GUID guid_cfg_ahx_stereo =
 
 enum
 {
+	default_cfg_indefinite = 0,
 	default_cfg_samplerate = 44100,
 	default_cfg_ahx_stereo = 2
 };
 
+static cfg_int cfg_indefinite(guid_cfg_indefinite,default_cfg_indefinite);
 static cfg_int cfg_samplerate(guid_cfg_samplerate,default_cfg_samplerate);
 static cfg_int cfg_ahx_stereo(guid_cfg_ahx_stereo,default_cfg_ahx_stereo);
 
@@ -184,7 +193,7 @@ public:
 
 		sample_buffer.set_size( srate / 50 * 2 );
 
-		dont_loop = !! ( p_flags & input_flag_no_looping );
+		dont_loop = !! ( p_flags & input_flag_no_looping ) || !cfg_indefinite;
 	}
 
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
@@ -287,6 +296,7 @@ public:
 	//WTL message map
 	BEGIN_MSG_MAP(CMyPreferences)
 		MSG_WM_INITDIALOG(OnInitDialog)
+		COMMAND_HANDLER_EX(IDC_INDEFINITE, BN_CLICKED, OnClicked)
 		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_EDITCHANGE, OnEditChange)
 		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_SELCHANGE, OnSelectionChange)
 		DROPDOWN_HISTORY_HANDLER(IDC_SAMPLERATE, cfg_history_rate)
@@ -294,13 +304,12 @@ public:
 	END_MSG_MAP()
 private:
 	BOOL OnInitDialog(CWindow, LPARAM);
+	void OnClicked(UINT, int, CWindow);
 	void OnEditChange(UINT, int, CWindow);
 	void OnSelectionChange(UINT, int, CWindow);
 	void OnHScroll(UINT, UINT, CScrollBar);
 	bool HasChanged();
 	void OnChanged();
-
-	void enable_vgm_loop_count(BOOL);
 
 	const preferences_page_callback::ptr m_callback;
 };
@@ -326,8 +335,14 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 	w = GetDlgItem( IDC_AHX_STEREO );
 	w.SendMessage( TBM_SETRANGE, 0, MAKELONG( 0, 4 ) );
 	w.SendMessage( TBM_SETPOS, 1, cfg_ahx_stereo );
+
+	SendDlgItemMessage( IDC_INDEFINITE, BM_SETCHECK, cfg_indefinite, FALSE );
 	
 	return FALSE;
+}
+
+void CMyPreferences::OnClicked(UINT, int, CWindow) {
+	OnChanged();
 }
 
 void CMyPreferences::OnEditChange(UINT, int, CWindow) {
@@ -349,6 +364,7 @@ t_uint32 CMyPreferences::get_state() {
 }
 
 void CMyPreferences::reset() {
+	SendDlgItemMessage( IDC_INDEFINITE, BM_SETCHECK, default_cfg_indefinite, FALSE );
 	SetDlgItemInt( IDC_SAMPLERATE, default_cfg_samplerate );
 	SendDlgItemMessage( IDC_AHX_STEREO, TBM_SETPOS, 1, default_cfg_ahx_stereo );
 	
@@ -365,12 +381,14 @@ void CMyPreferences::apply() {
 	cfg_history_rate.add_item( temp );
 	cfg_samplerate = t;
 	cfg_ahx_stereo = SendDlgItemMessage( IDC_AHX_STEREO, TBM_GETPOS );
+	cfg_indefinite = SendDlgItemMessage( IDC_INDEFINITE, BM_GETCHECK );
 	
 	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
 }
 
 bool CMyPreferences::HasChanged() {
-	return GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE ) != cfg_samplerate ||
+	return SendDlgItemMessage( IDC_INDEFINITE, BM_GETCHECK ) != cfg_indefinite ||
+		GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE ) != cfg_samplerate ||
 		SendDlgItemMessage( IDC_AHX_STEREO, TBM_GETPOS ) != cfg_ahx_stereo;
 }
 void CMyPreferences::OnChanged() {
