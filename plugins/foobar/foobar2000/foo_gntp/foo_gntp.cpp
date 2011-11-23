@@ -33,7 +33,7 @@ advconfig_string_factory cfg_server_host("Server host[:port]", guid_cfg_server_h
 advconfig_string_factory cfg_server_password("Server password", guid_cfg_server_password, guid_cfg_parent_growl, 1, "");
 
 char CurrentPath[_MAX_PATH];
-char AlbumArtPath[_MAX_PATH];
+char AlbumArtPath[_MAX_PATH] = {0};
 
 const char* notifications[] = {
 	"Playback Started",
@@ -153,7 +153,7 @@ void playback_stopped(play_control::t_stop_reason p_reason)
 
 }
 
-void playback_new_track()
+void playback_new_track(bool fetch_art = true)
 {
 	static_api_ptr_t<play_control> pc;
 	static_api_ptr_t<titleformat_compiler> compiler;
@@ -183,42 +183,53 @@ void playback_new_track()
 	strcat_s (message, len, "\"\n");
 	strcat_s (message, len, album.toString());
 	
-	DeleteFileA(AlbumArtPath);	
-
-	uGetTempPath(path);
-	uGetTempFileName(path, "art", 0, filename);
-
-	AlbumArtPath[0] = '\0';
-	strcat_s (AlbumArtPath, pfc::stringcvt::string_ansi_from_utf8(filename));
-	
-	metadb_handle_ptr handle;
-	pc->get_now_playing(handle);
-	metadb_handle_list handle_list;
-	pfc::list_t<GUID> guid_list;
-	handle_list.add_item(handle);
-	guid_list.add_item(album_art_ids::cover_front);
-
 	const void * ptr = NULL;
 
-	try
+	if (!fetch_art)
 	{
-		abort_callback_dummy dummy; // never aborts
-		album_art_extractor_instance_v2::ptr art_instance = static_api_ptr_t<album_art_manager_v2>()->open(handle_list, guid_list, dummy);
-		album_art_data_ptr art = art_instance->query(album_art_ids::cover_front, dummy);
-
-		if (art->get_size())
-		{
-			ptr = art->get_ptr();
-
-			std::fstream the_file (AlbumArtPath, std::ios::out | std::ios::binary);
-			the_file.seekg (0);
-			the_file.write( reinterpret_cast<const char *>(art->get_ptr()), art->get_size());
-			the_file.close();
-		}
+		if (AlbumArtPath[0])
+			ptr = (const void *)1;
 	}
-	catch(exception_album_art_not_found e)
+	else
 	{
-		ptr = NULL;
+		if (AlbumArtPath[0])
+			DeleteFileA(AlbumArtPath);	
+
+		uGetTempPath(path);
+		uGetTempFileName(path, "art", 0, filename);
+
+		AlbumArtPath[0] = '\0';
+		strcat_s (AlbumArtPath, pfc::stringcvt::string_ansi_from_utf8(filename));
+	
+		metadb_handle_ptr handle;
+		pc->get_now_playing(handle);
+		metadb_handle_list handle_list;
+		pfc::list_t<GUID> guid_list;
+		handle_list.add_item(handle);
+		guid_list.add_item(album_art_ids::cover_front);
+
+		try
+		{
+			abort_callback_dummy dummy; // never aborts
+			album_art_extractor_instance_v2::ptr art_instance = static_api_ptr_t<album_art_manager_v2>()->open(handle_list, guid_list, dummy);
+			album_art_data_ptr art = art_instance->query(album_art_ids::cover_front, dummy);
+
+			if (art->get_size())
+			{
+				ptr = art->get_ptr();
+
+				std::fstream the_file (AlbumArtPath, std::ios::out | std::ios::binary);
+				the_file.seekg (0);
+				the_file.write( reinterpret_cast<const char *>(art->get_ptr()), art->get_size());
+				the_file.close();
+			}
+		}
+		catch(exception_album_art_not_found e)
+		{
+			ptr = NULL;
+			DeleteFileA(AlbumArtPath);
+			AlbumArtPath[0] = '\0';
+		}
 	}
 	
 	growl("Playback Started", "Playback Started", message, ptr ? true : false );
@@ -235,6 +246,9 @@ class play_callback_gntp : public play_callback_static
 	virtual void on_playback_stop(play_control::t_stop_reason p_reason)
 	{
 		playback_stopped(p_reason);
+		if (AlbumArtPath[0])
+			DeleteFileA(AlbumArtPath);
+		AlbumArtPath[0] = '\0';
 	}
 	virtual void on_playback_seek(double p_time) {}
 	virtual void on_playback_pause(bool p_state)
@@ -242,13 +256,13 @@ class play_callback_gntp : public play_callback_static
 		if (p_state)
 			playback_stopped((play_control::t_stop_reason)5);
 		else
-			playback_new_track();
+			playback_new_track(false);
 	}
 	virtual void on_playback_edited(metadb_handle_ptr p_track) {}
 	virtual void on_playback_dynamic_info(const file_info & info) {}
 	virtual void on_playback_dynamic_info_track(const file_info & info)
 	{
-		playback_new_track();
+		playback_new_track(false);
 	}
 	virtual void on_playback_time(double p_time) {}
 	virtual void on_volume_change(float p_new_val) {}
