@@ -12,7 +12,7 @@ using namespace pfc;
 #define PLUGIN_NAME		"Foobar GNTP"
 #define PLUGIN_AUTHOR	"Daniel Dimovski <daniel.k.dimovski@gmail.com>"
 #define PLUGIN_DESC		"Plugin sends Foobar notifications to Growl."
-#define VERSION			"0.2.6"
+#define VERSION			"0.2.7"
 #define SERVER_IP 		"127.0.0.1:23053"
 
 // {6EC09DAD-0D5C-45CF-AC4A-E4AFE71F2C7C}
@@ -126,7 +126,7 @@ void growl(char* type, char* title, char* notice, bool hasAlbumArt)
 		if(!hasAlbumArt)
 			growl_notify(server_ip, PLUGIN_NAME, type, title, notice, password, NULL, CurrentPath);
 		else
-			growl_notify(server_ip, PLUGIN_NAME, type, title, notice, password, NULL, &AlbumArtPath[7]);
+			growl_notify(server_ip, PLUGIN_NAME, type, title, notice, password, NULL, AlbumArtPath);
 	}
 }
 
@@ -153,13 +153,12 @@ void playback_stopped(play_control::t_stop_reason p_reason)
 
 }
 
-void playback_new_track(metadb_handle_ptr track)
+void playback_new_track()
 {
-	if (track.is_empty())
-		return;
-		
+	static_api_ptr_t<play_control> pc;
 	static_api_ptr_t<titleformat_compiler> compiler;
-	
+
+	string8 path, filename;
 	string8 title;
 	string8 artist;
 	string8 album;
@@ -167,13 +166,13 @@ void playback_new_track(metadb_handle_ptr track)
 	service_ptr_t<titleformat_object> title_obj;
 	
 	compiler->compile_safe(title_obj, "%title%");
-	track->format_title(NULL, title, title_obj, NULL);
+	pc->playback_format_title(NULL, title, title_obj, NULL, play_control::display_level_all);
 
 	compiler->compile_safe(title_obj, "%artist%");
-	track->format_title(NULL, artist, title_obj, NULL);
+	pc->playback_format_title(NULL, artist, title_obj, NULL, play_control::display_level_all);
 
 	compiler->compile_safe(title_obj, "%album%");
-	track->format_title(NULL, album, title_obj, NULL);
+	pc->playback_format_title(NULL, album, title_obj, NULL, play_control::display_level_all);
 
 	int len = strlen(title.toString()) + strlen(artist.toString()) + strlen(album.toString()) + 5;
 	char *message = new char[len];
@@ -184,29 +183,38 @@ void playback_new_track(metadb_handle_ptr track)
 	strcat_s (message, len, "\"\n");
 	strcat_s (message, len, album.toString());
 	
-	DeleteFileA(&AlbumArtPath[7]);	
+	DeleteFileA(AlbumArtPath);	
+
+	uGetTempPath(path);
+	uGetTempFileName(path, "art", 0, filename);
 
 	AlbumArtPath[0] = '\0';
-	strcat_s (AlbumArtPath, core_api::get_profile_path());
-	strcat_s (AlbumArtPath, "/");
-	strcat_s (AlbumArtPath, title.toString());
+	strcat_s (AlbumArtPath, pfc::stringcvt::string_ansi_from_utf8(filename));
 	
-	abort_callback_dummy dummy; // never aborts
-	album_art_manager_instance_ptr aamip = static_api_ptr_t<album_art_manager>()->instantiate();
-	aamip->open(track->get_path(),dummy);
-	album_art_data_ptr art = NULL;
+	metadb_handle_ptr handle;
+	pc->get_now_playing(handle);
+	metadb_handle_list handle_list;
+	pfc::list_t<GUID> guid_list;
+	handle_list.add_item(handle);
+	guid_list.add_item(album_art_ids::cover_front);
 
-	const void *ptr;
+	const void * ptr = NULL;
 
 	try
 	{
-		art = aamip->query(album_art_ids::cover_front, dummy);
-		ptr = art->get_ptr();
+		abort_callback_dummy dummy; // never aborts
+		album_art_extractor_instance_v2::ptr art_instance = static_api_ptr_t<album_art_manager_v2>()->open(handle_list, guid_list, dummy);
+		album_art_data_ptr art = art_instance->query(album_art_ids::cover_front, dummy);
 
-		std::fstream the_file (&AlbumArtPath[7], std::ios::out | std::ios::binary);
-	    the_file.seekg (0);
-		the_file.write( reinterpret_cast<const char *>(art->get_ptr()), art->get_size());
-	    the_file.close();
+		if (art->get_size())
+		{
+			ptr = art->get_ptr();
+
+			std::fstream the_file (AlbumArtPath, std::ios::out | std::ios::binary);
+			the_file.seekg (0);
+			the_file.write( reinterpret_cast<const char *>(art->get_ptr()), art->get_size());
+			the_file.close();
+		}
 	}
 	catch(exception_album_art_not_found e)
 	{
@@ -222,7 +230,7 @@ class play_callback_gntp : public play_callback_static
 	virtual void on_playback_starting(play_control::t_track_command p_command, bool p_paused) {}
 	virtual void on_playback_new_track(metadb_handle_ptr p_track)
 	{
-		playback_new_track(p_track);
+		playback_new_track();
 	}
 	virtual void on_playback_stop(play_control::t_stop_reason p_reason)
 	{
@@ -234,24 +242,19 @@ class play_callback_gntp : public play_callback_static
 		if (p_state)
 			playback_stopped((play_control::t_stop_reason)5);
 		else
-		{
-			metadb_handle_ptr track;
-			static_api_ptr_t<play_control>()->get_now_playing(track);
-			if (track.is_valid())
-			{
-				playback_new_track(track);
-				track.release();
-			}
-		}
+			playback_new_track();
 	}
 	virtual void on_playback_edited(metadb_handle_ptr p_track) {}
 	virtual void on_playback_dynamic_info(const file_info & info) {}
-	virtual void on_playback_dynamic_info_track(const file_info & info) {}
+	virtual void on_playback_dynamic_info_track(const file_info & info)
+	{
+		playback_new_track();
+	}
 	virtual void on_playback_time(double p_time) {}
 	virtual void on_volume_change(float p_new_val) {}
 	virtual unsigned get_flags() 
 	{
-		return flag_on_playback_new_track | flag_on_playback_pause | flag_on_playback_stop;
+		return flag_on_playback_new_track | flag_on_playback_pause | flag_on_playback_stop | flag_on_playback_dynamic_info_track;
 	}
 };
 
