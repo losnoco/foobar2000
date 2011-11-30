@@ -15,23 +15,6 @@
 #include "decoder.h"
 #include "swap.h"
 
-//const uint32_t sample_rate = 44100;
-
-static short cubicA0[1025], cubicA1[1025];
-
-static struct init_cubic
-{
-	init_cubic()
-	{
-		unsigned int t; /* 3*1024*1024*1024 is within range if it's unsigned */
-		for (t = 0; t < 1025; t++) {
-			/* int casts to pacify warnings about negating unsigned values */
-			cubicA0[t] = -(int)(  t*t*t >> 17) + (int)(  t*t >> 6) - (int)(t << 3);
-			cubicA1[t] =  (int)(3*t*t*t >> 17) - (int)(5*t*t >> 7)                 + (int)(1 << 14);
-		}
-	}
-} initializer;
-
 // Advance the decoder by one beat
 void _org_advance_beat(org_decoder_t *decoder) {
 	// Update the current beat
@@ -98,6 +81,8 @@ void _org_advance_beat(org_decoder_t *decoder) {
 			if (0xff != note.pan) { // If pan == 0xff, then the key should remain the same
 				decoder->state.tracks[i].note.pan = note.pan;
 			}
+
+			decoder->state.tracks[i].last_clock = 0;
 		}
 		
 		if (decoder->state.tracks[i].note.start <= decoder->state.current_beat) {
@@ -115,13 +100,20 @@ size_t org_decode_samples(org_decoder_t *decoder, int16_t *buffer, size_t num_sa
 	//const uint8_t bits_per_sample = 16;
 	//const uint8_t channels = 2;
 	uint32_t samples_per_beat = (uint32_t)((uint64_t)decoder->file->header.tempo * (uint64_t)decoder->state.sample_rate / (uint64_t)1000);
+	uint32_t samples_rendered = 0;
 	for (int i = 0; i < num_samples; i++) {
-		int32_t left_wave = 0;
-		int32_t right_wave = 0;
-		
 		if (decoder->state.current_sample % samples_per_beat == 0) { // we are done sampling the current beat, on to the next
 			_org_advance_beat(decoder);
 			
+			if (i > samples_rendered) {
+				blip_end_frame(decoder->state.blip_buffer[0], (i - samples_rendered) * 65536);
+				blip_end_frame(decoder->state.blip_buffer[1], (i - samples_rendered) * 65536);
+				blip_read_samples(decoder->state.blip_buffer[0], buffer, i - samples_rendered, 1);
+				blip_read_samples(decoder->state.blip_buffer[1], buffer + 1, i - samples_rendered, 1);
+				buffer += (i - samples_rendered) * 2;
+				samples_rendered = i;
+			}
+
 			// Check if we are done decoding the file.
 			if (decoder->state.current_beat > decoder->file->header.loop_end) {
 				return i;
@@ -156,89 +148,63 @@ size_t org_decode_samples(org_decoder_t *decoder, int16_t *buffer, size_t num_sa
 			// Calculate the offset into the sample data
 			uint32_t note_start_beat = note.start;
 			uint32_t note_sample_pos = decoder->state.current_sample - note_start_beat * samples_per_beat;
-			uint32_t note_sample_pos_fraction = (uint32_t)(uint16_t)(note_sample_pos * freq * 65536.0);
+			uint32_t note_sample_advance = (uint32_t)((1.0 / freq) * 65536.0);
+			uint32_t note_sample_clock = decoder->state.tracks[j].last_clock;
+			uint32_t note_sample_beat_clock = note_sample_clock + (i - samples_rendered) * 65536;
 			note_sample_pos = (uint32_t)(note_sample_pos * freq);
-			
-			int32_t sample = 0;
-			int32_t sample_temp[4];
-			if (is_melody && !decoder->file->instruments[j].disable_sustain) { // Loop the sample
-				note_sample_pos %= sample_data.length;
-				switch (decoder->state.interpolation_method)
-				{
-				default:
+
+			while (note_sample_clock < 65536) {
+				int32_t left_delta;
+				int32_t right_delta;
+				int32_t sample = 0;
+				if (is_melody && !decoder->file->instruments[j].disable_sustain) { // Loop the sample
+					note_sample_pos %= sample_data.length;
 					sample = sample_data.wave[note_sample_pos];
-					break;
-				case 1:
-					sample_temp[0] = sample_data.wave[note_sample_pos];
-					sample_temp[1] = sample_data.wave[(note_sample_pos + 1) % sample_data.length];
-					sample = ( int32_t ) ( ( int64_t ) ( sample_temp[1] - sample_temp[0] ) * note_sample_pos_fraction / 65536 ) + sample_temp[0];
-					break;
-				case 2:
-					sample_temp[0] = sample_data.wave[note_sample_pos];
-					sample_temp[1] = sample_data.wave[(note_sample_pos + 1) % sample_data.length];
-					sample_temp[2] = sample_data.wave[(note_sample_pos + 2) % sample_data.length];
-					sample_temp[3] = sample_data.wave[(note_sample_pos + 3) % sample_data.length];
-					sample = ( sample_temp[0] * cubicA0[note_sample_pos_fraction >> 6] +
-						sample_temp[1] * cubicA1[note_sample_pos_fraction >> 6] +
-						sample_temp[2] * cubicA1[1 + (note_sample_pos_fraction >> 6 ^ 1023)] +
-						sample_temp[3] * cubicA0[1 + (note_sample_pos_fraction >> 6 ^ 1023)] ) >> 14;
-					break;
 				}
-			}
-			else { // Do not loop the sample
-				if (note_sample_pos < sample_data.length) {
-					switch (decoder->state.interpolation_method)
-					{
-					default:
+				else { // Do not loop the sample
+					if (note_sample_pos < sample_data.length) {
 						sample = sample_data.wave[note_sample_pos];
-						break;
-					case 1:
-						sample_temp[0] = sample_data.wave[note_sample_pos];
-						sample_temp[1] = 0;
-						if (note_sample_pos + 1 < sample_data.length) sample_temp[1] = sample_data.wave[note_sample_pos + 1];
-						sample = ( int32_t ) ( ( int64_t ) ( sample_temp[1] - sample_temp[0] ) * note_sample_pos_fraction / 65536 ) + sample_temp[0];
-						break;
-					case 2:
-						sample_temp[0] = sample_data.wave[note_sample_pos];
-						sample_temp[1] = 0;
-						sample_temp[2] = 0;
-						sample_temp[3] = 0;
-						if (note_sample_pos + 1 < sample_data.length) sample_temp[1] = sample_data.wave[note_sample_pos + 1];
-						if (note_sample_pos + 2 < sample_data.length) sample_temp[2] = sample_data.wave[note_sample_pos + 2];
-						if (note_sample_pos + 3 < sample_data.length) sample_temp[3] = sample_data.wave[note_sample_pos + 3];
-						sample = ( sample_temp[0] * cubicA0[note_sample_pos_fraction >> 6] +
-							sample_temp[1] * cubicA1[note_sample_pos_fraction >> 6] +
-							sample_temp[2] * cubicA1[1 + (note_sample_pos_fraction >> 6 ^ 1023)] +
-							sample_temp[3] * cubicA0[1 + (note_sample_pos_fraction >> 6 ^ 1023)] ) >> 14;
-						break;
 					}
 				}
-			}
-		
-			// Adjust volume
-			double volume = 1;
-			volume = (note.volume/252.0);;
-			
-			// Adjust for panning
-			double left_pan = 0.5;
-			double right_pan = 0.5;
-			double pan = note.pan/12.0;
-			left_pan = 1 - pan;
-			right_pan = pan;
-			
-			// Actually combine the sample data
-			left_wave += (sample*volume*left_pan);
-			right_wave += (sample*volume*right_pan); 
-		}
-		
-		// Clip instead of overflow.
-		if((int16_t)left_wave  != left_wave)  left_wave  = 0x7FFF ^ (left_wave >> 31);
-		if((int16_t)right_wave != right_wave) right_wave = 0x7FFF ^ (right_wave >> 31);
 
-		buffer[2*i] = left_wave;
-		buffer[2*i + 1] = right_wave;
-		
+				// Adjust volume
+				double volume = 1;
+				volume = (note.volume/252.0);;
+
+				// Adjust for panning
+				double left_pan = 0.5;
+				double right_pan = 0.5;
+				double pan = note.pan/12.0;
+				left_pan = 1 - pan;
+				right_pan = pan;
+
+				// Actually combine the sample data
+				left_delta = (sample*volume*left_pan) - decoder->state.tracks[j].last_amp[0];
+				right_delta = (sample*volume*right_pan) - decoder->state.tracks[j].last_amp[1];
+
+				blip_add_delta(decoder->state.blip_buffer[0], note_sample_beat_clock, left_delta);
+				blip_add_delta(decoder->state.blip_buffer[1], note_sample_beat_clock, right_delta);
+
+				decoder->state.tracks[j].last_amp[0] += left_delta;
+				decoder->state.tracks[j].last_amp[1] += right_delta;
+
+				note_sample_pos++;
+
+				note_sample_clock += note_sample_advance;
+				note_sample_beat_clock += note_sample_advance;
+			}
+
+			note_sample_clock -= 65536;
+			decoder->state.tracks[j].last_clock = note_sample_clock;
+		}
 		decoder->state.current_sample++;
+	}
+
+	if (num_samples > samples_rendered) {
+		blip_end_frame(decoder->state.blip_buffer[0], (num_samples - samples_rendered) * 65536);
+		blip_end_frame(decoder->state.blip_buffer[1], (num_samples - samples_rendered) * 65536);
+		blip_read_samples(decoder->state.blip_buffer[0], buffer, num_samples - samples_rendered, 1);
+		blip_read_samples(decoder->state.blip_buffer[1], buffer + 1, num_samples - samples_rendered, 1);
 	}
 	
 	return num_samples;
@@ -325,11 +291,17 @@ void org_decoder_seek_sample(org_decoder_t *decoder, size_t sample)
 	decoder->state.current_loop = 1; // Loop count starts at 1
 	decoder->state.current_beat = 0;
 	decoder->state.current_sample = 0;
+
+	blip_clear(decoder->state.blip_buffer[0]);
+	blip_clear(decoder->state.blip_buffer[1]);
 	
 	// Reset tracks
 	for (int i = 0; i < 16; i++) {
 		decoder->state.tracks[i].current_note = 0;
 		decoder->state.tracks[i].playing = 0;
+		decoder->state.tracks[i].last_amp[0] = 0;
+		decoder->state.tracks[i].last_amp[1] = 0;
+		decoder->state.tracks[i].last_clock = 0;
 	}
 	
 	// Advance to the correct beat
@@ -368,7 +340,6 @@ org_decoder_t *org_decoder_create(service_ptr_t<file> & org_file, const char *re
 		decoder->state.current_beat = 0;
 		decoder->state.current_sample = 0;
 		decoder->state.loop_count = loop_count;
-		decoder->state.interpolation_method = 0;
 		decoder->state.sample_rate = 44100;
 
 		decoder->state.current_loop = 1; // The first time through is the first loop.
@@ -381,10 +352,25 @@ org_decoder_t *org_decoder_create(service_ptr_t<file> & org_file, const char *re
 			return NULL;
 		}
 
+		uint32_t samples_per_beat = (uint32_t)((uint64_t)decoder->state.sample_rate*(uint64_t)decoder->file->header.tempo/(uint64_t)1000);
+
+		decoder->state.blip_buffer[0] = blip_new(samples_per_beat * 4);
+		decoder->state.blip_buffer[1] = blip_new(samples_per_beat * 4);
+		if (!decoder->state.blip_buffer[0] || !decoder->state.blip_buffer[1]) {
+			org_decoder_destroy(decoder);
+
+			return NULL;
+		}
+		blip_set_rates(decoder->state.blip_buffer[0], 65536, 1);
+		blip_set_rates(decoder->state.blip_buffer[1], 65536, 1);
+
 		// Set initial track state
 		for (uint8_t i = 0; i < 16; i++) {
 			decoder->state.tracks[i].playing = 0;
 			decoder->state.tracks[i].current_note = 0;
+			decoder->state.tracks[i].last_amp[0] = 0;
+			decoder->state.tracks[i].last_amp[1] = 0;
+			decoder->state.tracks[i].last_clock = 0;
 		}
 
 		return decoder;
@@ -406,6 +392,9 @@ void org_decoder_destroy(org_decoder_t *decoder) {
 			free(decoder->samples[i].wave);
 		}
 	}
+
+	blip_delete(decoder->state.blip_buffer[0]);
+	blip_delete(decoder->state.blip_buffer[1]);
 	
 	// Clean up the rest
 	free(decoder);

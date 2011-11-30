@@ -8,12 +8,16 @@
  */
 
 #include "file.h"
+#include "blip_buf.h"
 
 typedef struct {
 	uint16_t current_note; // Index into org_instrument_t.notes
 	uint8_t playing; // Whether or not the track is currently playing
 	
 	org_note_t note; // Current note properties.
+
+	int16_t last_amp[2];
+	int32_t last_clock;
 } org_track_t;
 
 typedef struct {
@@ -29,9 +33,10 @@ typedef struct {
 	uint32_t current_loop; // The current loop number
 	uint32_t loop_count; // The total number of times we will loop. This is passed in org_decoder_create. 
 
-	uint32_t interpolation_method;
 	uint32_t sample_rate;
 	
+	blip_t * blip_buffer[2];
+
 	org_track_t tracks[16]; // 16 tracks for each org file
 } org_decoder_state_t;
 

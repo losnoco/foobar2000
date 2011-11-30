@@ -118,11 +118,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="liborganya\blip_buf.c" />
     <ClCompile Include="org.cpp" />
     <ClCompile Include="liborganya\decoder.cpp" />
     <ClCompile Include="liborganya\file.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="liborganya\blip_buf.h" />
     <ClInclude Include="liborganya\decoder.h" />
     <ClInclude Include="liborganya\file.h" />
     <ClInclude Include="liborganya\organya.h" />
