@@ -1,7 +1,11 @@
-#define MYVERSION "1.6"
+#define MYVERSION "1.7"
 
 /*
 	changelog
+
+2011-12-01 00:37 UTC - kode54
+- Added file read caching to speed up song loading
+- Version is now 1.7
 
 2011-11-30 01:14 UTC - kode54
 - Removed interpolation modes and replaced with band-limited synthesis
@@ -36,6 +40,8 @@
 */
 
 #include <foobar2000.h>
+
+#include "../helpers/file_cached.h"
 
 #include "liborganya/organya.h"
 #include "liborganya/decoder.h"
@@ -89,13 +95,16 @@ public:
 
 		if ( m_file.is_empty() ) filesystem::g_open( m_file, p_path, filesystem::open_mode_read, p_abort );
 
-		m_stats = m_file->get_stats( p_abort );
+		file::ptr p_file;
+		file_cached::g_create( p_file, m_file, p_abort, 4096 );
+
+		m_stats = p_file->get_stats( p_abort );
 
 		pfc::string8 my_path = core_api::get_my_full_path();
 		my_path.truncate( my_path.scan_filename() );
 		my_path += "samples";
 
-		m_tune = org_decoder_create( m_file, my_path, 1, p_abort );
+		m_tune = org_decoder_create( p_file, my_path, 1, p_abort );
 		if ( !m_tune ) throw exception_io_data();
 
 		sample_rate = cfg_sample_rate;
