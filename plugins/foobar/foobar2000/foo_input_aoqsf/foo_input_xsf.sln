@@ -1,0 +1,109 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_xsf", "foo_input_xsf.vcxproj", "{E4201E50-0CD2-46F2-B822-FAECF711C5F0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pfc", "..\foobar\pfc\pfc.vcxproj", "{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foobar2000_component_client", "..\foobar\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj", "{71AD2674-065B-48F5-B8B0-E1F9D3892081}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foobar2000_SDK", "..\foobar\foobar2000\SDK\foobar2000_SDK.vcxproj", "{E8091321-D79D-4575-86EF-064EA1A4A20D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foobar2000_sdk_helpers", "..\foobar\foobar2000\helpers\foobar2000_sdk_helpers.vcxproj", "{EE47764E-A202-4F85-A767-ABDAB4AFF35F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foobar2000_ATL_helpers", "..\foobar\foobar2000\ATLHelpers\foobar2000_ATL_helpers.vcxproj", "{622E8B19-8109-4717-BD4D-9657AA78363E}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 6
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = http://tina:8080/tfs/defaultcollection
+		SccProjectUniqueName0 = foo_input_xsf.vcxproj
+		SccProjectName0 = .
+		SccAuxPath0 = http://tina:8080/tfs/defaultcollection
+		SccLocalPath0 = .
+		SccProvider0 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName1 = ..\\foobar\\pfc\\pfc.vcxproj
+		SccProjectName1 = ../foobar/pfc
+		SccAuxPath1 = http://tina:8080/tfs/defaultcollection
+		SccLocalPath1 = ..\\foobar\\pfc
+		SccProvider1 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName2 = ..\\foobar\\foobar2000\\foobar2000_component_client\\foobar2000_component_client.vcxproj
+		SccProjectName2 = ../foobar/foobar2000/foobar2000_component_client
+		SccAuxPath2 = http://tina:8080/tfs/defaultcollection
+		SccLocalPath2 = ..\\foobar\\foobar2000\\foobar2000_component_client
+		SccProvider2 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName3 = ..\\foobar\\foobar2000\\SDK\\foobar2000_SDK.vcxproj
+		SccProjectName3 = ../foobar/foobar2000/SDK
+		SccAuxPath3 = http://tina:8080/tfs/defaultcollection
+		SccLocalPath3 = ..\\foobar\\foobar2000\\SDK
+		SccProvider3 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName4 = ..\\foobar\\foobar2000\\helpers\\foobar2000_sdk_helpers.vcxproj
+		SccProjectName4 = ../foobar/foobar2000/helpers
+		SccAuxPath4 = http://tina:8080/tfs/defaultcollection
+		SccLocalPath4 = ..\\foobar\\foobar2000\\helpers
+		SccProvider4 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName5 = ..\\foobar\\foobar2000\\ATLHelpers\\foobar2000_ATL_helpers.vcxproj
+		SccProjectName5 = ../foobar/foobar2000/ATLHelpers
+		SccAuxPath5 = http://tina:8080/tfs/defaultcollection
+		SccLocalPath5 = ..\\foobar\\foobar2000\\ATLHelpers
+		SccProvider5 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Debug|Win32.Build.0 = Debug|Win32
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Debug|x64.ActiveCfg = Debug|Win32
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Release|Win32.ActiveCfg = Release|Win32
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Release|Win32.Build.0 = Release|Win32
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Release|x64.ActiveCfg = Release|Win32
+		{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}.Debug|Win32.Build.0 = Debug|Win32
+		{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}.Debug|x64.ActiveCfg = Debug|x64
+		{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}.Debug|x64.Build.0 = Debug|x64
+		{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}.Release|Win32.ActiveCfg = Release|Win32
+		{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}.Release|Win32.Build.0 = Release|Win32
+		{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}.Release|x64.ActiveCfg = Release|x64
+		{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}.Release|x64.Build.0 = Release|x64
+		{71AD2674-065B-48F5-B8B0-E1F9D3892081}.Debug|Win32.ActiveCfg = Debug|Win32
+		{71AD2674-065B-48F5-B8B0-E1F9D3892081}.Debug|Win32.Build.0 = Debug|Win32
+		{71AD2674-065B-48F5-B8B0-E1F9D3892081}.Debug|x64.ActiveCfg = Debug|x64
+		{71AD2674-065B-48F5-B8B0-E1F9D3892081}.Debug|x64.Build.0 = Debug|x64
+		{71AD2674-065B-48F5-B8B0-E1F9D3892081}.Release|Win32.ActiveCfg = Release|Win32
+		{71AD2674-065B-48F5-B8B0-E1F9D3892081}.Release|Win32.Build.0 = Release|Win32
+		{71AD2674-065B-48F5-B8B0-E1F9D3892081}.Release|x64.ActiveCfg = Release|x64
+		{71AD2674-065B-48F5-B8B0-E1F9D3892081}.Release|x64.Build.0 = Release|x64
+		{E8091321-D79D-4575-86EF-064EA1A4A20D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E8091321-D79D-4575-86EF-064EA1A4A20D}.Debug|Win32.Build.0 = Debug|Win32
+		{E8091321-D79D-4575-86EF-064EA1A4A20D}.Debug|x64.ActiveCfg = Debug|x64
+		{E8091321-D79D-4575-86EF-064EA1A4A20D}.Debug|x64.Build.0 = Debug|x64
+		{E8091321-D79D-4575-86EF-064EA1A4A20D}.Release|Win32.ActiveCfg = Release|Win32
+		{E8091321-D79D-4575-86EF-064EA1A4A20D}.Release|Win32.Build.0 = Release|Win32
+		{E8091321-D79D-4575-86EF-064EA1A4A20D}.Release|x64.ActiveCfg = Release|x64
+		{E8091321-D79D-4575-86EF-064EA1A4A20D}.Release|x64.Build.0 = Release|x64
+		{EE47764E-A202-4F85-A767-ABDAB4AFF35F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EE47764E-A202-4F85-A767-ABDAB4AFF35F}.Debug|Win32.Build.0 = Debug|Win32
+		{EE47764E-A202-4F85-A767-ABDAB4AFF35F}.Debug|x64.ActiveCfg = Debug|x64
+		{EE47764E-A202-4F85-A767-ABDAB4AFF35F}.Debug|x64.Build.0 = Debug|x64
+		{EE47764E-A202-4F85-A767-ABDAB4AFF35F}.Release|Win32.ActiveCfg = Release|Win32
+		{EE47764E-A202-4F85-A767-ABDAB4AFF35F}.Release|Win32.Build.0 = Release|Win32
+		{EE47764E-A202-4F85-A767-ABDAB4AFF35F}.Release|x64.ActiveCfg = Release|x64
+		{EE47764E-A202-4F85-A767-ABDAB4AFF35F}.Release|x64.Build.0 = Release|x64
+		{622E8B19-8109-4717-BD4D-9657AA78363E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{622E8B19-8109-4717-BD4D-9657AA78363E}.Debug|Win32.Build.0 = Debug|Win32
+		{622E8B19-8109-4717-BD4D-9657AA78363E}.Debug|x64.ActiveCfg = Debug|x64
+		{622E8B19-8109-4717-BD4D-9657AA78363E}.Debug|x64.Build.0 = Debug|x64
+		{622E8B19-8109-4717-BD4D-9657AA78363E}.Release|Win32.ActiveCfg = Release|Win32
+		{622E8B19-8109-4717-BD4D-9657AA78363E}.Release|Win32.Build.0 = Release|Win32
+		{622E8B19-8109-4717-BD4D-9657AA78363E}.Release|x64.ActiveCfg = Release|x64
+		{622E8B19-8109-4717-BD4D-9657AA78363E}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

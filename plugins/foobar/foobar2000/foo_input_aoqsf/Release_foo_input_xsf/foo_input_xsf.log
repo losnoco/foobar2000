@@ -1,0 +1,40 @@
+﻿Build started 12/7/2011 4:55:36 PM.
+Project "C:\programming\aoqsf\foo_input_xsf.vcxproj" on node 2 (build target(s)).
+InitializeBuildStatus:
+  Creating "Release_foo_input_xsf\foo_input_xsf.unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  All outputs are up-to-date.
+  C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /IC:\programming\foobar\foobar2000\SDK /IC:\programming\foobar /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D AUDIO_RATE=48000 /D NDEBUG /D _WINDOWS /D _USRDLL /D FOO_INPUT_XSF_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:fast /Zc:wchar_t /Zc:forScope /Fo"Release_foo_input_xsf\\" /Fd"Release_foo_input_xsf\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt src\xsfc\foo_input_xsf.cpp src\xsfc\foo_input_xsfcfg.cpp src\xsfc\xsfc.cpp src\xsfc\xsfcfg.cpp
+  foo_input_xsf.cpp
+  foo_input_xsfcfg.cpp
+  xsfc.cpp
+  xsfcfg.cpp
+  All outputs are up-to-date.
+  C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /IC:\programming\foobar\foobar2000\SDK /IC:\programming\foobar /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D AUDIO_RATE=48000 /D NDEBUG /D _WINDOWS /D _USRDLL /D FOO_INPUT_XSF_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:fast /Zc:wchar_t /Zc:forScope /Fo"Release_foo_input_xsf\\" /Fd"Release_foo_input_xsf\vc100.pdb" /Gd /TC /analyze- /errorReport:prompt src\loadpe\loadpe.c
+  loadpe.c
+ResourceCompile:
+  All outputs are up-to-date.
+Project "C:\programming\aoqsf\foo_input_xsf.vcxproj" (1) is building "C:\programming\foobar\foobar2000\ATLHelpers\foobar2000_ATL_helpers.vcxproj" (2:3) on node 2 (GetResolvedLinkLibs target(s)).
+PrepareForBuild:
+  Creating directory "C:\programming\aoqsf\Release\".
+Done Building Project "C:\programming\foobar\foobar2000\ATLHelpers\foobar2000_ATL_helpers.vcxproj" (GetResolvedLinkLibs target(s)).
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\Microsoft.CppBuild.targets(990,5): warning MSB8012: TargetPath(C:\programming\aoqsf\Release_foo_input_xsf\foo_input_xsf.dll) does not match the Linker's OutputFile property value (C:\programming\aoqsf\foo_input_aoqsf.dll). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\Microsoft.CppBuild.targets(992,5): warning MSB8012: TargetName(foo_input_xsf) does not match the Linker's OutputFile property value (foo_input_aoqsf). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\programming\aoqsf\foo_input_aoqsf.dll" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST:NO /PDB:"C:\programming\aoqsf\Release_foo_input_xsf\foo_input_xsf.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\programming\aoqsf\Release_foo_input_xsf\foo_input_xsf.lib" /MACHINE:X86 /DLL Release_foo_input_xsf\xsfui.res
+  Release_foo_input_xsf\foo_input_xsf.obj
+  Release_foo_input_xsf\foo_input_xsfcfg.obj
+  Release_foo_input_xsf\loadpe.obj
+  Release_foo_input_xsf\xsfc.obj
+  Release_foo_input_xsf\xsfcfg.obj
+  C:\programming\aoqsf\Release\foobar2000_ATL_helpers.lib
+  C:\programming\aoqsf\Release\foobar2000_component_client.lib
+  C:\programming\aoqsf\Release\foobar2000_sdk_helpers.lib
+  C:\programming\aoqsf\Release\foobar2000_SDK.lib
+  C:\programming\aoqsf\Release\pfc.lib
+LINK : fatal error LNK1181: cannot open input file 'C:\programming\aoqsf\Release\foobar2000_ATL_helpers.lib'
+Done Building Project "C:\programming\aoqsf\foo_input_xsf.vcxproj" (build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:10.17
