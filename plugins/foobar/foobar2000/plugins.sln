@@ -159,11 +159,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DXiClasses", "foo_midi\DXiC
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_gntp", "foo_gntp\foo_gntp.vcxproj", "{6C8DACFC-B68B-4EDF-BFFB-D4ADE68BE183}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_aoqsf", "foo_input_aoqsf\foo_input_xsf.vcxproj", "{E4201E50-0CD2-46F2-B822-FAECF711C5F0}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 73
+		SccNumberOfProjects = 74
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = http://sabin:8080/tfs/defaultcollection
+		SccTeamFoundationServer = http://tina:8080/tfs/defaultcollection
 		SccLocalPath0 = .
 		SccProjectUniqueName1 = foo_festalon\\DFC\\DFC.vcxproj
 		SccProjectName1 = foo_festalon/DFC
@@ -381,6 +383,9 @@ Global
 		SccProjectUniqueName72 = foo_gntp\\foo_gntp.vcxproj
 		SccProjectName72 = foo_gntp
 		SccLocalPath72 = foo_gntp
+		SccProjectUniqueName73 = foo_input_aoqsf\\foo_input_xsf.vcxproj
+		SccProjectName73 = foo_input_aoqsf
+		SccLocalPath73 = foo_input_aoqsf
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -837,6 +842,12 @@ Global
 		{6C8DACFC-B68B-4EDF-BFFB-D4ADE68BE183}.Release|Win32.ActiveCfg = Release|Win32
 		{6C8DACFC-B68B-4EDF-BFFB-D4ADE68BE183}.Release|Win32.Build.0 = Release|Win32
 		{6C8DACFC-B68B-4EDF-BFFB-D4ADE68BE183}.Release|x64.ActiveCfg = Release|Win32
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Debug|Win32.Build.0 = Debug|Win32
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Debug|x64.ActiveCfg = Debug|Win32
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Release|Win32.ActiveCfg = Release|Win32
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Release|Win32.Build.0 = Release|Win32
+		{E4201E50-0CD2-46F2-B822-FAECF711C5F0}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
