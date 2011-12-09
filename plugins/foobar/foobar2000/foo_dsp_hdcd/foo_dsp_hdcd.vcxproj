@@ -27,7 +27,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <WholeProgramOptimization>PGUpdate</WholeProgramOptimization>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -125,7 +125,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dsp_hdcd.cpp" />
-    <ClCompile Include="hdcd_decode.cpp" />
+    <ClCompile Include="hdcd_decode.c" />
     <ClCompile Include="test_hdcd.cpp" />
   </ItemGroup>
   <ItemGroup>

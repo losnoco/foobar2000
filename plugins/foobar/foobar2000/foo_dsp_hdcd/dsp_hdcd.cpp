@@ -1,4 +1,4 @@
-#define MYVERSION "1.11"
+#define MYVERSION "1.12"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -35,6 +35,10 @@
 /*
 
 	change log
+
+2011-12-08 23:56 UTC - kode54
+- Implemented optimized C decoder by Gumboot
+- Version is now 1.12
 
 2011-02-22 14:14 UTC - kode54
 - Changed advanced configuration option to a radio selection, defaulting to only
@@ -117,7 +121,7 @@ advconfig_radio_factory cfg_hdcd_amp_not_peak("Only if peak extension is enabled
 advconfig_radio_factory cfg_hdcd_amp_always("Always", guid_cfg_hdcd_amp_always, guid_cfg_parent_amp, 0, false);
 
 class hdcd_dsp : public dsp_impl_base {
-	pfc::array_t<hdcd_decode> decoders;
+	pfc::array_t<hdcd_state_t> decoders;
 
 	dsp_chunk_list_impl original_chunks;
 	dsp_chunk_list_impl output_chunks;
@@ -135,8 +139,7 @@ class hdcd_dsp : public dsp_impl_base {
 
 		for ( unsigned i = 0; i < nch; i++ )
 		{
-			decoders[ i ].reset();
-			decoders[ i ].set_sample_rate( srate );
+			hdcd_reset( &decoders[ i ], srate );
 		}
 	}
 
@@ -159,7 +162,7 @@ class hdcd_dsp : public dsp_impl_base {
 			unsigned enabled = 0;
 			for ( unsigned i = 0; i < nch; i++ )
 			{
-				enabled |= decoders[ i ].get_sample_counter();
+				enabled |= decoders[ i ].sustain;
 			}
 
 			dsp_chunk_list * list = enabled ? &output_chunks : &original_chunks;
@@ -177,20 +180,16 @@ class hdcd_dsp : public dsp_impl_base {
 	void process_chunk( audio_chunk * chunk )
 	{
 		bool peak_extension = false;
-		for ( unsigned i = 0; i < nch; ++i ) peak_extension |= !!( decoders[ i ].get_status() & 16 );
+		for ( unsigned i = 0; i < nch; ++i ) peak_extension |= !!( decoders[ i ].control & 16 );
 		bool amp = this->amp == 0 ? true : this->amp == 2 ? false : !peak_extension;
-		const audio_sample target_scale = amp ? ( 1 << ( 32 - 19 ) ) : ( 1 << ( 32 - 20 ) );
+		const audio_sample target_scale = amp ? 2 : 1;
 		int data = chunk->get_sample_count() * nch;
 		buffer.grow_size( data );
 		audio_math::convert_to_int32( chunk->get_data(), data, buffer.get_ptr(), 1. / 65536. );
 
 		for ( unsigned i = 0; i < nch; i++ )
 		{
-			for ( unsigned j = 0, k = chunk->get_sample_count(); j < k; j++ )
-			{
-				t_int32 * ptr = buffer.get_ptr() + j * nch + i;
-				*ptr = decoders[ i ].decode_sample( *ptr );
-			}
+			hdcd_process( &decoders[ i ], buffer.get_ptr() + i, chunk->get_sample_count(), nch );
 		}
 
 		audio_math::convert_from_int32( buffer.get_ptr(), data, chunk->get_data(), target_scale );
@@ -270,7 +269,7 @@ public:
 		unsigned enabled = 0;
 		for ( unsigned i = 0; i < nch; i++ )
 		{
-			enabled |= decoders[ i ].get_sample_counter();
+			enabled |= decoders[ i ].sustain;
 		}
 
 		if ( enabled )
@@ -339,7 +338,7 @@ public:
 
 class hdcd_postprocessor_instance : public decode_postprocessor_instance
 {
-	pfc::array_t<hdcd_decode> decoders;
+	pfc::array_t<hdcd_state_t> decoders;
 
 	dsp_chunk_list_impl original_chunks;
 	dsp_chunk_list_impl output_chunks;
@@ -357,8 +356,7 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 
 		for ( unsigned i = 0; i < nch; i++ )
 		{
-			decoders[ i ].reset();
-			decoders[ i ].set_sample_rate( srate );
+			hdcd_reset( &decoders[ i ], srate );
 		}
 	}
 
@@ -386,7 +384,7 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 			unsigned enabled = 0;
 			for ( unsigned i = 0; i < nch; i++ )
 			{
-				enabled |= decoders[ i ].get_sample_counter();
+				enabled |= decoders[ i ].sustain;
 			}
 
 			dsp_chunk_list * list = enabled ? &output_chunks : &original_chunks;
@@ -408,9 +406,9 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 	void process_chunk( audio_chunk * chunk )
 	{
 		bool peak_extension = false;
-		for ( unsigned i = 0; i < nch; ++i ) peak_extension |= !!( decoders[ i ].get_status() & 16 );
+		for ( unsigned i = 0; i < nch; ++i ) peak_extension |= !!( decoders[ i ].control & 16 );
 		bool amp = this->amp == 0 ? true : this->amp == 2 ? false : !peak_extension;
-		const audio_sample target_scale = amp ? ( 1 << ( 32 - 19 ) ) : ( 1 << ( 32 - 20 ) );
+		const audio_sample target_scale = amp ? 2 : 1;
 
 		int data = chunk->get_sample_count() * nch;
 		buffer.grow_size( data );
@@ -418,11 +416,7 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 
 		for ( unsigned i = 0; i < nch; i++ )
 		{
-			for ( unsigned j = 0, k = chunk->get_sample_count(); j < k; j++ )
-			{
-				t_int32 * ptr = buffer.get_ptr() + j * nch + i;
-				*ptr = decoders[ i ].decode_sample( *ptr );
-			}
+			hdcd_process( &decoders[ i ], buffer.get_ptr() + i, chunk->get_sample_count(), nch );
 		}
 
 		audio_math::convert_from_int32( buffer.get_ptr(), data, chunk->get_data(), target_scale );
@@ -462,7 +456,7 @@ public:
 			unsigned enabled = 0;
 			for ( unsigned j = 0; j < nch; j++ )
 			{
-				enabled |= decoders[ j ].get_sample_counter();
+				enabled |= decoders[ j ].sustain;
 			}
 
 			if ( enabled && sustained )
@@ -509,15 +503,14 @@ public:
 		unsigned enabled = 0;
 		for ( unsigned i = 0; i < nch; i++ )
 		{
-			enabled |= decoders[ i ].get_sample_counter();
+			enabled |= decoders[ i ].sustain;
 		}
 
 		if ( enabled )
 		{
-			unsigned status = decoders[ 0 ].get_status();
+			unsigned status = decoders[ 0 ].control;
 
 			p_out.info_set_int( "bitspersample", 24 );
-			p_out.info_set_int( "decoded_bitspersample", 20 );
 			p_out.info_set( "hdcd", "yes" );
 
 			p_out.info_set( "hdcd_peak_extend", ( status & 16 ) ? "yes" : "no" );
@@ -537,7 +530,6 @@ public:
 		else if ( p_out.info_get( "hdcd" ) )
 		{
 			p_out.info_set_int( "bitspersample", 16 );
-			p_out.info_remove( "decoded_bitspersample" );
 
 			p_out.info_remove( "hdcd" );
 			p_out.info_remove( "hdcd_peak_extend" );

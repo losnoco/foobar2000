@@ -2,6 +2,8 @@
    Copyright (C) 2010, Chris Moeller,
    All rights reserved.                          
 
+   Optimizations by Gumboot
+
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -33,33 +35,27 @@
 #ifndef _HDCD_DECODE_H_
 #define _HDCD_DECODE_H_
 
-class hdcd_decode
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct
 {
-	unsigned bits_a, bits_b;
-	unsigned char step_counter, status;
-	unsigned sample_counter;
+    uint64_t window;
+    unsigned char readahead, arg, control;
 
-	double gain_current, gain_running;
-	int gain_fixed;
+    int running_gain;
 
-	unsigned sample_rate;
+    unsigned sustain, sustain_reset;
+} hdcd_state_t;
 
-	static const double gain_table[16];
-	static const int peak_extend_table[9856];
+void hdcd_reset(hdcd_state_t *state, unsigned rate);
+void hdcd_process(hdcd_state_t *state, int *samples, int count, int stride);
 
-	void process_sample_lsb( int sample );
-
-public:
-	hdcd_decode();
-
-	inline void set_sample_rate( unsigned rate ) { sample_rate = rate; }
-
-	inline unsigned get_sample_counter() const { return sample_counter; }
-	inline unsigned get_status() const { return status; }
-
-	void reset();
-
-	int decode_sample( int sample );
-};
+#ifdef __cplusplus
+}
+#endif
 
 #endif
