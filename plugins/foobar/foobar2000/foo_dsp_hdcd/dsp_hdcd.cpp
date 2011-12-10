@@ -1,4 +1,4 @@
-#define MYVERSION "1.13"
+#define MYVERSION "1.14"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -35,6 +35,10 @@
 /*
 
 	change log
+
+2011-12-10 01:39 UTC - kode54
+- Further optimizations from Gumboot
+- Version is now 1.14
 
 2011-12-10 00:38 UTC - kode54
 - Fixed sustain counter so decoder won't process non-HDCD content

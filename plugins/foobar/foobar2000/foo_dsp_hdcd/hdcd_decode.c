@@ -741,20 +741,34 @@ void hdcd_reset(hdcd_state_t *state, unsigned rate)
     state->sustain_reset = rate * 10;
 }
 
-static int integrate(hdcd_state_t *state, int sample)
+static int integrate(hdcd_state_t *state, int *flag, int const *samples, int count, int stride)
 {
-    int result = -1;
-    uint32_t bits;
-    state->window = (state->window << 1) | (sample & 1);
-    if (--state->readahead > 0)
+    uint32_t bits = 0;
+    int result = min(state->readahead, count);
+    int i;
+    *flag = 0;
+    for (i = result - 1; i >= 0; i--)
+    {
+        bits |= (*samples & 1) << i; /* might be better as a conditional? */
+        samples += stride;
+    }
+    state->window = (state->window << result) | bits;
+    state->readahead -= result;
+    if (state->readahead > 0)
         return result;
     bits = (state->window ^ state->window >> 5 ^ state->window >> 23) & 0xffffffffu;
     if (state->arg)
     {
         if ((bits & 0xffffffc8) == 0x0fa00500)
-            result = (bits & 255) + (bits & 7);
+        {
+            state->control = (bits & 255) + (bits & 7);
+            *flag = 1;
+        }
         if (((bits ^ (~bits >> 8 & 255)) & 0xffff00ff) == 0xa0060000)
-            result = bits >> 8 & 255;
+        {
+            state->control = bits >> 8 & 255;
+            *flag = 1;
+        }
         state->arg = 0;
     }
     if (bits == 0x7e0fa005 || bits == 0x7e0fa006)
@@ -776,7 +790,7 @@ static int hdcd_scan(hdcd_state_t *state, int const *samples, int max, int strid
 {
     int result;
     int control;
-    if (0 < state->sustain)
+    if (state->sustain > 0)
     {
         if (state->sustain <= max)
         {
@@ -785,14 +799,19 @@ static int hdcd_scan(hdcd_state_t *state, int const *samples, int max, int strid
         }
         state->sustain -= max;
     }
-    for (result = 0; result < max; result++, samples += stride)
-        if ((control = integrate(state, *samples)) >= 0)
+	result = 0;
+    while (result < max)
+    {
+        int flag;
+        int consumed = integrate(state, &flag, samples, max - result, stride);
+        result += consumed;
+        if (flag > 0)
         {
-            state->control = control;
             state->sustain = state->sustain_reset;
-            result++;
             break;
         }
+        samples += consumed * stride;
+    }
     return result;
 }
 
