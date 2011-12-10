@@ -776,12 +776,15 @@ static int hdcd_scan(hdcd_state_t *state, int const *samples, int max, int strid
 {
     int result;
     int control;
-    if (0 < state->sustain && state->sustain <= max)
+    if (0 < state->sustain)
     {
-        state->control = 0;
-        max = state->sustain;
+        if (state->sustain <= max)
+        {
+            state->control = 0;
+            max = state->sustain;
+        }
+        state->sustain -= max;
     }
-    state->sustain -= max;
     for (result = 0; result < max; result++, samples += stride)
         if ((control = integrate(state, *samples)) >= 0)
         {
