@@ -64,6 +64,11 @@ VGMSTREAM * init_vgmstream_sqex_scd(STREAMFILE *streamFile) {
     if (codec_id == 0x6)
     {
         vgm_vorbis_info_t inf;
+        uint32_t seek_table_size = read_32bit(meta_offset+0x30, streamFile);
+        uint32_t vorb_header_size = read_32bit(meta_offset+0x34, streamFile);
+		VGMSTREAM * result;
+
+        memset(&inf, 0, sizeof(inf));
         inf.loop_start = loop_start;
         inf.loop_end = loop_end;
         inf.loop_flag = loop_flag;
@@ -72,7 +77,40 @@ VGMSTREAM * init_vgmstream_sqex_scd(STREAMFILE *streamFile) {
         inf.layout_type = layout_ogg_vorbis;
         inf.meta_type = meta_SQEX_SCD;
 
-        return init_vgmstream_ogg_vorbis_callbacks(streamFile, filename, NULL, start_offset, &inf);
+        result = init_vgmstream_ogg_vorbis_callbacks(streamFile, filename, NULL, start_offset, &inf);
+
+        if (result != NULL) {
+            return result;
+        }
+
+        // try skipping seek table
+        {
+            if (0x20 + seek_table_size + vorb_header_size != read_32bit(meta_offset+0x18, streamFile)) {
+                return NULL;
+            }
+
+            start_offset = meta_offset + 0x40 + seek_table_size;
+            result = init_vgmstream_ogg_vorbis_callbacks(streamFile, filename, NULL, start_offset, &inf);
+            if (result != NULL) {
+                return result;
+            }
+        }
+
+        // try deobfuscating header (assume skipping seek table)
+        {
+            unsigned char xor_byte = read_8bit(meta_offset+0x22, streamFile);
+			VGMSTREAM * result;
+
+            if (xor_byte == 0) {
+                return NULL;
+            }
+
+            inf.scd_xor = xor_byte;
+            inf.scd_xor_len = vorb_header_size;
+
+            result = init_vgmstream_ogg_vorbis_callbacks(streamFile, filename, NULL, start_offset, &inf);
+            return result;
+        }
     }
 #endif
     
