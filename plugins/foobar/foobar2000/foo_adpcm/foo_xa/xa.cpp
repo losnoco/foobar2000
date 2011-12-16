@@ -1,7 +1,11 @@
-#define MY_VERSION "1.5"
+#define MY_VERSION "1.6"
 
 /*
 	changelog
+
+2011-12-15 13:23 UTC - kode54
+- Fixed crashes in loop scanner when single sector length streams are found
+- Version is now 1.6
 
 2009-10-17 13:45 UTC - kode54
 - Fixed song scanner for files with RIFF headers
@@ -1249,7 +1253,8 @@ public:
 							if ( ptr[ offset + 2 ] & 0x81 )
 							{
 								m_info.add_item( p_info );
-								info[ ptr[ offset + 1 ] ] = 0;
+								info[ ptr[ offset + 1 ] ] = p_info = 0;
+								continue;
 							}
 						}
 						else
@@ -1264,6 +1269,7 @@ public:
 						info[ ptr[ offset + 1 ] ] = p_info = new xa_subsong_scanner_info;
 						p_info->file_number = ptr[ offset ];
 						p_info->sector_offset = unsigned( sector - 1 );
+						p_info->sector_offset_end = p_info->sector_offset;
 						p_info->sector_count = 1;
 						p_info->channel = ptr[ offset + 1 ];
 						p_info->loop_start = ~0;
@@ -1320,6 +1326,8 @@ public:
 				p_abort.check();
 
 				xa_subsong_scanner_info & p_info = * m_info[ i ];
+
+				if ( p_info.sector_count == 1 ) continue;
 
 				xa_subsong_scanner_loop_info & p_end = m_loop_data[ p_info.sector_offset_end ];
 

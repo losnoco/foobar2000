@@ -1,7 +1,11 @@
-#define MY_VERSION "1.9"
+#define MY_VERSION "1.10"
 
 /*
 	change log
+
+2011-12-15 13:23 UTC - kode54
+- Fixed a crash bug when XA scanner encounters single sector stream sequences
+- Version is now 1.10
 
 2010-09-22 03:44 UTC - kode54
 - Added detection for redundant format inputs to disable support for formats
