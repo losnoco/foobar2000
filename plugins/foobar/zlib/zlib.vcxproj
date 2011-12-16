@@ -41,7 +41,10 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
@@ -74,10 +77,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CustomBuild Include="zlib.def">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">lib /def:zlib.def /machine:x86 /out:"$(OutDir)\zlib.lib"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">lib /def:zlib.def /machine:x86 /out:"$(OutDir)\zlib.lib"</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)\zlib.lib</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)\zlib.lib</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">lib /def:zlib.def /machine:x86 /out:"$(OutDir)zlib.lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">lib /def:zlib.def /machine:x86 /out:"$(OutDir)zlib.lib"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)zlib.lib</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)zlib.lib</Outputs>
     </CustomBuild>
     <None Include="zlib1.dll" />
   </ItemGroup>
