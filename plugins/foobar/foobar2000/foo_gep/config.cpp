@@ -1,7 +1,11 @@
-#define MYVERSION "1.115"
+#define MYVERSION "1.116"
 
 /*
 	change log
+
+2011-12-17 00:42 UTC - kode54
+- Correctly implemented reading of the DATE field from M3U playlists
+- Version is now 1.116
 
 2011-07-26 03:14 UTC - kode54
 - Fixed VGM format handling bugs introduced by recent changes

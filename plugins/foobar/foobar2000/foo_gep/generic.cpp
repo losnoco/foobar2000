@@ -156,6 +156,7 @@ public:
 		HEADER_STRING( p_info, "album", i.game );
 		HEADER_STRING( p_info, "title", i.song );
 		HEADER_STRING( p_info, "artist", i.author );
+		HEADER_STRING( p_info, "date", i.date );
 		HEADER_STRING( p_info, "engineer", i.engineer );
 		HEADER_STRING( p_info, "composer", i.composer );
 		HEADER_STRING( p_info, "sequencer", i.sequencer );
