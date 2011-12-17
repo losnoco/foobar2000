@@ -1,7 +1,11 @@
-#define MYVERSION "1.116"
+#define MYVERSION "1.117"
 
 /*
 	change log
+
+2011-12-17 08:57 UTC - kode54
+- Bumped the version number to avoid an issue with the accidental release
+- Version is now 1.117
 
 2011-12-17 00:42 UTC - kode54
 - Correctly implemented reading of the DATE field from M3U playlists
