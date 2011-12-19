@@ -1,9 +1,15 @@
 #include "stdafx.h"
 
-#define MY_VERSION "1.10"
+#define MY_VERSION "1.11"
 
 /*
 	change log
+
+2011-12-19 03:09 UTC - kode54
+- Changed a number of constants to local variables in preparation for adding a
+  configuration system
+- Restructured to use a large duration gated loudness measurement
+- Version is now 1.11
 
 2011-02-07 14:12 UTC - kode54
 - Fixed a stupid bug in libebur128 when handling weird sample rates
@@ -62,32 +68,29 @@
 
 */
 
-#define ENABLE_MOMENTARY
-
 class dsp_r128 : public dsp_impl_base
 {
 	unsigned m_rate, m_ch, m_ch_mask;
 	ebur128_state * m_state;
 	dsp_chunk_list_impl sample_buffer;
 	bool startup_complete;
-#ifdef ENABLE_MOMENTARY
-	int frames_until_next_moment;
-#endif
-	int frames_until_next_shortterm;
-#ifdef ENABLE_MOMENTARY
-	double momentary_scale;
-#endif
-	double shortterm_scale;
+	int frames_until_next;
 	double current_scale;
 	double target_scale;
 	double scale_up;
 	double scale_down;
+	double latency_startup;
+	double latency_minimum;
+	double latency_window;
+	double latency_update;
+	double reference_loudness;
+
+	unsigned block_count;
+
 public:
 	dsp_r128() :
-#ifdef ENABLE_MOMENTARY
-	  momentary_scale(1.0),
-#endif
-	  shortterm_scale(1.0), current_scale(1.0), target_scale(1.0), m_rate( 0 ), m_ch( 0 ), m_ch_mask( 0 ), m_state( NULL )
+	  current_scale(1.0), target_scale(1.0), latency_startup(10.0), latency_window(20.0), latency_minimum(4.0), latency_update(0.05), reference_loudness(-18.0),
+	  m_rate( 0 ), m_ch( 0 ), m_ch_mask( 0 ), m_state( NULL )
 	{
 	}
 
@@ -117,11 +120,10 @@ public:
 			flush_buffer();
 		}
 
-		if ( ebur128_add_frames_float( m_state, chunk->get_data(), chunk->get_sample_count() ) ) return true;
-
 		if ( !startup_complete )
 		{
-			if ( sample_buffer.get_duration() + chunk->get_duration() < 3.0 )
+			if ( ebur128_add_frames_float( m_state, chunk->get_data(), chunk->get_sample_count() ) ) return true;
+			if ( sample_buffer.get_duration() + chunk->get_duration() < latency_startup )
 			{
 				audio_chunk * chunk_copy = sample_buffer.insert_item( sample_buffer.get_count(), chunk->get_data_size() );
 				chunk_copy->copy( *chunk );
@@ -129,40 +131,26 @@ public:
 			}
 		}
 
-#ifdef ENABLE_MOMENTARY
-		if ( frames_until_next_moment <= 0 )
+		unsigned samples_added = 0;
+		while ( samples_added < chunk->get_sample_count() )
 		{
-			frames_until_next_moment += m_rate / 20;
-			double new_momentary_scale = loudness_to_scale( ebur128_loudness_momentary( m_state ) );
-			if ( startup_complete ) momentary_scale = sqrt( sqrt( new_momentary_scale * momentary_scale * momentary_scale * momentary_scale ) );
-			else momentary_scale = new_momentary_scale;
-			target_scale = sqrt( momentary_scale * shortterm_scale );
+			unsigned samples_to_add = chunk->get_sample_count() - samples_added;
+			if ( frames_until_next > 0 && frames_until_next < samples_to_add ) samples_to_add = frames_until_next;
+
+			if ( frames_until_next <= 0 )
+			{
+				if (m_rate / 10 < samples_to_add) samples_to_add = m_rate / 10;
+				frames_until_next += m_rate / 10;
+				target_scale = loudness_to_scale( ebur128_loudness_global( m_state ) );
+			}
+
+			if ( ebur128_add_frames_float( m_state, chunk->get_data() + chunk->get_channels() * samples_added, samples_to_add ) ) return true;
+
+			ebur128_gated_loudness_cleanup( m_state, block_count );
+
+			samples_added += samples_to_add;
+			frames_until_next -= samples_to_add;
 		}
-#endif
-
-		if ( frames_until_next_shortterm <= 0 )
-		{
-#ifdef ENABLE_MOMENTARY
-			frames_until_next_shortterm += m_rate / 5;
-#else
-			frames_until_next_shortterm += m_rate / 10;
-#endif
-			double new_shortterm_scale = loudness_to_scale( ebur128_loudness_shortterm( m_state ) );
-			if ( startup_complete ) shortterm_scale = sqrt( new_shortterm_scale * shortterm_scale );
-			else shortterm_scale = new_shortterm_scale;
-#ifdef ENABLE_MOMENTARY
-			target_scale = sqrt( momentary_scale * shortterm_scale );
-#else
-			target_scale = shortterm_scale;
-#endif
-		}
-
-		ebur128_gated_loudness_cleanup( m_state, 8 );
-
-#ifdef ENABLE_MOMENTARY
-		frames_until_next_moment -= chunk->get_sample_count();
-#endif
-		frames_until_next_shortterm -= chunk->get_sample_count();
 
 		if ( !startup_complete )
 		{
@@ -173,7 +161,7 @@ public:
 #if 0
 		flush_buffer();
 #else
-		flush_buffer( 0.5 );
+		flush_buffer( latency_minimum );
 		if ( sample_buffer.get_count() )
 		{
 			audio_chunk * copy_chunk = sample_buffer.insert_item( sample_buffer.get_count(), chunk->get_data_size() );
@@ -206,7 +194,6 @@ public:
 #ifdef ENABLE_MOMENTARY
 		momentary_scale = 1.0;
 #endif
-		shortterm_scale = 1.0;
 		current_scale = 1.0;
 		target_scale = 1.0;
 		sample_buffer.remove_all();
@@ -249,14 +236,13 @@ private:
 
 		ebur128_set_channel_map( m_state, channel_map.get_ptr() );
 
-#ifdef ENABLE_MOMENTARY
-		frames_until_next_moment = 0;
-#endif
-		frames_until_next_shortterm = 0;
+		block_count = (unsigned) (latency_window * 2.5 + 0.5);
 
-		// Scale up or down by 1 dB every 50ms
-		scale_up   = pow( pow( 10.0,  1.0 / 20.0 ), 1.0 / ( 0.05 * double( m_rate ) ) );
-		scale_down = pow( pow( 10.0, -1.0 / 20.0 ), 1.0 / ( 0.05 * double( m_rate ) ) );
+		frames_until_next = 0;
+
+		// Scale up or down by 1 dB every latency_update seconds
+		scale_up   = pow( pow( 10.0,  1.0 / 20.0 ), 1.0 / ( latency_update * double( m_rate ) ) );
+		scale_down = pow( pow( 10.0, -1.0 / 20.0 ), 1.0 / ( latency_update * double( m_rate ) ) );
 
 		startup_complete = false;
 	}
@@ -264,7 +250,7 @@ private:
 	double loudness_to_scale(double lu)
 	{
 		if ( lu == std::numeric_limits<double>::quiet_NaN() || lu == std::numeric_limits<double>::infinity() || lu < -70 ) return 1.0;
-		else return pow( 10.0, ( -18.0 - lu ) / 20.0 );
+		else return pow( 10.0, ( reference_loudness - lu ) / 20.0 );
 	}
 
 	// Increase by one decibel every 32 samples, or decrease by one decibel every 256 samples
@@ -286,15 +272,20 @@ private:
 	{
 		unsigned count = chunk->get_sample_count();
 		unsigned channels = chunk->get_channels();
-		for ( unsigned i = 0; i < count; i++ )
+		audio_sample * sample = chunk->get_data();
+		unsigned i;
+
+		for ( i = 0; i < count; i++ )
 		{
-			audio_sample * sample = chunk->get_data() + i * channels;
-			for ( unsigned j = 0; j < chunk->get_channels(); j++ )
+			if ( current_scale == target_scale ) break;
+			for ( unsigned j = 0; j < channels; j++ )
 			{
-				sample[ j ] *= current_scale;
+				*sample++ *= current_scale;
 			}
 			update_scale();
 		}
+
+		if ( i < count ) audio_math::scale( sample, ( count - i ) * channels, sample, current_scale );
 	}
 
 	void flush_buffer( double latency = 0 )
