@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.45"
+#define MYVERSION "0.9.9.46"
 
 /*
 	changelog
+
+2011-12-28 10:53 UTC - kode54
+- Updated unmo3.dll to version 2.4.0.3.
+- Version is now 0.9.9.46
 
 2011-08-31 05:23 UTC - kode54
 - Corrected old style PSM note data
