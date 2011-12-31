@@ -3,11 +3,20 @@
 
 #include <stdafx.h>
 
-#define MYVERSION "0.5"
+#define MYVERSION "0.7"
 
 /*
 
 	change log
+
+2011-12-31 17:55 UTC - kode54
+- Fixed loop detection for files which don't actually loop
+- Skip any non-ending or frozen songs
+- Version is now 0.7
+
+2011-12-31 16:59 UTC - kode54
+- Changed default length to loop count, with actual length detection
+- Version is now 0.6
 
 2011-03-23 02:45 UTC - kode54
 - Implemented file stats collection properly for file size and modification time reporting
@@ -88,12 +97,12 @@ public:
 
 	unsigned get_subsong_count()
 	{
-		return ( p_src->tag ) ? p_src->tag->songs.get_count() : 16;
+		return p_src->GetSongCount();
 	}
 
 	t_uint32 get_subsong( unsigned p_index )
 	{
-		return p_index;
+		return p_src->GetSong( p_index );
 	}
 
 	void get_info( t_uint32 p_subsong, file_info & p_info, abort_callback & p_abort )
@@ -153,7 +162,7 @@ public:
 
 		if ( !has_length )
 		{
-			length = p_src->GetLength();
+			length = p_src->GetLength( p_subsong );
 		}
 
 		p_info.set_length( length );

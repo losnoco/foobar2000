@@ -74,7 +74,9 @@ class CTFMXSource
 	int Open( service_ptr_t<file> & r, const char *url, int track, abort_callback & p_abort );
 	int GetSamples( float *sample_buffer, int samples, int *srate );
 	int SetPosition( double ); 
-	double GetLength();
+	double GetLength(int song = 0);
+	int GetSongCount();
+	int GetSong(int song);
 	~CTFMXSource();
 	CTFMXSource();
 
@@ -150,9 +152,12 @@ class CTFMXSource
 
 	int samples_written;
 
+	int song_lengths[16];
+
 
 	bool is_tfm,has_len;
 	bool seeking;
+	bool track_ended;
 	int song_len,fade_len;
 	int outRate;
 	int separation;
