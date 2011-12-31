@@ -29,7 +29,7 @@ static const GUID guid_cfg_parent_tfmx = { 0xc5acdbaf, 0x352c, 0x45d2, { 0xaf, 0
 static const GUID guid_cfg_infinite = { 0x95171f76, 0x51b4, 0x4da6, { 0x93, 0xd8, 0xba, 0x98, 0x8d, 0xc, 0x4b, 0xcc } };
 static const GUID guid_cfg_sample_rate = { 0x7f507203, 0x3fa4, 0x4c85, { 0xa2, 0xfc, 0x78, 0xe7, 0xa9, 0xb3, 0x71, 0x7b } };
 static const GUID guid_cfg_stereo_separation = { 0x56bc36a5, 0x9559, 0x4fb4, { 0x98, 0x21, 0xc6, 0x70, 0x8f, 0xc8, 0x24, 0xfa } };
-static const GUID guid_cfg_loop_count = { 0xa10066, 0x9e20, 0x461c, { 0xa3, 0xda, 0x55, 0x9a, 0xd7, 0xcd, 0xae, 0x12 } };
+static const GUID guid_cfg_default_length = { 0x9f5f0285, 0x26d1, 0x4edf, { 0xa5, 0xa6, 0xdf, 0x8c, 0xc3, 0xbd, 0xdd, 0xd1 } };
 static const GUID guid_cfg_default_fade = { 0xf594de6d, 0x8fcd, 0x4b55, { 0x83, 0x2d, 0x36, 0xbd, 0xf, 0x85, 0x66, 0xae } };
 
 advconfig_branch_factory cfg_tfmx_parent("TFMX decoder", guid_cfg_parent_tfmx, advconfig_branch::guid_branch_playback, 0);
@@ -40,8 +40,7 @@ advconfig_integer_factory cfg_sample_rate("Sample rate", guid_cfg_sample_rate, g
 
 advconfig_integer_factory cfg_stereo_separation( "Stereo separation (percent)", guid_cfg_stereo_separation, guid_cfg_parent_tfmx, 2, 83, 0, 100 );
 
-advconfig_integer_factory cfg_loop_count( "Loop count", guid_cfg_loop_count, guid_cfg_parent_tfmx, 3, 2, 1, 10 );
-
+advconfig_integer_factory cfg_default_length( "Default length (seconds)", guid_cfg_default_length, guid_cfg_parent_tfmx, 3, 170, 1, 9999 );
 advconfig_integer_factory cfg_default_fade( "Default fade time (seconds)", guid_cfg_default_fade, guid_cfg_parent_tfmx, 4, 10, 0, 99 );
 
 BYTE get_compat(UINT mdat,UINT smpl);
@@ -253,41 +252,7 @@ void CTFMXSource::init_song()
 		}
 	}
 
-	if (!has_len)
-	{
-		if (!song_lengths[cur_song])
-		{
-			unsigned max_len = 30 * 60 * outRate;
-			startPat = -1;
-			eClocks = 14318;
-			TfmxInit();
-			StartSong(cur_song, 0);
-			song_len = 0;
-			while (loop_cnt < cfg_loop_count)
-			{
-				U16 lastpos = pdb.CurrPos;
-				track_ended = false;
-				tfmxIrqIn();
-				if (track_ended && pdb.CurrPos < lastpos) ++loop_cnt;
-				n_samples=(eClocks*(outRate>>1));
-				eRem+=(n_samples%357955);
-				n_samples/=357955;
-				if (eRem>357955) {n_samples++;eRem-=357955;}
-				song_len += n_samples;
-				if (song_len >= max_len)
-				{
-					song_len = -1;
-					break;
-				}
-				if (!mdb.PlayerEnable) break;
-			}
-			song_lengths[cur_song] = song_len;
-		}
-		else song_len = song_lengths[cur_song];
-
-		fade_len = cfg_default_fade.get() * outRate;
-		if (song_len < 0) song_len = 0;
-	}
+	if (!has_len) {song_len = cfg_default_length.get() * outRate; fade_len = cfg_default_fade.get() * outRate;}
 
 	has_len = !cfg_infinite.get();
 
@@ -306,31 +271,6 @@ void CTFMXSource::init_song()
 
 	lp_l=lp_r=0;
 
-}
-
-int CTFMXSource::GetSongCount()
-{
-	int song_count = 0;
-	int max_songs = tag ? tag->songs.get_count() : 16;
-	for ( int i = 0; i < max_songs; ++i )
-	{
-		cur_song = i;
-		init_song();
-		if ( song_len ) ++song_count;
-	}
-	return song_count;
-}
-
-int CTFMXSource::GetSong(int song)
-{
-	int max_songs = tag ? tag->songs.get_count() : 16;
-	for ( int i = 0; i < max_songs; ++i )
-	{
-		cur_song = i;
-		init_song();
-		if ( song_len && !song-- ) return i;
-	}
-	return 0;
 }
 
 int CTFMXSource::Open( service_ptr_t<file> & r, const char *url, int track, abort_callback & p_abort )
@@ -358,14 +298,6 @@ int CTFMXSource::Open( service_ptr_t<file> & r, const char *url, int track, abor
 	}
 
 	if ( load_tfmx( r, url, p_abort ) ) return 1;
-
-	unsigned song_count = tag ? tag->songs.get_count() : 16;
-	for ( unsigned i = 0; i < song_count; ++i )
-	{
-		cur_song = i;
-		song_lengths[i] = 0;
-		init_song();
-	}
 
 	cur_song = track;
 
@@ -478,9 +410,9 @@ int CTFMXSource::SetPosition(double pos)
 }
 
 
-double CTFMXSource::GetLength(int song)
+double CTFMXSource::GetLength(void)
 {
-	return (double)(song_lengths[song] + fade_len)/(double)outRate;
+	return (double)(song_len + fade_len)/(double)outRate;
 }
 
 CTFMXSource::~CTFMXSource()

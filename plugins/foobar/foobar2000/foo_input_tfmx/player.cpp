@@ -692,6 +692,7 @@ void CTFMXSource::GetTrackStep()
 			else if (mdb.TrackLoop<0)
 				mdb.TrackLoop=l[3];
 			pdb.CurrPos=l[2];
+			loop_cnt++;
 			goto loop;
 		case 2: /* speed */
 			mdb.SpeedCnt=pdb.Prescale=l[2];
@@ -864,7 +865,6 @@ void CTFMXSource::DoTracks()
 		mdb.SpeedCnt=pdb.Prescale;
 		for (x=0;x<8;x++) {
 			if (DoTrack(&pdb.p[x],x)) {
-				track_ended = true;
 				x=-1;
 				continue;
 			}
@@ -929,7 +929,6 @@ void CTFMXSource::StartSong(int song, int mode)
 	mdb.FadeSlope=0;
 	mdb.TrackLoop=-1;
 	mdb.PlayPattFlag=0;
-	loop_cnt=0;
 	eClocks=14318; /* assume 125bpm, NTSC timing */
 	mdb.CIASave=14318;
 	if (mode!=2) {
