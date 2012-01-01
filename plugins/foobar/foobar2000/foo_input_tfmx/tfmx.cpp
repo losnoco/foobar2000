@@ -205,7 +205,7 @@ static bool GetSampleFile( const char * mfn, pfc::string8 & sfn, abort_callback 
 	
 	if (!_stricmp(mfn+p+1,"tfx"))
 	{
-		strcpy(&tmp[p+1],"sam");
+		strcpy(&tmp[p+1],!strcmp(mfn+p+1,"TFX")?"SAM":"sam");
 		if (filesystem::g_exists(tmp, p_abort))
 		{
 			sfn = tmp;
@@ -215,7 +215,7 @@ static bool GetSampleFile( const char * mfn, pfc::string8 & sfn, abort_callback 
 	}
 	else if (!_stricmp(mfn+p+1,"mdat"))
 	{
-		strcpy(&tmp[p+1],"smpl");
+		strcpy(&tmp[p+1],!strcmp(mfn+p+1,"MDAT")?"SMPL":"smpl");
 		if (filesystem::g_exists(tmp, p_abort))
 		{
 			sfn = tmp;
@@ -225,7 +225,7 @@ static bool GetSampleFile( const char * mfn, pfc::string8 & sfn, abort_callback 
 	}
 	else if (!memcmp(mfn+p-4,"mdat",4) || !memcmp(mfn+p-4,"MDAT",4))
 	{
-		memcpy(tmp+p-4,"smpl",4);
+		memcpy(tmp+p-4,!memcmp(mfn+p-4,"MDAT",4)?"SMPL":"smpl",4);
 		if (filesystem::g_exists( tmp, p_abort ))
 		{
 			sfn = tmp;

@@ -3,11 +3,15 @@
 
 #include <stdafx.h>
 
-#define MYVERSION "0.7"
+#define MYVERSION "0.8"
 
 /*
 
 	change log
+
+2012-01-01 22:59 UTC - kode54
+- Fixed sample file extension case sensitivity issues
+- Version is now 0.8
 
 2011-12-31 18:51 UTC - kode54
 - Rolled back all changes since 0.5
