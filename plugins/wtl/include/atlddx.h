@@ -139,15 +139,17 @@ namespace WTL
 	}
 
 // DDX support for Tab, Combo, ListBox and ListView selection index
-// Note: ListView selection DDX support requires atlctrls.h included first
+// Note: Specialized versions require atlctrls.h to be included first
 #define DDX_INDEX(CtrlClass, nID, var) \
 	if(nCtlID == (UINT)-1 || nCtlID == nID) \
 		DDX_Index<CtrlClass>(nID, var, bSaveAndValidate);
 
-#define DDX_TAB_INDEX(nID, var)      DDX_INDEX(WTL::CTabCtrl, nID, var)
-#define DDX_COMBO_INDEX(nID, var)    DDX_INDEX(WTL::CComboBox, nID, var)
-#define DDX_LISTBOX_INDEX(nID, var)  DDX_INDEX(WTL::CListBox, nID, var)
-#define DDX_LISTVIEW_INDEX(nID, var) DDX_INDEX(WTL::CListViewCtrl, nID, var)
+#ifdef __ATLCTRLS_H__
+  #define DDX_TAB_INDEX(nID, var)      DDX_INDEX(WTL::CTabCtrl, nID, var)
+  #define DDX_COMBO_INDEX(nID, var)    DDX_INDEX(WTL::CComboBox, nID, var)
+  #define DDX_LISTBOX_INDEX(nID, var)  DDX_INDEX(WTL::CListBox, nID, var)
+  #define DDX_LISTVIEW_INDEX(nID, var) DDX_INDEX(WTL::CListViewCtrl, nID, var)
+#endif // __ATLCTRLS_H__
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -618,29 +620,27 @@ public:
 	template <class TCtrl>
 	void _setSel(TCtrl& tCtrl, INT iSel)
 	{
-		if (iSel < 0)
-		{
+		if(iSel < 0)
 			tCtrl.SetCurSel(-1);
-		}
-		else tCtrl.SetCurSel(iSel);
+		else
+			tCtrl.SetCurSel(iSel);
 	}
 
 #ifdef __ATLCTRLS_H__
 	// ListViewCtrl specialization
 	template <>
-	INT _getSel(CListViewCtrl& tCtrl)
+	INT _getSel(WTL::CListViewCtrl& tCtrl)
 	{
 		return tCtrl.GetSelectedIndex();
 	}
 
 	template <>
-	void _setSel(CListViewCtrl& tCtrl, INT iSel)
+	void _setSel(WTL::CListViewCtrl& tCtrl, INT iSel)
 	{
-		if (iSel < 0)
-		{
-			tCtrl.SetItemState(-1, 0, LVIS_SELECTED);
-		}
-		else tCtrl.SelectItem(iSel);
+		if(iSel < 0)
+			tCtrl.SelectItem(-1);
+		else
+			tCtrl.SelectItem(iSel);
 	}
 #endif // __ATLCTRLS_H__
 
@@ -648,17 +648,12 @@ public:
 	void DDX_Index(UINT nID, INT& nVal, BOOL bSave)
 	{
 		T* pT = static_cast<T*>(this);
-
 		TCtrl ctrl(pT->GetDlgItem(nID));
 
 		if(bSave)
-		{
 			nVal = _getSel(ctrl);
-		}
 		else
-		{
 			_setSel(ctrl, nVal);
-		}
 	}
 
 // Overrideables
