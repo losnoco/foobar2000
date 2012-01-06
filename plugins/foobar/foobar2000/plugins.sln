@@ -163,9 +163,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "residfp-builder", "..\..\si
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "resid-builder", "..\..\sidplay-residfp\trunk\libsidplayfp\builders\resid-builder\win\VC\resid_builder.vcxproj", "{0EAAA915-CCED-49C1-910B-4955874883C3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vsthost", "foo_midi\vsthost\vsthost.vcxproj", "{5D666F11-5E76-4653-8B5B-32988E4907A0}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 75
+		SccNumberOfProjects = 76
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = http://sabin:8080/tfs/defaultcollection
 		SccLocalPath0 = .
@@ -391,6 +393,9 @@ Global
 		SccProjectUniqueName74 = ..\\..\\sidplay-residfp\\trunk\\libsidplayfp\\builders\\resid-builder\\win\\VC\\resid_builder.vcxproj
 		SccProjectName74 = ../../sidplay-residfp/trunk/libsidplayfp/builders/resid-builder/win/VC
 		SccLocalPath74 = ..\\..\\sidplay-residfp\\trunk\\libsidplayfp\\builders\\resid-builder\\win\\VC
+		SccProjectUniqueName75 = foo_midi\\vsthost\\vsthost.vcxproj
+		SccProjectName75 = foo_midi/vsthost
+		SccLocalPath75 = foo_midi\\vsthost
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -859,6 +864,12 @@ Global
 		{0EAAA915-CCED-49C1-910B-4955874883C3}.Release|Win32.ActiveCfg = Release|Win32
 		{0EAAA915-CCED-49C1-910B-4955874883C3}.Release|Win32.Build.0 = Release|Win32
 		{0EAAA915-CCED-49C1-910B-4955874883C3}.Release|x64.ActiveCfg = Release|Win32
+		{5D666F11-5E76-4653-8B5B-32988E4907A0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5D666F11-5E76-4653-8B5B-32988E4907A0}.Debug|Win32.Build.0 = Debug|Win32
+		{5D666F11-5E76-4653-8B5B-32988E4907A0}.Debug|x64.ActiveCfg = Debug|Win32
+		{5D666F11-5E76-4653-8B5B-32988E4907A0}.Release|Win32.ActiveCfg = Release|Win32
+		{5D666F11-5E76-4653-8B5B-32988E4907A0}.Release|Win32.Build.0 = Release|Win32
+		{5D666F11-5E76-4653-8B5B-32988E4907A0}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
