@@ -1,7 +1,10 @@
-#define MYVERSION "0.9.9.48"
+#define MYVERSION "0.9.9.49"
 
 /*
 	changelog
+
+2012-01-12 11:25 UTC - kode54
+- Further fixes to IT pattern titling
 
 2012-01-12 10:03 UTC - kode54
 - Slight fix to IT pattern titling
@@ -3092,11 +3095,11 @@ class input_mod
 
 	void get_pattern_title( pfc::string_base & p_out, t_uint32 p_pattern )
 	{
-		const char * title = m_info->meta_get( field_title, 0 );
+		const char * title = m_info->meta_get_count_by_name( field_title ) ? m_info->meta_get( field_title, 0 ) : NULL;
 		if ( title ) p_out = title;
 		else p_out.reset();
 
-		if ( m_pattern_titles[ p_pattern ].get_length() && strcmp( p_out, m_pattern_titles[ p_pattern ] ) )
+		if ( p_pattern < m_pattern_titles.get_count() && m_pattern_titles[ p_pattern ].get_length() && strcmp( p_out, m_pattern_titles[ p_pattern ] ) )
 		{
 			if ( title ) p_out += " - ";
 			p_out += m_pattern_titles[ p_pattern ];
@@ -3552,6 +3555,21 @@ public:
 
 				if (dynamic_info)
 				{
+					if ( m_pattern_titles.get_count() )
+					{
+						int pattern = itsd->order[ itsr->order ];
+						if ( pattern != dyn_pattern )
+						{
+							dyn_pattern = pattern;
+							pfc::string8 new_title;
+							pfc::string8 old_title = p_out.meta_get_count_by_name( field_title ) ? p_out.meta_get( field_title, 0 ) : "";
+							get_pattern_title( new_title, pattern );
+							bool changed = !!strcmp( old_title, new_title );
+							if ( new_title.length() ) p_out.meta_set( field_title, new_title );
+							else p_out.meta_remove_field( field_title );
+							if ( changed ) { p_timestamp_delta = written / double( srate ); ret = true; }
+						}
+					}
 					if (dyn_order != itsr->order)
 					{
 						dyn_order = itsr->order;
@@ -3609,24 +3627,6 @@ public:
 
 	bool decode_get_dynamic_info_track( file_info & p_out, double & p_timestamp_delta )
 	{
-		if ( m_pattern_titles.get_count() )
-		{
-			DUMB_IT_SIGDATA * itsd = duh_get_it_sigdata( duh );
-			DUMB_IT_SIGRENDERER * itsr = duh_get_it_sigrenderer( sr );
-			int pattern = itsd->order[ itsr->order ];
-			if ( pattern != dyn_pattern )
-			{
-				dyn_pattern = pattern;
-				pfc::string8 old_title, new_title;
-				const char * old_title_ptr = p_out.meta_get( field_title, 0 );
-				if ( old_title_ptr ) old_title = old_title_ptr;
-				get_pattern_title( new_title, pattern );
-				bool changed = !!strcmp( old_title, new_title );
-				p_out.meta_set( field_title, new_title );
-				if ( changed ) p_timestamp_delta = written / double( srate );
-				return changed;
-			}
-		}
 		return false;
 	}
 
