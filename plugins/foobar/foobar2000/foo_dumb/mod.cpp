@@ -1,7 +1,15 @@
-#define MYVERSION "0.9.9.46"
+#define MYVERSION "0.9.9.48"
 
 /*
 	changelog
+
+2012-01-12 10:03 UTC - kode54
+- Slight fix to IT pattern titling
+- Version is now 0.9.9.48
+
+2012-01-12 09:36 UTC - kode54
+- Now exposes IT pattern titles as song titles, if present
+- Version is now 0.9.9.47
 
 2011-12-28 10:53 UTC - kode54
 - Updated unmo3.dll to version 2.4.0.3.
@@ -1370,7 +1378,7 @@ typedef struct MODMIDICFG
 
 #pragma pack(pop)
 
-static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
+static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, pfc::array_t< pfc::string8 > & pattern_titles, bool meta)
 {
 	PITFILEHEADER pifh = (PITFILEHEADER) ptr;
 	if ((!ptr) || (size < 0x100)) return false;
@@ -1523,18 +1531,27 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 		pos += 8;
 		if ((pos + len <= size) && (len <= 240 * 32) && (len >= 32))
 		{
+			l = len / 32;
+			pattern_titles.set_count( l );
+			for (n = 0; n < l; ++n)
+			{
+				if (*(ptr + pos + n * 32))
+				{
+					pattern_titles[ n ] = string_utf8_from_it((const char *) ptr + pos + n * 32, 32);
+				}
+			}
+
 			if (meta)
 			{
-				l = len / 32;
 				if ( cfg_multi_value_tags )
 				{
 					for (n = 0; n < l; n++)
 					{
-						if (*(ptr + pos + n * 32))
+						if (pattern_titles[ n ].length())
 						{
 							name = pfc::format_int( n, 3 );
 							name += ". ";
-							name += string_utf8_from_it((const char *) ptr + pos + n * 32, 32);
+							name += pattern_titles[ n ];
 							info.meta_add(field_pattern_m, name);
 						}
 					}
@@ -1543,12 +1560,11 @@ static bool ReadIT(const BYTE * ptr, unsigned size, file_info & info, bool meta)
 				{
 					for (n = 0; n < l; n++)
 					{
-						if (*(ptr + pos + n * 32))
+						if (pattern_titles[ n ].length())
 						{
 							name = field_pattern;
 							name << pfc::format_int( n, 3 );
-							value = string_utf8_from_it((const char *) ptr + pos + n * 32, 32);
-							info.meta_add(name, value);
+							info.meta_add(name, pattern_titles[ n ]);
 						}
 					}
 				}
@@ -3049,6 +3065,7 @@ class input_mod
 	float delta;
 	bool no_loop, eof, dynamic_info, read_tag;
 	int dyn_order, dyn_row, dyn_speed, dyn_tempo, dyn_channels, dyn_max_channels;
+	int dyn_pattern;
 	int written;
 	int loop_count;
 	callback_limit_info limit_info;
@@ -3070,6 +3087,21 @@ class input_mod
 	file_info_impl * m_info;
 
 	pfc::ptr_list_t< dumb_subsong_info > m_subsong_info;
+
+	pfc::array_t< pfc::string8 > m_pattern_titles;
+
+	void get_pattern_title( pfc::string_base & p_out, t_uint32 p_pattern )
+	{
+		const char * title = m_info->meta_get( field_title, 0 );
+		if ( title ) p_out = title;
+		else p_out.reset();
+
+		if ( m_pattern_titles[ p_pattern ].get_length() && strcmp( p_out, m_pattern_titles[ p_pattern ] ) )
+		{
+			if ( title ) p_out += " - ";
+			p_out += m_pattern_titles[ p_pattern ];
+		}
+	}
 
 public:
 	input_mod()
@@ -3195,7 +3227,7 @@ public:
 			catch ( const exception_io_data & )       { read_tag = false; }
 		}
 
-		if (is_it) ReadIT(ptr, size, *m_info, !read_tag);
+		if (is_it) ReadIT(ptr, size, *m_info, m_pattern_titles, !read_tag);
 		else ReadDUH(duh, *m_info, !read_tag, is_dos);
 
 		// subsong magic time
@@ -3263,6 +3295,17 @@ public:
 		{
 			if ( info->length >= 0 ) p_info.set_length( double( info->length ) / 65536. );
 		}
+
+		if ( m_pattern_titles.get_count() )
+		{
+			DUMB_IT_SIGDATA * itsd = duh_get_it_sigdata( duh );
+			if ( itsd->n_orders > p_subsong )
+			{
+				pfc::string8 title;
+				get_pattern_title( title, itsd->order[ p_subsong ] );
+				if ( title.length() ) p_info.meta_set( field_title, title );
+			}
+		}
 	}
 
 	t_filestats get_file_stats( abort_callback & p_abort )
@@ -3311,6 +3354,7 @@ public:
 		dynamic_info = !!cfg_dynamic_info;
 		written = 0;
 		dyn_order = dyn_row = dyn_speed = dyn_tempo = dyn_channels = -1;
+		dyn_pattern = -1;
 		dyn_max_channels = 0;
 	}
 
@@ -3565,6 +3609,24 @@ public:
 
 	bool decode_get_dynamic_info_track( file_info & p_out, double & p_timestamp_delta )
 	{
+		if ( m_pattern_titles.get_count() )
+		{
+			DUMB_IT_SIGDATA * itsd = duh_get_it_sigdata( duh );
+			DUMB_IT_SIGRENDERER * itsr = duh_get_it_sigrenderer( sr );
+			int pattern = itsd->order[ itsr->order ];
+			if ( pattern != dyn_pattern )
+			{
+				dyn_pattern = pattern;
+				pfc::string8 old_title, new_title;
+				const char * old_title_ptr = p_out.meta_get( field_title, 0 );
+				if ( old_title_ptr ) old_title = old_title_ptr;
+				get_pattern_title( new_title, pattern );
+				bool changed = !!strcmp( old_title, new_title );
+				p_out.meta_set( field_title, new_title );
+				if ( changed ) p_timestamp_delta = written / double( srate );
+				return changed;
+			}
+		}
 		return false;
 	}
 
