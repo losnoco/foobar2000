@@ -5,6 +5,7 @@
 
 2012-01-15 12:04 UTC - kode54
 - Reverted some half-assed changes to the VGM parser
+- Fixed VGM files with idiot silence loops
 - Version is now 1.118
 
 2011-12-17 08:57 UTC - kode54
