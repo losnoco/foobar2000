@@ -8,7 +8,8 @@
 #endif
 
 // #define FOOBAR2000_TARGET_VERSION 75 // 0.9.6
-#define FOOBAR2000_TARGET_VERSION 76 // 1.0
+// #define FOOBAR2000_TARGET_VERSION 76 // 1.0
+#define FOOBAR2000_TARGET_VERSION 77 // 1.1
 
 #include "../../pfc/pfc.h"
 
@@ -52,6 +53,7 @@ typedef const char * pcchar;
 #include "event_logger.h"
 #include "input.h"
 #include "input_impl.h"
+#include "decode_postprocessor.h"
 #include "menu.h"
 #include "contextmenu.h"
 #include "contextmenu_manager.h"
@@ -101,5 +103,7 @@ typedef const char * pcchar;
 #include "playback_stream_capture.h"
 #include "http_client.h"
 #include "exceptions.h"
+
+#include "progress_meter.h"
 
 #endif //_FOOBAR2000_H_

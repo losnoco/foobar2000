@@ -107,7 +107,9 @@ public:
 //! \since 1.0
 //! Implements a preferences page instance. \n
 //! Instantiated through preferences_page_v3::instantiate(). \n
-//! Note that the window will be destroyed by the caller before the last reference to the preferences_page_instance is released, so you don't need special workarounds to ensure that the object doesn't get deleted while the window is still active - use simple service_impl_t<> when creating your instances.
+//! Note that the window will be destroyed by the caller before the last reference to the preferences_page_instance is released. \n
+//! WARNING: misguided use of modal dialogs - or ANY windows APIs that might spawn such dialogs - may result in conditions when the owner dialog (along with your page) is destroyed somewhere inside your message handler, also releasing references to your object. \n
+//! It is recommended to use window_service_impl_t<> from ATLHelpers to instantiate preferences_page_instances, or preferences_page_impl<> framework for your preferences_page code to cleanly workaround such cases.
 class preferences_page_instance : public service_base {
 	FB2K_MAKE_SERVICE_INTERFACE(preferences_page_instance, service_base)
 public:

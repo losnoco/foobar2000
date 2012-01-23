@@ -623,7 +623,7 @@ private:
 	t_size m_count;
 };
 
-template<typename item, template<typename> class alloc> class traits_t<list_t<item, alloc> > : public traits_combined<alloc<item>, traits_vtable> {};
+template<typename item, template<typename> class alloc> class traits_t<list_t<item, alloc> > : public combine_traits<traits_t<alloc<item> >, traits_vtable> {};
 
 }
 #endif //_PFC_LIST_H_

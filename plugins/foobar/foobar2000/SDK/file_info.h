@@ -170,6 +170,7 @@ public:
 	void		copy_meta_single_rename_ex(const file_info & p_source,t_size p_index,const char * p_new_name,t_size p_new_name_length);
 	inline void	copy_meta_single_rename(const file_info & p_source,t_size p_index,const char * p_new_name) {copy_meta_single_rename_ex(p_source,p_index,p_new_name,pfc_infinite);}
 	void		overwrite_info(const file_info & p_source);
+	void		overwrite_meta(const file_info & p_source);
 
 	t_int64 info_get_int(const char * name) const;
 	t_int64 info_get_length_samples() const;

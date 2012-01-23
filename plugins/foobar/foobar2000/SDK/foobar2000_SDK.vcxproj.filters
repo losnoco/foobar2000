@@ -2,11 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{002383b1-462e-4513-85c6-4ec02e980b23}</UniqueIdentifier>
+      <UniqueIdentifier>{6c35c7a7-723a-401f-acdc-c63af942abae}</UniqueIdentifier>
       <Extensions>*.h</Extensions>
     </Filter>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{26adad47-9c4d-475d-bb4e-203d1d23e5a2}</UniqueIdentifier>
+      <UniqueIdentifier>{3b2ccd60-8f0c-4241-830a-fda069a5d440}</UniqueIdentifier>
       <Extensions>*.cpp</Extensions>
     </Filter>
   </ItemGroup>
@@ -68,10 +68,13 @@
     <ClInclude Include="contextmenu_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="core_api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="coreversion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="core_api.h">
+    <ClInclude Include="decode_postprocessor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="dsp.h">
@@ -86,12 +89,6 @@
     <ClInclude Include="exceptions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="filesystem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="filesystem_helper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="file_info.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -99,6 +96,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="file_operation_callback.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="filesystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="filesystem_helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="foobar2000.h">
@@ -167,6 +170,9 @@
     <ClInclude Include="packet_decoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="play_callback.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="playable_location.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -180,9 +186,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="playlist_loader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="play_callback.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="popup_message.h">
@@ -239,7 +242,7 @@
     <ClInclude Include="vis.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="decode_postprocessor.h">
+    <ClInclude Include="progress_meter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -286,12 +289,6 @@
     <ClCompile Include="dsp_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="filesystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="filesystem_helper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="file_info.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -302,6 +299,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="file_operation_callback.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="filesystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="filesystem_helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="guids.cpp">

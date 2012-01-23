@@ -175,6 +175,8 @@ public:
 	t_size skip_first_samples(t_size samples);
 	void set_silence(t_size samples);
 
+	bool process_skip(double & skipDuration);
+
 	//! Simple function to get original PCM stream back. Assumes host's endianness, integers are signed - including the 8bit mode; 32bit mode assumed to be float.
 	//! @returns false when the conversion could not be performed because of unsupported bit depth etc.
 	bool to_raw_data(class mem_block_container & out, t_uint32 bps) const;

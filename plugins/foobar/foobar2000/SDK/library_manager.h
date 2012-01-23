@@ -42,8 +42,8 @@ public:
 	//! Pops up the Media Library preferences page.
 	virtual void show_preferences() = 0;
 
-	//! Deprecated, does nothing.
-	__declspec(deprecated) virtual void rescan() = 0;
+	//! Deprecated, do not call.
+	virtual void rescan() = 0;
 	
 	//! Deprecated, does nothing.
 	__declspec(deprecated) virtual void check_dead_entries(const pfc::list_base_t<metadb_handle_ptr> & p_list) = 0;

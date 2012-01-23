@@ -262,6 +262,23 @@ void audio_chunk::insert_silence_fromstart(t_size samples) {
 	set_sample_count(get_sample_count() + samples);
 }
 
+bool audio_chunk::process_skip(double & skipDuration) {
+	t_uint64 skipSamples = audio_math::time_to_samples(skipDuration, get_sample_rate());
+	if (skipSamples == 0) {skipDuration = 0; return true;}
+	const t_size mySamples = get_sample_count();
+	if (skipSamples < mySamples) {
+		skip_first_samples((t_size)skipSamples); 
+		skipDuration = 0;
+		return true;
+	}
+	if (skipSamples == mySamples) {
+		skipDuration = 0;
+		return false;
+	}
+	skipDuration -= audio_math::samples_to_time(mySamples, get_sample_rate());
+	return false;
+}
+
 t_size audio_chunk::skip_first_samples(t_size samples_delta)
 {
 	t_size samples_old = get_sample_count();

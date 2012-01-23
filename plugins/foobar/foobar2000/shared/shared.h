@@ -16,11 +16,7 @@
 #include <ddeml.h>
 #include <commctrl.h>
 #include <uxtheme.h>
-#if (NTDDI_VERSION >= NTDDI_VISTA)
-#include <vssym32.h>
-#else
 #include <tmschema.h>
-#endif
 
 #ifndef NOTHROW
 #ifdef _MSC_VER
@@ -132,6 +128,11 @@ public:
 typedef uGetOpenFileNameMultiResult * puGetOpenFileNameMultiResult;
 
 puGetOpenFileNameMultiResult SHARED_EXPORT uGetOpenFileNameMulti(HWND parent,const char * p_ext_mask,unsigned def_ext_mask,const char * p_def_ext,const char * p_title,const char * p_directory);
+
+// new in fb2k 1.1.1
+puGetOpenFileNameMultiResult SHARED_EXPORT uBrowseForFolderEx(HWND parent,const char * title, const char * initPath);
+puGetOpenFileNameMultiResult SHARED_EXPORT uEvalKnownFolder(const GUID& id);
+
 
 class NOVTABLE uFindFile
 {
@@ -844,6 +845,8 @@ public:
 	CoTaskMemObject() : m_ptr() {}
 
 	~CoTaskMemObject() {CoTaskMemFree(m_ptr);}
+	void Reset() {CoTaskMemFree(pfc::replace_null_t(m_ptr));}
+	TPtr * Receive() {Reset(); return &m_ptr;}
 
 	TPtr m_ptr;
 	PFC_CLASS_NOT_COPYABLE(CoTaskMemObject, CoTaskMemObject<TPtr> );

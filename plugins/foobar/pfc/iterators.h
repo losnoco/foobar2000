@@ -83,7 +83,7 @@ namespace pfc {
 	class comparator_list {
 	public:
 		template<typename t_list1, typename t_list2>
-		static int compare(const t_list1 & p_list1, const t_list2 p_list2) {
+		static int compare(const t_list1 & p_list1, const t_list2 & p_list2) {
 			typename t_list1::const_iterator iter1 = p_list1.first();
 			typename t_list2::const_iterator iter2 = p_list2.first();
 			for(;;) {

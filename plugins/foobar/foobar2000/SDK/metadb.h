@@ -182,6 +182,17 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(metadb_io_callback);
 };
 
+//! \since 1.1
+//! Callback service receiving notifications about user-triggered tag edits. \n
+//! You want to use metadb_io_callback instead most of the time, unless you specifically want to track tag edits for purposes other than updating user interface.
+class NOVTABLE metadb_io_edit_callback : public service_base {
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(metadb_io_edit_callback)
+public:
+	//! Called after the user has edited tags on a set of files.
+	typedef const pfc::list_base_const_t<const file_info*> & t_infosref;
+	virtual void on_edited(metadb_handle_list_cref items, t_infosref before, t_infosref after) = 0;
+};
+
 //! Entrypoint service for metadb_handle related operations.\n
 //! Implemented only by core, do not reimplement.\n
 //! Use static_api_ptr_t template to access it, e.g. static_api_ptr_t<metadb>()->handle_create(myhandle,mylocation);
@@ -316,4 +327,76 @@ public:
 private:
 	metadb_handle_list m_handles;
 	pfc::array_t<file_info_impl> m_infos;
+};
+
+
+//! \since 1.1
+// typedef hasher_md5_result metadb_index_hash;
+typedef t_uint64 metadb_index_hash;
+
+
+//! \since 1.1
+class NOVTABLE metadb_index_client : public service_base {
+	FB2K_MAKE_SERVICE_INTERFACE(metadb_index_client, service_base)
+public:
+	virtual metadb_index_hash transform(const file_info & info, const playable_location & location) = 0;
+
+	bool hashHandleLocked(metadb_handle_ptr const & h, metadb_index_hash & out) {
+		const file_info * i;
+		if (!h->get_info_locked(i)) return false;
+		out = transform(*i, h->get_location());
+		return true;
+	}
+
+	static metadb_index_hash from_md5(hasher_md5_result const & in) {return in.xorHalve();}
+};
+
+//! \since 1.1
+class NOVTABLE metadb_index_manager : public service_base {
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(metadb_index_manager)
+public:
+	virtual void add(metadb_index_client::ptr client, const GUID & index_id, t_filetimestamp userDataRetentionPeriod) = 0;
+	virtual void remove(const GUID & index_id) = 0;
+	virtual void set_user_data(const GUID & index_id, const metadb_index_hash & hash, const void * data, t_size dataSize) = 0;
+	virtual void get_user_data(const GUID & index_id, const metadb_index_hash & hash, mem_block_container & out) = 0;
+
+
+	template<typename t_array> void get_user_data_t(const GUID & index_id, const metadb_index_hash & hash, t_array & out) {
+		mem_block_container_ref_impl<t_array> ref(out);
+		get_user_data(index_id, hash, ref);
+	}
+
+	t_size get_user_data_here(const GUID & index_id, const metadb_index_hash & hash, void * out, t_size outSize) {
+		mem_block_container_temp_impl ref(out, outSize);
+		get_user_data(index_id, hash, ref);
+		return ref.get_size();
+	}
+
+	virtual void dispatch_refresh(const GUID & index_id, const pfc::list_base_const_t<metadb_index_hash> & hashes) = 0;
+	
+	void dispatch_refresh(const GUID & index_id, const metadb_index_hash & hash) {
+		pfc::list_single_ref_t<metadb_index_hash> l(hash);
+		dispatch_refresh(index_id, l);
+	}
+
+	virtual void dispatch_global_refresh() = 0;
+
+	//! Efficiently retrieves metadb_handles of items present in the Media Library matching the specified index value. \n
+	//! This can be called from the app main thread only (interfaces with the library_manager API).
+	virtual void get_ML_handles(const GUID & index_id, const metadb_index_hash & hash, metadb_handle_list_ref out) = 0;
+
+	//! Retrieves all known hash values for this index.
+	virtual void get_all_hashes(const GUID & index_id, pfc::list_base_t<metadb_index_hash> & out) = 0;
+
+	//! Determines whether a no longer needed user data file for this index exists. \n
+	//! For use with index IDs that are not currently registered only.
+	virtual bool have_orphaned_data(const GUID & index_id) = 0;
+
+	//! Deletes no longer needed index user data files. \n
+	//! For use with index IDs that are not currently registered only.
+	virtual void erase_orphaned_data(const GUID & index_id) = 0;
+
+	//! Saves index user data file now. You normally don't need to call this; it's done automatically when saving foobar2000 configuration. \n
+	//! This will throw exceptions in case of a failure (out of disk space etc).
+	virtual void save_index_data(const GUID & index_id) = 0;
 };

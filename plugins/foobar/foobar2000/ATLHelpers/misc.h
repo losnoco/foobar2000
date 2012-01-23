@@ -383,7 +383,9 @@ public:
 	END_MSG_MAP()
 };
 
+
 static bool window_service_trait_defer_destruction(const service_base *) {return true;}
+
 
 //! Special service_impl_t replacement for service classes that also implement ATL/WTL windows.
 template<typename _t_base>
@@ -515,6 +517,9 @@ public:
 	void ShowTip(UINT id, const TCHAR * label) {
 		m_tip.Show(label, GetDlgItem(id));
 	}
+	void ShowTip(HWND child, const TCHAR * label) {
+		m_tip.Show(label, child);
+	}
 
 	void ShowTipF(UINT id, const TCHAR * label) {
 		m_tip.ShowFocus(label, GetDlgItem(id));
@@ -591,10 +596,11 @@ public:
 	preferences_page_instance_impl(HWND parent, preferences_page_callback::ptr callback) : TDialog(callback) {WIN32_OP(this->Create(parent) != NULL);}
 	HWND get_wnd() {return this->m_hWnd;}
 };
+static bool window_service_trait_defer_destruction(const preferences_page_instance *) {return false;}
 template<typename TDialog> class preferences_page_impl : public preferences_page_v3 {
 public:
 	preferences_page_instance::ptr instantiate(HWND parent, preferences_page_callback::ptr callback) {
-		return new service_impl_t<preferences_page_instance_impl<TDialog> >(parent, callback);
+		return new window_service_impl_t<preferences_page_instance_impl<TDialog> >(parent, callback);
 	}
 };
 
@@ -680,45 +686,112 @@ private:
 };
 
 
-class CSeparator : public CContainedWindowT<CStatic>, private CMessageMap {
+void PaintSeparatorControl(CWindow wnd);
+
+class CStaticSeparator : public CContainedWindowT<CStatic>, private CMessageMap {
 public:
-	CSeparator() : CContainedWindowT<CStatic>(this, 0) {}
+	CStaticSeparator() : CContainedWindowT<CStatic>(this, 0) {}
 	BEGIN_MSG_MAP_EX(CSeparator)
 		MSG_WM_PAINT(OnPaint)
+		MSG_WM_SETTEXT(OnSetText)
 	END_MSG_MAP()
 private:
+	int OnSetText(LPCTSTR lpstrText) {
+		Invalidate();
+		SetMsgHandled(FALSE);
+		return 0;
+	}
 	void OnPaint(CDCHandle) {
-		CPaintDC dc(*this);
-		TCHAR buffer[512] = {};
-		GetWindowText(buffer, _countof(buffer));
-		const int txLen = pfc::strlen_max_t(buffer, _countof(buffer));
-		CRect contentRect;
-		WIN32_OP_D( GetClientRect(contentRect) );
-		SelectObjectScope scopeFont(dc, GetFont());
-		dc.SetTextColor(GetSysColor(COLOR_WINDOWTEXT));
-		dc.SetBkMode(TRANSPARENT);
-		
-		if (txLen > 0) {
-			CRect rcText(contentRect);
-			WIN32_OP_D( dc.DrawText(buffer,txLen,rcText,DT_NOPREFIX | DT_END_ELLIPSIS | DT_SINGLELINE | DT_VCENTER | DT_LEFT ) > 0);
-		}
+		PaintSeparatorControl(*this);
+	}
+};
 
-		SIZE txSize, probeSize;
-		const TCHAR probe[] = _T("#");
-		if (dc.GetTextExtent(buffer,txLen,&txSize) && dc.GetTextExtent(probe, _countof(probe), &probeSize)) {
-			int spacing = txSize.cx > 0 ? (probeSize.cx / 4) : 0;
-			if (txSize.cx + spacing < contentRect.Width()) {
-				const CPoint center = contentRect.CenterPoint();
-				CRect rcEdge(contentRect.left + txSize.cx + spacing, center.y, contentRect.right, contentRect.bottom);
-				WIN32_OP_D( dc.DrawEdge(rcEdge, EDGE_ETCHED, BF_TOP) );
-			}
+class CWindowClassUnregisterScope {
+public:
+	CWindowClassUnregisterScope() : name() {}
+	const TCHAR * name;
+	void Set(const TCHAR * n) {PFC_ASSERT( name == NULL ); name = n; }
+	bool IsActive() const {return name != NULL;}
+	void CleanUp() {
+		const TCHAR * n = name; name = NULL;
+		if (n != NULL) WIN32_OP_D( UnregisterClass(n, (HINSTANCE)&__ImageBase) );
+	}
+	~CWindowClassUnregisterScope() {CleanUp();}
+};
+
+template<typename TClass, typename TBaseClass = CWindow>
+class CWindowRegisteredT : public TBaseClass {
+public:
+	static UINT GetClassStyle() {
+		return CS_VREDRAW | CS_HREDRAW;
+	}
+	static HCURSOR GetCursor() {
+		return ::LoadCursor(NULL, IDC_ARROW);
+	}
+
+	BEGIN_MSG_MAP_EX(CWindowRegisteredT)
+	END_MSG_MAP()
+
+
+	static void Register() {
+		static CWindowClassUnregisterScope scope;
+		if (!scope.IsActive()) {
+			WNDCLASS wc = {};
+			wc.style = TClass::GetClassStyle();
+			wc.cbWndExtra = sizeof(void*);
+			wc.lpszClassName = TClass::GetClassName();
+			wc.lpfnWndProc = myWindowProc;
+			wc.hInstance = (HINSTANCE)&__ImageBase;
+			wc.hCursor = TClass::GetCursor();
+			WIN32_OP( RegisterClass(&wc) != 0 );
+			scope.Set(wc.lpszClassName);
 		}
-		
+	}
+protected:
+	virtual ~CWindowRegisteredT() {}
+private:
+	static LRESULT CALLBACK myWindowProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
+		TClass * i = NULL;
+		if (msg == WM_NCCREATE) {
+			TClass * i = new TClass;
+			i->Attach(wnd);
+			::SetWindowLongPtr(wnd, 0, reinterpret_cast<LONG_PTR>(i));
+		} else {
+			i = reinterpret_cast<TClass*>( ::GetWindowLongPtr(wnd, 0) );
+		}
+		LRESULT r;
+		if (i == NULL || !i->ProcessWindowMessage(wnd, msg, wp, lp, r)) r = ::DefWindowProc(wnd, msg, wp, lp);
+		if (msg == WM_NCDESTROY) {
+			::SetWindowLongPtr(wnd, 0, 0);
+			delete i;
+		}
+		return r;
 	}
 };
 
 
-
+template<typename TClass>
+class CTextControl : public CWindowRegisteredT<TClass> {
+public:
+	BEGIN_MSG_MAP_EX(CTextControl)
+		MSG_WM_SETFONT(OnSetFont)
+		MSG_WM_GETFONT(OnGetFont)
+		MSG_WM_SETTEXT(OnSetText)
+		CHAIN_MSG_MAP(__super)
+	END_MSG_MAP()
+private:
+	HFONT OnGetFont() {
+		return m_font;
+	}
+	void OnSetFont(HFONT font, BOOL bRedraw) {
+		m_font = font;
+		if (bRedraw) Invalidate();
+	}
+	int OnSetText(LPCTSTR lpstrText) {
+		Invalidate();SetMsgHandled(FALSE); return 0;
+	}
+	CFontHandle m_font;
+};
 
 #ifndef VSCLASS_TEXTSTYLE
 //
@@ -752,16 +825,23 @@ enum CONTROLLABELSTATES {
 
 #endif
 
+
 class CStaticThemed : public CContainedWindowT<CStatic>, private CMessageMap {
 public:
 	CStaticThemed() : CContainedWindowT<CStatic>(this, 0), m_id(), m_fallback() {}
 	BEGIN_MSG_MAP_EX(CStaticThemed)
 		MSG_WM_PAINT(OnPaint)
 		MSG_WM_THEMECHANGED(OnThemeChanged)
+		MSG_WM_SETTEXT(OnSetText)
 	END_MSG_MAP()
 
 	void SetThemePart(int id) {m_id = id; if (m_hWnd != NULL) Invalidate();}
 private:
+	int OnSetText(LPCTSTR lpstrText) {
+		Invalidate();
+		SetMsgHandled(FALSE);
+		return 0;
+	}
 	void OnThemeChanged() {
 		m_theme.Release();
 		m_fallback = false;
@@ -806,4 +886,22 @@ private:
 class CStaticMainInstruction : public CStaticThemed {
 public:
 	CStaticMainInstruction() { SetThemePart(TEXT_MAININSTRUCTION); }
+};
+
+
+
+class CSeparator : public CTextControl<CSeparator> {
+public:
+	BEGIN_MSG_MAP_EX(CSeparator)
+		MSG_WM_PAINT(OnPaint)
+		CHAIN_MSG_MAP(__super)
+	END_MSG_MAP()
+
+	static const TCHAR * GetClassName() {
+		return _T("foobar2000:separator");
+	}
+private:
+	void OnPaint(CDCHandle dc) {
+		PaintSeparatorControl(*this);
+	}
 };

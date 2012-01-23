@@ -36,5 +36,6 @@ static bool ListView_IsItemSelected(HWND p_listview,int p_index) {
 }
 
 void ListView_GetContextMenuPoint(HWND p_list,LPARAM p_coords,POINT & p_point,int & p_selection);
+void ListView_GetContextMenuPoint(HWND p_list,POINT p_coords,POINT & p_point,int & p_selection);
 
 int ListView_GetColumnCount(HWND listView);

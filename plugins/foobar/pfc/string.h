@@ -725,16 +725,44 @@ namespace pfc {
 	private:
 		typedef string_simple_t<t_char> t_self;
 	public:
-		t_size length(t_size p_limit = ~0) const {return pfc::strlen_t(get_ptr(),p_limit);}
-		bool is_empty() const {return length(1) == 0;}
-		void set_string(const t_char * p_source,t_size p_length = ~0) {
-			t_size length = pfc::strlen_t(p_source,p_length);
-			m_buffer.set_size(length + 1);
-			pfc::memcpy_t(m_buffer.get_ptr(),p_source,length);
-			m_buffer[length] = 0;
+		t_size length() const {
+			t_size s = m_buffer.get_size();
+			if (s == 0) return 0; else return s-1;
+		}
+		bool is_empty() const {return m_buffer.get_size() == 0;}
+
+		void set_string_nc(const t_char * p_source, t_size p_length) {
+			if (p_length == 0) {
+				m_buffer.set_size(0);
+			} else {
+				m_buffer.set_size(p_length + 1);
+				pfc::memcpy_t(m_buffer.get_ptr(),p_source,p_length);
+				m_buffer[p_length] = 0;
+			}
+		}
+		void set_string(const t_char * p_source) {
+			set_string_nc(p_source, pfc::strlen_t(p_source));
+		}
+		void set_string(const t_char * p_source, t_size p_length) {
+			set_string_nc(p_source, strlen_max_t(p_source, p_length));
+		}
+		void add_string(const t_char * p_source, t_size p_length) {
+			add_string_nc(p_source, strlen_max_t(p_source, p_length));
+		}
+		void add_string(const t_char * p_source) {
+			add_string_nc(p_source, strlen_t(p_source));
+		}
+		void add_string_nc(const t_char * p_source, t_size p_length) {
+			if (p_length > 0) {
+				t_size base = length();
+				m_buffer.set_size( base + p_length + 1 );
+				memcpy_t(m_buffer.get_ptr() + base, p_source, p_length);
+				m_buffer[base + p_length] = 0;
+			}
 		}
 		string_simple_t() {}
-		string_simple_t(const t_char * p_source,t_size p_length = ~0) {set_string(p_source,p_length);}
+		string_simple_t(const t_char * p_source) {set_string(p_source);}
+		string_simple_t(const t_char * p_source, t_size p_length) {set_string(p_source, p_length);}
 		const t_self & operator=(const t_char * p_source) {set_string(p_source);return *this;}
 		operator const t_char* () const {return get_ptr();}
 		const t_char * get_ptr() const {return m_buffer.get_size() > 0 ? m_buffer.get_ptr() : pfc::empty_string_t<t_char>();}
@@ -753,6 +781,16 @@ namespace pfc {
 	public:
 		inline static int compare(const char * p_item1,const char * p_item2) {return strcmp(p_item1,p_item2);}
 		inline static int compare(const wchar_t * item1, const wchar_t * item2) {return wcscmp(item1, item2);}
+		
+		static int compare(const char * p_item1, string_part_ref p_item2) {
+			return strcmp_ex(p_item1, ~0, p_item2.m_ptr, p_item2.m_len);
+		}
+		static int compare(string_part_ref p_item1, string_part_ref p_item2) {
+			return strcmp_ex(p_item1.m_ptr, p_item1.m_len, p_item2.m_ptr, p_item2.m_len);
+		}
+		static int compare(string_part_ref p_item1, const char * p_item2) {
+			return strcmp_ex(p_item1.m_ptr, p_item1.m_len, p_item2, ~0);
+		}
 	};
 
 	class comparator_stricmp_ascii {
@@ -899,6 +937,16 @@ namespace pfc {
 			}
 			out += string_part(str, next - str);
 			str = next + 1;
+		}
+	}
+	template<typename t_out> void splitStringBySubstring(t_out & out, const char * str, const char * split) {
+		for(;;) {
+			const char * next = strstr(str, split);
+			if (next == NULL) {
+				out += string_part(str, strlen(str)); break;
+			}
+			out += string_part(str, next - str);
+			str = next + strlen(split);
 		}
 	}
 

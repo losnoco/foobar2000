@@ -99,6 +99,14 @@ public:
 		}
 	}
 	void reset() {m_data.remove_all();}
+
+	void fix_itunes_compilation() {
+		static const char cmp[] = "itunescompilation";
+		if (m_data.have_item(cmp)) {
+			// m_data.remove(cmp);
+			if (!m_data.have_item("album artist")) add("album artist", "Various Artists");
+		}
+	}
 private:
 
 	t_entry & _add(const char * p_name) {

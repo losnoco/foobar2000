@@ -6,6 +6,7 @@ enum {
 	input_flag_playback						= 1 << 2,
 	input_flag_testing_integrity			= 1 << 3,
 	input_flag_allow_inaccurate_seeking		= 1 << 4,
+	input_flag_no_postproc					= 1 << 5,
 
 	input_flag_simpledecode = input_flag_no_seeking|input_flag_no_looping,
 };

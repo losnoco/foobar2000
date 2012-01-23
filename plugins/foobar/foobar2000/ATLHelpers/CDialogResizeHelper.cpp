@@ -1,26 +1,41 @@
 #include "stdafx.h"
 
+bool CDialogResizeHelper::EvalRect(UINT id, CRect & out) const {
+	for(t_size walk = 0; walk < m_table.get_size(); ++walk) {
+		if (m_table[walk].id == id) {
+			CRect client; WIN32_OP_D( m_thisWnd.GetClientRect(client) );
+			return _EvalRect(walk, client.Size(), out);
+		}
+	}
+	return false;
+}
+
+bool CDialogResizeHelper::_EvalRect(t_size index, CSize wndSize, CRect & out) const {
+	CRect rc;
+	const Param & e = m_table[index];
+	if (m_origRects.query(e.id, rc)) {
+		int delta_x = wndSize.cx - m_rcOrigClient.right,
+			delta_y = wndSize.cy - m_rcOrigClient.bottom;
+
+		rc.left += pfc::rint32( e.snapLeft * delta_x );
+		rc.right += pfc::rint32( e.snapRight * delta_x );
+		rc.top += pfc::rint32(e.snapTop * delta_y );
+		rc.bottom += pfc::rint32(e.snapBottom * delta_y );
+
+		out = rc;
+		return true;
+	}
+	return false;
+}
+
 void CDialogResizeHelper::OnSize(UINT, CSize newSize)
 {
 	if (m_thisWnd != NULL) {
 		HDWP hWinPosInfo = BeginDeferWindowPos( m_table.get_size() + (m_sizeGrip != NULL ? 1 : 0) );
 		for(t_size n = 0; n < m_table.get_size(); ++n) {
-			CRect rcOrig;
-			const Param & e = m_table[n];
-			CWindow wndItem = m_thisWnd.GetDlgItem(e.id);
-			if (m_origRects.query(e.id, rcOrig) && wndItem != NULL) {
-				int dest_x = rcOrig.left, dest_y = rcOrig.top, 
-					dest_cx = rcOrig.Width(), dest_cy = rcOrig.Height();
-
-				int delta_x = newSize.cx - m_rcOrigClient.right,
-					delta_y = newSize.cy - m_rcOrigClient.bottom;
-
-				dest_x += pfc::rint32( e.snapLeft * delta_x );
-				dest_cx += pfc::rint32( (e.snapRight - e.snapLeft) * delta_x );
-				dest_y += pfc::rint32( e.snapTop * delta_y );
-				dest_cy += pfc::rint32( (e.snapBottom - e.snapTop) * delta_y );
-				
-				DeferWindowPos(hWinPosInfo, wndItem, 0,dest_x,dest_y,dest_cx,dest_cy,SWP_NOZORDER);
+			CRect rc;
+			if (_EvalRect(n, newSize, rc)) {
+				DeferWindowPos(hWinPosInfo, m_thisWnd.GetDlgItem(m_table[n].id), 0, rc.left,rc.top,rc.Width(),rc.Height(),SWP_NOZORDER);
 			}
 		}
 		if (m_sizeGrip != NULL)

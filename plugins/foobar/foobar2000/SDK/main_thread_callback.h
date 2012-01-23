@@ -18,3 +18,17 @@ public:
 
 	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(main_thread_callback_manager);
 };
+
+
+static void main_thread_callback_add(main_thread_callback::ptr ptr) {
+	static_api_ptr_t<main_thread_callback_manager>()->add_callback(ptr);
+}
+template<typename t_class> static void main_thread_callback_spawn() {
+	main_thread_callback_add(new service_impl_t<t_class>);
+}
+template<typename t_class, typename t_param1> static void main_thread_callback_spawn(const t_param1 & p1) {
+	main_thread_callback_add(new service_impl_t<t_class>(p1));
+}
+template<typename t_class, typename t_param1, typename t_param2> static void main_thread_callback_spawn(const t_param1 & p1, const t_param2 & p2) {
+	main_thread_callback_add(new service_impl_t<t_class>(p1, p2));
+}

@@ -56,9 +56,10 @@ class search_filter_manager_v2 : public search_filter_manager {
 public:
 	enum {
 		KFlagAllowSort = 1 << 0,
+		KFlagSuppressNotify = 1 << 1,
 	};
 	//! Creates a search_filter object. Throws an exception on failure (such as an error in the query). It's recommended that you relay the exception message to the user if this function fails.
-	//! @param changeNotify A completion_notify callback object that will get called each time the query's behavior changes as a result of some external event (such as system time change). The caller must refresh query results each time this callback is triggered. The status parameter of it's on_completion() parameter is unused and always set to zero.
+	//! @param changeNotify A completion_notify callback object that will get called each time the query's behavior changes as a result of some external event (such as system time change). The caller must refresh query results each time this callback is triggered. The status parameter of its on_completion() parameter is unused and always set to zero.
 	virtual search_filter_v2::ptr create_ex(const char * query, completion_notify::ptr changeNotify, t_uint32 flags) = 0;
 
 	//! Opens the search query syntax reference document, typically an external HTML in user's default web browser.

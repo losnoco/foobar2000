@@ -126,6 +126,21 @@ namespace foobar2000_io
 		void read_string_ex(pfc::string_base & p_out,t_size p_bytes,abort_callback & p_abort);
 		//! Helper function; reads a string of specified length from the stream.
 		pfc::string read_string_ex(t_size p_len,abort_callback & p_abort);
+
+		template<typename t_outArray>
+		void read_till_eof(t_outArray & out, abort_callback & abort) {
+			pfc::assert_raw_type<typename t_outArray::t_item>();
+			const t_size itemWidth = sizeof(typename t_outArray::t_item);
+			out.set_size(pfc::max_t<t_size>(1,256 / itemWidth)); t_size done = 0;
+			for(;;) {
+				t_size delta = out.get_size() - done;
+				t_size delta2 = read(out.get_ptr() + done, delta * itemWidth, abort ) / itemWidth;
+				done += delta2;
+				if (delta2 != delta) break;
+				out.set_size(out.get_size() << 1);
+			}
+			out.set_size(done);
+		}
 	protected:
 		stream_reader() {}
 		~stream_reader() {}

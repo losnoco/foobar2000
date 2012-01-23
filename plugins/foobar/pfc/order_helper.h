@@ -69,9 +69,9 @@ public:
 
 
 namespace pfc {
-	template<typename t_list>
-	static bool guess_reorder_pattern(pfc::array_t<t_size> & out, const t_list & from, const t_list & to) {
-		typedef typename t_list::t_item t_item;
+	template<typename t_list1, typename t_list2>
+	static bool guess_reorder_pattern(pfc::array_t<t_size> & out, const t_list1 & from, const t_list2 & to) {
+		typedef typename t_list1::t_item t_item;
 		const t_size count = from.get_size();
 		if (count != to.get_size()) return false;
 		out.set_size(count);

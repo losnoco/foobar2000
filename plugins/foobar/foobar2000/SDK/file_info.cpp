@@ -79,6 +79,13 @@ bool file_info::info_remove_ex(const char * p_name,t_size p_name_length)
 	else return false;
 }
 
+void file_info::overwrite_meta(const file_info & p_source) {
+	const t_size total = p_source.meta_get_count();
+	for(t_size walk = 0; walk < total; ++walk) {
+		copy_meta_single(p_source, walk);
+	}
+}
+
 void file_info::copy_meta_single(const file_info & p_source,t_size p_index)
 {
 	copy_meta_single_rename(p_source,p_index,p_source.meta_enum_name(p_index));

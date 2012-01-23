@@ -560,6 +560,19 @@ namespace pfc {
 	t_int multiply_guarded(t_int v1, t_int v2) {
 		return mul_safe_t<exception_overflow>(v1, v2);
 	}
+	template<typename t_int> t_int add_unsigned_clipped(t_int v1, t_int v2) {
+		t_int v = v1 + v2;
+		if (v < v1) return ~0;
+		return v;
+	}
+	template<typename t_int> t_int sub_unsigned_clipped(t_int v1, t_int v2) {
+		t_int v = v1 - v2;
+		if (v > v1) return 0;
+		return v;
+	}
+	template<typename t_int> void acc_unsigned_clipped(t_int & v1, t_int v2) {
+		v1 = add_unsigned_clipped(v1, v2);
+	}
 
 	template<typename t_src,typename t_dst>
 	void memcpy_t(t_dst* p_dst,const t_src* p_src,t_size p_count) {
@@ -790,6 +803,17 @@ namespace pfc {
 	}
 
 	t_uint64 pow_int(t_uint64 base, t_uint64 exp);
+
+
+	template<typename t_val>
+	class incrementScope {
+	public:
+		incrementScope(t_val & i) : v(i) {++v;}
+		~incrementScope() {--v;}
+	private:
+		t_val & v;
+	};
+
 };
 
 
