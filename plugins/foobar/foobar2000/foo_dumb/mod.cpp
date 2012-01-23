@@ -1,7 +1,12 @@
-#define MYVERSION "0.9.9.49"
+#define MYVERSION "0.9.9.50"
 
 /*
 	changelog
+
+2012-01-23 16:49 UTC - kode54
+- Moved MOD vblank timing check into subsong scanning cache
+- Subsong cache size is now configurable
+- Version is now 0.9.9.50
 
 2012-01-12 11:25 UTC - kode54
 - Further fixes to IT pattern titling
@@ -1012,6 +1017,9 @@ static const GUID guid_cfg_fade_time =
 // {D72A249D-63DF-42f8-818A-04FB39482B7D}
 static const GUID guid_cfg_multi_value_tags = 
 { 0xd72a249d, 0x63df, 0x42f8, { 0x81, 0x8a, 0x4, 0xfb, 0x39, 0x48, 0x2b, 0x7d } };
+// {B0B8FC4E-3171-4C88-989A-B2F2306364A4}
+static const GUID guid_cfg_cache_size = 
+{ 0xb0b8fc4e, 0x3171, 0x4c88, { 0x98, 0x9a, 0xb2, 0xf2, 0x30, 0x63, 0x64, 0xa4 } };
 
 enum
 {
@@ -1028,7 +1036,8 @@ enum
 	default_cfg_tag = 0,
 	default_cfg_trim = 0,
 	default_cfg_multi_value_tags = 0,
-	default_cfg_dynamic_info = 0
+	default_cfg_dynamic_info = 0,
+	default_cfg_cache_size = 16384,
 };
 
 static cfg_int cfg_samplerate(guid_cfg_samplerate,default_cfg_samplerate);
@@ -1053,6 +1062,8 @@ static cfg_int cfg_multi_value_tags(guid_cfg_multi_value_tags, default_cfg_multi
 /*static cfg_int cfg_scan_subsongs(guid_cfg_scan_subsongs, 0);*/
 
 static cfg_int cfg_dynamic_info(guid_cfg_dynamic_info, default_cfg_dynamic_info);
+
+static cfg_int cfg_cache_size(guid_cfg_cache_size, default_cfg_cache_size);
 
 extern "C" void init_cubic(void);
 
@@ -1942,7 +1953,7 @@ void dumb_it_convert_tempos( DUMB_IT_SIGDATA * itsd, bool vsync )
 	}
 }
 
-static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * ext, int & start_order, bool & is_it, bool & is_dos)
+static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * ext, int & start_order, bool & is_it, bool & is_dos, bool is_vblank)
 {
 	DUH * duh = 0;
 
@@ -2107,25 +2118,10 @@ static DUH * g_open_module(const t_uint8 * & ptr, unsigned & size, const char * 
 		is_dos = false;
 		memdata.offset = 0;
 		duh = dumb_read_mod_quick(f, ( ! stricmp( ext, exts[ 0 ] ) || ! stricmp( ext, exts[ 1 ] ) ) ? 0 : 1 );
-		if ( duh )
+		if ( duh && is_vblank )
 		{
 			DUMB_IT_SIGDATA * itsd = duh_get_it_sigdata( duh );
-			if ( !dumb_it_test_for_speed_and_tempo( itsd ) )
-			{
-				long length_original = dumb_it_build_checkpoints( itsd, 0 );
-				dumb_it_convert_tempos( itsd, true );
-				long length_vsync = dumb_it_build_checkpoints( itsd, 0 );
-				if ( !length_vsync || (length_original && length_original < length_vsync ) ) dumb_it_convert_tempos( itsd, false );
-				IT_CHECKPOINT *checkpoint = itsd->checkpoint;
-				while ( checkpoint )
-				{
-					IT_CHECKPOINT *next = checkpoint->next;
-					_dumb_it_end_sigrenderer( checkpoint->sigrenderer );
-					free( checkpoint );
-					checkpoint = next;
-				}
-				itsd->checkpoint = NULL;
-			}
+			dumb_it_convert_tempos( itsd, true );
 		}
 	}
 
@@ -2500,6 +2496,7 @@ struct dumb_subsong_info
 
 class dumb_info_scanner
 {
+	bool m_is_vblank;
 	pfc::ptr_list_t< dumb_subsong_info > m_info;
 
 	struct callback_info
@@ -2523,7 +2520,7 @@ class dumb_info_scanner
 	}
 
 public:
-	dumb_info_scanner() {}
+	dumb_info_scanner() : m_is_vblank(false) {}
 	~dumb_info_scanner()
 	{
 		m_info.delete_all();
@@ -2557,7 +2554,7 @@ public:
 				p_abort.check();
 
 				start_order = i;
-				duh = g_open_module( ptr, size, "PSM", start_order, is_it, is_dos );
+				duh = g_open_module( ptr, size, "PSM", start_order, is_it, is_dos, false );
 
 				dumb_subsong_info * song = new dumb_subsong_info;
 
@@ -2574,9 +2571,40 @@ public:
 			callback_info cdata = { m_info, p_abort };
 
 			start_order = 0;
-			duh = g_open_module( ptr, size, ext, start_order, is_it, is_dos );
+			duh = g_open_module( ptr, size, ext, start_order, is_it, is_dos, false );
 
 			start_order = dumb_it_scan_for_playable_orders( duh_get_it_sigdata( duh ), scan_callback, & cdata );
+
+			if ( !start_order && !is_dos )
+			{
+				DUMB_IT_SIGDATA * itsd = duh_get_it_sigdata( duh );
+				if ( !dumb_it_test_for_speed_and_tempo( itsd ) )
+				{
+					pfc::ptr_list_t< dumb_subsong_info > _info;
+					callback_info _cdata = { _info, p_abort };
+					dumb_it_convert_tempos( itsd, true );
+					start_order = dumb_it_scan_for_playable_orders( itsd, scan_callback, & _cdata );
+					if ( !start_order )
+					{
+						long total_length_original = 0;
+						long total_length_vblank = 0;
+						for ( unsigned i = 0; i < m_info.get_count(); ++i ) // Safe to assume that both have the same song count as speed/tempo don't affect song flow control
+						{
+							total_length_original += m_info[ i ]->length;
+							total_length_vblank += _info[ i ]->length;
+						}
+						if ( !total_length_original || ( total_length_vblank && total_length_vblank < total_length_original ) )
+						{
+							for ( unsigned i = 0; i < m_info.get_count(); ++i )
+							{
+								m_info[ i ]->length = _info[ i ]->length;
+							}
+							m_is_vblank = true;
+						}
+					}
+					_info.delete_all();
+				}
+			}
 
 			unload_duh( duh );
 
@@ -2586,7 +2614,7 @@ public:
 		p_abort.check();
 	}
 
-	void get_info( pfc::ptr_list_t< dumb_subsong_info > & out )
+	void get_info( pfc::ptr_list_t< dumb_subsong_info > & out, bool & is_vblank )
 	{
 		for ( unsigned i = 0, j = m_info.get_count(); i < j; ++i )
 		{
@@ -2595,6 +2623,7 @@ public:
 			memcpy( out_item, in, sizeof( * in ) );
 			out.add_item( out_item );
 		}
+		is_vblank = m_is_vblank;
 	}
 };
 
@@ -2604,6 +2633,7 @@ class dumb_info_cache
 	{
 		pfc::string_simple                   path;
 		t_filetimestamp                 timestamp;
+		bool                            is_vblank;
 		pfc::ptr_list_t< dumb_subsong_info > info;
 
 		~t_info()
@@ -2614,38 +2644,75 @@ class dumb_info_cache
 
 	pfc::ptr_list_t< t_info > m_cache;
 
+	volatile unsigned m_cache_count;
+	volatile unsigned m_cache_byte_count;
+
 	critical_section sync;
 
+	static inline size_t get_item_size( const t_info * item )
+	{
+		return sizeof( t_info * ) + sizeof( t_info ) + ( sizeof( dumb_subsong_info ) * item->info.get_count() ) + item->path.length() + 1;
+	}
+
+	void add_item( t_info * item )
+	{
+		m_cache.add_item( item );
+
+		m_cache_count++;
+		m_cache_byte_count += get_item_size( item );
+	}
+
+	void purge_item( unsigned index )
+	{
+		size_t item_size = get_item_size( m_cache[ index ] );
+
+		m_cache.delete_by_idx( index );
+
+		m_cache_count--;
+		m_cache_byte_count -= item_size;
+	}
+
 public:
+	dumb_info_cache() : m_cache_count( 0 ), m_cache_byte_count( 0 ) { }
+
 	~dumb_info_cache()
 	{
 		m_cache.delete_all();
 	}
 
-	void run( const t_uint8 * ptr, unsigned size, const char * p_path, t_filetimestamp p_timestamp, pfc::ptr_list_t< dumb_subsong_info > & p_out, abort_callback & p_abort )
+	void run( const t_uint8 * ptr, unsigned size, const char * p_path, t_filetimestamp p_timestamp, bool & is_vblank, pfc::ptr_list_t< dumb_subsong_info > & p_out, abort_callback & p_abort )
 	{
 		insync( sync );
 
 		for ( unsigned i = 0, j = m_cache.get_count(); i < j; ++i )
 		{
 			t_info * item = m_cache[ i ];
-			if ( ! stricmp_utf8( p_path, item->path ) && p_timestamp == item->timestamp )
+			if ( ! stricmp_utf8( p_path, item->path ) )
 			{
-				for ( unsigned k = 0, l = item->info.get_count(); k < l; ++k )
+				if ( p_timestamp == item->timestamp )
 				{
-					dumb_subsong_info * in = item->info[ k ];
-					dumb_subsong_info * out_item = new dumb_subsong_info;
-					memcpy( out_item, in, sizeof( *in ) );
-					p_out.add_item( out_item );
-				}
+					for ( unsigned k = 0, l = item->info.get_count(); k < l; ++k )
+					{
+						dumb_subsong_info * in = item->info[ k ];
+						dumb_subsong_info * out_item = new dumb_subsong_info;
+						memcpy( out_item, in, sizeof( *in ) );
+						p_out.add_item( out_item );
+					}
+					is_vblank = item->is_vblank;
 
-				if ( i != m_cache.get_count() - 1 )
+					if ( i != m_cache.get_count() - 1 )
+					{
+						m_cache.remove_by_idx( i );
+						m_cache.add_item( item );
+					}
+
+					return;
+				}
+				else
 				{
-					m_cache.remove_by_idx( i );
-					m_cache.add_item( item );
+					purge_item( i );
+					break;
 				}
-
-				return;
 			}
 		}
 
@@ -2662,7 +2729,7 @@ public:
 		}
 
 		{
-			scanner.get_info( item->info );
+			scanner.get_info( item->info, item->is_vblank );
 			for ( unsigned i = 0, j = item->info.get_count(); i < j; ++i )
 			{
 				dumb_subsong_info * in = item->info[ i ];
@@ -2670,16 +2737,32 @@ public:
 				memcpy( out_item, in, sizeof( *in ) );
 				p_out.add_item( out_item );
 			}
+			is_vblank = item->is_vblank;
 
-			while ( m_cache.get_count() >= 10 )
+			while ( m_cache.get_count() >= cfg_cache_size )
 			{
-				m_cache.delete_by_idx( 0 );
+				purge_item( 0 );
 			}
 
 			item->path = p_path;
 			item->timestamp = p_timestamp;
 
-			m_cache.add_item( item );
+			add_item( item );
+		}
+	}
+
+	void get_cache_info( unsigned & count, unsigned & bytes )
+	{
+		count = m_cache_count;
+		bytes = m_cache_byte_count;
+	}
+
+	void shrink_cache( unsigned count )
+	{
+		insync( sync );
+		if ( count < m_cache.get_count() )
+		{
+			for ( unsigned i = m_cache.get_count() - count; i--; ) purge_item( i );
 		}
 	}
 };
@@ -3066,7 +3149,7 @@ class input_mod
 	int srate, interp, volramp;
 	int start_order;
 	float delta;
-	bool no_loop, eof, dynamic_info, read_tag;
+	bool no_loop, eof, dynamic_info, read_tag, is_vblank;
 	int dyn_order, dyn_row, dyn_speed, dyn_tempo, dyn_channels, dyn_max_channels;
 	int dyn_pattern;
 	int written;
@@ -3217,8 +3300,13 @@ public:
 
 		// OutputDebugString("loading module");
 
+		// subsong magic time
+		g_cache.run( ptr, size, p_path, m_file->get_timestamp( p_abort ), is_vblank, m_subsong_info, p_abort );
+
+		if ( p_reason == input_open_info_write ) this->m_file = m_file;
+
 		start_order = 0;
-		duh = g_open_module( ( const t_uint8 *& ) ptr, size, extension, start_order, is_it, is_dos );
+		duh = g_open_module( ( const t_uint8 *& ) ptr, size, extension, start_order, is_it, is_dos, is_vblank );
 
 		if ( read_tag )
 		{
@@ -3232,11 +3320,6 @@ public:
 
 		if (is_it) ReadIT(ptr, size, *m_info, m_pattern_titles, !read_tag);
 		else ReadDUH(duh, *m_info, !read_tag, is_dos);
-
-		// subsong magic time
-		g_cache.run( ptr, size, p_path, m_file->get_timestamp( p_abort ), m_subsong_info, p_abort );
-
-		if ( p_reason == input_open_info_write ) this->m_file = m_file;
 	}
 
 	unsigned get_subsong_count()
@@ -3266,7 +3349,7 @@ public:
 				bool dummy;
 				const t_uint8 * ptr = buffer.get_ptr();
 				unsigned size = buffer.get_size();
-				duh = g_open_module( ptr, size, "PSM", start_order, dummy, dummy );
+				duh = g_open_module( ptr, size, "PSM", start_order, dummy, dummy, false );
 				ReadDUH( duh, p_info, !read_tag, true );
 				unload_duh( duh );
 			}
@@ -3346,7 +3429,7 @@ public:
 		{
 			const t_uint8 * ptr = buffer.get_ptr();
 			unsigned size = buffer.get_size();
-			duh = g_open_module( ptr, size, extension, start_order, is_it, is_dos );
+			duh = g_open_module( ptr, size, extension, start_order, is_it, is_dos, is_vblank );
 		}
 
 		if ( ! open2() ) throw exception_io_data();
@@ -3772,7 +3855,7 @@ void print_time_crap(int ms, char *out)
 class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
 public:
 	//Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us
-	CMyPreferences(preferences_page_callback::ptr callback) : m_callback(callback) {}
+	CMyPreferences(preferences_page_callback::ptr callback) : m_cache_count( 0 ), m_cache_bytes( 0 ), m_callback(callback) {}
 
 	//Note that we don't bother doing anything regarding destruction of our class.
 	//The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
@@ -3788,6 +3871,7 @@ public:
 	//WTL message map
 	BEGIN_MSG_MAP(CMyPreferences)
 		MSG_WM_INITDIALOG(OnInitDialog)
+		MSG_WM_TIMER(OnTimer)
 		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_EDITCHANGE, OnEditChange)
 		COMMAND_HANDLER_EX(IDC_SAMPLERATE, CBN_SELCHANGE, OnSelectionChange)
 		DROPDOWN_HISTORY_HANDLER(IDC_SAMPLERATE, cfg_history_rate)
@@ -3807,6 +3891,7 @@ public:
 	END_MSG_MAP()
 private:
 	BOOL OnInitDialog(CWindow, LPARAM);
+	void OnTimer(UINT_PTR nIDEvent);
 	void OnEditChange(UINT, int, CWindow);
 	void OnSelectionChange(UINT, int, CWindow);
 	void OnButtonClick(UINT, int, CWindow);
@@ -3815,6 +3900,10 @@ private:
 
 	void enable_chip(BOOL status);
 	void enable_fade(BOOL status);
+
+	unsigned m_cache_count, m_cache_bytes;
+
+	void update_cache_info();
 
 	const preferences_page_callback::ptr m_callback;
 };
@@ -3839,6 +3928,20 @@ void CMyPreferences::enable_fade(BOOL status)
 	GetDlgItem(IDC_FADE).EnableWindow(status);
 	GetDlgItem(IDC_FADE_TIME).EnableWindow(status);
 	GetDlgItem(IDC_FADE_TEXT).EnableWindow(status);
+}
+
+void CMyPreferences::update_cache_info()
+{
+	unsigned cache_count, cache_bytes;
+	g_cache.get_cache_info( cache_count, cache_bytes );
+	if ( cache_count != m_cache_count || cache_bytes != m_cache_bytes )
+	{
+		m_cache_count = cache_count;
+		m_cache_bytes = cache_bytes;
+
+		uSetDlgItemText( m_hWnd, IDC_CACHE_COUNT, pfc::format_int( cache_count ) );
+		uSetDlgItemText( m_hWnd, IDC_CACHE_MEMORY, pfc::format_file_size_short( cache_bytes ) );
+	}
 }
 
 BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
@@ -3899,9 +4002,20 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 	SetDlgItemInt( IDC_CHIP_SCAN, cfg_autochip_size_scan, FALSE );
 	SetDlgItemInt( IDC_CHIP_SCAN_THRESHOLD, cfg_autochip_scan_threshold, FALSE );
 
+	SetDlgItemInt( IDC_CACHE_SIZE, cfg_cache_size, FALSE );
+
 	SetWindowLong( DWL_USER, 1 );
 
+	update_cache_info();
+
+	SetTimer( 0, 10 );
+
 	return FALSE;
+}
+
+void CMyPreferences::OnTimer(UINT_PTR nIDEvent)
+{
+	if ( nIDEvent == 0 ) update_cache_info();
 }
 
 void CMyPreferences::OnEditChange(UINT, int, CWindow) {
@@ -3946,6 +4060,7 @@ void CMyPreferences::reset() {
 	SetDlgItemInt( IDC_CHIP_FORCE, default_cfg_autochip_size_force, FALSE );
 	SetDlgItemInt( IDC_CHIP_SCAN, default_cfg_autochip_size_scan, FALSE );
 	SetDlgItemInt( IDC_CHIP_SCAN_THRESHOLD, default_cfg_autochip_scan_threshold, FALSE );
+	SetDlgItemInt( IDC_CACHE_SIZE, default_cfg_cache_size, FALSE );
 
 	OnChanged();
 }
@@ -3992,6 +4107,12 @@ void CMyPreferences::apply() {
 	else if ( t > 100 ) t = 100;
 	SetDlgItemInt( IDC_CHIP_SCAN_THRESHOLD, t, FALSE );
 	cfg_autochip_scan_threshold = t;
+	t = GetDlgItemInt( IDC_CACHE_SIZE, NULL, FALSE );
+	if ( t < 16 ) t = 16;
+	if ( t > 262144 ) t = 262144;
+	SetDlgItemInt( IDC_CACHE_SIZE, t, FALSE );
+	cfg_cache_size = t;
+	g_cache.shrink_cache( t );
 	
 	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
 }
@@ -4012,6 +4133,7 @@ bool CMyPreferences::HasChanged() {
 	if ( !changed && GetDlgItemInt( IDC_CHIP_FORCE, NULL, FALSE ) != cfg_autochip_size_force ) changed = true;
 	if ( !changed && GetDlgItemInt( IDC_CHIP_SCAN, NULL, FALSE ) != cfg_autochip_size_scan ) changed = true;
 	if ( !changed && GetDlgItemInt( IDC_CHIP_SCAN_THRESHOLD, NULL, FALSE ) != cfg_autochip_scan_threshold ) changed = true;
+	if ( !changed && GetDlgItemInt( IDC_CACHE_SIZE, NULL, FALSE ) != cfg_cache_size ) changed = true;
 	if ( !changed )
 	{
 		int t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_FADE_TIME ) ) );

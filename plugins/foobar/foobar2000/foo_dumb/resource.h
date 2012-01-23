@@ -26,6 +26,9 @@
 #define IDC_CHIP_TEXT_4                 1019
 #define IDC_CHIP_TEXT_5                 1020
 #define IDC_MULTI_VALUE_TAGS            1021
+#define IDC_CACHE_SIZE                  1022
+#define IDC_CACHE_COUNT                 1023
+#define IDC_CACHE_MEMORY                1024
 #define IDC_OVERRIDE                    1301
 #define IDC_RESET                       1302
 #define IDC_VOICE1                      1303
@@ -99,7 +102,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        102
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1022
+#define _APS_NEXT_CONTROL_VALUE         1025
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

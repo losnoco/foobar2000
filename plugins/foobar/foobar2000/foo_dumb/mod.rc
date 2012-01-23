@@ -50,7 +50,7 @@ END
 // Dialog
 //
 
-IDD_MOD_CONFIG DIALOGEX 0, 0, 286, 221
+IDD_MOD_CONFIG DIALOGEX 0, 0, 286, 238
 STYLE DS_SETFONT | WS_CHILD
 FONT 8, "Tahoma", 0, 0, 0x0
 BEGIN
@@ -82,7 +82,14 @@ BEGIN
     RTEXT           "delta values greater than",IDC_CHIP_TEXT_4,10,135,83,9
     EDITTEXT        IDC_CHIP_SCAN_THRESHOLD,95,133,42,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "% of the integer range.",IDC_CHIP_TEXT_5,140,135,79,8
-    LTEXT           "Dynamic info fields: order, pattern, row, speed, tempo, channels, channels_max.\nIn scripts: %__mod_dyn_order%, %__mod_dyn_pattern%, etc.",IDC_STATIC,7,158,272,21
+    GROUPBOX        "Sub-song length scanner cache",IDC_STATIC,7,157,272,31
+    RTEXT           "Cache size:",IDC_STATIC,15,171,63,10
+    EDITTEXT        IDC_CACHE_SIZE,82,169,54,12,ES_AUTOHSCROLL | ES_NUMBER
+    RTEXT           "Current size:",IDC_STATIC,143,171,47,10
+    RTEXT           "0",IDC_CACHE_COUNT,201,171,31,10
+    CTEXT           "/",IDC_STATIC,234,171,8,10
+    RTEXT           "0KB",IDC_CACHE_MEMORY,244,171,32,10
+    LTEXT           "Dynamic info fields: order, pattern, row, speed, tempo, channels, channels_max.\nIn scripts: %__mod_dyn_order%, %__mod_dyn_pattern%, etc.",IDC_STATIC,7,198,272,21
 END
 
 IDD_MONITOR DIALOGEX 0, 0, 149, 164
@@ -187,8 +194,9 @@ BEGIN
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 279
+        VERTGUIDE, 143
         TOPMARGIN, 7
-        BOTTOMMARGIN, 214
+        BOTTOMMARGIN, 231
     END
 
     IDD_MONITOR, DIALOG
