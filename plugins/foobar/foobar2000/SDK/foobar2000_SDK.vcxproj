@@ -21,6 +21,10 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E8091321-D79D-4575-86EF-064EA1A4A20D}</ProjectGuid>
     <RootNamespace>foobar2000_SDK</RootNamespace>
+    <SccProjectName>$/foobar2000/files/plugins.root/plugins/foobar/foobar2000/SDK</SccProjectName>
+    <SccAuxPath>http://sabin:8080/tfs/defaultcollection</SccAuxPath>
+    <SccLocalPath>.</SccLocalPath>
+    <SccProvider>{4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}</SccProvider>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">

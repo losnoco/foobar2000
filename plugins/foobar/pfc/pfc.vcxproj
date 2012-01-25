@@ -21,6 +21,10 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}</ProjectGuid>
     <RootNamespace>pfc</RootNamespace>
+    <SccProjectName>$/foobar2000/files/plugins.root/plugins/foobar/pfc</SccProjectName>
+    <SccAuxPath>http://sabin:8080/tfs/defaultcollection</SccAuxPath>
+    <SccLocalPath>.</SccLocalPath>
+    <SccProvider>{4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}</SccProvider>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
