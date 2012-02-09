@@ -1,7 +1,12 @@
-#define MYVERSION "1.118"
+#define MYVERSION "1.119"
 
 /*
 	change log
+
+2012-02-09 16:15 UTC - kode54
+- Fixed M3U timing support and implemented repeat count support
+- Fixed M3U @field when colons are included in the value
+- Version is now 1.119
 
 2012-01-15 12:04 UTC - kode54
 - Reverted some half-assed changes to the VGM parser
