@@ -24,10 +24,14 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1B46AFAE-79D7-4099-A1AC-62E282BF7A4F}</ProjectGuid>
-    <SccProjectName>SAK</SccProjectName>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccProvider>SAK</SccProvider>
+    <SccProjectName>
+    </SccProjectName>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccProvider>
+    </SccProvider>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>SnarlInterface</RootNamespace>
   </PropertyGroup>

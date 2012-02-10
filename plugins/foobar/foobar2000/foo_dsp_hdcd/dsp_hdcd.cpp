@@ -111,7 +111,6 @@
 */
 
 #include <foobar2000.h>
-#include <decode_postprocessor.h>
 
 #include "hdcd_decode.h"
 

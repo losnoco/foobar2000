@@ -1,5 +1,4 @@
 #include "../SDK/foobar2000.h"
-#include "../SDK/decode_postprocessor.h"
 
 typedef unsigned int    uint32_t;
 typedef signed int      int32_t;

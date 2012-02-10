@@ -14,11 +14,15 @@
     <ProjectName>adplug_playertest</ProjectName>
     <ProjectGuid>{495CE6B2-5C37-408A-B1F7-32A1A660134C}</ProjectGuid>
     <RootNamespace>playertest</RootNamespace>
-    <SccProjectName>SAK</SccProjectName>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccProvider>SAK</SccProvider>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccProvider>
+    </SccProvider>
     <Keyword>Win32Proj</Keyword>
-    <SccAuxPath>SAK</SccAuxPath>
+    <SccAuxPath>
+    </SccAuxPath>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">

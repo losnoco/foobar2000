@@ -13,10 +13,14 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{58CA6EA2-756C-4987-9DAE-280556BD46B2}</ProjectGuid>
     <RootNamespace>foo_psf</RootNamespace>
-    <SccProjectName>SAK</SccProjectName>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccProvider>SAK</SccProvider>
-    <SccAuxPath>SAK</SccAuxPath>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccProvider>
+    </SccProvider>
+    <SccAuxPath>
+    </SccAuxPath>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -129,9 +133,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="psf.cpp" />
-    <ClCompile Include="..\..\psfemucore\psf2fs.cpp" />
+    <ClCompile Include="psf2fs.cpp" />
     <ClCompile Include="PSXFilter.cpp" />
-    <ClCompile Include="..\..\psfemucore\tag.c" />
+    <ClCompile Include="tag.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="psf.rc" />
@@ -144,8 +148,8 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\psfemucore\psf2fs.h" />
-    <ClInclude Include="..\..\psfemucore\tag.h" />
+    <ClInclude Include="psf2fs.h" />
+    <ClInclude Include="tag.h" />
     <ClInclude Include="circular_buffer.h" />
     <ClInclude Include="PSXFilter.h" />
     <ClInclude Include="resource.h" />

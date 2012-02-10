@@ -244,7 +244,7 @@
 #include "../../../ESP/PSX/Core/spu.h"
 #endif
 
-#include "../../psfemucore/psf2fs.h"
+#include "psf2fs.h"
 
 #include "PSXFilter.h"
 
