@@ -1,0 +1,12 @@
+# intellisense crap
+ipch
+
+# more intellisense crap
+plugins.sdf
+plugins.opensdf
+plugins.suo
+
+# output directories
+Debug
+Release
+Release Good

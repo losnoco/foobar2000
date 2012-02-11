@@ -1,0 +1,5 @@
+*.user
+Debug
+Debug_GdiPlus
+Release
+Release_GdiPlus
