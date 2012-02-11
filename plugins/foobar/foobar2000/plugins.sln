@@ -149,7 +149,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_r128norm", "foo_r128nor
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_tfmx", "foo_input_tfmx\foo_input_tfmx.vcxproj", "{12624259-3220-4697-AC35-BC5D3AEA2DC2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "baseclasses", "..\..\baseclasses\baseclasses.vcxproj", "{FDB4D58E-BD17-4EE3-843D-738F6548C3F8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseClasses", "..\..\BaseClasses\BaseClasses.vcxproj", "{FDB4D58E-BD17-4EE3-843D-738F6548C3F8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DXiClasses", "foo_midi\DXiClasses\DXiClasses.vcxproj", "{6D609010-D19F-4EA5-AF8F-08A474BB1408}"
 EndProject
