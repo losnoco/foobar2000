@@ -29,6 +29,7 @@
     </SccLocalPath>
     <SccProvider>
     </SccProvider>
+    <ProjectName>BaseClasses</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
