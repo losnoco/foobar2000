@@ -89,6 +89,8 @@ void input_usf::decode_initialize(unsigned p_flags, abort_callback & p_abort)
 
 bool input_usf::decode_run(audio_chunk & p_chunk, abort_callback & p_abort)
 {
+	p_abort.check();
+
 	uint32_t BufferSize = 5000;
 
 

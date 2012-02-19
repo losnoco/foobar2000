@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.19"
+#define MYVERSION "2.0.20"
 
 /*
 	changelog
+
+2012-02-19 19:50 UTC - kode54
+- Added abort check to decoder
+- Version is now 2.0.20
 
 2011-01-26 04:04 UTC - kode54
 - Fixed playback initialization for when files do not specify a
@@ -1155,6 +1159,8 @@ public:
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
+		p_abort.check();
+
 		if ( ( eof || err < 0 ) && !silence_test_buffer.data_available() ) return false;
 
 		if ( no_loop && tag_song_ms && ( pos_delta + MulDiv( data_written, 1000, 44100 ) ) >= tag_song_ms + tag_fade_ms )

@@ -1,1 +1,1 @@
-#define VERSION		"r973"
+#define VERSION		"r973-1"

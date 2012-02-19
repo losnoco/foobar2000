@@ -230,6 +230,8 @@ void input_gep::decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_c
 
 bool input_gep::decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
 {
+	p_abort.check();
+
 	if ( ! emu->track_ended() )
 	{
 		//if ( no_infinite && played >= song_len + fade_len ) return false;

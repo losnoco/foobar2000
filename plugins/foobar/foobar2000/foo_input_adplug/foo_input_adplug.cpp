@@ -1,9 +1,13 @@
-#define MYVERSION "1.39"
+#define MYVERSION "1.40"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2012-02-19 19:49 UTC - kode54
+- Added abort check to decoder
+- Version is now 1.40
 
 2011-02-14 17:48 UTC - kode54
 - Fixed string compare which caused "a" to be added to all reported file name
@@ -333,6 +337,8 @@ public:
 
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 	{
+		p_abort.check();
+
 		if ( !samples_todo )
 		{
 			bool ret = m_player->update();

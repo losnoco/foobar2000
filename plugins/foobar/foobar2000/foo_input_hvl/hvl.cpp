@@ -1,7 +1,11 @@
-#define MYVERSION "1.8"
+#define MYVERSION "1.9"
 
 /*
 	changelog
+
+2012-02-19 19:51 UTC - kode54
+- Added abort check to decoder
+- Version is now 1.9
 
 2011-11-01 23:59 UTC - kode54
 - Implemented looping control
@@ -198,6 +202,8 @@ public:
 
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 	{
+		p_abort.check();
+
 		if ( dont_loop && m_tune->ht_SongEndReached ) return false;
 
 		int const sample_count = srate / 50;

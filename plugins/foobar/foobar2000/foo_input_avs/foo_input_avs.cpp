@@ -1,7 +1,11 @@
-#define MY_VERSION "0.3"
+#define MY_VERSION "0.4"
 
 /*
 	changelog
+
+2012-02-19 19:49 UTC - kode54
+- Added abort check to decoder
+- Version is now 0.4
 
 2010-01-11 20:10 UTC - kode54
 - Added filename validator
@@ -181,6 +185,8 @@ public:
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
+		p_abort.check();
+
 		int	deltaread = (int) max( min( m_inf.num_audio_samples - m_pos , 1024 ), 0 );
 
 		if( 0 == deltaread ) return false;

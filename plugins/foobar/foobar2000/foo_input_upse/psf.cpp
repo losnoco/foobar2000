@@ -1,7 +1,11 @@
-#define MYVERSION "1.4"
+#define MYVERSION "1.5"
 
 /*
 	changelog
+
+2012-02-19 19:55 UTC - kode54
+- Added abort check to decoder
+- Version is now 1.5
 
 2011-03-10 05:14 UTC - kode54
 - Added support for _refresh tags
@@ -539,6 +543,8 @@ public:
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
+		p_abort.check();
+
 		int samples_rendered = emu.render( &sample_buffer );
 
 		if ( samples_rendered <= 0 )

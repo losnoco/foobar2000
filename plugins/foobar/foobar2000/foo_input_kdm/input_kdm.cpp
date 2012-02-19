@@ -1,7 +1,11 @@
-#define MYVERSION "1.0"
+#define MYVERSION "1.1"
 
 /*
 	changelog
+
+2012-02-19 19:52 UTC - kode54
+- Added abort check to decoder
+- Version is now 1.1
 
 2010-06-20 07:05 UTC - kode54
 - Initial release
@@ -108,6 +112,8 @@ public:
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
+		p_abort.check();
+
 		if ( eof ) return false;
 
 		unsigned samples_to_do = srate / 120;

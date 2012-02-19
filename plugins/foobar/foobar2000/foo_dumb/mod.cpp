@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.50"
+#define MYVERSION "0.9.9.51"
 
 /*
 	changelog
+
+2012-02-19 19:45 UTC - kode54
+- Added abort check to decoder
+- Version is now 0.9.9.51
 
 2012-01-23 16:49 UTC - kode54
 - Moved MOD vblank timing check into subsong scanning cache
@@ -3474,6 +3478,8 @@ private:
 public:
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 	{
+		p_abort.check();
+
 		if (eof) return false;
 
 		monitor_update( duh_get_it_sigrenderer( sr ) );

@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.25"
+#define MYVERSION "2.0.26"
 
 /*
 	changelog
+
+2011-02-19 20:00 UTC - kode54
+- Added abort check to decoder
+- Version is now 2.0.26
 
 2011-06-25 18:27 UTC - kode54
 - Unrolled reverb downsampling function and removed processing of samples
@@ -1257,6 +1261,8 @@ public:
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
+		p_abort.check();
+
 		int srate;
 
 		if ( ( eof || err < 0 ) && !silence_test_buffer.data_available() ) return false;

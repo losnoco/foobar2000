@@ -1,7 +1,11 @@
-#define MYVERSION "1.8"
+#define MYVERSION "1.9"
 
 /*
 	changelog
+
+2012-02-19 19:52 UTC - kode54
+- Added abort check to decoder
+- Version is now 1.9
 
 2011-12-31 15:24 UTC - kode54
 - Implemented loop count and fade control
@@ -160,6 +164,8 @@ public:
 
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 	{
+		p_abort.check();
+
 		if ( dont_loop && samples_decoded >= length + fade_time ) return false;
 
 		t_int16 * ptr = sample_buffer.get_ptr();

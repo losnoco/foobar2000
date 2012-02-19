@@ -1,7 +1,11 @@
-#define MYVERSION "1.0"
+#define MYVERSION "1.1"
 
 /*
 	changelog
+
+2012-02-19 19:54 UTC - kode54
+- Added abort check to decoder
+- Version is now 1.1
 
 2010-07-03 23:34 UTC - kode54
 - Updated to support the "new" SPU log format
@@ -313,6 +317,8 @@ public:
 
 	bool decode_run( audio_chunk & p_chunk, abort_callback & p_abort )
 	{
+		p_abort.check();
+
 		if (CurrentLog == LogCount && !remainder) return false;
 
 		int samples, rendered, remain;

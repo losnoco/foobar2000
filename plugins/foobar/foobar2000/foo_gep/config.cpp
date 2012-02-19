@@ -1,7 +1,11 @@
-#define MYVERSION "1.119"
+#define MYVERSION "1.120"
 
 /*
 	change log
+
+2012-02-19 19:47 UTC - kode54
+- Added abort check to decoder
+- Version is now 1.120
 
 2012-02-09 16:15 UTC - kode54
 - Fixed M3U timing support and implemented repeat count support

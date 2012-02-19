@@ -3,11 +3,15 @@
 
 #include <stdafx.h>
 
-#define MYVERSION "0.8"
+#define MYVERSION "0.9"
 
 /*
 
 	change log
+
+2012-02-19 19:55 UTC - kode54
+- Added abort check to decoder
+- Version is now 0.9
 
 2012-01-01 22:59 UTC - kode54
 - Fixed sample file extension case sensitivity issues
@@ -191,6 +195,7 @@ public:
 
 	bool decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
 	{
+		p_abort.check();
 		p_chunk.set_data_size( 1024 * 2 );
 		int n = p_src->GetSamples( p_chunk.get_data(), 1024, &sample_rate );
 		if ( !n ) return false;
