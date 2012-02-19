@@ -144,8 +144,6 @@ void input_vgmstream::decode_initialize(unsigned p_flags,abort_callback & p_abor
 };
 
 bool input_vgmstream::decode_run(audio_chunk & p_chunk,abort_callback & p_abort) {
-	p_abort.check();
-
 	int max_buffer_samples = sizeof(sample_buffer)/sizeof(sample_buffer[0])/vgmstream->channels;
 	int l = 0, samples_to_do = max_buffer_samples, t= 0;
 
