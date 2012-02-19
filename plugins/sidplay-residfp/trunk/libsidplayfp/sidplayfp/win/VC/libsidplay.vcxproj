@@ -93,39 +93,50 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\c64\Bank.h" />
+    <ClInclude Include="..\..\c64\c64.h" />
+    <ClInclude Include="..\..\c64\c64cpu.h" />
+    <ClInclude Include="..\..\c64\c64env.h" />
+    <ClInclude Include="..\..\c64\CIA\mos6526.h" />
+    <ClInclude Include="..\..\c64\ColorRAMBank.h" />
+    <ClInclude Include="..\..\c64\CPU\mos6510.h" />
+    <ClInclude Include="..\..\c64\CPU\mos6510debug.h" />
+    <ClInclude Include="..\..\c64\CPU\opcodes.h" />
+    <ClInclude Include="..\..\c64\IOBank.h" />
     <ClInclude Include="..\..\c64\mmu.h" />
-    <ClInclude Include="..\..\mos6510\conf6510.h" />
-    <ClInclude Include="..\..\mos6510\mos6510.h" />
-    <ClInclude Include="..\..\mos6510\opcodes.h" />
-    <ClInclude Include="..\..\mos6526\mos6526.h" />
-    <ClInclude Include="..\..\mos656x\mos656x.h" />
+    <ClInclude Include="..\..\c64\SystemRAMBank.h" />
+    <ClInclude Include="..\..\c64\SystemROMBanks.h" />
+    <ClInclude Include="..\..\c64\VIC_II\mos656x.h" />
+    <ClInclude Include="..\..\c64\ZeroRAMBank.h" />
+    <ClInclude Include="..\..\EventScheduler.h" />
+    <ClInclude Include="..\..\mixer.h" />
     <ClInclude Include="..\..\sidtune\SidTuneCfg.h" />
     <ClInclude Include="..\..\sidtune\SidTuneTools.h" />
     <ClInclude Include="..\..\c64\c64cia.h" />
     <ClInclude Include="..\..\c64\c64vic.h" />
     <ClInclude Include="..\..\c64\c64xsid.h" />
     <ClInclude Include="..\..\Buffer.h" />
-    <ClInclude Include="..\..\c64env.h" />
     <ClInclude Include="..\..\component.h" />
     <ClInclude Include="..\..\event.h" />
-    <ClInclude Include="..\..\nullsid.h" />
     <ClInclude Include="..\..\player.h" />
     <ClInclude Include="..\..\sid2types.h" />
     <ClInclude Include="..\..\sidbuilder.h" />
     <ClInclude Include="..\..\sidconfig.h" />
     <ClInclude Include="..\..\sidendian.h" />
-    <ClInclude Include="..\..\sidenv.h" />
     <ClInclude Include="..\..\sidplay2.h" />
     <ClInclude Include="..\..\SidTune.h" />
-    <ClInclude Include="..\..\sidtypes.h" />
     <ClInclude Include="..\..\sidusage.h" />
+    <ClInclude Include="..\..\sidversion.h" />
     <ClInclude Include="..\..\SmartPtr.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\c64\c64.cpp" />
+    <ClCompile Include="..\..\c64\CIA\mos6526.cpp" />
+    <ClCompile Include="..\..\c64\CPU\mos6510.cpp" />
+    <ClCompile Include="..\..\c64\CPU\mos6510debug.cpp" />
     <ClCompile Include="..\..\c64\mmu.cpp" />
-    <ClCompile Include="..\..\mos6510\mos6510.cpp" />
-    <ClCompile Include="..\..\mos6526\mos6526.cpp" />
-    <ClCompile Include="..\..\mos656x\mos656x.cpp" />
+    <ClCompile Include="..\..\c64\VIC_II\mos656x.cpp" />
+    <ClCompile Include="..\..\EventScheduler.cpp" />
     <ClCompile Include="..\..\sidtune\MUS.cpp" />
     <ClCompile Include="..\..\sidtune\p00.cpp" />
     <ClCompile Include="..\..\sidtune\prg.cpp" />
@@ -133,7 +144,6 @@
     <ClCompile Include="..\..\sidtune\SidTune.cpp" />
     <ClCompile Include="..\..\sidtune\SidTuneTools.cpp" />
     <ClCompile Include="..\..\config.cpp" />
-    <ClCompile Include="..\..\event.cpp" />
     <ClCompile Include="..\..\mixer.cpp" />
     <ClCompile Include="..\..\player.cpp" />
     <ClCompile Include="..\..\psiddrv.cpp" />
@@ -141,12 +151,13 @@
     <ClCompile Include="..\..\sidplay2.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\basic.bin" />
-    <None Include="..\..\char.bin" />
-    <None Include="..\..\kernal.bin" />
-    <None Include="..\..\poweron.bin" />
+    <None Include="..\..\c64\basic.bin" />
+    <None Include="..\..\c64\char.bin" />
+    <None Include="..\..\c64\kernal.bin" />
+    <None Include="..\..\c64\poweron.bin" />
     <None Include="..\..\psiddrv.a65" />
     <None Include="..\..\psiddrv.bin" />
+    <None Include="..\..\sidversion.h.in" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

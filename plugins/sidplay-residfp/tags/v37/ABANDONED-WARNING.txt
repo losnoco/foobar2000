@@ -1,0 +1,27 @@
+Note from alankila, 18.9.2010:
+
+I'm gradually considering sidplay2 codebase to be obsolete. I am officially
+abandoning this project today.
+
+I'm primarily working on jsidplay2, which has now also been integrated to
+Acid64 via jsiddevice, a SID emulator on the other end of a network socket,
+which is basically a minimalistic jsidplay2 as well. The java project is
+strongly recommend for checking out, as it has video output, cartride, disk and
+tape support in addition to SID playing capabilities.
+
+This codebase has a variety of bugs in CPU and with its headless VIC emulation.
+These bugs are unlikely to ever get fixed, due to the lipstick-on-a-pig feeling
+that it evokes. (The Java codebase has rewritten CPU and VIC.) Hoever, it is of
+note that someone ported our port of VICE's MOS6526 into this codebase, so that
+is now fairly good and is expected to pass the Lorentz test suite. So people
+who want to work on a sidplay2 are encouraged to pick the mos6526.cpp from this
+tree.
+
+In short, use jsidplay2, or acic64+jsiddevice, or VICE's vsid. I know the vsid
+is right now horribly primitive, but I'm pretty sure a superior SID player
+can be evolved from VICE with less effort than it takes to upgrade the CPU and
+VIC of sidplay2, and to perhaps fix other small problems.
+
+See you in VICE, or the land of Java.
+
+Antti

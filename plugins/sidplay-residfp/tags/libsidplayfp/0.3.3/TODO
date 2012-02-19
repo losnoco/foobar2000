@@ -1,0 +1,6 @@
+* finish documenting API (at least public interface)
+* fix Visual Studio build files
+* port improvements from jsiplay2
+
+* merge builders into main lib (?)
+* add a STIL parser (?)

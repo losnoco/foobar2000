@@ -1,0 +1,6 @@
+* fix testuite
+* finish documenting API
+* fix Visual Studio build files
+
+* merge builders into main lib (?)
+* add a STIL parser (?)
