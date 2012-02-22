@@ -1,7 +1,11 @@
-#define MYVERSION "1.120"
+#define MYVERSION "1.121"
 
 /*
 	change log
+
+2012-02-22 18:56 UTC - kode54
+- Fixed stupid VGM crash
+- Version is now 1.121
 
 2012-02-19 19:47 UTC - kode54
 - Added abort check to decoder
