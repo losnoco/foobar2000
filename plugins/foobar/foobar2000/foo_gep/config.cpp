@@ -1,7 +1,11 @@
-#define MYVERSION "1.121"
+#define MYVERSION "1.122"
 
 /*
 	change log
+
+2012-02-23 00:06 UTC - kode54
+- Fixed crash by forcing a recompile of the relevant source file
+- Version is now 1.122
 
 2012-02-22 18:56 UTC - kode54
 - Fixed stupid VGM crash
