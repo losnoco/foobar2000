@@ -142,7 +142,7 @@ public:
 		int length = 0;
 		double dlength = double(tag_song_ms + tag_fade_ms) * .001;
 		if ( i.intro_length != -1 && i.loop_length != -1 )
-			length = i.intro_length + i.loop_length * ( i.repeat_count > 0 ? i.repeat_count : 1 );
+			length = i.intro_length + i.loop_length * ( i.repeat_count > 0 ? i.repeat_count : 2 );
 		else if ( i.length != -1 )
 			length = i.length;
 		if ( length )
@@ -176,7 +176,7 @@ public:
 		int length = 0;
 		double dlength = double(tag_song_ms + tag_fade_ms) * .001;
 		if ( i.intro_length != -1 && i.loop_length != -1 )
-			length = i.intro_length + i.loop_length;
+			length = i.intro_length + i.loop_length * ( i.repeat_count > 0 ? i.repeat_count : 2 );
 		else if ( i.length != -1 )
 			length = i.length;
 		if ( length )

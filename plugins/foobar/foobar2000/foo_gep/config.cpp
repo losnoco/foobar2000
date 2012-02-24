@@ -1,7 +1,12 @@
-#define MYVERSION "1.122"
+#define MYVERSION "1.123"
 
 /*
 	change log
+
+2012-02-24 21:29 UTC - kode54
+- Fixed M3U playlist length handling to match reported lengths, and assume two
+  extra loops if no loop count is specified
+- Version is now 1.123
 
 2012-02-23 00:06 UTC - kode54
 - Fixed crash by forcing a recompile of the relevant source file
