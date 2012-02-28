@@ -1,7 +1,12 @@
-#define MYVERSION "0.9.9.51"
+#define MYVERSION "0.9.9.52"
 
 /*
 	changelog
+
+2012-02-24 19:11 UTC - kode54
+- Fixed MOD vibrato depth
+- Fixed XM tremolo ramp and square waveform tracking
+- Version is now 0.9.9.52
 
 2012-02-19 19:45 UTC - kode54
 - Added abort check to decoder
