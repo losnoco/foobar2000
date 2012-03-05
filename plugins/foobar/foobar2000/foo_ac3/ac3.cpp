@@ -1,7 +1,11 @@
-#define MY_VERSION "0.9.5"
+#define MY_VERSION "0.9.6"
 
 /*
 	changelog
+
+2012-03-03 12:51 UTC - kode54
+- Packet decoder now correctly disables dynamic range compression
+- Version is now 0.9.6
 
 2010-04-13 14:51 UTC - kode54
 - Amended preferences WM_INITDIALOG handler
@@ -651,6 +655,7 @@ public:
 		sample_t level = 1.0, bias = 0;
 
 		if ( a52_frame( m_state, ( uint8_t * ) p_buffer + i, &flags, &level, bias ) ) throw exception_io_data();
+		if ( ! m_dynrng ) a52_dynrng( m_state, NULL, NULL );
 
 		if ( ! m_decode )
 		{
