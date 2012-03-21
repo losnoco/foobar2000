@@ -103,6 +103,7 @@
     <ClCompile Include="meta\nub.c" />
     <ClCompile Include="meta\pc_adp.c" />
     <ClCompile Include="meta\pc_snds.c" />
+    <ClCompile Include="meta\ps2_hsf.c" />
     <ClCompile Include="meta\ps2_iab.c" />
     <ClCompile Include="meta\ps2_mss.c" />
     <ClCompile Include="meta\ps2_mtaf.c" />
