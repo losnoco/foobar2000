@@ -46,6 +46,7 @@ typedef DWORD HSOUNDFONT;	// soundfont handle
 #define BASS_MIDI_DECAYEND		0x1000
 #define BASS_MIDI_NOFX			0x2000
 #define BASS_MIDI_DECAYSEEK		0x4000
+#define BASS_MIDI_SINCINTER		0x800000
 
 typedef struct {
 	HSOUNDFONT font;	// soundfont
