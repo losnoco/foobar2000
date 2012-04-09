@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.52"
+#define MYVERSION "0.9.9.53"
 
 /*
 	changelog
+
+2012-04-08 20:22 UTC - kode54
+- Transparent archive unpacking now allows for nesting of compression formats
+- Version is now 0.9.9.53
 
 2012-02-24 19:11 UTC - kode54
 - Fixed MOD vibrato depth
@@ -2884,6 +2888,13 @@ typedef void (WINAPI * UNMO3_FREE)(void *data);
 
 void unpack_mo3( service_ptr_t<file> & p_out, const service_ptr_t<file> & p_source, abort_callback & p_abort )
 {
+	unsigned char header[3];
+	t_filesize sz64 = p_source->get_size_ex( p_abort );
+	if ( sz64 > INT_MAX ) sz64 = INT_MAX;
+	if ( sz64 < 3 ) throw foobar2000_io::exception_io_data();
+	p_source->read_object( header, 3, p_abort );
+	if ( memcmp( header, "MO3", 3 ) != 0 ) throw foobar2000_io::exception_io_data();
+
 	pfc::string8 module_path = core_api::get_my_full_path();
 	module_path.truncate( module_path.scan_filename() );
 	module_path += "unmo3.dll";
@@ -2899,14 +2910,13 @@ void unpack_mo3( service_ptr_t<file> & p_out, const service_ptr_t<file> & p_sour
 			try
 			{
 				void * ptr;
-				t_filesize sz64 = p_source->get_size_ex( p_abort );
-				if ( sz64 > INT_MAX ) sz64 = INT_MAX;
 				int size = ( int ) sz64;
 
 				pfc::array_t< t_uint8 > buffer;
 				buffer.set_size( size );
 
-				p_source->read_object( buffer.get_ptr(), size, p_abort );
+				memcpy( buffer.get_ptr(), header, 3 );
+				p_source->read_object( buffer.get_ptr() + 3, size - 3, p_abort );
 
 				ptr = buffer.get_ptr();
 
@@ -3240,7 +3250,36 @@ public:
 
 			m_info = new file_info_impl;
 
-			if ( ! stricmp_utf8( extension, "MO3" ) )
+			read_tag = true;
+
+			bool is_j2b = false;
+
+			try
+			{
+				unpacker::g_open( m_unpack, m_file, p_abort );
+
+				m_file = m_unpack;
+				read_tag = false;
+			}
+			catch ( const exception_io_data & )
+			{
+				m_file->seek( 0, p_abort );
+			}
+
+			try
+			{
+				unpack_j2b( m_unpack, m_file, p_abort );
+
+				m_file = m_unpack;
+				read_tag = false;
+				is_j2b = true;
+			}
+			catch ( const exception_io_data & )
+			{
+				m_file->seek( 0, p_abort );
+			}
+
+			if ( ! is_j2b && ( !stricmp_utf8( extension, "MO3" ) || !read_tag ) )
 			{
 				try
 				{
@@ -3252,32 +3291,6 @@ public:
 				catch ( const exception_io_data & )
 				{
 					m_file->seek( 0, p_abort );
-					read_tag = true;
-				}
-			}
-			else
-			{
-				try
-				{
-					unpacker::g_open( m_unpack, m_file, p_abort );
-
-					m_file = m_unpack;
-					read_tag = false;
-				}
-				catch ( const exception_io_data & )
-				{
-					try
-					{
-						unpack_j2b( m_unpack, m_file, p_abort );
-
-						m_file = m_unpack;
-						read_tag = false;
-					}
-					catch ( const exception_io_data & )
-					{
-						m_file->seek( 0, p_abort );
-						read_tag = true;
-					}
 				}
 			}
 
