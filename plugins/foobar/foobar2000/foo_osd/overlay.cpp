@@ -22,12 +22,30 @@ using namespace Gdiplus;
 
 #define swap_color(x) (((x) & 0xFF00) | (((x) & 0xFF) << 16) | (((x) & 0xFF0000) >> 16))
 
-void GetDesktopRect(RECT * rc)
+struct monitor_enum_data
 {
-	rc->left = GetSystemMetrics(SM_XVIRTUALSCREEN);
-	rc->top = GetSystemMetrics(SM_YVIRTUALSCREEN);
-	rc->right = rc->left + GetSystemMetrics(SM_CXVIRTUALSCREEN);
-	rc->bottom = rc->top + GetSystemMetrics(SM_CYVIRTUALSCREEN);
+	unsigned display_number;
+	LPRECT display_rect;
+};
+
+BOOL CALLBACK MonitorEnumProc(
+  __in  HMONITOR hMonitor,
+  __in  HDC hdcMonitor,
+  __in  LPRECT lprcMonitor,
+  __in  LPARAM dwData
+)
+{
+	monitor_enum_data * data = ( monitor_enum_data * ) dwData;
+	if ( (data->display_number)-- > 0 ) return TRUE;
+	*data->display_rect = *lprcMonitor;
+	return FALSE;
+}
+
+void GetDesktopRect(unsigned display_number, RECT * rc)
+{
+	if ( display_number > GetSystemMetrics( SM_CMONITORS ) ) display_number = 0;
+	monitor_enum_data data = { display_number, rc };
+	EnumDisplayMonitors( NULL, NULL, MonitorEnumProc, (LPARAM) &data );
 }
 
 #ifdef GDIPLUS
@@ -795,7 +813,7 @@ void COsdWnd::Repaint()
 
 	RECT rc;
 	HDC dDC = GetDC(NULL);
-	GetDesktopRect(&rc);
+	GetDesktopRect(p_config.display_number, &rc);
 
 	{
 #ifdef GDIPLUS
@@ -957,9 +975,10 @@ bool COsdWnd::RepaintVolume(int volume)
 {
 	RECT rc;
 	HDC dDC = GetDC(NULL);
-	GetDesktopRect(&rc);
 
 	const osd_config & p_config = m_state.get();
+
+	GetDesktopRect(p_config.display_number, &rc);
 
 	int vsteps = p_config.vsteps;
 	int vmin = p_config.vmin;

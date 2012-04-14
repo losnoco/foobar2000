@@ -1,6 +1,6 @@
 /*
 
-   Copyright (C) 2003-2004, Chris Moeller,
+   Copyright (C) 2003-2012, Chris Moeller,
    All rights reserved.                          
 
    Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
 
  */
 
-#define VERSION "1.69"
+#define VERSION "1.70"
 
 /*
 #define GDIPLUS
@@ -41,6 +41,10 @@
 
 /*
 	change log
+
+2012-04-14 03:21 UTC - kode54
+- Implemented proper multi-display support
+- Version is now 1.70
 
 2011-02-09 11:40 UTC - kode54
 - Dissolve function now locks down bitmap bits pointer every frame instead of assuming it

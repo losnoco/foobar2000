@@ -45,9 +45,35 @@ enum
 };
 
 class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
+	class CNotificationWindow : public CWindowImpl<CNotificationWindow, CWindow, CNullTraits>
+	{
+		CMyPreferences & m_target_window;
+
+	public:
+		DECLARE_WND_CLASS_EX( _T("B7D33278-DC33-4796-8B48-8325C467569D"), 0, -1 )
+
+		BEGIN_MSG_MAP(CNotificationWindow)
+			MSG_WM_DISPLAYCHANGE(OnDisplayChange)
+		END_MSG_MAP()
+
+		CNotificationWindow(CMyPreferences & p_target_window) : m_target_window( p_target_window )
+		{
+		}
+
+		~CNotificationWindow()
+		{
+			DestroyWindow();
+		}
+
+		void OnDisplayChange(UINT wParam, CSize size)
+		{
+			m_target_window.OnDisplayChange( wParam, size );
+		}
+	};
+
 public:
 	//Constructor - invoked by preferences_page_impl helpers - don't do Create() in here, preferences_page_impl does this for us
-	CMyPreferences(preferences_page_callback::ptr callback) : m_callback(callback) {}
+	CMyPreferences(preferences_page_callback::ptr callback) : m_callback(callback), notifier_window(*this) {}
 
 	//Note that we don't bother doing anything regarding destruction of our class.
 	//The host ensures that our dialog is destroyed first, then the last reference to our preferences_page_instance object is released, causing our object to be deleted.
@@ -82,6 +108,7 @@ private:
 	void OnOverlayApply(UINT, int, CWindow);
 	void OnOverlayTest(UINT, int, CWindow);
 	void OnOverlayChange(UINT, int, CWindow);
+	void OnDisplayChange(UINT, CSize);
 	bool HasChanged();
 	void OnChanged();
 
@@ -90,6 +117,7 @@ private:
 	void load(const osd_config & c);
 	void save(osd_config & c);
 	bool rename(pfc::string_base & param);
+	void rebuild_display_list(unsigned selection);
 
 	static BOOL CALLBACK RenameProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 	static BOOL CALLBACK ChildProc(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
@@ -111,6 +139,8 @@ private:
 	pfc::array_t<osd_config> backup;
 
 	bool modified, enabled;
+
+	CNotificationWindow notifier_window;
 };
 
 void CMyPreferences::on_count( unsigned count, bool modified )
@@ -176,6 +206,8 @@ void CMyPreferences::load(const osd_config & c)
 	w2 = w.GetDlgItem( IDC_YSPIN );
 	::SendMessage( w2, UDM_SETRANGE, 0L, MAKELONG(0, 100) );
 	::SendMessage( w2, UDM_SETPOS, 0L, MAKELONG(c.y, 0) );
+
+	rebuild_display_list( c.display_number );
 	
 	w.CheckRadioButton( IDC_PLEFT, IDC_PRIGHT, IDC_PLEFT + c.pos );
 	w.CheckRadioButton( IDC_ALEFT, IDC_ARIGHT, IDC_ALEFT + c.align );
@@ -276,6 +308,8 @@ void CMyPreferences::save(osd_config & c)
 	n = w.GetDlgItemInt( IDC_POSY, NULL, FALSE );
 	if (n > 100) n = 100;
 	c.y = n;
+
+	c.display_number = w.SendDlgItemMessage( IDC_DISPLAY, CB_GETCURSEL );
 	
 	if (w.SendDlgItemMessage( IDC_PLEFT, BM_GETCHECK ) ) n = DT_LEFT;
 	else if (w.SendDlgItemMessage( IDC_PCENTER, BM_GETCHECK ) ) n = DT_CENTER;
@@ -478,6 +512,8 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 
 	enabled = !!cfg_enable;
 
+	notifier_window.Create( GetDesktopWindow() );
+
 	return FALSE;
 }
 
@@ -637,6 +673,10 @@ LRESULT CMyPreferences::OnNotify(int idCtrl, LPNMHDR pnmh)
 				case MAKEID(IDC_CONFIG4, IDC_VMIN):
 					if (HIWORD(pnmh->code) == EN_CHANGE) on_modified();
 					break;
+
+				case MAKEID(IDC_CONFIG1, IDC_DISPLAY):
+					if (HIWORD(pnmh->code) == CBN_SELCHANGE) on_modified();
+					break;
 				}
 			}
 		}
@@ -788,6 +828,40 @@ void CMyPreferences::OnOverlayChange(UINT, int, CWindow w) {
 		load(ctx.preset);
 		ctx.initialized = true;
 	}
+}
+
+void CMyPreferences::OnDisplayChange(UINT, CSize)
+{
+	rebuild_display_list( GetDlgItem( IDC_TAB ).GetDlgItem( IDC_CONFIG1 ).SendDlgItemMessage( IDC_DISPLAY, CB_GETCURSEL ) );
+}
+
+void CMyPreferences::rebuild_display_list( unsigned selection )
+{
+	CComboBox w = GetDlgItem( IDC_TAB ).GetDlgItem( IDC_CONFIG1 ).GetDlgItem( IDC_DISPLAY );
+	unsigned display_count = GetSystemMetrics( SM_CMONITORS );
+	unsigned current_display_count = w.SendMessage( CB_GETCOUNT );
+	TCHAR temp[ 16 ];
+	if ( selection >= display_count )
+	{
+		selection = 0;
+		on_modified();
+	}
+	if ( display_count > current_display_count )
+	{
+		for ( unsigned i = current_display_count; i < display_count; ++i )
+		{
+			_itot( i, temp, 10 );
+			w.AddString( temp );
+		}
+	}
+	else
+	{
+		for ( unsigned i = current_display_count; i-- > display_count; )
+		{
+			w.DeleteString( i );
+		}
+	}
+	w.SetCurSel( selection );
 }
 
 t_uint32 CMyPreferences::get_state() {

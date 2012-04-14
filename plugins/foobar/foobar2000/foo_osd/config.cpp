@@ -39,6 +39,8 @@ osd_config::osd_config()
 		dissolve_decay = 50;
 
 		idletime = 5 * 60 * 1000;
+
+		display_number = 0;
 	}
 }
 
@@ -66,6 +68,8 @@ const osd_config & osd_config::operator =(const osd_config & in)
 	dissolve_decay = in.dissolve_decay;
 
 	idletime = in.idletime;
+
+	display_number = in.display_number;
 
 	return *this;
 }

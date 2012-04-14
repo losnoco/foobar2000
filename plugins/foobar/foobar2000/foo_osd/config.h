@@ -46,6 +46,9 @@ struct osd_config
 	// v2
 	unsigned            idletime;
 
+	// v3
+	unsigned			display_number;
+
 	osd_config();
 
 	osd_config(const osd_config * in) { *this = *in; }

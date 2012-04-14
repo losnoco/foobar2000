@@ -46,6 +46,7 @@
 #define IDC_ALPHA                       1036
 #define IDC_POP_STOP                    1036
 #define IDC_ALPHATEXT                   1037
+#define IDC_DISPLAY                     1037
 #define IDC_ALPHABACK                   1038
 #define IDC_FADEINOUT                   1039
 #define IDC_FADETIME                    1040
@@ -74,6 +75,7 @@
 #define IDC_IDLE_DISABLED               1063
 #define IDC_IDLE_HIDE                   1064
 #define IDC_IDLE_SHOW                   1065
+#define IDC_COMBO1                      1066
 
 // Next default values for new objects
 // 
@@ -81,7 +83,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        105
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1062
+#define _APS_NEXT_CONTROL_VALUE         1067
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
