@@ -73,7 +73,7 @@ void input_vgmstream::open(service_ptr_t<file> p_filehint,const char * p_path,t_
 			/* were we able to open it? */
 			if (!vgmstream) {
 				/* Generate exception if the file is unopenable*/
-				throw exception_io_unsupported_format();
+				throw exception_io_data();
 				return;
 			}
 
@@ -100,8 +100,6 @@ void input_vgmstream::open(service_ptr_t<file> p_filehint,const char * p_path,t_
 		case input_open_info_read:
 			if ( p_filehint.is_empty() ) input_open_file_helper( p_filehint, p_path, p_reason, p_abort );
 			stats = p_filehint->get_stats( p_abort );
-			vgmstream = init_vgmstream_foo(p_path, p_abort);
-			if (!vgmstream) throw exception_io_unsupported_format();
 			break;
 
 		case input_open_info_write:
