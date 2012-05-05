@@ -1,7 +1,11 @@
-#define MYVERSION "1.123"
+#define MYVERSION "1.124"
 
 /*
 	change log
+
+2012-05-05 23:13 UTC - kode54
+- Fixed HES which had reversed stereo
+- Version is now 1.124
 
 2012-02-24 21:29 UTC - kode54
 - Fixed M3U playlist length handling to match reported lengths, and assume two
