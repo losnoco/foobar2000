@@ -281,6 +281,7 @@ bool input_vgmstream::g_is_our_path(const char * p_path,const char * p_extension
 	if(!stricmp_utf8(p_extension,"agsc")) return 1;
 	if(!stricmp_utf8(p_extension,"ahx")) return 1;
 	if(!stricmp_utf8(p_extension,"aic")) return 1;
+	if(!stricmp_utf8(p_extension,"aifc")) return 1;
 	if(!stricmp_utf8(p_extension,"aix")) return 1;
 	if(!stricmp_utf8(p_extension,"amts")) return 1;
 	if(!stricmp_utf8(p_extension,"as4")) return 1;
