@@ -122,6 +122,7 @@ class input_nsf : public input_gep
 {
 	CNSFFile nsf;
 	bool ignore_nsfe_playlist;
+	bool ignore_w4011;
 
 public:
 	static bool g_is_our_path( const char * p_path, const char * p_extension )
@@ -145,6 +146,7 @@ public:
 		if ( p_reason != input_open_info_write ) m_file.release();
 
 		ignore_nsfe_playlist = !! cfg_nsfe_ignore_playlists;
+		ignore_w4011 = !! cfg_nsf_ignore_w4011;
 	}
 
 	unsigned get_subsong_count()
@@ -253,6 +255,14 @@ public:
 		if (tag_fade_ms < 0) tag_fade_ms = cfg_default_fade;
 
 		input_gep::decode_initialize( p_subsong, p_flags, p_abort );
+
+		emu->core().nes_apu()->enable_w4011_( !ignore_w4011 );
+	}
+
+	void decode_seek( double p_seconds, abort_callback & p_abort )
+	{
+		input_gep::decode_seek( p_seconds, p_abort );
+		(( Nsf_Emu * )emu)->core().nes_apu()->enable_w4011_( !ignore_w4011 );
 	}
 
 	void retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )

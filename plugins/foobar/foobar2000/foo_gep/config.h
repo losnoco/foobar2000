@@ -20,6 +20,8 @@ extern cfg_int cfg_format_enable;
 
 extern cfg_int cfg_effects_enable, cfg_effects_bass, cfg_effects_treble, cfg_effects_echo_depth;
 
+extern cfg_int cfg_nsf_ignore_w4011;
+
 #define BORK_TIME 0xC0CAC01A
 
 unsigned long parse_time_crap(const char *input);

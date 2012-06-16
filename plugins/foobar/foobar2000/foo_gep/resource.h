@@ -17,6 +17,8 @@
 #define IDC_SLIDER_TREBLE               1004
 #define IDC_SLIDER_ECHO_DEPTH           1005
 #define IDC_VGMLOOPCOUNT_TEXT           1055
+#define IDC_CHECK1                      1056
+#define IDC_NSF4011                     1056
 #define IDC_TRACKLIST                   1101
 #define IDC_ADDALL                      1102
 #define IDC_ADD                         1103
@@ -89,7 +91,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        105
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1056
+#define _APS_NEXT_CONTROL_VALUE         1057
 #define _APS_NEXT_SYMED_VALUE           105
 #endif
 #endif

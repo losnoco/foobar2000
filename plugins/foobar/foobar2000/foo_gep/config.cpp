@@ -1,7 +1,11 @@
-#define MYVERSION "1.124"
+#define MYVERSION "1.125"
 
 /*
 	change log
+
+2012-06-16 23:20 UTC - kode54
+- Implemented control for NSF to ignore writes to register $4011
+- Version is now 1.125
 
 2012-05-05 23:13 UTC - kode54
 - Fixed HES which had reversed stereo
@@ -334,6 +338,7 @@ static const GUID guid_cfg_default_fade = { 0x39da3fe0, 0x8f89, 0x4f35, { 0xbc, 
 static const GUID guid_cfg_write = { 0x477ac718, 0xaf, 0x4873, { 0xa0, 0xce, 0x8e, 0x47, 0xf6, 0xec, 0xe5, 0x37 } };
 static const GUID guid_cfg_write_nsfe = { 0x3d33ee75, 0x5abc, 0x4e41, { 0x91, 0x66, 0x4d, 0x5a, 0xd9, 0x9d, 0xe, 0xb5 } };
 static const GUID guid_cfg_nsfe_ignore_playlists = { 0xc219de94, 0xcbd1, 0x45d4, { 0xa3, 0x21, 0xd, 0xee, 0xc4, 0x99, 0x82, 0x86 } };
+static const GUID guid_cfg_nsf_ignore_w4011 = { 0xd1d5c497, 0xdba0, 0x4ade, { 0x85, 0x83, 0xf9, 0xf4, 0x8a, 0x57, 0x7f, 0x70 } };
 static const GUID guid_cfg_spc_anti_surround = { 0x5d2b2962, 0x6c57, 0x4303, { 0xb9, 0xde, 0xd6, 0x97, 0x9c, 0x0, 0x45, 0x7a } };
 static const GUID guid_cfg_spc_interpolation = { 0xf3f5df07, 0x7b49, 0x462a, { 0x8a, 0xd5, 0x9c, 0xd5, 0x79, 0x66, 0x31, 0x97 } };
 static const GUID guid_cfg_history_rate = { 0xce4842e1, 0x5707, 0x4e43, { 0xaa, 0x56, 0x48, 0xc8, 0x1d, 0xce, 0x5c, 0xac } };
@@ -359,6 +364,7 @@ enum
 	default_cfg_write = 0,
 	default_cfg_write_nsfe = 0,
 	default_cfg_nsfe_ignore_playlists = 0,
+	default_cfg_nsf_ignore_w4011 = 1,
 	default_cfg_spc_anti_surround = 0,
 	default_cfg_spc_interpolation = 0,
 	default_cfg_vgm_loop_count = 1,
@@ -372,31 +378,32 @@ enum
 	default_cfg_effects_echo_depth = 31
 };
 
-cfg_int cfg_sample_rate(guid_cfg_sample_rate, 44100);
+cfg_int cfg_sample_rate(guid_cfg_sample_rate, default_cfg_sample_rate);
 
-cfg_int cfg_indefinite(guid_cfg_indefinite, 0);
-cfg_int cfg_default_length(guid_cfg_default_length, 170000);
-cfg_int cfg_default_fade(guid_cfg_default_fade, 10000);
+cfg_int cfg_indefinite(guid_cfg_indefinite, default_cfg_indefinite);
+cfg_int cfg_default_length(guid_cfg_default_length, default_cfg_default_length);
+cfg_int cfg_default_fade(guid_cfg_default_fade, default_cfg_default_fade);
 
-cfg_int cfg_write(guid_cfg_write, 0);
-cfg_int cfg_write_nsfe(guid_cfg_write_nsfe, 0);
-cfg_int cfg_nsfe_ignore_playlists(guid_cfg_nsfe_ignore_playlists, 0);
+cfg_int cfg_write(guid_cfg_write, default_cfg_write);
+cfg_int cfg_write_nsfe(guid_cfg_write_nsfe, default_cfg_write_nsfe);
+cfg_int cfg_nsfe_ignore_playlists(guid_cfg_nsfe_ignore_playlists, default_cfg_nsfe_ignore_playlists);
+cfg_int cfg_nsf_ignore_w4011(guid_cfg_nsf_ignore_w4011, default_cfg_nsf_ignore_w4011);
 
-cfg_int cfg_spc_anti_surround(guid_cfg_spc_anti_surround, 0);
-cfg_int cfg_spc_interpolation(guid_cfg_spc_interpolation, 0);
+cfg_int cfg_spc_anti_surround(guid_cfg_spc_anti_surround, default_cfg_spc_anti_surround);
+cfg_int cfg_spc_interpolation(guid_cfg_spc_interpolation, default_cfg_spc_interpolation);
 
-cfg_int cfg_vgm_loop_count(guid_cfg_vgm_loop_count, 1);
-cfg_int cfg_vgm_gd3_prefers_japanese(guid_cfg_vgm_gd3_prefers_japanese, 0);
+cfg_int cfg_vgm_loop_count(guid_cfg_vgm_loop_count, default_cfg_vgm_loop_count);
+cfg_int cfg_vgm_gd3_prefers_japanese(guid_cfg_vgm_gd3_prefers_japanese, default_cfg_vgm_gd3_prefers_japanese);
 
-cfg_int cfg_format_enable(guid_cfg_format_enable, ~0);
+cfg_int cfg_format_enable(guid_cfg_format_enable, default_cfg_format_enable);
 
-cfg_int cfg_control_override(guid_cfg_control_override, 0);
-cfg_int cfg_control_tempo(guid_cfg_control_tempo, 10000);
+cfg_int cfg_control_override(guid_cfg_control_override, default_cfg_control_override);
+cfg_int cfg_control_tempo(guid_cfg_control_tempo, default_cfg_control_tempo);
 
-cfg_int cfg_effects_enable(guid_cfg_effects_enable, 0);
-cfg_int cfg_effects_bass(guid_cfg_effects_bass, 128);
-cfg_int cfg_effects_treble(guid_cfg_effects_treble, 128);
-cfg_int cfg_effects_echo_depth(guid_cfg_effects_echo_depth, 31);
+cfg_int cfg_effects_enable(guid_cfg_effects_enable, default_cfg_effects_enable);
+cfg_int cfg_effects_bass(guid_cfg_effects_bass, default_cfg_effects_bass);
+cfg_int cfg_effects_treble(guid_cfg_effects_treble, default_cfg_effects_treble);
+cfg_int cfg_effects_echo_depth(guid_cfg_effects_echo_depth, default_cfg_effects_echo_depth);
 
 static cfg_dropdown_history cfg_history_rate(guid_cfg_history_rate,16);
 
@@ -521,6 +528,7 @@ public:
 		COMMAND_HANDLER_EX(IDC_WRITE, BN_CLICKED, OnButtonClick)
 		COMMAND_HANDLER_EX(IDC_WNSFE, BN_CLICKED, OnButtonClick)
 		COMMAND_HANDLER_EX(IDC_NSFEPL, BN_CLICKED, OnButtonClick)
+		COMMAND_HANDLER_EX(IDC_NSF4011, BN_CLICKED, OnButtonClick)
 		COMMAND_HANDLER_EX(IDC_ANTISURROUND, BN_CLICKED, OnButtonClick)
 		COMMAND_HANDLER_EX(IDC_GD3JAPANESE, BN_CLICKED, OnButtonClick)
 		COMMAND_HANDLER_EX(IDC_EFFECTS, BN_CLICKED, OnButtonClick)
@@ -569,6 +577,7 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 	SendDlgItemMessage( IDC_WRITE, BM_SETCHECK, cfg_write );
 	SendDlgItemMessage( IDC_WNSFE, BM_SETCHECK, cfg_write_nsfe );
 	SendDlgItemMessage( IDC_NSFEPL, BM_SETCHECK, cfg_nsfe_ignore_playlists );
+	SendDlgItemMessage( IDC_NSF4011, BM_SETCHECK, cfg_nsf_ignore_w4011 );
 	SendDlgItemMessage( IDC_ANTISURROUND, BM_SETCHECK, cfg_spc_anti_surround );
 	SendDlgItemMessage( IDC_GD3JAPANESE, BM_SETCHECK, cfg_vgm_gd3_prefers_japanese );
 	SendDlgItemMessage( IDC_EFFECTS, BM_SETCHECK, cfg_effects_enable );
@@ -672,6 +681,7 @@ void CMyPreferences::reset() {
 	SendDlgItemMessage( IDC_WRITE, BM_SETCHECK, default_cfg_write );
 	SendDlgItemMessage( IDC_WNSFE, BM_SETCHECK, default_cfg_write_nsfe );
 	SendDlgItemMessage( IDC_NSFEPL, BM_SETCHECK, default_cfg_nsfe_ignore_playlists );
+	SendDlgItemMessage( IDC_NSF4011, BM_SETCHECK, default_cfg_nsf_ignore_w4011 );
 	SendDlgItemMessage( IDC_ANTISURROUND, BM_SETCHECK, default_cfg_spc_anti_surround );
 	SendDlgItemMessage( IDC_GD3JAPANESE, BM_SETCHECK, default_cfg_vgm_gd3_prefers_japanese );
 	SendDlgItemMessage( IDC_EFFECTS, BM_SETCHECK, default_cfg_effects_enable );
@@ -723,6 +733,7 @@ void CMyPreferences::apply() {
 	cfg_write = SendDlgItemMessage( IDC_WRITE, BM_GETCHECK );
 	cfg_write_nsfe = SendDlgItemMessage( IDC_WNSFE, BM_GETCHECK );
 	cfg_nsfe_ignore_playlists = SendDlgItemMessage( IDC_NSFEPL, BM_GETCHECK );
+	cfg_nsf_ignore_w4011 = SendDlgItemMessage( IDC_NSF4011, BM_GETCHECK );
 	cfg_spc_anti_surround = SendDlgItemMessage( IDC_ANTISURROUND, BM_GETCHECK );
 	cfg_vgm_gd3_prefers_japanese = SendDlgItemMessage( IDC_GD3JAPANESE, BM_GETCHECK );
 	cfg_effects_enable = SendDlgItemMessage( IDC_EFFECTS, BM_GETCHECK );
@@ -750,6 +761,7 @@ bool CMyPreferences::HasChanged() {
 	if ( !changed && SendDlgItemMessage( IDC_WRITE, BM_GETCHECK ) != cfg_write ) changed = true;
 	if ( !changed && SendDlgItemMessage( IDC_WNSFE, BM_GETCHECK ) != cfg_write_nsfe ) changed = true;
 	if ( !changed && SendDlgItemMessage( IDC_NSFEPL, BM_GETCHECK ) != cfg_nsfe_ignore_playlists ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_NSF4011, BM_GETCHECK ) != cfg_nsf_ignore_w4011 ) changed = true;
 	if ( !changed && SendDlgItemMessage( IDC_ANTISURROUND, BM_GETCHECK ) != cfg_spc_anti_surround ) changed = true;
 	if ( !changed && SendDlgItemMessage( IDC_GD3JAPANESE, BM_GETCHECK ) != cfg_vgm_gd3_prefers_japanese ) changed = true;
 	if ( !changed && SendDlgItemMessage( IDC_EFFECTS, BM_GETCHECK ) != cfg_effects_enable ) changed = true;
