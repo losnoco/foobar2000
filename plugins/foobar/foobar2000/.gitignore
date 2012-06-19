@@ -8,5 +8,9 @@ plugins.suo
 
 # output directories
 Debug
+Debug32
+Debug64
 Release
+Release32
+Release64
 Release Good
