@@ -4,6 +4,9 @@
 
 /*
 
+2012-07-03 05:37 UTC - kode54
+- Implemented channel mapping by transmuting the stream map table
+
 2012-06-20 06:17 UTC - kode54
 - Completed preliminary version with basic playback, seeking, and tag reading support
 - Version is now 1.0

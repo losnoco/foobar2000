@@ -18,9 +18,13 @@
 
 struct ogg_packet
 {
-	const t_uint8 * header;
-	unsigned header_size;
-	unsigned reserved[6];
+  unsigned char *packet;
+  long  bytes;
+  long  b_o_s;
+  long  e_o_s;
+
+  t_int64 granulepos;
+  t_int64 packetno;
 };
 
 #include <opus.h>
