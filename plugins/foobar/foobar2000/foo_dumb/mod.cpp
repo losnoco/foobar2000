@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.53"
+#define MYVERSION "0.9.9.54"
 
 /*
 	changelog
+
+2012-07-04 03:49 UTC - kode54
+- Fixed XM reader for files with smaller than expected instrument or sample header sizes
+- Version is now 0.9.9.54
 
 2012-04-08 20:22 UTC - kode54
 - Transparent archive unpacking now allows for nesting of compression formats
