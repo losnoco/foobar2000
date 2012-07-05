@@ -18,7 +18,7 @@ const int chmap[MAXCHANNELS][MAXCHANNELS] = {
 	{ 0, 1, 2, 3, },			// l, r, bl, br
 	{ 0, 2, 1, 3, 4, },			// l, c, r, bl, br -> l, r, c, bl, br
 	{ 0, 2, 1, 5, 3, 4, },		// l, c, r, bl, br, lfe -> l, r, c, lfe, bl, br
-	{ 0, 2, 1, 6, 3, 4, 5, },	// l, c, r, sl, sr, bc, lfe -> l, r, c, lfe, sl, sr, bc
+	{ 0, 2, 1, 6, 5, 3, 4, },	// l, c, r, sl, sr, bc, lfe -> l, r, c, lfe, bc, sl, sr
 	{ 0, 2, 1, 7, 5, 6, 3, 4 },	// l, c, r, sl, sr, bl, br, lfe -> l, r, c, lfe, bl, br, sl, sr
 };
 
