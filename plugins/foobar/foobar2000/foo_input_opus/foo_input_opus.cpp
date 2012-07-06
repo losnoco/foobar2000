@@ -24,7 +24,7 @@ const int chmap[MAXCHANNELS][MAXCHANNELS] = {
 
 class packet_decoder_opus : public packet_decoder
 {
-	unsigned preskip;
+	int preskip;
 	//float gain;
 	unsigned skip_packet;
 
@@ -53,7 +53,7 @@ class packet_decoder_opus : public packet_decoder
 
 		//gain = pow(10., header.gain/5120.);
 
-		sample_buffer.set_count( MAX_FRAME_SIZE * header.channels );
+		sample_buffer.set_count( MAX_FRAME_SIZE * header.channels * 2 );
 	}
 
 	void cleanup()
@@ -85,10 +85,14 @@ class packet_decoder_opus : public packet_decoder
 	{
 		unsigned channel_count = header.channels;
 
-		for ( unsigned channel = 0; channel < channel_count; ++channel )
+		if ( header.channel_mapping == 1 )
 		{
-			stream_map[ channel ] = header.stream_map[ chmap[ channel_count - 1 ][ channel ] ];
+			for ( unsigned channel = 0; channel < channel_count; ++channel )
+			{
+				stream_map[ channel ] = header.stream_map[ chmap[ channel_count - 1 ][ channel ] ];
+			}
 		}
+		else memcpy( stream_map, header.stream_map, channel_count );
 	}
 
 	void read_comments( const char * c, unsigned size )
@@ -203,8 +207,30 @@ public:
 			// First header packet will be the comments packet
 			if ( p_param2size == sizeof( ogg_packet ) )
 			{
-				ogg_packet * comments = ( ogg_packet * ) p_param2;
-				read_comments( ( const char * ) comments->packet, comments->bytes );
+				ogg_packet * packet = ( ogg_packet * ) p_param2;
+				if ( packet->granulepos == 0 )
+				{
+					read_comments( ( const char * ) packet->packet, packet->bytes );
+					return 0;
+				}
+				else
+				{
+					analyze_packet( packet->packet, packet->bytes, header.nb_streams, info );
+					if ( !st ) init();
+					float * ptr = sample_buffer.get_ptr();
+					int ret = opus_multistream_decode_float( st, packet->packet, packet->bytes, ptr, MAX_FRAME_SIZE, 0 );
+					if ( ret < 0 ) throw exception_io_data( opus_strerror( ret ) );
+					if ( preskip >= ret )
+					{
+						preskip -= ret;
+					}
+					else
+					{
+						memmove( ptr, ptr + header.channels * preskip, ( ret - preskip ) * header.channels * sizeof( *ptr ) );
+						preskip = - ( ret - preskip );
+					}
+					return 1;
+				}
 			}
 			return 1;
 		}
@@ -246,11 +272,11 @@ public:
 			ogg_packet * setup = ( ogg_packet * ) p_param2;
 			opus_header_parse( setup->packet, setup->bytes, &header );
 		}
-		else if ( p_owner == owner_matroska )
+		/*else if ( p_owner == owner_matroska )
 		{
 			matroska_setup * setup = ( matroska_setup * ) p_param2;
 			opus_header_parse( ( const unsigned char * ) setup->codec_private, setup->codec_private_size, &header );
-		}
+		}*/
 		remap_channels();
 		skip_packet = 0;
 	}
@@ -266,7 +292,7 @@ public:
 				if ( opus_header_parse( setup->packet, setup->bytes, &h ) > 0 && h.channel_mapping <= 1 && h.channels <= MAXCHANNELS ) return true;
 			}
 		}
-		else if ( p_owner == owner_matroska )
+		/*else if ( p_owner == owner_matroska )
 		{
 			if ( p_param2size == sizeof( matroska_setup ) )
 			{
@@ -278,7 +304,7 @@ public:
 						h.channel_mapping <= 1 && h.channels <= MAXCHANNELS ) return true;
 				}
 			}
-		}
+		}*/
 		return false;
 	}
 
@@ -315,11 +341,11 @@ public:
 
 		float * ptr = sample_buffer.get_ptr();
 
-		int ret = opus_multistream_decode_float( st, ( const unsigned char * ) data, bytes, ptr, MAX_FRAME_SIZE, 0 );
+		int ret = opus_multistream_decode_float( st, ( const unsigned char * ) data, bytes, ptr + ( preskip < 0 ? -preskip * header.channels : 0 ), MAX_FRAME_SIZE, 0 );
 
 		if ( ret < 0 ) throw exception_io_data( opus_strerror( ret ) );
 
-		if ( preskip )
+		if ( preskip > 0 )
 		{
 			if ( preskip > ret )
 			{
@@ -332,6 +358,11 @@ public:
 				ptr += preskip * header.channels;
 				preskip = 0;
 			}
+		}
+		else if ( preskip < 0 )
+		{
+			ret -= preskip;
+			preskip = 0;
 		}
 
 		if ( ret )

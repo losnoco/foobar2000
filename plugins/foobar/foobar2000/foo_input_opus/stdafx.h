@@ -31,5 +31,7 @@ struct ogg_packet
 #include <opus_multistream.h>
 
 #include "opus_header.h"
+#include "analysis.h"
+
 #include <string.h>
 #include <stdio.h>

@@ -4,6 +4,9 @@
 
 /*
 
+2012-07-06 02:09 UTC - kode54
+- Added initial packet analysis for technical information
+
 2012-07-03 05:37 UTC - kode54
 - Implemented channel mapping by transmuting the stream map table
 

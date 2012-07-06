@@ -20,6 +20,9 @@
     <ClInclude Include="opus_header.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="analysis.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -32,6 +35,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="opus_header.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="analysis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
