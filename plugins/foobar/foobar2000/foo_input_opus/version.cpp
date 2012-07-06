@@ -4,6 +4,9 @@
 
 /*
 
+2012-07-06 19:13 UTC - kode54
+- Fixed analysis reporting for lower mode and bandwidth
+
 2012-07-06 02:09 UTC - kode54
 - Added initial packet analysis for technical information
 

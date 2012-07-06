@@ -200,15 +200,21 @@ void analyze_packet( const unsigned char * packet, unsigned bytes, unsigned nb_s
 	}
 	for ( i = 0; i < 3; ++i )
 	{
-		if ( temp.length() ) temp += " / ";
-		if ( has_mode[ i ]) temp += mode_strings[ i ];
+		if ( has_mode[ i ] ) 
+		{
+			if ( temp.length() ) temp += " / ";
+			temp += mode_strings[ i ];
+		}
 	}
 	p_out.info_set( "opus_mode", temp );
 	temp.reset();
 	for ( i = 0; i < 5; ++i )
 	{
-		if ( temp.length() ) temp += " / ";
-		if ( has_bw[ i ] ) temp += bw_strings[ i ];
+		if ( has_bw[ i ] )
+		{
+			if ( temp.length() ) temp += " / ";
+			temp += bw_strings[ i ];
+		}
 	}
 	p_out.info_set( "opus_bandwidth", temp );
 	temp = pfc::format_float( (double)min_size / 48.0, 0, min_size == 120 ? 1 : 0 );
