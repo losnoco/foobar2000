@@ -1,7 +1,12 @@
-#define MYVERSION "0.9.9.54"
+#define MYVERSION "0.9.9.55"
 
 /*
 	changelog
+
+2012-07-08 19:44 UTC - kode54
+- Added sanity checking to XM reader instrument and sample header sizes
+- Added footer tag checking to prevent tags from reaching the module reader
+- Version is now 0.9.9.55
 
 2012-07-04 03:49 UTC - kode54
 - Fixed XM reader for files with smaller than expected instrument or sample header sizes
@@ -3304,6 +3309,19 @@ public:
 			if ( m_stats.m_size < 1 || m_stats.m_size > ( 1UL << 30 ) )
 			{
 				throw exception_io_data();
+			}
+
+			if ( read_tag )
+			{
+				try
+				{
+					t_filesize tag_offset = ~0;
+					tag_processor::read_trailing_ex( m_file, file_info_impl(), tag_offset, p_abort );
+					m_stats.m_size = tag_offset;
+				}
+				catch ( const exception_tag_not_found & ) { read_tag = false; }
+				catch ( const exception_io_data & )       { read_tag = false; }
+				m_file->seek( 0, p_abort );
 			}
 
 			size = unsigned( m_stats.m_size );
