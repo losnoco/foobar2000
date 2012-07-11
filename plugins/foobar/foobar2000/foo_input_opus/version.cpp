@@ -4,6 +4,9 @@
 
 /*
 
+2012-07-10 23:16 UTC - kode54
+- Implemented support for .opus file name extension
+
 2012-07-06 19:13 UTC - kode54
 - Fixed analysis reporting for lower mode and bandwidth
 

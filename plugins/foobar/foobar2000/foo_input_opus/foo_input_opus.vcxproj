@@ -84,6 +84,7 @@
   <ItemGroup>
     <ClCompile Include="analysis.cpp" />
     <ClCompile Include="foo_input_opus.cpp" />
+    <ClCompile Include="input_hack.cpp" />
     <ClCompile Include="opus_header.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
