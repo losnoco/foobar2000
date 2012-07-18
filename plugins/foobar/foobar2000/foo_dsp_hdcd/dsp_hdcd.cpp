@@ -1,4 +1,4 @@
-#define MYVERSION "1.14"
+#define MYVERSION "1.15"
 
 /*
    Copyright (C) 2010, Chris Moeller,
@@ -35,6 +35,14 @@
 /*
 
 	change log
+
+2012-07-18 03:37 UTC - kode54
+- HDCD scanning now sustains processing before applying levels to output
+- Maintains peak extension flag for the entire track
+- Starts processing from the beginning with the volume level flags from
+  post-sustain status, to prevent sharp volume level transitions on track
+  change
+- Version is now 1.15
 
 2011-12-10 01:39 UTC - kode54
 - Further optimizations from Gumboot
@@ -131,14 +139,13 @@ class hdcd_dsp : public dsp_impl_base {
 	pfc::array_t<hdcd_state_t> decoders;
 
 	dsp_chunk_list_impl original_chunks;
-	dsp_chunk_list_impl output_chunks;
 	pfc::array_t<t_int32> buffer;
 
 	unsigned amp;
 
 	unsigned srate, nch, channel_config;
 
-	bool info_emitted;
+	bool gave_up, info_emitted, peak_extension;
 
 	void init()
 	{
@@ -154,17 +161,18 @@ class hdcd_dsp : public dsp_impl_base {
 	{
 		decoders.set_size( 0 );
 		original_chunks.remove_all();
-		output_chunks.remove_all();
 		buffer.set_size( 0 );
 		srate = 0;
 		nch = 0;
 		channel_config = 0;
+		gave_up = false;
 		info_emitted = false;
+		peak_extension = false;
 	}
 
 	void flush_chunk()
 	{
-		if ( output_chunks.get_count() )
+		if ( original_chunks.get_count() )
 		{
 			unsigned enabled = 0;
 			for ( unsigned i = 0; i < nch; i++ )
@@ -172,13 +180,12 @@ class hdcd_dsp : public dsp_impl_base {
 				enabled |= decoders[ i ].sustain;
 			}
 
-			dsp_chunk_list * list = enabled ? &output_chunks : &original_chunks;
-
-			for ( unsigned i = 0; i < list->get_count(); i++ )
+			for ( unsigned i = 0; i < original_chunks.get_count(); i++ )
 			{
-				audio_chunk * in_chunk = list->get_item( i );
+				audio_chunk * in_chunk = original_chunks.get_item( i );
 				audio_chunk * out_chunk = insert_chunk( in_chunk->get_data_length() );
 				out_chunk->copy( *in_chunk );
+				if ( enabled ) process_chunk( out_chunk );
 			}
 		}
 		cleanup();
@@ -186,7 +193,6 @@ class hdcd_dsp : public dsp_impl_base {
 
 	void process_chunk( audio_chunk * chunk )
 	{
-		bool peak_extension = false;
 		for ( unsigned i = 0; i < nch; ++i ) peak_extension |= !!( decoders[ i ].control & 16 );
 		bool amp = this->amp == 0 ? true : this->amp == 2 ? false : !peak_extension;
 		const audio_sample target_scale = amp ? 2 : 1;
@@ -237,6 +243,8 @@ public:
 
 	virtual bool on_chunk(audio_chunk *chunk, abort_callback &p_abort)
 	{
+		if ( gave_up ) return true;
+
         metadb_handle_ptr fh;
         if ( !get_cur_file( fh ) )
 		{
@@ -287,16 +295,16 @@ public:
 				info_emitted = true;
 			}
 
-			if ( output_chunks.get_count() )
+			if ( original_chunks.get_count() )
 			{
-				for ( unsigned i = 0; i < output_chunks.get_count(); i++ )
+				for ( unsigned i = 0; i < original_chunks.get_count(); i++ )
 				{
-					audio_chunk * in_chunk = output_chunks.get_item( i );
+					audio_chunk * in_chunk = original_chunks.get_item( i );
 					audio_chunk * out_chunk = insert_chunk( in_chunk->get_data_length() );
 					out_chunk->copy( *in_chunk );
+					process_chunk( out_chunk );
 				}
 				original_chunks.remove_all();
-				output_chunks.remove_all();
 			}
 
 			process_chunk( chunk );
@@ -308,15 +316,11 @@ public:
 
 		process_chunk( chunk );
 
-		output_chunks.add_chunk( chunk );
-
-		while ( original_chunks.get_duration() >= 1.0 && original_chunks.get_count() > 1 )
+		if ( original_chunks.get_duration() >= 10.0 && original_chunks.get_count() > 1 )
 		{
-			audio_chunk * in_chunk = original_chunks.get_item( 0 );
-			audio_chunk * out_chunk = insert_chunk( in_chunk->get_data_length() );
-			out_chunk->copy( *in_chunk );
-			original_chunks.remove_by_idx( 0 );
-			output_chunks.remove_by_idx( 0 );
+			flush_chunk();
+			gave_up = true;
+			return true;
 		}
 
 		return false;
@@ -348,14 +352,13 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 	pfc::array_t<hdcd_state_t> decoders;
 
 	dsp_chunk_list_impl original_chunks;
-	dsp_chunk_list_impl output_chunks;
 	pfc::array_t<t_int32> buffer;
 
 	unsigned amp;
 
 	unsigned srate, nch, channel_config;
 
-	bool gave_up, sustained;
+	bool gave_up, sustained, peak_extension;
 
 	void init()
 	{
@@ -371,22 +374,22 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 	{
 		decoders.set_size( 0 );
 		original_chunks.remove_all();
-		output_chunks.remove_all();
 		buffer.set_size( 0 );
 		srate = 0;
 		nch = 0;
 		channel_config = 0;
 		gave_up = false;
 		sustained = false;
+		peak_extension = false;
 	}
 
 	unsigned flush_chunks( dsp_chunk_list & p_chunk_list, unsigned insert_point )
 	{
 		unsigned ret = 0;
 
-		if ( output_chunks.get_count() )
+		if ( original_chunks.get_count() )
 		{
-			ret = output_chunks.get_count();
+			ret = original_chunks.get_count();
 
 			unsigned enabled = 0;
 			for ( unsigned i = 0; i < nch; i++ )
@@ -394,17 +397,15 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 				enabled |= decoders[ i ].sustain;
 			}
 
-			dsp_chunk_list * list = enabled ? &output_chunks : &original_chunks;
-
-			for ( unsigned i = 0; i < list->get_count(); i++ )
+			for ( unsigned i = 0; i < ret; i++ )
 			{
-				audio_chunk * in_chunk = list->get_item( i );
+				audio_chunk * in_chunk = original_chunks.get_item( i );
 				audio_chunk * out_chunk = p_chunk_list.insert_item( insert_point++, in_chunk->get_data_length() );
 				out_chunk->copy( *in_chunk );
+				if ( enabled ) process_chunk( out_chunk );
 			}
 
 			original_chunks.remove_all();
-			output_chunks.remove_all();
 		}
 
 		return ret;
@@ -412,7 +413,6 @@ class hdcd_postprocessor_instance : public decode_postprocessor_instance
 
 	void process_chunk( audio_chunk * chunk )
 	{
-		bool peak_extension = false;
 		for ( unsigned i = 0; i < nch; ++i ) peak_extension |= !!( decoders[ i ].control & 16 );
 		bool amp = this->amp == 0 ? true : this->amp == 2 ? false : !peak_extension;
 		const audio_sample target_scale = amp ? 2 : 1;
@@ -479,11 +479,9 @@ public:
 
 			process_chunk( chunk );
 
-			output_chunks.add_chunk( chunk );
-
 			p_chunk_list.remove_by_idx( i );
 
-			if ( original_chunks.get_duration() >= 5.0 && original_chunks.get_count() > 1 )
+			if ( original_chunks.get_duration() >= 10.0 && original_chunks.get_count() > 1 )
 			{
 				if ( !enabled )
 				{
