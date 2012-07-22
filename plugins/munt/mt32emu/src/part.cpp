@@ -1,4 +1,5 @@
-/* Copyright (C) 2003-2009 Dean Beeler, Jerome Fisher
+/* Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009 Dean Beeler, Jerome Fisher
+ * Copyright (C) 2011 Dean Beeler, Jerome Fisher, Sergey V. Mikayev
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -14,25 +15,28 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
-#include <math.h>
+#include <cstdio>
+#include <cstring>
 
 #include "mt32emu.h"
+#include "PartialManager.h"
 
 namespace MT32Emu {
 
 static const Bit8u PartialStruct[13] = {
 	0, 0, 2, 2, 1, 3,
-	3, 0, 3, 0, 2, 1, 3 };
+	3, 0, 3, 0, 2, 1, 3
+};
 
 static const Bit8u PartialMixStruct[13] = {
 	0, 1, 0, 1, 1, 0,
-	1, 3, 3, 2, 2, 2, 2 };
+	1, 3, 3, 2, 2, 2, 2
+};
 
 static const float floatKeyfollow[17] = {
-	-1.0f, -1.0f/2.0f, -1.0f/4.0f, 0.0f,
-	1.0f/8.0f, 1.0f/4.0f, 3.0f/8.0f, 1.0f/2.0f, 5.0f/8.0f, 3.0f/4.0f, 7.0f/8.0f, 1.0f,
-	5.0f/4.0f, 3.0f/2.0f, 2.0f,
+	-1.0f, -1.0f / 2.0f, -1.0f / 4.0f, 0.0f,
+	1.0f / 8.0f, 1.0f / 4.0f, 3.0f / 8.0f, 1.0f / 2.0f, 5.0f / 8.0f, 3.0f / 4.0f, 7.0f / 8.0f, 1.0f,
+	5.0f / 4.0f, 3.0f / 2.0f, 2.0f,
 	1.0009765625f, 1.0048828125f
 };
 
@@ -44,8 +48,8 @@ RhythmPart::RhythmPart(Synth *useSynth, unsigned int usePartNum): Part(useSynth,
 }
 
 Part::Part(Synth *useSynth, unsigned int usePartNum) {
-	this->synth = useSynth;
-	this->partNum = usePartNum;
+	synth = useSynth;
+	partNum = usePartNum;
 	patchCache[0].dirty = true;
 	holdpedal = false;
 	patchTemp = &synth->mt32ram.patchTemp[partNum];
@@ -58,7 +62,9 @@ Part::Part(Synth *useSynth, unsigned int usePartNum) {
 	}
 	currentInstr[0] = 0;
 	currentInstr[10] = 0;
+	modulation = 0;
 	expression = 100;
+	pitchBend = 0;
 	activePartialCount = 0;
 	memset(patchCache, 0, sizeof(patchCache));
 	for (int i = 0; i < MT32EMU_MAX_POLY; i++) {
@@ -149,8 +155,9 @@ void RhythmPart::refresh() {
 	// (Re-)cache all the mapped timbres ahead of time
 	for (unsigned int drumNum = 0; drumNum < synth->controlROMMap->rhythmSettingsCount; drumNum++) {
 		int drumTimbreNum = rhythmTemp[drumNum].timbre;
-		if (drumTimbreNum >= 127) // 94 on MT-32
+		if (drumTimbreNum >= 127) { // 94 on MT-32
 			continue;
+		}
 		PatchCache *cache = drumCache[drumNum];
 		backupCacheToPartials(cache);
 		for (int t = 0; t < 4; t++) {
@@ -159,6 +166,7 @@ void RhythmPart::refresh() {
 			cache[t].reverb = rhythmTemp[drumNum].reverbSwitch > 0;
 		}
 	}
+	updatePitchBenderRange();
 }
 
 void Part::refresh() {
@@ -169,6 +177,7 @@ void Part::refresh() {
 		patchCache[t].reverb = patchTemp->patch.reverbSwitch > 0;
 	}
 	memcpy(currentInstr, timbreTemp->common.name, 10);
+	updatePitchBenderRange();
 }
 
 const char *Part::getCurrentInstr() const {
@@ -177,8 +186,9 @@ const char *Part::getCurrentInstr() const {
 
 void RhythmPart::refreshTimbre(unsigned int absTimbreNum) {
 	for (int m = 0; m < 85; m++) {
-		if (rhythmTemp[m].timbre == absTimbreNum - 128)
+		if (rhythmTemp[m].timbre == absTimbreNum - 128) {
 			drumCache[m][0].dirty = true;
+		}
 	}
 }
 
@@ -186,29 +196,6 @@ void Part::refreshTimbre(unsigned int absTimbreNum) {
 	if (getAbsTimbreNum() == absTimbreNum) {
 		memcpy(currentInstr, timbreTemp->common.name, 10);
 		patchCache[0].dirty = true;
-	}
-}
-
-int Part::fixBiaslevel(int srcpnt, int *dir) {
-	int noteat = srcpnt & 0x3F;
-	int outnote;
-	if (srcpnt < 64)
-		*dir = 0;
-	else
-		*dir = 1;
-	outnote = 33 + noteat;
-	//synth->printDebug("Bias note %d, dir %d", outnote, *dir);
-
-	return outnote;
-}
-
-int Part::fixKeyfollow(int srckey) {
-	if (srckey>=0 && srckey<=16) {
-		int keyfix[17] = { -256*16, -128*16, -64*16, 0, 32*16, 64*16, 96*16, 128*16, (128+32)*16, 192*16, (192+32)*16, 256*16, (256+64)*16, (256+128)*16, (512)*16, 4100, 4116};
-		return keyfix[srckey];
-	} else {
-		//LOG(LOG_ERROR|LOG_MISC,"Missed key: %d", srckey);
-		return 256;
 	}
 }
 
@@ -233,13 +220,17 @@ unsigned int Part::getAbsTimbreNum() const {
 	return (patchTemp->patch.timbreGroup * 64) + patchTemp->patch.timbreNum;
 }
 
+#if MT32EMU_MONITOR_MIDI > 0
 void RhythmPart::setProgram(unsigned int patchNum) {
 	synth->printDebug("%s: Attempt to set program (%d) on rhythm is invalid", name, patchNum);
 }
+#else
+void RhythmPart::setProgram(unsigned int) { }
+#endif
 
 void Part::setProgram(unsigned int patchNum) {
 	setPatch(&synth->mt32ram.patches[patchNum]);
-	updatePitchBenderRange();
+	holdpedal = false;
 	allSoundOff();
 	setTimbre(&synth->mt32ram.timbres[getAbsTimbreNum()].timbre);
 	refresh();
@@ -254,7 +245,7 @@ void Part::backupCacheToPartials(PatchCache cache[4]) {
 	// if so then duplicate the cached data from the part to the partial so that
 	// we can change the part's cache without affecting the partial.
 	// We delay this until now to avoid a copy operation with every note played
-	for (std::list<Poly*>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
+	for (std::list<Poly *>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
 		(*polyIt)->backupCacheToPartials(cache);
 	}
 }
@@ -308,14 +299,6 @@ void Part::cacheTimbre(PatchCache cache[4], const TimbreParam *timbre) {
 		cache[t].partialParam = &timbre->partial[t];
 
 		cache[t].waveform = timbre->partial[t].wg.waveform;
-		cache[t].pulsewidth = timbre->partial[t].wg.pulseWidth;
-		cache[t].pwsens = timbre->partial[t].wg.pulseWidthVeloSensitivity;
-
-		// Calculate and cache filter stuff
-		cache[t].filtEnv = timbre->partial[t].tvf;
-		cache[t].filtkeyfollow  = fixKeyfollow(cache[t].filtEnv.keyfollow);
-		cache[t].filtEnv.envDepth = (char)((float)cache[t].filtEnv.envDepth);
-		cache[t].filtsustain  = cache[t].filtEnv.envLevel[3];
 	}
 	for (int t = 0; t < 4; t++) {
 		// Common parameters, stored redundantly
@@ -325,7 +308,7 @@ void Part::cacheTimbre(PatchCache cache[4], const TimbreParam *timbre) {
 	}
 	//synth->printDebug("Res 1: %d 2: %d 3: %d 4: %d", cache[0].waveform, cache[1].waveform, cache[2].waveform, cache[3].waveform);
 
-#if MT32EMU_MONITOR_INSTRUMENTS == 1
+#if MT32EMU_MONITOR_INSTRUMENTS > 0
 	synth->printDebug("%s (%s): Recached timbre", name, currentInstr);
 	for (int i = 0; i < 4; i++) {
 		synth->printDebug(" %d: play=%s, pcm=%s (%d), wave=%d", i, cache[i].playPartial ? "YES" : "NO", cache[i].PCMPartial ? "YES" : "NO", timbre->partial[i].wg.pcmWave, timbre->partial[i].wg.waveform);
@@ -343,6 +326,10 @@ void Part::setVolume(unsigned int midiVolume) {
 	//synth->printDebug("%s (%s): Set volume to %d", name, currentInstr, midiVolume);
 }
 
+Bit8u Part::getVolume() const {
+	return patchTemp->outputLevel;
+}
+
 Bit8u Part::getExpression() const {
 	return expression;
 }
@@ -352,10 +339,11 @@ void Part::setExpression(unsigned int midiExpression) {
 	expression = (Bit8u)(midiExpression * 100 / 127);
 }
 
-void RhythmPart::setPan(unsigned int midiPan)
-{
+void RhythmPart::setPan(unsigned int midiPan) {
 	// CONFIRMED: This does change patchTemp, but has no actual effect on playback.
+#if MT32EMU_MONITOR_MIDI > 0
 	synth->printDebug("%s: Pointlessly setting pan (%d) on rhythm part", name, midiPan);
+#endif
 	Part::setPan(midiPan);
 }
 
@@ -370,14 +358,18 @@ void Part::setPan(unsigned int midiPan) {
 	//synth->printDebug("%s (%s): Set pan to %d", name, currentInstr, panpot);
 }
 
-unsigned int Part::midiKeyToKey(unsigned int midiKey, const char *debugAction) {
+/**
+ * Applies key shift to a MIDI key and converts it into an internal key value in the range 12-108.
+ */
+unsigned int Part::midiKeyToKey(unsigned int midiKey) {
 	int key = midiKey + patchTemp->patch.keyShift;
 	if (key < 36) {
-		synth->printDebug("%s (%s): Attempted to perform \"%s\" on invalid key %d (%d after keyshift) < 36; moving up by octaves", name, currentInstr, debugAction, midiKey, key);
-		while (key < 36)
+		// After keyShift is applied, key < 36, so move up by octaves
+		while (key < 36) {
 			key += 12;
+		}
 	} else if (key > 132) {
-		synth->printDebug("%s (%s): Attempted to perform \"%s\" on invalid key %d (%d after keyshift) > 132; moving down by octaves", name, currentInstr, debugAction, midiKey, key);
+		// After keyShift is applied, key > 132, so move down by octaves
 		while (key > 132) {
 			key -= 12;
 		}
@@ -387,7 +379,7 @@ unsigned int Part::midiKeyToKey(unsigned int midiKey, const char *debugAction) {
 }
 
 void RhythmPart::noteOn(unsigned int midiKey, unsigned int velocity) {
-	if (midiKey < 24 || midiKey > 108)/*> 87 on MT-32)*/ {
+	if (midiKey < 24 || midiKey > 108) { /*> 87 on MT-32)*/
 		synth->printDebug("%s: Attempted to play invalid key %d (velocity %d)", name, midiKey, velocity);
 		return;
 	}
@@ -410,31 +402,53 @@ void RhythmPart::noteOn(unsigned int midiKey, unsigned int velocity) {
 	int absTimbreNum = drumTimbreNum + 128;
 	TimbreParam *timbre = &synth->mt32ram.timbres[absTimbreNum].timbre;
 	memcpy(currentInstr, timbre->common.name, 10);
-#if MT32EMU_MONITOR_INSTRUMENTS == 1
-	synth->printDebug("%s (%s): starting poly (drum %d, timbre %d) - key %d (velocity %d)", name, currentInstr, drumNum, absTimbreNum, midiKey, velocity);
-#endif
 	if (drumCache[drumNum][0].dirty) {
 		cacheTimbre(drumCache[drumNum], timbre);
 	}
+#if MT32EMU_MONITOR_INSTRUMENTS > 0
+	synth->printDebug("%s (%s): Start poly (drum %d, timbre %d): midiKey %u, key %u, velo %u, mod %u, exp %u, bend %u", name, currentInstr, drumNum, absTimbreNum, midiKey, key, velocity, modulation, expression, pitchBend);
+#if MT32EMU_MONITOR_INSTRUMENTS > 1
+	// According to info from Mok, keyShift does not appear to affect anything on rhythm part on LAPC-I, but may do on MT-32 - needs investigation
+	synth->printDebug(" Patch: (timbreGroup %u), (timbreNum %u), (keyShift %u), fineTune %u, benderRange %u, assignMode %u, (reverbSwitch %u)", patchTemp->patch.timbreGroup, patchTemp->patch.timbreNum, patchTemp->patch.keyShift, patchTemp->patch.fineTune, patchTemp->patch.benderRange, patchTemp->patch.assignMode, patchTemp->patch.reverbSwitch);
+	synth->printDebug(" PatchTemp: outputLevel %u, (panpot %u)", patchTemp->outputLevel, patchTemp->panpot);
+	synth->printDebug(" RhythmTemp: timbre %u, outputLevel %u, panpot %u, reverbSwitch %u", rhythmTemp[drumNum].timbre, rhythmTemp[drumNum].outputLevel, rhythmTemp[drumNum].panpot, rhythmTemp[drumNum].reverbSwitch); 
+#endif
+#endif
 	playPoly(drumCache[drumNum], &rhythmTemp[drumNum], midiKey, key, velocity);
 }
 
 void Part::noteOn(unsigned int midiKey, unsigned int velocity) {
-	unsigned int key = midiKeyToKey(midiKey, "Note On");
-#if MT32EMU_MONITOR_INSTRUMENTS == 1
-	synth->printDebug("%s (%s): starting poly - key %d (velocity %d)", name, currentInstr, midiKey, velocity);
-#endif
+	unsigned int key = midiKeyToKey(midiKey);
 	if (patchCache[0].dirty) {
 		cacheTimbre(patchCache, timbreTemp);
 	}
+#if MT32EMU_MONITOR_INSTRUMENTS > 0
+	synth->printDebug("%s (%s): Start poly: midiKey %u, key %u, velo %u, mod %u, exp %u, bend %u", name, currentInstr, midiKey, key, velocity, modulation, expression, pitchBend);
+#if MT32EMU_MONITOR_INSTRUMENTS > 1
+	synth->printDebug(" Patch: timbreGroup %u, timbreNum %u, keyShift %u, fineTune %u, benderRange %u, assignMode %u, reverbSwitch %u", patchTemp->patch.timbreGroup, patchTemp->patch.timbreNum, patchTemp->patch.keyShift, patchTemp->patch.fineTune, patchTemp->patch.benderRange, patchTemp->patch.assignMode, patchTemp->patch.reverbSwitch);
+	synth->printDebug(" PatchTemp: outputLevel %u, panpot %u", patchTemp->outputLevel, patchTemp->panpot);
+#endif
+#endif
 	playPoly(patchCache, NULL, midiKey, key, velocity);
 }
 
+void Part::abortPoly(Poly *poly) {
+	if (poly->startAbort()) {
+		while (poly->isActive()) {
+			if (!synth->prerender()) {
+				synth->printDebug("%s (%s): Ran out of prerender space to abort poly gracefully", name, currentInstr);
+				poly->terminate();
+				break;
+			}
+		}
+	}
+}
+
 bool Part::abortFirstPoly(unsigned int key) {
-	for (std::list<Poly*>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
+	for (std::list<Poly *>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
 		Poly *poly = *polyIt;
 		if (poly->getKey() == key) {
-			poly->abort();
+			abortPoly(poly);
 			return true;
 		}
 	}
@@ -442,37 +456,49 @@ bool Part::abortFirstPoly(unsigned int key) {
 }
 
 bool Part::abortFirstPoly(PolyState polyState) {
-	for (std::list<Poly*>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
+	for (std::list<Poly *>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
 		Poly *poly = *polyIt;
 		if (poly->getState() == polyState) {
-			poly->abort();
+			abortPoly(poly);
 			return true;
 		}
 	}
 	return false;
 }
 
+bool Part::abortFirstPolyPreferHeld() {
+	if (abortFirstPoly(POLY_Held)) {
+		return true;
+	}
+	return abortFirstPoly();
+}
+
 bool Part::abortFirstPoly() {
-	if (activePolys.empty())
+	if (activePolys.empty()) {
 		return false;
-	activePolys.front()->abort();
+	}
+	abortPoly(activePolys.front());
 	return true;
 }
 
 void Part::playPoly(const PatchCache cache[4], const MemParams::RhythmTemp *rhythmTemp, unsigned int midiKey, unsigned int key, unsigned int velocity) {
-	if((patchTemp->patch.assignMode & 2) == 0) {
+	// CONFIRMED: Even in single-assign mode, we don't abort playing polys if the timbre to play is completely muted.
+	unsigned int needPartials = cache[0].partialCount;
+	if (needPartials == 0) {
+		synth->printDebug("%s (%s): Completely muted instrument", name, currentInstr);
+		return;
+	}
+
+	if ((patchTemp->patch.assignMode & 2) == 0) {
 		// Single-assign mode
 		abortFirstPoly(key);
 	}
 
-	unsigned int needPartials = cache[0].partialCount;
-	if (needPartials == 0) {
-		synth->printDebug("%s (%s): Completely muted instrument", name, this->currentInstr);
-		return;
-	}
-
 	if (!synth->partialManager->freePartials(needPartials, partNum)) {
-		synth->printDebug("%s (%s): Insufficient free partials to play key %d (velocity %d); needed=%d, free=%d", name, currentInstr, midiKey, velocity, needPartials, synth->partialManager->getFreePartialCount());
+#if MT32EMU_MONITOR_PARTIALS > 0
+		synth->printDebug("%s (%s): Insufficient free partials to play key %d (velocity %d); needed=%d, free=%d, assignMode=%d", name, currentInstr, midiKey, velocity, needPartials, synth->partialManager->getFreePartialCount(), patchTemp->patch.assignMode);
+		synth->printPartialUsage();
+#endif
 		return;
 	}
 
@@ -502,15 +528,21 @@ void Part::playPoly(const PatchCache cache[4], const MemParams::RhythmTemp *rhyt
 
 	for (int x = 0; x < 4; x++) {
 		if (partials[x] != NULL) {
+#if MT32EMU_MONITOR_PARTIALS > 2
+			synth->printDebug("%s (%s): Allocated partial %d", name, currentInstr, partials[x]->debugGetPartialNum());
+#endif
 			partials[x]->startPartial(this, poly, &cache[x], rhythmTemp, partials[cache[x].structurePair]);
 		}
 	}
+#if MT32EMU_MONITOR_PARTIALS > 1
+	synth->printPartialUsage();
+#endif
 }
 
 void Part::allNotesOff() {
 	// The MIDI specification states - and Mok confirms - that all notes off (0x7B)
 	// should treat the hold pedal as usual.
-	for (std::list<Poly*>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
+	for (std::list<Poly *>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
 		Poly *poly = *polyIt;
 		// FIXME: This has special handling of key 0 in NoteOff that Mok has not yet confirmed
 		// applies to AllNotesOff.
@@ -522,14 +554,14 @@ void Part::allSoundOff() {
 	// MIDI "All sound off" (0x78) should release notes immediately regardless of the hold pedal.
 	// This controller is not actually implemented by the synths, though (according to the docs and Mok) -
 	// we're only using this method internally.
-	for (std::list<Poly*>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
+	for (std::list<Poly *>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
 		Poly *poly = *polyIt;
 		poly->startDecay();
 	}
 }
 
 void Part::stopPedalHold() {
-	for (std::list<Poly*>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
+	for (std::list<Poly *>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
 		Poly *poly = *polyIt;
 		poly->stopPedalHold();
 	}
@@ -540,15 +572,15 @@ void RhythmPart::noteOff(unsigned int midiKey) {
 }
 
 void Part::noteOff(unsigned int midiKey) {
-	stopNote(midiKeyToKey(midiKey, "Note Off"));
+	stopNote(midiKeyToKey(midiKey));
 }
 
 void Part::stopNote(unsigned int key) {
-#if MT32EMU_MONITOR_INSTRUMENTS == 1
+#if MT32EMU_MONITOR_INSTRUMENTS > 0
 	synth->printDebug("%s (%s): stopping key %d", name, currentInstr, key);
 #endif
 
-	for (std::list<Poly*>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
+	for (std::list<Poly *>::iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
 		Poly *poly = *polyIt;
 		// Generally, non-sustaining instruments ignore note off. They die away eventually anyway.
 		// Key 0 (only used by special cases on rhythm part) reacts to note off even if non-sustaining or pedal held.
@@ -569,14 +601,14 @@ unsigned int Part::getActivePartialCount() const {
 }
 
 unsigned int Part::getActiveNonReleasingPartialCount() const {
-	unsigned int activePartialCount = 0;
-	for (std::list<Poly*>::const_iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
+	unsigned int activeNonReleasingPartialCount = 0;
+	for (std::list<Poly *>::const_iterator polyIt = activePolys.begin(); polyIt != activePolys.end(); polyIt++) {
 		Poly *poly = *polyIt;
 		if (poly->getState() != POLY_Releasing) {
-			activePartialCount += poly->getActivePartialCount();
+			activeNonReleasingPartialCount += poly->getActivePartialCount();
 		}
 	}
-	return activePartialCount;
+	return activeNonReleasingPartialCount;
 }
 
 void Part::partialDeactivated(Poly *poly) {

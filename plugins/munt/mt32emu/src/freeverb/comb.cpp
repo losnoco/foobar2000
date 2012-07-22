@@ -44,3 +44,9 @@ float comb::getfeedback()
 {
 	return feedback;
 }
+
+void comb::deletebuffer()
+{
+	delete[] buffer;
+	buffer = 0;
+}

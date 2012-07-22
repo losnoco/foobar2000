@@ -15,27 +15,28 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MT32EMU_FILE_H
-#define MT32EMU_FILE_H
+#ifndef MT32EMU_FREEVERB_MODEL_H
+#define MT32EMU_FREEVERB_MODEL_H
 
-#include <cstddef>
+class revmodel;
 
 namespace MT32Emu {
 
-class File {
-private:
-	unsigned char sha1Digest [45];
-protected:
-	size_t fileSize;
-	unsigned char *data;
+class FreeverbModel : public ReverbModel {
+	revmodel *freeverb;
+	float scaleTuning;
+	float filtVal;
+	float wet;
+	Bit8u room;
+	float damp;
 public:
-	File();
-	virtual ~File() {}
-	virtual size_t getSize() = 0;
-	virtual unsigned char *getData() = 0;
-	virtual unsigned char *getSHA1();
-
-	virtual void close() = 0;
+	FreeverbModel(float useScaleTuning, float useFiltVal, float useWet, Bit8u useRoom, float useDamp);
+	~FreeverbModel();
+	void open(unsigned int sampleRate);
+	void close();
+	void setParameters(Bit8u time, Bit8u level);
+	void process(const float *inLeft, const float *inRight, float *outLeft, float *outRight, unsigned long numSamples);
+	bool isActive() const;
 };
 
 }

@@ -1,4 +1,5 @@
-/* Copyright (C) 2003-2009 Dean Beeler, Jerome Fisher
+/* Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009 Dean Beeler, Jerome Fisher
+ * Copyright (C) 2011 Dean Beeler, Jerome Fisher, Sergey V. Mikayev
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -14,18 +15,15 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <math.h>
+#include <cmath>
 
 #include "mt32emu.h"
+#include "mmath.h"
 
 namespace MT32Emu {
 
-// FIXME: Need to confirm that this is correct. Sounds about right.
-const int TVF_TARGET_MULT = 0x800000;
-const int MAX_CURRENT = 0xFF * TVF_TARGET_MULT;
-
-// When entering nextPhase, targetPhase is immediately incremented, and the descriptions/names below represent
-// their use after the increment.
+// Note that when entering nextPhase(), newPhase is set to phase + 1, and the descriptions/names below refer to
+// newPhase's value.
 enum {
 	// When this is the target phase, level[0] is targeted within time[0]
 	// Note that this phase is always set up in reset(), not nextPhase()
@@ -51,7 +49,7 @@ enum {
 	PHASE_DONE = 7
 };
 
-static int calcBaseCutoff(const Tables *tables, const TimbreParam::PartialParam *partialParam, Bit32u basePitch, unsigned int key) {
+static int calcBaseCutoff(const TimbreParam::PartialParam *partialParam, Bit32u basePitch, unsigned int key) {
 	// This table matches the values used by a real LAPC-I.
 	static const Bit8s biasLevelToBiasMult[] = {85, 42, 21, 16, 10, 5, 2, 0, -2, -5, -10, -16, -21, -74, -85};
 	// These values represent unique options with no consistent pattern, so we have to use something like a table in any case.
@@ -59,24 +57,32 @@ static int calcBaseCutoff(const Tables *tables, const TimbreParam::PartialParam 
 	// -1, -1/2, -1/4, 0, 1/8, 1/4, 3/8, 1/2, 5/8, 3/4, 7/8, 1, 5/4, 3/2, 2, s1, s2
 	// Note that the entry for 1/8 is rounded to 2 (from 1/8 * 21 = 2.625), which seems strangely inaccurate compared to the others.
 	static const Bit8s keyfollowMult21[] = {-21, -10, -5, 0, 2, 5, 8, 10, 13, 16, 18, 21, 26, 32, 42, 21, 21};
-	int baseCutoff = keyfollowMult21[partialParam->tvf.keyfollow] - keyfollowMult21[partialParam->wg.pitchKeyfollow]; // baseCutoff range here: -63 to 63
+	int baseCutoff = keyfollowMult21[partialParam->tvf.keyfollow] - keyfollowMult21[partialParam->wg.pitchKeyfollow];
+	// baseCutoff range now: -63 to 63
 	baseCutoff *= (int)key - 60;
+	// baseCutoff range now: -3024 to 3024
 	int biasPoint = partialParam->tvf.biasPoint;
 	if ((biasPoint & 0x40) == 0) {
-		int bias = biasPoint + 33 - key;
+		// biasPoint range here: 0 to 63
+		int bias = biasPoint + 33 - key; // bias range here: -75 to 84 
 		if (bias > 0) {
-			bias = -bias;
-			baseCutoff += bias * biasLevelToBiasMult[partialParam->tvf.biasLevel];
+			bias = -bias; // bias range here: -1 to -84
+			baseCutoff += bias * biasLevelToBiasMult[partialParam->tvf.biasLevel]; // Calculation range: -7140 to 7140
+			// baseCutoff range now: -10164 to 10164 
 		}
 	} else {
-		int bias = biasPoint - 31 - key;
+		// biasPoint range here: 64 to 127
+		int bias = biasPoint - 31 - key; // bias range here: -75 to 84
 		if (bias < 0) {
-			baseCutoff += bias * biasLevelToBiasMult[partialParam->tvf.biasLevel];
+			baseCutoff += bias * biasLevelToBiasMult[partialParam->tvf.biasLevel]; // Calculation range: −6375 to 6375
+			// baseCutoff range now: -9399 to 9399
 		}
 	}
+	// baseCutoff range now: -10164 to 10164
 	baseCutoff += ((partialParam->tvf.cutoff << 4) - 800);
+	// baseCutoff range now: -10964 to 10964
 	if (baseCutoff >= 0) {
-		// FIXME: Potentially bad if initialCutoff ends up below -2056?
+		// FIXME: Potentially bad if baseCutoff ends up below -2056?
 		int pitchDeltaThing = (basePitch >> 4) + baseCutoff - 3584;
 		if (pitchDeltaThing > 0) {
 			baseCutoff -= pitchDeltaThing;
@@ -92,51 +98,54 @@ static int calcBaseCutoff(const Tables *tables, const TimbreParam::PartialParam 
 	return (Bit8u)baseCutoff;
 }
 
-TVF::TVF(const Partial *partial) :
-	partial(partial) {
+TVF::TVF(const Partial *usePartial, LA32Ramp *useCutoffModifierRamp) :
+	partial(usePartial), cutoffModifierRamp(useCutoffModifierRamp) {
 }
 
-void TVF::setIncrement(Bit8u increment) {
-	// FIXME: This is just a guess - absolutely no idea whether this is the same as for TVA::setAmpIncrement(), which it copies.
-	this->increment = increment;
-
-	bigIncrement = increment & 0x7F;
-	// FIXME: We could use a table for this in future
-	bigIncrement = (unsigned int)((powf(10.0f, (float)((bigIncrement - 1.0f) / 26.0f))) * 256.0f);
+void TVF::startRamp(Bit8u newTarget, Bit8u newIncrement, int newPhase) {
+	target = newTarget;
+	phase = newPhase;
+	cutoffModifierRamp->startRamp(newTarget, newIncrement);
+#if MT32EMU_MONITOR_TVF >= 1
+	partial->getSynth()->printDebug("[+%lu] [Partial %d] TVF,ramp,%d,%d,%d,%d", partial->debugGetSampleNum(), partial->debugGetPartialNum(), newTarget, (newIncrement & 0x80) ? -1 : 1, (newIncrement & 0x7F), newPhase);
+#endif
 }
 
-void TVF::reset(const TimbreParam::PartialParam *partialParam, unsigned int basePitch) {
-	this->partialParam = partialParam;
+void TVF::reset(const TimbreParam::PartialParam *newPartialParam, unsigned int basePitch) {
+	partialParam = newPartialParam;
 
 	unsigned int key = partial->getPoly()->getKey();
 	unsigned int velocity = partial->getPoly()->getVelocity();
 
 	Tables *tables = &partial->getSynth()->tables;
 
-	baseCutoff = calcBaseCutoff(tables, partialParam, basePitch, key);
+	baseCutoff = calcBaseCutoff(newPartialParam, basePitch, key);
+#if MT32EMU_MONITOR_TVF >= 1
+	partial->getSynth()->printDebug("[+%lu] [Partial %d] TVF,base,%d", partial->debugGetSampleNum(), partial->debugGetPartialNum(), baseCutoff);
+#endif
 
-	int newLevelMult = velocity * partialParam->tvf.envVeloSensitivity;
+	int newLevelMult = velocity * newPartialParam->tvf.envVeloSensitivity;
 	newLevelMult >>= 6;
-	newLevelMult += 109 - partialParam->tvf.envVeloSensitivity;
-	newLevelMult += ((signed)key - 60) >> (4 - partialParam->tvf.envDepthKeyfollow);
+	newLevelMult += 109 - newPartialParam->tvf.envVeloSensitivity;
+	newLevelMult += ((signed)key - 60) >> (4 - newPartialParam->tvf.envDepthKeyfollow);
 	if (newLevelMult < 0) {
 		newLevelMult = 0;
 	}
-	newLevelMult *= partialParam->tvf.envDepth;
+	newLevelMult *= newPartialParam->tvf.envDepth;
 	newLevelMult >>= 6;
 	if (newLevelMult > 255) {
 		newLevelMult = 255;
 	}
 	levelMult = newLevelMult;
 
-	if (partialParam->tvf.envTimeKeyfollow != 0) {
-		keyTimeSubtraction = ((signed)key - 60) >> (5 - partialParam->tvf.envTimeKeyfollow);
+	if (newPartialParam->tvf.envTimeKeyfollow != 0) {
+		keyTimeSubtraction = ((signed)key - 60) >> (5 - newPartialParam->tvf.envTimeKeyfollow);
 	} else {
 		keyTimeSubtraction = 0;
 	}
 
-	int newTarget = (newLevelMult * partialParam->tvf.envLevel[0]) >> 8;
-	int envTimeSetting = partialParam->tvf.envTime[0] - keyTimeSubtraction;
+	int newTarget = (newLevelMult * newPartialParam->tvf.envLevel[0]) >> 8;
+	int envTimeSetting = newPartialParam->tvf.envTime[0] - keyTimeSubtraction;
 	int newIncrement;
 	if (envTimeSetting <= 0) {
 		newIncrement = (0x80 | 127);
@@ -146,91 +155,58 @@ void TVF::reset(const TimbreParam::PartialParam *partialParam, unsigned int base
 			newIncrement = 1;
 		}
 	}
-	increment = newIncrement;
-	target = newTarget;
-	targetPhase = PHASE_2 - 1;
+	cutoffModifierRamp->reset();
+	startRamp(newTarget, newIncrement, PHASE_2 - 1);
 }
 
-unsigned int TVF::nextFilt() {
-	// FIXME: This whole method is basically a copy of TVA::nextAmp(), which may be completely inappropriate for TVF.
-	Bit32u bigTarget = target * TVF_TARGET_MULT;
-	if (increment == 0) {
-		current = bigTarget;
-	} else {
-		if ((increment & 0x80) != 0) {
-			// Lowering
-			if (bigIncrement > current) {
-				current = bigTarget;
-				nextPhase();
-			} else {
-				current -= bigIncrement;
-				if (current <= bigTarget) {
-					current = bigTarget;
-					nextPhase();
-				}
-			}
-		} else {
-			// Raising
-			if (MAX_CURRENT - current < bigIncrement) {
-				current = bigTarget;
-				nextPhase();
-			} else {
-				current += bigIncrement;
-				if(current >= bigTarget) {
-					current = bigTarget;
-					nextPhase();
-				}
-			}
-		}
-	}
-	// FIXME: Absolutely nfi whether this is right
-	int cutoff = baseCutoff * current / TVF_TARGET_MULT;
-	cutoff >>= 8;
-	return cutoff;
+Bit8u TVF::getBaseCutoff() const {
+	return baseCutoff;
+}
+
+void TVF::handleInterrupt() {
+	nextPhase();
 }
 
 void TVF::startDecay() {
-	if (targetPhase >= PHASE_RELEASE)
+	if (phase >= PHASE_RELEASE) {
 		return;
-	targetPhase = PHASE_DONE - 1;
-	if (partialParam->tvf.envTime[4] == 0)
-		setIncrement(1);
-	else
-		setIncrement(-partialParam->tvf.envTime[4]);
-	target = 0;
+	}
+	if (partialParam->tvf.envTime[4] == 0) {
+		startRamp(0, 1, PHASE_DONE - 1);
+	} else {
+		startRamp(0, -partialParam->tvf.envTime[4], PHASE_DONE - 1);
+	}
 }
 
 void TVF::nextPhase() {
 	Tables *tables = &partial->getSynth()->tables;
-	targetPhase++;
+	int newPhase = phase + 1;
 
-	switch (targetPhase) {
+	switch (newPhase) {
 	case PHASE_DONE:
-		increment = 0;
-		target = 0;
+		startRamp(0, 0, newPhase);
 		return;
 	case PHASE_SUSTAIN:
 	case PHASE_RELEASE:
-		// FIXME: Afaict targetPhase should never be PHASE_RELEASE here. And if it were, this is an odd way to handle it.
+		// FIXME: Afaict newPhase should never be PHASE_RELEASE here. And if it were, this is an odd way to handle it.
 		if (!partial->getPoly()->canSustain()) {
+			phase = newPhase; // FIXME: Correct?
 			startDecay(); // FIXME: This should actually start decay even if phase is already 6. Does that matter?
 			return;
 		}
-		increment = 0;
-		target = (levelMult * partialParam->tvf.envLevel[3]) >> 8;
+		startRamp((levelMult * partialParam->tvf.envLevel[3]) >> 8, 0, newPhase);
 		return;
 	}
 
-	int envPointIndex = targetPhase - 1;
-	// FIXME: Should the result perhaps be cast to Bit8s?
-	int envTimeSetting = (int)partialParam->tvf.envTime[envPointIndex] - keyTimeSubtraction;
+	int envPointIndex = phase;
+	int envTimeSetting = partialParam->tvf.envTime[envPointIndex] - keyTimeSubtraction;
 
 	int newTarget = (levelMult * partialParam->tvf.envLevel[envPointIndex]) >> 8;
 	int newIncrement;
 	if (envTimeSetting > 0) {
 		int targetDelta = newTarget - target;
-		if (targetDelta == 0 ) {
-			if (newTarget == 0 ) {
+		if (targetDelta == 0) {
+			if (newTarget == 0) {
 				targetDelta = 1;
 				newTarget = 1;
 			} else {
@@ -238,8 +214,7 @@ void TVF::nextPhase() {
 				newTarget--;
 			}
 		}
-		// FIXME: Can't newIncrement be negative or over 127 here? Casting to Bit8u to emulate...
-		newIncrement = (Bit8u)(tables->envLogarithmicTime[targetDelta < 0 ? -targetDelta : targetDelta] - envTimeSetting);
+		newIncrement = tables->envLogarithmicTime[targetDelta < 0 ? -targetDelta : targetDelta] - envTimeSetting;
 		if (newIncrement <= 0) {
 			newIncrement = 1;
 		}
@@ -249,8 +224,7 @@ void TVF::nextPhase() {
 	} else {
 		newIncrement = newTarget >= target ? (0x80 | 127) : 127;
 	}
-	increment = newIncrement;
-	target = newTarget;
+	startRamp(newTarget, newIncrement, newPhase);
 }
 
 }

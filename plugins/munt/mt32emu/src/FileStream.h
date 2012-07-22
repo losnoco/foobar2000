@@ -15,27 +15,28 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MT32EMU_FILE_H
-#define MT32EMU_FILE_H
+#ifndef MT32EMU_FILE_STREAM_H
+#define MT32EMU_FILE_STREAM_H
 
-#include <cstddef>
+#include <fstream>
+#include <iostream>
+#include <cstdio>
+
+#include "File.h"
 
 namespace MT32Emu {
 
-class File {
+class FileStream: public File {
 private:
-	unsigned char sha1Digest [45];
-protected:
-	size_t fileSize;
-	unsigned char *data;
+	std::ifstream *ifsp;
 public:
-	File();
-	virtual ~File() {}
-	virtual size_t getSize() = 0;
-	virtual unsigned char *getData() = 0;
-	virtual unsigned char *getSHA1();
+	FileStream();
+	virtual ~FileStream();
+	virtual size_t getSize();
+	virtual unsigned char* getData();
 
-	virtual void close() = 0;
+	bool open(const char *filename);
+	void close();
 };
 
 }

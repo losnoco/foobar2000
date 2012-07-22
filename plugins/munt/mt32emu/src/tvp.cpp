@@ -1,4 +1,5 @@
-/* Copyright (C) 2003-2009 Dean Beeler, Jerome Fisher
+/* Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009 Dean Beeler, Jerome Fisher
+ * Copyright (C) 2011 Dean Beeler, Jerome Fisher, Sergey V. Mikayev
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -14,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <math.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdlib>
 
 #include "mt32emu.h"
 
@@ -33,25 +34,25 @@ static Bit16s pitchKeyfollowMult[] = {-8192, -4096, -2048, 0, 1024, 2048, 3072, 
 // Note: Keys < 60 use keyToPitchTable[60 - key], keys >= 60 use keyToPitchTable[key - 60].
 // FIXME: This table could really be shorter, since we never use e.g. key 127.
 static Bit16u keyToPitchTable[] = {
-		    0,   341,   683,  1024,  1365,  1707,  2048,  2389,
-		 2731,  3072,  3413,  3755,  4096,  4437,  4779,  5120,
-		 5461,  5803,  6144,  6485,  6827,  7168,  7509,  7851,
-		 8192,  8533,  8875,  9216,  9557,  9899, 10240, 10581,
-		10923, 11264, 11605, 11947, 12288, 12629, 12971, 13312,
-		13653, 13995, 14336, 14677, 15019, 15360, 15701, 16043,
-		16384, 16725, 17067, 17408, 17749, 18091, 18432, 18773,
-		19115, 19456, 19797, 20139, 20480, 20821, 21163, 21504,
-		21845, 22187, 22528, 22869
+	    0,   341,   683,  1024,  1365,  1707,  2048,  2389,
+	 2731,  3072,  3413,  3755,  4096,  4437,  4779,  5120,
+	 5461,  5803,  6144,  6485,  6827,  7168,  7509,  7851,
+	 8192,  8533,  8875,  9216,  9557,  9899, 10240, 10581,
+	10923, 11264, 11605, 11947, 12288, 12629, 12971, 13312,
+	13653, 13995, 14336, 14677, 15019, 15360, 15701, 16043,
+	16384, 16725, 17067, 17408, 17749, 18091, 18432, 18773,
+	19115, 19456, 19797, 20139, 20480, 20821, 21163, 21504,
+	21845, 22187, 22528, 22869
 };
 
-TVP::TVP(const Partial *partial) :
-	partial(partial), system(&partial->getSynth()->mt32ram.system) {
-	unsigned int sampleRate = partial->getSynth()->myProp.sampleRate;
+TVP::TVP(const Partial *usePartial) :
+	partial(usePartial), system(&usePartial->getSynth()->mt32ram.system) {
+	unsigned int sampleRate = usePartial->getSynth()->myProp.sampleRate;
 	// We want to do processing 4000 times per second. FIXME: This is pretty arbitrary.
-	this->maxCounter = sampleRate / 4000;
+	maxCounter = sampleRate / 4000;
 	// The timer runs at 500kHz. We only need to bother updating it every maxCounter samples, before we do processing.
 	// This is how much to increment it by every maxCounter samples.
-	this->processTimerIncrement = 500000 * maxCounter / sampleRate;
+	processTimerIncrement = 500000 * maxCounter / sampleRate;
 }
 
 static Bit16s keyToPitch(unsigned int key) {
@@ -115,18 +116,17 @@ static Bit32u calcVeloMult(Bit8u veloSensitivity, unsigned int velocity) {
 	return veloMult;
 }
 
-static Bit32s calcTargetPitchOffsetWithoutLFO(const TimbreParam::PartialParam *partialParam, int levelIndex, unsigned int velocity)
-{
+static Bit32s calcTargetPitchOffsetWithoutLFO(const TimbreParam::PartialParam *partialParam, int levelIndex, unsigned int velocity) {
 	int veloMult = calcVeloMult(partialParam->pitchEnv.veloSensitivity, velocity);
 	int targetPitchOffsetWithoutLFO = partialParam->pitchEnv.level[levelIndex] - 50;
 	targetPitchOffsetWithoutLFO = (Bit32s)(targetPitchOffsetWithoutLFO * veloMult) >> (16 - partialParam->pitchEnv.depth); // PORTABILITY NOTE: Assumes arithmetic shift
 	return targetPitchOffsetWithoutLFO;
 }
 
-void TVP::reset(const Part *part, const PatchCache *patchCache) {
-	this->part = part;
-	this->partialParam = patchCache->partialParam;
-	this->patchTemp = part->getPatchTemp();
+void TVP::reset(const Part *usePart, const TimbreParam::PartialParam *usePartialParam) {
+	part = usePart;
+	partialParam = usePartialParam;
+	patchTemp = part->getPatchTemp();
 
 	unsigned int key = partial->getPoly()->getKey();
 	unsigned int velocity = partial->getPoly()->getVelocity();
@@ -141,9 +141,9 @@ void TVP::reset(const Part *part, const PatchCache *patchCache) {
 
 	if (partialParam->pitchEnv.timeKeyfollow) {
 		timeKeyfollowSubtraction = (key - 60) >> (5 - partialParam->pitchEnv.timeKeyfollow); // PORTABILITY NOTE: Assumes arithmetic shift
-	}
-	else
+	} else {
 		timeKeyfollowSubtraction = 0;
+	}
 	lfoPitchOffset = 0;
 	counter = 0;
 	pitch = basePitch;
@@ -168,10 +168,12 @@ void TVP::updatePitch() {
 	if ((partialParam->wg.pitchBenderEnabled & 1) != 0) {
 		newPitch += part->getPitchBend();
 	}
-	if (newPitch < 0)
+	if (newPitch < 0) {
 		newPitch = 0;
-	if (newPitch > 59392)
+	}
+	if (newPitch > 59392) {
 		newPitch = 59392;
+	}
 	pitch = (Bit16u)newPitch;
 
 	// FIXME: We're doing this here because that's what the CM-32L does - we should probably move this somewhere more appropriate in future.
@@ -224,8 +226,8 @@ void TVP::nextPhase() {
 // Shifts val to the left until bit 31 is 1 and returns the number of shifts
 static Bit8u normalise(Bit32u &val) {
 	Bit8u leftShifts;
-	for(leftShifts = 0; leftShifts < 31; leftShifts++) {
-		if((val & 0x80000000) != 0) {
+	for (leftShifts = 0; leftShifts < 31; leftShifts++) {
+		if ((val & 0x80000000) != 0) {
 			break;
 		}
 		val = val << 1;
@@ -234,13 +236,16 @@ static Bit8u normalise(Bit32u &val) {
 }
 
 void TVP::setupPitchChange(int targetPitchOffset, Bit8u changeDuration) {
+	bool negativeDelta = targetPitchOffset < currentPitchOffset;
 	Bit32s pitchOffsetDelta = targetPitchOffset - currentPitchOffset;
 	if (pitchOffsetDelta > 32767 || pitchOffsetDelta < -32768) {
-		// FIXME: Weird, will end up being set to 32767 when it should be < -32768. Apparently a bug in the original, or is it never < -32768?
 		pitchOffsetDelta = 32767;
 	}
+	if (negativeDelta) {
+		pitchOffsetDelta = -pitchOffsetDelta;
+	}
 	// We want to maximise the number of bits of the Bit16s "pitchOffsetChangePerBigTick" we use in order to get the best possible precision later
-	Bit32u absPitchOffsetDelta = abs((int)pitchOffsetDelta) << 16;
+	Bit32u absPitchOffsetDelta = pitchOffsetDelta << 16;
 	Bit8u normalisationShifts = normalise(absPitchOffsetDelta); // FIXME: Double-check: normalisationShifts is usually between 0 and 15 here, unless the delta is 0, in which case it's 31
 	absPitchOffsetDelta = absPitchOffsetDelta >> 1; // Make room for the sign bit
 
@@ -249,7 +254,7 @@ void TVP::setupPitchChange(int targetPitchOffset, Bit8u changeDuration) {
 	shifts = normalisationShifts + upperDuration + 2;
 	Bit16u divisor = lowerDurationToDivisor[changeDuration & 7];
 	Bit16s newPitchOffsetChangePerBigTick = ((absPitchOffsetDelta & 0xFFFF0000) / divisor) >> 1; // Result now fits within 15 bits. FIXME: Check nothing's getting sign-extended incorrectly
-	if (pitchOffsetDelta < 0) {
+	if (negativeDelta) {
 		newPitchOffsetChangePerBigTick = -newPitchOffsetChangePerBigTick;
 	}
 	pitchOffsetChangePerBigTick = newPitchOffsetChangePerBigTick;
@@ -259,6 +264,7 @@ void TVP::setupPitchChange(int targetPitchOffset, Bit8u changeDuration) {
 	if (durationInBigTicks > 32767) {
 		durationInBigTicks = 32767;
 	}
+	// The result of the addition may exceed 16 bits, but wrapping is fine and intended here.
 	targetPitchOffsetReachedBigTick = currentBigTick + durationInBigTicks;
 }
 
@@ -270,8 +276,7 @@ void TVP::startDecay() {
 
 Bit16u TVP::nextPitch() {
 	// FIXME: Write explanation of counter and time increment
-	if(counter == 0)
-	{
+	if (counter == 0) {
 		timeElapsed += processTimerIncrement;
 		timeElapsed = timeElapsed & 0x00FFFFFF;
 		process();
@@ -281,7 +286,6 @@ Bit16u TVP::nextPitch() {
 }
 
 void TVP::process() {
-
 	if (phase == 0) {
 		targetPitchOffsetReached();
 		return;
@@ -295,7 +299,7 @@ void TVP::process() {
 		return;
 	}
 
-	int negativeBigTicksRemaining = (timeElapsed >> 8) - targetPitchOffsetReachedBigTick;
+	Bit16s negativeBigTicksRemaining = (timeElapsed >> 8) - targetPitchOffsetReachedBigTick;
 	if (negativeBigTicksRemaining >= 0) {
 		// We've reached the time for a phase change
 		targetPitchOffsetReached();

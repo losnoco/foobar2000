@@ -1,4 +1,5 @@
-/* Copyright (C) 2003-2009 Dean Beeler, Jerome Fisher
+/* Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009 Dean Beeler, Jerome Fisher
+ * Copyright (C) 2011 Dean Beeler, Jerome Fisher, Sergey V. Mikayev
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +19,8 @@
 
 namespace MT32Emu {
 
-Poly::Poly(Part *part) {
-	this->part = part;
+Poly::Poly(Part *usePart) {
+	part = usePart;
 	key = 255;
 	velocity = 255;
 	sustain = false;
@@ -30,20 +31,20 @@ Poly::Poly(Part *part) {
 	state = POLY_Inactive;
 }
 
-void Poly::reset(unsigned int key, unsigned int velocity, bool canSustain, Partial **partials) {
-	if(isActive()) {
+void Poly::reset(unsigned int newKey, unsigned int newVelocity, bool newSustain, Partial **newPartials) {
+	if (isActive()) {
 		// FIXME: Throw out some big ugly debug output with a lot of exclamation marks - we should never get here
-		abort();
+		terminate();
 	}
 
-	this->key = key;
-	this->velocity = velocity;
-	this->sustain = canSustain;
+	key = newKey;
+	velocity = newVelocity;
+	sustain = newSustain;
 
 	activePartialCount = 0;
 	for (int i = 0; i < 4; i++) {
-		this->partials[i] = partials[i];
-		if (partials[i] != NULL) {
+		partials[i] = newPartials[i];
+		if (newPartials[i] != NULL) {
 			activePartialCount++;
 			state = POLY_Playing;
 		}
@@ -65,8 +66,9 @@ bool Poly::noteOff(bool pedalHeld) {
 }
 
 bool Poly::stopPedalHold() {
-	if (state != POLY_Held)
+	if (state != POLY_Held) {
 		return false;
+	}
 	return startDecay();
 }
 
@@ -85,7 +87,20 @@ bool Poly::startDecay() {
 	return true;
 }
 
-void Poly::abort() {
+bool Poly::startAbort() {
+	if (state == POLY_Inactive) {
+		return false;
+	}
+	for (int t = 0; t < 4; t++) {
+		Partial *partial = partials[t];
+		if (partial != NULL) {
+			partial->startAbort();
+		}
+	}
+	return true;
+}
+
+void Poly::terminate() {
 	if (state == POLY_Inactive) {
 		return;
 	}
@@ -112,6 +127,12 @@ void Poly::backupCacheToPartials(PatchCache cache[4]) {
 	}
 }
 
+/**
+ * Returns the internal key identifier.
+ * For non-rhythm, this is within the range 12 to 108.
+ * For rhythm on MT-32, this is 0 or 1 (special cases) or within the range 24 to 87.
+ * For rhythm on devices with extended PCM sounds (e.g. CM-32L), this is 0, 1 or 24 to 108
+ */
 unsigned int Poly::getKey() const {
 	return key;
 }

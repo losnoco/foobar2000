@@ -1,4 +1,5 @@
-/* Copyright (C) 2003-2009 Dean Beeler, Jerome Fisher
+/* Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009 Dean Beeler, Jerome Fisher
+ * Copyright (C) 2011 Dean Beeler, Jerome Fisher, Sergey V. Mikayev
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -19,8 +20,6 @@
 
 namespace MT32Emu {
 
-const unsigned int MAX_SAMPLE_OUTPUT = 4096;
-
 // MT32EMU_MEMADDR() converts from sysex-padded, MT32EMU_SYSEXMEMADDR converts to it
 // Roland provides documentation using the sysex-padded addresses, so we tend to use that in code and output
 #define MT32EMU_MEMADDR(x) ((((x) & 0x7f0000) >> 2) | (((x) & 0x7f00) >> 1) | ((x) & 0x7f))
@@ -28,12 +27,8 @@ const unsigned int MAX_SAMPLE_OUTPUT = 4096;
 
 #ifdef _MSC_VER
 #define  MT32EMU_ALIGN_PACKED __declspec(align(1))
-typedef unsigned __int64   Bit64u;
-typedef   signed __int64   Bit64s;
 #else
 #define MT32EMU_ALIGN_PACKED __attribute__((packed))
-typedef unsigned long long Bit64u;
-typedef   signed long long Bit64s;
 #endif
 
 typedef unsigned int       Bit32u;
@@ -128,6 +123,16 @@ struct PatchParam {
 	Bit8u dummy; // (DUMMY)
 } MT32EMU_ALIGN_PACKED;
 
+const unsigned int SYSTEM_MASTER_TUNE_OFF = 0;
+const unsigned int SYSTEM_REVERB_MODE_OFF = 1;
+const unsigned int SYSTEM_REVERB_TIME_OFF = 2;
+const unsigned int SYSTEM_REVERB_LEVEL_OFF = 3;
+const unsigned int SYSTEM_RESERVE_SETTINGS_START_OFF = 4;
+const unsigned int SYSTEM_RESERVE_SETTINGS_END_OFF = 12;
+const unsigned int SYSTEM_CHAN_ASSIGN_START_OFF = 13;
+const unsigned int SYSTEM_CHAN_ASSIGN_END_OFF = 21;
+const unsigned int SYSTEM_MASTER_VOL_OFF = 22;
+
 struct MemParams {
 	// NOTE: The MT-32 documentation only specifies PatchTemp areas for parts 1-8.
 	// The LAPC-I documentation specified an additional area for rhythm at the end,
@@ -178,15 +183,8 @@ struct ControlROMPCMStruct;
 struct PCMWaveEntry {
 	Bit32u addr;
 	Bit32u len;
-	double tune;
 	bool loop;
-	bool unaffectedByMasterTune;
 	ControlROMPCMStruct *controlROMPCMStruct;
-};
-
-struct StereoVolume {
-	Bit16u leftvol;
-	Bit16u rightvol;
 };
 
 // This is basically a per-partial, pre-processed combination of timbre and patch/rhythm settings
@@ -195,14 +193,6 @@ struct PatchCache {
 	bool PCMPartial;
 	int pcm;
 	char waveform;
-	int pulsewidth;
-	int pwsens;
-
-	int filtkeyfollow;
-
-	TimbreParam::PartialParam::TVFParam filtEnv;
-
-	Bit32s filtsustain;
 
 	Bit32u structureMix;
 	int structurePosition;

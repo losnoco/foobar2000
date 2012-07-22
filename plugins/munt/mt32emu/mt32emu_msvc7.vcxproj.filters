@@ -21,6 +21,12 @@
     <Filter Include="Header Files\blit">
       <UniqueIdentifier>{fc01a6e3-b028-44ea-b57c-e79b464f1c1f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\sha1">
+      <UniqueIdentifier>{3aeac179-309a-429f-a1fd-5999c8352b50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sha1">
+      <UniqueIdentifier>{5d49e36a-1ee4-47c8-ab53-80584b166f5c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\externalInterface.cpp">
@@ -83,7 +89,16 @@
     <ClCompile Include="src\tvf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\i386.cpp">
+    <ClCompile Include="src\sha1\sha1.cpp">
+      <Filter>Source Files\sha1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\LA32Ramp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\FileStream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\FreeverbModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -160,7 +175,16 @@
     <ClInclude Include="src\tvf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\i386.h">
+    <ClInclude Include="src\sha1\sha1.h">
+      <Filter>Header Files\sha1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\LA32Ramp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\FileStream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\FreeverbModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

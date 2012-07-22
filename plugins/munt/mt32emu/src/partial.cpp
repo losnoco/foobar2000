@@ -1,4 +1,5 @@
-/* Copyright (C) 2003-2009 Dean Beeler, Jerome Fisher
+/* Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009 Dean Beeler, Jerome Fisher
+ * Copyright (C) 2011 Dean Beeler, Jerome Fisher, Sergey V. Mikayev
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -14,36 +15,46 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
 
 #include "mt32emu.h"
+#include "mmath.h"
 
-#define FIXEDPOINT_UDIV(x, y, point) (((x) << (point)) / ((y)))
-#define FIXEDPOINT_SDIV(x, y, point) (((x) * (1 << point)) / ((y)))
-#define FIXEDPOINT_UMULT(x, y, point) (((x) * (y)) >> point)
-#define FIXEDPOINT_SMULT(x, y, point) (((x) * (y)) / (1 << point))
+namespace MT32Emu {
 
-using namespace MT32Emu;
+#ifdef INACCURATE_SMOOTH_PAN
+// Mok wanted an option for smoother panning, and we love Mok.
+static const float PAN_NUMERATOR_NORMAL[] = {0.0f, 0.5f, 1.0f, 1.5f, 2.0f, 2.5f, 3.0f, 3.5f, 4.0f, 4.5f, 5.0f, 5.5f, 6.0f, 6.5f, 7.0f};
+#else
+// CONFIRMED by Mok: These NUMERATOR values (as bytes, not floats, obviously) are sent exactly like this to the LA32.
+static const float PAN_NUMERATOR_NORMAL[] = {0.0f, 0.0f, 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f, 4.0f, 4.0f, 5.0f, 5.0f, 6.0f, 6.0f, 7.0f};
+#endif
+static const float PAN_NUMERATOR_MASTER[] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f};
+static const float PAN_NUMERATOR_SLAVE[]  = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f, 7.0f};
 
-Partial::Partial(Synth *useSynth, int debugPartialNum) :
-	synth(useSynth), debugPartialNum(debugPartialNum), tva(new TVA(this)), tvp(new TVP(this))
-{
+Partial::Partial(Synth *useSynth, int useDebugPartialNum) :
+	synth(useSynth), debugPartialNum(useDebugPartialNum), sampleNum(0), tva(new TVA(this, &ampRamp)), tvp(new TVP(this)), tvf(new TVF(this, &cutoffModifierRamp)) {
 	ownerPart = -1;
 	poly = NULL;
 	pair = NULL;
-	// BlitSaws are initialised with dummy values here - they'll be reset the first time they're used anyway.
-	// We're not allocating lazily since deferring memory allocations until sound is actually playing doesn't seem like a good idea.
-	posSaw = new BlitSaw(1, 0.5);
-	negSaw = new BlitSaw(1, 0.0);
 }
 
 Partial::~Partial() {
-	delete posSaw;
-	delete negSaw;
 	delete tva;
 	delete tvp;
+	delete tvf;
+}
+
+// Only used for debugging purposes
+int Partial::debugGetPartialNum() const {
+	return debugPartialNum;
+}
+
+// Only used for debugging purposes
+unsigned long Partial::debugGetSampleNum() const {
+	return sampleNum;
 }
 
 int Partial::getOwnerPart() const {
@@ -55,7 +66,7 @@ bool Partial::isActive() const {
 }
 
 const Poly *Partial::getPoly() const {
-	return this->poly;
+	return poly;
 }
 
 void Partial::activate(int part) {
@@ -64,8 +75,9 @@ void Partial::activate(int part) {
 }
 
 void Partial::deactivate() {
-	if (!isActive())
+	if (!isActive()) {
 		return;
+	}
 	ownerPart = -1;
 	if (poly != NULL) {
 		poly->partialDeactivated(this);
@@ -73,16 +85,10 @@ void Partial::deactivate() {
 			pair->pair = NULL;
 		}
 	}
-}
-
-void Partial::initKeyFollow(int key) {
-	// Calculate keyfollow for filter.
-	int keyfollow = ((key - MIDDLEC) * patchCache->filtkeyfollow) / 4096;
-	if (keyfollow > 108)
-		keyfollow = 108;
-	else if (keyfollow < -108)
-		keyfollow = -108;
-	filtVal = synth->tables.tvfKeyfollowMult[keyfollow + 108];
+#if MT32EMU_MONITOR_PARTIALS > 2
+	synth->printDebug("[+%lu] [Partial %d] Deactivated", sampleNum, debugPartialNum);
+	synth->printPartialUsage(sampleNum);
+#endif
 }
 
 // DEPRECATED: This should probably go away eventually, it's currently only used as a kludge to protect our old assumptions that
@@ -98,43 +104,34 @@ int Partial::getKey() const {
 	}
 }
 
-void Partial::startPartial(const Part *part, Poly *usePoly, const PatchCache *useCache, const MemParams::RhythmTemp *rhythmTemp, Partial *pairPartial) {
-	if (usePoly == NULL || useCache == NULL) {
-		synth->printDebug("*** Error: Starting partial for owner %d, usePoly=%s, useCache=%s", ownerPart, usePoly == NULL ? "*** NULL ***" : "OK", useCache == NULL ? "*** NULL ***" : "OK");
+void Partial::startPartial(const Part *part, Poly *usePoly, const PatchCache *usePatchCache, const MemParams::RhythmTemp *rhythmTemp, Partial *pairPartial) {
+	if (usePoly == NULL || usePatchCache == NULL) {
+		synth->printDebug("[Partial %d] *** Error: Starting partial for owner %d, usePoly=%s, usePatchCache=%s", debugPartialNum, ownerPart, usePoly == NULL ? "*** NULL ***" : "OK", usePatchCache == NULL ? "*** NULL ***" : "OK");
 		return;
 	}
-	patchCache = useCache;
+	patchCache = usePatchCache;
 	poly = usePoly;
 	mixType = patchCache->structureMix;
 	structurePosition = patchCache->structurePosition;
 
-	play = true;
-	initKeyFollow(getKey()); // Initialises filtVal and realVal
-	keyLookup = &synth->tables.keyLookups[getKey() - 12];
-
 	Bit8u panSetting = rhythmTemp != NULL ? rhythmTemp->panpot : part->getPatchTemp()->panpot;
-	if(mixType == 3) {
-		if(structurePosition == 0) {
-			if(panSetting > 7) {
-				panSetting = (panSetting - 7) * 2;
-			} else {
-				panSetting = 0;
-			}
+	float panVal;
+	if (mixType == 3) {
+		if (structurePosition == 0) {
+			panVal = PAN_NUMERATOR_MASTER[panSetting];
 		} else {
-			if(panSetting < 7) {
-				panSetting = panSetting * 2;
-			} else {
-				panSetting = 14;
-			}
+			panVal = PAN_NUMERATOR_SLAVE[panSetting];
 		}
 		// Do a normal mix independent of any pair partial.
 		mixType = 0;
 		pairPartial = NULL;
+	} else {
+		panVal = PAN_NUMERATOR_NORMAL[panSetting];
 	}
-	// FIXME: Sample analysis suggests that this is linear, but there are some some quirks that still need to be resolved.
-	// On the real devices, there are only 8 real pan positions.
-	stereoVolume.leftvol = panSetting * 32768 / 14;
-	stereoVolume.rightvol = 32768 - stereoVolume.leftvol;
+
+	// FIXME: Sample analysis suggests that the use of panVal is linear, but there are some some quirks that still need to be resolved.
+	stereoVolume.leftVol = panVal / 7.0f;
+	stereoVolume.rightVol = 1.0f - stereoVolume.leftVol;
 
 	if (patchCache->PCMPartial) {
 		pcmNum = patchCache->pcm;
@@ -147,43 +144,27 @@ void Partial::startPartial(const Part *part, Poly *usePoly, const PatchCache *us
 		pcmWave = &synth->pcmWaves[pcmNum];
 	} else {
 		pcmWave = NULL;
+		wavePos = 0.0f;
+		lastFreq = 0.0;
 	}
 
-	pastCarrier = 0;
-	pastOsc = 0;
-	pastDesCarrier = 0;
-
-	pulsewidth = patchCache->pulsewidth + synth->tables.pwVelfollowAdd[patchCache->pwsens][poly->getVelocity()];
-	if (pulsewidth > 100) {
-		pulsewidth = 100;
-	} else if (pulsewidth < 0) {
-		pulsewidth = 0;
+	// CONFIRMED: pulseWidthVal calculation is based on information from Mok
+	pulseWidthVal = (poly->getVelocity() - 64) * (patchCache->srcPartial.wg.pulseWidthVeloSensitivity - 7) + synth->tables.pulseWidth100To255[patchCache->srcPartial.wg.pulseWidth];
+	if (pulseWidthVal < 0) {
+		pulseWidthVal = 0;
+	} else if (pulseWidthVal > 255) {
+		pulseWidthVal = 255;
 	}
 
-	filtEnv.envpos = 0;
-	filtEnv.envstat = -1;
-	filtEnv.envbase = 0;
-	filtEnv.envdist = 0;
-	filtEnv.envsize = 0;
-	filtEnv.sustaining = false;
-	filtEnv.decaying = false;
-	filtEnv.prevlevel = 0;
-	filtEnv.counter = 0;
-	filtEnv.count = 0;
-
-	loopPos = 0;
 	pcmPosition = 0.0f;
-	intPCMPosition = 0;
 	pair = pairPartial;
-	useNoisePair = pairPartial == NULL && (mixType == 1 || mixType == 2);
 	alreadyOutputed = false;
-	tva->reset(part, patchCache, rhythmTemp);
-	tvp->reset(part, patchCache);
-	firstSample = true;
-	memset(history,0,sizeof(history));
+	tva->reset(part, patchCache->partialParam, rhythmTemp);
+	tvp->reset(part, patchCache->partialParam);
+	tvf->reset(patchCache->partialParam, tvp->getBasePitch());
 }
 
-Bit16s Partial::getPCMSample(unsigned int position) {
+float Partial::getPCMSample(unsigned int position) {
 	if (position >= pcmWave->len) {
 		if (!pcmWave->loop) {
 			return 0;
@@ -193,12 +174,12 @@ Bit16s Partial::getPCMSample(unsigned int position) {
 	return synth->pcmROMData[pcmWave->addr + position];
 }
 
-unsigned long Partial::generateSamples(Bit16s *partialBuf, unsigned long length) {
+unsigned long Partial::generateSamples(float *partialBuf, unsigned long length) {
 	if (!isActive() || alreadyOutputed) {
 		return 0;
 	}
 	if (poly == NULL) {
-		synth->printDebug("*** ERROR: poly is NULL at Partial::generateSamples()!");
+		synth->printDebug("[Partial %d] *** ERROR: poly is NULL at Partial::generateSamples()!", debugPartialNum);
 		return 0;
 	}
 
@@ -206,184 +187,258 @@ unsigned long Partial::generateSamples(Bit16s *partialBuf, unsigned long length)
 
 	// Generate samples
 
-	unsigned long sampleNum;
-	for(sampleNum = 0; sampleNum < length; sampleNum++) {
+	for (sampleNum = 0; sampleNum < length; sampleNum++) {
 		float sample = 0;
-		float amp = tva->nextAmp();
-		if (!tva->play) {
+		Bit32u ampRampVal = ampRamp.nextValue();
+		if (ampRamp.checkInterrupt()) {
+			tva->handleInterrupt();
+		}
+		if (!tva->isPlaying()) {
 			deactivate();
 			break;
 		}
+		// SEMI-CONFIRMED: From sample analysis:
+		// (1) Tested with a single partial playing PCM wave 77 with pitchCoarse 36 and no keyfollow, velocity follow, etc.
+		// This gives results within +/- 2 at the output (before any DAC bitshifting)
+		// when sustaining at levels 156 - 255 with no modifiers.
+		// (2) Tested with a special square wave partial (internal capture ID tva5) at TVA envelope levels 155-255.
+		// This gives deltas between -1 and 0 compared to the real output. Note that this special partial only produces
+		// positive amps, so negative still needs to be explored, as well as lower levels.
+		//
+		// Also still partially unconfirmed is the behaviour when ramping between levels, as well as the timing.
+		float amp = EXP2F((32772 - ampRampVal / 2048) / -2048.0f);
 
 		Bit16u pitch = tvp->nextPitch();
-
-		// Aka (slightly slower): powf(2.0f, pitchVal / 4096.0f - 16.0f) * 32000.0f
-		float freq = powf(2.0f, pitch / 4096.0f - 1.034215715f);
+		float freq = synth->tables.pitchToFreq[pitch];
 
 		if (patchCache->PCMPartial) {
 			// Render PCM waveform
 			int len = pcmWave->len;
+			int intPCMPosition = (int)pcmPosition;
 			if (intPCMPosition >= len && !pcmWave->loop) {
 				// We're now past the end of a non-looping PCM waveform so it's time to die.
-				play = false;
 				deactivate();
 				break;
 			}
 			Bit32u pcmAddr = pcmWave->addr;
 			float positionDelta = freq * 2048.0f / synth->myProp.sampleRate;
-			float newPCMPosition = pcmPosition + positionDelta;
-			int newIntPCMPosition = (int)newPCMPosition;
 
-			if (amp != 0.0f) {
-				// Only bother doing the actual sample calculation if someone's going to hear it.
-				if (positionDelta < 1.0f) {
-					// Linear interpolation
-					int firstSample = synth->pcmROMData[pcmAddr + intPCMPosition];
-					int nextSample = getPCMSample(intPCMPosition + 1);
-					sample = firstSample + (nextSample - firstSample) * (pcmPosition - intPCMPosition);
-				} else if (intPCMPosition == newIntPCMPosition) {
-					// Small optimisation
-					sample = synth->pcmROMData[pcmAddr + newIntPCMPosition];
-				} else {
-					// Average all the samples in the range
-					double sampleSum = synth->pcmROMData[pcmAddr + intPCMPosition] * ((intPCMPosition + 1) - pcmPosition); // First sample may not be 100% in range
-					for (int position = intPCMPosition + 1; position < newIntPCMPosition; position++) {
-						sampleSum += getPCMSample(position);
-					}
-					sampleSum += getPCMSample(newIntPCMPosition) * (newPCMPosition - newIntPCMPosition); // Last sample may not be 100% in range
-					sample = (float)(sampleSum / positionDelta);
-				}
-			} else {
-				// If a sample is calculated in the woods, and the current TVA value's too low to hear it, is there any point?
-				sample = 0.0f;
-			}
+			// Linear interpolation
+			float firstSample = synth->pcmROMData[pcmAddr + intPCMPosition];
+			float nextSample = getPCMSample(intPCMPosition + 1);
+			sample = firstSample + (nextSample - firstSample) * (pcmPosition - intPCMPosition);
+
+			float newPCMPosition = pcmPosition + positionDelta;
 			if (pcmWave->loop) {
-				newPCMPosition = fmodf(newPCMPosition, pcmWave->len);
-				newIntPCMPosition = newIntPCMPosition % pcmWave->len;
+				newPCMPosition = fmod(newPCMPosition, (float)pcmWave->len);
 			}
 			pcmPosition = newPCMPosition;
-			intPCMPosition = newIntPCMPosition;
 		} else {
 			// Render synthesised waveform
-			if(firstSample) {
-				firstSample = false;
-				float spw = synth->tables.pwFactorf[pulsewidth];
-				if ((patchCache->waveform & 1) != 0 && spw < 0.5f) {
-					spw = 0.5f - ((0.5f - spw) * 2.0f);
-				}
-				posSaw->reset(freq, spw);
-				negSaw->reset(freq, 0.0);
+			wavePos *= lastFreq / freq;
+			lastFreq = freq;
+
+			Bit32u cutoffModifierRampVal = cutoffModifierRamp.nextValue();
+			if (cutoffModifierRamp.checkInterrupt()) {
+				tvf->handleInterrupt();
+			}
+			float cutoffModifier = cutoffModifierRampVal / 262144.0f;
+
+			// res corresponds to a value set in an LA32 register
+			Bit8u res = patchCache->srcPartial.tvf.resonance + 1;
+
+			// EXP2F(1.0f - (32 - res) / 4.0f);
+			float resAmp = synth->tables.resAmpMax[res];
+
+			// The cutoffModifier may not be supposed to be directly added to the cutoff -
+			// it may for example need to be multiplied in some way.
+			// The 240 cutoffVal limit was determined via sample analysis (internal Munt capture IDs: glop3, glop4).
+			// More research is needed to be sure that this is correct, however.
+			float cutoffVal = tvf->getBaseCutoff() + cutoffModifier;
+			if (cutoffVal > 240.0f) {
+				cutoffVal = 240.0f;
+			}
+
+			// Wave length in samples
+			float waveLen = synth->myProp.sampleRate / freq;
+
+			// Init cosineLen
+			float cosineLen = 0.5f * waveLen;
+			if (cutoffVal > 128.0f) {
+#if MT32EMU_ACCURATE_WG == 1
+				cosineLen *= EXP2F((cutoffVal - 128.0f) / -16.0f); // found from sample analysis
+#else
+				cosineLen *= synth->tables.cutoffToCosineLen[Bit32u((cutoffVal - 128.0f) * 8.0f)];
+#endif
+			}
+
+			// Start playing in center of first cosine segment
+			// relWavePos is shifted by a half of cosineLen
+			float relWavePos = wavePos + 0.5f * cosineLen;
+			if (relWavePos > waveLen) {
+				relWavePos -= waveLen;
+			}
+
+			float pulseLen = 0.5f;
+			if (pulseWidthVal > 128) {
+				pulseLen += synth->tables.pulseLenFactor[pulseWidthVal - 128];
+			}
+			pulseLen *= waveLen;
+
+			float lLen = pulseLen - cosineLen;
+
+			// Ignore pulsewidths too high for given freq
+			if (lLen < 0.0f) {
+				lLen = 0.0f;
+			}
+
+			// Ignore pulsewidths too high for given freq and cutoff
+			float hLen = waveLen - lLen - 2 * cosineLen;
+			if (hLen < 0.0f) {
+				hLen = 0.0f;
+			}
+
+			// Correct resAmp for cutoff in range 50..66
+			if ((cutoffVal >= 128.0f) && (cutoffVal < 144.0f)) {
+#if MT32EMU_ACCURATE_WG == 1
+				resAmp *= sinf(FLOAT_PI * (cutoffVal - 128.0f) / 32.0f);
+#else
+				resAmp *= synth->tables.sinf10[Bit32u(64 * (cutoffVal - 128.0f))];
+#endif
+			}
+
+			// Produce filtered square wave with 2 cosine waves on slopes
+
+			// 1st cosine segment
+			if (relWavePos < cosineLen) {
+#if MT32EMU_ACCURATE_WG == 1
+				sample = -cosf(FLOAT_PI * relWavePos / cosineLen);
+#else
+				sample = -synth->tables.sinf10[Bit32u(2048.0f * relWavePos / cosineLen) + 1024];
+#endif
+			} else
+
+			// high linear segment
+			if (relWavePos < (cosineLen + hLen)) {
+				sample = 1.f;
+			} else
+
+			// 2nd cosine segment
+			if (relWavePos < (2 * cosineLen + hLen)) {
+#if MT32EMU_ACCURATE_WG == 1
+				sample = cosf(FLOAT_PI * (relWavePos - (cosineLen + hLen)) / cosineLen);
+#else
+				sample = synth->tables.sinf10[Bit32u(2048.0f * (relWavePos - (cosineLen + hLen)) / cosineLen) + 1024];
+#endif
 			} else {
-				posSaw->setFrequency(freq);
-				negSaw->setFrequency(freq);
+
+			// low linear segment
+				sample = -1.f;
 			}
-			Bit32s filtval = getFiltEnvelope();
 
-			float phase = negSaw->getPhase();
+			if (cutoffVal < 128.0f) {
 
-			sample = posSaw->tick() - negSaw->tick();
-			float freqsum = 0;
-			freqsum = ((powf(256.0f, (((float)filtval / 128.0f) - 1.0f))) * posSaw->getStartFreq());
-			if(freqsum >= (FILTERGRAN - 500.0))
-				freqsum = (FILTERGRAN - 500.0f);
-			filtval = (Bit32s)freqsum;
+				// Attenuate samples below cutoff 50
+				// Found by sample analysis
+#if MT32EMU_ACCURATE_WG == 1
+				sample *= EXP2F(-0.125f * (128.0f - cutoffVal));
+#else
+				sample *= synth->tables.cutoffToFilterAmp[Bit32u(cutoffVal * 8.0f)];
+#endif
+			} else {
 
-			sample = (floorf((synth->iirFilter)((sample * WGAMP), &history[0], synth->tables.filtCoeff[filtval][(int)patchCache->filtEnv.resonance])));
+				// Add resonance sine. Effective for cutoff > 50 only
+				float resSample = 1.0f;
 
+				// Now relWavePos counts from the middle of first cosine
+				relWavePos = wavePos;
+
+				// negative segments
+				if (!(relWavePos < (cosineLen + hLen))) {
+					resSample = -resSample;
+					relWavePos -= cosineLen + hLen;
+				}
+
+				// Resonance sine WG
+#if MT32EMU_ACCURATE_WG == 1
+				resSample *= sinf(FLOAT_PI * relWavePos / cosineLen);
+#else
+				resSample *= synth->tables.sinf10[Bit32u(2048.0f * relWavePos / cosineLen) & 4095];
+#endif
+
+				// Resonance sine amp
+				float resAmpFade = EXP2F(-synth->tables.resAmpFadeFactor[res >> 2] * (relWavePos / cosineLen));	// seems to be exact
+
+				// Now relWavePos set negative to the left from center of any cosine
+				relWavePos = wavePos;
+
+				// negative segment
+				if (!(wavePos < (waveLen - 0.5f * cosineLen))) {
+					relWavePos -= waveLen;
+				} else
+
+				// positive segment
+				if (!(wavePos < (hLen + 0.5f * cosineLen))) {
+					relWavePos -= cosineLen + hLen;
+				}
+
+				// Fading to zero while within cosine segments to avoid jumps in the wave
+				// Sample analysis suggests that this window is very close to cosine
+				if (relWavePos < 0.5f * cosineLen) {
+#if MT32EMU_ACCURATE_WG == 1
+					resAmpFade *= 0.5f * (1.0f - cosf(FLOAT_PI * relWavePos / (0.5f * cosineLen)));
+#else
+					resAmpFade *= 0.5f * (1.0f + synth->tables.sinf10[Bit32s(2048.0f * relWavePos / (0.5f * cosineLen)) + 3072]);
+#endif
+				}
+
+				sample += resSample * resAmp * resAmpFade;
+			}
+
+			// sawtooth waves
 			if ((patchCache->waveform & 1) != 0) {
-				//CC: Sawtooth samples are finally generated here by multipling an in-sync cosine
-				//with the generated square wave.
-
-				//CC: Computers are fast these days.  Not caring to use a LUT or fixed point anymore.
-				//If I port this to the iPhone I may reconsider.
-				sample = ((cosf(phase * 2.0f)) * sample) + (WGAMP * 0.1618f);
+#if MT32EMU_ACCURATE_WG == 1
+				sample *= cosf(FLOAT_2PI * wavePos / waveLen);
+#else
+				sample *= synth->tables.sinf10[(Bit32u(4096.0f * wavePos / waveLen) & 4095) + 1024];
+#endif
 			}
 
-			if (sample < -32768.0f) {
-				synth->printDebug("Overdriven amplitude for waveform=%d, freqsum=%f: %f < -32768", patchCache->waveform, freqsum, sample);
-				sample = -32768.0f;
+			wavePos++;
+
+			// wavePos isn't supposed to be > waveLen
+			if (wavePos > waveLen) {
+				wavePos -= waveLen;
 			}
-			else if (sample > 32767.0f) {
-				synth->printDebug("Overdriven amplitude for waveform=%d, freqsum=%f: %f > 32767", patchCache->waveform, freqsum, sample);
-				sample = 32767.0f;
-			}
-			filtEnv.envpos++;
 		}
 
-		// Multiply sample with current TVA value and add to buffer.
-		*partialBuf++ = (Bit16s)(amp * sample);
+		// Multiply sample with current TVA value
+		sample *= amp;
+		*partialBuf++ = sample;
 	}
-	// At this point, sampleNum represents the number of samples rendered
-	return sampleNum;
+	unsigned long renderedSamples = sampleNum;
+	sampleNum = 0;
+	return renderedSamples;
 }
 
-Bit32s Partial::calcRingMod(Bit16s sample1, Bit16s sample2) {
-	static const Bit32s CUTOFF = 2048;
-	Bit32s a[3], b[3], c[2], d[2];
-	a[0] = (Bit32s)sample1;
-	b[0] = (Bit32s)sample2;
-
-	a[1] = pastCarrier + ((CUTOFF * (a[0] - pastCarrier)) >> 12);
-	a[2] = a[1] + ((CUTOFF * (0 - a[1])) >> 12);
-	pastCarrier = a[2];
-
-	b[1] = pastOsc + ((CUTOFF * (b[0] - pastOsc)) >> 12);
-	b[2] = b[1] + ((CUTOFF * (0 - b[1])) >> 12);
-	pastOsc = b[2];
-
-	c[0] = a[1] ^ b[1];
-	c[1] = a[2] * b[2];
-
-	d[0] = pastDesCarrier + ((CUTOFF * (c[0] - pastDesCarrier)) >> 12);
-	d[1] = d[0] + ((CUTOFF * (c[1] - d[0])) >> 12);
-
-	pastDesCarrier = d[1];
-
-	return d[0] >> 5;
-}
-
-Bit16s *Partial::mixBuffersRingMix(Bit16s *buf1, Bit16s *buf2, unsigned long len) {
-	if (buf1 == NULL)
+float *Partial::mixBuffersRingMix(float *buf1, float *buf2, unsigned long len) {
+	if (buf1 == NULL) {
 		return NULL;
+	}
 	if (buf2 == NULL) {
 		return buf1;
-		// FIXME:KG: Not sure what the reason for this was, but hopefully it's obsolete
-/*
-		Bit16s *outBuf = buf1;
-		while (len--) {
-			if (*buf1 < -8192)
-				*buf1 = -8192;
-			else if (*buf1 > 8192)
-				*buf1 = 8192;
-			buf1++;
-		}
-		return outBuf;
-*/
 	}
 
-	Bit16s *outBuf = buf1;
-#if MT32EMU_USE_MMX >= 1
-	// KG: This seems to be fine
-	int donelen = i386_mixBuffersRingMix(buf1, buf2, len);
-	len -= donelen;
-	buf1 += donelen;
-	buf2 += donelen;
-#endif
 	while (len--) {
-		Bit32s result = calcRingMod(*buf1, *buf2) + *buf1;
-
-		if (result > 32767)
-			result = 32767;
-		if (result < -32768)
-			result = -32768;
-		*buf1 = (Bit16s)(result);
+		// FIXME: At this point we have no idea whether this is remotely correct...
+		*buf1 = *buf1 * *buf2 + *buf1;
 		buf1++;
 		buf2++;
 	}
-	return outBuf;
+	return buf1;
 }
 
-Bit16s *Partial::mixBuffersRing(Bit16s *buf1, Bit16s *buf2, unsigned long len) {
+float *Partial::mixBuffersRing(float *buf1, float *buf2, unsigned long len) {
 	if (buf1 == NULL) {
 		return NULL;
 	}
@@ -391,26 +446,13 @@ Bit16s *Partial::mixBuffersRing(Bit16s *buf1, Bit16s *buf2, unsigned long len) {
 		return NULL;
 	}
 
-	Bit16s *outBuf = buf1;
-#if MT32EMU_USE_MMX >= 1
-	// FIXME:KG: Not really checked as working
-	int donelen = i386_mixBuffersRing(buf1, buf2, len);
-	len -= donelen;
-	buf1 += donelen;
-	buf2 += donelen;
-#endif
 	while (len--) {
-		Bit32s result = calcRingMod(*buf1, *buf2);
-
-		if (result > 32767)
-			result = 32767;
-		if (result < -32768)
-			result = -32768;
-		*buf1 = (Bit16s)(result);
+		// FIXME: At this point we have no idea whether this is remotely correct...
+		*buf1 = *buf1 * *buf2;
 		buf1++;
 		buf2++;
 	}
-	return outBuf;
+	return buf1;
 }
 
 bool Partial::hasRingModulatingSlave() const {
@@ -426,8 +468,9 @@ bool Partial::isPCM() const {
 }
 
 const ControlROMPCMStruct *Partial::getControlROMPCMStruct() const {
-	if(pcmWave != NULL)
+	if (pcmWave != NULL) {
 		return pcmWave->controlROMPCMStruct;
+	}
 	return NULL;
 }
 
@@ -435,187 +478,82 @@ Synth *Partial::getSynth() const {
 	return synth;
 }
 
-bool Partial::produceOutput(Bit16s *partialBuf, unsigned long length) {
-	if (!isActive() || alreadyOutputed || isRingModulatingSlave())
+bool Partial::produceOutput(float *leftBuf, float *rightBuf, unsigned long length) {
+	if (!isActive() || alreadyOutputed || isRingModulatingSlave()) {
 		return false;
+	}
 	if (poly == NULL) {
-		synth->printDebug("*** ERROR: poly is NULL at Partial::produceOutput()!");
+		synth->printDebug("[Partial %d] *** ERROR: poly is NULL at Partial::produceOutput()!", debugPartialNum);
 		return false;
 	}
 
-	Bit16s *myBuf = &myBuffer[0];
-	unsigned long numGenerated = generateSamples(myBuf, length);
+	float *partialBuf = &myBuffer[0];
+	unsigned long numGenerated = generateSamples(partialBuf, length);
 	if (mixType == 1 || mixType == 2) {
-		Bit16s *pairBuf;
+		float *pairBuf;
 		unsigned long pairNumGenerated;
 		if (pair == NULL) {
 			pairBuf = NULL;
 			pairNumGenerated = 0;
 		} else {
 			pairBuf = &pair->myBuffer[0];
-			pairNumGenerated = generateSamples(pairBuf, numGenerated);
-			if (!isActive()) {
-				pair->deactivate();
-				pair = NULL;
-			} else if (!pair->isActive()) {
-				pair = NULL;
+			pairNumGenerated = pair->generateSamples(pairBuf, numGenerated);
+			// pair will have been set to NULL if it deactivated within generateSamples()
+			if (pair != NULL) {
+				if (!isActive()) {
+					pair->deactivate();
+					pair = NULL;
+				} else if (!pair->isActive()) {
+					pair = NULL;
+				}
 			}
 		}
 		if (pairNumGenerated > 0) {
-			if(mixType == 1)
-				mixBuffersRingMix(myBuf, pairBuf, pairNumGenerated);
-			else
-				mixBuffersRing(myBuf, pairBuf, pairNumGenerated);
+			if (mixType == 1) {
+				mixBuffersRingMix(partialBuf, pairBuf, pairNumGenerated);
+			} else {
+				mixBuffersRing(partialBuf, pairBuf, pairNumGenerated);
+			}
 		}
 		if (numGenerated > pairNumGenerated) {
-			if(mixType == 1)
-				mixBuffersRingMix(myBuf + pairNumGenerated, NULL, numGenerated - pairNumGenerated);
-			else
-				mixBuffersRing(myBuf + pairNumGenerated, NULL, numGenerated - pairNumGenerated);
+			if (mixType == 1) {
+				mixBuffersRingMix(partialBuf + pairNumGenerated, NULL, numGenerated - pairNumGenerated);
+			} else {
+				mixBuffersRing(partialBuf + pairNumGenerated, NULL, numGenerated - pairNumGenerated);
+			}
 		}
 	}
 
-#if MT32EMU_USE_MMX >= 2
-	// FIXME:KG: This appears to introduce crackle
-	int donelen = i386_partialProductOutput(numGenerated, stereoVolume.leftvol, stereoVolume.rightvol, partialBuf, myBuf);
-	length -= donelen;
-	numGenerated -= donelen;
-	myBuf += donelen;
-	partialBuf += donelen * 2;
-#endif
 	for (unsigned int i = 0; i < numGenerated; i++) {
-		*partialBuf++ = (Bit16s)(((Bit32s)*myBuf * (Bit32s)stereoVolume.leftvol) >> 16);
-		*partialBuf++ = (Bit16s)(((Bit32s)*myBuf * (Bit32s)stereoVolume.rightvol) >> 16);
-		myBuf++;
+		*leftBuf++ = partialBuf[i] * stereoVolume.leftVol;
 	}
-	if (numGenerated < length)
-		memset(partialBuf, 0, sizeof(Bit16s) * 2 * (length - numGenerated));
+	for (unsigned int i = 0; i < numGenerated; i++) {
+		*rightBuf++ = partialBuf[i] * stereoVolume.rightVol;
+	}
+	while (numGenerated < length) {
+		*leftBuf++ = 0.0f;
+		*rightBuf++ = 0.0f;
+		numGenerated++;
+	}
 	return true;
 }
 
-Bit32s Partial::getFiltEnvelope() {
-	int reshigh;
-
-	int cutoff;
-
-	EnvelopeStatus *tStat = &filtEnv;
-
-	if (tStat->decaying) {
-		reshigh = tStat->envbase;
-		reshigh = (reshigh + ((tStat->envdist * tStat->envpos) / tStat->envsize));
-		if (tStat->envpos >= tStat->envsize)
-			reshigh = 0;
-	} else {
-		if (tStat->envstat==4) {
-			reshigh = patchCache->filtsustain;
-			if (!poly->canSustain()) {
-				startFiltDecay(reshigh);
-			}
-		} else {
-			if ((tStat->envstat==-1) || (tStat->envpos >= tStat->envsize)) {
-				if (tStat->envstat==-1)
-					tStat->envbase = 0;
-				else
-					tStat->envbase = patchCache->filtEnv.envLevel[tStat->envstat];
-				tStat->envstat++;
-				tStat->envpos = 0;
-				if (tStat->envstat == 3) {
-					tStat->envsize = synth->tables.envTime[(int)patchCache->filtEnv.envTime[tStat->envstat]];
-				} else {
-					Bit32u envTime = (int)patchCache->filtEnv.envTime[tStat->envstat];
-					if (tStat->envstat > 1) {
-						int envDiff = abs(patchCache->filtEnv.envLevel[tStat->envstat] - patchCache->filtEnv.envLevel[tStat->envstat - 1]);
-						if (envTime > synth->tables.envDeltaMaxTime[envDiff]) {
-							envTime = synth->tables.envDeltaMaxTime[envDiff];
-						}
-					}
-
-					tStat->envsize = (synth->tables.envTime[envTime] * keyLookup->envTimeMult[(int)patchCache->filtEnv.envTimeKeyfollow]) >> 8;
-				}
-
-				tStat->envsize++;
-				tStat->envdist = patchCache->filtEnv.envLevel[tStat->envstat] - tStat->envbase;
-			}
-
-			reshigh = tStat->envbase;
-			reshigh = (reshigh + ((tStat->envdist * tStat->envpos) / tStat->envsize));
-		}
-		tStat->prevlevel = reshigh;
+bool Partial::shouldReverb() {
+	if (!isActive()) {
+		return false;
 	}
-
-	cutoff = filtMultKeyfollow[patchCache->srcPartial.tvf.keyfollow] - filtMultKeyfollow[patchCache->srcPartial.wg.pitchKeyfollow];
-	cutoff *= ((Bit32s)getKey() - 60);
-	int dynamicBiasPoint = (Bit32s)patchCache->srcPartial.tvf.biasPoint;
-	if ((dynamicBiasPoint & 0x40) == 0) {
-		dynamicBiasPoint = dynamicBiasPoint + 33 - (Bit32s)getKey();
-		if (dynamicBiasPoint > 0) {
-			dynamicBiasPoint = -dynamicBiasPoint;
-			dynamicBiasPoint *= BiasLevel_MulTable[patchCache->srcPartial.tvf.biasLevel];
-			cutoff += dynamicBiasPoint;
-		}
-	} else {
-		dynamicBiasPoint = dynamicBiasPoint - 31 - (Bit32s)getKey();
-		if (dynamicBiasPoint <= 0) {
-			dynamicBiasPoint *= BiasLevel_MulTable[patchCache->srcPartial.tvf.biasLevel];
-			cutoff += dynamicBiasPoint;
-		}
-	}
-
-	cutoff += (((Bit32s)patchCache->srcPartial.tvf.cutoff << 4) - 800);
-	if (cutoff >= 0) {
-		Bit32u basePitch = tvp->getBasePitch();
-		int pitchAdjust = (basePitch >> 4) + cutoff - 3584;
-		if (pitchAdjust > 0) {
-			cutoff -= pitchAdjust;
-		}
-	} else {
-		if (cutoff < -2048) {
-			cutoff = -2048;
-		}
-	}
-	cutoff = (cutoff + 2056) >> 4;
-	if (cutoff > 255) {
-		cutoff = 255;
-	}
-
-	int veloFilEnv = (Bit32s)poly->getVelocity() * (Bit32s)patchCache->srcPartial.tvf.envVeloSensitivity;
-	int filEnv = (veloFilEnv << 2) >> 8;
-	veloFilEnv  = 109 - patchCache->srcPartial.tvf.envVeloSensitivity + filEnv;
-	filEnv = ((Bit32s)getKey() - 60) >> (4 - (Bit32s)patchCache->srcPartial.tvf.envDepthKeyfollow);
-	veloFilEnv += filEnv;
-	if (veloFilEnv < 0) {
-		veloFilEnv = 0;
-	}
-	veloFilEnv *= patchCache->srcPartial.tvf.envDepth;
-	filEnv = (veloFilEnv << 2) >> 8;
-	if (filEnv > 255) {
-		filEnv = 255;
-	}
-
-	filEnv = (filEnv * reshigh) >> 8;
-
-	return cutoff + filEnv;
+	return patchCache->reverb;
 }
 
-bool Partial::shouldReverb() {
-	if (!isActive())
-		return false;
-	return patchCache->reverb;
+void Partial::startAbort() {
+	// This is called when the partial manager needs to terminate partials for re-use by a new Poly.
+	tva->startAbort();
 }
 
 void Partial::startDecayAll() {
 	tva->startDecay();
 	tvp->startDecay();
-	startFiltDecay(filtEnv.prevlevel);
+	tvf->startDecay();
 }
 
-void Partial::startFiltDecay(Bit32s startval) {
-	filtEnv.sustaining = false;
-	filtEnv.decaying = true;
-	filtEnv.envpos = 0;
-	filtEnv.envbase = startval;
-
-	filtEnv.envsize = FIXEDPOINT_UMULT(synth->tables.envDecayTime[(int)patchCache->filtEnv.envTime[4]], keyLookup->envTimeMult[(int)patchCache->filtEnv.envTimeKeyfollow], 8);
-	filtEnv.envdist = -startval;
-	filtEnv.envsize++;
 }

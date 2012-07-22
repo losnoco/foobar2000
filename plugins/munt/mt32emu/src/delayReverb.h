@@ -1,4 +1,5 @@
-/* Copyright (C) 2003-2009 Dean Beeler, Jerome Fisher
+/* Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009 Dean Beeler, Jerome Fisher
+ * Copyright (C) 2011 Dean Beeler, Jerome Fisher, Sergey V. Mikayev
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -21,37 +22,32 @@ namespace MT32Emu {
 
 class DelayReverb : public ReverbModel {
 private:
-	float *buf;
+	Bit8u time;
+	Bit8u level;
 
 	unsigned int sampleRate;
-	unsigned int bufSize;
-	unsigned int bufIx;
-	unsigned int rampCount;
-	unsigned int rampTarget;
+	Bit32u bufSize;
+	Bit32u bufIx;
 
-	unsigned int leftDelay;
-	unsigned int rightDelay;
+	float *buf;
 
-	float leftDelaySeconds;
-	float rightDelaySeconds;
-	float targetReverbLevel;
-	float reverbLevelRampInc;
-	float reverbLevel;
+	Bit32u delayLeft;
+	Bit32u delayRight;
+	Bit32u delayFeedback;
 
-	float targetFeedbackLevel;
-	float feedbackLevelRampInc;
-	float feedbackLevel;
+	float fade;
+	float feedback;
 
-	void resetBuffer();
-	void resetParameters();
+	void recalcParameters();
 
 public:
 	DelayReverb();
 	~DelayReverb();
-	void setSampleRate(unsigned int sampleRate);
-	void setParameters(Bit8u mode, Bit8u time, Bit8u level);
-	void process(const float *inLeft, const float *inRight, float *outLeft, float *outRight, long numSamples);
-	void reset();
+	void open(unsigned int sampleRate);
+	void close();
+	void setParameters(Bit8u time, Bit8u level);
+	void process(const float *inLeft, const float *inRight, float *outLeft, float *outRight, unsigned long numSamples);
+	bool isActive() const;
 };
 }
 #endif
