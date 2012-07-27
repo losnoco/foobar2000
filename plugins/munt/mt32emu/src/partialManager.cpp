@@ -25,19 +25,20 @@ namespace MT32Emu {
 PartialManager::PartialManager(Synth *useSynth, Part **useParts) {
 	synth = useSynth;
 	parts = useParts;
-	for (int i = 0; i < MT32EMU_MAX_PARTIALS; i++) {
+	max_partials = synth->isSuper() ? MT32EMU_MAX_PARTIALS : 32;
+	for (int i = 0; i < max_partials; i++) {
 		partialTable[i] = new Partial(synth, i);
 	}
 }
 
 PartialManager::~PartialManager(void) {
-	for (int i = 0; i < MT32EMU_MAX_PARTIALS; i++) {
+	for (int i = 0; i < max_partials; i++) {
 		delete partialTable[i];
 	}
 }
 
 void PartialManager::clearAlreadyOutputed() {
-	for (int i = 0; i < MT32EMU_MAX_PARTIALS; i++) {
+	for (int i = 0; i < max_partials; i++) {
 		partialTable[i]->alreadyOutputed = false;
 	}
 }
@@ -51,7 +52,7 @@ bool PartialManager::produceOutput(int i, float *leftBuf, float *rightBuf, Bit32
 }
 
 void PartialManager::deactivateAll() {
-	for (int i = 0; i < MT32EMU_MAX_PARTIALS; i++) {
+	for (int i = 0; i < max_partials; i++) {
 		partialTable[i]->deactivate();
 	}
 }
@@ -69,7 +70,7 @@ Partial *PartialManager::allocPartial(int partNum) {
 	Partial *outPartial = NULL;
 
 	// Get the first inactive partial
-	for (int partialNum = 0; partialNum < MT32EMU_MAX_PARTIALS; partialNum++) {
+	for (int partialNum = 0; partialNum < max_partials; partialNum++) {
 		if (!partialTable[partialNum]->isActive()) {
 			outPartial = partialTable[partialNum];
 			break;
@@ -83,7 +84,7 @@ Partial *PartialManager::allocPartial(int partNum) {
 
 unsigned int PartialManager::getFreePartialCount(void) {
 	int count = 0;
-	for (int i = 0; i < MT32EMU_MAX_PARTIALS; i++) {
+	for (int i = 0; i < max_partials; i++) {
 		if (!partialTable[i]->isActive()) {
 			count++;
 		}
@@ -92,9 +93,9 @@ unsigned int PartialManager::getFreePartialCount(void) {
 }
 
 // This function is solely used to gather data for debug output at the moment.
-void PartialManager::getPerPartPartialUsage(unsigned int perPartPartialUsage[9]) {
-	memset(perPartPartialUsage, 0, 9 * sizeof(unsigned int));
-	for (unsigned int i = 0; i < MT32EMU_MAX_PARTIALS; i++) {
+void PartialManager::getPerPartPartialUsage(unsigned int perPartPartialUsage[16]) {
+	memset(perPartPartialUsage, 0, 16 * sizeof(unsigned int));
+	for (unsigned int i = 0; i < max_partials; i++) {
 		if (partialTable[i]->isActive()) {
 			perPartPartialUsage[partialTable[i]->getOwnerPart()]++;
 		}
@@ -110,7 +111,8 @@ bool PartialManager::abortFirstReleasingPolyWhereReserveExceeded(int minPart) {
 		// Rhythm is highest priority
 		minPart = -1;
 	}
-	for (int partNum = 7; partNum >= minPart; partNum--) {
+	for (int partNum = synth->isSuper() ? 15 : 7; partNum >= minPart; partNum--) {
+		if (partNum == 8) partNum = 7;
 		int usePartNum = partNum == -1 ? 8 : partNum;
 		if (parts[usePartNum]->getActivePartialCount() > numReservedPartialsForPart[usePartNum]) {
 			// This part has exceeded its reserved partial count.
@@ -243,7 +245,7 @@ bool PartialManager::freePartials(unsigned int needed, int partNum) {
 }
 
 const Partial *PartialManager::getPartial(unsigned int partialNum) const {
-	if (partialNum > MT32EMU_MAX_PARTIALS - 1) {
+	if (partialNum > max_partials - 1) {
 		return NULL;
 	}
 	return partialTable[partialNum];

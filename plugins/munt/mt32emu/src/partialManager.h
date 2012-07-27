@@ -26,9 +26,10 @@ class PartialManager {
 private:
 	Synth *synth; // Only used for sending debug output
 	Part **parts;
+	int max_partials;
 
 	Partial *partialTable[MT32EMU_MAX_PARTIALS];
-	Bit8u numReservedPartialsForPart[9];
+	Bit8u numReservedPartialsForPart[16];
 
 	bool abortFirstReleasingPolyWhereReserveExceeded(int minPart);
 	bool abortFirstPolyPreferHeldWhereReserveExceeded(int minPart);

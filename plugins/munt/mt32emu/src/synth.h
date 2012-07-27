@@ -93,6 +93,11 @@ struct SynthProperties {
 	// Sample rate to use in mixing
 	unsigned int sampleRate;
 
+	// Renderer should produce floating point samples
+	bool useFloat;
+	// Renderer runs in super mode
+	bool useSuper;
+
 	// Deprecated - ignored. Use Synth::setReverbEnabled() instead.
 	bool useReverb;
 	// Deprecated - ignored. Use Synth::setReverbOverridden() instead.
@@ -326,6 +331,11 @@ private:
 
 	MemParams mt32ram, mt32default;
 
+	// super crappy
+	Bit8u chanAssignSuper[7];
+	MemParams::PatchTemp patchTempSuper[7];
+	TimbreParam timbreTempSuper[7];
+
 	ReverbModel *reverbModels[4];
 	ReverbModel *reverbModel;
 	bool reverbEnabled;
@@ -339,7 +349,7 @@ private:
 	bool isOpen;
 
 	PartialManager *partialManager;
-	Part *parts[9];
+	Part *parts[16];
 
 	// FIXME: We can reorganise things so that we don't need all these separate tmpBuf, tmp and prerender buffers.
 	// This should be rationalised when things have stabilised a bit (if prerender buffers don't die in the mean time).
@@ -351,22 +361,70 @@ private:
 	float tmpBufReverbOutLeft[MAX_SAMPLES_PER_RUN];
 	float tmpBufReverbOutRight[MAX_SAMPLES_PER_RUN];
 
-	Bit16s tmpNonReverbLeft[MAX_SAMPLES_PER_RUN];
-	Bit16s tmpNonReverbRight[MAX_SAMPLES_PER_RUN];
-	Bit16s tmpReverbDryLeft[MAX_SAMPLES_PER_RUN];
-	Bit16s tmpReverbDryRight[MAX_SAMPLES_PER_RUN];
-	Bit16s tmpReverbWetLeft[MAX_SAMPLES_PER_RUN];
-	Bit16s tmpReverbWetRight[MAX_SAMPLES_PER_RUN];
+	union
+	{
+		Bit16s tmpNonReverbLeft[MAX_SAMPLES_PER_RUN];
+		float  tmpNonReverbLeft_f[MAX_SAMPLES_PER_RUN];
+	};
+	union
+	{
+		Bit16s tmpNonReverbRight[MAX_SAMPLES_PER_RUN];
+		float  tmpNonReverbRight_f[MAX_SAMPLES_PER_RUN];
+	};
+	union
+	{
+		Bit16s tmpReverbDryLeft[MAX_SAMPLES_PER_RUN];
+		float  tmpReverbDryLeft_f[MAX_SAMPLES_PER_RUN];
+	};
+	union
+	{
+		Bit16s tmpReverbDryRight[MAX_SAMPLES_PER_RUN];
+		float  tmpReverbDryRight_f[MAX_SAMPLES_PER_RUN];
+	};
+	union
+	{
+		Bit16s tmpReverbWetLeft[MAX_SAMPLES_PER_RUN];
+		float  tmpReverbWetLeft_f[MAX_SAMPLES_PER_RUN];
+	};
+	union
+	{
+		Bit16s tmpReverbWetRight[MAX_SAMPLES_PER_RUN];
+		float  tmpReverbWetRight_f[MAX_SAMPLES_PER_RUN];
+	};
 
 	// These ring buffers are only used to simulate delays present on the real device.
 	// In particular, when a partial needs to be aborted to free it up for use by a new Poly,
 	// the controller will busy-loop waiting for the sound to finish.
-	Bit16s prerenderNonReverbLeft[MAX_PRERENDER_SAMPLES];
-	Bit16s prerenderNonReverbRight[MAX_PRERENDER_SAMPLES];
-	Bit16s prerenderReverbDryLeft[MAX_PRERENDER_SAMPLES];
-	Bit16s prerenderReverbDryRight[MAX_PRERENDER_SAMPLES];
-	Bit16s prerenderReverbWetLeft[MAX_PRERENDER_SAMPLES];
-	Bit16s prerenderReverbWetRight[MAX_PRERENDER_SAMPLES];
+	union
+	{
+		Bit16s prerenderNonReverbLeft[MAX_PRERENDER_SAMPLES];
+		float  prerenderNonReverbLeft_f[MAX_PRERENDER_SAMPLES];
+	};
+	union
+	{
+		Bit16s prerenderNonReverbRight[MAX_PRERENDER_SAMPLES];
+		float  prerenderNonReverbRight_f[MAX_PRERENDER_SAMPLES];
+	};
+	union
+	{
+		Bit16s prerenderReverbDryLeft[MAX_PRERENDER_SAMPLES];
+		float  prerenderReverbDryLeft_f[MAX_PRERENDER_SAMPLES];
+	};
+	union
+	{
+		Bit16s prerenderReverbDryRight[MAX_PRERENDER_SAMPLES];
+		float  prerenderReverbDryRight_f[MAX_PRERENDER_SAMPLES];
+	};
+	union
+	{
+		Bit16s prerenderReverbWetLeft[MAX_PRERENDER_SAMPLES];
+		float  prerenderReverbWetLeft_f[MAX_PRERENDER_SAMPLES];
+	};
+	union
+	{
+		Bit16s prerenderReverbWetRight[MAX_PRERENDER_SAMPLES];
+		float  prerenderReverbWetRight_f[MAX_PRERENDER_SAMPLES];
+	};
 	int prerenderReadIx;
 	int prerenderWriteIx;
 
@@ -376,6 +434,11 @@ private:
 	void copyPrerender(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16s *reverbDryLeft, Bit16s *reverbDryRight, Bit16s *reverbWetLeft, Bit16s *reverbWetRight, Bit32u pos, Bit32u len);
 	void checkPrerender(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16s *reverbDryLeft, Bit16s *reverbDryRight, Bit16s *reverbWetLeft, Bit16s *reverbWetRight, Bit32u &pos, Bit32u &len);
 	void doRenderStreams(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16s *reverbDryLeft, Bit16s *reverbDryRight, Bit16s *reverbWetLeft, Bit16s *reverbWetRight, Bit32u len);
+
+	bool prerender_float();
+	void copyPrerender_float(float *nonReverbLeft, float *nonReverbRight, float *reverbDryLeft, float *reverbDryRight, float *reverbWetLeft, float *reverbWetRight, Bit32u pos, Bit32u len);
+	void checkPrerender_float(float *nonReverbLeft, float *nonReverbRight, float *reverbDryLeft, float *reverbDryRight, float *reverbWetLeft, float *reverbWetRight, Bit32u &pos, Bit32u &len);
+	void doRenderStreams_float(float *nonReverbLeft, float *nonReverbRight, float *reverbDryLeft, float *reverbDryRight, float *reverbWetLeft, float *reverbWetRight, Bit32u len);
 
 	void playAddressedSysex(unsigned char channel, const Bit8u *sysex, Bit32u len);
 	void readSysex(unsigned char channel, const Bit8u *sysex, Bit32u len) const;
@@ -449,15 +512,20 @@ public:
 	// The length is in frames, not bytes (in 16-bit stereo,
 	// one frame is 4 bytes).
 	void render(Bit16s *stream, Bit32u len);
+	void render_float(float *stream, Bit32u len);
 
 	// Renders samples to the specified output streams (any or all of which may be NULL).
 	void renderStreams(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16s *reverbDryLeft, Bit16s *reverbDryRight, Bit16s *reverbWetLeft, Bit16s *reverbWetRight, Bit32u len);
+	void renderStreams_float(float *nonReverbLeft, float *nonReverbRight, float *reverbDryLeft, float *reverbDryRight, float *reverbWetLeft, float *reverbWetRight, Bit32u len);
 
 	// Returns true when there is at least one active partial, otherwise false.
 	bool hasActivePartials() const;
 
 	// Returns true if hasActivePartials() returns true, or reverb is (somewhat unreliably) detected as being active.
 	bool isActive() const;
+
+	// Returns if in Super mode
+	bool isSuper() const;
 
 	const Partial *getPartial(unsigned int partialNum) const;
 

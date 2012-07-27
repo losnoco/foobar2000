@@ -50,9 +50,19 @@ static inline Bit16s *streamOffset(Bit16s *stream, Bit32u pos) {
 	return stream == NULL ? NULL : stream + pos;
 }
 
+static inline float *streamOffset_float(float *stream, Bit32u pos) {
+	return stream == NULL ? NULL : stream + pos;
+}
+
 static inline void clearIfNonNull(Bit16s *stream, Bit32u len) {
 	if (stream != NULL) {
 		memset(stream, 0, len * sizeof(Bit16s));
+	}
+}
+
+static inline void clearIfNonNull_float(float *stream, Bit32u len) {
+	if (stream != NULL) {
+		memset(stream, 0, len * sizeof(float));
 	}
 }
 
@@ -539,11 +549,18 @@ bool Synth::open(SynthProperties &useProp) {
 		// The channel assignment is then {0, 1, 2, 3, 4, 5, 6, 7, 9}
 		mt32ram.system.chanAssign[i] = i + 1;
 	}
+	if (myProp.useSuper) {
+		chanAssignSuper[0] = !mt32ram.system.chanAssign[0];
+		for (Bit8u i = 1; i < 7; i++) {
+			chanAssignSuper[i] = i + 9;
+		}
+	}
 	mt32ram.system.masterVol = 100; // Confirmed
 	refreshSystem();
 
-	for (int i = 0; i < 9; i++) {
-		MemParams::PatchTemp *patchTemp = &mt32ram.patchTemp[i];
+	int num_parts = myProp.useSuper ? 16 : 9;
+	for (int i = 0; i < num_parts; i++) {
+		MemParams::PatchTemp *patchTemp = i < 9 ? &mt32ram.patchTemp[i] : &patchTempSuper[i-9];
 
 		// Note that except for the rhythm part, these patch fields will be set in setProgram() below anyway.
 		patchTemp->patch.timbreGroup = 0;
@@ -560,9 +577,9 @@ bool Synth::open(SynthProperties &useProp) {
 		memset(patchTemp->dummyv, 0, sizeof(patchTemp->dummyv));
 		patchTemp->dummyv[1] = 127;
 
-		if (i < 8) {
+		if (i != 8) {
 			parts[i] = new Part(this, i);
-			parts[i]->setProgram(controlROMData[controlROMMap->programSettings + i]);
+			parts[i]->setProgram(i < 9 ? controlROMData[controlROMMap->programSettings + i] : 0);
 		} else {
 			parts[i] = new RhythmPart(this, i);
 		}
@@ -588,7 +605,8 @@ void Synth::close() {
 	delete partialManager;
 	partialManager = NULL;
 
-	for (int i = 0; i < 9; i++) {
+	int num_parts = myProp.useSuper ? 16 : 9;
+	for (int i = 0; i < num_parts; i++) {
 		delete parts[i];
 		parts[i] = NULL;
 	}
@@ -619,7 +637,8 @@ void Synth::playMsg(Bit32u msg) {
 	//printDebug("Playing chan %d, code 0x%01x note: 0x%02x", chan, code, note);
 
 	char part = chantable[chan];
-	if (part < 0 || part > 8) {
+	int max_part = myProp.useSuper ? 15 : 8;
+	if (part < 0 || part > max_part) {
 #if MT32EMU_MONITOR_MIDI > 0
 		printDebug("Play msg on unreg chan %d (%d): code=0x%01x, vel=%d", chan, part, code, velocity);
 #endif
@@ -655,6 +674,9 @@ void Synth::playMsgOnPart(unsigned char part, unsigned char code, unsigned char 
 			break;
 		case 0x06:
 			parts[part]->setDataEntryMSB(velocity);
+			break;
+		case 0x26:
+			parts[part]->setDataEntryLSB(velocity);
 			break;
 		case 0x07:  // Set volume
 			//printDebug("Volume set: %d", velocity);
@@ -871,10 +893,17 @@ void Synth::writeSysex(unsigned char device, const Bit8u *sysex, Bit32u len) {
 #endif
 				offset = 0;
 			} else {
-				offset = chantable[device] * sizeof(TimbreParam);
+				if (myProp.useSuper && chantable[device] > 8) {
+					offset = 0;
 #if MT32EMU_MONITOR_SYSEX > 0
-				printDebug(" (Setting extra offset to %d)", offset);
+					printDebug(" (Channel mapped to super parts... 0 offset)");
 #endif
+				} else {
+					offset = chantable[device] * sizeof(TimbreParam);
+#if MT32EMU_MONITOR_SYSEX > 0
+					printDebug(" (Setting extra offset to %d)", offset);
+#endif
+				}
 			}
 			addr += MT32EMU_MEMADDR(0x040000) - MT32EMU_MEMADDR(0x020000) + offset;
 		} else {
@@ -1167,7 +1196,8 @@ void Synth::writeMemoryRegion(const MemoryRegion *region, Bit32u addr, Bit32u le
 #endif
 			// FIXME:KG: Not sure if the stuff below should be done (for rhythm and/or parts)...
 			// Does the real MT-32 automatically do this?
-			for (unsigned int part = 0; part < 9; part++) {
+			unsigned int num_parts = myProp.useSuper ? 16 : 9;
+			for (unsigned int part = 0; part < num_parts; part++) {
 				if (parts[part] != NULL) {
 					parts[part]->refreshTimbre(i);
 				}
@@ -1271,14 +1301,33 @@ void Synth::refreshSystemReserveSettings() {
 void Synth::refreshSystemChanAssign(unsigned int firstPart, unsigned int lastPart) {
 	memset(chantable, -1, sizeof(chantable));
 
+	// Fill out the Super channel map with any unmapped channels
+	if (myProp.useSuper) {
+		for (unsigned int i = 0, j = 0; i < 16 && j < 7; i++) {
+			unsigned int k;
+			for (k = 0; k < 9; k++) {
+				if (mt32ram.system.chanAssign[k] == i) break;
+			}
+			if (k == 9) {
+				if (chanAssignSuper[j] != i) {
+					parts[chanAssignSuper[j]]->allSoundOff();
+					parts[chanAssignSuper[j]]->resetAllControllers();
+				}
+				chanAssignSuper[j] = i;
+				j++;
+			}
+		}
+	}
+
 	// CONFIRMED: In the case of assigning a channel to multiple parts, the lower part wins.
-	for (unsigned int i = 0; i <= 8; i++) {
+	unsigned int num_parts = myProp.useSuper ? 16 : 9;
+	for (unsigned int i = 0; i < num_parts; i++) {
 		if (parts[i] != NULL && i >= firstPart && i <= lastPart) {
 			// CONFIRMED: Decay is started for all polys, and all controllers are reset, for every part whose assignment was touched by the sysex write.
 			parts[i]->allSoundOff();
 			parts[i]->resetAllControllers();
 		}
-		int chan = mt32ram.system.chanAssign[i];
+		int chan = i < 9 ? mt32ram.system.chanAssign[i] : chanAssignSuper[i - 9];
 		if (chan != 16 && chantable[chan] == -1) {
 			chantable[chan] = i;
 		}
@@ -1319,6 +1368,12 @@ void Synth::reset() {
 			parts[8]->refresh();
 		}
 	}
+	if (myProp.useSuper) {
+		for (int i = 9; i < 16; i++) {
+			parts[i]->reset();
+			parts[i]->refresh();
+		}
+	}
 	refreshSystem();
 	isEnabled = false;
 }
@@ -1340,7 +1395,25 @@ void Synth::render(Bit16s *stream, Bit32u len) {
 	}
 }
 
+void Synth::render_float(float *stream, Bit32u len) {
+	if (!isEnabled) {
+		memset(stream, 0, len * sizeof(float) * 2);
+		return;
+	}
+	while (len > 0) {
+		Bit32u thisLen = len > MAX_SAMPLES_PER_RUN ? MAX_SAMPLES_PER_RUN : len;
+		renderStreams_float(tmpNonReverbLeft_f, tmpNonReverbRight_f, tmpReverbDryLeft_f, tmpReverbDryRight_f, tmpReverbWetLeft_f, tmpReverbWetRight_f, thisLen);
+		for (Bit32u i = 0; i < thisLen; i++) {
+			stream[0] = tmpNonReverbLeft_f[i] + tmpReverbDryLeft_f[i] + tmpReverbWetLeft_f[i];
+			stream[1] = tmpNonReverbRight_f[i] + tmpReverbDryRight_f[i] + tmpReverbWetRight_f[i];
+			stream += 2;
+		}
+		len -= thisLen;
+	}
+}
+
 bool Synth::prerender() {
+	if (myProp.useFloat) return prerender_float();
 	int newPrerenderWriteIx = (prerenderWriteIx + 1) % MAX_PRERENDER_SAMPLES;
 	if (newPrerenderWriteIx == prerenderReadIx) {
 		// The prerender buffer is full
@@ -1358,11 +1431,36 @@ bool Synth::prerender() {
 	return true;
 }
 
+bool Synth::prerender_float() {
+	int newPrerenderWriteIx = (prerenderWriteIx + 1) % MAX_PRERENDER_SAMPLES;
+	if (newPrerenderWriteIx == prerenderReadIx) {
+		// The prerender buffer is full
+		return false;
+	}
+	doRenderStreams_float(
+		prerenderNonReverbLeft_f + prerenderWriteIx,
+		prerenderNonReverbRight_f + prerenderWriteIx,
+		prerenderReverbDryLeft_f + prerenderWriteIx,
+		prerenderReverbDryRight_f + prerenderWriteIx,
+		prerenderReverbWetLeft_f + prerenderWriteIx,
+		prerenderReverbWetRight_f + prerenderWriteIx,
+		1);
+	prerenderWriteIx = newPrerenderWriteIx;
+	return true;
+}
+
 static inline void maybeCopy(Bit16s *out, Bit32u outPos, Bit16s *in, Bit32u inPos, Bit32u len) {
 	if (out == NULL) {
 		return;
 	}
 	memcpy(out + outPos, in + inPos, len * sizeof(Bit16s));
+}
+
+static inline void maybeCopy_float(float *out, Bit32u outPos, float *in, Bit32u inPos, Bit32u len) {
+	if (out == NULL) {
+		return;
+	}
+	memcpy(out + outPos, in + inPos, len * sizeof(float));
 }
 
 void Synth::copyPrerender(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16s *reverbDryLeft, Bit16s *reverbDryRight, Bit16s *reverbWetLeft, Bit16s *reverbWetRight, Bit32u pos, Bit32u len) {
@@ -1372,6 +1470,15 @@ void Synth::copyPrerender(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16s 
 	maybeCopy(reverbDryRight, pos, prerenderReverbDryRight, prerenderReadIx, len);
 	maybeCopy(reverbWetLeft, pos, prerenderReverbWetLeft, prerenderReadIx, len);
 	maybeCopy(reverbWetRight, pos, prerenderReverbWetRight, prerenderReadIx, len);
+}
+
+void Synth::copyPrerender_float(float *nonReverbLeft, float *nonReverbRight, float *reverbDryLeft, float *reverbDryRight, float *reverbWetLeft, float *reverbWetRight, Bit32u pos, Bit32u len) {
+	maybeCopy_float(nonReverbLeft, pos, prerenderNonReverbLeft_f, prerenderReadIx, len);
+	maybeCopy_float(nonReverbRight, pos, prerenderNonReverbRight_f, prerenderReadIx, len);
+	maybeCopy_float(reverbDryLeft, pos, prerenderReverbDryLeft_f, prerenderReadIx, len);
+	maybeCopy_float(reverbDryRight, pos, prerenderReverbDryRight_f, prerenderReadIx, len);
+	maybeCopy_float(reverbWetLeft, pos, prerenderReverbWetLeft_f, prerenderReadIx, len);
+	maybeCopy_float(reverbWetRight, pos, prerenderReverbWetRight_f, prerenderReadIx, len);
 }
 
 void Synth::checkPrerender(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16s *reverbDryLeft, Bit16s *reverbDryRight, Bit16s *reverbWetLeft, Bit16s *reverbWetRight, Bit32u &pos, Bit32u &len) {
@@ -1393,6 +1500,36 @@ void Synth::checkPrerender(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16s
 			prerenderCopyLen = len;
 		}
 		copyPrerender(nonReverbLeft, nonReverbRight, reverbDryLeft, reverbDryRight, reverbWetLeft, reverbWetRight, pos, prerenderCopyLen);
+		len -= prerenderCopyLen;
+		pos += prerenderCopyLen;
+		prerenderReadIx += prerenderCopyLen;
+	}
+	if (prerenderReadIx == prerenderWriteIx) {
+		// If the ring buffer's empty, reset it to start at 0 to minimise wrapping,
+		// which requires two writes instead of one.
+		prerenderReadIx = prerenderWriteIx = 0;
+	}
+}
+
+void Synth::checkPrerender_float(float *nonReverbLeft, float *nonReverbRight, float *reverbDryLeft, float *reverbDryRight, float *reverbWetLeft, float *reverbWetRight, Bit32u &pos, Bit32u &len) {
+	if (prerenderReadIx > prerenderWriteIx) {
+		// There's data in the prerender buffer, and the write index has wrapped.
+		Bit32u prerenderCopyLen = MAX_PRERENDER_SAMPLES - prerenderReadIx;
+		if (prerenderCopyLen > len) {
+			prerenderCopyLen = len;
+		}
+		copyPrerender_float(nonReverbLeft, nonReverbRight, reverbDryLeft, reverbDryRight, reverbWetLeft, reverbWetRight, pos, prerenderCopyLen);
+		len -= prerenderCopyLen;
+		pos += prerenderCopyLen;
+		prerenderReadIx = (prerenderReadIx + prerenderCopyLen) % MAX_PRERENDER_SAMPLES;
+	}
+	if (prerenderReadIx < prerenderWriteIx) {
+		// There's data in the prerender buffer, and the write index is ahead of the read index.
+		Bit32u prerenderCopyLen = prerenderWriteIx - prerenderReadIx;
+		if (prerenderCopyLen > len) {
+			prerenderCopyLen = len;
+		}
+		copyPrerender_float(nonReverbLeft, nonReverbRight, reverbDryLeft, reverbDryRight, reverbWetLeft, reverbWetRight, pos, prerenderCopyLen);
 		len -= prerenderCopyLen;
 		pos += prerenderCopyLen;
 		prerenderReadIx += prerenderCopyLen;
@@ -1435,11 +1572,52 @@ void Synth::renderStreams(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16s 
 	}
 }
 
+void Synth::renderStreams_float(float *nonReverbLeft, float *nonReverbRight, float *reverbDryLeft, float *reverbDryRight, float *reverbWetLeft, float *reverbWetRight, Bit32u len) {
+	if (!isEnabled) {
+		clearIfNonNull_float(nonReverbLeft, len);
+		clearIfNonNull_float(nonReverbRight, len);
+		clearIfNonNull_float(reverbDryLeft, len);
+		clearIfNonNull_float(reverbDryRight, len);
+		clearIfNonNull_float(reverbWetLeft, len);
+		clearIfNonNull_float(reverbWetRight, len);
+		return;
+	}
+	Bit32u pos = 0;
+
+	// First, check for data in the prerender buffer and spit that out before generating anything new.
+	// Note that the prerender buffer is rarely used - see comments elsewhere for details.
+	checkPrerender_float(nonReverbLeft, nonReverbRight, reverbDryLeft, reverbDryRight, reverbWetLeft, reverbWetRight, pos, len);
+
+	while (len > 0) {
+		Bit32u thisLen = len > MAX_SAMPLES_PER_RUN ? MAX_SAMPLES_PER_RUN : len;
+		doRenderStreams_float(
+			streamOffset_float(nonReverbLeft, pos),
+			streamOffset_float(nonReverbRight, pos),
+			streamOffset_float(reverbDryLeft, pos),
+			streamOffset_float(reverbDryRight, pos),
+			streamOffset_float(reverbWetLeft, pos),
+			streamOffset_float(reverbWetRight, pos),
+			thisLen);
+		len -= thisLen;
+		pos += thisLen;
+	}
+}
+
 // FIXME: Using more temporary buffers than we need to
 void Synth::doRenderStreams(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16s *reverbDryLeft, Bit16s *reverbDryRight, Bit16s *reverbWetLeft, Bit16s *reverbWetRight, Bit32u len) {
+	if (myProp.useFloat) {
+		clearIfNonNull(nonReverbLeft, len);
+		clearIfNonNull(nonReverbRight, len);
+		clearIfNonNull(reverbDryLeft, len);
+		clearIfNonNull(reverbDryRight, len);
+		clearIfNonNull(reverbWetLeft, len);
+		clearIfNonNull(reverbWetRight, len);
+		return;
+	}
+	const unsigned int max_partials = myProp.useSuper ? MT32EMU_MAX_PARTIALS : 32;
 	clearFloats(&tmpBufMixLeft[0], &tmpBufMixRight[0], len);
 	if (!reverbEnabled) {
-		for (unsigned int i = 0; i < MT32EMU_MAX_PARTIALS; i++) {
+		for (unsigned int i = 0; i < max_partials; i++) {
 			if (partialManager->produceOutput(i, &tmpBufPartialLeft[0], &tmpBufPartialRight[0], len)) {
 				mix(&tmpBufMixLeft[0], &tmpBufPartialLeft[0], len);
 				mix(&tmpBufMixRight[0], &tmpBufPartialRight[0], len);
@@ -1456,7 +1634,7 @@ void Synth::doRenderStreams(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16
 		clearIfNonNull(reverbWetLeft, len);
 		clearIfNonNull(reverbWetRight, len);
 	} else {
-		for (unsigned int i = 0; i < MT32EMU_MAX_PARTIALS; i++) {
+		for (unsigned int i = 0; i < max_partials; i++) {
 			if (!partialManager->shouldReverb(i)) {
 				if (partialManager->produceOutput(i, &tmpBufPartialLeft[0], &tmpBufPartialRight[0], len)) {
 					mix(&tmpBufMixLeft[0], &tmpBufPartialLeft[0], len);
@@ -1472,7 +1650,7 @@ void Synth::doRenderStreams(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16
 		}
 
 		clearFloats(&tmpBufMixLeft[0], &tmpBufMixRight[0], len);
-		for (unsigned int i = 0; i < MT32EMU_MAX_PARTIALS; i++) {
+		for (unsigned int i = 0; i < max_partials; i++) {
 			if (partialManager->shouldReverb(i)) {
 				if (partialManager->produceOutput(i, &tmpBufPartialLeft[0], &tmpBufPartialRight[0], len)) {
 					mix(&tmpBufMixLeft[0], &tmpBufPartialLeft[0], len);
@@ -1500,8 +1678,87 @@ void Synth::doRenderStreams(Bit16s *nonReverbLeft, Bit16s *nonReverbRight, Bit16
 	renderedSampleCount += len;
 }
 
+static inline void scalefloat(float * out, const float * in, Bit32u len, float outputGain)
+{
+	for (Bit32u i = 0; i < len; ++i) out[i] = in[i] * outputGain;
+}
+
+void Synth::doRenderStreams_float(float *nonReverbLeft, float *nonReverbRight, float *reverbDryLeft, float *reverbDryRight, float *reverbWetLeft, float *reverbWetRight, Bit32u len) {
+	if (!myProp.useFloat) {
+		clearIfNonNull_float(nonReverbLeft, len);
+		clearIfNonNull_float(nonReverbRight, len);
+		clearIfNonNull_float(reverbDryLeft, len);
+		clearIfNonNull_float(reverbDryRight, len);
+		clearIfNonNull_float(reverbWetLeft, len);
+		clearIfNonNull_float(reverbWetRight, len);
+		return;
+	}
+	const unsigned int max_partials = myProp.useSuper ? MT32EMU_MAX_PARTIALS : 32;
+	clearFloats(&tmpBufMixLeft[0], &tmpBufMixRight[0], len);
+	if (!reverbEnabled) {
+		for (unsigned int i = 0; i < max_partials; i++) {
+			if (partialManager->produceOutput(i, &tmpBufPartialLeft[0], &tmpBufPartialRight[0], len)) {
+				mix(&tmpBufMixLeft[0], &tmpBufPartialLeft[0], len);
+				mix(&tmpBufMixRight[0], &tmpBufPartialRight[0], len);
+			}
+		}
+		if (nonReverbLeft != NULL) {
+			scalefloat(nonReverbLeft, &tmpBufMixLeft[0], len, outputGain);
+		}
+		if (nonReverbRight != NULL) {
+			scalefloat(nonReverbRight, &tmpBufMixRight[0], len, outputGain);
+		}
+		clearIfNonNull_float(reverbDryLeft, len);
+		clearIfNonNull_float(reverbDryRight, len);
+		clearIfNonNull_float(reverbWetLeft, len);
+		clearIfNonNull_float(reverbWetRight, len);
+	} else {
+		for (unsigned int i = 0; i < max_partials; i++) {
+			if (!partialManager->shouldReverb(i)) {
+				if (partialManager->produceOutput(i, &tmpBufPartialLeft[0], &tmpBufPartialRight[0], len)) {
+					mix(&tmpBufMixLeft[0], &tmpBufPartialLeft[0], len);
+					mix(&tmpBufMixRight[0], &tmpBufPartialRight[0], len);
+				}
+			}
+		}
+		if (nonReverbLeft != NULL) {
+			scalefloat(nonReverbLeft, &tmpBufMixLeft[0], len, outputGain);
+		}
+		if (nonReverbRight != NULL) {
+			scalefloat(nonReverbRight, &tmpBufMixRight[0], len, outputGain);
+		}
+
+		clearFloats(&tmpBufMixLeft[0], &tmpBufMixRight[0], len);
+		for (unsigned int i = 0; i < max_partials; i++) {
+			if (partialManager->shouldReverb(i)) {
+				if (partialManager->produceOutput(i, &tmpBufPartialLeft[0], &tmpBufPartialRight[0], len)) {
+					mix(&tmpBufMixLeft[0], &tmpBufPartialLeft[0], len);
+					mix(&tmpBufMixRight[0], &tmpBufPartialRight[0], len);
+				}
+			}
+		}
+		if (reverbDryLeft != NULL) {
+			scalefloat(reverbDryLeft, &tmpBufMixLeft[0], len, outputGain);
+		}
+		if (reverbDryRight != NULL) {
+			scalefloat(reverbDryRight, &tmpBufMixRight[0], len, outputGain);
+		}
+
+		// FIXME: Note that on the real devices, reverb input and output are signed linear 16-bit (well, kinda, there's some fudging) PCM, not float.
+		reverbModel->process(&tmpBufMixLeft[0], &tmpBufMixRight[0], &tmpBufReverbOutLeft[0], &tmpBufReverbOutRight[0], len);
+		if (reverbWetLeft != NULL) {
+			scalefloat(reverbWetLeft, &tmpBufReverbOutLeft[0], len, reverbOutputGain * 0.5f);
+		}
+		if (reverbWetRight != NULL) {
+			scalefloat(reverbWetRight, &tmpBufReverbOutRight[0], len, reverbOutputGain * 0.5f);
+		}
+	}
+	partialManager->clearAlreadyOutputed();
+	renderedSampleCount += len;
+}
+
 void Synth::printPartialUsage(unsigned long sampleOffset) {
-	unsigned int partialUsage[9];
+	unsigned int partialUsage[16];
 	partialManager->getPerPartPartialUsage(partialUsage);
 	if (sampleOffset > 0) {
 		printDebug("[+%lu] Partial Usage: 1:%02d 2:%02d 3:%02d 4:%02d 5:%02d 6:%02d 7:%02d 8:%02d R: %02d  TOTAL: %02d", sampleOffset, partialUsage[0], partialUsage[1], partialUsage[2], partialUsage[3], partialUsage[4], partialUsage[5], partialUsage[6], partialUsage[7], partialUsage[8], MT32EMU_MAX_PARTIALS - partialManager->getFreePartialCount());
@@ -1516,7 +1773,8 @@ bool Synth::hasActivePartials() const {
 		// It also means that partials are definitely active at this render point.
 		return true;
 	}
-	for (int partialNum = 0; partialNum < MT32EMU_MAX_PARTIALS; partialNum++) {
+	int max_partials = myProp.useSuper ? MT32EMU_MAX_PARTIALS : 32;
+	for (int partialNum = 0; partialNum < max_partials; partialNum++) {
 		if (partialManager->getPartial(partialNum)->isActive()) {
 			return true;
 		}
@@ -1534,12 +1792,17 @@ bool Synth::isActive() const {
 	return false;
 }
 
+bool Synth::isSuper() const {
+	return myProp.useSuper;
+}
+
 const Partial *Synth::getPartial(unsigned int partialNum) const {
 	return partialManager->getPartial(partialNum);
 }
 
 const Part *Synth::getPart(unsigned int partNum) const {
-	if (partNum > 8) {
+	const unsigned int max_part = myProp.useSuper ? 15 : 8;
+	if (partNum > max_part) {
 		return NULL;
 	}
 	return parts[partNum];

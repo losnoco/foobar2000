@@ -52,13 +52,20 @@ Part::Part(Synth *useSynth, unsigned int usePartNum) {
 	partNum = usePartNum;
 	patchCache[0].dirty = true;
 	holdpedal = false;
-	patchTemp = &synth->mt32ram.patchTemp[partNum];
+	if (usePartNum < 9) {
+		patchTemp = &synth->mt32ram.patchTemp[partNum];
+	} else {
+		patchTemp = &synth->patchTempSuper[partNum - 9];
+	}
 	if (usePartNum == 8) {
 		// Nasty hack for rhythm
 		timbreTemp = NULL;
-	} else {
+	} else if (usePartNum < 8) {
 		sprintf(name, "Part %d", partNum + 1);
 		timbreTemp = &synth->mt32ram.timbreTemp[partNum];
+	} else {
+		sprintf(name, "Part %d", partNum + 1);
+		timbreTemp = &synth->timbreTempSuper[partNum - 9];
 	}
 	currentInstr[0] = 0;
 	currentInstr[10] = 0;
@@ -67,9 +74,11 @@ Part::Part(Synth *useSynth, unsigned int usePartNum) {
 	pitchBend = 0;
 	activePartialCount = 0;
 	memset(patchCache, 0, sizeof(patchCache));
-	for (int i = 0; i < MT32EMU_MAX_POLY; i++) {
+	int max_poly = synth->isSuper() ? MT32EMU_MAX_POLY : 32;
+	for (int i = 0; i < max_poly; i++) {
 		freePolys.push_front(new Poly(this));
 	}
+	if (synth->isSuper()) pitchBenderRange = 683 * 2;
 }
 
 Part::~Part() {
@@ -94,8 +103,28 @@ void Part::setDataEntryMSB(unsigned char midiDataEntryMSB) {
 		// which is the only RPN that these synths support
 		return;
 	}
-	patchTemp->patch.benderRange = midiDataEntryMSB > 24 ? 24 : midiDataEntryMSB;
+	if (synth->isSuper()) {
+		pitchBenderRange = midiDataEntryMSB * 683;
+	} else {
+		patchTemp->patch.benderRange = midiDataEntryMSB > 24 ? 24 : midiDataEntryMSB;
+	}
 	updatePitchBenderRange();
+}
+
+void Part::setDataEntryLSB(unsigned char midiDataEntryLSB) {
+	if (nrpn) {
+		// The last RPN-related control change was for an NRPN,
+		// which the real synths don't support.
+		return;
+	}
+	if (rpn != 0) {
+		// The RPN has been set to something other than 0,
+		// which is the only RPN that these synths support
+		return;
+	}
+	if (synth->isSuper()) {
+		pitchBenderRange = ((((pitchBenderRange / 683) * 128) + midiDataEntryLSB) * 683) / 128;
+	}
 }
 
 void Part::setNRPN() {
@@ -149,6 +178,7 @@ void Part::reset() {
 	resetAllControllers();
 	allSoundOff();
 	rpn = 0xFFFF;
+	if (synth->isSuper()) pitchBenderRange = 683 * 2;
 }
 
 void RhythmPart::refresh() {
@@ -237,7 +267,7 @@ void Part::setProgram(unsigned int patchNum) {
 }
 
 void Part::updatePitchBenderRange() {
-	pitchBenderRange = patchTemp->patch.benderRange * 683;
+	if (!synth->isSuper()) pitchBenderRange = patchTemp->patch.benderRange * 683;
 }
 
 void Part::backupCacheToPartials(PatchCache cache[4]) {
