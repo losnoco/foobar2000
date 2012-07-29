@@ -1,0 +1,6 @@
+[submodule "plugins/ogg/opus"]
+	path = plugins/ogg/opus
+	url = git://git.xiph.org/opus.git
+[submodule "plugins/ogg/opus-tools"]
+	path = plugins/ogg/opus-tools
+	url = git://git.xiph.org/opus-tools.git
