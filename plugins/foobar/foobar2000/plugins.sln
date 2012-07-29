@@ -171,8 +171,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "celt", "..\..\ogg\opus\celt
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_common", "..\..\ogg\opus\silk\silk_common.vcxproj", "{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_fixed", "..\..\ogg\opus\silk\fixed\silk_fixed.vcxproj", "{8484C90D-1561-402F-A91D-2DB10F8C5171}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_float", "..\..\ogg\opus\silk\float\silk_float.vcxproj", "{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}"
 EndProject
 Global
@@ -673,14 +671,6 @@ Global
 		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.Release|Win32.Build.0 = Release|Win32
 		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.Release|x64.ActiveCfg = Release|x64
 		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.Release|x64.Build.0 = Release|x64
-		{8484C90D-1561-402F-A91D-2DB10F8C5171}.Debug|Win32.ActiveCfg = Debug|Win32
-		{8484C90D-1561-402F-A91D-2DB10F8C5171}.Debug|Win32.Build.0 = Debug|Win32
-		{8484C90D-1561-402F-A91D-2DB10F8C5171}.Debug|x64.ActiveCfg = Debug|x64
-		{8484C90D-1561-402F-A91D-2DB10F8C5171}.Debug|x64.Build.0 = Debug|x64
-		{8484C90D-1561-402F-A91D-2DB10F8C5171}.Release|Win32.ActiveCfg = Release|Win32
-		{8484C90D-1561-402F-A91D-2DB10F8C5171}.Release|Win32.Build.0 = Release|Win32
-		{8484C90D-1561-402F-A91D-2DB10F8C5171}.Release|x64.ActiveCfg = Release|x64
-		{8484C90D-1561-402F-A91D-2DB10F8C5171}.Release|x64.Build.0 = Release|x64
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Debug|Win32.ActiveCfg = Debug|Win32
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Debug|Win32.Build.0 = Debug|Win32
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Debug|x64.ActiveCfg = Debug|x64
