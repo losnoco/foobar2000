@@ -173,6 +173,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_common", "..\..\ogg\op
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_float", "..\..\ogg\opus\silk\float\silk_float.vcxproj", "{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_r128gain", "foo_r128gain\foo_r128gain.vcxproj", "{FE1C1A51-57A3-403B-B7DA-011EC5AF5803}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib1770", "foo_r128gain\lib1770\lib1770.vcxproj", "{6A3C5A33-40C7-487B-982D-99A7B6A04EDF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -679,6 +683,18 @@ Global
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|Win32.Build.0 = Release|Win32
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|x64.ActiveCfg = Release|x64
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|x64.Build.0 = Release|x64
+		{FE1C1A51-57A3-403B-B7DA-011EC5AF5803}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FE1C1A51-57A3-403B-B7DA-011EC5AF5803}.Debug|Win32.Build.0 = Debug|Win32
+		{FE1C1A51-57A3-403B-B7DA-011EC5AF5803}.Debug|x64.ActiveCfg = Debug|Win32
+		{FE1C1A51-57A3-403B-B7DA-011EC5AF5803}.Release|Win32.ActiveCfg = Release|Win32
+		{FE1C1A51-57A3-403B-B7DA-011EC5AF5803}.Release|Win32.Build.0 = Release|Win32
+		{FE1C1A51-57A3-403B-B7DA-011EC5AF5803}.Release|x64.ActiveCfg = Release|Win32
+		{6A3C5A33-40C7-487B-982D-99A7B6A04EDF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6A3C5A33-40C7-487B-982D-99A7B6A04EDF}.Debug|Win32.Build.0 = Debug|Win32
+		{6A3C5A33-40C7-487B-982D-99A7B6A04EDF}.Debug|x64.ActiveCfg = Debug|Win32
+		{6A3C5A33-40C7-487B-982D-99A7B6A04EDF}.Release|Win32.ActiveCfg = Release|Win32
+		{6A3C5A33-40C7-487B-982D-99A7B6A04EDF}.Release|Win32.Build.0 = Release|Win32
+		{6A3C5A33-40C7-487B-982D-99A7B6A04EDF}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
