@@ -114,7 +114,6 @@
     <ClInclude Include="..\..\sidtune\SidTuneTools.h" />
     <ClInclude Include="..\..\c64\c64cia.h" />
     <ClInclude Include="..\..\c64\c64vic.h" />
-    <ClInclude Include="..\..\c64\c64xsid.h" />
     <ClInclude Include="..\..\Buffer.h" />
     <ClInclude Include="..\..\component.h" />
     <ClInclude Include="..\..\event.h" />

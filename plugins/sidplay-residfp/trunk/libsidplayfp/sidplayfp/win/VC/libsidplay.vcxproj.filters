@@ -38,9 +38,6 @@
     <ClInclude Include="..\..\c64\c64vic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\c64\c64xsid.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Buffer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
