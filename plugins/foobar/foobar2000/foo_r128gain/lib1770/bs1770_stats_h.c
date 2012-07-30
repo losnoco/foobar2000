@@ -285,6 +285,7 @@ static double bs1770_stats_h_get_lra(bs1770_stats_t *stats, double lower,
 static double bs1770_stats_h_get_lra_multiple(bs1770_stats_t *stats, size_t stats_count,
    double lower, double upper)
 {
+  double gate=0.0;
   double total_min=0.0;
   double total_max=0.0;
   size_t i;
@@ -303,8 +304,11 @@ static double bs1770_stats_h_get_lra_multiple(bs1770_stats_t *stats, size_t stat
     upper=1.0;
 
   for (i = 0; i < stats_count; i++)
+    gate+=stats[i].pass1.wmsq*pow(10,0.1*stats[i].gate);
+  gate/=(double)stats_count;
+
+  for (i = 0; i < stats_count; i++)
   {
-    double gate=stats[i].pass1.wmsq*pow(10,0.1*stats[i].gate);
     struct bs1770_stats_h_bin *rp=stats[i].h.bin;
     struct bs1770_stats_h_bin *mp=rp+BS1770_STATS_H_NBINS;
     unsigned long long count=0ull;

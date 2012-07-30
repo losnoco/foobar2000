@@ -234,6 +234,7 @@ static double bs1770_stats_s_get_lra_multiple(bs1770_stats_t *stats, size_t stat
 {
 #ifdef SORTED_SEQUENCE
   size_t i;
+  double gate=0.0;
   double total_min=0.0;
   double total_max=0.0;
 
@@ -251,8 +252,11 @@ static double bs1770_stats_s_get_lra_multiple(bs1770_stats_t *stats, size_t stat
     upper=1.0;
 
   for (i = 0; i < stats_count; i++)
+    gate+=stats[i].pass1.wmsq*pow(10,0.1*stats[i].gate);
+  gate/=(double)stats_count;
+
+  for (i = 0; i < stats_count; i++)
   {
-    double gate=stats[i].pass1.wmsq*pow(10,0.1*stats[i].gate);
     double *rp=stats[i].blocks.wmsq;
     double *mp=rp+(stats[i].blocks.offs-(stats[i].partition-1));
     double wmsq=0.0;
