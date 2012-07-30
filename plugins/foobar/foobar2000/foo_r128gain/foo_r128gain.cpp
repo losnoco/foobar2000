@@ -12,7 +12,7 @@
 #else
 #define GATE      (-8.0)
 #endif
-#define MODE      BS1770_MODE_S
+#define MODE      BS1770_MODE_H
 #define BLOCK     400.0
 #define PARTITION 4
 
