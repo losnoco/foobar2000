@@ -4,22 +4,37 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.23"
+#define MY_VERSION "1.30"
 
-#define R128_2
-#ifdef R128_2
-#define GATE      (-10.0)
-#else
-#define GATE      (-8.0)
-#endif
-#define MODE      BS1770_MODE_H
-#define BLOCK     400.0
-#define PARTITION 4
+#define GATE_2      (-10.0)
+#define PARTITION_2 4
 
-#define REFERENCE (-18.0)
+#define GATE_1      (-8.0)
+#define PARTITION_1 2
+
+#define MODE        BS1770_MODE_H
+#define BLOCK       400.0
+
+#define REFERENCE   (-18.0)
 
 /*
 	change log
+
+2012-07-31 01:17 UTC - kode54
+- Made R128 mode configurable
+- Version is now 1.30
+
+2012-07-31 01:07 UTC - kode54
+- Implemented output result sorting to match the input order
+
+2012-07-30 23:39 UTC - kode54
+- Completed change over to lib1770 and stabilized multi-threaded interface usage
+
+2012-07-30 05:46 UTC - kode54
+- First installed
+
+2012-07-30 02:14 UTC - kode54
+- Repurposed as lib1770 based scanner
 
 2011-03-13 08:54 UTC - kode54
 - Fixed a single unchecked call to ebur128_destroy
@@ -156,11 +171,17 @@ static const GUID guid_r128_branch = { 0xdb7e74cb, 0xaa00, 0x482e, { 0xb6, 0xa2,
 static const GUID guid_cfg_album_pattern = { 0x1f308fe2, 0xd795, 0x4a6a, { 0xab, 0x53, 0x47, 0x9e, 0xbb, 0x1c, 0x19, 0x89 } };
 static const GUID guid_cfg_true_peak_scanning = { 0x246545be, 0x41cd, 0x48ae, { 0xaa, 0xd8, 0xee, 0x23, 0xf5, 0xad, 0x1, 0x67 } };
 static const GUID guid_cfg_thread_priority = { 0x88ce22da, 0x3b84, 0x44e5, { 0xb9, 0xab, 0xfd, 0x3c, 0xc7, 0x4f, 0x4b, 0xc6 } };
+static const GUID guid_r128_mode_branch = { 0x990421a1, 0x3682, 0x4cc8, { 0x91, 0x79, 0xfe, 0x8b, 0x18, 0x3b, 0x25, 0x1b } };
+static const GUID guid_cfg_r128_1 = { 0xd075d956, 0xa08d, 0x4b8a, { 0x98, 0x56, 0x61, 0xf2, 0xa, 0x72, 0xdc, 0xd5 } };
+static const GUID guid_cfg_r128_2 = { 0x83945a3d, 0x1ffc, 0x4e33, { 0xa8, 0x57, 0x2f, 0xff, 0x35, 0xd6, 0xa9, 0x75 } };
 
 static advconfig_branch_factory r128_tools_branch("EBU R128 Gain Scanner", guid_r128_branch, advconfig_branch::guid_branch_tools, 0);
 static advconfig_string_factory cfg_album_pattern("Album grouping pattern", guid_cfg_album_pattern, guid_r128_branch, 0, "%album artist% | %date% | %album%");
 static advconfig_checkbox_factory cfg_true_peak_scanning("\"True\" peak scanning", guid_cfg_true_peak_scanning, guid_r128_branch, 0, false);
 static advconfig_integer_factory cfg_thread_priority("Thread priority (1-7)", guid_cfg_thread_priority, guid_r128_branch, 0, 2, 1, 7 );
+static advconfig_branch_factory r128_mode("EBU R128 standard level", guid_r128_mode_branch, guid_r128_branch, 1 );
+static advconfig_radio_factory cfg_r128_2("R128-2", guid_cfg_r128_2, guid_r128_mode_branch, 0, true );
+static advconfig_radio_factory cfg_r128_1("R128-1", guid_cfg_r128_1, guid_r128_mode_branch, 1, false );
 
 static const int thread_priority_levels[7] = { THREAD_PRIORITY_IDLE, THREAD_PRIORITY_LOWEST, THREAD_PRIORITY_BELOW_NORMAL, THREAD_PRIORITY_NORMAL, THREAD_PRIORITY_ABOVE_NORMAL, THREAD_PRIORITY_HIGHEST, THREAD_PRIORITY_TIME_CRITICAL };
 
@@ -182,44 +203,90 @@ struct last_chunk_info
 	}
 };
 
-unsigned convert_audio_samples( audio_sample * in, unsigned channels, unsigned channel_config, bs1770_sample_t & out )
+unsigned convert_audio_samples( const audio_sample * in, unsigned count, unsigned channels, unsigned channel_config, bs1770_sample_t * & out )
 {
 	unsigned channels_out = 0;
 
-	memset( out, 0, sizeof( out ) );
+	out = ( bs1770_sample_t * ) realloc( out, count * sizeof( bs1770_sample_t ) );
 
-	for ( unsigned i = 0; i < channels; i++ )
+	if ( channel_config == audio_chunk::channel_config_mono )
 	{
-		switch ( audio_chunk::g_extract_channel_flag( channel_config, i ) )
+		for ( unsigned i = 0; i < count; i++ )
 		{
-		case audio_chunk::channel_front_left:
-			out[ 0 ] = in[ i ];
-			channels_out = 1;
-			break;
-
-		case audio_chunk::channel_front_right:
-			out[ 1 ] = in[ i ];
-			channels_out = 2;
-			break;
-
-		case audio_chunk::channel_front_center:
-			out[ 2 ] = in[ i ];
-			channels_out = 3;
-			break;
-
-		case audio_chunk::channel_back_left:
-			out[ 3 ] = in[ i ];
-			channels_out = 4;
-			break;
-
-		case audio_chunk::channel_back_right:
-			out[ 4 ] = in[ i ];
-			channels_out = 5;
-			break;
+			out[ i ][ 0 ] = in[ i ];
+			out[ i ][ 1 ] = in[ i ];
+			out[ i ][ 2 ] = 0.0;
+			out[ i ][ 3 ] = 0.0;
+			out[ i ][ 4 ] = 0.0;
 		}
-	}
 
-	return channels_out;
+		return 2;
+	}
+	else if ( channel_config == audio_chunk::channel_config_stereo )
+	{
+		for ( unsigned i = 0; i < count; i++ )
+		{
+			out[ i ][ 0 ] = in[ i * 2 ];
+			out[ i ][ 1 ] = in[ i * 2 + 1 ];
+			out[ i ][ 2 ] = 0.0;
+			out[ i ][ 3 ] = 0.0;
+			out[ i ][ 4 ] = 0.0;
+		}
+
+		return 2;
+	}
+	else
+	{
+		unsigned channel_offset[BS1770_MAX_CHANNELS];
+
+		memset( channel_offset, ~0, sizeof( channel_offset ) );
+
+		for ( unsigned i = 0; i < channels; i++ )
+		{
+			switch ( audio_chunk::g_extract_channel_flag( channel_config, i ) )
+			{
+			case audio_chunk::channel_front_left:
+				channel_offset[0] = i;
+				channels_out = 1;
+				break;
+
+			case audio_chunk::channel_front_right:
+				channel_offset[1] = i;
+				channels_out = 2;
+				break;
+
+			case audio_chunk::channel_front_center:
+				channel_offset[2] = i;
+				channels_out = 3;
+				break;
+
+			case audio_chunk::channel_back_left:
+				channel_offset[3] = i;
+				channels_out = 4;
+				break;
+
+			case audio_chunk::channel_back_right:
+				channel_offset[4] = i;
+				channels_out = 5;
+				break;
+			}
+		}
+
+		for ( unsigned i = 0; i < channels_out; i++ )
+		{
+			unsigned channel_in = channel_offset[ i ];
+			if ( channel_in != ~0 )
+			{
+				for ( unsigned j = 0; j < count; j++ ) out[ j ][ i ] = in[ j * channels + channel_in ];
+			}
+			else
+			{
+				for ( unsigned j = 0; j < count; j++ ) out[ j ][ i ] = 0.0;
+			}
+		}
+
+		return channels_out;
+	}
 }
 
 double scan_track( bs1770_ctx_m_t * ctx, size_t index, audio_sample & peak, last_chunk_info & last_info, metadb_handle_ptr p_handle, service_ptr_t<dsp> & m_resampler, double & p_progress, unsigned track_total, threaded_process_status & p_status, critical_section & p_critsec, abort_callback & p_abort )
@@ -249,63 +316,69 @@ double scan_track( bs1770_ctx_m_t * ctx, size_t index, audio_sample & peak, last
 	m_decoder.get_info( p_handle->get_subsong_index(), m_info, p_abort );
 	length = m_info.get_length();
 
-	while ( m_decoder.run( m_chunk, p_abort ) )
+	bs1770_sample_t * buffer = NULL;
+
+	try
 	{
-		p_abort.check();
-
-		if ( ! first_chunk && m_resampler.is_valid() )
+		while ( m_decoder.run( m_chunk, p_abort ) )
 		{
-			dsp_chunk_list_impl chunks; chunks.add_chunk( &m_previous_chunk );
-			m_resampler->run_abortable( &chunks, p_handle, 0, p_abort );
+			p_abort.check();
 
-			for ( unsigned i = 0; i < chunks.get_count(); i++ )
+			if ( ! first_chunk && m_resampler.is_valid() )
 			{
-				const audio_chunk * chunk = chunks.get_item( i );
-				audio_sample current_peak = audio_math::calculate_peak( chunk->get_data(), chunk->get_sample_count() * chunk->get_channels() );
+				dsp_chunk_list_impl chunks; chunks.add_chunk( &m_previous_chunk );
+				m_resampler->run_abortable( &chunks, p_handle, 0, p_abort );
+
+				for ( unsigned i = 0; i < chunks.get_count(); i++ )
+				{
+					const audio_chunk * chunk = chunks.get_item( i );
+					audio_sample current_peak = audio_math::calculate_peak( chunk->get_data(), chunk->get_sample_count() * chunk->get_channels() );
+					peak = max( peak, current_peak );
+				}
+			}
+
+			if ( first_chunk )
+			{
+				if ( cfg_true_peak_scanning.get() )
+				{
+					resampler_entry::g_create( m_resampler, m_chunk.get_srate(), m_chunk.get_srate() * 4, 0 );
+				}
+
+				first_chunk = false;
+			}
+
+			unsigned channels = convert_audio_samples( m_chunk.get_data(), m_chunk.get_sample_count(), m_chunk.get_channels(), m_chunk.get_channel_config(), buffer );
+
+			for ( unsigned i = 0; i < m_chunk.get_sample_count(); i++ )
+				bs1770_ctx_m_add_sample( ctx, index, m_chunk.get_srate(), channels, buffer[ i ] );
+
+			last_info.last_srate = m_chunk.get_srate();
+			last_info.last_channels = channels;
+
+			if ( m_resampler.is_valid() ) m_previous_chunk.copy( m_chunk );
+			else
+			{
+				audio_sample current_peak = audio_math::calculate_peak( m_chunk.get_data(), m_chunk.get_sample_count() * m_chunk.get_channels() );
 				peak = max( peak, current_peak );
 			}
-		}
 
-		if ( first_chunk )
-		{
-			if ( cfg_true_peak_scanning.get() )
+			duration += m_chunk.get_duration();
+
+			if ( length )
 			{
-				resampler_entry::g_create( m_resampler, m_chunk.get_srate(), m_chunk.get_srate() * 4, 0 );
+				insync(p_critsec);
+				p_progress += m_chunk.get_duration() / length / double(track_total);
+				p_status.set_progress_float( p_progress );
 			}
-
-			first_chunk = false;
-		}
-
-		unsigned channels;
-
-		audio_sample * data = m_chunk.get_data();
-		for ( unsigned i = 0; i < m_chunk.get_sample_count(); i++ )
-		{
-			bs1770_sample_t sample;
-			channels = convert_audio_samples( data, m_chunk.get_channels(), m_chunk.get_channel_config(), sample );
-			bs1770_ctx_m_add_sample( ctx, index, m_chunk.get_srate(), channels, sample );
-			data += m_chunk.get_channels();
-		}
-
-		last_info.last_srate = m_chunk.get_srate();
-		last_info.last_channels = channels;
-
-		if ( m_resampler.is_valid() ) m_previous_chunk.copy( m_chunk );
-		else
-		{
-			audio_sample current_peak = audio_math::calculate_peak( m_chunk.get_data(), m_chunk.get_sample_count() * m_chunk.get_channels() );
-			peak = max( peak, current_peak );
-		}
-
-		duration += m_chunk.get_duration();
-
-		if ( length )
-		{
-			insync(p_critsec);
-			p_progress += m_chunk.get_duration() / length / double(track_total);
-			p_status.set_progress_float( p_progress );
 		}
 	}
+	catch (...)
+	{
+		if (buffer) free(buffer);
+		throw;
+	}
+
+	free(buffer);
 
 	if ( m_resampler.is_valid() )
 	{
@@ -396,6 +469,7 @@ class r128_scanner : public threaded_process_callback
 		bs1770_ctx_m_t               * m_ctx;
 		service_list_t<dsp>            m_resamplers;
 		metadb_handle_list             m_handles_done;
+		pfc::array_t<t_size>           m_track_id;
 		r128_scanner_result          * m_scanner_result;
 
 		job( bool p_is_album, const metadb_handle_list & p_handles )
@@ -418,6 +492,8 @@ class r128_scanner : public threaded_process_callback
 	LONG input_items_total;
 	volatile LONG input_items_remaining;
 
+	t_size input_job_count;
+
 	critical_section lock_input_job_list;
 	pfc::ptr_list_t<job> input_job_list;
 
@@ -427,10 +503,11 @@ class r128_scanner : public threaded_process_callback
 	critical_section lock_output_list;
 	pfc::ptr_list_t<r128_scanner_result> output_list;
 	double output_duration;
+	pfc::array_t<t_size> output_list_order;
 
 	FILETIME start_time, end_time;
 
-	void report_error( const char * message, metadb_handle_ptr track )
+	void report_error( const char * message, t_size id, metadb_handle_ptr track )
 	{
 		r128_scanner_result * result = NULL;
 		try
@@ -441,6 +518,7 @@ class r128_scanner : public threaded_process_callback
 			{
 				insync( lock_output_list );
 				output_list.add_item( result );
+				output_list_order.append_single( id );
 			}
 		}
 		catch (...)
@@ -449,7 +527,7 @@ class r128_scanner : public threaded_process_callback
 		}
 	}
 
-	void report_error( const char * message, metadb_handle_list tracks )
+	void report_error( const char * message, t_size id, metadb_handle_list tracks )
 	{
 		r128_scanner_result * result = NULL;
 		try
@@ -460,6 +538,7 @@ class r128_scanner : public threaded_process_callback
 			{
 				insync( lock_output_list );
 				output_list.add_item( result );
+				output_list_order.append_single( id );
 			}
 		}
 		catch (...)
@@ -470,9 +549,13 @@ class r128_scanner : public threaded_process_callback
 
 	void scanner_process()
 	{
+		const double GATE = cfg_r128_2.get() ? GATE_2 : GATE_1;
+		const int PARTITION = cfg_r128_2.get() ? PARTITION_2 : PARTITION_1;
+
 		for (;;)
 		{
 			job * m_current_job = NULL;
+			t_size m_current_job_id;
 
 			m_abort->check();
 
@@ -480,6 +563,8 @@ class r128_scanner : public threaded_process_callback
 				insync( lock_input_job_list );
 
 				if ( ! input_job_list.get_count() ) break;
+
+				m_current_job_id = input_job_count - input_job_list.get_count();
 
 				m_current_job = input_job_list[ 0 ];
 
@@ -518,6 +603,7 @@ class r128_scanner : public threaded_process_callback
 					{
 						insync(lock_output_list);
 						output_list.add_item( m_current_result );
+						output_list_order.append_single( m_current_job_id );
 						output_duration += duration;
 					}
 
@@ -598,6 +684,7 @@ class r128_scanner : public threaded_process_callback
 							m_current_result->m_track_peak.append_single( m_current_track_peak );
 							m_current_result->m_album_peak = max(m_current_result->m_album_peak, m_current_track_peak);
 							m_current_job->m_handles_done.add_item( m_current_track );
+							m_current_job->m_track_id.append_single( m_track_index );
 
 							m_current_job->m_last_info[ m_current_thread ] = m_last_info;
 							m_current_job->m_resamplers[ m_current_thread ] = m_resampler;
@@ -609,9 +696,20 @@ class r128_scanner : public threaded_process_callback
 								m_current_result->m_album_gain = bs1770_ctx_m_album_lufs( m_current_job->m_ctx );
 
 								m_current_result->m_handles.add_items( m_current_job->m_handles_done );
+
+								pfc::array_t<t_size> order_list;
+								order_list.set_count( m_current_job->m_track_id.get_count() );
+								for ( unsigned i = 0; i < m_current_job->m_track_id.get_count(); i++ )
+									order_list[ m_current_job->m_track_id[ i ] ] = i;
+
+								m_current_result->m_handles.reorder( order_list.get_ptr() );
+								pfc::reorder_partial_t( m_current_result->m_track_gain, 0, order_list.get_ptr(), order_list.get_count() );
+								pfc::reorder_partial_t( m_current_result->m_track_peak, 0, order_list.get_ptr(), order_list.get_count() );
+
 								{
 									insync(lock_output_list);
 									output_list.add_item( m_current_result );
+									output_list_order.append_single( m_current_job_id );
 									m_current_job->m_scanner_result = m_current_result = NULL;
 								}
 								{
@@ -632,7 +730,7 @@ class r128_scanner : public threaded_process_callback
 						catch (std::exception & e)
 						{
 							m_current_job->m_lock.leave();
-							report_error( e.what(), m_current_track );
+							report_error( e.what(), m_current_job_id, m_current_track );
 							throw;
 						}
 						catch (...)
@@ -680,7 +778,7 @@ class r128_scanner : public threaded_process_callback
 			{
 				if ( m_current_job )
 				{
-					report_error( e.what(), m_current_job->m_handles );
+					report_error( e.what(), m_current_job_id, m_current_job->m_handles );
 
 					{
 						insync(lock_input_name_list);
@@ -704,7 +802,7 @@ class r128_scanner : public threaded_process_callback
 				if (m_ctx) bs1770_ctx_m_close(m_ctx);
 				if ( m_current_job )
 				{
-					report_error( e.what(), m_current_job->m_handles );
+					report_error( e.what(), m_current_job_id, m_current_job->m_handles );
 
 					{
 						insync(lock_input_name_list);
@@ -722,7 +820,7 @@ class r128_scanner : public threaded_process_callback
 				if (m_ctx) bs1770_ctx_m_close(m_ctx);
 				if ( m_current_job )
 				{
-					report_error( e.what(), m_current_job->m_handles );
+					report_error( e.what(), m_current_job_id, m_current_job->m_handles );
 					{
 						insync(lock_input_name_list);
 						for ( unsigned i = 0; i < m_current_job->m_names.get_count(); i++ )
@@ -838,6 +936,7 @@ public:
 	r128_scanner()
 	{
 		input_items_remaining = input_items_total = 0;
+		input_job_count = 0;
 		output_duration = 0;
 		m_progress = 0;
 	}
@@ -859,6 +958,7 @@ public:
 		input_job_list.add_item( m_job );
 
 		input_items_remaining = input_items_total += 1;
+		input_job_count++;
 	}
 
 	void add_job_album( const metadb_handle_list & p_input )
@@ -879,6 +979,7 @@ public:
 		input_job_list.add_item( m_job );
 
 		input_items_remaining = input_items_total += p_input.get_count();
+		input_job_count++;
 	}
 
 	~r128_scanner()
@@ -933,6 +1034,13 @@ public:
 			if ( end_time.dwLowDateTime < start_time.dwLowDateTime ) high--;
 
 			unsigned __int64 timestamp = ((unsigned __int64)(high) << 32) + low;
+
+			pfc::array_t<t_size> order_list;
+			order_list.set_count( output_list_order.get_count() );
+			for ( unsigned i = 0; i < output_list_order.get_count(); i++ )
+				order_list[ output_list_order[ i ] ] = i;
+
+			output_list.reorder( order_list.get_ptr() );
 
 			RunR128ResultsPopup( output_list, output_duration, timestamp, core_api::get_main_window() );
 		}
