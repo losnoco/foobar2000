@@ -202,22 +202,29 @@ public:
 		foobar_Data_Reader rdr(m_file, p_abort);
 
 		{
-			ERRCHK( rdr.read( &m_header, sizeof(m_header) ) );
+			ERRCHK( rdr.read( &m_header, m_header.size_min ) );
 
-			if ( 0 != memcmp( m_header.tag, "Vgm ", 4 ) )
+			if ( !m_header.valid_tag() )
 			{
 				console::info("Not a VGM file");
 				throw exception_io_data();
 			}
-			if ( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.version ) ) > 0x0150 )
+			t_uint32 version = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.version ) );
+			if ( version > 0x0161 )
 			{
 				console::info("Unsupported VGM format");
 				throw exception_io_data();
 			}
-			if ( ! m_header.track_duration )
+			if ( ! * ( ( t_uint32 * ) &m_header.track_duration ) )
 			{
 				console::info("Header contains empty track duration");
 			}
+			if ( m_header.size() > m_header.size_min )
+			{
+				ERRCHK( rdr.read( &m_header.rf5c68_rate, m_header.size() - m_header.size_min ) );
+			}
+
+			m_header.cleanup();
 		}
 	}
 
@@ -261,7 +268,14 @@ public:
 			m_file.release();
 		}
 
-		p_info.set_length( double( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.track_duration ) ) ) / 44100 );
+		int song_len = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.track_duration ) );
+		if ( song_len )
+		{
+			//int fade_min = ( 512 * 8 * 1000 / 2 + sample_rate - 1 ) / sample_rate;
+			int loop_len = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.loop_duration ) );
+			song_len += loop_len * cfg_vgm_loop_count;
+			p_info.set_length( song_len / 44100 + tag_fade_ms / 1000 );
+		}
 
 		if ( * ( ( t_uint32 * ) &m_header.loop_offset ) )
 		{

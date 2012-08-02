@@ -1,7 +1,14 @@
-#define MYVERSION "1.125"
+#define MYVERSION "1.126"
 
 /*
 	change log
+
+2012-08-02 05:30 UTC - kode54
+- Fixed FM resampler for resample duration rounding errors
+- Extended VGM header reading capabilities
+- Fixed VGM YM2413 playback
+- Fixed VGM song duration reporting
+- Version is now 1.126
 
 2012-06-16 23:20 UTC - kode54
 - Implemented control for NSF to ignore writes to register $4011
