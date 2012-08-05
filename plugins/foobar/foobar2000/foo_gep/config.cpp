@@ -1,7 +1,11 @@
-#define MYVERSION "1.126"
+#define MYVERSION "1.127"
 
 /*
 	change log
+
+2012-08-05 20:49 UTC - kode54
+- Fixed an issue with the GYM/VGM FM resampler
+- Version is now 1.127
 
 2012-08-02 05:30 UTC - kode54
 - Fixed FM resampler for resample duration rounding errors
