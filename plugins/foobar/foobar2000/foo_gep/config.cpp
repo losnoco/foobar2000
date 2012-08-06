@@ -1,7 +1,17 @@
-#define MYVERSION "1.127"
+#define MYVERSION "1.128"
 
 /*
 	change log
+
+2012-08-06 08:57 UTC - kode54
+- Implemented C140, RF5C68, RF5C164, and PWM support in VGM player
+- Version is now 1.128
+
+2012-08-06 04:07 UTC - kode54
+- Implemented YM2151 support in VGM player
+
+2012-08-06 03:11 UTC - kode54
+- Added more file information reporting to the VGM input
 
 2012-08-05 20:49 UTC - kode54
 - Fixed an issue with the GYM/VGM FM resampler

@@ -48,8 +48,98 @@ static void uncompressStream( const service_ptr_t< file > & src_fd, service_ptr_
 	}
 }
 
+enum {
+	cmd_gg_stereo       = 0x4F,
+	cmd_psg             = 0x50,
+	cmd_ym2413          = 0x51,
+	cmd_ym2612_port0    = 0x52,
+	cmd_ym2612_port1    = 0x53,
+	cmd_ym2151          = 0x54,
+	cmd_delay           = 0x61,
+	cmd_delay_735       = 0x62,
+	cmd_delay_882       = 0x63,
+	cmd_byte_delay      = 0x64,
+	cmd_end             = 0x66,
+	cmd_data_block      = 0x67,
+	cmd_short_delay     = 0x70,
+	cmd_pcm_delay       = 0x80,
+	cmd_pcm_seek        = 0xE0,
+	
+	pcm_block_type      = 0x00,
+	ym2612_dac_port     = 0x2A,
+	ym2612_dac_pan_port = 0xB6
+};
+
+inline int command_len( int command )
+{
+	static byte const lens [0x10] = {
+	// 0 1 2 3 4 5 6 7 8 9 A B C D E F
+	   1,1,1,2,2,3,1,1,1,1,3,3,4,4,5,5
+	};
+	int len = lens [command >> 4];
+	return len;
+}
+
+inline int get_le16( byte const* p ) { return pfc::byteswap_if_be_t( * ( t_int16 * ) p ); }
+inline int get_le32( byte const* p ) { return pfc::byteswap_if_be_t( * ( t_int32 * ) p ); }
+
+void update_fm_rates( byte const* p, size_t size, Vgm_Emu::header_t & header )
+{
+	byte const* file_end = p + size;
+	int data_offset = get_le32( header.data_offset );
+	if ( data_offset )
+		p += data_offset + offsetof( Vgm_Emu::header_t, data_offset ) - header.size();
+	while ( p < file_end )
+	{
+		switch ( *p )
+		{
+		case cmd_end:
+			return;
+		
+		case cmd_psg:
+		case cmd_byte_delay:
+			p += 2;
+			break;
+		
+		case cmd_delay:
+			p += 3;
+			break;
+		
+		case cmd_data_block:
+			p += 7 + get_le32( p + 3 );
+			break;
+		
+		case cmd_ym2413:
+			memset( header.ym2612_rate, 0, sizeof( header.ym2612_rate ) );
+			memset( header.ym2151_rate, 0, sizeof( header.ym2151_rate ) );
+			return;
+		
+		case cmd_ym2612_port0:
+		case cmd_ym2612_port1:
+			memset( header.ym2413_rate, 0, sizeof( header.ym2413_rate ) );
+			memset( header.ym2151_rate, 0, sizeof( header.ym2151_rate ) );
+			return;
+		
+		case cmd_ym2151:
+			memset( header.ym2612_rate, 0, sizeof( header.ym2612_rate ) );
+			memset( header.ym2413_rate, 0, sizeof( header.ym2413_rate ) );
+			return;
+		
+		default:
+			p += command_len( *p );
+		}
+	}
+}
+
+inline void set_freq( file_info & p_info, const char * p_name, int freq )
+{
+	if ( freq > 0 ) p_info.info_set_int( p_name, freq );
+}
+
 class input_vgm : public input_gep
 {
+	double volume_modifier;
+
 	Vgm_Emu::header_t m_header;
 
 	const wchar_t * get_string( const wchar_t * & ptr, unsigned & wchar_remain )
@@ -209,13 +299,13 @@ public:
 				console::info("Not a VGM file");
 				throw exception_io_data();
 			}
-			t_uint32 version = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.version ) );
+			t_uint32 version = get_le32( m_header.version );
 			if ( version > 0x0161 )
 			{
 				console::info("Unsupported VGM format");
 				throw exception_io_data();
 			}
-			if ( ! * ( ( t_uint32 * ) &m_header.track_duration ) )
+			if ( ! get_le32( m_header.track_duration ) )
 			{
 				console::info("Header contains empty track duration");
 			}
@@ -225,6 +315,19 @@ public:
 			}
 
 			m_header.cleanup();
+
+			if ( version < 0x110 )
+			{
+				size_t body_size = m_file->get_size_ex( p_abort ) - m_header.size();
+
+				pfc::array_t<t_uint8> buffer;
+				buffer.set_count( body_size );
+				ERRCHK( rdr.read( buffer.get_ptr(), body_size ) );
+
+				update_fm_rates( buffer.get_ptr(), body_size, m_header );
+			}
+
+			volume_modifier = pow( 2.0, (double)m_header.volume_modifier / 32.0 );
 		}
 	}
 
@@ -249,6 +352,7 @@ public:
 				m_file->seek( 0, p_abort );
 				foobar_Data_Reader rdr( m_file, p_abort );
 
+				emu->set_gain( volume_modifier );
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( rdr ) );
 				handle_warning();
@@ -268,21 +372,84 @@ public:
 			m_file.release();
 		}
 
-		int song_len = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.track_duration ) );
+		int song_len = get_le32( m_header.track_duration );
 		if ( song_len )
 		{
 			//int fade_min = ( 512 * 8 * 1000 / 2 + sample_rate - 1 ) / sample_rate;
-			int loop_len = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.loop_duration ) );
+			int loop_len = get_le32( m_header.loop_duration );
 			song_len += loop_len * cfg_vgm_loop_count;
 			p_info.set_length( song_len / 44100 + tag_fade_ms / 1000 );
 		}
 
-		if ( * ( ( t_uint32 * ) &m_header.loop_offset ) )
+		if ( get_le32( m_header.loop_offset ) )
 		{
-			unsigned loop_end = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.track_duration ) );
-			unsigned loop_dur = pfc::byteswap_if_be_t( * ( ( t_uint32 * ) &m_header.loop_duration ) );
+			unsigned loop_end = get_le32( m_header.track_duration );
+			unsigned loop_dur = get_le32( m_header.loop_duration );
 			p_info.info_set_int("vgm_loop_start", loop_end - loop_dur);
 		}
+
+		int version = get_le32( m_header.version );
+		p_info.info_set( "VGM_VERSION", pfc::string_formatter() << pfc::format_int( version >> 8, 0, 16 ) << "." << pfc::format_int( version & 0xFF, 2, 16 ) );
+
+		set_freq( p_info, "VGM_YM2413_RATE", get_le32( m_header.ym2413_rate ) );
+		set_freq( p_info, "VGM_FRAME_RATE", get_le32( m_header.frame_rate ) );
+		set_freq( p_info, "VGM_SN76489_RATE", get_le32( m_header.psg_rate ) );
+		if ( get_le32( m_header.psg_rate ) > 0 )
+		{
+			p_info.info_set_int( "VGM_SN76489_FLAGS", m_header.sn76489_flags );
+			if ( get_le16( m_header.noise_feedback ) )
+				p_info.info_set( "VGM_NOISE_FEEDBACK", pfc::format_int( get_le16( m_header.noise_feedback ), 4, 16 ) );
+			set_freq( p_info, "VGM_NOISE_WIDTH", m_header.noise_width );
+		}
+		set_freq( p_info, "VGM_YM2612_RATE", get_le32( m_header.ym2612_rate ) );
+		set_freq( p_info, "VGM_YM2151_RATE", get_le32( m_header.ym2151_rate ) );
+		set_freq( p_info, "VGM_SEGAPCM_RATE", get_le32( m_header.segapcm_rate ) );
+		set_freq( p_info, "VGM_RF5C68_RATE", get_le32( m_header.rf5c68_rate ) );
+		set_freq( p_info, "VGM_YM2203_RATE", get_le32( m_header.ym2203_rate ) );
+		set_freq( p_info, "VGM_YM2608_RATE", get_le32( m_header.ym2608_rate ) );
+		set_freq( p_info, "VGM_YM2610_RATE", get_le32( m_header.ym2610_rate ) );
+		set_freq( p_info, "VGM_YM3812_RATE", get_le32( m_header.ym3812_rate ) );
+		set_freq( p_info, "VGM_YM3526_RATE", get_le32( m_header.ym3526_rate ) );
+		set_freq( p_info, "VGM_Y8950_RATE", get_le32( m_header.y8950_rate ) );
+		set_freq( p_info, "VGM_YMF262_RATE", get_le32( m_header.ymf262_rate ) );
+		set_freq( p_info, "VGM_YMF278B_RATE", get_le32( m_header.ymf278b_rate ) );
+		set_freq( p_info, "VGM_YMF271_RATE", get_le32( m_header.ymf271_rate ) );
+		set_freq( p_info, "VGM_YMZ280B_RATE", get_le32( m_header.ymz280b_rate ) );
+		set_freq( p_info, "VGM_RF5C164_RATE", get_le32( m_header.rf5c164_rate ) );
+		set_freq( p_info, "VGM_PWM_RATE", get_le32( m_header.pwm_rate ) );
+		set_freq( p_info, "VGM_AY8910_RATE", get_le32( m_header.ay8910_rate ) );
+		if ( get_le32( m_header.ay8910_rate ) > 0 || get_le32( m_header.ym2203_rate ) > 0 || get_le32( m_header.ym2608_rate ) > 0 )
+		{
+			p_info.info_set_int( "VGM_AY8910_TYPE", m_header.ay8910_type );
+			p_info.info_set_int( "VGM_AY8910_FLAGS", m_header.ay8910_flags );
+			if ( get_le32( m_header.ym2203_rate ) > 0 )
+				p_info.info_set_int( "VGM_YM2203_AY8910_FLAGS", m_header.ym2203_ay8910_flags );
+			if ( get_le32( m_header.ym2608_rate ) > 0 )
+				p_info.info_set_int( "VGM_YM2608_AY8910_FLAGS", m_header.ym2608_ay8910_flags );
+		}
+		if ( volume_modifier != 1.0 )
+			p_info.info_set_float( "VGM_VOLUME_MODIFIER", volume_modifier, 3 );
+		set_freq( p_info, "VGM_LOOP_BASE", m_header.loop_base );
+		set_freq( p_info, "VGM_LOOP_MODIFIER", m_header.loop_modifier );
+		set_freq( p_info, "VGM_GBDMG_RATE", get_le32( m_header.gbdmg_rate ) );
+		set_freq( p_info, "VGM_NESAPU_RATE", get_le32( m_header.nesapu_rate ) );
+		set_freq( p_info, "VGM_MULTIPCM_RATE", get_le32( m_header.multipcm_rate ) );
+		set_freq( p_info, "VGM_UPD7759_RATE", get_le32( m_header.upd7759_rate ) );
+		set_freq( p_info, "VGM_OKIM6258_RATE", get_le32( m_header.okim6258_rate ) );
+		if ( get_le32( m_header.okim6258_rate ) > 0 )
+			p_info.info_set_int( "VGM_OKIM6258_FLAGS", m_header.okim6258_flags );
+		set_freq( p_info, "VGM_K054539_RATE", get_le32( m_header.k054539_rate ) );
+		if ( get_le32( m_header.k054539_rate ) > 0 )
+			p_info.info_set_int( "VGM_K054539_FLAGS", m_header.k054539_flags );
+		set_freq( p_info, "VGM_C140_RATE", get_le32( m_header.c140_rate ) );
+		if ( get_le32( m_header.c140_rate ) > 0 )
+			p_info.info_set_int( "VGM_C140_TYPE", m_header.c140_type );
+		set_freq( p_info, "VGM_OKIM6295_RATE", get_le32( m_header.okim6295_rate ) );
+		set_freq( p_info, "VGM_K051649_RATE", get_le32( m_header.k051649_rate ) );
+		set_freq( p_info, "VGM_HUC6280_RATE", get_le32( m_header.huc6280_rate ) );
+		set_freq( p_info, "VGM_K053260_RATE", get_le32( m_header.k053260_rate ) );
+		set_freq( p_info, "VGM_POKEY_RATE", get_le32( m_header.pokey_rate ) );
+		set_freq( p_info, "VGM_QSOUND_RATE", get_le32( m_header.qsound_rate ) );
 
 		int size = 0;
 		const unsigned char * gd3_tag;
@@ -307,6 +474,7 @@ public:
 				m_file->seek( 0, p_abort );
 				foobar_Data_Reader rdr( m_file, p_abort );
 
+				emu->set_gain( volume_modifier );
 				ERRCHK( emu->set_sample_rate( sample_rate ) );
 				ERRCHK( emu->load( rdr ) );
 				handle_warning();
