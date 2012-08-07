@@ -1,7 +1,11 @@
-#define MYVERSION "0.9.9.55"
+#define MYVERSION "0.9.9.56"
 
 /*
 	changelog
+
+2012-08-07 04:32 UTC - kode54
+- Fixed XM sample header size handling to always assume a size of 0x28
+- Version is now 0.9.9.56
 
 2012-07-08 19:44 UTC - kode54
 - Added sanity checking to XM reader instrument and sample header sizes
