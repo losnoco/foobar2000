@@ -114,7 +114,6 @@ VGMSTREAM * init_vgmstream_sqex_scd(STREAMFILE *streamFile) {
         {
             // skip chunks before xor_byte
             unsigned char xor_byte;
-			VGMSTREAM * result;
 
             xor_byte = read_8bit(post_meta_offset+2, streamFile);
 

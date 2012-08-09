@@ -1,1 +1,1 @@
-#define VERSION		"r980"
+#define VERSION		"r982"
