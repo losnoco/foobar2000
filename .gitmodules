@@ -4,3 +4,9 @@
 [submodule "plugins/ogg/opus-tools"]
 	path = plugins/ogg/opus-tools
 	url = git://git.xiph.org/opus-tools.git
+[submodule "plugins/dumb"]
+	path = plugins/dumb
+	url = git@github.com:kode54/dumb.git
+[submodule "plugins/Game_Music_Emu"]
+	path = plugins/Game_Music_Emu
+	url = git@github.com:kode54/Game_Music_Emu.git
