@@ -1,7 +1,12 @@
-#define MYVERSION "1.128"
+#define MYVERSION "1.129"
 
 /*
 	change log
+
+2012-08-11 04:41 UTC - kode54
+- Fixed VGM initialization order of PCM versus FM chips
+- Implemented VGM DAC control system
+- Version is now 1.129
 
 2012-08-06 08:57 UTC - kode54
 - Implemented C140, RF5C68, RF5C164, and PWM support in VGM player
