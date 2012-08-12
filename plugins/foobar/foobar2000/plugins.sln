@@ -133,7 +133,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext_libs", "..\..\vgmstream
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_upse", "foo_input_upse\foo_input_upse.vcxproj", "{A596288A-368D-4DFD-B24C-6B663028CB50}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libupse", "foo_input_upse\libupse\libupse.vcxproj", "{24A0B662-B326-495C-80D5-29FF06158E0C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libupse", "..\..\libupse\libupse.vcxproj", "{24A0B662-B326-495C-80D5-29FF06158E0C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\zlib\zlib.vcxproj", "{B91FDB47-3784-46CC-B23F-E863B60E87D4}"
 EndProject

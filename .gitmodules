@@ -37,3 +37,12 @@
 [submodule "plugins/foobar/foobar2000/foo_unpack_lha"]
 	path = plugins/foobar/foobar2000/foo_unpack_lha
 	url = git@github.com:kode54/foo_unpack_lha.git
+[submodule "plugins/foobar/foobar2000/foo_unpack_unix"]
+	path = plugins/foobar/foobar2000/foo_unpack_unix
+	url = git@github.com:kode54/foo_unpack_unix.git
+[submodule "plugins/libupse"]
+	path = plugins/libupse
+	url = git@github.com:kode54/libupse.git
+[submodule "plugins/foobar/foobar2000/foo_input_upse"]
+	path = plugins/foobar/foobar2000/foo_input_upse
+	url = git@github.com:kode54/foo_input_upse.git
