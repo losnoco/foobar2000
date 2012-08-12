@@ -46,3 +46,6 @@
 [submodule "plugins/foobar/foobar2000/foo_input_upse"]
 	path = plugins/foobar/foobar2000/foo_input_upse
 	url = git@github.com:kode54/foo_input_upse.git
+[submodule "plugins/foobar/foobar2000/foo_hdcd"]
+	path = plugins/foobar/foobar2000/foo_hdcd
+	url = git@github.com:kode54/foo_hdcd.git

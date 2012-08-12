@@ -107,7 +107,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_aften", "foo_dsp_af
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libaften", "..\..\aften\msvc\libaften\libaften.vcxproj", "{0A4290CA-37C3-47A5-AE2B-9B525182AF0D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_hdcd", "foo_dsp_hdcd\foo_dsp_hdcd.vcxproj", "{32E9B780-8555-4010-B5C1-19544EEEF26F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_hdcd", "foo_hdcd\foo_hdcd.vcxproj", "{32E9B780-8555-4010-B5C1-19544EEEF26F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_usf", "foo_input_usf\usf.vcxproj", "{852F6566-124D-453C-B45B-5BD1C3D9BE3B}"
 EndProject
