@@ -10,3 +10,30 @@
 [submodule "plugins/Game_Music_Emu"]
 	path = plugins/Game_Music_Emu
 	url = git@github.com:kode54/Game_Music_Emu.git
+[submodule "plugins/foobar/foobar2000/foo_input_hvl"]
+	path = plugins/foobar/foobar2000/foo_input_hvl
+	url = git@github.com:kode54/foo_input_hvl.git
+[submodule "plugins/foobar/foobar2000/foo_dumb"]
+	path = plugins/foobar/foobar2000/foo_dumb
+	url = git@github.com:kode54/foo_dumb.git
+[submodule "plugins/foobar/foobar2000/foo_gep"]
+	path = plugins/foobar/foobar2000/foo_gep
+	url = git@github.com:kode54/foo_gep.git
+[submodule "plugins/foobar/foobar2000/foo_input_org"]
+	path = plugins/foobar/foobar2000/foo_input_org
+	url = git@github.com:kode54/foo_input_org.git
+[submodule "plugins/foobar/foobar2000/foo_osd"]
+	path = plugins/foobar/foobar2000/foo_osd
+	url = git@github.com:kode54/foo_osd.git
+[submodule "plugins/File_Extractor"]
+	path = plugins/File_Extractor
+	url = git@github.com:kode54/File_Extractor.git
+[submodule "plugins/foobar/foobar2000/foo_unpack_7z"]
+	path = plugins/foobar/foobar2000/foo_unpack_7z
+	url = git@github.com:kode54/foo_unpack_7z.git
+[submodule "plugins/foobar/foobar2000/foo_unpack_jma"]
+	path = plugins/foobar/foobar2000/foo_unpack_jma
+	url = git@github.com:kode54/foo_unpack_jma.git
+[submodule "plugins/foobar/foobar2000/foo_unpack_lha"]
+	path = plugins/foobar/foobar2000/foo_unpack_lha
+	url = git@github.com:kode54/foo_unpack_lha.git
