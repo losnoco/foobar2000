@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.26"
+#define MYVERSION "2.0.27"
 
 /*
 	changelog
+
+2012-08-15 00:55 UTC - kode54
+- Input automatically drops support for PSF1 files if another decoder is detected
+- Version is now 2.0.27
 
 2011-02-19 20:00 UTC - kode54
 - Added abort check to decoder
@@ -350,6 +354,29 @@ static cfg_int cfg_reverb(guid_cfg_reverb,1);
 static cfg_int cfg_freq(guid_cfg_freq,1);
 static cfg_int cfg_compat(guid_cfg_compat,IOP_COMPAT_FRIENDLY);
 static cfg_window_placement cfg_placement(guid_cfg_placement);
+
+bool cfg_enable_overlapping = true;
+
+class psf_detect_redundant_decoder : public initquit
+{
+public:
+	virtual void on_init()
+	{
+		unsigned service_count = 0;
+
+		service_enum_t<input_entry> e;
+		service_ptr_t<input_entry> f;
+
+		while ( e.next( f ) )
+		{
+			if ( f->is_our_path( "foo.psf", "psf" ) ) service_count++;
+		}
+
+		if ( service_count > 1 ) cfg_enable_overlapping = false;
+	}
+
+	virtual void on_quit() { }
+};
 
 static const char field_length[]="psf_length";
 static const char field_fade[]="psf_fade";
@@ -1627,7 +1654,7 @@ public:
 
 	static bool g_is_our_path( const char * p_full_path, const char * p_extension )
 	{
-		return (!stricmp(p_extension,"psf") || !stricmp(p_extension,"minipsf") ||
+		return ((cfg_enable_overlapping && (!stricmp(p_extension,"psf") || !stricmp(p_extension,"minipsf"))) ||
 				!stricmp(p_extension,"psf2") || !stricmp(p_extension, "minipsf2"));
 	}
 
@@ -2162,8 +2189,8 @@ public:
 			int c1 = strnicmp(ext, "PSF", 3);
 			int c2 = strnicmp(ext, "MINIPSF", 7);
 			if (c1 && c2) return false;
-			if ((!c1 && ext[3] != 0 && (ext[3] != '2' || ext[4] != 0)) ||
-				(!c2 && ext[7] != 0 && (ext[7] != '2' || ext[8] != 0))) return false;
+			if ((!c1 && (ext[3] != 0 || !cfg_enable_overlapping) && (ext[3] != '2' || ext[4] != 0)) ||
+				(!c2 && (ext[7] != 0 || !cfg_enable_overlapping) && (ext[7] != '2' || ext[8] != 0))) return false;
 		}
 		if (i == 1) out = "Edit length";
 		else out = "Set length";
@@ -2251,5 +2278,6 @@ static preferences_page_factory_t <preferences_page_myimpl> g_config_psf_factory
 static contextmenu_item_factory_t <context_psf>             g_contextmenu_item_psf_factory;
 static service_factory_single_t   <psf_file_types>          g_input_file_type_psf_factory;
 static service_factory_single_t   <version_psf>             g_componentversion_psf_factory;
+static initquit_factory_t<psf_detect_redundant_decoder>     g_initquit_psf_detector;
 
 VALIDATE_COMPONENT_FILENAME("foo_psf.dll");
