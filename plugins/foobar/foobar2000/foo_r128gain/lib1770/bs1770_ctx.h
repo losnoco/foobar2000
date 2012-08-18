@@ -23,33 +23,40 @@
 extern "C" {
 #endif
 
-#define BS1770_MODE_S 1
-#define BS1770_MODE_H 2
+#include <stdlib.h>
+
+///////////////////////////////////////////////////////////////////////////////
 #define BS1770_MAX_CHANNELS 5
 
 typedef double bs1770_sample_t[BS1770_MAX_CHANNELS];
+
+typedef struct bs1770_ps {
+  double ms;
+  int partition;
+  double gate;
+  double reference;
+} bs1770_ps_t;
+
+///////////////////////////////////////////////////////////////////////////////
+const char *bs1770_version();
+
+///////////////////////////////////////////////////////////////////////////////
 typedef struct bs1770_ctx bs1770_ctx_t;
 
-#ifdef _MSC_VER
-#include <math.h>
-static __inline double round(double m) { return floor(m + 0.5); }
-#endif
+typedef double (*bs1770_ctx_lufs_t)(bs1770_ctx_t *);
+typedef double (*bs1770_ctx_lra_t)(bs1770_ctx_t *, double, double);
 
-extern const char *bs1770_version;
-
-bs1770_ctx_t *bs1770_ctx_open(int mode, double gate, double ms, int partition,
-    double def);
+bs1770_ctx_t *bs1770_ctx_open(size_t size, const bs1770_ps_t *lufs,
+    const bs1770_ps_t *lra);
 void bs1770_ctx_close(bs1770_ctx_t *ctx);
 
-void bs1770_ctx_add_sample(bs1770_ctx_t *ctx, double fs, int channels,
-    bs1770_sample_t sample);
-double bs1770_ctx_track_lufs(bs1770_ctx_t *ctx, double fs, int channels);
-double bs1770_ctx_track_lra(bs1770_ctx_t *ctx, double lower, double upper,
-    double fs, int channels);
+void bs1770_ctx_add_sample(bs1770_ctx_t *ctx, size_t i, double fs,
+    int channels, bs1770_sample_t sample);
+double bs1770_ctx_track_lufs(bs1770_ctx_t *ctx, size_t i);
+double bs1770_ctx_track_lra(bs1770_ctx_t *ctx, size_t i, double lower,
+    double upper);
 double bs1770_ctx_album_lufs(bs1770_ctx_t *ctx);
-double bs1770_ctx_album_lufs_multiple(bs1770_ctx_t **ctx, size_t count);
 double bs1770_ctx_album_lra(bs1770_ctx_t *ctx, double lower, double upper);
-double bs1770_ctx_album_lra_multiple(bs1770_ctx_t **ctx, size_t count, double lower, double upper);
 
 #ifdef __cplusplus
 }

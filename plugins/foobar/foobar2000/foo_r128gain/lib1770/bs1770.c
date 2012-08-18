@@ -1,5 +1,5 @@
 /*
- * bs1770.c
+ * bs1770_ring.c
  * Copyright (C) 2011, 2012 Peter Belkner <pbelkner@snafu.de>
  * 
  * This library is free software; you can redistribute it and/or
@@ -18,8 +18,8 @@
  * MA  02110-1301  USA
  */
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include "bs1770.h"
 
 #define IS_DEN(x) \
@@ -46,7 +46,7 @@ double BS1770_G[BS1770_MAX_CHANNELS]={
 };
 
 static biquad_t pre48000={
-#ifdef _MSC_VER
+#if defined (_MSC_VER)
   48000,
   -1.69065929318241,
   0.73248077421585,
@@ -64,7 +64,7 @@ static biquad_t pre48000={
 };
 
 static biquad_t rlb48000={
-#ifdef _MSC_VER
+#if defined (_MSC_VER)
   48000,
   -1.99004745483398,
   0.99007225036621,
@@ -81,49 +81,15 @@ static biquad_t rlb48000={
 #endif
 };
 
-void bs1770_close(bs1770_t *bs1770)
-{
-  free(bs1770_cleanup(bs1770));
-}
-
-bs1770_t *bs1770_init(bs1770_t *bs1770, bs1770_stats_t *track,
-    bs1770_stats_t *album)
+bs1770_t *bs1770_init(bs1770_t *bs1770, bs1770_aggr_t *lufs,
+	bs1770_aggr_t *lra)
 {
   memset(bs1770, 0, sizeof *bs1770);
-  bs1770->fs=0.0;
-  bs1770->pre.fs=0.0;
-  bs1770->rlb.fs=0.0;
-
-  bs1770->track=track;
-  bs1770->album=album;
+  bs1770->lufs=lufs;
+  bs1770->lra=lra;
+  bs1770_reset(bs1770);
 
   return bs1770;
-error:
-  return NULL;
-}
-
-bs1770_t *bs1770_s_init(bs1770_t *bs1770, bs1770_stats_t *track,
-    bs1770_stats_t *album, double gate, double ms, int partition,
- double reference)
-{
-  if (NULL==bs1770_stats_s_init(track,gate,ms,partition,reference))
-    return NULL;
-  else if (NULL==bs1770_stats_s_init(album,gate,ms,partition,reference))
-    return NULL;
-
-  return bs1770_init(bs1770,track,album);
-}
-
-bs1770_t *bs1770_h_init(bs1770_t *bs1770, bs1770_stats_t *track,
-    bs1770_stats_t *album, double gate, double ms, int partition,
- double reference)
-{
-  if (NULL==bs1770_stats_h_init(track,gate,ms,partition,reference))
-    return NULL;
-  else if (NULL==bs1770_stats_h_init(album,gate,ms,partition,reference))
-    return NULL;
-
-  return bs1770_init(bs1770,track,album);
 }
 
 bs1770_t *bs1770_cleanup(bs1770_t *bs1770)
@@ -131,11 +97,23 @@ bs1770_t *bs1770_cleanup(bs1770_t *bs1770)
   return bs1770;
 }
 
-void bs1770_set_fs(bs1770_t *bs1770, double fs, int channels)
+bs1770_t *bs1770_reset(bs1770_t *bs1770)
+{
+  bs1770->ring.size=bs1770->ring.offs=0;
+  bs1770->fs=0.0;
+  bs1770->channels=0.0;
+  bs1770->pre.fs=0.0;
+  bs1770->rlb.fs=0.0;
+
+  return bs1770;
+}
+
+static void bs1770_set_fs(bs1770_t *bs1770, double fs, int channels)
 {
   int i;
 
   bs1770->fs=fs;
+  bs1770->channels=channels;
 
   bs1770->pre.fs=fs;
   biquad_requantize(&pre48000, &bs1770->pre);
@@ -188,8 +166,11 @@ void bs1770_add_sample(bs1770_t *bs1770, double fs, int channels,
     }
   }
 
-  bs1770_stats_add_sqs(bs1770->track, fs, wssqs);
-  bs1770_stats_add_sqs(bs1770->album, fs, wssqs);
+  if (NULL!=bs1770->lufs)
+    bs1770_aggr_add_sqs(bs1770->lufs,fs,wssqs);
+
+  if (NULL!=bs1770->lra)
+    bs1770_aggr_add_sqs(bs1770->lra,fs,wssqs);
 
   if (size<2)
     ++bs1770->ring.size;
@@ -198,9 +179,10 @@ void bs1770_add_sample(bs1770_t *bs1770, double fs, int channels,
     bs1770->ring.offs=0;
 }
 
-void bs1770_flush(bs1770_t *bs1770, double fs, int channels)
+void bs1770_flush(bs1770_t *bs1770)
 {
-  channels=MIN(channels,BS1770_MAX_CHANNELS);
+  double fs=bs1770->fs;
+  int channels=bs1770->channels;
 
   if (1<bs1770->ring.size) {
     bs1770_sample_t sample;
@@ -209,9 +191,40 @@ void bs1770_flush(bs1770_t *bs1770, double fs, int channels)
     for (i=0;i<channels;++i)
       sample[i]=0.0;
 
-    bs1770_add_sample(bs1770, fs, channels, sample);
+    bs1770_add_sample(bs1770,fs,channels,sample);
   }
 
-  bs1770->ring.size=bs1770->ring.offs=0;
-  bs1770->fs=0.0;
+  bs1770_reset(bs1770);
+
+  if (NULL!=bs1770->lufs)
+    bs1770_aggr_reset(bs1770->lufs);
+
+  if (NULL!=bs1770->lra)
+    bs1770_aggr_reset(bs1770->lra);
+}
+
+double bs1770_track_lufs(bs1770_t *bs1770)
+{
+  double lufs;
+
+  bs1770_flush(bs1770);
+  lufs=bs1770_hist_get_lufs(bs1770->lufs->track);
+  bs1770_hist_add(bs1770->lufs->album,bs1770->lufs->track);
+  bs1770_hist_reset(bs1770->lufs->track);
+
+  return lufs;
+}
+
+double bs1770_track_lra(bs1770_t *bs1770, double lower, double upper)
+{
+  double lra=0.0;
+
+  if (NULL!=bs1770->lra) {
+    bs1770_flush(bs1770);
+    lra=bs1770_hist_get_lra(bs1770->lra->track,lower,upper);
+    bs1770_hist_add(bs1770->lra->album,bs1770->lra->track);
+    bs1770_hist_reset(bs1770->lra->track);
+  }
+
+  return lra;
 }

@@ -9,7 +9,7 @@
 
 // Windows Header Files:
 #include <windows.h>
-
+#include <Uxtheme.h>
 
 
 // TODO: reference additional headers your program requires here
@@ -20,9 +20,7 @@
 
 #include <atlframe.h>
 
-#include <helpers.h>
-
-#include "lib1770/bs1770_ctx_m.h"
+#include "lib1770/bs1770_ctx.h"
 
 #include <float.h>
 #include <limits.h>

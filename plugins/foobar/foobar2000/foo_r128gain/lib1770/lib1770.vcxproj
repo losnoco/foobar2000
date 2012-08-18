@@ -71,16 +71,15 @@
     <ClInclude Include="biquad.h" />
     <ClInclude Include="bs1770.h" />
     <ClInclude Include="bs1770_ctx.h" />
-    <ClInclude Include="bs1770_ctx_m.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="biquad.c" />
     <ClCompile Include="bs1770.c" />
+    <ClCompile Include="bs1770_aggr.c" />
     <ClCompile Include="bs1770_ctx.c" />
-    <ClCompile Include="bs1770_ctx_m.c" />
+    <ClCompile Include="bs1770_hist.c" />
+    <ClCompile Include="bs1770_nd.c" />
     <ClCompile Include="bs1770_stats.c" />
-    <ClCompile Include="bs1770_stats_h.c" />
-    <ClCompile Include="bs1770_stats_s.c" />
     <ClCompile Include="bs1770_version.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

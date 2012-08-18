@@ -4,21 +4,15 @@
 
 #include "resource.h"
 
-#define MY_VERSION "1.30"
-
-#define GATE_2      (-10.0)
-#define PARTITION_2 4
-
-#define GATE_1      (-8.0)
-#define PARTITION_1 2
-
-#define MODE        BS1770_MODE_H
-#define BLOCK       400.0
-
-#define REFERENCE   (-18.0)
+#define MY_VERSION "1.31"
 
 /*
 	change log
+
+2012-08-18 00:11 UTC - kode54
+- Updated lib1770 to version 0.8
+- Added extended ListView styles and Explorer theming
+- Version is now 1.31
 
 2012-07-31 01:17 UTC - kode54
 - Made R128 mode configurable
@@ -161,6 +155,52 @@
 
 */
 
+#define REFERENCE   (-18.0)
+
+// parameters for loudness computation.
+static const bs1770_ps_t lufs_2={
+#if defined (_MSC_VER)
+	400.0,
+	4,
+	-10.0,
+	REFERENCE
+#else
+	.ms=400.0,
+	.partition=4,
+	.gate=-10.0,
+	.reference=REFERENCE
+#endif
+};
+
+static const bs1770_ps_t lufs_1={
+#if defined (_MSC_VER)
+	400.0,
+	2,
+	-8.0,
+	REFERENCE
+#else
+	.ms=400.0,
+	.partition=2,
+	.gate=-8.0,
+	.reference=REFERENCE
+#endif
+};
+
+// parameters for loudness range computation.
+static const bs1770_ps_t lra={
+#if defined (_MSC_VER)
+	3000.0,
+	3,
+	-20.0,
+	REFERENCE
+#else
+	.ms=3000.0,
+	.partition=3,
+	.gate=-20.0,
+	.reference=REFERENCE
+#endif
+};
+
 static inline double rg_offset(double lu)
 {
 	if ( lu == std::numeric_limits<double>::quiet_NaN() || lu == std::numeric_limits<double>::infinity() || lu < -70 ) return replaygain_info::gain_invalid;
@@ -289,10 +329,10 @@ unsigned convert_audio_samples( const audio_sample * in, unsigned count, unsigne
 	}
 }
 
-double scan_track( bs1770_ctx_m_t * ctx, size_t index, audio_sample & peak, last_chunk_info & last_info, metadb_handle_ptr p_handle, service_ptr_t<dsp> & m_resampler, double & p_progress, unsigned track_total, threaded_process_status & p_status, critical_section & p_critsec, abort_callback & p_abort )
+double scan_track( bs1770_ctx_t * ctx, size_t index, audio_sample & peak, last_chunk_info & last_info, metadb_handle_ptr p_handle, service_ptr_t<dsp> & m_resampler, double & p_progress, unsigned track_total, threaded_process_status & p_status, critical_section & p_critsec, abort_callback & p_abort )
 {
 	input_helper               m_decoder;
-	service_ptr_t<file>        m_file, m_file_cached;
+	service_ptr_t<file>        m_file;
 	audio_chunk_impl_temporary m_chunk, m_previous_chunk;
 	file_info_impl             m_info;
 
@@ -303,8 +343,6 @@ double scan_track( bs1770_ctx_m_t * ctx, size_t index, audio_sample & peak, last
 	try
 	{
 		filesystem::g_open_precache( m_file, p_handle->get_path(), p_abort );
-		file_cached::g_create( m_file_cached, m_file, p_abort, 4 * 1024 * 1024 );
-		m_file = m_file_cached;
 	}
 	catch (...)
 	{
@@ -350,7 +388,7 @@ double scan_track( bs1770_ctx_m_t * ctx, size_t index, audio_sample & peak, last
 			unsigned channels = convert_audio_samples( m_chunk.get_data(), m_chunk.get_sample_count(), m_chunk.get_channels(), m_chunk.get_channel_config(), buffer );
 
 			for ( unsigned i = 0; i < m_chunk.get_sample_count(); i++ )
-				bs1770_ctx_m_add_sample( ctx, index, m_chunk.get_srate(), channels, buffer[ i ] );
+				bs1770_ctx_add_sample( ctx, index, m_chunk.get_srate(), channels, buffer[ i ] );
 
 			last_info.last_srate = m_chunk.get_srate();
 			last_info.last_channels = channels;
@@ -466,7 +504,7 @@ class r128_scanner : public threaded_process_callback
 		size_t                         m_tracks_total;
 		size_t                         m_current_thread;
 		pfc::array_t<last_chunk_info>  m_last_info;
-		bs1770_ctx_m_t               * m_ctx;
+		bs1770_ctx_t                 * m_ctx;
 		service_list_t<dsp>            m_resamplers;
 		metadb_handle_list             m_handles_done;
 		pfc::array_t<t_size>           m_track_id;
@@ -485,7 +523,7 @@ class r128_scanner : public threaded_process_callback
 		~job()
 		{
 			m_names.delete_all();
-			if ( m_ctx ) bs1770_ctx_m_close( m_ctx );
+			if ( m_ctx ) bs1770_ctx_close( m_ctx );
 		}
 	};
 
@@ -549,8 +587,7 @@ class r128_scanner : public threaded_process_callback
 
 	void scanner_process()
 	{
-		const double GATE = cfg_r128_2.get() ? GATE_2 : GATE_1;
-		const int PARTITION = cfg_r128_2.get() ? PARTITION_2 : PARTITION_1;
+		const bool r128_2 = cfg_r128_2.get();
 
 		for (;;)
 		{
@@ -579,7 +616,7 @@ class r128_scanner : public threaded_process_callback
 				else input_job_list.remove_by_idx( 0 );
 			}
 
-			bs1770_ctx_m_t * m_ctx = NULL;
+			bs1770_ctx_t * m_ctx = NULL;
 
 			try
 			{
@@ -591,14 +628,14 @@ class r128_scanner : public threaded_process_callback
 					}
 					update_status();
 
-					m_ctx = bs1770_ctx_m_open( 1, MODE, GATE, BLOCK, PARTITION, REFERENCE );
+					m_ctx = bs1770_ctx_open( 1, r128_2 ? &lufs_2 : &lufs_1, &lra );
 
 					audio_sample m_current_peak = 0;
 					last_chunk_info last_info;
 					service_ptr_t<dsp> m_resampler;
 					double duration = scan_track( m_ctx, 0, m_current_peak, last_info, m_current_job->m_handles[ 0 ], m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
 					r128_scanner_result * m_current_result = new r128_scanner_result(r128_scanner_result::track, m_current_job->m_handles);
-					m_current_result->m_album_gain = bs1770_ctx_m_track_lufs( m_ctx, 0, last_info.last_srate, last_info.last_channels );
+					m_current_result->m_album_gain = bs1770_ctx_track_lufs( m_ctx, 0 );
 					m_current_result->m_album_peak = m_current_peak;
 					{
 						insync(lock_output_list);
@@ -632,7 +669,7 @@ class r128_scanner : public threaded_process_callback
 							m_current_job->m_scanner_result = m_current_result;
 							m_current_job->m_thread_in_use.append_multi( false, thread_count );
 							m_current_job->m_last_info.set_count( thread_count );
-							m_current_job->m_ctx = bs1770_ctx_m_open( m_current_job->m_tracks_total, MODE, GATE, BLOCK, PARTITION, REFERENCE );
+							m_current_job->m_ctx = bs1770_ctx_open( m_current_job->m_tracks_total, r128_2 ? &lufs_2 : &lufs_1, &lra );
 							m_current_job->m_resamplers.set_count( thread_count );
 						}
 						do
@@ -662,7 +699,7 @@ class r128_scanner : public threaded_process_callback
 
 						audio_sample m_current_track_peak = 0;
 						double duration = scan_track( m_ctx, m_track_index, m_current_track_peak, m_last_info, m_current_track, m_resampler, m_progress, input_items_total, *status_callback, lock_status, *m_abort );
-						double m_current_track_gain = bs1770_ctx_m_track_lufs( m_ctx, m_track_index, m_last_info.last_srate, m_last_info.last_channels );
+						double m_current_track_gain = bs1770_ctx_track_lufs( m_ctx, m_track_index );
 
 						{
 							insync(lock_input_name_list);
@@ -693,7 +730,7 @@ class r128_scanner : public threaded_process_callback
 
 							if ( --m_current_job->m_tracks_left == 0 )
 							{
-								m_current_result->m_album_gain = bs1770_ctx_m_album_lufs( m_current_job->m_ctx );
+								m_current_result->m_album_gain = bs1770_ctx_album_lufs( m_current_job->m_ctx );
 
 								m_current_result->m_handles.add_items( m_current_job->m_handles_done );
 
@@ -799,7 +836,7 @@ class r128_scanner : public threaded_process_callback
 			}
 			catch (exception_aborted & e)
 			{
-				if (m_ctx) bs1770_ctx_m_close(m_ctx);
+				if (m_ctx) bs1770_ctx_close(m_ctx);
 				if ( m_current_job )
 				{
 					report_error( e.what(), m_current_job_id, m_current_job->m_handles );
@@ -817,7 +854,7 @@ class r128_scanner : public threaded_process_callback
 			}
 			catch (std::exception & e)
 			{
-				if (m_ctx) bs1770_ctx_m_close(m_ctx);
+				if (m_ctx) bs1770_ctx_close(m_ctx);
 				if ( m_current_job )
 				{
 					report_error( e.what(), m_current_job_id, m_current_job->m_handles );
@@ -834,7 +871,7 @@ class r128_scanner : public threaded_process_callback
 			}
 			catch (...)
 			{
-				if (m_ctx) bs1770_ctx_m_close(m_ctx);
+				if (m_ctx) bs1770_ctx_close(m_ctx);
 				if ( m_current_job )
 				{
 					insync(lock_input_name_list);
@@ -847,7 +884,7 @@ class r128_scanner : public threaded_process_callback
 				throw;
 			}
 
-			if (m_ctx) bs1770_ctx_m_close(m_ctx);
+			if (m_ctx) bs1770_ctx_close(m_ctx);
 			if ( m_current_job )
 			{
 				insync(lock_input_name_list);
@@ -1212,6 +1249,10 @@ private:
 		uSetDlgItemText( m_hWnd, IDC_STATUS, temp );
 
 		m_listview = GetDlgItem( IDC_LISTVIEW );
+
+		SetWindowTheme( m_listview, L"explorer", NULL );
+
+		m_listview.SetExtendedListViewStyle( LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES, 0 );
 
 		LVCOLUMN lvc = { 0 };
 		lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;

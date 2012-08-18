@@ -1,3 +1,6 @@
 #include "bs1770_ctx.h"
 
-const char *bs1770_version = "0.8";
+const char *bs1770_version()
+{
+	return "0.8";
+}

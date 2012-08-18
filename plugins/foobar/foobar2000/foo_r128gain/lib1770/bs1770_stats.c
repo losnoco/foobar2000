@@ -17,79 +17,33 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301  USA
  */
-#ifdef _MSC_VER
 #include <string.h>
-#else
-#include <strings.h>
-#endif
-#include <math.h>
 #include "bs1770.h"
 
-#define BLOCK_SIZE(size) \
-  ((size)*sizeof(((bs1770_stats_t *)NULL)->blocks.wmsq[0]))
-
-bs1770_stats_t *bs1770_stats_alloc(bs1770_stats_t *stats, int size,
-    double gate, double ms, int partition, double reference)
+bs1770_stats_t *bs1770_stats_init(bs1770_stats_t *stats, bs1770_hist_t *album,
+    const bs1770_ps_t *ps)
 {
-  stats->gate=gate;
-  stats->length=0.001*ms;
-  stats->partition=partition;
-  stats->reference=reference;
-  stats->pass1.gate=pow(10.0,0.1*(0.691-70.0));
+  memset(stats,0,sizeof *stats);
+  stats->album=album;
 
-  stats->blocks.size=size;
-  stats->blocks.wmsq=NULL;
-  
-  if (NULL==(stats->blocks.wmsq=malloc(BLOCK_SIZE(stats->blocks.size))))
-    goto error;
+  if (NULL==bs1770_hist_init(&stats->track,ps))
+	goto error;
+  else if (NULL==bs1770_aggr_init(&stats->aggr,ps,&stats->track,album))
+	goto error;
+
+  stats->active=1;
 
   return stats;
 error:
+  bs1770_stats_cleanup(stats);
+
   return NULL;
 }
 
-bs1770_stats_t *bs1770_stats_realloc(bs1770_stats_t *stats)
+bs1770_stats_t *bs1770_stats_cleanup(bs1770_stats_t *stats)
 {
-  size_t size=(stats->blocks.size*=2);
-
-  if (NULL==(stats->blocks.wmsq=realloc(stats->blocks.wmsq,BLOCK_SIZE(size))))
-    goto error;
+  bs1770_aggr_cleanup(&stats->aggr);
+  bs1770_hist_cleanup(&stats->track);
 
   return stats;
-error:
-  return NULL;
-}
-
-bs1770_stats_t *bs1770_stats_free(bs1770_stats_t *stats)
-{
-  if (NULL!=stats->blocks.wmsq)
-    free(stats->blocks.wmsq);
-
-  return stats;
-}
-
-void bs1770_stats_clear(bs1770_stats_t *stats)
-{
-  stats->scale=0.0;
-  stats->fs=0.0;
-  stats->overlap_size=0;
-  stats->block_size=0;
-
-  stats->pass1.wmsq=0.0;
-  stats->pass1.count=0;
-
-  stats->blocks.offs=0;
-  stats->blocks.count=0;
-  stats->blocks.wmsq[0]=0.0;
-}
-
-void bs1770_stats_set_fs(bs1770_stats_t *stats, double fs)
-{
-  int partition=stats->partition;
-
-  stats->fs=fs;
-  stats->overlap_size=round(stats->length*fs/partition);  // 400/partition ms.
-  stats->block_size=partition*stats->overlap_size;        // 400 ms.
-  stats->scale=1.0/(double)stats->block_size;
-  stats->blocks.count=0;
 }
