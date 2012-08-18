@@ -46,8 +46,5 @@
     <ClCompile Include="bs1770_version.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="bs1770_ctx_m.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

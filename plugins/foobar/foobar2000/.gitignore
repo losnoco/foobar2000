@@ -5,6 +5,7 @@ ipch
 plugins.sdf
 plugins.opensdf
 plugins.suo
+plugins.v11.suo
 
 # output directories
 Debug

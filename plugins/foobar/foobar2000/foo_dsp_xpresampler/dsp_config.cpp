@@ -65,7 +65,7 @@ unsigned RateConfig::realrate(unsigned in_samplerate) const
 	case FromList:
 	//case FromListAlt:
 		if (no_resample_rates.get_count() == 0) return in_samplerate; //empty list - what else can we do?
-		if (no_resample_rates.have_item(in_samplerate)) return in_samplerate;
+		for (unsigned i = 0; i < no_resample_rates.get_count(); i++) if (no_resample_rates[i] == in_samplerate) return in_samplerate;
 
 		/*if(outRate == FromListAlt)
 		{
@@ -73,10 +73,10 @@ unsigned RateConfig::realrate(unsigned in_samplerate) const
 			if (no_resample_rates.have_item(in_samplerate*4)) return in_samplerate*4;
 		}*/
 
-		t_uint32 r, fr; r = fr = no_resample_rates.get_item(0);
+		t_uint32 r, fr; r = fr = no_resample_rates[0];
 		for(unsigned int i=1; i < no_resample_rates.get_count(); i++)
 		{
-			r = no_resample_rates.get_item(i);
+			r = no_resample_rates[i];
 			if (r >= in_samplerate)
 			{
 				if(fr > r) fr = r;
@@ -135,9 +135,9 @@ bool t_dsp_rate_params::set_data(const dsp_preset& p_data)
 
 		cfg_.outRate        = temp[1];
 
-		cfg_.no_resample_rates.remove_all();
+		cfg_.no_resample_rates.set_count(0);
 		for(unsigned int i=2; i<datasize; i++)
-			cfg_.no_resample_rates.add_item(temp[i]);
+			cfg_.no_resample_rates.append_single(temp[i]);
 	}
 
 	delete[] temp;
@@ -154,7 +154,7 @@ bool t_dsp_rate_params::get_data(dsp_preset& p_data) const
 	temp[0] = RESAMPLER_VERSION;
 	temp[1] = cfg_.outRate;
 	for(unsigned int i=2; i<datasize; i++)
-		temp[i] = cfg_.no_resample_rates.get_item(i-2);
+		temp[i] = cfg_.no_resample_rates[i-2];
 
 	p_data.set_owner(g_get_guid());
 	for(unsigned int i=0; i<datasize; i++)

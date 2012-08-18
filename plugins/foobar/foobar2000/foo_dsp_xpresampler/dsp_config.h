@@ -49,7 +49,7 @@ class RateConfig
 {
 public:
 	t_int32 outRate;
-	pfc::list_t<t_uint32> no_resample_rates;
+	pfc::array_t<t_uint32> no_resample_rates;
 
 	unsigned realrate(unsigned in_samplerate) const;
 
@@ -57,7 +57,7 @@ public:
 	{
 		if (in_samplerate == outRate) return true;
 		if (no_resample_rates.get_count() == 0) return false;
-		if (no_resample_rates.have_item(in_samplerate)) return false;
+		for (unsigned i = 0; i < no_resample_rates.get_count(); i++) if (no_resample_rates[i] == in_samplerate) return false;
 		return true;
 	}
 
@@ -89,7 +89,7 @@ public:
 
 	//inline t_int32 outRate(...) const { return cfg_.outRate; }
 	inline int getNnoresamplefreqs() const { return cfg_.no_resample_rates.get_count(); }
-	inline int getnoresamplefreq(int i) const { return cfg_.no_resample_rates.get_item(i); }
+	inline int getnoresamplefreq(int i) const { return cfg_.no_resample_rates[i]; }
 	const TCHAR* toutRateStr(TCHAR*) const;
 
 	void tset_outRate(const TCHAR* rate);
@@ -99,8 +99,8 @@ public:
 		else if (rate > audio_chunk::sample_rate_max) rate = audio_chunk::sample_rate_max;
 		cfg_.outRate = rate;
 	}
-	inline void clear_noresamplefreq(){ cfg_.no_resample_rates.remove_all(); }
-	inline void add_noresamplefreq(t_int32 freq) { cfg_.no_resample_rates.add_item(freq); }
+	inline void clear_noresamplefreq(){ cfg_.no_resample_rates.set_count(0); }
+	inline void add_noresamplefreq(t_int32 freq) { cfg_.no_resample_rates.append_single(freq); }
 	void tfill_freqlist(const TCHAR* str);
 };
 
