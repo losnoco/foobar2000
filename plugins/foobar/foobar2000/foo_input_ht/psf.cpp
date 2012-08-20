@@ -1,7 +1,15 @@
-#define MYVERSION "2.0.20"
+#define MYVERSION "2.0.21"
+
+#define DISABLE_SSF
 
 /*
 	changelog
+
+2012-08-20 12:33 UTC - kode54
+- Implemented ring modulation in SCSP emulator
+- Implemented C68k CPU emulator in SSF player, but disabled it because it's really slow
+- Disabled SSF support
+- Version is now 2.0.21
 
 2012-02-19 19:50 UTC - kode54
 - Added abort check to decoder
@@ -223,7 +231,9 @@ typedef unsigned long u_long;
 
 critical_section g_sync;
 static int initialized = 0;
+#ifndef DISABLE_SSF
 volatile long ssf_count = 0, dsf_count = 0;
+#endif
 
 // {091E116D-1353-4bad-A259-20FE14AB9943}
 static const GUID guid_cfg_infinite = 
@@ -728,9 +738,13 @@ public:
 		if ( !load( p_reader, p_info, inherit ) ) throw exception_io_data();
 		if ( state )
 		{
-			unsigned max_length = ( m_version == 2 ) ? 0x200004 : 0x80004;
-			unsigned length = m_executable.get_size();
-			if ( length > max_length ) length = max_length;
+			DWORD start = pfc::byteswap_if_be_t( *(DWORD*)(m_executable.get_ptr()) );
+			DWORD length = m_executable.get_size();
+			DWORD max_length = ( m_version == 2 ) ? 0x200000 : 0x80000;
+			if ((start + (length-4)) > max_length)
+			{
+				length = max_length - start + 4;
+			}
 			sega_upload_program( state, m_executable.get_ptr(), length );
 		}
 	}
@@ -797,11 +811,13 @@ private:
 						void * dcsound = sega_get_dcsound_state( state );
 						yam = dcsound_get_yam_state( dcsound );
 					}
+#ifndef DISABLE_SSF
 					else
 					{
 						void * satsound = sega_get_satsound_state( state );
 						yam = satsound_get_yam_state( satsound );
 					}
+#endif
 					if ( yam ) yam_prepare_dynacode( yam );
 				}
 			}
@@ -973,6 +989,10 @@ private:
 	}
 };
 
+#if 0
+extern "C" FILE * scsp_log = NULL;
+#endif
+
 class input_xsf
 {
 	bool no_loop, eof;
@@ -1007,6 +1027,9 @@ class input_xsf
 public:
 	input_xsf() : silence_test_buffer( 0 )
 	{
+#if 0
+		scsp_log = fopen("d:\\temp\\ht.log", "w");
+#endif
 	}
 
 	~input_xsf()
@@ -1019,13 +1042,18 @@ public:
 				void * dcsound = sega_get_dcsound_state( sega_state.get_ptr() );
 				yam = dcsound_get_yam_state( dcsound );
 			}
+#ifndef DISABLE_SSF
 			else
 			{
 				void * satsound = sega_get_satsound_state( sega_state.get_ptr() );
 				yam = satsound_get_yam_state( satsound );
 			}
+#endif
 			if ( yam ) yam_unprepare_dynacode( yam );
 		}
+#if 0
+		fclose(scsp_log);
+#endif
 	}
 
 	void open( service_ptr_t<file> p_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
@@ -1035,8 +1063,10 @@ public:
 		{
 			xsf_version = load_xsf( p_file, p_path, m_info, false, p_abort );
 
+#ifndef DISABLE_SSF
 			if (xsf_version == 1) InterlockedIncrement(&ssf_count);
 			else if (xsf_version == 2) InterlockedIncrement(&dsf_count);
+#endif
 
 			tag_song_ms = 0;
 			tag_fade_ms = 0;
@@ -1526,7 +1556,11 @@ int input_xsf::load_xsf(service_ptr_t<file> & r, const char * p_path, file_info 
 	r->read_object(header, 16, p_abort);
 	if (memcmp(header, "PSF", 3)) throw exception_io_data();
 
-	if (header[3] == 0x11 || header[3] == 0x12)
+	if (
+#ifndef DISABLE_SSF
+		header[3] == 0x11 ||
+#endif
+		header[3] == 0x12)
 	{
 		int version = header[3] == 0x12 ? 2 : 1;
 
@@ -1630,9 +1664,12 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 		}
 	}
 	
+#ifdef DISABLE_SSF
+	SendDlgItemMessage(IDC_LOGO, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM) LoadImage( core_api::get_my_instance(), MAKEINTRESOURCE(IDB_LOGOBMP2), IMAGE_BITMAP, 0, 0, 0) );
+#else
 	unsigned long ssfc = ssf_count;
 	unsigned long dsfc = dsf_count;
-	
+
 	if (dsfc)
 	{
 		__int64 total = ((__int64)ssfc + (__int64)dsfc) - 1;
@@ -1642,6 +1679,7 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 			SendDlgItemMessage(IDC_LOGO, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM) LoadImage( core_api::get_my_instance(), MAKEINTRESOURCE(IDB_LOGOBMP2), IMAGE_BITMAP, 0, 0, 0) );
 		}
 	}
+#endif
 	
 	return FALSE;
 }
@@ -1737,7 +1775,11 @@ void CMyPreferences::OnChanged() {
 class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
 	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
 public:
+#ifdef DISABLE_SSF
+	const char * get_name() {return "DSF Decoder";}
+#else
 	const char * get_name() {return "SSF/DSF Decoder";}
+#endif
 	GUID get_guid() {
 		// {8CAEADE6-1AAA-4763-B8CF-DE0BAE3EBEE9}
 		static const GUID guid = { 0x8caeade6, 0x1aaa, 0x4763, { 0xb8, 0xcf, 0xde, 0xb, 0xae, 0x3e, 0xbe, 0xe9 } };
