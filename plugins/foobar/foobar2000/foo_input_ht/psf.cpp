@@ -1,9 +1,16 @@
-#define MYVERSION "2.0.21"
+#define MYVERSION "2.0.22"
 
 #define DISABLE_SSF
 
 /*
 	changelog
+
+2012-08-20 22:20 UTC - kode54
+- Adjusted DSP input and output volume levels
+- Version is now 2.0.22
+
+2012-08-20 19:34 UTC - kode54
+- Fixed upload handling when a block begins before the last
 
 2012-08-20 12:33 UTC - kode54
 - Implemented ring modulation in SCSP emulator
@@ -707,7 +714,7 @@ static int load_exe_unpack(pfc::array_t<t_uint8> & dst, const BYTE *src, uLong s
 	}
 	if ( ( src_start + src_len ) > ( dst_start + dst_len ) )
 	{
-		DWORD diff = ( dst_start + dst_len ) - ( src_start + src_len );
+		DWORD diff = ( src_start + src_len ) - ( dst_start + dst_len );
 		dst.set_size( dst_len + 4 + diff );
 		memset( dst.get_ptr() + 4 + dst_len, 0, diff );
 		dst_len += diff;
