@@ -1,9 +1,15 @@
-#define MYVERSION "2.0.22"
+#define MYVERSION "2.0.23"
 
-#define DISABLE_SSF
+//#define DISABLE_SSF
 
 /*
 	changelog
+
+2012-08-21 00:34 UTC - kode54
+- Implemented SCSP FM support properly
+- Fixed SCSP/AICA timer expiration reporting when IRQ signaling is not enabled for that timer
+- Re-enabled SSF support
+- Version is now 2.0.23
 
 2012-08-20 22:20 UTC - kode54
 - Adjusted DSP input and output volume levels
@@ -996,7 +1002,7 @@ private:
 	}
 };
 
-#if 0
+#if defined(SCSP_LOG)
 extern "C" FILE * scsp_log = NULL;
 #endif
 
@@ -1034,7 +1040,7 @@ class input_xsf
 public:
 	input_xsf() : silence_test_buffer( 0 )
 	{
-#if 0
+#if defined(SCSP_LOG)
 		scsp_log = fopen("d:\\temp\\ht.log", "w");
 #endif
 	}
@@ -1058,7 +1064,7 @@ public:
 #endif
 			if ( yam ) yam_unprepare_dynacode( yam );
 		}
-#if 0
+#if defined(SCSP_LOG)
 		fclose(scsp_log);
 #endif
 	}
