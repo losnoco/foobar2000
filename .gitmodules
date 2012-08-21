@@ -58,3 +58,9 @@
 [submodule "plugins/foobar/foobar2000/foo_midi"]
 	path = plugins/foobar/foobar2000/foo_midi
 	url = git@github.com:kode54/foo_midi.git
+[submodule "plugins/ESP/Sega"]
+	path = plugins/ESP/Sega
+	url = git@github.com:kode54/Highly_Theoretical.git
+[submodule "plugins/foobar/foobar2000/foo_input_ht"]
+	path = plugins/foobar/foobar2000/foo_input_ht
+	url = git@github.com:kode54/foo_input_ht.git
