@@ -64,3 +64,6 @@
 [submodule "plugins/foobar/foobar2000/foo_input_ht"]
 	path = plugins/foobar/foobar2000/foo_input_ht
 	url = git@github.com:kode54/foo_input_ht.git
+[submodule "plugins/foobar/foobar2000/foo_dsp_prvb"]
+	path = plugins/foobar/foobar2000/foo_dsp_prvb
+	url = git@github.com:kode54/foo_dsp_prvb.git
