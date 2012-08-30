@@ -1,7 +1,11 @@
-#define MY_VERSION "0.9.6"
+#define MY_VERSION "0.9.7"
 
 /*
 	changelog
+
+2012-08-30 00:56 UTC - kode54
+- Added channel info reporting
+- Version is now 0.9.7
 
 2012-03-03 12:51 UTC - kode54
 - Packet decoder now correctly disables dynamic range compression
@@ -146,6 +150,27 @@ unsigned get_speaker_config( int flags )
 	};
 	pfc::static_assert_t< audio_chunk::channel_lfe == 8 >();
 	return config[ flags & 15 ] + ( ( flags & 16 ) >> 1 );
+}
+
+void get_mode_description( int p_flags, pfc::string8 & p_out )
+{
+	static const char *ac3_mode_list[11] = {
+		{ "Dual Mono" },
+		{ "Mono" },
+		{ "Stereo" },
+		{ "3 front channels" },
+		{ "2 front, 1 rear surround channel" },
+		{ "3 front, 1 rear surround channel" },
+		{ "2 front, 2 rear surround channels" },
+		{ "3 front, 2 rear surround channels" },
+		{ "Channel 1" },
+		{ "Channel 2" },
+		{ "Dolby Stereo" }
+	};
+	unsigned channel_mode = p_flags & A52_CHANNEL_MASK;
+	if ( channel_mode < _countof(ac3_mode_list) ) p_out = ac3_mode_list[ channel_mode ];
+	else { p_out = "Unknown mode ("; p_out += pfc::format_int( channel_mode ); p_out += ")"; }
+	if ( p_flags & A52_LFE ) p_out += " + LFE";
 }
 
 void prepare_chunk( const sample_t * p_src, audio_sample * p_dst, unsigned sample_count, int flags )
@@ -381,6 +406,10 @@ public:
 		m_info.info_set_int( "channels", get_channels( flags ) );
 		m_info.info_set_int( "samplerate", srate );
 		m_info.info_set( "encoding", "lossy" );
+
+		pfc::string8 channel_mode;
+		get_mode_description( flags, channel_mode );
+		m_info.info_set( "channel_mode", channel_mode );
 	}
 
 	void get_info( file_info & p_info, abort_callback & p_abort )
@@ -552,7 +581,7 @@ class packet_decoder_ac3 : public packet_decoder_streamparse
 {
 	a52_state_t * m_state;
 	bool m_dynrng, m_decode;
-	int srate, nch;
+	int srate, nch, flags, bitrate;
 
 public:
     packet_decoder_ac3()
@@ -622,6 +651,13 @@ public:
         p_info.info_set_int( "channels", nch );
 		p_info.info_set( "codec", "ATSC A/52" );
 		p_info.info_set( "encoding", "lossy" );
+
+		if ( bitrate )
+		{
+			pfc::string8 channel_mode;
+			get_mode_description( flags, channel_mode );
+			p_info.info_set( "channel_mode", channel_mode );
+		}
 	}
 
 	virtual unsigned get_max_frame_dependency() { return 0; }
@@ -635,8 +671,13 @@ public:
 		decode_ex( p_buffer, p_bytes, temp, p_chunk, p_abort );
 	}
 
-	virtual bool analyze_first_frame_supported() { return false; }
-	virtual void analyze_first_frame( const void * p_buffer, t_size p_bytes, abort_callback & p_abort ) {}
+	virtual bool analyze_first_frame_supported() { return true; }
+	virtual void analyze_first_frame( const void * p_buffer, t_size p_bytes, abort_callback & p_abort )
+	{
+		if ( p_bytes < 7 ) throw exception_io_data();
+		int frame_size = a52_syncinfo( ( uint8_t * ) p_buffer, &flags, &srate, &bitrate );
+		if ( !frame_size || frame_size != p_bytes ) throw exception_io_data();
+	}
 
 	virtual void decode_ex( const void * p_buffer, t_size p_bytes, t_size & p_bytes_processed, audio_chunk & p_chunk, abort_callback & p_abort )
 	{
