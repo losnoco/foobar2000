@@ -70,3 +70,9 @@
 [submodule "plugins/vgmstream"]
 	path = plugins/vgmstream
 	url = git@github.com:kode54/vgmstream.git
+[submodule "plugins/qaac"]
+	path = plugins/qaac
+	url = git@github.com:kode54/qaac.git
+[submodule "plugins/fdk-aac"]
+	path = plugins/fdk-aac
+	url = git@github.com:kode54/fdk-aac.git
