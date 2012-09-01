@@ -183,6 +183,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mp4v2", "..\..\qaac\vcproje
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fdk-aac", "..\..\fdk-aac\msvc\fdk-aac.vcxproj", "{308E2AD5-BE31-4770-9441-A8D50F56895C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_pd_aac", "foo_pd_aac\foo_pd_aac.vcxproj", "{20ED80EE-6D48-4C61-A69E-E6C982274C73}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -721,6 +723,12 @@ Global
 		{308E2AD5-BE31-4770-9441-A8D50F56895C}.Release|Win32.ActiveCfg = Release|Win32
 		{308E2AD5-BE31-4770-9441-A8D50F56895C}.Release|Win32.Build.0 = Release|Win32
 		{308E2AD5-BE31-4770-9441-A8D50F56895C}.Release|x64.ActiveCfg = Release|Win32
+		{20ED80EE-6D48-4C61-A69E-E6C982274C73}.Debug|Win32.ActiveCfg = Debug|Win32
+		{20ED80EE-6D48-4C61-A69E-E6C982274C73}.Debug|Win32.Build.0 = Debug|Win32
+		{20ED80EE-6D48-4C61-A69E-E6C982274C73}.Debug|x64.ActiveCfg = Debug|Win32
+		{20ED80EE-6D48-4C61-A69E-E6C982274C73}.Release|Win32.ActiveCfg = Release|Win32
+		{20ED80EE-6D48-4C61-A69E-E6C982274C73}.Release|Win32.Build.0 = Release|Win32
+		{20ED80EE-6D48-4C61-A69E-E6C982274C73}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
