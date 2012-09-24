@@ -1,9 +1,13 @@
-#define MYVERSION "1.40"
+#define MYVERSION "1.41"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2012-09-24 11:38 UTC - kode54
+- Updated AdPlug
+- Version is now 1.41
 
 2012-02-19 19:49 UTC - kode54
 - Added abort check to decoder
