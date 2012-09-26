@@ -185,6 +185,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fdk-aac", "..\..\fdk-aac\ms
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_pd_aac", "foo_pd_aac\foo_pd_aac.vcxproj", "{20ED80EE-6D48-4C61-A69E-E6C982274C73}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_tak", "foo_input_tak\foo_input_tak.vcxproj", "{2E197B85-CE17-4452-85F3-A651E232E5B0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -729,6 +731,12 @@ Global
 		{20ED80EE-6D48-4C61-A69E-E6C982274C73}.Release|Win32.ActiveCfg = Release|Win32
 		{20ED80EE-6D48-4C61-A69E-E6C982274C73}.Release|Win32.Build.0 = Release|Win32
 		{20ED80EE-6D48-4C61-A69E-E6C982274C73}.Release|x64.ActiveCfg = Release|Win32
+		{2E197B85-CE17-4452-85F3-A651E232E5B0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2E197B85-CE17-4452-85F3-A651E232E5B0}.Debug|Win32.Build.0 = Debug|Win32
+		{2E197B85-CE17-4452-85F3-A651E232E5B0}.Debug|x64.ActiveCfg = Debug|Win32
+		{2E197B85-CE17-4452-85F3-A651E232E5B0}.Release|Win32.ActiveCfg = Release|Win32
+		{2E197B85-CE17-4452-85F3-A651E232E5B0}.Release|Win32.Build.0 = Release|Win32
+		{2E197B85-CE17-4452-85F3-A651E232E5B0}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

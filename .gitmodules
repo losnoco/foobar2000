@@ -76,3 +76,9 @@
 [submodule "plugins/vgmstream"]
 	path = plugins/vgmstream
 	url = git@github.com:kode54/vgmstream.git
+[submodule "foo_input_tak"]
+	path = plugins/foobar/foobar2000/foo_input_tak
+	url = git@github.com:kode54/foo_input_tak.git
+[submodule "plugins/foobar/foobar2000/foo_input_tak"]
+	path = plugins/foobar/foobar2000/foo_input_tak
+	url = git@github.com:kode54/foo_input_tak.git
