@@ -36,12 +36,16 @@
 #include "residfp.h"
 #include "residfp-emu.h"
 
-char ReSIDfp::m_credit[];
+std::string ReSIDfp::m_credit;
+
+const char* ReSIDfp::getCredits()
+{
+	return m_credit.c_str();
+}
 
 ReSIDfp::ReSIDfp (sidbuilder *builder)
 :sidemu(builder),
  m_context(NULL),
- m_phase(EVENT_CLOCK_PHI1),
 #ifdef HAVE_EXCEPTIONS
  m_sid(*(new(std::nothrow) RESID_NAMESPACE::SID)),
 #else
@@ -53,12 +57,14 @@ ReSIDfp::ReSIDfp (sidbuilder *builder)
     m_error = "N/A";
 
     // Setup credits
-    sprintf (m_credit,
-        "ReSIDfp V" VERSION " Engine:\n"
-        "\t(C) 1999-2002 Simon White\n"
-        "MOS6581 (SID) Emulation (ReSIDfp V%s):\n"
-        "\t(C) 1999-2002 Dag Lem\n"
-        "\t(C) 2005-2011 Antti S. Lankila\n", residfp_version_string);
+	m_credit = 
+        "ReSIDfp V" VERSION " Engine:"
+        "\t(C) 1999-2002 Simon White <sidplay2@yahoo.com>"
+        "MOS6581 (SID) Emulation (ReSIDfp V";
+	m_credit += residfp_version_string;
+	m_credit += 
+        "\t(C) 1999-2002 Dag Lem <resid@nimrod.no>"
+		"\t(C) 2005-2011 Antti S. Lankila <alankila@bel.fi>";
 
 
     if (!&m_sid)
@@ -79,7 +85,30 @@ ReSIDfp::~ReSIDfp ()
         delete &m_sid;
     delete[] m_buffer;
 }
+#if 0
+bool ReSIDfp::filter (const sid_filterfp_t *filter)
+{
+    /* Set whatever data is provided in the filter def.
+     * XXX: we should check that if one param in set is provided,
+     * all are provided. */
+    if (filter != NULL) {
+      //FIXME
+#ifdef DEBUG
+    //printf("filterCurve6581: %f\n", filter->filterCurve6581);
+    //printf("filterCurve8580: %f\n", filter->filterCurve8580);
+#endif
 
+      m_sid.getFilter6581()->setFilterCurve(0.5);
+      m_sid.getFilter8580()->setFilterCurve(12500.);
+    } else {
+      /* Set sensible defaults. */
+      m_sid.getFilter6581()->setFilterCurve(0.5);
+      m_sid.getFilter8580()->setFilterCurve(12500.);
+    }
+
+    return true;
+}
+#endif
 void ReSIDfp::filter6581Curve (const double filterCurve)
 {
    m_sid.getFilter6581()->setFilterCurve(filterCurve);
@@ -112,7 +141,7 @@ void ReSIDfp::write (uint_least8_t addr, uint8_t data)
 
 void ReSIDfp::clock()
 {
-    const int cycles = m_context->getTime(m_accessClk, m_phase);
+    const int cycles = m_context->getTime(m_accessClk, EVENT_CLOCK_PHI1);
     m_accessClk += cycles;
     m_bufferpos += m_sid.clock(cycles, m_buffer+m_bufferpos);
 }
@@ -124,15 +153,15 @@ void ReSIDfp::filter (bool enable)
 }
 
 void ReSIDfp::sampling (float systemclock, float freq,
-        const sampling_method_t method, const bool fast)
+        const SidConfig::sampling_method_t method, const bool fast)
 {
     reSIDfp::SamplingMethod sampleMethod;
     switch (method)
     {
-    case SID2_INTERPOLATE:
+	case SidConfig::INTERPOLATE:
         sampleMethod = reSIDfp::DECIMATE;
         break;
-    case SID2_RESAMPLE_INTERPOLATE:
+	case SidConfig::RESAMPLE_INTERPOLATE:
         sampleMethod = reSIDfp::RESAMPLE;
         break;
     default:
@@ -156,12 +185,12 @@ void ReSIDfp::sampling (float systemclock, float freq,
 // Set execution environment and lock sid to it
 bool ReSIDfp::lock (EventContext *env)
 {
-    if (!env)
+    if (env == NULL)
     {
         if (!m_locked)
             return false;
         m_locked  = false;
-        m_context = 0;
+        m_context = NULL;
     }
     else
     {
@@ -173,10 +202,15 @@ bool ReSIDfp::lock (EventContext *env)
     return true;
 }
 
-// Set the emulated SID model
-void ReSIDfp::model (sid2_model_t model)
+void ReSIDfp::unlock()
 {
-    if (model == SID2_MOS8580)
+	lock(NULL);
+}
+
+// Set the emulated SID model
+void ReSIDfp::model (SidConfig::model_t model)
+{
+    if (model == SidConfig::MOS8580)
         m_sid.setChipModel (reSIDfp::MOS8580);
     else
         m_sid.setChipModel (reSIDfp::MOS6581);

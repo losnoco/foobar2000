@@ -1,6 +1,9 @@
-/**
- * This file is part of reSID, a MOS6581 SID emulator engine.
- * Copyright (C) 2004  Dag Lem <resid@nimrod.no>
+/*
+ * This file is part of libsidplayfp, a SID player engine.
+ *
+ * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2007-2010 Antti Lankila
+ * Copyright 2004 Dag Lem <resid@nimrod.no>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,27 +17,23 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * @author Ken Händel
- *
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
+#include "SincResampler.h"
+
+#include <assert.h>
+#include <string.h>
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#endif
+#include <math.h>
+#include <iostream>
+#include <sstream>
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
-
-#include "SincResampler.h"
-
-#ifdef _MSC_VER
-#define _USE_MATH_DEFINES
-#endif
-
-#include <math.h>
-#include <iostream>
-#include <sstream>
-#include <assert.h>
-#include <string.h>
 
 #ifdef HAVE_MMINTRIN_H
 #  include <mmintrin.h>

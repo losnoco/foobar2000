@@ -16,13 +16,7 @@
     <ClCompile Include="..\..\residfp\Filter6581.cpp">
       <Filter>ReSIDfp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\residfp\Filter8580.cpp">
-      <Filter>ReSIDfp</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\residfp\FilterModelConfig.cpp">
-      <Filter>ReSIDfp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\residfp\Integrator.cpp">
       <Filter>ReSIDfp</Filter>
     </ClCompile>
     <ClCompile Include="..\..\residfp\OpAmp.cpp">
@@ -43,11 +37,11 @@
     <ClCompile Include="..\..\residfp\WaveformGenerator.cpp">
       <Filter>ReSIDfp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\residfp.cpp" />
     <ClCompile Include="..\..\residfp-builder.cpp" />
     <ClCompile Include="..\..\residfp\resample\SincResampler.cpp">
       <Filter>ReSIDfp\resample</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\residfp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\residfp\array.h">
@@ -115,6 +109,10 @@
     <ClInclude Include="..\..\residfp\resample\ZeroOrderResampler.h">
       <Filter>ReSIDfp\resample</Filter>
     </ClInclude>
+    <ClInclude Include="config.h" />
+    <ClInclude Include="..\..\residfp\siddefs-fp.h">
+      <Filter>ReSIDfp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ReSIDfp">
@@ -123,5 +121,10 @@
     <Filter Include="ReSIDfp\resample">
       <UniqueIdentifier>{dd8b212f-343e-4d5f-8a16-d51803f7872f}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\residfp\README">
+      <Filter>ReSIDfp</Filter>
+    </None>
   </ItemGroup>
 </Project>

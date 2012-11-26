@@ -1,0 +1,39 @@
+﻿Build started 11/26/2012 4:52:07 AM.
+     1>Project "Z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\utils\win\VC\libsidutils.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Debug\sidutils.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I. /I../../../sidplay/win/VC /I../../.. /ZI /nologo /W3 /WX- /Od /Oy- /D HAVE_CONFIG_H /D WIN32 /D _DEBUG /D _WINDOWS /D DLL_EXPORT /D HAVE_MSWINDOWS /D _VC80_UPGRADE=0x0710 /Gm- /EHsc /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\SidDatabase.cpp
+         SidDatabase.cpp
+     1>z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\sidplayfp\sidtune.h(46): warning C4251: 'SidTune::tune' : class 'std::auto_ptr<_Ty>' needs to have dll-interface to be used by clients of class 'SidTune'
+                 with
+                 [
+                     _Ty=SidTuneBase
+                 ]
+     1>z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\utils\siddatabase.cpp(134): warning C4101: 'e' : unreferenced local variable
+     1>c:\program files (x86)\microsoft visual studio 10.0\vc\include\memory(931): warning C4150: deletion of pointer to incomplete type 'SidTuneBase'; no destructor called
+                 z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\sidplayfp\sidtune.h(34) : see declaration of 'SidTuneBase'
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\memory(930) : while compiling class template member function 'std::auto_ptr<_Ty>::~auto_ptr(void)'
+                 with
+                 [
+                     _Ty=SidTuneBase
+                 ]
+                 z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\sidplayfp\sidtune.h(46) : see reference to class template instantiation 'std::auto_ptr<_Ty>' being compiled
+                 with
+                 [
+                     _Ty=SidTuneBase
+                 ]
+       Lib:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"Z:\programming\plugins\foobar\foobar2000\Debug\sidutils.lib" /NOLOGO Debug\iniParser.obj
+         Debug\MD5.obj
+         Debug\SidDatabase.obj
+         Debug\stil.obj
+         libsidutils.vcxproj -> Z:\programming\plugins\foobar\foobar2000\Debug\sidutils.lib
+       FinalizeBuildStatus:
+         Deleting file "Debug\sidutils.unsuccessfulbuild".
+         Touching "Debug\sidutils.lastbuildstate".
+     1>Done Building Project "Z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\utils\win\VC\libsidutils.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:03.49

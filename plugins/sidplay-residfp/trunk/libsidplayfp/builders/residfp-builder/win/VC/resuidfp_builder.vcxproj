@@ -120,9 +120,7 @@
     <ClCompile Include="..\..\residfp\ExternalFilter.cpp" />
     <ClCompile Include="..\..\residfp\Filter.cpp" />
     <ClCompile Include="..\..\residfp\Filter6581.cpp" />
-    <ClCompile Include="..\..\residfp\Filter8580.cpp" />
     <ClCompile Include="..\..\residfp\FilterModelConfig.cpp" />
-    <ClCompile Include="..\..\residfp\Integrator.cpp" />
     <ClCompile Include="..\..\residfp\OpAmp.cpp" />
     <ClCompile Include="..\..\residfp\resample\SincResampler.cpp" />
     <ClCompile Include="..\..\residfp\SID.cpp" />
@@ -151,10 +149,15 @@
     <ClInclude Include="..\..\residfp\resample\ZeroOrderResampler.h" />
     <ClInclude Include="..\..\residfp\residfp-config.h" />
     <ClInclude Include="..\..\residfp\SID.h" />
+    <ClInclude Include="..\..\residfp\siddefs-fp.h" />
     <ClInclude Include="..\..\residfp\Spline.h" />
     <ClInclude Include="..\..\residfp\Voice.h" />
     <ClInclude Include="..\..\residfp\WaveformCalculator.h" />
     <ClInclude Include="..\..\residfp\WaveformGenerator.h" />
+    <ClInclude Include="config.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\residfp\README" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

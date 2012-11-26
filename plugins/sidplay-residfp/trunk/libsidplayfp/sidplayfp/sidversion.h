@@ -1,7 +1,7 @@
 #ifndef LIBSIDPLAYFP_VERSION_H
 #define LIBSIDPLAYFP_VERSION_H
 
-#ifndef _sidplay2_h_
+#ifndef SIDPLAYFP_H
 #  error Do not include directly.
 #endif
 

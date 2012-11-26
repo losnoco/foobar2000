@@ -85,7 +85,7 @@ short *Audio_OSS::open (AudioConfig &cfg, const char *)
 {
     int mask, format;
     int wantedFormat = 0;
-    int temp;
+    int temp = 0;
 
     if (_audiofd != -1)
     {
@@ -139,11 +139,11 @@ short *Audio_OSS::open (AudioConfig &cfg, const char *)
     }
 
     ioctl (_audiofd, SNDCTL_DSP_GETBLKSIZE, &temp);
-    cfg.bufSize = (unsigned) temp;
+    cfg.bufSize = (uint_least32_t) temp;
 #ifdef HAVE_EXCEPTIONS
-    _sampleBuffer = new(std::nothrow) float[cfg.bufSize];
+    _sampleBuffer = new(std::nothrow) short[cfg.bufSize];
 #else
-    _sampleBuffer = new float[cfg.bufSize];
+    _sampleBuffer = new short[cfg.bufSize];
 #endif
 
     if (!_sampleBuffer)
