@@ -172,6 +172,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "residfp-builder", "..\..\si
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sidutils", "..\..\sidplay-residfp\trunk\libsidplayfp\utils\win\VC\libsidutils.vcxproj", "{63370DF9-1079-4428-9403-E7912DD39505}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "playptmod", "..\..\playptmod\prj\msvc\playptmod\playptmod.vcxproj", "{44F9C02F-B2B5-475B-BA24-BC4032E18B44}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -722,6 +724,12 @@ Global
 		{63370DF9-1079-4428-9403-E7912DD39505}.Release|Win32.ActiveCfg = Release|Win32
 		{63370DF9-1079-4428-9403-E7912DD39505}.Release|Win32.Build.0 = Release|Win32
 		{63370DF9-1079-4428-9403-E7912DD39505}.Release|x64.ActiveCfg = Release|Win32
+		{44F9C02F-B2B5-475B-BA24-BC4032E18B44}.Debug|Win32.ActiveCfg = Debug|Win32
+		{44F9C02F-B2B5-475B-BA24-BC4032E18B44}.Debug|Win32.Build.0 = Debug|Win32
+		{44F9C02F-B2B5-475B-BA24-BC4032E18B44}.Debug|x64.ActiveCfg = Debug|Win32
+		{44F9C02F-B2B5-475B-BA24-BC4032E18B44}.Release|Win32.ActiveCfg = Release|Win32
+		{44F9C02F-B2B5-475B-BA24-BC4032E18B44}.Release|Win32.Build.0 = Release|Win32
+		{44F9C02F-B2B5-475B-BA24-BC4032E18B44}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
