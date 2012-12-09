@@ -46,6 +46,7 @@ typedef DWORD HSOUNDFONT;	// soundfont handle
 #define BASS_MIDI_DECAYEND		0x1000
 #define BASS_MIDI_NOFX			0x2000
 #define BASS_MIDI_DECAYSEEK		0x4000
+#define BASS_MIDI_NOCROP		0x8000
 #define BASS_MIDI_SINCINTER		0x800000
 
 // BASS_MIDI_FontInit flags
@@ -137,6 +138,10 @@ typedef struct {
 #define MIDI_EVENT_SYSTEM			61
 #define MIDI_EVENT_TEMPO			62
 #define MIDI_EVENT_SCALETUNING		63
+#define MIDI_EVENT_CONTROL			64
+#define MIDI_EVENT_CHANPRES_VIBRATO	65
+#define MIDI_EVENT_MODRANGE			66
+#define MIDI_EVENT_BANK_LSB			67
 #define MIDI_EVENT_MIXLEVEL			0x10000
 #define MIDI_EVENT_TRANSPOSE		0x10001
 #define MIDI_EVENT_SYSTEMEX			0x10002
@@ -186,6 +191,9 @@ typedef struct {
 	DWORD flags;
 } BASS_MIDI_DEVICEINFO;
 
+// BASS_MIDI_FontPack flags
+#define BASS_MIDI_PACK_NOHEAD		1	// don't send a WAV header to the encoder
+
 typedef void (CALLBACK MIDIINPROC)(DWORD device, double time, const void *buffer, DWORD length, void *user);
 /* User MIDI input callback function.
 device : MIDI input device
@@ -212,7 +220,7 @@ HSTREAM BASSMIDIDEF(BASS_MIDI_StreamGetChannel)(HSTREAM handle, DWORD chan);
 HSOUNDFONT BASSMIDIDEF(BASS_MIDI_FontInit)(const void *file, DWORD flags);
 BOOL BASSMIDIDEF(BASS_MIDI_FontFree)(HSOUNDFONT handle);
 BOOL BASSMIDIDEF(BASS_MIDI_FontGetInfo)(HSOUNDFONT handle, BASS_MIDI_FONTINFO *info);
-BOOL BASSMIDIDEF(BASS_MIDI_FontGetPresets)(HSOUNDFONT font, DWORD *presets);
+BOOL BASSMIDIDEF(BASS_MIDI_FontGetPresets)(HSOUNDFONT handle, DWORD *presets);
 const char *BASSMIDIDEF(BASS_MIDI_FontGetPreset)(HSOUNDFONT handle, int preset, int bank);
 BOOL BASSMIDIDEF(BASS_MIDI_FontLoad)(HSOUNDFONT handle, int preset, int bank);
 BOOL BASSMIDIDEF(BASS_MIDI_FontUnload)(HSOUNDFONT handle, int preset, int bank);
