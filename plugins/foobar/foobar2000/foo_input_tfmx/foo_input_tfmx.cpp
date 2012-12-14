@@ -3,11 +3,15 @@
 
 #include <stdafx.h>
 
-#define MYVERSION "0.9"
+#define MYVERSION "0.10"
 
 /*
 
 	change log
+
+2012-12-14 00:24 UTC - kode54
+- Added more extensions to the shell integration list
+- Version is now 0.10
 
 2012-02-19 19:55 UTC - kode54
 - Added abort check to decoder
@@ -266,7 +270,7 @@ public:
 
 static input_factory_t<input_tfmx> g_input_tfmx_factory;
 
-DECLARE_FILE_TYPE("TFMX files", "*.TFM");
+DECLARE_FILE_TYPE("TFMX files", "*.TFM;*.TFMX;*.TFX;*.MDAT");
 
 DECLARE_COMPONENT_VERSION("TFMX decoder",MYVERSION,"MDAT.*;TFMX.*;*.MDAT;*.TFM;*.TFMX;*.TFX");
 
