@@ -14,8 +14,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_midi", "foo_midi\foo_mi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_osd", "foo_osd\foo_osd.vcxproj", "{0B7F9C1D-3702-4B89-B771-D6AF8C9AB6BA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_osd_gdiplus", "foo_osd\foo_osd_gdiplus.vcxproj", "{F155C2C0-FAF6-45ED-91FA-92F01F96B6FE}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_sid", "foo_sid\foo_sid.vcxproj", "{F57BAFBF-423B-4ED5-93C4-4C0F179253B8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liba52", "..\..\a52dec-0.7.4\vc++\liba52.vcxproj", "{53BE283B-077E-4AAA-B0C2-33EA95A50BDF}"
@@ -224,12 +222,6 @@ Global
 		{0B7F9C1D-3702-4B89-B771-D6AF8C9AB6BA}.Release|Win32.ActiveCfg = Release|Win32
 		{0B7F9C1D-3702-4B89-B771-D6AF8C9AB6BA}.Release|Win32.Build.0 = Release|Win32
 		{0B7F9C1D-3702-4B89-B771-D6AF8C9AB6BA}.Release|x64.ActiveCfg = Release|Win32
-		{F155C2C0-FAF6-45ED-91FA-92F01F96B6FE}.Debug|Win32.ActiveCfg = Debug|Win32
-		{F155C2C0-FAF6-45ED-91FA-92F01F96B6FE}.Debug|Win32.Build.0 = Debug|Win32
-		{F155C2C0-FAF6-45ED-91FA-92F01F96B6FE}.Debug|x64.ActiveCfg = Debug|Win32
-		{F155C2C0-FAF6-45ED-91FA-92F01F96B6FE}.Release|Win32.ActiveCfg = Release|Win32
-		{F155C2C0-FAF6-45ED-91FA-92F01F96B6FE}.Release|Win32.Build.0 = Release|Win32
-		{F155C2C0-FAF6-45ED-91FA-92F01F96B6FE}.Release|x64.ActiveCfg = Release|Win32
 		{F57BAFBF-423B-4ED5-93C4-4C0F179253B8}.Debug|Win32.ActiveCfg = Debug|Win32
 		{F57BAFBF-423B-4ED5-93C4-4C0F179253B8}.Debug|Win32.Build.0 = Debug|Win32
 		{F57BAFBF-423B-4ED5-93C4-4C0F179253B8}.Debug|x64.ActiveCfg = Debug|Win32
