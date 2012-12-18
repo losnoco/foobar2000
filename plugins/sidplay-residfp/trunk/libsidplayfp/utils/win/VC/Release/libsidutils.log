@@ -1,13 +1,9 @@
-﻿Build started 11/26/2012 5:09:12 AM.
+﻿Build started 12/17/2012 8:12:18 PM.
      1>Project "Z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\utils\win\VC\libsidutils.vcxproj" on node 2 (build target(s)).
-     1>PrepareForBuild:
-         Creating directory "Z:\programming\plugins\foobar\foobar2000\Release\".
-       InitializeBuildStatus:
+     1>InitializeBuildStatus:
          Creating "Release\sidutils.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I. /I../../../sidplay/win/VC /I../../.. /Zi /nologo /W3 /WX- /Ox /Ob2 /Oi /Ot /Oy /GL /D HAVE_CONFIG_H /D WIN32 /D NDEBUG /D _WINDOWS /D DLL_EXPORT /D HAVE_MSWINDOWS /D _VC80_UPGRADE=0x0710 /GF /Gm- /EHsc /MT /GS /Gy /arch:SSE /fp:fast /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\iniParser.cpp ..\..\MD5\MD5.cpp ..\..\SidDatabase.cpp ..\..\STILview\stil.cpp
-         iniParser.cpp
-     1>..\..\iniParser.cpp(83): warning C4101: 'e' : unreferenced local variable
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I. /I../../../sidplay/win/VC /I../../.. /Zi /nologo /W3 /WX- /Ox /Ob2 /Oi /Ot /Oy /GL /D HAVE_CONFIG_H /D WIN32 /D NDEBUG /D _WINDOWS /D DLL_EXPORT /D HAVE_MSWINDOWS /D _VC80_UPGRADE=0x0710 /GF /Gm- /EHsc /MT /GS /Gy /arch:SSE /fp:fast /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\MD5\MD5.cpp ..\..\SidDatabase.cpp
          MD5.cpp
          SidDatabase.cpp
      1>Z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\sidplayfp/SidTune.h(46): warning C4251: 'SidTune::tune' : class 'std::auto_ptr<_Ty>' needs to have dll-interface to be used by clients of class 'SidTune'
@@ -16,9 +12,9 @@
                      _Ty=SidTuneBase
                  ]
      1>..\..\SidDatabase.cpp(134): warning C4101: 'e' : unreferenced local variable
-     1>C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\memory(931): warning C4150: deletion of pointer to incomplete type 'SidTuneBase'; no destructor called
+     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\memory(931): warning C4150: deletion of pointer to incomplete type 'SidTuneBase'; no destructor called
                  Z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\sidplayfp/SidTune.h(34) : see declaration of 'SidTuneBase'
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\memory(930) : while compiling class template member function 'std::auto_ptr<_Ty>::~auto_ptr(void)'
+                 c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\memory(930) : while compiling class template member function 'std::auto_ptr<_Ty>::~auto_ptr(void)'
                  with
                  [
                      _Ty=SidTuneBase
@@ -28,88 +24,8 @@
                  [
                      _Ty=SidTuneBase
                  ]
-         stil.cpp
-     1>z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\utils\stilview\stil.h(276): warning C4251: 'STIL::versionString' : class 'std::basic_string<_Elem,_Traits,_Ax>' needs to have dll-interface to be used by clients of class 'STIL'
-                 with
-                 [
-                     _Elem=char,
-                     _Traits=std::char_traits<char>,
-                     _Ax=std::allocator<char>
-                 ]
-     1>z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\utils\stilview\stil.h(282): warning C4251: 'STIL::baseDir' : class 'std::basic_string<_Elem,_Traits,_Ax>' needs to have dll-interface to be used by clients of class 'STIL'
-                 with
-                 [
-                     _Elem=char,
-                     _Traits=std::char_traits<char>,
-                     _Ax=std::allocator<char>
-                 ]
-     1>z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\utils\stilview\stil.h(288): warning C4251: 'STIL::stilDirs' : class 'std::map<_Kty,_Ty>' needs to have dll-interface to be used by clients of class 'STIL'
-                 with
-                 [
-                     _Kty=std::string,
-                     _Ty=std::streampos
-                 ]
-     1>z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\utils\stilview\stil.h(289): warning C4251: 'STIL::bugDirs' : class 'std::map<_Kty,_Ty>' needs to have dll-interface to be used by clients of class 'STIL'
-                 with
-                 [
-                     _Kty=std::string,
-                     _Ty=std::streampos
-                 ]
-     1>..\..\STILview\stil.cpp(267): warning C4996: 'strnicmp': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strnicmp. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(248) : see declaration of 'strnicmp'
-     1>..\..\STILview\stil.cpp(313): warning C4996: 'strnicmp': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strnicmp. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(248) : see declaration of 'strnicmp'
-     1>..\..\STILview\stil.cpp(337): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(188) : see declaration of 'strncpy'
-     1>..\..\STILview\stil.cpp(338): warning C4996: 'strncat': This function or variable may be unsafe. Consider using strncat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(175) : see declaration of 'strncat'
-     1>..\..\STILview\stil.cpp(375): warning C4996: 'strnicmp': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strnicmp. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(248) : see declaration of 'strnicmp'
-     1>..\..\STILview\stil.cpp(412): warning C4996: 'strnicmp': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strnicmp. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(248) : see declaration of 'strnicmp'
-     1>..\..\STILview\stil.cpp(436): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(188) : see declaration of 'strncpy'
-     1>..\..\STILview\stil.cpp(437): warning C4996: 'strncat': This function or variable may be unsafe. Consider using strncat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(175) : see declaration of 'strncat'
-     1>..\..\STILview\stil.cpp(474): warning C4996: 'strnicmp': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strnicmp. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(248) : see declaration of 'strnicmp'
-     1>..\..\STILview\stil.cpp(517): warning C4996: 'strnicmp': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strnicmp. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(248) : see declaration of 'strnicmp'
-     1>..\..\STILview\stil.cpp(539): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(188) : see declaration of 'strncpy'
-     1>..\..\STILview\stil.cpp(540): warning C4996: 'strncat': This function or variable may be unsafe. Consider using strncat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(175) : see declaration of 'strncat'
-     1>..\..\STILview\stil.cpp(648): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
-     1>..\..\STILview\stil.cpp(651): warning C4996: '_snprintf': This function or variable may be unsafe. Consider using _snprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\stdio.h(363) : see declaration of '_snprintf'
-     1>..\..\STILview\stil.cpp(663): warning C4996: 'strnicmp': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strnicmp. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(248) : see declaration of 'strnicmp'
-     1>..\..\STILview\stil.cpp(761): warning C4996: 'strnicmp': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strnicmp. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(248) : see declaration of 'strnicmp'
-     1>..\..\STILview\stil.cpp(773): warning C4996: 'stricmp': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _stricmp. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(246) : see declaration of 'stricmp'
-     1>..\..\STILview\stil.cpp(779): warning C4996: 'strnicmp': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strnicmp. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(248) : see declaration of 'strnicmp'
-     1>..\..\STILview\stil.cpp(811): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(110) : see declaration of 'strcat'
-     1>..\..\STILview\stil.cpp(813): warning C4996: 'strncat': This function or variable may be unsafe. Consider using strncat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(175) : see declaration of 'strncat'
-     1>..\..\STILview\stil.cpp(882): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(188) : see declaration of 'strncpy'
-     1>..\..\STILview\stil.cpp(892): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(188) : see declaration of 'strncpy'
-     1>..\..\STILview\stil.cpp(924): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(188) : see declaration of 'strncpy'
-     1>..\..\STILview\stil.cpp(965): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(188) : see declaration of 'strncpy'
-     1>..\..\STILview\stil.cpp(1000): warning C4996: '_snprintf': This function or variable may be unsafe. Consider using _snprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\stdio.h(363) : see declaration of '_snprintf'
-     1>..\..\STILview\stil.cpp(1054): warning C4996: 'strncat': This function or variable may be unsafe. Consider using strncat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(175) : see declaration of 'strncat'
-     1>..\..\STILview\stil.cpp(1167): warning C4996: 'strncat': This function or variable may be unsafe. Consider using strncat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(175) : see declaration of 'strncat'
        Lib:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"Z:\programming\plugins\foobar\foobar2000\Release\sidutils.lib" /NOLOGO /LTCG Release\iniParser.obj
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"Z:\programming\plugins\foobar\foobar2000\Release\sidutils.lib" /NOLOGO /LTCG Release\iniParser.obj
          Release\MD5.obj
          Release\SidDatabase.obj
          Release\stil.obj
@@ -121,4 +37,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:13.04
+Time Elapsed 00:00:02.82
