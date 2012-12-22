@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.20"
+#define MYVERSION "2.0.21"
 
 /*
 	changelog
+
+2012-12-22 03:04 UTC - kode54
+- Added support for multi-value fields
+- Version is now 2.0.21
 
 2012-02-19 19:53 UTC - kode54
 - Added abort check to decoder
@@ -355,19 +359,24 @@ static void print_time_crap(int ms, char *out)
 	else sprintf(out, "%d%s",s,frac);
 }
 
-static void info_meta_add(file_info & info, const char * tag, const char * value)
+static void info_meta_add(file_info & info, const char * tag, pfc::ptr_list_t< const char > const& values)
 {
-	if (info.meta_get_count_by_name(tag))
+	t_size count = info.meta_get_count_by_name( tag );
+	if ( count )
 	{
 		// append as another line
-		pfc::string8 final = info.meta_get(tag, 0);
+		pfc::string8 final = info.meta_get(tag, count - 1);
 		final += "\r\n";
-		final += value;
-		info.meta_set(tag, final);
+		final += values[0];
+		info.meta_modify_value( info.meta_find( tag ), count - 1, final );
 	}
 	else
 	{
-		info.meta_add(tag, value);
+		info.meta_add(tag, values[0]);
+	}
+	for ( count = 1; count < values.get_count(); count++ )
+	{
+		info.meta_add( tag, values[count] );
 	}
 }
 
@@ -396,9 +405,30 @@ static int find_crlf(pfc::string8 & blah)
 	return -1;
 }
 
+static const char * fields_to_split[] = {"ARTIST", "ALBUM ARTIST", "PRODUCER", "COMPOSER", "PERFORMER", "GENRE"};
+
+static bool meta_split_value( const char * tag )
+{
+	for ( unsigned i = 0; i < _countof( fields_to_split ); i++ )
+	{
+		if ( !stricmp_utf8( tag, fields_to_split[ i ] ) ) return true;
+	}
+	return false;
+}
+
 static void info_meta_write(pfc::string_base & tag, const file_info & info, const char * name, int idx, int & first)
 {
 	pfc::string8 v = info.meta_enum_value(idx, 0);
+	if (meta_split_value(name))
+	{
+		t_size count = info.meta_enum_value_count(idx);
+		for (t_size i = 1; i < count; i++)
+		{
+			v += "; ";
+			v += info.meta_enum_value(idx, i);
+		}
+	}
+
 	int pos = find_crlf(v);
 
 	if (pos == -1)
@@ -514,6 +544,24 @@ static void trim_whitespace( pfc::string_base & val )
 	val.truncate( end - start + 1 );
 }
 
+static void split_value( char * in, pfc::ptr_list_t< const char > & out )
+{
+	char * start = in, * semicolon = strstr( in, "; " );
+	if (semicolon)
+	{
+		do
+		{
+			*semicolon = 0;
+			out.add_item( start );
+			start = semicolon + 2;
+			semicolon = strstr( start, "; " );
+		}
+		while ( semicolon );
+	}
+	if ( *start )
+		out.add_item( start );
+}
+
 static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, int & tag_song_ms, int & tag_fade_ms)
 {
 	int pos, precede = 0, utf8 = 0;
@@ -529,6 +577,8 @@ static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, i
 		{
 			DBG("scanning for name/value");
 
+			pfc::ptr_list_t< const char > values;
+
 			t_size line_end = whole_tag.find_first( '\n', pos );
 			if ( line_end == ~0 ) line_end = len;
 			tag.set_string( whole_tag.get_ptr() + pos, line_end - pos );
@@ -539,6 +589,10 @@ static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, i
 			tag.truncate( line_end );
 			trim_whitespace( tag );
 			trim_whitespace( value );
+			if ( meta_split_value( tag ) )
+				split_value( (char*)value.get_ptr(), values );
+			else
+				values.add_item( value );
 			
 			if (inherit < 0)
 			{
@@ -606,7 +660,7 @@ static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, i
 //					char err[64];
 //					wsprintf(err, "found %s", tag);
 //					DBG(err);
-					info_meta_add(info, tag, value);
+					info_meta_add(info, tag, values);
 				}
 			}
 			else
