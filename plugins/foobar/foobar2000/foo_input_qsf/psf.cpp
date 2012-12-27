@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.21"
+#define MYVERSION "2.0.22"
 
 /*
 	changelog
+
+2012-12-27 17:16 UTC - kode54
+- Replaced bulky PSF loading code with new psflib
+- Version is now 2.0.22
 
 2012-12-22 03:04 UTC - kode54
 - Added support for multi-value fields
@@ -198,9 +202,10 @@
 #include "resource.h"
 
 #include <stdio.h>
-#include <zlib.h>
 
 #include "../../../ESP/QSound/Core/qsound.h"
+
+#include <psflib.h>
 
 #include "circular_buffer.h"
 
@@ -463,224 +468,94 @@ static void info_meta_write(pfc::string_base & tag, const file_info & info, cons
 	}
 }
 
-#if 0
-static bool info_read_line( const BYTE * ptr, int len, pfc::string_base & tag, pfc::string_base & value )
+struct psf_info_meta_state
 {
-	int p = 0;
-	for ( ;; ++p )
+	file_info * info;
+
+	pfc::string8_fast name;
+
+	bool utf8;
+
+	int tag_song_ms;
+	int tag_fade_ms;
+
+	psf_info_meta_state()
+		: info( 0 ), utf8( false ), tag_song_ms( 0 ), tag_fade_ms( 0 )
 	{
-		if ( p >= len ) break;
-		unsigned u = ptr[ p ];
-		if ( ! u ) return false;
-		if ( u != 0x0A ) continue;
-		break;
 	}
-	len = p;
-	p = 0;
-	for ( ;; ++p )
-	{
-		if ( p >= len ) return false;
-		unsigned u = ptr[ p ];
-		if ( u == '=' ) break;
-		continue;
-	}
-	int equals_position = p;
-	p = 0;
-	for ( ;; ++p )
-	{
-		if ( p >= len ) return false;
-		unsigned u = ptr[ p ];
-		if ( u <= 0x20 ) continue;
-		break;
-	}
-	if ( p == equals_position ) return false; // no name or pure whitespace in name field
+};
 
-	// okay, we have the tag name
-	int tag_start = p;
-
-	p = equals_position - 1;
-	for ( ;; --p )
-	{
-		if ( p < tag_start ) return false;
-		unsigned u = ptr[ p ];
-		if ( u <= 0x20 ) continue;
-		break;
-	}
-	tag.set_string( ( const char * ) ptr + tag_start, p - tag_start + 1 );
-
-	p = equals_position + 1;
-
-	for ( ;; ++p )
-	{
-		if ( p >= len ) return false;
-		unsigned u = ptr[ p ];
-		if ( u <= 0x20 ) continue;
-		break;
-	}
-
-	tag_start = p;
-	p = len;
-
-	for ( ;; --p )
-	{
-		if ( p < tag_start ) return false;
-		unsigned u = ptr[ p ];
-		if ( u <= 0x20 ) continue;
-		break;
-	}
-	value.set_string( ( const char * ) ptr + tag_start, p - tag_start + 1 );
-
-	return true;
-}
-#endif
-
-static void trim_whitespace( pfc::string_base & val )
+static int psf_info_meta(void * context, const char * name, const char * value)
 {
-	const char * start = val.get_ptr();
-	const char * end = start + strlen( start ) - 1;
-	while ( *start > 0 && *start < 0x20 ) ++start;
-	while ( end >= start && *end >= 0 && *end < 0x20 ) --end;
-	memcpy( (void *) val.get_ptr(), start, end - start + 1 );
-	val.truncate( end - start + 1 );
-}
+	psf_info_meta_state * state = ( psf_info_meta_state * ) context;
 
-static void split_value( char * in, pfc::ptr_list_t< const char > & out )
-{
-	char * start = in, * semicolon = strstr( in, "; " );
-	if (semicolon)
+	pfc::string8_fast & tag = state->name;
+
+	tag = name;
+
+	if (!stricmp_utf8(tag, "game"))
 	{
-		do
+		DBG("reading game as album");
+		tag = "album";
+	}
+	else if (!stricmp_utf8(tag, "year"))
+	{
+		DBG("reading year as date");
+		tag = "date";
+	}
+
+	if (!stricmp_utf8_partial(tag, "replaygain_"))
+	{
+		DBG("reading RG info");
+		//info.info_set(tag, value);
+		state->info->info_set_replaygain(tag, value);
+	}
+	else if (!stricmp_utf8(tag, "length"))
+	{
+		DBG("reading length");
+		int temp = parse_time_crap(value);
+		if (temp != BORK_TIME)
 		{
-			*semicolon = 0;
-			out.add_item( start );
-			start = semicolon + 2;
-			semicolon = strstr( start, "; " );
-		}
-		while ( semicolon );
-	}
-	if ( *start )
-		out.add_item( start );
-}
-
-static int info_read(const BYTE * ptr, int len, file_info & info, int inherit, int & tag_song_ms, int & tag_fade_ms)
-{
-	int pos, precede = 0, utf8 = 0;
-	pfc::string8 whole_tag( (const char *)ptr, len );
-	tag_song_ms = 0;
-	tag_fade_ms = 0;
-	if (!memcmp(whole_tag, "[TAG]", 5))
-	{
-		DBG("found tag block");
-		pfc::string8_fastalloc tag, value;
-
-		for (pos = 5; pos < len; pos++)
-		{
-			DBG("scanning for name/value");
-
-			pfc::ptr_list_t< const char > values;
-
-			t_size line_end = whole_tag.find_first( '\n', pos );
-			if ( line_end == ~0 ) line_end = len;
-			tag.set_string( whole_tag.get_ptr() + pos, line_end - pos );
-			pos = line_end;
-			line_end = tag.find_first( '=' );
-			if ( line_end == ~0 ) continue;
-			value.set_string( tag.get_ptr() + line_end + 1 );
-			tag.truncate( line_end );
-			trim_whitespace( tag );
-			trim_whitespace( value );
-			if ( meta_split_value( tag ) )
-				split_value( (char*)value.get_ptr(), values );
-			else
-				values.add_item( value );
-			
-			if (inherit < 0)
-			{
-				// only parse metadata for top level executable
-				if (!stricmp_utf8(tag, "game"))
-				{
-					DBG("reading game as album");
-					tag = "album";
-				}
-				else if (!stricmp_utf8(tag, "year"))
-				{
-					DBG("reading year as date");
-					tag = "date";
-				}
-
-				if (!stricmp_utf8_partial(tag, "replaygain_"))
-				{
-					DBG("reading RG info");
-					//info.info_set(tag, value);
-					info.info_set_replaygain(tag, value);
-				}
-				else if (!stricmp_utf8(tag, "length"))
-				{
-					DBG("reading length");
-					int temp = parse_time_crap(value);
-					if (temp != BORK_TIME)
-					{
-						tag_song_ms = temp;
-						info.info_set_int(field_length, tag_song_ms);
-					}
-				}
-				else if (!stricmp_utf8(tag, "fade"))
-				{
-					DBG("reading fade");
-					int temp = parse_time_crap(value);
-					if (temp != BORK_TIME)
-					{
-						tag_fade_ms = temp;
-						info.info_set_int(field_fade, tag_fade_ms);
-					}
-				}
-				else if (!stricmp_utf8(tag, "utf8"))
-				{
-					utf8 = 1;
-				}
-				else if (!stricmp_utf8_partial(tag, "_lib"))
-				{
-					DBG("found _lib");
-					if (! *(tag.get_ptr() + 4)) precede = 1;
-					info.info_set(tag, value);
-				}
-				else if (!stricmp_utf8(tag, "_refresh"))
-				{
-					DBG("found _refresh");
-					info.info_set(tag, value);
-				}
-				else if (tag[0] == '_')
-				{
-					DBG("found unknown required tag, failing");
-					console::formatter() << "Unsupported tag found: " << tag << ", required to play file.";
-					return -1;
-				}
-				else
-				{
-//					char err[64];
-//					wsprintf(err, "found %s", tag);
-//					DBG(err);
-					info_meta_add(info, tag, values);
-				}
-			}
-			else
-			{
-				// handle nested libraries only, and info is now
-				// the top level internal info class
-				if (!stricmp_utf8_partial(tag, "_lib"))
-				{
-					pfc::string8 blah;
-					if (!*(tag.get_ptr() + 4)) precede = 1;
-					blah.set_string(tag);
-					blah.add_byte('=');
-					blah.add_string(value);
-					info.meta_add(info.info_get("current"), value);
-				}
-			}
+			state->tag_song_ms = temp;
+			state->info->info_set_int(field_length, state->tag_song_ms);
 		}
 	}
-	if (!utf8) info_meta_ansi( info );
-	return precede;
+	else if (!stricmp_utf8(tag, "fade"))
+	{
+		DBG("reading fade");
+		int temp = parse_time_crap(value);
+		if (temp != BORK_TIME)
+		{
+			state->tag_fade_ms = temp;
+			state->info->info_set_int(field_fade, state->tag_fade_ms);
+		}
+	}
+	else if (!stricmp_utf8(tag, "utf8"))
+	{
+		state->utf8 = true;
+	}
+	else if (!stricmp_utf8_partial(tag, "_lib"))
+	{
+		DBG("found _lib");
+		state->info->info_set(tag, value);
+	}
+	else if (!stricmp_utf8(tag, "_refresh"))
+	{
+		DBG("found _refresh");
+		state->info->info_set(tag, value);
+	}
+	else if (tag[0] == '_')
+	{
+		DBG("found unknown required tag, failing");
+		console::formatter() << "Unsupported tag found: " << tag << ", required to play file.";
+		return -1;
+	}
+	else
+	{
+		state->info->meta_add( tag, value );
+	}
+
+	return 0;
 }
 
 class qsound_rom
@@ -779,295 +654,113 @@ private:
 	}
 };
 
-static int load_exe_unpack(qsound_rom & dst, const BYTE *src, uLong srclen)
+static int qsound_load(void * context, const uint8_t * exe, size_t exe_size,
+                                  const uint8_t * reserved, size_t reserved_size)
 {
-	DBG("loading");
-	pfc::array_t<t_uint8> buf;
-	buf.set_size( 0x1000000 );
-	BYTE *ptr = buf.get_ptr();
-
-	uLong destlen = 0x1000000;
-	uncompress(ptr, &destlen, src, srclen);
-	// ScrubFormat checks this, but I already did this :)
-	DBG("header in");
-	buf.set_size( destlen );
-
-	ptr = buf.get_ptr();
+	qsound_rom * rom = ( qsound_rom * ) context;
 
 	for (;;)
 	{
 		char s[4];
-		if ( destlen < 11 ) break;
-		memcpy( s, ptr, 3 ); ptr += 3; destlen -= 3;
+		if ( exe_size < 11 ) break;
+		memcpy( s, exe, 3 ); exe += 3; exe_size -= 3;
 		s [3] = 0;
-		t_uint32 dataofs = pfc::byteswap_if_be_t( *(t_uint32*)ptr ); ptr += 4; destlen -= 4;
-		t_uint32 datasize = pfc::byteswap_if_be_t( *(t_uint32*)ptr ); ptr += 4; destlen -= 4;
-		if ( datasize > destlen )
-		{
-			throw foobar2000_io::exception_io_data( "Unexpected end of program section" );
-		}
+		uint32_t dataofs = pfc::byteswap_if_be_t( *(uint32_t*)exe ); exe += 4; exe_size -= 4;
+		uint32_t datasize = pfc::byteswap_if_be_t( *(uint32_t*)exe ); exe += 4; exe_size -= 4;
+		if ( datasize > exe_size )
+			return -1;
 
-		dst.upload_section( s, dataofs, ptr, datasize );
+		rom->upload_section( s, dataofs, exe, datasize );
 
-		ptr += datasize;
-		destlen -= datasize; 
+		exe += datasize;
+		exe_size -= datasize; 
 	}
 
-	return 1;
+	return 0;
 }
 
-class load_exe_recursive
+struct psf_file_state
 {
-	file_info_impl   internal;
+	file::ptr f;
+};
 
-	void             * state;
-	abort_callback   & m_abort;
-	const char       * base_path;
-	const char       * filename;
-
-	qsound_rom       * m_rom;
-
-public:
-	load_exe_recursive( void * p_state, qsound_rom * p_rom, service_ptr_t<file> & p_reader, const char * p_path, file_info & p_info, const char * p_base_path, int inherit, abort_callback & p_abort )
-	: state( p_state ), m_rom( p_rom ), m_abort( p_abort ), base_path( p_base_path ), filename( p_path )
+static void * psf_file_fopen( const char * uri )
+{
+	try
 	{
-		if ( !load( p_reader, p_info, inherit ) ) throw exception_io_data();
-		if ( state )
-		{
-			if(m_rom->m_aKey.get_size() == 11)
-			{
-				t_uint8 * ptr = m_rom->m_aKey.get_ptr();
-				t_uint32 swap_key1 = pfc::byteswap_if_le_t( *( t_uint32 * )( ptr +  0 ) );
-				t_uint32 swap_key2 = pfc::byteswap_if_le_t( *( t_uint32 * )( ptr +  4 ) );
-				t_uint16 addr_key  = pfc::byteswap_if_le_t( *( t_uint16 * )( ptr +  8 ) );
-				t_uint8  xor_key   =                                      *( ptr + 10 );
-				qsound_set_kabuki_key( state, swap_key1, swap_key2, addr_key, xor_key );
-			}
-			else
-			{
-				qsound_set_kabuki_key( state, 0, 0, 0, 0 );
-			}
-			qsound_set_z80_rom( state, m_rom->m_aZ80ROM.get_ptr(), m_rom->m_aZ80ROM.get_size() );
-			qsound_set_sample_rom( state, m_rom->m_aSampleROM.get_ptr(), m_rom->m_aSampleROM.get_size() );
-		}
+		psf_file_state * state = new psf_file_state;
+		filesystem::g_open( state->f, uri, filesystem::open_mode_read, abort_callback_dummy() );
+		return state;
 	}
-
-private:
-	int load( service_ptr_t<file> & r, file_info & info, int inherit )
+	catch (...)
 	{
-		pfc::array_t<t_uint8> buf;
-		DBG("r->get_length()");
-		t_filesize size64 = r->get_size_ex(m_abort);
-		if (size64 < 16 || size64 > 0x10000000) return 0;
-		int size = (int)size64;
-
-		buf.set_size( 16 );
-		BYTE *ptr = buf.get_ptr();
-		DBG("seek(0)");
-		r->seek(0, m_abort);
-		DBG("read(16)");
-		r->read_object(ptr, 16, m_abort);
-
-		if (ptr[3] != 0x41) return 0;
-
-		int reserved_size = pfc::byteswap_if_be_t( ((unsigned long*)ptr)[1] );
-		int exe_size = pfc::byteswap_if_be_t( ((unsigned long*)ptr)[2] );
-		if (size < 16 + reserved_size + exe_size) return 0;
-		DBG("size okay");
-		uLong exe_crc = pfc::byteswap_if_be_t( ((unsigned long*)ptr)[3] );
-		r->seek(reserved_size + 16, m_abort);
-		buf.set_size( exe_size );
-		ptr = buf.get_ptr();
-		r->read_object(ptr, exe_size, m_abort);
-		if (exe_crc != crc32(crc32(0L, Z_NULL, 0), ptr, exe_size)) return 0;
-		DBG("CRC okay");
-
-		//file_info_i_full internal;
-
-		if (inherit < 0)
-		{
-			DBG("setting first-pass info");
-			// first pass
-			info.info_set_int("samplerate", 44100);
-			info.info_set_int("bitspersample", 16);
-			info.info_set_int("channels", 2);
-			info.info_set("codec", "QSF");
-			info.info_set( "encoding", "synthesized" );
-
-			if (inherit != -2)
-			{
-				//internal.reset();
-
-				qsound_clear_state( state );
-
-				m_rom->clear();
-			}
-		}
-
-		int tag_song_ms = 0, tag_fade_ms = 0;
-
-		if (size < 16 + reserved_size + exe_size + 5)
-		{
-			DBG("loading executable only");
-			// load executable only
-			info.set_length((double)(tag_song_ms+tag_fade_ms)*.001);
-			if (inherit == -2) return 1;
-			return load_exe_unpack( *m_rom, ptr, exe_size );
-		}
-
-		int precede = 0;
-
-		// check for tags
-		{
-			pfc::array_t<t_uint8> buf2;
-			int len = size - (16 + reserved_size + exe_size);
-			buf2.set_size( len + 1 );
-			BYTE * ptr = buf2.get_ptr();
-			r->read_object(ptr, 5, m_abort);
-			ptr[len] = 0;
-			if (!memcmp(ptr, "[TAG]", 5))
-			{
-				r->read_object(ptr + 5, len - 5, m_abort);
-				precede = info_read(ptr, len, info, inherit, tag_song_ms, tag_fade_ms);
-				if (precede < 0) return 0;
-			}
-		}
-
-		if (inherit < 0)
-		{
-			DBG("setting length");
-			if (!tag_song_ms)
-			{
-				tag_song_ms = cfg_deflength;
-				tag_fade_ms = cfg_deffade;
-			}
-			info.set_length((double)(tag_song_ms+tag_fade_ms)*.001);
-			if (inherit == -2) return 1;
-		}
-
-		pfc::string8 current;
-		if (inherit >= 0)
-		{
-			current = info.info_get("current");
-		}
-
-		int rtn;
-
-		if (precede)
-		{
-			// alrighty, we've at least got _lib
-			const char * n;
-			service_ptr_t<file> rdr;
-			if (inherit < 0)
-			{
-				n = info.info_get("_lib");
-				pfc::string8 f = filename;
-				const char *fn = f.get_ptr() + f.scan_filename();
-				if (!stricmp(fn, n))
-				{
-					// Umm, no.
-					return 0;
-				}
-				internal.meta_add(fn, "dummy");
-				internal.info_set("current", n);
-			}
-			else
-			{
-				n = info.meta_get(current, 0);
-				if (info.meta_get_count_by_name(n))
-				{
-					// Not happening.
-					return 0;
-				}
-				info.info_set("current",n);
-			}
-
-			pfc::string8 fn = base_path;
-			fn += n;
-			DBG(fn);
-			filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
-			DBG("g_open success");
-			if (inherit < 0)
-			{
-				if (!load(rdr, internal, -inherit)) return 0;
-			}
-			else 
-			{
-				if (!load(rdr, info, inherit)) return 0;
-			}
-			rdr.release();
-			DBG("success");
-			if (inherit >= 0)
-			{
-				info.meta_remove_field(current);
-			}
-		}
-
-		rtn = load_exe_unpack( *m_rom, buf.get_ptr(), exe_size );
-		buf.set_size(0);
-		if (!rtn)
-		{
-			return 0;
-		}
-
-		char temp[16];
-		unsigned count, cur, lib;
-		service_ptr_t<file> rdr;
-
-		if (inherit < 0)
-		{
-			for (lib = 2;; lib++)
-			{
-				sprintf(temp, "_lib%u", lib);
-				const char * v = info.info_get(temp);
-				if (!v) break;
-
-				internal.info_set("current", v);
-
-				pfc::string8 fn(base_path);
-				fn += v;
-				filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
-				if ( !load( rdr, internal, 0 ) ) return 0;
-				rdr.release();
-			}
-		}
-		else
-		{
-			const char * n, * v;
-			bool found;
-			pfc::ptr_list_t<const char> libs;
-			count = info.meta_get_count_by_name(current);
-			for (cur = 0; cur < count; cur++)
-			{
-				libs.add_item(info.meta_get(current, cur));
-			}
-			for (lib = 2;; lib++)
-			{
-				sprintf(temp, "_lib%u", lib);
-				found = false;
-				for (cur=0; cur<count; cur++)
-				{
-					n = libs[cur];
-					if (stricmp_utf8_partial(n, temp)) continue;
-					v = strchr(n, '=') + 1;
-					if (info.meta_get_count_by_name(v))
-					{
-						// wtf are you trying to pull? :P
-						return 0;
-					}
-					info.info_set("current", v);
-					pfc::string8 fn(base_path);
-					fn.add_string(n);
-					filesystem::g_open( rdr, fn, filesystem::open_mode_read, m_abort );
-					if ( !load( rdr, info, 0 ) ) return 0;
-					rdr.release();
-					found = true;
-				}
-				if (!found) break;
-			}
-		}
-		return 1;
+		return NULL;
 	}
+}
+
+static size_t psf_file_fread( void * buffer, size_t size, size_t count, void * handle )
+{
+	try
+	{
+		psf_file_state * state = ( psf_file_state * ) handle;
+		size_t bytes_read = state->f->read( buffer, size * count, abort_callback_dummy() );
+		return bytes_read / size;
+	}
+	catch (...)
+	{
+		return 0;
+	}
+}
+
+static int psf_file_fseek( void * handle, int64_t offset, int whence )
+{
+	try
+	{
+		psf_file_state * state = ( psf_file_state * ) handle;
+		state->f->seek_ex( offset, (foobar2000_io::file::t_seek_mode) whence, abort_callback_dummy() );
+		return 0;
+	}
+	catch (...)
+	{
+		return -1;
+	}
+}
+
+static int psf_file_fclose( void * handle )
+{
+	try
+	{
+		psf_file_state * state = ( psf_file_state * ) handle;
+		delete state;
+		return 0;
+	}
+	catch (...)
+	{
+		return -1;
+	}
+}
+
+static long psf_file_ftell( void * handle )
+{
+	try
+	{
+		psf_file_state * state = ( psf_file_state * ) handle;
+		return state->f->get_position( abort_callback_dummy() );
+	}
+	catch (...)
+	{
+		return -1;
+	}
+}
+
+const psf_file_callbacks psf_file_system =
+{
+	"\\/|:",
+	psf_file_fopen,
+	psf_file_fread,
+	psf_file_fseek,
+	psf_file_fclose,
+	psf_file_ftell
 };
 
 class input_qsf
@@ -1083,8 +776,7 @@ class input_qsf
 
 	service_ptr_t<file> m_file;
 
-	pfc::string8 base_path;
-	pfc::string8 filename;
+	pfc::string8 m_path;
 
 	int err;
 
@@ -1099,8 +791,6 @@ class input_qsf
 
 	bool do_filter, do_suppressendsilence;
 
-	void load_qsf(service_ptr_t<file> & r, const char * p_path, file_info & info, bool full_open, abort_callback & p_abort);
-
 public:
 	input_qsf() : silence_test_buffer( 0 )
 	{
@@ -1114,22 +804,28 @@ public:
 	{
 		input_open_file_helper( p_file, p_path, p_reason, p_abort );
 
+		psf_info_meta_state info_state;
+		info_state.info = &m_info;
+
+		if ( psf_load( p_path, &psf_file_system, 0x41, 0, 0, psf_info_meta, &info_state ) <= 0 )
+			throw exception_io_data( "Not a QSF file" );
+
+		if ( !info_state.utf8 )
+			info_meta_ansi( m_info );
+
+		tag_song_ms = info_state.tag_song_ms;
+		tag_fade_ms = info_state.tag_fade_ms;
+
+		if (!tag_song_ms)
 		{
-			load_qsf( p_file, p_path, m_info, false, p_abort );
-
-			tag_song_ms = 0;
-			tag_fade_ms = 0;
-
-			m_file = p_file;
-
-			{
-				pfc::string8 f = p_path;
-				int meh = f.scan_filename();
-				filename = f.get_ptr() + meh;
-				f.truncate(meh);
-				base_path = f;
-			}
+			tag_song_ms = cfg_deflength;
+			tag_fade_ms = cfg_deffade;
 		}
+
+		m_info.set_length( (double)( tag_song_ms + tag_fade_ms ) * .001 );
+
+		m_file = p_file;
+		m_path = p_path;
 	}
 
 	void get_info( file_info & p_info, abort_callback & p_abort )
@@ -1144,19 +840,6 @@ public:
 
 	void decode_initialize( unsigned p_flags, abort_callback & p_abort )
 	{
-		const char *t = m_info.info_get(field_length);
-		if (t)
-		{
-			tag_song_ms = atoi(t);
-			t = m_info.info_get(field_fade);
-			if (t) tag_fade_ms = atoi(t);
-		}
-		if (!tag_song_ms)
-		{
-			tag_song_ms = cfg_deflength;
-			tag_fade_ms = cfg_deffade;
-		}
-
 		{
 			insync(g_sync);
 			if (!initialized)
@@ -1171,13 +854,28 @@ public:
 
 		void * pEmu = qsound_state.get_ptr();
 
-		m_info.reset();
+		qsound_clear_state( pEmu );
 
+		m_rom.clear();
+
+		if ( psf_load( m_path, &psf_file_system, 0x41, qsound_load, &m_rom, 0, 0 ) < 0 )
+			throw exception_io_data( "Invalid QSF" );
+
+		if(m_rom.m_aKey.get_size() == 11)
 		{
-			pfc::string8 path = base_path;
-			path += filename;
-			load_qsf( m_file, path, m_info, true, p_abort );
+			uint8_t * ptr = m_rom.m_aKey.get_ptr();
+			uint32_t swap_key1 = pfc::byteswap_if_le_t( *( uint32_t * )( ptr +  0 ) );
+			uint32_t swap_key2 = pfc::byteswap_if_le_t( *( uint32_t * )( ptr +  4 ) );
+			uint32_t addr_key  = pfc::byteswap_if_le_t( *( uint16_t * )( ptr +  8 ) );
+			uint8_t  xor_key   =                                      *( ptr + 10 );
+			qsound_set_kabuki_key( pEmu, swap_key1, swap_key2, addr_key, xor_key );
 		}
+		else
+		{
+			qsound_set_kabuki_key( pEmu, 0, 0, 0, 0 );
+		}
+		qsound_set_z80_rom( pEmu, m_rom.m_aZ80ROM.get_ptr(), m_rom.m_aZ80ROM.get_size() );
+		qsound_set_sample_rom( pEmu, m_rom.m_aSampleROM.get_ptr(), m_rom.m_aSampleROM.get_size() );
 
 		qsfemu_pos = 0.;
 
@@ -1362,30 +1060,7 @@ public:
 		void *pEmu = qsound_state.get_ptr();
 		if ( p_seconds < qsfemu_pos )
 		{
-			//file_info *temp = new file_info_i_full;
-			file_info_impl temp;
-			pfc::string8 path = base_path;
-			path += filename;
-
-			load_qsf( m_file, path, temp, true, p_abort );
-			qsfemu_pos = 0.;
-			if ( startsilence )
-			{
-				unsigned int silence = startsilence;
-				while ( silence )
-				{
-					p_abort.check();
-
-					unsigned int todo = silence;
-					int err = qsound_execute( pEmu, 0x7FFFFFFF, 0, & todo );
-					if ( err < 0 )
-					{
-						eof = true;
-						return;
-					}
-					silence -= todo;
-				}
-			}
+			decode_initialize( no_loop ? input_flag_no_looping : 0, p_abort );
 		}
 		unsigned int howmany = ( int )( audio_math::time_to_samples( p_seconds - qsfemu_pos, 44100 ) );
 
@@ -1587,35 +1262,6 @@ private:
 		fade_len=MulDiv(tag_fade_ms,44100,1000);
 	}
 };
-
-void input_qsf::load_qsf(service_ptr_t<file> & r, const char * p_path, file_info & info, bool full_open, abort_callback & p_abort)
-{
-	unsigned char header[16];
-	int fl;
-	__int64 fl64;
-	fl64 = r->get_size_ex(p_abort);
-	if (fl64 > 1<<30) throw exception_io_data();
-	fl = (int)fl64;
-	if (fl < 16) throw exception_io_data();
-	r->seek(0, p_abort);
-	r->read_object(header, 16, p_abort);
-	if (memcmp(header, "PSF", 3)) throw exception_io_data();
-
-	if (header[3] == 0x41)
-	{
-		if (!full_open)
-		{
-			load_exe_recursive( 0, 0, r, p_path, info, 0, -2, p_abort );
-		}
-		else
-		{
-			load_exe_recursive( qsound_state.get_ptr(), &m_rom, r, p_path, info, base_path, -1, p_abort);
-		}
-		return;
-	}
-
-	throw exception_io_data();
-}
 
 class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
 public:
