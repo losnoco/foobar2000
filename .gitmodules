@@ -84,7 +84,7 @@
 	url = git@github.com:kode54/playptmod.git
 [submodule "plugins/ESP/PSX"]
 	path = plugins/ESP/PSX
-	url = git@github.com:kode54/PSXCore.git
+	url = git@github.com:kode54/Highly_Experimental.git
 [submodule "plugins/foobar/foobar2000/foo_psf"]
 	path = plugins/foobar/foobar2000/foo_psf
 	url = git@github.com:kode54/foo_psf.git
@@ -93,7 +93,7 @@
 	url = /home/chris/src/test_player/test_player/psflib
 [submodule "plugins/ESP/QSound"]
 	path = plugins/ESP/QSound
-	url = git@github.com:kode54/QSoundCore.git
+	url = git@github.com:kode54/Highly_Quixotic.git
 [submodule "plugins/foobar/foobar2000/foo_input_qsf"]
 	path = plugins/foobar/foobar2000/foo_input_qsf
 	url = git@github.com:kode54/foo_input_qsf.git
