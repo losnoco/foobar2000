@@ -91,3 +91,9 @@
 [submodule "plugins/psflib"]
 	path = plugins/psflib
 	url = /home/chris/src/test_player/test_player/psflib
+[submodule "plugins/ESP/QSound"]
+	path = plugins/ESP/QSound
+	url = git@github.com:kode54/QSoundCore.git
+[submodule "plugins/foobar/foobar2000/foo_input_qsf"]
+	path = plugins/foobar/foobar2000/foo_input_qsf
+	url = git@github.com:kode54/foo_input_qsf.git
