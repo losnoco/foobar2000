@@ -82,3 +82,6 @@
 [submodule "plugins/playptmod"]
 	path = plugins/playptmod
 	url = git@github.com:kode54/playptmod.git
+[submodule "plugins/ESP/PSX"]
+	path = plugins/ESP/PSX
+	url = git@github.com:kode54/PSXCore.git
