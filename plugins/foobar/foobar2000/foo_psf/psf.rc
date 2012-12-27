@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -88,6 +86,7 @@ BEGIN
     CONTROL         1014,IDC_LOGO,"Static",SS_BITMAP,179,70,101,58
     CTEXT           "",IDC_URL,179,134,101,8,NOT WS_GROUP
     CTEXT           "",IDC_K54,179,146,101,8,NOT WS_GROUP
+    PUSHBUTTON      "Select PS2 BIOS",IDC_BIOS,184,53,91,14
 END
 
 IDD_TIME DIALOGEX 31, 26, 140, 44
@@ -110,7 +109,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_PSF_CONFIG, DIALOG
     BEGIN
@@ -130,7 +129,7 @@ BEGIN
 END
 #endif    // APSTUDIO_INVOKED
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

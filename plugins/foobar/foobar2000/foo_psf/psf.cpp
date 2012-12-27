@@ -1,7 +1,11 @@
-#define MYVERSION "2.0.28"
+#define MYVERSION "2.0.29"
 
 /*
 	changelog
+
+2012-12-27 12:50 UTC - kode54
+- Now requires external BIOS image
+- Version is now 2.0.29
 
 2012-12-22 03:04 UTC - kode54
 - Added support for multi-value fields
@@ -254,6 +258,8 @@
 #include "../../../ESP/PSX/Core/iop.h"
 #include "../../../ESP/PSX/Core/r3000.h"
 #include "../../../ESP/PSX/Core/spu.h"
+#include "../../../ESP/PSX/Core/bios.h"
+#include "../../../ESP/PSX/Core/mkhebios.h"
 #endif
 
 #include "psf2fs.h"
@@ -295,8 +301,6 @@ typedef struct {
 	char title[60];
 } psxexe_hdr_t;
 
-critical_section g_sync;
-static int initialized = 0;
 volatile long psf_count = 0, psf2_count = 0;
 
 // {A18393A9-A816-4565-B4E2-F407DEDD937F}
@@ -332,6 +336,9 @@ static const GUID guid_cfg_compat =
 // {BC3A4F79-54EF-4202-9B86-D81297DAC217}
 static const GUID guid_cfg_placement = 
 { 0xbc3a4f79, 0x54ef, 0x4202, { 0x9b, 0x86, 0xd8, 0x12, 0x97, 0xda, 0xc2, 0x17 } };
+// {7EBCA61D-EEBC-4B2B-B2FA-CE4E4DD3E548}
+static const GUID guid_cfg_bios_path = 
+{ 0x7ebca61d, 0xeebc, 0x4b2b, { 0xb2, 0xfa, 0xce, 0x4e, 0x4d, 0xd3, 0xe5, 0x48 } };
 
 enum
 {
@@ -357,6 +364,7 @@ static cfg_int cfg_endsilenceseconds(guid_cfg_endsilenceseconds,5);
 static cfg_int cfg_reverb(guid_cfg_reverb,1);
 static cfg_int cfg_freq(guid_cfg_freq,1);
 static cfg_int cfg_compat(guid_cfg_compat,IOP_COMPAT_FRIENDLY);
+static cfg_string cfg_bios_path(guid_cfg_bios_path,"");
 static cfg_window_placement cfg_placement(guid_cfg_placement);
 
 bool cfg_enable_overlapping = true;
@@ -381,6 +389,71 @@ public:
 
 	virtual void on_quit() { }
 };
+
+class psf_init_and_load_bios
+{
+	critical_section lock;
+	unsigned ref_count;
+
+	void * bios;
+
+public:
+	psf_init_and_load_bios()
+	{
+		ref_count = 0;
+		bios = NULL;
+	}
+
+	~psf_init_and_load_bios()
+	{
+		if ( bios ) mkhebios_delete( bios );
+	}
+
+	bool init( abort_callback & p_abort )
+	{
+		insync( lock );
+		if ( ref_count == 0 )
+		{
+			pfc::string8 bios_name = "file://";
+			bios_name += cfg_bios_path;
+			file::ptr bios_file;
+			try
+			{
+				filesystem::g_open( bios_file, bios_name, filesystem::open_mode_read, p_abort );
+				t_filesize bios_size = bios_file->get_size_ex( p_abort );
+				if ( bios_size != 0x400000 ) return false;
+				pfc::array_t<t_uint8> buffer;
+				buffer.set_size( 0x400000 );
+				bios_file->read_object( buffer.get_ptr(), 0x400000, p_abort );
+
+				int final_size = 0x400000;
+				bios = mkhebios_create( buffer.get_ptr(), &final_size );
+				if ( !bios ) return false;
+
+				bios_set_image( (unsigned char *) bios, final_size );
+
+				if ( psx_init() ) return false;
+			}
+			catch (...)
+			{
+				return false;
+			}
+		}
+		++ref_count;
+		return true;
+	}
+
+	void quit()
+	{
+		insync( lock );
+		if ( --ref_count == 0 )
+		{
+			free( bios );
+			bios = NULL;
+		}
+	}
+
+} g_init;
 
 static const char field_length[]="psf_length";
 static const char field_fade[]="psf_fade";
@@ -1189,10 +1262,12 @@ class input_psf
 
 	bool do_filter, do_suppressendsilence;
 
+	bool initialized;
+
 	int load_psf(service_ptr_t<file> & r, const char * p_path, file_info & info, bool full_open, abort_callback & p_abort);
 
 public:
-	input_psf() : silence_test_buffer( 0 )
+	input_psf() : silence_test_buffer( 0 ), initialized( false )
 	{
 		psf2fs = NULL;
 	}
@@ -1201,6 +1276,7 @@ public:
 	{
 		if (psf2fs) psf2fs_delete(psf2fs);
 		if (errors.length()) console::info(errors);
+		if ( initialized ) g_init.quit();
 	}
 
 	void open( service_ptr_t<file> p_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
@@ -1256,14 +1332,13 @@ public:
 			tag_fade_ms = cfg_deffade;
 		}
 
+		if ( !initialized )
 		{
-			insync(g_sync);
-			if (!initialized)
+			if ( !g_init.init( p_abort ) )
 			{
-				DBG("psx_init()");
-				if (psx_init()) throw std::exception("PSX emulator static initialization failed");
-				initialized = 1;
+				throw exception_io_data( "BIOS load failure" );
 			}
+			initialized = true;
 		}
 
 		psx_state.set_size( psx_get_state_size( psf_version ) );
@@ -1877,11 +1952,13 @@ public:
 		COMMAND_HANDLER_EX(IDC_SILENCE, EN_CHANGE, OnEditChange)
 		COMMAND_HANDLER_EX(IDC_DLENGTH, EN_CHANGE, OnEditChange)
 		COMMAND_HANDLER_EX(IDC_DFADE, EN_CHANGE, OnEditChange)
+		COMMAND_HANDLER_EX(IDC_BIOS, BN_CLICKED, OnBiosClick)
 	END_MSG_MAP()
 private:
 	BOOL OnInitDialog(CWindow, LPARAM);
 	void OnEditChange(UINT, int, CWindow);
 	void OnButtonClick(UINT, int, CWindow);
+	void OnBiosClick(UINT, int, CWindow);
 	bool HasChanged();
 	void OnChanged();
 
@@ -1889,6 +1966,8 @@ private:
 
 	CHyperLink m_link_neill;
 	CHyperLink m_link_kode54;
+
+	pfc::string8 m_bios_path;
 };
 
 BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
@@ -1916,6 +1995,8 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 		print_time_crap( cfg_deffade, (char *)&temp );
 		uSetDlgItemText( m_hWnd, IDC_DFADE, (char *)&temp );
 	}
+
+	m_bios_path = cfg_bios_path;
 	
 	m_link_neill.SetLabel( _T( "Neill Corlett's Home Page" ) );
 	m_link_neill.SetHyperLink( _T( "http://www.neillcorlett.com/" ) );
@@ -1963,6 +2044,17 @@ void CMyPreferences::OnButtonClick(UINT, int, CWindow) {
 	OnChanged();
 }
 
+void CMyPreferences::OnBiosClick(UINT, int, CWindow) {
+	pfc::string8 path( m_bios_path );
+	pfc::string8 directory( m_bios_path );
+	directory.truncate( directory.scan_filename() );
+	if ( uGetOpenFileName( m_hWnd, "BIOS files|*.bin;*.rom", 0, "bin", "Select a PS2 BIOS image...", directory, path, false ) )
+	{
+		m_bios_path = path;
+	}
+	OnChanged();
+}
+
 t_uint32 CMyPreferences::get_state() {
 	t_uint32 state = preferences_state::resettable;
 	if (HasChanged()) state |= preferences_state::changed;
@@ -1986,6 +2078,7 @@ void CMyPreferences::reset() {
 	uSetDlgItemText( m_hWnd, IDC_DLENGTH, (char *)&temp );
 	print_time_crap( default_cfg_deffade, (char *)&temp );
 	uSetDlgItemText( m_hWnd, IDC_DFADE, (char *)&temp );
+	m_bios_path = "";
 	
 	OnChanged();
 }
@@ -2017,6 +2110,7 @@ void CMyPreferences::apply() {
 		print_time_crap( cfg_deffade, (char *)&temp );
 		uSetDlgItemText( m_hWnd, IDC_DFADE, (char *)&temp );
 	}
+	cfg_bios_path = m_bios_path;
 	
 	OnChanged(); //our dialog content has not changed but the flags have - our currently shown values now match the settings so the apply button can be disabled
 }
@@ -2030,6 +2124,7 @@ bool CMyPreferences::HasChanged() {
 	if ( !changed && SendDlgItemMessage( IDC_REVERB, BM_GETCHECK ) != cfg_reverb ) changed = true;
 	if ( !changed && SendDlgItemMessage( IDC_FREQ, BM_GETCHECK ) != cfg_freq ) changed = true;
 	if ( !changed && SendDlgItemMessage( IDC_INFO, BM_GETCHECK ) != cfg_info ) changed = true;
+	if ( !changed && strcmp( m_bios_path, cfg_bios_path ) ) changed = true;
 	if ( !changed )
 	{
 		int n = IDC_FRIENDLY;
