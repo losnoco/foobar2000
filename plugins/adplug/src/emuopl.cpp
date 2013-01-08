@@ -27,7 +27,7 @@ CEmuopl::CEmuopl(int rate, bool bit16, bool usestereo)
   opl[0] = YM3812Init(3579545, rate);
   opl[1] = YM3812Init(3579545, rate);
   opl3 = new YMF262::Class();
-  opl3->YMF262Init(1, 14400000, rate);
+  opl3->YMF262Init(1, 14318180, rate);
 
   currType = TYPE_OPL3;
 

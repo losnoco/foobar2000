@@ -1,9 +1,13 @@
-#define MYVERSION "1.41"
+#define MYVERSION "1.42"
 
 #define DISABLE_ADL // currently broken
 
 /*
 	change log
+
+2013-01-08 01:45 UTC - kode54
+- Changed Adlib chips to always render at their native sample rate
+- Version is now 1.42
 
 2012-09-24 11:38 UTC - kode54
 - Updated AdPlug
@@ -196,10 +200,143 @@ static Copl * create_adlib_surround( unsigned core, unsigned srate )
 	return new CSurroundopl( a, b, true );
 }
 
+#include "blargg/blargg_source.h"
+
+#include "blargg/Fir_Resampler.h"
+typedef Fir_Resampler_Norm Chip_Resampler_Downsampler;
+
+int const resampler_extra = 0; //34;
+
+class Chip_Resampler {
+	int last_time;
+	short* out;
+	typedef short dsample_t;
+	enum { disabled_time = -1 };
+	enum { gain_bits = 14 };
+	blargg_vector<dsample_t> sample_buf;
+	int sample_buf_size;
+	int oversamples_per_frame;
+	int buf_pos;
+	int buffered;
+	int resampler_size;
+	int gain_;
+
+	Chip_Resampler_Downsampler resampler;
+
+	void put_samples( short * buf, int count )
+	{
+        dsample_t * inptr = sample_buf.begin();
+		memcpy( buf, inptr, count * 2 * sizeof(short) );
+	}
+
+public:
+	Chip_Resampler()      { last_time = disabled_time; out = NULL; }
+	blargg_err_t setup( double oversample, double rolloff, double gain )
+	{
+		gain_ = (int) ((1 << gain_bits) * gain);
+		RETURN_ERR( resampler.set_rate( oversample ) );
+		return reset_resampler();
+	}
+
+	blargg_err_t reset()
+	{
+		resampler.clear();
+		return blargg_ok;
+	}
+
+	blargg_err_t reset_resampler()
+	{
+		unsigned int pairs;
+		double rate = resampler.rate();
+		if ( rate >= 1.0 ) pairs = 64.0 * rate;
+		else pairs = 64.0 / rate;
+		RETURN_ERR( sample_buf.resize( (pairs + (pairs >> 2)) * 2 ) );
+		resize( pairs );
+		resampler_size = oversamples_per_frame + (oversamples_per_frame >> 2);
+		RETURN_ERR( resampler.resize_buffer( resampler_size ) );
+		return blargg_ok;
+	}
+
+	void resize( int pairs )
+	{
+		int new_sample_buf_size = pairs * 2;
+		//new_sample_buf_size = new_sample_buf_size / 4 * 4; // TODO: needed only for 3:2 downsampler
+		if ( sample_buf_size != new_sample_buf_size )
+		{
+			if ( (unsigned) new_sample_buf_size > sample_buf.size() )
+			{
+				check( false );
+				return;
+			}
+			sample_buf_size = new_sample_buf_size;
+			oversamples_per_frame = int (pairs * resampler.rate()) * 2 + 2;
+			clear();
+		}
+	}
+
+	void clear()
+	{
+		buf_pos = buffered = 0;
+		resampler.clear();
+	}
+
+	void enable( bool b = true )    { last_time = b ? 0 : disabled_time; }
+	bool enabled() const            { return last_time != disabled_time; }
+	void begin_frame( short* buf )  { out = buf; last_time = 0; }
+
+	int run_until( int time, void (*emu_render)(void * context, int count, short * out), void *context )
+	{
+		int count = time - last_time;
+		while ( count > 0 )
+		{
+			if ( last_time < 0 )
+				return false;
+			last_time = time;
+			if ( buffered )
+			{
+				int samples_to_copy = buffered;
+				if ( samples_to_copy > count ) samples_to_copy = count;
+				memcpy( out, sample_buf.begin(), samples_to_copy * sizeof(short) * 2 );
+				memcpy( sample_buf.begin(), sample_buf.begin() + samples_to_copy * 2, ( buffered - samples_to_copy ) * 2 * sizeof(short) );
+				buffered -= samples_to_copy;
+				count -= samples_to_copy;
+				continue;
+			}
+			int sample_count = oversamples_per_frame - resampler.written() + resampler_extra;
+			memset( resampler.buffer(), 0, sample_count * sizeof(*resampler.buffer()) );
+			emu_render( context, sample_count >> 1, resampler.buffer() );
+			for ( unsigned i = 0; i < sample_count; i++ )
+			{
+                dsample_t * ptr = resampler.buffer() + i;
+				*ptr = ( *ptr * gain_ ) >> gain_bits;
+			}
+			short* p = out;
+			resampler.write( sample_count );
+			sample_count = resampler.read( sample_buf.begin(), count * 2 > sample_buf_size ? sample_buf_size : count * 2 ) >> 1;
+			if ( sample_count > count )
+			{
+				out += count * 2;
+				put_samples( p, count );
+				memmove( sample_buf.begin(), sample_buf.begin() + count * 2, (sample_count - count) * 2 * sizeof(short) );
+				buffered = sample_count - count;
+				return true;
+			}
+			else if (!sample_count) return true;
+			out += sample_count * 2;
+			put_samples( p, sample_count );
+			count -= sample_count;
+		}
+		return true;
+	}
+};
+
+#undef check
+
 class input_adplug
 {
-	CPlayer * m_player;
-	Copl    * m_emu;
+	CPlayer        * m_player;
+	Copl           * m_emu;
+	Chip_Resampler * m_resampler;
 
 	t_filestats m_stats;
 
@@ -220,12 +357,14 @@ public:
 	{
 		m_player = 0;
 		m_emu = 0;
+		m_resampler = 0;
 	}
 
 	~input_adplug()
 	{
 		delete m_player;
 		delete m_emu;
+		delete m_resampler;
 	}
 
 	void open( service_ptr_t<file> m_file, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
@@ -242,8 +381,15 @@ public:
 
 		srate = cfg_samplerate;
 
-		if ( cfg_adlib_surround ) m_emu = create_adlib_surround( cfg_adlib_core, srate );
-		else m_emu = create_adlib( cfg_adlib_core, srate );
+		if ( cfg_adlib_surround ) m_emu = create_adlib_surround( cfg_adlib_core, 49716 );
+		else m_emu = create_adlib( cfg_adlib_core, 49716 );
+
+		if ( srate != 49716 )
+		{
+			m_resampler = new Chip_Resampler;
+			if ( m_resampler->setup( 49716.0 / (double)srate, 0.85, 1.0 ) )
+				throw exception_io_data( "Failed to initialize resampler" );
+			}
 
 		pfc::string8 path = p_path;
 		pfc::string_extension p_extension( p_path );
@@ -332,6 +478,9 @@ public:
 
 		m_emu->init();
 
+		if ( m_resampler )
+			m_resampler->reset();
+
 		m_player->rewind( subsong );
 
 		sample_buffer.set_size( 2048 * 2 );
@@ -339,6 +488,13 @@ public:
 		dont_loop = !! ( p_flags & input_flag_no_looping ) || !cfg_play_indefinitely;
 	}
 
+private:
+	static void decode_render(void * context, int count, short * out)
+	{
+		((Copl*)context)->update( out, count );
+	}
+
+public:
 	bool decode_run(audio_chunk & p_chunk,abort_callback & p_abort)
 	{
 		p_abort.check();
@@ -357,7 +513,12 @@ public:
 		unsigned sample_count = samples_todo;
 		if ( sample_count > 2048 ) sample_count = 2048;
 
-		m_emu->update( sample_buffer.get_ptr(), sample_count );
+		if ( m_resampler )
+		{
+			m_resampler->begin_frame( sample_buffer.get_ptr() );
+			m_resampler->run_until( sample_count, decode_render, m_emu );
+		}
+		else m_emu->update( sample_buffer.get_ptr(), sample_count );
 
 		samples_todo -= sample_count;
 
@@ -508,7 +669,7 @@ class adplug_file_types : public input_file_type
 
 static cfg_dropdown_history cfg_history_rate(guid_cfg_history_rate,16);
 
-static const int srate_tab[]={8000,11025,16000,22050,24000,32000,44100,48000,64000,88200,96000};
+static const int srate_tab[]={8000,11025,16000,22050,24000,32000,44100,48000,49716,64000,88200,96000};
 
 class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
 public:

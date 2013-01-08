@@ -4,6 +4,9 @@
     <Filter Include="OPL">
       <UniqueIdentifier>{d98a4e88-0d10-43b8-b4b0-66ad4ad7c016}</UniqueIdentifier>
     </Filter>
+    <Filter Include="blargg">
+      <UniqueIdentifier>{0383a7d0-d03d-46c4-a5dc-a95077508382}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fileprovider.h" />
@@ -17,12 +20,42 @@
       <Filter>OPL</Filter>
     </ClInclude>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="blargg\blargg_common.h">
+      <Filter>blargg</Filter>
+    </ClInclude>
+    <ClInclude Include="blargg\blargg_config.h">
+      <Filter>blargg</Filter>
+    </ClInclude>
+    <ClInclude Include="blargg\blargg_errors.h">
+      <Filter>blargg</Filter>
+    </ClInclude>
+    <ClInclude Include="blargg\blargg_source.h">
+      <Filter>blargg</Filter>
+    </ClInclude>
+    <ClInclude Include="blargg\Fir_Resampler.h">
+      <Filter>blargg</Filter>
+    </ClInclude>
+    <ClInclude Include="blargg\Resampler.h">
+      <Filter>blargg</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fileprovider.cpp" />
     <ClCompile Include="foo_input_adplug.cpp" />
     <ClCompile Include="opl\dbopl.cpp">
       <Filter>OPL</Filter>
+    </ClCompile>
+    <ClCompile Include="blargg\blargg_common.cpp">
+      <Filter>blargg</Filter>
+    </ClCompile>
+    <ClCompile Include="blargg\blargg_errors.cpp">
+      <Filter>blargg</Filter>
+    </ClCompile>
+    <ClCompile Include="blargg\Fir_Resampler.cpp">
+      <Filter>blargg</Filter>
+    </ClCompile>
+    <ClCompile Include="blargg\Resampler.cpp">
+      <Filter>blargg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

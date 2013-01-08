@@ -1287,6 +1287,8 @@ static void OPL_initalize(FM_OPL *OPL)
 	OPL->rate = (double)OPL->clock / 72.0;
 	OPL->freqbase  = 1.0;
 #endif
+	if ( fabs( OPL->freqbase - 1.0 ) < 0.00001 )
+		OPL->freqbase = 1.0;
 
 	/*logerror("freqbase=%f\n", OPL->freqbase);*/
 
