@@ -33,6 +33,7 @@ typedef DWORD HSOUNDFONT;	// soundfont handle
 #define BASS_CONFIG_MIDI_DEFFONT	0x10403
 
 // Additional sync types
+#define BASS_SYNC_MIDI_MARK		0x10000
 #define BASS_SYNC_MIDI_MARKER	0x10000
 #define BASS_SYNC_MIDI_CUE		0x10001
 #define BASS_SYNC_MIDI_LYRIC	0x10002
@@ -76,12 +77,15 @@ typedef struct {
 } BASS_MIDI_MARK;
 
 // Marker types
-#define BASS_MIDI_MARK_MARKER	0	// marker events
-#define BASS_MIDI_MARK_CUE		1	// cue events
-#define BASS_MIDI_MARK_LYRIC	2	// lyric events
-#define BASS_MIDI_MARK_TEXT		3	// text events
+#define BASS_MIDI_MARK_MARKER	0	// marker
+#define BASS_MIDI_MARK_CUE		1	// cue point
+#define BASS_MIDI_MARK_LYRIC	2	// lyric
+#define BASS_MIDI_MARK_TEXT		3	// text
 #define BASS_MIDI_MARK_TIMESIG	4	// time signature
 #define BASS_MIDI_MARK_KEYSIG	5	// key signature
+#define BASS_MIDI_MARK_COPY		6	// copyright notice
+#define BASS_MIDI_MARK_TRACK	7	// track name
+#define BASS_MIDI_MARK_INST		8	// instrument name
 #define BASS_MIDI_MARK_TICK		0x10000 // FLAG: get position in ticks (otherwise bytes)
 
 // MIDI events
@@ -140,8 +144,11 @@ typedef struct {
 #define MIDI_EVENT_SCALETUNING		63
 #define MIDI_EVENT_CONTROL			64
 #define MIDI_EVENT_CHANPRES_VIBRATO	65
-#define MIDI_EVENT_MODRANGE			66
-#define MIDI_EVENT_BANK_LSB			67
+#define MIDI_EVENT_CHANPRES_PITCH	66
+#define MIDI_EVENT_CHANPRES_FILTER	67
+#define MIDI_EVENT_CHANPRES_VOLUME	68
+#define MIDI_EVENT_MODRANGE			69
+#define MIDI_EVENT_BANK_LSB			70
 #define MIDI_EVENT_MIXLEVEL			0x10000
 #define MIDI_EVENT_TRANSPOSE		0x10001
 #define MIDI_EVENT_SYSTEMEX			0x10002
@@ -208,16 +215,18 @@ HSTREAM BASSMIDIDEF(BASS_MIDI_StreamCreateURL)(const char *url, DWORD offset, DW
 HSTREAM BASSMIDIDEF(BASS_MIDI_StreamCreateFileUser)(DWORD system, DWORD flags, const BASS_FILEPROCS *procs, void *user, DWORD freq);
 HSTREAM BASSMIDIDEF(BASS_MIDI_StreamCreateEvents)(const BASS_MIDI_EVENT *events, DWORD ppqn, DWORD flags, DWORD freq);
 BOOL BASSMIDIDEF(BASS_MIDI_StreamGetMark)(HSTREAM handle, DWORD type, DWORD index, BASS_MIDI_MARK *mark);
+DWORD BASSMIDIDEF(BASS_MIDI_StreamGetMarks)(HSTREAM handle, int track, DWORD type, BASS_MIDI_MARK *marks);
 BOOL BASSMIDIDEF(BASS_MIDI_StreamSetFonts)(HSTREAM handle, const BASS_MIDI_FONT *fonts, DWORD count);
 DWORD BASSMIDIDEF(BASS_MIDI_StreamGetFonts)(HSTREAM handle, BASS_MIDI_FONT *fonts, DWORD count);
 BOOL BASSMIDIDEF(BASS_MIDI_StreamLoadSamples)(HSTREAM handle);
 BOOL BASSMIDIDEF(BASS_MIDI_StreamEvent)(HSTREAM handle, DWORD chan, DWORD event, DWORD param);
 DWORD BASSMIDIDEF(BASS_MIDI_StreamEvents)(HSTREAM handle, DWORD mode, const void *events, DWORD length);
 DWORD BASSMIDIDEF(BASS_MIDI_StreamGetEvent)(HSTREAM handle, DWORD chan, DWORD event);
-DWORD BASSMIDIDEF(BASS_MIDI_StreamGetEvents)(HSTREAM handle, DWORD track, DWORD filter, BASS_MIDI_EVENT *events);
+DWORD BASSMIDIDEF(BASS_MIDI_StreamGetEvents)(HSTREAM handle, int track, DWORD filter, BASS_MIDI_EVENT *events);
 HSTREAM BASSMIDIDEF(BASS_MIDI_StreamGetChannel)(HSTREAM handle, DWORD chan);
 
 HSOUNDFONT BASSMIDIDEF(BASS_MIDI_FontInit)(const void *file, DWORD flags);
+HSOUNDFONT BASSMIDIDEF(BASS_MIDI_FontInitUser)(const BASS_FILEPROCS *procs, void *user, DWORD flags);
 BOOL BASSMIDIDEF(BASS_MIDI_FontFree)(HSOUNDFONT handle);
 BOOL BASSMIDIDEF(BASS_MIDI_FontGetInfo)(HSOUNDFONT handle, BASS_MIDI_FONTINFO *info);
 BOOL BASSMIDIDEF(BASS_MIDI_FontGetPresets)(HSOUNDFONT handle, DWORD *presets);
