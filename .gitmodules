@@ -97,3 +97,9 @@
 [submodule "plugins/foobar/foobar2000/foo_input_qsf"]
 	path = plugins/foobar/foobar2000/foo_input_qsf
 	url = git@github.com:kode54/foo_input_qsf.git
+[submodule "plugins/viogsf"]
+	path = plugins/viogsf
+	url = git@github.com:kode54/viogsf.git
+[submodule "plugins/foobar/foobar2000/foo_input_gsf"]
+	path = plugins/foobar/foobar2000/foo_input_gsf
+	url = git@github.com:kode54/foo_input_gsf.git
