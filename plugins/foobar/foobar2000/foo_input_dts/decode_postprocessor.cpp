@@ -43,6 +43,12 @@ class dts_postprocessor_instance : public decode_postprocessor_instance
 	int dts_flags, nch, srate, bitrate, frame_length;
 	unsigned int channel_mask;
 
+	unsigned int contiguous_silent_samples;
+	unsigned int contiguous_silent_bytes;
+	unsigned int pre_silent_samples;
+	unsigned int post_silent_samples;
+	unsigned int bytes_skipped;
+
 	bool info_emitted, gave_up;
 
 	bool init()
@@ -73,6 +79,11 @@ class dts_postprocessor_instance : public decode_postprocessor_instance
 		bufptr = buf;
 		bufpos = buf + HEADER_SIZE;
 		dts_flags = nch = srate = bitrate = 0;
+		contiguous_silent_samples = 0;
+		contiguous_silent_bytes = 0;
+		pre_silent_samples = 0;
+		post_silent_samples = 0;
+		bytes_skipped = 0;
 		valid_stream_found = false;
 		info_emitted = false;
 		gave_up = false;
@@ -165,9 +176,21 @@ class dts_postprocessor_instance : public decode_postprocessor_instance
 					if ( !length )
 					{
 						//console::warning("DTS: skip");
+						++bytes_skipped;
+						if ( !bufptr[0] )
+						{
+							if ( ( ++contiguous_silent_bytes & 3 ) == 0 &&
+								( bytes_skipped & 3 ) == 0 ) ++contiguous_silent_samples;
+						}
+						else
+						{
+							contiguous_silent_samples = 0;
+							contiguous_silent_bytes = 0;
+						}
 						for ( bufptr = buf; bufptr < buf + HEADER_SIZE - 1; bufptr++ ) bufptr[0] = bufptr[1];
 						continue;
 					}
+					else bytes_skipped += length;
 
 					nch = get_channel_count( dts_flags );
 					channel_mask = get_channel_map_mask( dts_flags );
@@ -258,6 +281,19 @@ error:
 		return ret;
 	}
 
+	unsigned flush_silence( dsp_chunk_list & p_chunk_list, unsigned insert_point, unsigned sample_count )
+	{
+		if ( sample_count )
+		{
+			audio_chunk * out = p_chunk_list.insert_item( insert_point++, sample_count * nch );
+			out->set_srate( srate );
+			out->set_channels( nch, channel_mask );
+			out->set_silence( sample_count );
+			return 1;
+		}
+		else return 0;
+	}
+
 public:
 	dts_postprocessor_instance()
 	{
@@ -303,6 +339,7 @@ public:
 					if ( output_chunks.get_count() )
 					{
 						valid_stream_found = true;
+						i += flush_silence( p_chunk_list, i, pre_silent_samples );
 						i += flush_chunks( p_chunk_list, i, true ) + 1;
 						modified = true;
 					}
@@ -311,6 +348,7 @@ public:
 						out = output_chunks.insert_item( output_chunks.get_count(), chunk->get_data_length() );
 						out->copy( *chunk );
 						p_chunk_list.remove_by_idx( i );
+						pre_silent_samples = contiguous_silent_samples;
 					}
 				}
 				else
@@ -321,6 +359,7 @@ public:
 			}
 			else
 			{
+				contiguous_silent_samples = 0;
 				if ( decode( buffer.get_ptr(), data, *chunk, p_abort ) )
 				{
 					i++;
@@ -330,15 +369,16 @@ public:
 				{
 					p_chunk_list.remove_by_idx( i );
 				}
+				post_silent_samples += contiguous_silent_samples;
 			}
 		}
 
+		if ( valid_stream_found )
 		for ( unsigned i = 0; i < original_chunks.get_count(); )
 		{
 			audio_chunk * in = original_chunks.get_item( i );
 			if ( !is_chunk_silent( in ) ) break;
-			audio_chunk * out = p_chunk_list.insert_item( p_chunk_list.get_count(), in->get_data_length() );
-			out->copy( *in );
+			flush_silence( p_chunk_list, p_chunk_list.get_count(), in->get_sample_count() );
 			original_chunks.remove_by_idx( i );
 		}
 
@@ -351,6 +391,7 @@ public:
 		if ( p_flags & flag_eof )
 		{
 			flush_chunks( p_chunk_list, p_chunk_list.get_count(), valid_stream_found );
+			flush_silence( p_chunk_list, p_chunk_list.get_count(), post_silent_samples );
 			cleanup();
 		}
 
