@@ -90,7 +90,7 @@
 	url = git@github.com:kode54/foo_psf.git
 [submodule "plugins/psflib"]
 	path = plugins/psflib
-	url = /home/chris/src/test_player/test_player/psflib
+	url = git@github.com:kode54/psflib.git
 [submodule "plugins/ESP/QSound"]
 	path = plugins/ESP/QSound
 	url = git@github.com:kode54/Highly_Quixotic.git
