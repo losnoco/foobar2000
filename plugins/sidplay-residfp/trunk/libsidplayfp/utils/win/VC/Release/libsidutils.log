@@ -1,40 +1,17 @@
-﻿Build started 12/17/2012 8:12:18 PM.
-     1>Project "Z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\utils\win\VC\libsidutils.vcxproj" on node 2 (build target(s)).
+﻿Build started 3/25/2013 11:08:35 AM.
+     1>Project "C:\Users\Chris\Documents\programming\foobar2000\plugins\sidplay-residfp\trunk\libsidplayfp\utils\win\VC\libsidutils.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Release\sidutils.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I. /I../../../sidplay/win/VC /I../../.. /Zi /nologo /W3 /WX- /Ox /Ob2 /Oi /Ot /Oy /GL /D HAVE_CONFIG_H /D WIN32 /D NDEBUG /D _WINDOWS /D DLL_EXPORT /D HAVE_MSWINDOWS /D _VC80_UPGRADE=0x0710 /GF /Gm- /EHsc /MT /GS /Gy /arch:SSE /fp:fast /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\MD5\MD5.cpp ..\..\SidDatabase.cpp
-         MD5.cpp
-         SidDatabase.cpp
-     1>Z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\sidplayfp/SidTune.h(46): warning C4251: 'SidTune::tune' : class 'std::auto_ptr<_Ty>' needs to have dll-interface to be used by clients of class 'SidTune'
-                 with
-                 [
-                     _Ty=SidTuneBase
-                 ]
-     1>..\..\SidDatabase.cpp(134): warning C4101: 'e' : unreferenced local variable
-     1>c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\memory(931): warning C4150: deletion of pointer to incomplete type 'SidTuneBase'; no destructor called
-                 Z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\sidplayfp/SidTune.h(34) : see declaration of 'SidTuneBase'
-                 c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\memory(930) : while compiling class template member function 'std::auto_ptr<_Ty>::~auto_ptr(void)'
-                 with
-                 [
-                     _Ty=SidTuneBase
-                 ]
-                 Z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\sidplayfp/SidTune.h(46) : see reference to class template instantiation 'std::auto_ptr<_Ty>' being compiled
-                 with
-                 [
-                     _Ty=SidTuneBase
-                 ]
+         All outputs are up-to-date.
        Lib:
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"Z:\programming\plugins\foobar\foobar2000\Release\sidutils.lib" /NOLOGO /LTCG Release\iniParser.obj
-         Release\MD5.obj
-         Release\SidDatabase.obj
-         Release\stil.obj
-         libsidutils.vcxproj -> Z:\programming\plugins\foobar\foobar2000\Release\sidutils.lib
+         All outputs are up-to-date.
+         libsidutils.vcxproj -> C:\Users\Chris\Documents\programming\foobar2000\plugins\foobar\foobar2000\Release\sidutils.lib
        FinalizeBuildStatus:
          Deleting file "Release\sidutils.unsuccessfulbuild".
          Touching "Release\sidutils.lastbuildstate".
-     1>Done Building Project "Z:\programming\plugins\sidplay-residfp\trunk\libsidplayfp\utils\win\VC\libsidutils.vcxproj" (build target(s)).
+     1>Done Building Project "C:\Users\Chris\Documents\programming\foobar2000\plugins\sidplay-residfp\trunk\libsidplayfp\utils\win\VC\libsidutils.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:02.82
+Time Elapsed 00:00:00.05
