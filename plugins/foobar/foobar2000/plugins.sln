@@ -178,6 +178,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "viogsf", "..\..\viogsf\viog
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_gsf", "foo_input_gsf\foo_input_gsf.vcxproj", "{4CAE867A-385A-4FE5-85DC-52A7191DFBE7}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SSEQPlayer", "..\..\SSEQPlayer\SSEQPlayer.vcxproj", "{1B825AB0-287E-4F75-9C15-22469D52BE73}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_ncsf", "foo_input_ncsf\foo_input_ncsf.vcxproj", "{38404369-5649-4458-8A99-A33CF4F4A632}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -746,6 +750,18 @@ Global
 		{4CAE867A-385A-4FE5-85DC-52A7191DFBE7}.Release|Win32.ActiveCfg = Release|Win32
 		{4CAE867A-385A-4FE5-85DC-52A7191DFBE7}.Release|Win32.Build.0 = Release|Win32
 		{4CAE867A-385A-4FE5-85DC-52A7191DFBE7}.Release|x64.ActiveCfg = Release|Win32
+		{1B825AB0-287E-4F75-9C15-22469D52BE73}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1B825AB0-287E-4F75-9C15-22469D52BE73}.Debug|Win32.Build.0 = Debug|Win32
+		{1B825AB0-287E-4F75-9C15-22469D52BE73}.Debug|x64.ActiveCfg = Debug|Win32
+		{1B825AB0-287E-4F75-9C15-22469D52BE73}.Release|Win32.ActiveCfg = Release|Win32
+		{1B825AB0-287E-4F75-9C15-22469D52BE73}.Release|Win32.Build.0 = Release|Win32
+		{1B825AB0-287E-4F75-9C15-22469D52BE73}.Release|x64.ActiveCfg = Release|Win32
+		{38404369-5649-4458-8A99-A33CF4F4A632}.Debug|Win32.ActiveCfg = Debug|Win32
+		{38404369-5649-4458-8A99-A33CF4F4A632}.Debug|Win32.Build.0 = Debug|Win32
+		{38404369-5649-4458-8A99-A33CF4F4A632}.Debug|x64.ActiveCfg = Debug|Win32
+		{38404369-5649-4458-8A99-A33CF4F4A632}.Release|Win32.ActiveCfg = Release|Win32
+		{38404369-5649-4458-8A99-A33CF4F4A632}.Release|Win32.Build.0 = Release|Win32
+		{38404369-5649-4458-8A99-A33CF4F4A632}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
