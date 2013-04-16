@@ -103,3 +103,9 @@
 [submodule "plugins/foobar/foobar2000/foo_input_gsf"]
 	path = plugins/foobar/foobar2000/foo_input_gsf
 	url = git@github.com:kode54/foo_input_gsf.git
+[submodule "plugins/SSEQPlayer"]
+	path = plugins/SSEQPlayer
+	url = git@github.com:kode54/SSEQPlayer.git
+[submodule "plugins/foobar/foobar2000/foo_input_ncsf"]
+	path = plugins/foobar/foobar2000/foo_input_ncsf
+	url = git@github.com:kode54/foo_input_ncsf.git
