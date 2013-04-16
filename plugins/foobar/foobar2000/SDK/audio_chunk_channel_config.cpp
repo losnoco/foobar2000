@@ -95,8 +95,6 @@ static const unsigned g_audio_channel_config_table_xiph[] =
 	audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_back_left | audio_chunk::channel_back_right,
 	audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_back_left | audio_chunk::channel_back_right | audio_chunk::channel_front_center,
 	audio_chunk::channel_config_5point1,
-	audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_front_center | audio_chunk::channel_lfe | audio_chunk::channel_back_center | audio_chunk::channel_side_right | audio_chunk::channel_side_left,
-	audio_chunk::channel_front_left | audio_chunk::channel_front_right | audio_chunk::channel_back_left | audio_chunk::channel_back_right | audio_chunk::channel_front_center | audio_chunk::channel_lfe | audio_chunk::channel_side_right | audio_chunk::channel_side_left,
 };
 
 unsigned audio_chunk::g_guess_channel_config(unsigned count)
