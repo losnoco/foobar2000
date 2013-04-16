@@ -87,7 +87,7 @@ public:
 		m_haveEOF = false;
 		m_toSkip = 0;
 		m_postproc.close();
-		if ((p_flags & input_flag_testing_integrity) == 0 && m_postproc.should_bother()) {
+		if ((p_flags & input_flag_no_postproc) == 0 && m_postproc.should_bother()) {
 			file_info_impl info;
 			get_info(p_subsong, info, p_abort);
 			m_postproc.initialize(info);
@@ -99,7 +99,7 @@ public:
 		m_haveEOF = false;
 		m_toSkip = 0;
 		m_postproc.close();
-		if ((p_flags & (input_flag_testing_integrity|input_flag_no_postproc)) == 0 && m_postproc.should_bother()) {
+		if ((p_flags & input_flag_no_postproc) == 0 && m_postproc.should_bother()) {
 			file_info_impl info;
 			get_info(info, p_abort);
 			m_postproc.initialize(info);
