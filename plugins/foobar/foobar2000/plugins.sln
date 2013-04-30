@@ -96,8 +96,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_usf", "foo_input_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gthread", "..\..\glib-2.20.4\build\win32\vs9\gthread-static.vcxproj", "{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mt32emu", "..\..\munt\mt32emu\mt32emu_msvc7.vcxproj", "{063A149D-E48C-499B-B13F-7A70C140A662}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_echo", "foo_dsp_echo\foo_dsp_echo.vcxproj", "{68029F2E-F774-48FE-BC67-E0F493B1E9CD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_prvb", "foo_dsp_prvb\foo_dsp_prvb.vcxproj", "{9F324D83-0C9A-475A-A385-2FD96BA2A58A}"
@@ -181,6 +179,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SSEQPlayer", "..\..\SSEQPlayer\SSEQPlayer.vcxproj", "{1B825AB0-287E-4F75-9C15-22469D52BE73}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_ncsf", "foo_input_ncsf\foo_input_ncsf.vcxproj", "{38404369-5649-4458-8A99-A33CF4F4A632}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mt32emu", "..\..\munt\mt32emu\mt32emu_msvc7.vcxproj", "{063A149D-E48C-499B-B13F-7A70C140A662}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -494,12 +494,6 @@ Global
 		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Release|Win32.Build.0 = Release|Win32
 		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Release|x64.ActiveCfg = Release|x64
 		{C8AFB8C3-FFFD-460F-BC13-9AC25D7B117C}.Release|x64.Build.0 = Release|x64
-		{063A149D-E48C-499B-B13F-7A70C140A662}.Debug|Win32.ActiveCfg = Debug|Win32
-		{063A149D-E48C-499B-B13F-7A70C140A662}.Debug|Win32.Build.0 = Debug|Win32
-		{063A149D-E48C-499B-B13F-7A70C140A662}.Debug|x64.ActiveCfg = Debug|Win32
-		{063A149D-E48C-499B-B13F-7A70C140A662}.Release|Win32.ActiveCfg = Release|Win32
-		{063A149D-E48C-499B-B13F-7A70C140A662}.Release|Win32.Build.0 = Release|Win32
-		{063A149D-E48C-499B-B13F-7A70C140A662}.Release|x64.ActiveCfg = Release|Win32
 		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Debug|Win32.ActiveCfg = Debug|Win32
 		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Debug|Win32.Build.0 = Debug|Win32
 		{68029F2E-F774-48FE-BC67-E0F493B1E9CD}.Debug|x64.ActiveCfg = Debug|Win32
@@ -762,6 +756,12 @@ Global
 		{38404369-5649-4458-8A99-A33CF4F4A632}.Release|Win32.ActiveCfg = Release|Win32
 		{38404369-5649-4458-8A99-A33CF4F4A632}.Release|Win32.Build.0 = Release|Win32
 		{38404369-5649-4458-8A99-A33CF4F4A632}.Release|x64.ActiveCfg = Release|Win32
+		{063A149D-E48C-499B-B13F-7A70C140A662}.Debug|Win32.ActiveCfg = Debug|Win32
+		{063A149D-E48C-499B-B13F-7A70C140A662}.Debug|Win32.Build.0 = Debug|Win32
+		{063A149D-E48C-499B-B13F-7A70C140A662}.Debug|x64.ActiveCfg = Debug|Win32
+		{063A149D-E48C-499B-B13F-7A70C140A662}.Release|Win32.ActiveCfg = Release|Win32
+		{063A149D-E48C-499B-B13F-7A70C140A662}.Release|Win32.Build.0 = Release|Win32
+		{063A149D-E48C-499B-B13F-7A70C140A662}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
