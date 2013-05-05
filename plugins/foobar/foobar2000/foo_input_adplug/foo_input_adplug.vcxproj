@@ -127,12 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="blargg\blargg_common.h" />
-    <ClInclude Include="blargg\blargg_config.h" />
-    <ClInclude Include="blargg\blargg_errors.h" />
-    <ClInclude Include="blargg\blargg_source.h" />
-    <ClInclude Include="blargg\Fir_Resampler.h" />
-    <ClInclude Include="blargg\Resampler.h" />
+    <ClInclude Include="lanczos_resampler.h" />
     <ClInclude Include="opl\adlib.h" />
     <ClInclude Include="opl\dbemuopl.h" />
     <ClInclude Include="opl\dbopl.h" />
@@ -140,10 +135,7 @@
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="blargg\blargg_common.cpp" />
-    <ClCompile Include="blargg\blargg_errors.cpp" />
-    <ClCompile Include="blargg\Fir_Resampler.cpp" />
-    <ClCompile Include="blargg\Resampler.cpp" />
+    <ClCompile Include="lanczos_resampler.c" />
     <ClCompile Include="opl\dbopl.cpp" />
     <ClCompile Include="fileprovider.cpp" />
     <ClCompile Include="foo_input_adplug.cpp" />
