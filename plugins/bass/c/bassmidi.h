@@ -1,6 +1,6 @@
 /*
 	BASSMIDI 2.4 C/C++ header file
-	Copyright (c) 2006-2012 Un4seen Developments Ltd.
+	Copyright (c) 2006-2013 Un4seen Developments Ltd.
 
 	See the BASSMIDI.CHM file for more detailed documentation
 */
@@ -59,6 +59,18 @@ typedef struct {
 	int preset;			// preset number (-1=all)
 	int bank;
 } BASS_MIDI_FONT;
+
+typedef struct {
+	HSOUNDFONT font;	// soundfont
+	int spreset;		// source preset number
+	int sbank;			// source bank number
+	int dpreset;		// destination preset/program number
+	int dbank;			// destination bank number
+	int dbanklsb;		// destination bank number LSB
+} BASS_MIDI_FONTEX;
+
+// BASS_MIDI_StreamSet/GetFonts flag
+#define BASS_MIDI_FONT_EX		0x1000000	// BASS_MIDI_FONTEX
 
 typedef struct {
 	const char *name;
@@ -192,14 +204,14 @@ typedef struct {
 // BASS_ChannelGetLength/GetPosition/SetPosition mode
 #define BASS_POS_MIDI_TICK		2		// tick position
 
+// BASS_MIDI_FontPack flags
+#define BASS_MIDI_PACK_NOHEAD		1	// don't send a WAV header to the encoder
+
 typedef struct {
 	const char *name;	// description
 	DWORD id;
 	DWORD flags;
 } BASS_MIDI_DEVICEINFO;
-
-// BASS_MIDI_FontPack flags
-#define BASS_MIDI_PACK_NOHEAD		1	// don't send a WAV header to the encoder
 
 typedef void (CALLBACK MIDIINPROC)(DWORD device, double time, const void *buffer, DWORD length, void *user);
 /* User MIDI input callback function.
@@ -216,8 +228,8 @@ HSTREAM BASSMIDIDEF(BASS_MIDI_StreamCreateFileUser)(DWORD system, DWORD flags, c
 HSTREAM BASSMIDIDEF(BASS_MIDI_StreamCreateEvents)(const BASS_MIDI_EVENT *events, DWORD ppqn, DWORD flags, DWORD freq);
 BOOL BASSMIDIDEF(BASS_MIDI_StreamGetMark)(HSTREAM handle, DWORD type, DWORD index, BASS_MIDI_MARK *mark);
 DWORD BASSMIDIDEF(BASS_MIDI_StreamGetMarks)(HSTREAM handle, int track, DWORD type, BASS_MIDI_MARK *marks);
-BOOL BASSMIDIDEF(BASS_MIDI_StreamSetFonts)(HSTREAM handle, const BASS_MIDI_FONT *fonts, DWORD count);
-DWORD BASSMIDIDEF(BASS_MIDI_StreamGetFonts)(HSTREAM handle, BASS_MIDI_FONT *fonts, DWORD count);
+BOOL BASSMIDIDEF(BASS_MIDI_StreamSetFonts)(HSTREAM handle, const void *fonts, DWORD count);
+DWORD BASSMIDIDEF(BASS_MIDI_StreamGetFonts)(HSTREAM handle, void *fonts, DWORD count);
 BOOL BASSMIDIDEF(BASS_MIDI_StreamLoadSamples)(HSTREAM handle);
 BOOL BASSMIDIDEF(BASS_MIDI_StreamEvent)(HSTREAM handle, DWORD chan, DWORD event, DWORD param);
 DWORD BASSMIDIDEF(BASS_MIDI_StreamEvents)(HSTREAM handle, DWORD mode, const void *events, DWORD length);
@@ -247,6 +259,43 @@ BOOL BASSMIDIDEF(BASS_MIDI_InStop)(DWORD device);
 
 #ifdef __cplusplus
 }
+
+static inline BOOL BASS_MIDI_StreamSetFonts(HSTREAM handle, const BASS_MIDI_FONTEX *fonts, DWORD count)
+{
+	return BASS_MIDI_StreamSetFonts(handle, (const void*)fonts, count|BASS_MIDI_FONT_EX);
+}
+
+static inline DWORD BASS_MIDI_StreamGetFonts(HSTREAM handle, BASS_MIDI_FONTEX *fonts, DWORD count)
+{
+	return BASS_MIDI_StreamGetFonts(handle, (void*)fonts, count|BASS_MIDI_FONT_EX);
+}
+
+#ifdef _WIN32
+static inline HSTREAM BASS_MIDI_StreamCreateFile(BOOL mem, const WCHAR *file, QWORD offset, QWORD length, DWORD flags, DWORD freq)
+{
+	return BASS_MIDI_StreamCreateFile(mem, (const void*)file, offset, length, flags|BASS_UNICODE, freq);
+}
+
+static inline HSTREAM BASS_MIDI_StreamCreateURL(const WCHAR *url, DWORD offset, DWORD flags, DOWNLOADPROC *proc, void *user, DWORD freq)
+{
+	return BASS_MIDI_StreamCreateURL((const char*)url, offset, flags|BASS_UNICODE, proc, user, freq);
+}
+
+static inline HSOUNDFONT BASS_MIDI_FontInit(const WCHAR *file, DWORD flags)
+{
+	return BASS_MIDI_FontInit((const void*)file, flags|BASS_UNICODE);
+}
+
+static inline BOOL BASS_MIDI_FontPack(HSOUNDFONT handle, const WCHAR *outfile, const WCHAR *encoder, DWORD flags)
+{
+	return BASS_MIDI_FontPack(handle, (const void*)outfile, (const void*)encoder, flags|BASS_UNICODE);
+}
+
+static inline BOOL BASS_MIDI_FontUnpack(HSOUNDFONT handle, const WCHAR *outfile, DWORD flags)
+{
+	return BASS_MIDI_FontUnpack(handle, (const void*)outfile, flags|BASS_UNICODE);
+}
+#endif
 #endif
 
 #endif

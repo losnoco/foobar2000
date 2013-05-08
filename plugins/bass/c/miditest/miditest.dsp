@@ -1,23 +1,23 @@
-# Microsoft Developer Studio Project File - Name="synth" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="miditest" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Application" 0x0101
 
-CFG=synth - Win32 Release
+CFG=miditest - Win32 Release
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "synth.mak".
+!MESSAGE NMAKE /f "miditest.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "synth.mak" CFG="synth - Win32 Release"
+!MESSAGE NMAKE /f "miditest.mak" CFG="miditest - Win32 Release"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "synth - Win32 Release" (based on "Win32 (x86) Application")
+!MESSAGE "miditest - Win32 Release" (based on "Win32 (x86) Application")
 !MESSAGE 
 
 # Begin Project
@@ -36,18 +36,18 @@ RSC=rc.exe
 # ADD CPP /nologo /MD /GX /I ".." /D "WIN32" /D "NDEBUG" /FD /c
 BSC32=bscmake.exe
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib comdlg32.lib comctl32.lib gdi32.lib /nologo /subsystem:windows /pdb:none /machine:I386
-# ADD LINK32 kernel32.lib user32.lib comdlg32.lib comctl32.lib gdi32.lib /nologo /subsystem:windows /pdb:none /machine:I386
+# ADD BASE LINK32 kernel32.lib user32.lib comdlg32.lib comctl32.lib /nologo /subsystem:windows /pdb:none /machine:I386
+# ADD LINK32 kernel32.lib user32.lib comdlg32.lib comctl32.lib /nologo /subsystem:windows /pdb:none /machine:I386
 # Begin Target
 
-# Name "synth - Win32 Release"
+# Name "miditest - Win32 Release"
 # Begin Source File
 
-SOURCE=synth.c
+SOURCE=miditest.c
 # End Source File
 # Begin Source File
 
-SOURCE=synth.rc
+SOURCE=miditest.rc
 # End Source File
 # Begin Source File
 
