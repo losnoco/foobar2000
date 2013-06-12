@@ -182,6 +182,7 @@ copy ..\..\..\glibconfig.h.win32 ..\..\..\glibconfig.h
       <CompileAs>CompileAsC</CompileAs>
       <ForcedIncludeFiles>msvc_recommended_pragmas.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Lib>
       <AdditionalDependencies>intl.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>

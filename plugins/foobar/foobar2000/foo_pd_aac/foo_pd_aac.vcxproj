@@ -70,6 +70,7 @@
       <AdditionalIncludeDirectories>../SDK;../../../fdk-aac/libAACdec/include;../../../fdk-aac/libSYS/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
