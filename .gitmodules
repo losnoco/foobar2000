@@ -109,3 +109,6 @@
 [submodule "plugins/foobar/foobar2000/foo_input_ncsf"]
 	path = plugins/foobar/foobar2000/foo_input_ncsf
 	url = git@github.com:kode54/foo_input_ncsf.git
+[submodule "plugins/foobar/foobar2000/foo_input_adplug"]
+	path = plugins/foobar/foobar2000/foo_input_adplug
+	url = git@github.com:kode54/foo_input_adplug.git
