@@ -112,3 +112,6 @@
 [submodule "plugins/foobar/foobar2000/foo_input_adplug"]
 	path = plugins/foobar/foobar2000/foo_input_adplug
 	url = git@github.com:kode54/foo_input_adplug.git
+[submodule "plugins/foobar/foobar2000/foo_sid"]
+	path = plugins/foobar/foobar2000/foo_sid
+	url = git://github.com/kode54/foo_sid.git
