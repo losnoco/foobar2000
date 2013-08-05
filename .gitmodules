@@ -115,3 +115,6 @@
 [submodule "plugins/foobar/foobar2000/foo_sid"]
 	path = plugins/foobar/foobar2000/foo_sid
 	url = git://github.com/kode54/foo_sid.git
+[submodule "plugins/midi_processing"]
+	path = plugins/midi_processing
+	url = git@github.com:kode54/midi_processing.git
