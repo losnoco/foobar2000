@@ -1,18 +1,12 @@
-[submodule "plugins/ogg/opus"]
-	path = plugins/ogg/opus
-	url = git://git.xiph.org/opus.git
-[submodule "plugins/ogg/opus-tools"]
-	path = plugins/ogg/opus-tools
-	url = git://git.xiph.org/opus-tools.git
 [submodule "plugins/dumb"]
 	path = plugins/dumb
-	url = git@github.com:kode54/dumb.git
+	url = git@bitbucket.org:kode54/dumb.git
 [submodule "plugins/Game_Music_Emu"]
 	path = plugins/Game_Music_Emu
-	url = git@github.com:kode54/Game_Music_Emu.git
+	url = git@bitbucket.org:kode54/game_music_emu.git
 [submodule "plugins/foobar/foobar2000/foo_input_hvl"]
 	path = plugins/foobar/foobar2000/foo_input_hvl
-	url = git@github.com:kode54/foo_input_hvl.git
+	url = git@bitbucket.org:kode54/foo_input_hvl.git
 [submodule "plugins/foobar/foobar2000/foo_dumb"]
 	path = plugins/foobar/foobar2000/foo_dumb
 	url = git@github.com:kode54/foo_dumb.git
@@ -60,7 +54,7 @@
 	url = git@github.com:kode54/foo_midi.git
 [submodule "plugins/ESP/Sega"]
 	path = plugins/ESP/Sega
-	url = git@github.com:kode54/Highly_Theoretical.git
+	url = git@bitbucket.org:kode54/highly-theoretical.git
 [submodule "plugins/foobar/foobar2000/foo_input_ht"]
 	path = plugins/foobar/foobar2000/foo_input_ht
 	url = git@github.com:kode54/foo_input_ht.git
@@ -84,7 +78,7 @@
 	url = git@github.com:kode54/playptmod.git
 [submodule "plugins/ESP/PSX"]
 	path = plugins/ESP/PSX
-	url = git@github.com:kode54/Highly_Experimental.git
+	url = git@bitbucket.org:kode54/highly-experimental.git
 [submodule "plugins/foobar/foobar2000/foo_psf"]
 	path = plugins/foobar/foobar2000/foo_psf
 	url = git@github.com:kode54/foo_psf.git
@@ -93,7 +87,7 @@
 	url = git@github.com:kode54/psflib.git
 [submodule "plugins/ESP/QSound"]
 	path = plugins/ESP/QSound
-	url = git@github.com:kode54/Highly_Quixotic.git
+	url = git@bitbucket.org:kode54/highly-quixotic.git
 [submodule "plugins/foobar/foobar2000/foo_input_qsf"]
 	path = plugins/foobar/foobar2000/foo_input_qsf
 	url = git@github.com:kode54/foo_input_qsf.git
@@ -105,7 +99,7 @@
 	url = git@github.com:kode54/foo_input_gsf.git
 [submodule "plugins/SSEQPlayer"]
 	path = plugins/SSEQPlayer
-	url = git@github.com:kode54/SSEQPlayer.git
+	url = git@bitbucket.org:kode54/sseqplayer.git
 [submodule "plugins/foobar/foobar2000/foo_input_ncsf"]
 	path = plugins/foobar/foobar2000/foo_input_ncsf
 	url = git@github.com:kode54/foo_input_ncsf.git
