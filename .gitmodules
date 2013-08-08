@@ -21,7 +21,7 @@
 	url = git@github.com:kode54/foo_osd.git
 [submodule "plugins/File_Extractor"]
 	path = plugins/File_Extractor
-	url = git@github.com:kode54/File_Extractor.git
+	url = git@bitbucket.org:kode54/file_extractor.git
 [submodule "plugins/foobar/foobar2000/foo_unpack_7z"]
 	path = plugins/foobar/foobar2000/foo_unpack_7z
 	url = git@github.com:kode54/foo_unpack_7z.git
