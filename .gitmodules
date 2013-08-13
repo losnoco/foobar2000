@@ -112,3 +112,6 @@
 [submodule "plugins/midi_processing"]
 	path = plugins/midi_processing
 	url = git@github.com:kode54/midi_processing.git
+[submodule "plugins/midisynth"]
+	path = plugins/midisynth
+	url = git@bitbucket.org:kode54/midisynth.git
