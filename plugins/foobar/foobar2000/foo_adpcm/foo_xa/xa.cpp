@@ -1,7 +1,11 @@
-#define MY_VERSION "1.6"
+#define MY_VERSION "1.7"
 
 /*
 	changelog
+
+2013-08-13 02:59 UTC - kode54
+- Fixed header check in case of odd CDXA total file size
+- Version is now 1.7
 
 2011-12-15 13:23 UTC - kode54
 - Fixed crashes in loop scanner when single sector length streams are found
@@ -862,8 +866,7 @@ static t_filesize check_cdxa(service_ptr_t<file> & r, abort_callback & p_abort)
 		if (!(length & 2047)) return ~0;
 		return 0; // no header
 	}
-	r->read_object( header, 4, p_abort );
-	if ( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) header ) ) + 8 > length ) throw exception_io_data();
+	r->skip( 4, p_abort );
 	r->read_object( header, 8, p_abort );
 	if ( pfc::byteswap_if_be_t( * ( ( t_uint32 * ) header ) ) != 'AXDC' ||
 		pfc::byteswap_if_be_t( ( ( t_uint32 * ) header )[ 1 ] ) != ' tmf' ) throw exception_io_data();

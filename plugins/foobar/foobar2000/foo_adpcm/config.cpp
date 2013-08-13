@@ -1,7 +1,11 @@
-#define MY_VERSION "1.10"
+#define MY_VERSION "1.11"
 
 /*
 	change log
+
+2013-08-13 02:59 UTC - kode54
+- Fixed header check in case of odd CDXA total file size
+- Version is now 1.11
 
 2011-12-15 13:23 UTC - kode54
 - Fixed a crash bug when XA scanner encounters single sector stream sequences
