@@ -176,6 +176,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "midi_processing", "..\..\mi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "midisynth", "..\..\midisynth\midisynth.vcxproj", "{987FC62D-EAF6-41ED-BE12-D8F867581534}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_vio2sf", "foo_input_vio2sf\foo_input_vio2sf.vcxproj", "{D4E78569-FB01-45A5-A22F-129FDE325E29}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vio2sf", "foo_input_vio2sf\vio2sf.vcxproj", "{8FB6AA5E-5B6B-431D-9CC5-B0A7491ECBD1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -730,6 +734,18 @@ Global
 		{987FC62D-EAF6-41ED-BE12-D8F867581534}.Release|Win32.ActiveCfg = Release|Win32
 		{987FC62D-EAF6-41ED-BE12-D8F867581534}.Release|Win32.Build.0 = Release|Win32
 		{987FC62D-EAF6-41ED-BE12-D8F867581534}.Release|x64.ActiveCfg = Release|Win32
+		{D4E78569-FB01-45A5-A22F-129FDE325E29}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D4E78569-FB01-45A5-A22F-129FDE325E29}.Debug|Win32.Build.0 = Debug|Win32
+		{D4E78569-FB01-45A5-A22F-129FDE325E29}.Debug|x64.ActiveCfg = Debug|Win32
+		{D4E78569-FB01-45A5-A22F-129FDE325E29}.Release|Win32.ActiveCfg = Release|Win32
+		{D4E78569-FB01-45A5-A22F-129FDE325E29}.Release|Win32.Build.0 = Release|Win32
+		{D4E78569-FB01-45A5-A22F-129FDE325E29}.Release|x64.ActiveCfg = Release|Win32
+		{8FB6AA5E-5B6B-431D-9CC5-B0A7491ECBD1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8FB6AA5E-5B6B-431D-9CC5-B0A7491ECBD1}.Debug|Win32.Build.0 = Debug|Win32
+		{8FB6AA5E-5B6B-431D-9CC5-B0A7491ECBD1}.Debug|x64.ActiveCfg = Debug|Win32
+		{8FB6AA5E-5B6B-431D-9CC5-B0A7491ECBD1}.Release|Win32.ActiveCfg = Release|Win32
+		{8FB6AA5E-5B6B-431D-9CC5-B0A7491ECBD1}.Release|Win32.Build.0 = Release|Win32
+		{8FB6AA5E-5B6B-431D-9CC5-B0A7491ECBD1}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
