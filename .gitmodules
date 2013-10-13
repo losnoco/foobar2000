@@ -118,3 +118,6 @@
 [submodule "plugins/foobar/foobar2000/foo_input_vio2sf"]
 	path = plugins/foobar/foobar2000/foo_input_vio2sf
 	url = ssh://git@bitbucket.org/kode54/foo_input_vio2sf.git
+[submodule "plugins/vio2sf"]
+	path = plugins/vio2sf
+	url = ssh://git@bitbucket.org/kode54/vio2sf.git
