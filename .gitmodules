@@ -115,3 +115,6 @@
 [submodule "plugins/midisynth"]
 	path = plugins/midisynth
 	url = git@bitbucket.org:kode54/midisynth.git
+[submodule "plugins/foobar/foobar2000/foo_input_vio2sf"]
+	path = plugins/foobar/foobar2000/foo_input_vio2sf
+	url = ssh://git@bitbucket.org/kode54/foo_input_vio2sf.git
