@@ -180,6 +180,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_vio2sf", "foo_inp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vio2sf", "..\..\vio2sf\vio2sf.vcxproj", "{804AF6A5-694F-4EE0-BDF2-5FF62B32FB4E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_snesapu", "foo_snesapu\foo_snesapu.vcxproj", "{85FBFD09-0099-4FE9-9DB6-78DB6F60F817}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -746,6 +748,12 @@ Global
 		{804AF6A5-694F-4EE0-BDF2-5FF62B32FB4E}.Release|Win32.ActiveCfg = Release|Win32
 		{804AF6A5-694F-4EE0-BDF2-5FF62B32FB4E}.Release|Win32.Build.0 = Release|Win32
 		{804AF6A5-694F-4EE0-BDF2-5FF62B32FB4E}.Release|x64.ActiveCfg = Release|Win32
+		{85FBFD09-0099-4FE9-9DB6-78DB6F60F817}.Debug|Win32.ActiveCfg = Debug|Win32
+		{85FBFD09-0099-4FE9-9DB6-78DB6F60F817}.Debug|Win32.Build.0 = Debug|Win32
+		{85FBFD09-0099-4FE9-9DB6-78DB6F60F817}.Debug|x64.ActiveCfg = Debug|Win32
+		{85FBFD09-0099-4FE9-9DB6-78DB6F60F817}.Release|Win32.ActiveCfg = Release|Win32
+		{85FBFD09-0099-4FE9-9DB6-78DB6F60F817}.Release|Win32.Build.0 = Release|Win32
+		{85FBFD09-0099-4FE9-9DB6-78DB6F60F817}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
