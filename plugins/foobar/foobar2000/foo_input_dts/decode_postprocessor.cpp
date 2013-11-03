@@ -27,6 +27,8 @@ bool is_chunk_silent( audio_chunk * chunk )
 	return true;
 }
 
+extern void set_channel_info( file_info & p_info, int dts_flags );
+
 class dts_postprocessor_instance : public decode_postprocessor_instance
 {
 	dsp_chunk_list_impl original_chunks;
@@ -423,7 +425,7 @@ public:
 				//p_out.info_set_int( "bitrate", bitrate / 1000 );
 				p_out.info_set( "codec", "DTS" );
 				p_out.info_set( "encoding", "lossy" );
-				p_out.info_set( "channel_mode", pfc::string_formatter() << dts_mode_list[ dts_flags & DCA_CHANNEL_MASK ] << ( dts_flags & DCA_LFE ? " + LFE" : "" ) );
+				set_channel_info( p_out, dts_flags );
 				return true;
 			}
 		}

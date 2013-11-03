@@ -5,6 +5,7 @@
 // foobar2000 component copyright (C) 2004-2006 Janne Hyvärinen
 //
 // Changes:
+//  0.3.2  (2013-11-03): Fixed channel mode reporting in the event that dts_flags has an invalid channel number field
 //  0.3.1  (2013-01-31): Amended decode postprocessor to emit silence in the same format as the DTS signal
 //  0.3.0  (2010-09-03): Added support for 48KHz source streams to the decode postprocessor
 //  0.2.9  (2010-05-23): Implemented decode_postprocessor interface, removed DSP
@@ -36,7 +37,7 @@
 //  0.0.4  (2004-10-15): Simplified packet decoder, added codec reporting, fixed typo in version number
 //  0.0.3  (2004-10-15): Added Matroska packet decoder support
 
-#define FD_VERSION  "0.3.1"
+#define FD_VERSION  "0.3.2"
 
 //#define DTS_DEBUG // print status info to console
 
@@ -75,6 +76,26 @@ static advconfig_checkbox_factory g_cfg_tag("Enable APEv2 tag writing", guid_ena
 //static advconfig_checkbox_factory g_cfg_drc("DTS - Use dynamic range compression", guid_enable_drc, advconfig_branch::guid_branch_decoding, 0, false);
 
 // -------------------------------------
+
+void set_channel_info( file_info & p_info, int dts_flags )
+{
+	static const char *dts_mode_list[DCA_CHANNEL_MAX + 1] = {
+		{ "Mono" },
+		{ "Dual Mono" },
+		{ "Stereo" },
+		{ "Stereo (SUMDIFF)" },
+		{ "Stereo (TOTAL)" },
+		{ "3 front channels" },
+		{ "2 front, 1 rear surround channel" },
+		{ "3 front, 1 rear surround channel" },
+		{ "2 front, 2 rear surround channels" },
+		{ "3 front, 2 rear surround channels" }
+	};
+	if ((dts_flags & DCA_CHANNEL_MASK) <= DCA_CHANNEL_MAX)
+		p_info.info_set("channel_mode", pfc::string_formatter() << dts_mode_list[dts_flags & DCA_CHANNEL_MASK] << (dts_flags & DCA_LFE ? " + LFE" : ""));
+	else
+		p_info.info_set("channel_mode", pfc::string_formatter() << "invalid (" << pfc::format_int( dts_flags & DCA_CHANNEL_MASK ) << (dts_flags & DCA_LFE ? " + LFE" : "") << ")" );
+}
 
 static void parse_tagtype_internal(const char *p_tagtype, bool &p_have_id3v1, bool &p_have_id3v2, bool &p_have_apev2)
 {
@@ -403,19 +424,6 @@ public:
 
     void get_info(file_info &p_info, abort_callback &p_abort)
     {
-        static const char *dts_mode_list[10] = {
-            { "Mono" },
-            { "Dual Mono" },
-            { "Stereo" },
-            { "Stereo (SUMDIFF)" },
-            { "Stereo (TOTAL)" },
-            { "3 front channels" },
-            { "2 front, 1 rear surround channel" },
-            { "3 front, 1 rear surround channel" },
-            { "2 front, 2 rear surround channels" },
-            { "3 front, 2 rear surround channels" }
-        };
-
         t_filesize current_pos = r->get_position(p_abort);
         //t_filesize tag_offset = r->get_size(p_abort);
 
@@ -442,7 +450,7 @@ public:
         p_info.info_set_int("bitrate", (int)((real_bitrate+500)/1000));
         p_info.info_set("codec", "DTS");
         p_info.info_set("encoding", "lossy");
-        p_info.info_set("channel_mode", pfc::string_formatter() << dts_mode_list[dts_flags & DCA_CHANNEL_MASK] << (dts_flags & DCA_LFE ? " + LFE" : ""));
+        set_channel_info( p_info, dts_flags );
     }
 
     void decode_initialize(unsigned p_flags, abort_callback &p_abort)
