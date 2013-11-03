@@ -124,3 +124,6 @@
 [submodule "plugins/foobar/foobar2000/foo_snesapu"]
 	path = plugins/foobar/foobar2000/foo_snesapu
 	url = ssh://git@bitbucket.org/kode54/foo_snesapu.git
+[submodule "plugins/foobar/foobar2000/foo_input_dts"]
+	path = plugins/foobar/foobar2000/foo_input_dts
+	url = ssh://git@bitbucket.org/kode54/foo_input_dts.git
