@@ -127,3 +127,6 @@
 [submodule "plugins/foobar/foobar2000/foo_input_dts"]
 	path = plugins/foobar/foobar2000/foo_input_dts
 	url = ssh://git@bitbucket.org/kode54/foo_input_dts.git
+[submodule "plugins/DFC"]
+	path = plugins/DFC
+	url = git@bitbucket.org:kode54/dfc.git
