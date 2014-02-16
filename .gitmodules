@@ -130,3 +130,9 @@
 [submodule "plugins/DFC"]
 	path = plugins/DFC
 	url = git@bitbucket.org:kode54/dfc.git
+[submodule "plugins/lazyusf"]
+	path = plugins/lazyusf
+	url = git@bitbucket.org:kode54/lazyusf.git
+[submodule "plugins/foobar/foobar2000/foo_input_usf"]
+	path = plugins/foobar/foobar2000/foo_input_usf
+	url = git@bitbucket.org:kode54/foo_input_usf.git
