@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DFC", "foo_festalon\DFC\DFC.vcxproj", "{253B2C35-5420-4773-87DA-54BD5B175B05}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DFC", "..\..\DFC\DFC.vcxproj", "{253B2C35-5420-4773-87DA-54BD5B175B05}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "akrip_static", "foo_cdda\akrip\akrip_static.vcxproj", "{9A7D9008-0770-4116-AC82-9F73964E329E}"
 EndProject
