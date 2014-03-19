@@ -184,6 +184,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lazyusf", "..\..\lazyusf\pr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_usf", "foo_input_usf\foo_input_usf.vcxproj", "{AC89187E-8BA8-44F0-A408-E3E9F8B5BC9B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "modplay", "..\..\modplay\prj\modplay\modplay.vcxproj", "{02FEE32E-344E-4C7D-B6DB-E06D86E496D3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -760,6 +762,12 @@ Global
 		{AC89187E-8BA8-44F0-A408-E3E9F8B5BC9B}.Release|Win32.ActiveCfg = Release|Win32
 		{AC89187E-8BA8-44F0-A408-E3E9F8B5BC9B}.Release|Win32.Build.0 = Release|Win32
 		{AC89187E-8BA8-44F0-A408-E3E9F8B5BC9B}.Release|x64.ActiveCfg = Release|Win32
+		{02FEE32E-344E-4C7D-B6DB-E06D86E496D3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{02FEE32E-344E-4C7D-B6DB-E06D86E496D3}.Debug|Win32.Build.0 = Debug|Win32
+		{02FEE32E-344E-4C7D-B6DB-E06D86E496D3}.Debug|x64.ActiveCfg = Debug|Win32
+		{02FEE32E-344E-4C7D-B6DB-E06D86E496D3}.Release|Win32.ActiveCfg = Release|Win32
+		{02FEE32E-344E-4C7D-B6DB-E06D86E496D3}.Release|Win32.Build.0 = Release|Win32
+		{02FEE32E-344E-4C7D-B6DB-E06D86E496D3}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
