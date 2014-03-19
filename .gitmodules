@@ -136,3 +136,6 @@
 [submodule "plugins/foobar/foobar2000/foo_input_usf"]
 	path = plugins/foobar/foobar2000/foo_input_usf
 	url = git@bitbucket.org:kode54/foo_input_usf.git
+[submodule "plugins/modplay"]
+	path = plugins/modplay
+	url = git@bitbucket.org:kode54/modplay.git
