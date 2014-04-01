@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2014 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000 Simon White
  *
@@ -24,13 +24,11 @@
 #define SIDTUNE_H
 
 #include <stdint.h>
-#include <fstream>
 #include <memory>
 
-#include "siddefs.h"
+#include "sidplayfp/siddefs.h"
 
 class SidTuneInfo;
-class SidTuneInfoImpl;
 class SidTuneBase;
 class sidmemory;
 
@@ -39,61 +37,76 @@ class sidmemory;
 */
 class SID_EXTERN SidTune
 {
- public:
+public:
     static const int MD5_LENGTH = 32;
 
- protected:  // -------------------------------------------------------------
-    std::auto_ptr<SidTuneBase> tune;
-
- private:  // -------------------------------------------------------------
-    bool m_status;
-
-    const char* m_statusString;
-
+private:
     /// Filename extensions to append for various file types.
     static const char** fileNameExtensions;
 
- public:  // ----------------------------------------------------------------
+protected:  // -------------------------------------------------------------
+    std::auto_ptr<SidTuneBase> tune;
+
+private:  // -------------------------------------------------------------
+    const char* m_statusString;
+
+    bool m_status;
+
+public:  // ----------------------------------------------------------------
 
     /**
     * Load a sidtune from a file.
     *
     * To retrieve data from standard input pass in filename "-".
     * If you want to override the default filename extensions use this
-    * contructor. Please note, that if the specified ``sidTuneFileName''
+    * contructor. Please note, that if the specified "fileName"
     * does exist and the loader is able to determine its file format,
     * this function does not try to append any file name extension.
-    * See ``sidtune.cpp'' for the default list of file name extensions.
-    * You can specific ``sidTuneFileName = 0'', if you do not want to
+    * See "SidTune.cpp" for the default list of file name extensions.
+    * You can specify "fileName = 0", if you do not want to
     * load a sidtune. You can later load one with open().
+    *
+    * @param fileName
+    * @param fileNameExt
+    * @param separatorIsSlash
     */
     SidTune(const char* fileName, const char **fileNameExt = 0,
             bool separatorIsSlash = false);
 
     /**
     * Load a single-file sidtune from a memory buffer.
-    * Currently supported: PSID format
+    * Currently supported: PSID format.
+    *
+    * @param oneFileFormatSidtune the buffer that contains song data
+    * @param sidtuneLength length of the buffer
     */
-    SidTune(const uint_least8_t* oneFileFormatSidtune, const uint_least32_t sidtuneLength);
+    SidTune(const uint_least8_t* oneFileFormatSidtune, uint_least32_t sidtuneLength);
 
-    virtual ~SidTune() {}
+    virtual ~SidTune();
 
     /**
-    * The sidTune class does not copy the list of file name extensions,
+    * The SidTune class does not copy the list of file name extensions,
     * so make sure you keep it. If the provided pointer is 0, the
     * default list will be activated. This is a static list which
-    *
     * is used by all SidTune objects.
+    *
+    * @param fileNameExt
     */
     void setFileNameExtensions(const char **fileNameExt);
 
     /**
     * Load a sidtune into an existing object from a file.
+    *
+    * @param fileName
+    * @param separatorIsSlash
     */
     void load(const char* fileName, bool separatorIsSlash = false);
 
     /**
     * Load a sidtune into an existing object from a buffer.
+    *
+    * @param sourceBuffer the buffer that contains song data
+    * @param bufferLen length of the buffer
     */
     void read(const uint_least8_t* sourceBuffer, uint_least32_t bufferLen);
 
@@ -101,25 +114,31 @@ class SID_EXTERN SidTune
     * Select sub-song.
     *
     * @param songNum the selected song (0 = default starting song)
-    * @return active song number
+    * @return active song number, 0 if no tune is loaded.
     */
     unsigned int selectSong(unsigned int songNum);
 
     /**
-    * Retrieve sub-song specific information.
+    * Retrieve current active sub-song specific information.
+    *
+    * @return a pointer to #SidTuneInfo, 0 if no tune is loaded. The pointer must not be deleted.
     */
     const SidTuneInfo* getInfo() const;
 
     /**
-    * Select sub-song (0 = default starting song)
-    * and retrieve active song information.
+    * Select sub-song and retrieve information.
+    *
+    * @param songNum the selected song (0 = default starting song)
+    * @return a pointer to #SidTuneInfo, 0 if no tune is loaded. The pointer must not be deleted.
     */
     const SidTuneInfo* getInfo(unsigned int songNum);
 
     /**
-    * Determine current state of object (true = okay, false = error).
-    * Upon error condition use ``getInfo'' to get a descriptive
-    * text string in ``SidTuneInfo.statusString''.
+    * Determine current state of object.
+    * Upon error condition use #statusString to get a descriptive
+    * text string.
+    *
+    * @return current state (true = okay, false = error)
     */
     bool getStatus() const;
 
@@ -137,11 +156,12 @@ class SID_EXTERN SidTune
     * Calculates the MD5 hash of the tune.
     * Not providing an md5 buffer will cause the internal one to be used.
     * If provided, buffer must be MD5_LENGTH + 1
-    * @return a pointer to the buffer containing the md5 string.
+    *
+    * @return a pointer to the buffer containing the md5 string, 0 if no tune is loaded.
     */
     const char *createMD5(char *md5 = 0);
 
- private:    // prevent copying
+private:    // prevent copying
     SidTune(const SidTune&);
     SidTune& operator=(SidTune&);
 };

@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2010 Antti Lankila
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,99 +23,46 @@
 #define SIDBANK_H
 
 #include "Bank.h"
-#include "sidplayfp/sidemu.h"
+#include "sidplayfp/c64/c64sid.h"
 
-/** @internal
+#include "NullSid.h"
+
+/**
 * SID
-* located at $D400-$D7FF
+* located at $D400-$D7FF, mirrored each 32 bytes
 */
 class SidBank : public Bank
 {
-public:
-    /** Maximum number of supported SIDs (mono and stereo) */
-    static const unsigned int MAX_SIDS = 2;
-
 private:
-    /**
-    * Size of mapping table. Each 32 bytes another SID chip base address
-    * can be assigned to.
-    */
-    static const int MAPPER_SIZE = 32;
-
-private:
-    /** SID chips */
-    sidemu *sid[MAX_SIDS];
-
-    /**
-    * SID mapping table in d4xx-d7xx.
-    * Maps a SID chip base address to a SID
-    * chip number.
-    */
-    int sidmapper[32];
+    /** SID chip */
+    c64sid *sid;
 
 public:
     SidBank()
-    {
-        for (unsigned int i = 0; i < MAX_SIDS; i++)
-            sid[i] = 0;
-
-        resetSIDMapper();
-    }
+      : sid(NullSid::getInstance())
+    {}
 
     void reset()
     {
-        for (unsigned int i = 0; i < MAX_SIDS; i++)
-        {
-            if (sid[i])
-                sid[i]->reset(0xf);
-        }
+        sid->reset(0xf);
     }
 
-    void resetSIDMapper()
+    uint8_t peek(uint_least16_t addr)
     {
-        for (int i = 0; i < MAPPER_SIZE; i++)
-            sidmapper[i] = 0;
+        return sid->peek(addr);
     }
 
-    /**
-    * Put a SID at desired location.
-    *
-    * @param address the address
-    * @param chipNum the SID chip number [1-MAX_SIDS[
-    */
-    void setSIDMapping(int address, int chipNum)
+    void poke(uint_least16_t addr, uint8_t data)
     {
-        sidmapper[address >> 5 & (MAPPER_SIZE - 1)] = chipNum;
-    }
-
-    uint8_t read(uint_least16_t addr)
-    {
-        const int i = sidmapper[addr >> 5 & (MAPPER_SIZE - 1)];
-        return sid[i] ? sid[i]->read(addr & 0x1f) : 0xff;
-    }
-
-    void write(uint_least16_t addr, uint8_t data)
-    {
-        const int i = sidmapper[addr >> 5 & (MAPPER_SIZE - 1)];
-        if (sid[i])
-            sid[i]->write(addr & 0x1f, data);
+        sid->poke(addr, data);
     }
 
     /**
     * Set SID emulation.
     *
-    * @param i the SID chip number
     * @param s the emulation
     */
-    void setSID(unsigned int i, sidemu *s) { sid[i] = s; }
-
-    /**
-    * Get SID emulation.
-    *
-    * @param i the SID chip number
-    * @ratuen the emulation
-    */
-    sidemu *getSID(unsigned int i) const { return (i < MAX_SIDS)?sid[i]:0; }
+    void setSID(c64sid *s) { sid = (s != 0) ? s : NullSid::getInstance(); }
 };
 
 #endif

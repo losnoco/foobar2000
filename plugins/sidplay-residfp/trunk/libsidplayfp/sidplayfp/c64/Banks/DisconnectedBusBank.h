@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2010 Antti Lankila
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 
 #include "Bank.h"
 
-/** @internal
+/**
 * IO1/IO2
 * memory mapped registers or machine code routines of optional external devices 
 * I/O Area #1 located at $DE00-$DEFF
@@ -35,10 +35,10 @@ class DisconnectedBusBank : public Bank
     /**
     * No device is connected so this is a no-op.
     */
-    void write(uint_least16_t addr, uint8_t data) {}
+    void poke(uint_least16_t addr SID_UNUSED, uint8_t data SID_UNUSED) {}
 
     // FIXME this should actually return last byte read from VIC
-    uint8_t read(uint_least16_t addr) { return 0; }
+    uint8_t peek(uint_least16_t addr SID_UNUSED) { return 0; }
 };
 
 #endif

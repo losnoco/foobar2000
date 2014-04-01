@@ -1,9 +1,9 @@
-m4_define([lib_major], [1])
+m4_define([lib_major], [2])
 m4_define([lib_minor], [0])
-m4_define([lib_level], [0alpha4])
+m4_define([lib_level], [0alpha])
 m4_define([lib_version], [lib_major.lib_minor.lib_level])
 
-AC_INIT([libsidplayfp], [lib_version])
+AC_INIT([libsidplayfp], [lib_version], [], [], [http://sourceforge.net/projects/sidplay-residfp/])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([sidplayfp/sidplayfp.cpp])
@@ -40,6 +40,8 @@ AC_PROG_CXX
 dnl Use C++ for tests.
 AC_LANG([C++])
 
+SID_CXX_COMPILE_STDCXX_11
+
 dnl check for hidden visibility support
 AX_CHECK_COMPILE_FLAG([-fvisibility=hidden -fvisibility-inlines-hidden], [has_visibility=yes], [has_visibility=no])
 AM_CONDITIONAL([HAVE_VISIBILITY], [test "x$has_visibility" = xyes])
@@ -57,12 +59,32 @@ AS_IF([test "x${ac_cv_header_stdint_h}" != "xyes"],
   [AC_MSG_ERROR([Required header stdint.h not found])]
 )
 
-dnl Checks for library functions.
-AC_CHECK_FUNCS([strncasecmp strcasecmp])
+dnl Checks for non-standard functions.
 
-dnl Check ANSI C++ ios features
-MY_CHECK_IOS_BIN
-MY_CHECK_IOS_OPENMODE
+AC_CHECK_DECL(
+    [strcasecmp],
+    [AC_CHECK_FUNCS([strcasecmp])],
+    [AC_CHECK_DECL(
+        [stricmp],
+        [AC_CHECK_FUNCS([stricmp])]
+    )]
+)
+
+AC_CHECK_DECL(
+    [strncasecmp],
+    [AC_CHECK_FUNCS([strncasecmp])],
+    [AC_CHECK_DECL(
+        [strnicmp],
+        [AC_CHECK_FUNCS([strnicmp])]
+    )]
+)
+
+AM_PATH_LIBGCRYPT(, [have_libgcrypt="yes"])
+
+if test "x$have_libgcrypt" = "xyes" ; then
+    AC_DEFINE([HAVE_LIBGCRYPT], [1], [Define to 1 if you have libgcrypt])
+fi
+AM_CONDITIONAL([LIBGCRYPT], [test "x$have_libgcrypt" = "xyes"])
 
 
 dnl libtool-style version-info number
@@ -79,13 +101,13 @@ dnl libtool-style version-info number
 #     value and # reset both “older interface age” and ”interface revision”
 #     to zero.
 
-LIBSIDPLAYCUR=3
+LIBSIDPLAYCUR=4
 LIBSIDPLAYREV=0
-LIBSIDPLAYAGE=0
+LIBSIDPLAYAGE=1
 LIBSIDPLAYVERSION=$LIBSIDPLAYCUR:$LIBSIDPLAYREV:$LIBSIDPLAYAGE
 
 LIBSTILVIEWCUR=0
-LIBSTILVIEWREV=0
+LIBSTILVIEWREV=1
 LIBSTILVIEWAGE=0
 LIBSTILVIEWVERSION=$LIBSTILVIEWCUR:$LIBSTILVIEWREV:$LIBSTILVIEWAGE
 
@@ -113,15 +135,25 @@ AS_IF([test x"$enable_inline" != "xno"],
   [RESID_INLINE=""; RESID_INLINING=0]
 )
 
+AC_ARG_ENABLE([mmx],
+  [AS_HELP_STRING([--enable-mmx],
+    [enable MMX optimization [default=no]])]
+)
 
-# hack to avoid warnings
-saveCPPFLAGS=$CPPFLAGS
-CPPFLAGS="$CPPFLAGS $CXXFLAGS"
+AS_IF([test x"$enable_mmx" = xyes],
+# Testing for mmintrin.h requires compiler support
+# for mmx support activated by specific flags
+# these are most probably defined in CXXFLAGS
+# but AC_CHECK_HEADERS uses only CPPFLAGS
+# so we need a workaround
+  [saveCPPFLAGS=$CPPFLAGS
+   CPPFLAGS="$CPPFLAGS $CXXFLAGS"
 
-AC_CHECK_HEADERS([mmintrin.h])
+   AC_CHECK_HEADERS([mmintrin.h])
 
-CPPFLAGS=$saveCPPFLAGS
-
+   CPPFLAGS=$saveCPPFLAGS]
+)
+ 
 AC_CACHE_CHECK([for working bool], ac_cv_cxx_bool,
 [AC_COMPILE_IFELSE(
   [AC_LANG_PROGRAM([],
@@ -162,7 +194,8 @@ AS_IF([test "$resid_cv_builtin_expect" = no],
 
 AC_CHECK_PROGS([DOXYGEN], [doxygen])
 AS_IF([test -z "$DOXYGEN"],
-  [AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])]
+  [AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])],
+  [AC_CHECK_PROG([DOT], [dot], [YES], [NO])]
 )
 
 AM_CONDITIONAL([HAVE_DOXYGEN], [test -n "$DOXYGEN"])

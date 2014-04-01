@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,48 +27,53 @@
 namespace reSIDfp
 {
 
-/** @internal
+/**
  * Return sample with linear interpolation.
  *
  * @author Antti Lankila
  */
-class ZeroOrderResampler : public Resampler {
+class ZeroOrderResampler : public Resampler
+{
 
 private:
-	int cachedSample;
+    int cachedSample;
 
-	const int cyclesPerSample;
-	int sampleOffset;
-	int outputValue;
+    const int cyclesPerSample;
+    int sampleOffset;
+    int outputValue;
 
 public:
-	ZeroOrderResampler(const double clockFrequency, const double samplingFrequency) :
-		cachedSample(0),
-		cyclesPerSample((int) (clockFrequency / samplingFrequency * 1024.f)),
-		sampleOffset(0),
-		outputValue(0) {}
+    ZeroOrderResampler(double clockFrequency, double samplingFrequency) :
+        cachedSample(0),
+        cyclesPerSample((int)(clockFrequency / samplingFrequency * 1024.)),
+        sampleOffset(0),
+        outputValue(0) {}
 
-	bool input(const int sample) {
-		bool ready = false;
+    bool input(int sample)
+    {
+        bool ready = false;
 
-		if (sampleOffset < 1024) {
-			outputValue = cachedSample + (sampleOffset * (sample - cachedSample) >> 10);
-			ready = true;
-			sampleOffset += cyclesPerSample;
-		}
-		sampleOffset -= 1024;
+        if (sampleOffset < 1024)
+        {
+            outputValue = cachedSample + (sampleOffset * (sample - cachedSample) >> 10);
+            ready = true;
+            sampleOffset += cyclesPerSample;
+        }
 
-		cachedSample = sample;
+        sampleOffset -= 1024;
 
-		return ready;
-	}
+        cachedSample = sample;
 
-	int output() const { return outputValue; }
+        return ready;
+    }
 
-	void reset() {
-		sampleOffset = 0;
-		cachedSample = 0;
-	}
+    int output() const { return outputValue; }
+
+    void reset()
+    {
+        sampleOffset = 0;
+        cachedSample = 0;
+    }
 };
 
 } // namespace reSIDfp

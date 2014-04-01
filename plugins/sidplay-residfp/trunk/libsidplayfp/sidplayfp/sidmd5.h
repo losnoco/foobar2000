@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,16 +25,28 @@
 #include <sstream>
 #include <iomanip>
 
-#include "utils/MD5/MD5.h"
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
 
-/** @internal
+#ifdef HAVE_LIBGCRYPT
+#  include "utils/md5_gcrypt.h"
+#else
+#  include "utils/MD5/MD5.h"
+#endif
+
+/**
 * A wrapper around the md5 implementation that provides
 * an hex formatted digest
 */
 class sidmd5
 {
 private:
+#ifdef HAVE_LIBGCRYPT
+    md5_gcrypt m_md5;
+#else
     MD5 m_md5;
+#endif
 
 public:
     /// Append a string to the message.
@@ -49,6 +61,10 @@ public:
     /// Return pointer to 32-byte hex fingerprint.
     std::string getDigest()
     {
+        const unsigned char* digest = m_md5.getDigest();
+        if (digest == 0)
+            return std::string();
+
         // Construct fingerprint.
         std::ostringstream ss;
         ss.fill('0');
@@ -56,11 +72,11 @@ public:
 
         for (int di = 0; di < 16; ++di)
         {
-            ss << std::setw(2) << (int) m_md5.getDigest()[di];
+            ss << std::setw(2) << (int) digest[di];
         }
 
         return ss.str();
     }
 };
-    
+
 #endif

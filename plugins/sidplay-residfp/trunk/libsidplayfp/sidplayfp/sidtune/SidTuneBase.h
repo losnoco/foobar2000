@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000 Simon White
  *
@@ -24,22 +24,24 @@
 #define SIDTUNEBASE_H
 
 #include <stdint.h>
-#include <fstream>
 #include <memory>
+#include <vector>
+#include <string>
 
-#include "sidplayfp/Buffer.h"
-#include "sidplayfp/SmartPtr.h"
+#include "SidTuneCfg.h"
+#include "SmartPtr.h"
+#include "SidTuneInfoImpl.h"
 #include "sidplayfp/SidTuneInfo.h"
-#include "sidplayfp/SidTune.h"
+#include "sidplayfp/siddefs.h"
 
-template class Buffer_sidtt<const uint_least8_t>;
+class sidmemory;
+template <class T> class SmartPtr_sidtt;
 
-class SidTuneInfoImpl;
-
-/** @internal
+/**
 * loadError
 */
-class loadError {
+class loadError
+{
 private:
     const char* m_msg;
 public:
@@ -47,23 +49,25 @@ public:
     const char* message() const { return m_msg; }
 };
 
-/** @internal
+/**
 * SidTuneBaseBase
 */
 class SidTuneBase
 {
-	friend class SidTuneMod;
- protected:
+protected:
+    typedef std::vector<uint_least8_t> buffer_t;
+
+protected:
     /// Also PSID file format limit.
     static const unsigned int MAX_SONGS = 256;
 
- private:
+private:
     /// C64KB+LOAD+PSID
     static const uint_least32_t MAX_FILELEN = 65536+2+0x7C;
 
     static const uint_least32_t MAX_MEMORY = 65536;
 
- public:  // ----------------------------------------------------------------
+public:  // ----------------------------------------------------------------
     virtual ~SidTuneBase() {}
 
     /**
@@ -71,10 +75,10 @@ class SidTuneBase
     *
     * To retrieve data from standard input pass in filename "-".
     * If you want to override the default filename extensions use this
-    * contructor. Please note, that if the specified ``sidTuneFileName''
+    * contructor. Please note, that if the specified "sidTuneFileName"
     * does exist and the loader is able to determine its file format,
     * this function does not try to append any file name extension.
-    * See ``sidtune.cpp'' for the default list of file name extensions.
+    * See "sidtune.cpp" for the default list of file name extensions.
     */
     static SidTuneBase* load(const char* fileName, const char **fileNameExt, bool separatorIsSlash);
 
@@ -112,9 +116,10 @@ class SidTuneBase
     * If provided, buffer must be MD5_LENGTH + 1
     * @return a pointer to the buffer containing the md5 string.
     */
-    virtual const char *createMD5(char *md5) { return 0; }
+    virtual const char *createMD5(char *md5 SID_UNUSED) { return 0; }
 
- protected:  // -------------------------------------------------------------
+protected:  // -------------------------------------------------------------
+public: // fuck it
 
     std::auto_ptr<SidTuneInfoImpl> info;
 
@@ -124,25 +129,26 @@ class SidTuneBase
     /// For files with header: offset to real data
     uint_least32_t fileOffset;
 
-    Buffer_sidtt<const uint_least8_t> cache;
+    buffer_t cache;
 
- protected:
+protected:
     SidTuneBase();
 
     /**
     * Does not affect status of object, and therefore can be used
     * to load files. Error string is put into info.statusString, though.
     */
-    static void loadFile(const char* fileName, Buffer_sidtt<const uint_least8_t>& bufferRef);
+    static void loadFile(const char* fileName,buffer_t& bufferRef);
 
     /// Convert 32-bit PSID-style speed word to internal tables.
     void convertOldStyleSpeedToTables(uint_least32_t speed,
          SidTuneInfo::clock_t clock = SidTuneInfo::CLOCK_PAL);
 
     /// Check compatibility details are sensible
-    bool checkCompatibility(void);
+    bool checkCompatibility();
+
     /// Check for valid relocation information
-    bool checkRelocInfo(void);
+    bool checkRelocInfo();
 
     /// Common address resolution procedure
     void resolveAddrs(const uint_least8_t* c64data);
@@ -164,17 +170,17 @@ class SidTuneBase
     * separator is the forward slash.
     */
     virtual void acceptSidTune(const char* dataFileName, const char* infoFileName,
-                       Buffer_sidtt<const uint_least8_t>& buf, bool isSlashedFileName);
+                        buffer_t& buf, bool isSlashedFileName);
 
     class PetsciiToAscii
     {
-     private:
+    private:
         std::string buffer;
-     public:
+    public:
         const char* convert(SmartPtr_sidtt<const uint_least8_t>& spPet);
     };
 
- private:  // ---------------------------------------------------------------
+private:  // ---------------------------------------------------------------
 
 #if !defined(SIDTUNE_NO_STDIN_LOADER)
     static SidTuneBase* getFromStdIn();
@@ -187,7 +193,7 @@ class SidTuneBase
     static void createNewFileName(std::string& destString,
                            const char* sourceName, const char* sourceExt);
 
- private:    // prevent copying
+private:    // prevent copying
     SidTuneBase(const SidTuneBase&);
     SidTuneBase& operator=(SidTuneBase&);
 };

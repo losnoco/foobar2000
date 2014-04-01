@@ -29,7 +29,7 @@
 
 #include "sidplayfp/SidInfo.h"
 
-#include "c64/Banks/SidBank.h"
+#include "c64/c64.h"
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -43,7 +43,11 @@
 #   define PACKAGE_VERSION VERSION
 #endif
 
-/** @internal
+#ifndef PACKAGE_URL
+#   define PACKAGE_URL URL
+#endif
+
+/**
 * The implementation of the SidInfo interface.
 */
 class SidInfoImpl : public SidInfo
@@ -76,7 +80,7 @@ public:
     SidInfoImpl() :
         m_name(PACKAGE_NAME),
         m_version(PACKAGE_VERSION),
-        m_maxsids(SidBank::MAX_SIDS),
+        m_maxsids(c64::MAX_SIDS),
         m_channels(1),
         m_driverAddr(0),
         m_driverLength(0),
@@ -85,8 +89,8 @@ public:
         m_credits.push_back(PACKAGE_NAME " V" PACKAGE_VERSION " Engine:\n"
             "\tCopyright (C) 2000 Simon White\n"
             "\tCopyright (C) 2007-2010 Antti Lankila\n"
-            "\tCopyright (C) 2010-2012 Leandro Nini\n"
-            "\thttp://sourceforge.net/projects/sidplay-residfp/\n");
+            "\tCopyright (C) 2010-2013 Leandro Nini\n"
+            "\t" PACKAGE_URL "\n");
     }
 
     const char *name() const { return m_name.c_str(); }

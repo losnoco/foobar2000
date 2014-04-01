@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000 Simon White
  *
@@ -26,14 +26,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "siddefs.h"
-#include "sidversion.h"
+#include "sidplayfp/siddefs.h"
+#include "sidplayfp/sidversion.h"
 
 class  SidConfig;
 class  SidTune;
 class  SidInfo;
 class  EventContext;
-class  SidTuneInfo;
 
 // Private Sidplayer
 namespace SIDPLAYFP_NAMESPACE
@@ -50,28 +49,29 @@ private:
     SIDPLAYFP_NAMESPACE::Player &sidplayer;
 
 public:
-    sidplayfp ();
-    virtual ~sidplayfp ();
+    sidplayfp();
+    ~sidplayfp();
 
     /**
     * Get the current engine configuration.
     *
     * @return a const reference to the current configuration.
     */
-    const SidConfig &config(void) const;
+    const SidConfig &config() const;
 
     /**
     * Get the current player informations.
     *
     * @return a const reference to the current info.
     */
-    const SidInfo &info(void) const;
+    const SidInfo &info() const;
 
     /**
     * Configure the engine.
+    * Check #error for detailed message if something goes wrong.
     *
     * @param cfg the new configuration
-    * @return true on sucess, false otherwise.
+    * @return true on success, false otherwise.
     */
     bool config(const SidConfig &cfg);
 
@@ -80,10 +80,10 @@ public:
     *
     * @return string error message.
     */
-    const char *error(void) const;
+    const char *error() const;
 
     /**
-    * 
+    * Set the fast-forward factor.
     *
     * @param percent
     */
@@ -91,6 +91,7 @@ public:
 
     /**
     * Load a tune.
+    * Check #error for detailed message if something goes wrong.
     *
     * @param tune the SidTune to load, 0 unloads current tune.
     * @return true on sucess, false otherwise.
@@ -101,7 +102,7 @@ public:
     * Produce samples to play.
     *
     * @param buffer pointer to the buffer to fill with samples.
-    * @param count the size of the buffer.
+    * @param count the size of the buffer measured in 16 bit samples.
     * @return the number of produced samples.
     */
     uint_least32_t play(short *buffer, uint_least32_t count);
@@ -111,15 +112,17 @@ public:
     *
     * @return true if playing, false otherwise.
     */
-    bool isPlaying(void) const;
+    bool isPlaying() const;
 
     /**
-    * Stop engine
+    * Stop the engine.
     */
-    void stop(void);
+    void stop();
 
     /**
     * Control debugging.
+    * Only has effect if library have been compiled
+    * with the --enable-debug option.
     *
     * @param enable enable/disable debugging.
     * @param out the file where to redirect the debug info.
@@ -133,42 +136,34 @@ public:
     * @param voice the channel to mute/unmute.
     * @param enable true unmutes the channel, false mutes it.
     */
-    void mute(const unsigned int sidNum, const unsigned int voice, const bool enable);
+    void mute(unsigned int sidNum, unsigned int voice, bool enable);
 
     /**
     * Get the current playing time with respect to resolution returned by timebase.
     *
     * @return the current playing time.
     */
-    uint_least32_t time(void) const;
+    uint_least32_t time() const;
 
     /**
-    * Set ROMs
-    * The ROMs are validate against konwn ones.
-    * The Kernal ROM is the only one mandatory.
+    * Set ROMs.
+    * The ROMs are validate against known ones.
     *
     * @param kernal pointer to Kernal ROM.
-    * @param basic pointer to Basic ROM, optional, generally needed only for BASIC tunes.
-    * @param character pointer to character generator ROM, optional.
+    * @param basic pointer to Basic ROM, generally needed only for BASIC tunes.
+    * @param character pointer to character generator ROM.
     */
     void setRoms(const uint8_t* kernal, const uint8_t* basic=0, const uint8_t* character=0);
 
     /**
     * Get the event scheduler.
     *
-    * @return the scheduler.
+    * @return pointer to the scheduler.
     */
     EventContext *getEventContext();
 
     /**
-    * Check the status of the engine.
-    *
-    * @return true if the engine is correctly initialized.
-    */
-    bool getStatus() const;
-
-    /**
-    * Get the CIA 1 Timer A programmed value
+    * Get the CIA 1 Timer A programmed value.
     */
     uint_least16_t getCia1TimerA() const;
 };

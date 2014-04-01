@@ -21,24 +21,10 @@
 #ifndef SIDTUNETOOLS_H
 #define SIDTUNETOOLS_H
 
-#include <string.h>
-
-#include "SidTuneCfg.h"
+#include <cstring>
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
-#endif
-
-#ifdef HAVE_STRCASECMP
-#   define MYSTRICMP strcasecmp
-#else
-#   define MYSTRICMP stricmp
-#endif
-
-#ifdef HAVE_STRNCASECMP
-#   define MYSTRNICMP strncasecmp
-#else
-#   define MYSTRNICMP strnicmp
 #endif
 
 class SidTuneTools
@@ -57,7 +43,7 @@ class SidTuneTools
     * Return pointer to file name extension in path.
     * Searching backwards until first dot is found.
     */
-    static char* fileExtOfPath(char* s);
+    static const char* fileExtOfPath(const char* s);
 };
 
 #endif  /* SIDTUNETOOLS_H */

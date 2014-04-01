@@ -1,95 +1,85 @@
-/***************************************************************************
-                          player.cpp  -  Frontend Player
-                             -------------------
-    begin                : Sun Oct 7 2001
-    copyright            : (C) 2001 by Simon White
-    email                : s_a_white@email.com
- ***************************************************************************/
+/*
+ * This file is part of sidplayfp, a console SID player.
+ *
+ * Copyright 2011-2013 Leandro Nini
+ * Copyright 2000-2001 Simon White
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+#include "player.h"
 
 #include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <sstream>
+#include <new>
+
 using std::cout;
 using std::cerr;
 using std::endl;
-#include <iomanip>
-#include <fstream>
 
-#include "config.h"
+#include <stdlib.h>
 
-#ifdef HAVE_EXCEPTIONS
-#   include <new>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
 #endif
 
-#ifdef _WIN32
-#   include <shlobj.h>
-#endif
-
-#include "player.h"
+#include "utils.h"
 #include "keyboard.h"
+#include "audio/AudioDrv.h"
+#include "audio/wav/WavFile.h"
 
-#ifdef MSVC_HEADER_LOCATIONS
-# include <sidbuilder.h>
-# include <SidInfo.h>
-# include <SidTuneInfo.h>
-#else
-# include <sidplayfp/sidbuilder.h>
-# include <sidplayfp/SidInfo.h>
-# include <sidplayfp/SidTuneInfo.h>
-#endif
+#include <sidplayfp/sidbuilder.h>
+#include <sidplayfp/SidInfo.h>
+#include <sidplayfp/SidTuneInfo.h>
 
 // Previous song select timeout (3 secs)
 #define SID2_PREV_SONG_TIMEOUT 4
 
 #ifdef HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H
-#  ifdef MSVC_HEADER_LOCATIONS
-#   include <builders/residfp-builder/residfp.h>
-#  else
-#   include <sidplayfp/builders/residfp.h>
-#  endif
-const char ConsolePlayer::RESIDFP_ID[]   = "ReSIDfp";
+#  include <sidplayfp/builders/residfp.h>
+const char ConsolePlayer::RESIDFP_ID[] = "ReSIDfp";
 #endif
 
 #ifdef HAVE_SIDPLAYFP_BUILDERS_RESID_H
-#  ifdef MSVC_HEADER_LOCATIONS
-#   include <builders/resid-builder/resid.h>
-#  else
-#   include <sidplayfp/builders/resid.h>
-#  endif
-const char ConsolePlayer::RESID_ID[]   = "ReSID";
+#  include <sidplayfp/builders/resid.h>
+const char ConsolePlayer::RESID_ID[] = "ReSID";
 #endif
 
 #ifdef HAVE_SIDPLAYFP_BUILDERS_HARDSID_H
-#  ifdef MSVC_HEADER_LOCATIONS
-#    include <builders/hardsid-builder/hardsid.h>
-#  else
-#    include <sidplayfp/builders/hardsid.h>
-#  endif
+#   include <sidplayfp/builders/hardsid.h>
 const char ConsolePlayer::HARDSID_ID[] = "HardSID";
 #endif
 
 
-ConsolePlayer::ConsolePlayer (const char * const name)
-:Event("External Timer\n"),
- m_name(name),
- m_tune(0),
- m_state(playerStopped),
- m_outfile(NULL),
- m_context(NULL),
- m_quietLevel(0),
- m_verboseLevel(0),
- m_cpudebug(false)
+ConsolePlayer::ConsolePlayer (const char * const name) :
+    Event("External Timer\n"),
+    m_name(name),
+    m_tune(0),
+    m_state(playerStopped),
+    m_outfile(NULL),
+    m_context(NULL),
+    m_filename(""),
+    m_quietLevel(0),
+    m_verboseLevel(0),
+    m_cpudebug(false)
 {   // Other defaults
-    m_filename       = "";
     m_filter.enabled = true;
     m_driver.device  = NULL;
+    m_driver.sid     = EMU_RESIDFP;
     m_timer.start    = 0;
     m_timer.length   = 0; // FOREVER
     m_timer.valid    = false;
@@ -109,19 +99,40 @@ ConsolePlayer::ConsolePlayer (const char * const name)
         IniConfig::emulation_section emulation = m_iniCfg.emulation();
 
         // INI Configuration Settings
-        m_engCfg.clockForced  = emulation.clockForced;
-        m_engCfg.clockDefault = emulation.clockSpeed;
-        m_engCfg.clockDefault = SidConfig::CLOCK_PAL;
+        m_engCfg.forceC64Model   = emulation.modelForced;
+        m_engCfg.defaultC64Model = emulation.modelDefault;
+        m_engCfg.defaultSidModel = emulation.sidModel;
+        m_engCfg.forceSidModel   = emulation.forceModel;
         m_engCfg.frequency    = audio.frequency;
         m_engCfg.playback     = audio.playback;
         m_precision           = audio.precision;
-        m_engCfg.sidDefault   = emulation.sidModel;
-        m_engCfg.forceModel   = emulation.forceModel;
-        m_engCfg.sidDefault   = SidConfig::MOS6581;
         m_filter.enabled      = emulation.filter;
         m_filter.bias         = emulation.bias;
         m_filter.filterCurve6581 = emulation.filterCurve6581;
         m_filter.filterCurve8580 = emulation.filterCurve8580;
+
+        if (emulation.engine)
+        {
+            if (strcmp(emulation.engine, "RESIDFP") == 0)
+            {
+                m_driver.sid    = EMU_RESIDFP;
+            }
+            else if (strcmp(emulation.engine, "RESID") == 0)
+            {
+                m_driver.sid    = EMU_RESID;
+            }
+#ifdef HAVE_SIDPLAYFP_BUILDERS_HARDSID_H
+            else if (strcmp(emulation.engine, "HARDSID") == 0)
+            {
+                m_driver.sid    = EMU_HARDSID;
+                m_driver.output = OUT_NULL;
+            }
+#endif
+            else if (strcmp(emulation.engine, "NONE") == 0)
+            {
+                m_driver.sid    = EMU_NONE;
+            }
+        }
     }
 
     createOutput (OUT_NULL, NULL);
@@ -139,53 +150,45 @@ ConsolePlayer::ConsolePlayer (const char * const name)
 uint8_t* ConsolePlayer::loadRom(const char* romPath, const int size, const char defaultRom[])
 {
     std::string dataPath;
-
-    // FIXME this code is dupicated in IniConfig.cpp
-#ifdef _WIN32
-    char szPath[MAX_PATH];
-
-    if (SHGetFolderPathA(NULL, CSIDL_APPDATA, NULL, 0, szPath)!=S_OK)
+    try
     {
-        char *path = getenv("USERPROFILE");
-        if (!path)
-            return 0;
-        dataPath.append(path).append("\\Application Data");
+        dataPath = utils::getDataPath();
     }
-    else
-        dataPath.append(szPath);
-#else
-    char *path = getenv("XDG_DATA_HOME");
-    if (!path)
+    catch (utils::error const &e)
     {
-        path = getenv("HOME");
-        if (!path)
-            return 0;
-        dataPath.append(path).append("/.local/share");
+        return 0;
     }
-    else
-        dataPath.append(path);
-#endif
+
     dataPath.append("/sidplayfp/").append(defaultRom);
+
+#if !defined _WIN32 && defined HAVE_UNISTD_H
+    if (::access(dataPath.c_str(), R_OK) != 0)
+    {
+        dataPath = PKGDATADIR;
+        dataPath.append(defaultRom);
+    }
+#endif
 
     std::ifstream is((romPath)?romPath:dataPath.c_str(), std::ios::binary);
 
     if (is.fail())
         goto error;
     {
-#ifdef HAVE_EXCEPTIONS
-    uint8_t *buffer = new(std::nothrow) uint8_t[size];
-#else
-    uint8_t *buffer = new uint8_t[size];
-#endif
-    if (buffer == 0)
-        goto error;
+        try
+        {
+            uint8_t *buffer = new uint8_t[size];
 
-    is.read((char*)buffer, size);
-    if (is.fail())
-        goto error;
+            is.read((char*)buffer, size);
+            if (is.fail())
+                goto error;
 
-    is.close();
-    return buffer;
+            is.close();
+            return buffer;
+        }
+        catch (std::bad_alloc const &ba)
+        {
+            goto error;
+        }
     }
 
 error:
@@ -193,12 +196,42 @@ error:
     return 0;
 }
 
+IAudio* ConsolePlayer::getWavFile(const SidTuneInfo *tuneInfo)
+{
+    const char *title = m_outfile;
+
+    // Generate a name for the wav file
+    if (title == NULL)
+    {
+        title = tuneInfo->dataFileName();
+        const size_t length = strlen(title);
+        size_t i = length;
+        while (i > 0)
+        {
+            if (title[--i] == '.')
+                break;
+        }
+        if (!i) i = length;
+
+        std::string name(title, i);
+
+        // Change name based on subtune
+        if (tuneInfo->songs() > 1)
+        {
+            std::ostringstream sstream;
+            sstream << "[" << tuneInfo->currentSong() << "]";
+            name.append(sstream.str());
+        }
+        name.append(WavFile::extension());
+        title = name.c_str();
+    }
+
+    return new WavFile(title);
+}
+
 // Create the output object to process sound buffer
 bool ConsolePlayer::createOutput (OUTPUTS driver, const SidTuneInfo *tuneInfo)
 {
-    char *name = NULL;
-    const char *title = m_outfile;
-
     // Remove old audio driver
     m_driver.null.close ();
     m_driver.selected = &m_driver.null;
@@ -214,23 +247,28 @@ bool ConsolePlayer::createOutput (OUTPUTS driver, const SidTuneInfo *tuneInfo)
     {
     case OUT_NULL:
         m_driver.device = &m_driver.null;
-        title = "";
     break;
 
     case OUT_SOUNDCARD:
-#ifdef HAVE_EXCEPTIONS
-        m_driver.device = new(std::nothrow) AudioDriver;
-#else
-        m_driver.device = new AudioDriver;
-#endif
+        try
+        {
+            m_driver.device = new audioDrv();
+        }
+        catch (std::bad_alloc const &ba)
+        {
+            m_driver.device = 0;
+        }
     break;
 
     case OUT_WAV:
-#ifdef HAVE_EXCEPTIONS
-        m_driver.device = new(std::nothrow) WavFile;
-#else
-        m_driver.device = new WavFile;
-#endif
+        try
+        {
+            m_driver.device = getWavFile(tuneInfo);
+        }
+        catch (std::bad_alloc const &ba)
+        {
+            m_driver.device = 0;
+        }
     break;
 
     default:
@@ -245,42 +283,6 @@ bool ConsolePlayer::createOutput (OUTPUTS driver, const SidTuneInfo *tuneInfo)
         return false;
     }
 
-    // Generate a name for the wav file
-    if (title == NULL)
-    {
-        size_t length, i;
-        title  = tuneInfo->dataFileName();
-        length = strlen (title);
-        i      = length;
-        while (i > 0)
-        {
-            if (title[--i] == '.')
-                break;
-        }
-        if (!i) i = length;
-
-#ifdef HAVE_EXCEPTIONS
-        name = new(std::nothrow) char[i + 10];
-#else
-        name = new char[i + 10];
-#endif
-        if (!name)
-        {
-            displayError (ERR_NOT_ENOUGH_MEMORY);
-            return false;
-        }
-
-        strcpy (name, title);
-        // Prevent extension ".sid.wav"
-        name[i] = '\0';
-
-        // Change name based on subtune
-        if (tuneInfo->songs() > 1)
-            sprintf (&name[i], "[%u]", tuneInfo->currentSong());
-        strcat (&name[i], m_driver.device->extension ());
-        title = name;
-    }
-
     // Configure with user settings
     m_driver.cfg.frequency = m_engCfg.frequency;
     m_driver.cfg.precision = m_precision;
@@ -291,17 +293,18 @@ bool ConsolePlayer::createOutput (OUTPUTS driver, const SidTuneInfo *tuneInfo)
 
     {   // Open the hardware
         bool err = false;
-        if (m_driver.device->open (m_driver.cfg, title) == NULL)
+        if (!m_driver.device->open (m_driver.cfg))
             err = true;
+
         // Can't open the same driver twice
         if (driver != OUT_NULL)
         {
-            if (m_driver.null.open (m_driver.cfg, title) == NULL)
-                err = true;;
+            if (!m_driver.null.open (m_driver.cfg))
+                err = true;
         }
-        if (name != NULL)
-            delete [] name;
-        if (err) {
+
+        if (err)
+        {
             displayError(m_driver.device->getErrorString());
             return false;
         }
@@ -347,13 +350,10 @@ bool ConsolePlayer::createSidEmu (SIDEMUS emu)
 #ifdef HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H
     case EMU_RESIDFP:
     {
-#ifdef HAVE_EXCEPTIONS
-        ReSIDfpBuilder *rs = new(std::nothrow) ReSIDfpBuilder( RESIDFP_ID );
-#else
-        ReSIDfpBuilder *rs = new ReSIDfpBuilder( RESIDFP_ID );
-#endif
-        if (rs)
+        try
         {
+            ReSIDfpBuilder *rs = new ReSIDfpBuilder( RESIDFP_ID );
+
             m_engCfg.sidEmulation = rs;
             if (!rs->getStatus()) goto createSidEmu_error;
             rs->create ((m_engine.info ()).maxsids());
@@ -364,6 +364,7 @@ bool ConsolePlayer::createSidEmu (SIDEMUS emu)
             if (m_filter.filterCurve8580)
                 rs->filter8580Curve((double)m_filter.filterCurve8580);
         }
+        catch (std::bad_alloc const &ba) {}
         break;
     }
 #endif // HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H
@@ -371,13 +372,10 @@ bool ConsolePlayer::createSidEmu (SIDEMUS emu)
 #ifdef HAVE_SIDPLAYFP_BUILDERS_RESID_H
     case EMU_RESID:
     {
-#ifdef HAVE_EXCEPTIONS
-        ReSIDBuilder *rs = new(std::nothrow) ReSIDBuilder( RESID_ID );
-#else
-        ReSIDBuilder *rs = new ReSIDfpBuilder( RESID_ID );
-#endif
-        if (rs)
+        try
         {
+            ReSIDBuilder *rs = new ReSIDBuilder( RESID_ID );
+
             m_engCfg.sidEmulation = rs;
             if (!rs->getStatus()) goto createSidEmu_error;
             rs->create ((m_engine.info ()).maxsids());
@@ -385,6 +383,7 @@ bool ConsolePlayer::createSidEmu (SIDEMUS emu)
 
             rs->bias(m_filter.bias);
         }
+        catch (std::bad_alloc const &ba) {}
         break;
     }
 #endif // HAVE_SIDPLAYFP_BUILDERS_RESID_H
@@ -392,18 +391,16 @@ bool ConsolePlayer::createSidEmu (SIDEMUS emu)
 #ifdef HAVE_SIDPLAYFP_BUILDERS_HARDSID_H
     case EMU_HARDSID:
     {
-#ifdef HAVE_EXCEPTIONS
-        HardSIDBuilder *hs = new(std::nothrow) HardSIDBuilder( HARDSID_ID );
-#else
-        HardSIDBuilder *hs = new HardSIDBuilder( HARDSID_ID );
-#endif
-        if (hs)
+        try
         {
+            HardSIDBuilder *hs = new HardSIDBuilder( HARDSID_ID );
+
             m_engCfg.sidEmulation = hs;
             if (!hs->getStatus()) goto createSidEmu_error;
             hs->create ((m_engine.info ()).maxsids());
             if (!hs->getStatus()) goto createSidEmu_error;
         }
+        catch (std::bad_alloc const &ba) {}
         break;
     }
 #endif // HAVE_SIDPLAYFP_BUILDERS_HARDSID_H
@@ -441,12 +438,6 @@ createSidEmu_error:
 
 bool ConsolePlayer::open (void)
 {
-    if (!m_engine.getStatus())
-    {
-        displayError (m_engine.error ());
-        return false;
-    }
-
     if ((m_state & ~playerFast) == playerRestart)
     {
         if (m_quietLevel < 2)
@@ -474,7 +465,7 @@ bool ConsolePlayer::open (void)
         return false;
 
     // Configure engine with settings
-    if (m_engine.config (m_engCfg) < 0)
+    if (!m_engine.config (m_engCfg))
     {   // Config failed
         displayError (m_engine.error ());
         return false;
@@ -497,7 +488,7 @@ bool ConsolePlayer::open (void)
     // so try the songlength database
     if (!m_timer.valid)
     {
-        int_least32_t length = m_database.length (m_tune);
+        const int_least32_t length = m_database.length (m_tune);
         if (length > 0)
             m_timer.length = length;
     }
@@ -524,14 +515,14 @@ bool ConsolePlayer::open (void)
     m_state = playerRunning;
 
     // Update display
-    menu  ();
-    event ();
+    menu();
+    event();
     return true;
 }
 
 void ConsolePlayer::close ()
 {
-    m_engine.stop   ();
+    m_engine.stop();
     if (m_state == playerExit)
     {   // Natural finish
         emuflush ();
@@ -552,7 +543,7 @@ void ConsolePlayer::close ()
         // end up in a suitable location
         if ((m_iniCfg.console ()).ansi)
             cerr << '\x1b' << "[0m";
-#ifndef HAVE_MSWINDOWS
+#ifndef _WIN32
         cerr << endl;
 #endif
     }
@@ -577,14 +568,12 @@ void ConsolePlayer::emuflush ()
 // Out play loop to be externally called
 bool ConsolePlayer::play ()
 {
-    short *buffer = m_driver.selected->buffer ();
-    uint_least32_t length = m_driver.cfg.bufSize;
-
     if (m_state == playerRunning)
     {
         // Fill buffer
-        uint_least32_t ret;
-        ret = m_engine.play (buffer, length);
+        short *buffer = m_driver.selected->buffer ();
+        const uint_least32_t length = m_driver.cfg.bufSize;
+        const uint_least32_t ret = m_engine.play (buffer, length);
         if (ret < length)
         {
             if (m_engine.isPlaying ())
@@ -621,10 +610,9 @@ bool ConsolePlayer::play ()
 #elif HAVE_TSID == 2
         if (m_tsid)
         {
-            int_least32_t length;
             char md5[SidTune::MD5_LENGTH + 1];
             m_tune.createMD5 (md5);
-            length = m_database.length (md5, m_track.selected);
+            int_least32_t length = m_database.length (md5, m_track.selected);
             // ignore errors
             if (length < 0)
                 length = 0;
@@ -648,7 +636,7 @@ void ConsolePlayer::stop ()
 // External Timer Event
 void ConsolePlayer::event (void)
 {
-    uint_least32_t seconds = m_engine.time();
+    const uint_least32_t seconds = m_engine.time();
     if ( !m_quietLevel )
     {
         cerr << "\b\b\b\b\b" << std::setw(2) << std::setfill('0')
@@ -704,11 +692,9 @@ void ConsolePlayer::displayError (const char *error)
 // Keyboard handling
 void ConsolePlayer::decodeKeys ()
 {
-    int action;
-
     do
     {
-        action = keyboard_decode ();
+        const int action = keyboard_decode ();
         if (action == A_INVALID)
             continue;
 

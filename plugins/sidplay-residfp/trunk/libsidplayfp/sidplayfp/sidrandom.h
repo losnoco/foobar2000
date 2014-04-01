@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- *  Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ *  Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,13 +21,13 @@
 #ifndef SIDRANDOM_H
 #define SIDRANDOM_H
 
-/** @internal
+/**
  * Simple thread-safe PRNG.
  */
 class sidrandom
 {
 private:
-    int m_seed;
+    unsigned int m_seed;
 
 public:
     /**
@@ -35,13 +35,13 @@ public:
     *
     * @param seed 
     */ 
-    sidrandom(int seed) :
-      m_seed(seed * 1103515245 + 12345) {}
+    sidrandom(unsigned int seed) :
+        m_seed(seed * 1103515245 + 12345) {}
 
     /**
     * Generate new pseudo-random number
     */ 
-    int next()
+    unsigned int next()
     {
         m_seed = m_seed * 13 + 1;
         return m_seed;

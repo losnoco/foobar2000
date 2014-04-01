@@ -1,62 +1,37 @@
-/***************************************************************************
-                          audiodrv.h  -  OSS sound support
-                             -------------------
-    begin                : Sat Jul 8 2000
-    copyright            : (C) 2000 by Simon White
-    email                : s_a_white@email.com
- ***************************************************************************/
+/*
+ * This file is part of sidplayfp, a console SID player.
+ *
+ * Copyright 2008 Antti Lankila
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-/***************************************************************************
- *  $Log: audiodrv.h,v $
- *  Revision 1.5  2001/10/30 23:35:35  s_a_white
- *  Added pause support.
- *
- *  Revision 1.4  2001/07/14 16:53:29  s_a_white
- *  Updated to use new audio base class.
- *
- *  Revision 1.3  2001/01/23 17:50:59  s_a_white
- *  Removed duplicate #endif.
- *
- *  Revision 1.2  2001/01/18 18:36:16  s_a_white
- *  Support for multiple drivers added.  C standard update applied (There
- *  should be no spaces before #)
- *
- *  Revision 1.1  2001/01/08 16:41:43  s_a_white
- *  App and Library Seperation
- *
- *  Revision 1.3  2000/12/11 19:09:12  s_a_white
- *  AC99 Update.
- *
- ***************************************************************************/
+#ifndef AUDIO_PULSE_H
+#define AUDIO_PULSE_H
 
-// --------------------------------------------------------------------------
-// ``Open Sound System (OSS)'' specific audio driver interface.
-// --------------------------------------------------------------------------
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
 
-#ifndef audio_pulse_h_
-#define audio_pulse_h_
-
-#include "config.h"
-#ifdef   HAVE_PULSE
+#ifdef HAVE_PULSE
 
 #ifndef AudioDriver
-#define AudioDriver Audio_Pulse
+#  define AudioDriver Audio_Pulse
 #endif
 
 #include <pulse/simple.h>
-#include <sys/ioctl.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <unistd.h>
 
 #include "../AudioBase.h"
 
@@ -70,15 +45,12 @@ public:  // --------------------------------------------------------- public
     Audio_Pulse();
     ~Audio_Pulse();
 
-    short *open  (AudioConfig &cfg, const char *name);
-    void  close ();
-    short *reset ()
-    {
-        return _sampleBuffer;
-    }
-    short *write ();
-    void  pause () {;}
+    bool open  (AudioConfig &cfg);
+    void close ();
+    void reset () {}
+    bool write ();
+    void pause () {}
 };
 
 #endif // HAVE_PULSE
-#endif // audio_pulse_h_
+#endif // AUDIO_PULSE_H

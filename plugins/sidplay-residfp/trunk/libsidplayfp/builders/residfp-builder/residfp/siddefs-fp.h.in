@@ -17,43 +17,35 @@
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //  ---------------------------------------------------------------------------
 
-#ifndef VICE__SIDDEFS_FP_H__
-#define VICE__SIDDEFS_FP_H__
+#ifndef SIDDEFS_FP_H
+#define SIDDEFS_FP_H
 
 #ifndef M_PI
 #  define M_PI    3.14159265358979323846
 #endif
 
-// Define bool, true, and false for C++ compilers that lack these keywords.
-#define RESID_HAVE_BOOL @RESID_HAVE_BOOL@
-
-#if !RESID_HAVE_BOOL
-typedef int bool;
-const bool true = 1;
-const bool false = 0;
+// Branch prediction macros, lifted off the Linux kernel.
+#if RESID_BRANCH_HINTS && HAVE_BUILTIN_EXPECT
+#  define likely(x)      __builtin_expect(!!(x), 1)
+#  define unlikely(x)    __builtin_expect(!!(x), 0)
+#else
+#  define likely(x)      (x)
+#  define unlikely(x)    (x)
 #endif
-
-typedef unsigned char reg4;
-typedef unsigned char reg8;
-typedef unsigned short reg12;
-typedef unsigned short reg16;
-typedef unsigned int reg24;
-typedef unsigned int reg32;
 
 namespace reSIDfp {
 
-typedef enum chip_model { MOS6581=1, MOS8580 } ChipModel;
+typedef enum { MOS6581=1, MOS8580 } ChipModel;
 
-typedef enum sampling_method { DECIMATE=1, RESAMPLE } SamplingMethod;
+typedef enum { DECIMATE=1, RESAMPLE } SamplingMethod;
 }
-
 
 extern "C"
 {
 #ifndef __VERSION_CC__
 extern const char* residfp_version_string;
 #else
-const char* residfp_version_string = "0.0.2";
+const char* residfp_version_string = "@PACKAGE_VERSION@";
 #endif
 }
 
@@ -61,4 +53,4 @@ const char* residfp_version_string = "0.0.2";
 #define RESID_INLINING @RESID_INLINING@
 #define RESID_INLINE @RESID_INLINE@
 
-#endif // not __SIDDEFS_H__
+#endif // SIDDEFS_FP_H

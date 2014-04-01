@@ -1,32 +1,39 @@
-/***************************************************************************
-                          menu.cpp  -  Ansi Console Menu
-                             -------------------
-    begin                : Sun Oct 7 2001
-    copyright            : (C) 2001 by Simon White
-    email                : s_a_white@email.com
- ***************************************************************************/
+/*
+ * This file is part of sidplayfp, a console SID player.
+ *
+ * Copyright 2011-2013 Leandro Nini
+ * Copyright 2000-2001 Simon White
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+#include "player.h"
 
 #include <ctype.h>
+
 #include <iostream>
+#include <iomanip>
+
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::dec;
 using std::hex;
 using std::flush;
-#include <iomanip>
 using std::setw;
 using std::setfill;
-#include "player.h"
 
 #include <sidplayfp/SidInfo.h>
 #include <sidplayfp/SidTuneInfo.h>
@@ -65,25 +72,29 @@ void ConsolePlayer::menu ()
         cerr << info.name() + 1 << " V" << info.version() << endl;
     }
 
-    consoleTable (tableSeperator);
-
-    if (tuneInfo->numberOfInfoStrings() == 3) //FIXME
+    const unsigned int n = tuneInfo->numberOfInfoStrings();
+    if (n)
     {
+        consoleTable (tableSeperator);
+
         consoleTable  (tableMiddle);
         consoleColour (cyan, true);
         cerr << " Title        : ";
         consoleColour (magenta, true);
         cerr << tuneInfo->infoString(0) << endl;
-        consoleTable  (tableMiddle);
-        consoleColour (cyan, true);
-        cerr << " Author       : ";
-        consoleColour (magenta, true);
-        cerr << tuneInfo->infoString(1) << endl;
-        consoleTable  (tableMiddle);
-        consoleColour (cyan, true);
-        cerr << " Released     : ";
-        consoleColour (magenta, true);
-        cerr << tuneInfo->infoString(2) << endl;
+        if (n>1)
+        {
+            consoleTable  (tableMiddle);
+            consoleColour (cyan, true);
+            cerr << " Author       : ";
+            consoleColour (magenta, true);
+            cerr << tuneInfo->infoString(1) << endl;
+            consoleTable  (tableMiddle);
+            consoleColour (cyan, true);
+            cerr << " Released     : ";
+            consoleColour (magenta, true);
+            cerr << tuneInfo->infoString(2) << endl;
+        }
     }
 
     for (unsigned int i = 0; i < tuneInfo->numberOfCommentStrings(); i++)
@@ -229,22 +240,19 @@ void ConsolePlayer::menu ()
         cerr << "Filter = "
              << ((m_filter.enabled == true) ? "Yes" : "No");
         cerr << ", Model = ";
-        switch (tuneInfo->sidModel1())
-        {
-        case SidTuneInfo::SIDMODEL_UNKNOWN:
-            cerr << "UNKNOWN";
-            break;
-        case SidTuneInfo::SIDMODEL_6581:
-            cerr << "6581";
-            break;
-        case SidTuneInfo::SIDMODEL_8580:
-            cerr << "8580";
-            break;
-        case SidTuneInfo::SIDMODEL_ANY:
-            cerr << "ANY";
-            break;
-        }
+        cerr << getModel(tuneInfo->sidModel1());
         cerr << endl;
+        
+        if (tuneInfo->isStereo())
+        {
+            consoleTable  (tableMiddle);
+            consoleColour (yellow, true);
+            cerr << "              : ";
+            consoleColour (white, false);
+            cerr << "2nd SID = $" << hex << tuneInfo->sidChipBase2() << dec;
+            cerr << ", Model = " << getModel(tuneInfo->sidModel2());
+            cerr << endl;
+        }
 
         if (m_verboseLevel > 1)
         {
@@ -326,34 +334,50 @@ void ConsolePlayer::consoleTable (player_table_t table)
         cerr << (m_iniCfg.console ()).topLeft << setw(tableWidth)
              << setfill ((m_iniCfg.console ()).horizontal) << ""
              << (m_iniCfg.console ()).topRight;
-    break;
+        break;
 
     case tableMiddle:
         cerr << setw(tableWidth + 1) << setfill(' ') << ""
              << (m_iniCfg.console ()).vertical << '\r'
              << (m_iniCfg.console ()).vertical;
-    return;
+        return;
 
     case tableSeperator:
         cerr << (m_iniCfg.console ()).junctionRight << setw(tableWidth)
              << setfill ((m_iniCfg.console ()).horizontal) << ""
              << (m_iniCfg.console ()).junctionLeft;
-    break;
+        break;
 
     case tableEnd:
         cerr << (m_iniCfg.console ()).bottomLeft << setw(tableWidth)
              << setfill ((m_iniCfg.console ()).horizontal) << ""
              << (m_iniCfg.console ()).bottomRight;
-    break;
+        break;
     }
 
     // Move back to begining of row and skip first char
     cerr << "\n";
 }
 
+
 // Restore Ansi Console to defaults
 void ConsolePlayer::consoleRestore ()
 {
     if ((m_iniCfg.console ()).ansi)
         cerr << '\x1b' << "[0m";
+}
+
+const char* ConsolePlayer::getModel (SidTuneInfo::model_t model)
+{
+    switch (model)
+    {
+    case SidTuneInfo::SIDMODEL_UNKNOWN:
+        return "UNKNOWN";
+    case SidTuneInfo::SIDMODEL_6581:
+        return "6581";
+    case SidTuneInfo::SIDMODEL_8580:
+        return "8580";
+    case SidTuneInfo::SIDMODEL_ANY:
+        return "ANY";
+    }
 }

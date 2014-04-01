@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 #include <memory>
 
 #include "sidplayfp/sidplayfp.h"
@@ -37,37 +38,6 @@
 #define KERNAL_PATH "/usr/local/lib/vice/C64/kernal"
 #define BASIC_PATH "/usr/local/lib/vice/C64/basic"
 #define CHARGEN_PATH "/usr/local/lib/vice/C64/chargen"
-
-class NullSID: public sidemu
-{
-public:
-    NullSID () : sidemu(0) { m_buffer = 0; }
-
-    void    reset (uint8_t) {}
-    uint8_t read  (uint_least8_t) { return 0; }
-    void    write (uint_least8_t, uint8_t) {}
-    void    clock() {}
-    const   char *credits (void) const { return ""; }
-    void    voice (const unsigned int num, const bool mute) {}
-    void    model    (SidConfig::model_t model)  {}
-    const   char *error   (void) const { return ""; }
-    bool    lock     (EventContext *env) { return true; }
-    void    unlock   () {}
-};
-
-class FakeBuilder: public sidbuilder
-{
-private:
-    NullSID sidobj;
-
-public:
-    FakeBuilder  (const char * const name)
-      : sidbuilder(name) { sidobjs.insert (new NullSID()); }
-    ~FakeBuilder (void) {}
-
-    const char *credits (void) const { return ""; }
-    void        filter (const bool enable) {}
-};
 
 void loadRom(const char* path, char* buffer)
 {
@@ -90,8 +60,6 @@ int main(int argc, char* argv[])
 
     m_engine.setRoms((const uint8_t*)kernal, (const uint8_t*)basic, (const uint8_t*)chargen);
 
-    std::auto_ptr<FakeBuilder> rs(new FakeBuilder("Test"));
-
     std::string name(PC64_TESTSUITE);
 
     if (argc > 1)
@@ -111,16 +79,6 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    SidConfig cfg;
-    cfg.clockForced = false;
-    cfg.frequency = 48000;
-    cfg.samplingMethod = SidConfig::INTERPOLATE;
-    cfg.fastSampling = false;
-    cfg.playback = SidConfig::MONO;
-    cfg.sidEmulation = rs.get();
-    cfg.sidDefault = SidConfig::MOS6581;
-    m_engine.config(cfg);
-
     tune->selectSong(0);
 
     if (!m_engine.load(tune.get()))
@@ -131,6 +89,6 @@ int main(int argc, char* argv[])
 
     for (;;)
     {
-        m_engine.play(0, 48000);
+        m_engine.play(0, 0);
     }
 }

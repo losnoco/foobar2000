@@ -4,6 +4,7 @@
 
 #define PACKAGE "libsidplayfp"
 #define VERSION "0.1.0"
+#define URL "http://sourceforge.net/projects/sidplay-residfp/"
 
 /* Define if your C++ compiler implements exception-handling.  */
 /* Note: exception specification is only available for MSVC > 6 */

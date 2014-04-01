@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -49,6 +49,12 @@
 #  define SID_DEPRECATED
 #endif
 
+/* Unused attributes */
+#if defined(__GNUC__)
+#  define SID_UNUSED __attribute__ ((unused))
+#else
+#  define SID_UNUSED
+#endif
 
 /* Namespace support */
 #define SIDPLAYFP_NAMESPACE __sidplayfp__

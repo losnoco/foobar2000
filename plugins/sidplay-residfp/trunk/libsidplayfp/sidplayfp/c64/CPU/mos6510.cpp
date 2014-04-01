@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000 Simon White
  *
@@ -22,18 +22,20 @@
 
 #include "mos6510.h"
 
-#include <string.h>
+#include "sidplayfp/event.h"
+#include "sidplayfp/sidendian.h"
 
 #include "opcodes.h"
 
 #ifdef DEBUG
+#  include <cstdio>
 #  include "mos6510debug.h"
 #endif
 
 #ifdef PC64_TESTSUITE
 #  include <stdlib.h>
 
-static const char _sidtune_CHRtab[256] =  // CHR$ conversion table (0x01 = no output)
+static const char CHRtab[256] =  // CHR$ conversion table (0x01 = no output)
 {
    0x0, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0xd, 0x1, 0x1,
    0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1,
@@ -58,10 +60,26 @@ static char filetmp[0x100];
 static int  filepos = 0;
 #endif // PC64_TESTSUITE
 
+
+/**
+* Magic value for lxa and ane undocumented instructions.
+* Magic may be EE, EF, FE or FF, but most emulators seem to use EE.
+* Based on tests on a couple of chips at
+* http://visual6502.org/wiki/index.php?title=6502_Opcode_8B_(XAA,_ANE)
+* the value of magic for the MOS 6510 is FF.
+* However the Lorentz test suite assumes this to be EE.
+*/
+const uint8_t magic =
+#ifdef PC64_TESTSUITE
+    0xee
+#else
+    0xff
+#endif
+;
 //-------------------------------------------------------------------------//
 
 /** When AEC signal is high, no stealing is possible */
-void MOS6510::eventWithoutSteals  (void)
+void MOS6510::eventWithoutSteals()
 {
     const ProcessorCycle &instr = instrTable[cycleCount++];
     (this->*(instr.func)) ();
@@ -69,7 +87,7 @@ void MOS6510::eventWithoutSteals  (void)
 }
 
 /** When AEC signal is low, steals permitted */
-void MOS6510::eventWithSteals  (void)
+void MOS6510::eventWithSteals()
 {
     if (instrTable[cycleCount].nosteal)
     {
@@ -99,7 +117,7 @@ void MOS6510::setFlagsNZ(uint8_t value)
     flagN = value & 0x80;
 }
 
-uint8_t MOS6510::getStatusRegister(void)
+uint8_t MOS6510::getStatusRegister()
 {
     uint8_t sr = 0x20;
     if (flagN)
@@ -171,7 +189,7 @@ void MOS6510::setRDY (bool newRDY)
 /**
 * Push P on stack, decrement S
 */
-void MOS6510::PushSR ()
+void MOS6510::PushSR()
 {
     const uint_least16_t addr = endian_16(SP_PAGE, Register_StackPointer);
     cpuWrite (addr, getStatusRegister());
@@ -181,7 +199,7 @@ void MOS6510::PushSR ()
 /**
 * increment S, Pop P off stack
 */
-void MOS6510::PopSR (void)
+void MOS6510::PopSR()
 {
     // Get status register off stack
     Register_StackPointer++;
@@ -206,7 +224,7 @@ void MOS6510::PopSR (void)
 * However, there is no possible way to trigger this signal from
 * programs, so it's OK.
 */
-void MOS6510::triggerRST (void)
+void MOS6510::triggerRST()
 {
     Initialise();
     cycleCount = BRKn << 3;
@@ -220,13 +238,13 @@ void MOS6510::triggerRST (void)
 * opportunity. There is no way to cancel NMI request once
 * given.
 */
-void MOS6510::triggerNMI (void)
+void MOS6510::triggerNMI()
 {
     nmiFlag = true;
     calculateInterruptTriggerCycle();
 
     /* maybe process 1 clock of interrupt delay. */
-    if (! rdy)
+    if (!rdy)
     {
         eventContext.cancel(m_steal);
         eventContext.schedule(m_steal, 0, EVENT_CLOCK_PHI2);
@@ -234,13 +252,13 @@ void MOS6510::triggerNMI (void)
 }
 
 /** Pull IRQ line low on CPU. */
-void MOS6510::triggerIRQ (void)
+void MOS6510::triggerIRQ()
 {
     irqAssertedOnPin = true;
     calculateInterruptTriggerCycle();
 
     /* maybe process 1 clock of interrupt delay. */
-    if (! rdy && interruptCycle == cycleCount)
+    if (!rdy && interruptCycle == cycleCount)
     {
         eventContext.cancel(m_steal);
         eventContext.schedule(m_steal, 0, EVENT_CLOCK_PHI2);
@@ -248,13 +266,13 @@ void MOS6510::triggerIRQ (void)
 }
 
 /** Inform CPU that IRQ is no longer pulled low. */
-void MOS6510::clearIRQ (void)
+void MOS6510::clearIRQ()
 {
     irqAssertedOnPin = false;
     calculateInterruptTriggerCycle();
 }
 
-void MOS6510::interruptsAndNextOpcode (void)
+void MOS6510::interruptsAndNextOpcode()
 {
     if (cycleCount > interruptCycle + 2)
     {
@@ -277,7 +295,7 @@ void MOS6510::interruptsAndNextOpcode (void)
     }
 }
 
-void MOS6510::fetchNextOpcode (void)
+void MOS6510::fetchNextOpcode()
 {
 #ifdef DEBUG
     if (dodump)
@@ -317,20 +335,20 @@ void MOS6510::calculateInterruptTriggerCycle()
     }
 }
 
-void MOS6510::IRQLoRequest (void)
+void MOS6510::IRQLoRequest()
 {
-    endian_16lo8 (Register_ProgramCounter, cpuRead (Cycle_EffectiveAddress));
+    endian_16lo8(Register_ProgramCounter, cpuRead (Cycle_EffectiveAddress));
 }
 
-void MOS6510::IRQHiRequest (void)
+void MOS6510::IRQHiRequest()
 {
-    endian_16hi8 (Register_ProgramCounter, cpuRead (Cycle_EffectiveAddress + 1));
+    endian_16hi8(Register_ProgramCounter, cpuRead (Cycle_EffectiveAddress + 1));
 }
 
 /**
 * Read the next opcode byte from memory (and throw it away)
 */
-void MOS6510::throwAwayFetch (void)
+void MOS6510::throwAwayFetch()
 {
     cpuRead (Register_ProgramCounter);
 }
@@ -338,7 +356,7 @@ void MOS6510::throwAwayFetch (void)
 /**
 * Issue throw-away read. Some people use these to ACK CIA IRQs.
 */
-void MOS6510::throwAwayRead (void)
+void MOS6510::throwAwayRead()
 {
     cpuRead (Cycle_HighByteWrongEffectiveAddress);
 }
@@ -352,13 +370,17 @@ void MOS6510::throwAwayRead (void)
 * <LI>Relative
 * </UL>
 */
-void MOS6510::FetchDataByte (void)
+void MOS6510::FetchDataByte()
 {
-    Cycle_Data = cpuRead (Register_ProgramCounter);
+    Cycle_Data = cpuRead(Register_ProgramCounter);
     if (flagB)
     {
         Register_ProgramCounter++;
     }
+
+#ifdef DEBUG
+    instrOperand = Cycle_Data;
+#endif
 }
 
 /**
@@ -374,10 +396,14 @@ void MOS6510::FetchDataByte (void)
 * <LI>Absolute Indirect
 * </UL>
 */
-void MOS6510::FetchLowAddr (void)
+void MOS6510::FetchLowAddr()
 {
-    Cycle_EffectiveAddress = cpuRead (Register_ProgramCounter);
+    Cycle_EffectiveAddress = cpuRead(Register_ProgramCounter);
     Register_ProgramCounter++;
+
+#ifdef DEBUG
+    instrOperand = Cycle_EffectiveAddress;
+#endif
 }
 
 /**
@@ -388,9 +414,9 @@ void MOS6510::FetchLowAddr (void)
 * <LI>Zero Page Indexed
 * </UL>
 */
-void MOS6510::FetchLowAddrX (void)
+void MOS6510::FetchLowAddrX()
 {
-    FetchLowAddr ();
+    FetchLowAddr();
     Cycle_EffectiveAddress = (Cycle_EffectiveAddress + Register_X) & 0xFF;
 }
 
@@ -402,9 +428,9 @@ void MOS6510::FetchLowAddrX (void)
 * <LI>Zero Page Indexed
 * </UL>
 */
-void MOS6510::FetchLowAddrY (void)
+void MOS6510::FetchLowAddrY()
 {
-    FetchLowAddr ();
+    FetchLowAddr();
     Cycle_EffectiveAddress = (Cycle_EffectiveAddress + Register_Y) & 0xFF;
 }
 
@@ -418,13 +444,13 @@ void MOS6510::FetchLowAddrY (void)
 * <LI>Absolute
 * </UL>
 */
-void MOS6510::FetchHighAddr (void)
+void MOS6510::FetchHighAddr()
 {   // Get the high byte of an address from memory
-    endian_16hi8 (Cycle_EffectiveAddress, cpuRead (Register_ProgramCounter));
+    endian_16hi8 (Cycle_EffectiveAddress, cpuRead(Register_ProgramCounter));
     Register_ProgramCounter++;
 
 #ifdef DEBUG
-    instrOperand = Cycle_EffectiveAddress;
+    endian_16hi8(instrOperand, endian_16hi8(Cycle_EffectiveAddress));
 #endif
 }
 
@@ -438,15 +464,15 @@ void MOS6510::FetchHighAddr (void)
 * <LI>Absolute Indexed
 * </UL>
 */
-void MOS6510::FetchHighAddrX (void)
+void MOS6510::FetchHighAddrX()
 {
-    FetchHighAddr ();
+    FetchHighAddr();
     Cycle_HighByteWrongEffectiveAddress = (Cycle_EffectiveAddress & 0xff00) | ((Cycle_EffectiveAddress + Register_X) & 0xff);
     Cycle_EffectiveAddress += Register_X;
 }
 
- // Handle page boundary crossing
-void MOS6510::FetchHighAddrX2 (void)
+/** Same as #FetchHighAddrX except dosen't worry about page crossing. */
+void MOS6510::FetchHighAddrX2()
 {
     FetchHighAddrX();
     if (Cycle_EffectiveAddress == Cycle_HighByteWrongEffectiveAddress)
@@ -463,17 +489,17 @@ void MOS6510::FetchHighAddrX2 (void)
 * <LI>Absolute Indexed
 * </UL>
 */
-void MOS6510::FetchHighAddrY (void)
+void MOS6510::FetchHighAddrY()
 {
-    FetchHighAddr ();
+    FetchHighAddr();
     Cycle_HighByteWrongEffectiveAddress = (Cycle_EffectiveAddress & 0xff00) | ((Cycle_EffectiveAddress + Register_Y) & 0xff);
     Cycle_EffectiveAddress += Register_Y;
 }
 
-// Same as above except dosen't worry about page crossing
-void MOS6510::FetchHighAddrY2 (void)
+/** Same as #FetchHighAddrY except dosen't worry about page crossing. */
+void MOS6510::FetchHighAddrY2()
 {
-    FetchHighAddrY ();
+    FetchHighAddrY();
     if (Cycle_EffectiveAddress == Cycle_HighByteWrongEffectiveAddress)
         cycleCount++;
 }
@@ -487,13 +513,13 @@ void MOS6510::FetchHighAddrY2 (void)
 * <LI>Indirect indexed (post Y)
 * </UL>
 */
-void MOS6510::FetchLowPointer (void)
+void MOS6510::FetchLowPointer()
 {
-    Cycle_Pointer = cpuRead (Register_ProgramCounter);
+    Cycle_Pointer = cpuRead(Register_ProgramCounter);
     Register_ProgramCounter++;
 
 #ifdef DEBUG
-    endian_16lo8 (instrOperand, endian_16lo8 (Cycle_Pointer));
+    instrOperand = Cycle_Pointer;
 #endif
 }
 
@@ -505,9 +531,9 @@ void MOS6510::FetchLowPointer (void)
 * <LI>Indexed Indirect (pre X)
 * </UL>
 */
-void MOS6510::FetchLowPointerX (void)
+void MOS6510::FetchLowPointerX()
 {
-    endian_16lo8 (Cycle_Pointer, (Cycle_Pointer + Register_X) & 0xFF);
+    endian_16lo8(Cycle_Pointer, (Cycle_Pointer + Register_X) & 0xFF);
 }
 
 /**
@@ -518,13 +544,13 @@ void MOS6510::FetchLowPointerX (void)
 * <LI>Absolute Indirect
 * </UL>
 */
-void MOS6510::FetchHighPointer (void)
+void MOS6510::FetchHighPointer()
 {
-    endian_16hi8 (Cycle_Pointer, cpuRead (Register_ProgramCounter));
+    endian_16hi8(Cycle_Pointer, cpuRead (Register_ProgramCounter));
     Register_ProgramCounter++;
 
 #ifdef DEBUG
-    endian_16hi8 (instrOperand, endian_16hi8 (Cycle_Pointer));
+    endian_16hi8(instrOperand, endian_16hi8(Cycle_Pointer));
 #endif
 }
 
@@ -538,9 +564,9 @@ void MOS6510::FetchHighPointer (void)
 * <LI>Indirect indexed (post Y)
 * </UL>
 */
-void MOS6510::FetchLowEffAddr (void)
+void MOS6510::FetchLowEffAddr()
 {
-    Cycle_EffectiveAddress = cpuRead (Cycle_Pointer);
+    Cycle_EffectiveAddress = cpuRead(Cycle_Pointer);
 }
 
 /**
@@ -552,10 +578,10 @@ void MOS6510::FetchLowEffAddr (void)
 * <LI>Indexed Indirect (pre X)
 * </UL>
 */
-void MOS6510::FetchHighEffAddr (void)
+void MOS6510::FetchHighEffAddr()
 {
-    endian_16lo8 (Cycle_Pointer, (Cycle_Pointer + 1) & 0xff);
-    endian_16hi8 (Cycle_EffectiveAddress, cpuRead (Cycle_Pointer));
+    endian_16lo8(Cycle_Pointer, (Cycle_Pointer + 1) & 0xff);
+    endian_16hi8(Cycle_EffectiveAddress, cpuRead(Cycle_Pointer));
 }
 
 /**
@@ -566,15 +592,16 @@ void MOS6510::FetchHighEffAddr (void)
 * <LI>Indirect indexed (post Y)
 * <UL>
 */
-void MOS6510::FetchHighEffAddrY (void)
+void MOS6510::FetchHighEffAddrY()
 {
-    FetchHighEffAddr ();
+    FetchHighEffAddr();
     Cycle_HighByteWrongEffectiveAddress = (Cycle_EffectiveAddress & 0xff00) | ((Cycle_EffectiveAddress + Register_Y) & 0xff);
     Cycle_EffectiveAddress += Register_Y;
 }
 
-// Handle page boundary crossing
-void MOS6510::FetchHighEffAddrY2 (void)
+
+/** Same as #FetchHighEffAddrY except dosen't worry about page crossing. */
+void MOS6510::FetchHighEffAddrY2()
 {
     FetchHighEffAddrY();
     if (Cycle_EffectiveAddress == Cycle_HighByteWrongEffectiveAddress)
@@ -589,65 +616,65 @@ void MOS6510::FetchHighEffAddrY2 (void)
 //-------------------------------------------------------------------------//
 //-------------------------------------------------------------------------//
 
-void MOS6510::FetchEffAddrDataByte (void)
+void MOS6510::FetchEffAddrDataByte()
 {
-    Cycle_Data = cpuRead (Cycle_EffectiveAddress);
+    Cycle_Data = cpuRead(Cycle_EffectiveAddress);
 }
 
 /**
 * Write Cycle_Data to effective address.
 */
-void MOS6510::PutEffAddrDataByte (void)
+void MOS6510::PutEffAddrDataByte()
 {
-    cpuWrite (Cycle_EffectiveAddress, Cycle_Data);
+    cpuWrite(Cycle_EffectiveAddress, Cycle_Data);
 }
 
 /**
 * Push Program Counter Low Byte on stack, decrement S
 */
-void MOS6510::PushLowPC (void)
+void MOS6510::PushLowPC()
 {
     const uint_least16_t addr = endian_16(SP_PAGE, Register_StackPointer);
-    cpuWrite (addr, endian_16lo8 (Register_ProgramCounter));
+    cpuWrite(addr, endian_16lo8(Register_ProgramCounter));
     Register_StackPointer--;
 }
 
 /**
 * Push Program Counter High Byte on stack, decrement S
 */
-void MOS6510::PushHighPC (void)
+void MOS6510::PushHighPC()
 {
     const uint_least16_t addr = endian_16(SP_PAGE, Register_StackPointer);
-    cpuWrite (addr, endian_16hi8 (Register_ProgramCounter));
+    cpuWrite(addr, endian_16hi8(Register_ProgramCounter));
     Register_StackPointer--;
 }
 
 /**
 * Increment stack and pull program counter low byte from stack.
 */
-void MOS6510::PopLowPC (void)
+void MOS6510::PopLowPC()
 {
     Register_StackPointer++;
     const uint_least16_t addr = endian_16(SP_PAGE, Register_StackPointer);
-    endian_16lo8 (Cycle_EffectiveAddress, cpuRead (addr));
+    endian_16lo8(Cycle_EffectiveAddress, cpuRead (addr));
 }
 
 /**
 * Increment stack and pull program counter high byte from stack.
 */
-void MOS6510::PopHighPC (void)
+void MOS6510::PopHighPC()
 {
     Register_StackPointer++;
     const uint_least16_t addr = endian_16(SP_PAGE, Register_StackPointer);
-    endian_16hi8 (Cycle_EffectiveAddress, cpuRead (addr));
+    endian_16hi8(Cycle_EffectiveAddress, cpuRead (addr));
 }
 
-void MOS6510::WasteCycle (void)
+void MOS6510::WasteCycle()
 {}
 
-void MOS6510::brkPushLowPC (void)
+void MOS6510::brkPushLowPC()
 {
-    PushLowPC ();
+    PushLowPC();
     if (rstFlag)
     {
         /* rst = %10x */
@@ -676,33 +703,33 @@ void MOS6510::brkPushLowPC (void)
 //-------------------------------------------------------------------------//
 //-------------------------------------------------------------------------//
 
-void MOS6510::brk_instr (void)
+void MOS6510::brk_instr()
 {
-    PushSR   ();
+    PushSR();
     flagB = true;
     flagI = true;
 }
 
-void MOS6510::cld_instr (void)
+void MOS6510::cld_instr()
 {
     flagD = false;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::cli_instr (void)
+void MOS6510::cli_instr()
 {
     flagI = false;
     calculateInterruptTriggerCycle();
     interruptsAndNextOpcode();
 }
 
-void MOS6510::jmp_instr (void)
+void MOS6510::jmp_instr()
 {
-    doJSR ();
-    interruptsAndNextOpcode ();
+    doJSR();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::doJSR (void)
+void MOS6510::doJSR()
 {
     Register_ProgramCounter = Cycle_EffectiveAddress;
 
@@ -712,21 +739,21 @@ void MOS6510::doJSR (void)
     // Print character
     if (Register_ProgramCounter == 0xffd2)
     {
-        const char ch = _sidtune_CHRtab[Register_Accumulator];
+        const char ch = CHRtab[Register_Accumulator];
         switch (ch)
         {
         case 0:
             break;
         case 1:
-            fprintf (stderr, " ");
+            fprintf(stderr, " ");
              break;
         case 0xd:
-            fprintf (stderr, "\n");
+            fprintf(stderr, "\n");
             filepos = 0;
             break;
         default:
             filetmp[filepos++] = ch;// - 'A' + 'a';
-            fprintf (stderr, "%c", ch);
+            fprintf(stderr, "%c", ch);
         }
     }
 
@@ -734,7 +761,7 @@ void MOS6510::doJSR (void)
     else if (Register_ProgramCounter == 0xe16f)
     {
         filetmp[filepos] = '\0';
-        loadFile (filetmp);
+        loadFile(filetmp);
     }
 
     // Stop
@@ -746,40 +773,40 @@ void MOS6510::doJSR (void)
 #endif // PC64_TESTSUITE
 }
 
-void MOS6510::pha_instr (void)
+void MOS6510::pha_instr()
 {
     const uint_least16_t addr = endian_16(SP_PAGE, Register_StackPointer);
-    cpuWrite (addr, Register_Accumulator);
+    cpuWrite(addr, Register_Accumulator);
     Register_StackPointer--;
 }
 
 /* RTI does not delay the IRQ I flag change as it is set 3 cycles before
  * the end of the opcode, and thus the 6510 has enough time to call the
  * interrupt routine as soon as the opcode ends, if necessary. */
-void MOS6510::rti_instr (void)
+void MOS6510::rti_instr()
 {
 #ifdef DEBUG
     if (dodump)
         fprintf (m_fdbg, "****************************************************\n\n");
 #endif
     Register_ProgramCounter = Cycle_EffectiveAddress;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::rts_instr (void)
+void MOS6510::rts_instr()
 {
     cpuRead(Cycle_EffectiveAddress);
     Register_ProgramCounter = Cycle_EffectiveAddress;
     Register_ProgramCounter++;
 }
 
-void MOS6510::sed_instr (void)
+void MOS6510::sed_instr()
 {
     flagD = true;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::sei_instr (void)
+void MOS6510::sei_instr()
 {
     flagI = true;
     interruptsAndNextOpcode();
@@ -787,22 +814,22 @@ void MOS6510::sei_instr (void)
         interruptCycle = MAX;
 }
 
-void MOS6510::sta_instr (void)
+void MOS6510::sta_instr()
 {
     Cycle_Data = Register_Accumulator;
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
 }
 
-void MOS6510::stx_instr (void)
+void MOS6510::stx_instr()
 {
     Cycle_Data = Register_X;
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
 }
 
-void MOS6510::sty_instr (void)
+void MOS6510::sty_instr()
 {
     Cycle_Data = Register_Y;
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
 }
 
 
@@ -814,23 +841,27 @@ void MOS6510::sty_instr (void)
 //-------------------------------------------------------------------------//
 //-------------------------------------------------------------------------//
 
-// Undocumented - This opcode stores the result of A AND X AND the high
-// byte of the target address of the operand +1 in memory.
-void MOS6510::axa_instr (void)
+/**
+* Undocumented - This opcode stores the result of A AND X AND the high
+* byte of the target address of the operand +1 in memory.
+*/
+void MOS6510::axa_instr()
 {
-    Cycle_Data = Register_X & Register_Accumulator & (endian_16hi8 (Cycle_EffectiveAddress) + 1);
+    Cycle_Data = Register_X & Register_Accumulator & (endian_16hi8(Cycle_EffectiveAddress) + 1);
     if (Cycle_HighByteWrongEffectiveAddress != Cycle_EffectiveAddress)
         Cycle_EffectiveAddress = endian_16(Cycle_Data, (uint8_t)Cycle_EffectiveAddress);
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
 }
 
-// Undocumented - AXS ANDs the contents of the A and X registers (without changing the
-// contents of either register) and stores the result in memory.
-// AXS does not affect any flags in the processor status register.
-void MOS6510::axs_instr (void)
+/**
+* Undocumented - AXS ANDs the contents of the A and X registers (without changing the
+* contents of either register) and stores the result in memory.
+* AXS does not affect any flags in the processor status register.
+*/
+void MOS6510::axs_instr()
 {
     Cycle_Data = Register_Accumulator & Register_X;
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
 }
 
 /* Not required - Operation performed By another method
@@ -840,62 +871,38 @@ void MOS6510::axs_instr (void)
 // most straightforward explanation for this opcode's behaviour.  Only a reset
 // will restart execution.  This opcode leaves no trace of any operation
 // performed!  No registers affected.
-void MOS6510::hlt_instr (void)
+void MOS6510::hlt_instr ()
 {
 }
 */
 
-/* Not required - Operation performed By another method
-void MOS6510::nop_instr (void)
-{
-}
+/**
+* Undocumented - This opcode ANDs the contents of the Y register with <ab+1> and stores the
+* result in memory.
 */
-
-/* Not required - Operation performed By another method
-void MOS6510::php_instr (void)
+void MOS6510::say_instr()
 {
-}
-*/
-
-// Undocumented - This opcode ANDs the contents of the Y register with <ab+1> and stores the
-// result in memory.
-void MOS6510::say_instr (void)
-{
-    Cycle_Data = Register_Y & (endian_16hi8 (Cycle_EffectiveAddress) + 1);
+    Cycle_Data = Register_Y & (endian_16hi8(Cycle_EffectiveAddress) + 1);
     if (Cycle_HighByteWrongEffectiveAddress != Cycle_EffectiveAddress)
         Cycle_EffectiveAddress = endian_16(Cycle_Data, (uint8_t)Cycle_EffectiveAddress);
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
 }
 
-/* Not required - Operation performed By another method
-// Undocumented - skip next byte.
-void MOS6510::skb_instr (void)
-{
-    Register_ProgramCounter++;
-}
+/**
+* Undocumented - This opcode ANDs the contents of the X register with <ab+1> and stores the
+* result in memory.
 */
-
-/* Not required - Operation performed By another method
-// Undocumented - skip next word.
-void MOS6510::skw_instr (void)
+void MOS6510::xas_instr()
 {
-    Register_ProgramCounter += 2;
-}
-*/
-
-// Undocumented - This opcode ANDs the contents of the X register with <ab+1> and stores the
-// result in memory.
-void MOS6510::xas_instr (void)
-{
-    Cycle_Data = Register_X & (endian_16hi8 (Cycle_EffectiveAddress) + 1);
+    Cycle_Data = Register_X & (endian_16hi8(Cycle_EffectiveAddress) + 1);
     if (Cycle_HighByteWrongEffectiveAddress != Cycle_EffectiveAddress)
         Cycle_EffectiveAddress = endian_16(Cycle_Data, (uint8_t)Cycle_EffectiveAddress);
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
 }
 
 
 /** BCD adding */
-void MOS6510::doADC (void)
+void MOS6510::doADC()
 {
     const unsigned int C      = flagC ? 1 : 0;
     const unsigned int A      = Register_Accumulator;
@@ -929,7 +936,7 @@ void MOS6510::doADC (void)
 }
 
 /** BCD subtracting */
-void MOS6510::doSBC (void)
+void MOS6510::doSBC()
 {
     const unsigned int C      = flagC? 0 : 1;
     const unsigned int A      = Register_Accumulator;
@@ -974,49 +981,43 @@ void MOS6510::doSBC (void)
 //-------------------------------------------------------------------------//
 //-------------------------------------------------------------------------//
 
-void MOS6510::adc_instr (void)
+void MOS6510::adc_instr()
 {
-    doADC ();
-    interruptsAndNextOpcode ();
+    doADC();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::and_instr (void)
+void MOS6510::and_instr()
 {
-    setFlagsNZ (Register_Accumulator &= Cycle_Data);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Accumulator &= Cycle_Data);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::ane_instr (void)
+/**
+* Undocumented - For a detailed explanation of this opcode look at:
+* http://visual6502.org/wiki/index.php?title=6502_Opcode_8B_(XAA,_ANE)
+*/
+void MOS6510::ane_instr()
 {
-    // For an explanation of this opcode look at:
-    // http://visual6502.org/wiki/index.php?title=6502_Opcode_8B_(XAA,_ANE)
-    // Based on the table on the same page the most common value of magic
-    // for the MOS 6510 is FF
-    // However the Lorentz test suite assumes this to be EE
-#ifdef PC64_TESTSUITE
-    const uint8_t magic = 0xee;
-#else
-    const uint8_t magic = 0xff;
-#endif
-    setFlagsNZ (Register_Accumulator = (Register_Accumulator | magic) & Register_X & Cycle_Data);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Accumulator = (Register_Accumulator | magic) & Register_X & Cycle_Data);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::asl_instr (void)
+void MOS6510::asl_instr()
 {
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
     flagC = Cycle_Data & 0x80;
-    setFlagsNZ (Cycle_Data <<= 1);
+    setFlagsNZ(Cycle_Data <<= 1);
 }
 
-void MOS6510::asla_instr (void)
+void MOS6510::asla_instr()
 {
     flagC = Register_Accumulator & 0x80;
-    setFlagsNZ (Register_Accumulator <<= 1);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Accumulator <<= 1);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::branch_instr (bool condition)
+void MOS6510::branch_instr(bool condition)
 {
     /*
     * 2 cycles spent before arriving here. spend 0 - 2 cycles here;
@@ -1050,296 +1051,296 @@ void MOS6510::branch_instr (bool condition)
     else
     {
         /* branch not taken: skip the following spurious read insn and go to FetchNextInstr immediately. */
-        interruptsAndNextOpcode ();
+        interruptsAndNextOpcode();
     }
 }
 
-void MOS6510::bcc_instr (void)
+void MOS6510::bcc_instr()
 {
-    branch_instr (!flagC);
+    branch_instr(!flagC);
 }
 
-void MOS6510::bcs_instr (void)
+void MOS6510::bcs_instr()
 {
-    branch_instr (flagC);
+    branch_instr(flagC);
 }
 
-void MOS6510::beq_instr (void)
+void MOS6510::beq_instr()
 {
-    branch_instr (flagZ);
+    branch_instr(flagZ);
 }
 
-void MOS6510::bit_instr (void)
+void MOS6510::bit_instr()
 {
     flagZ = (Register_Accumulator & Cycle_Data) == 0;
     flagN = Cycle_Data & 0x80;
     flagV = Cycle_Data & 0x40;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::bmi_instr (void)
+void MOS6510::bmi_instr()
 {
-    branch_instr (flagN);
+    branch_instr(flagN);
 }
 
-void MOS6510::bne_instr (void)
+void MOS6510::bne_instr()
 {
-    branch_instr (!flagZ);
+    branch_instr(!flagZ);
 }
 
-void MOS6510::bpl_instr(void)
+void MOS6510::bpl_instr()
 {
-    branch_instr (!flagN);
+    branch_instr(!flagN);
 }
 
-void MOS6510::bvc_instr (void)
+void MOS6510::bvc_instr()
 {
-    branch_instr (!flagV);
+    branch_instr(!flagV);
 }
 
-void MOS6510::bvs_instr (void)
+void MOS6510::bvs_instr()
 {
-    branch_instr (flagV);
+    branch_instr(flagV);
 }
 
-void MOS6510::clc_instr (void)
+void MOS6510::clc_instr()
 {
     flagC = false;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::clv_instr (void)
+void MOS6510::clv_instr()
 {
     flagV = false;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::cmp_instr (void)
+void MOS6510::cmp_instr()
 {
-    const uint_least16_t tmp = (uint_least16_t) Register_Accumulator - Cycle_Data;
-    setFlagsNZ (tmp);
+    const uint_least16_t tmp = (uint_least16_t)Register_Accumulator - Cycle_Data;
+    setFlagsNZ(tmp);
     flagC = tmp < 0x100;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::cpx_instr (void)
+void MOS6510::cpx_instr()
 {
-    const uint_least16_t tmp = (uint_least16_t) Register_X - Cycle_Data;
-    setFlagsNZ (tmp);
+    const uint_least16_t tmp = (uint_least16_t)Register_X - Cycle_Data;
+    setFlagsNZ(tmp);
     flagC = tmp < 0x100;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::cpy_instr (void)
+void MOS6510::cpy_instr()
 {
-    const uint_least16_t tmp = (uint_least16_t) Register_Y - Cycle_Data;
-    setFlagsNZ (tmp);
+    const uint_least16_t tmp = (uint_least16_t)Register_Y - Cycle_Data;
+    setFlagsNZ(tmp);
     flagC = tmp < 0x100;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::dec_instr (void)
+void MOS6510::dec_instr()
 {
-    PutEffAddrDataByte ();
-    setFlagsNZ (--Cycle_Data);
+    PutEffAddrDataByte();
+    setFlagsNZ(--Cycle_Data);
 }
 
-void MOS6510::dex_instr (void)
+void MOS6510::dex_instr()
 {
-    setFlagsNZ (--Register_X);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(--Register_X);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::dey_instr (void)
+void MOS6510::dey_instr()
 {
-    setFlagsNZ (--Register_Y);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(--Register_Y);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::eor_instr (void)
+void MOS6510::eor_instr()
 {
-    setFlagsNZ (Register_Accumulator ^= Cycle_Data);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Accumulator ^= Cycle_Data);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::inc_instr (void)
+void MOS6510::inc_instr()
 {
-    PutEffAddrDataByte ();
-    setFlagsNZ (++Cycle_Data);
+    PutEffAddrDataByte();
+    setFlagsNZ(++Cycle_Data);
 }
 
-void MOS6510::inx_instr (void)
+void MOS6510::inx_instr()
 {
-    setFlagsNZ (++Register_X);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(++Register_X);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::iny_instr (void)
+void MOS6510::iny_instr()
 {
-    setFlagsNZ (++Register_Y);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(++Register_Y);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::lda_instr (void)
+void MOS6510::lda_instr()
 {
-    setFlagsNZ (Register_Accumulator = Cycle_Data);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Accumulator = Cycle_Data);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::ldx_instr (void)
+void MOS6510::ldx_instr()
 {
-    setFlagsNZ (Register_X = Cycle_Data);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_X = Cycle_Data);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::ldy_instr (void)
+void MOS6510::ldy_instr()
 {
-    setFlagsNZ (Register_Y = Cycle_Data);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Y = Cycle_Data);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::lsr_instr (void)
+void MOS6510::lsr_instr()
 {
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
     flagC = Cycle_Data & 0x01;
-    setFlagsNZ (Cycle_Data >>= 1);
+    setFlagsNZ(Cycle_Data >>= 1);
 }
 
-void MOS6510::lsra_instr (void)
+void MOS6510::lsra_instr()
 {
     flagC = Register_Accumulator & 0x01;
-    setFlagsNZ (Register_Accumulator >>= 1);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Accumulator >>= 1);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::ora_instr (void)
+void MOS6510::ora_instr()
 {
-    setFlagsNZ (Register_Accumulator |= Cycle_Data);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Accumulator |= Cycle_Data);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::pla_instr (void)
+void MOS6510::pla_instr()
 {
     Register_StackPointer++;
     const uint_least16_t addr = endian_16(SP_PAGE, Register_StackPointer);
-    setFlagsNZ (Register_Accumulator = cpuRead (addr));
+    setFlagsNZ(Register_Accumulator = cpuRead (addr));
 }
 
-void MOS6510::plp_instr (void)
+void MOS6510::plp_instr()
 {
     interruptsAndNextOpcode();
 }
 
-void MOS6510::rol_instr (void)
+void MOS6510::rol_instr()
 {
     const uint8_t newC = Cycle_Data & 0x80;
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
     Cycle_Data <<= 1;
     if (flagC)
         Cycle_Data |= 0x01;
-    setFlagsNZ (Cycle_Data);
+    setFlagsNZ(Cycle_Data);
     flagC = newC;
 }
 
-void MOS6510::rola_instr (void)
+void MOS6510::rola_instr()
 {
     const uint8_t newC = Register_Accumulator & 0x80;
     Register_Accumulator <<= 1;
     if (flagC)
         Register_Accumulator |= 0x01;
-    setFlagsNZ (Register_Accumulator);
+    setFlagsNZ(Register_Accumulator);
     flagC = newC;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::ror_instr (void)
+void MOS6510::ror_instr()
 {
     const uint8_t newC = Cycle_Data & 0x01;
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
     Cycle_Data >>= 1;
     if (flagC)
         Cycle_Data |= 0x80;
-    setFlagsNZ (Cycle_Data);
+    setFlagsNZ(Cycle_Data);
     flagC = newC;
 }
 
-void MOS6510::rora_instr (void)
+void MOS6510::rora_instr()
 {
     const uint8_t newC = Register_Accumulator & 0x01;
     Register_Accumulator >>= 1;
     if (flagC)
         Register_Accumulator |= 0x80;
-    setFlagsNZ (Register_Accumulator);
+    setFlagsNZ(Register_Accumulator);
     flagC = newC;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::sbx_instr (void)
+void MOS6510::sbx_instr()
 {
     const unsigned int tmp = (Register_X & Register_Accumulator) - Cycle_Data;
-    setFlagsNZ (Register_X = tmp & 0xff);
+    setFlagsNZ(Register_X = tmp & 0xff);
     flagC = tmp < 0x100;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::sbc_instr (void)
+void MOS6510::sbc_instr()
 {
-    doSBC ();
-    interruptsAndNextOpcode ();
+    doSBC();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::sec_instr (void)
+void MOS6510::sec_instr()
 {
     flagC = true;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::shs_instr (void)
+void MOS6510::shs_instr()
 {
     Register_StackPointer = Register_Accumulator & Register_X;
     Cycle_Data = (endian_16hi8 (Cycle_EffectiveAddress) + 1) & Register_StackPointer;
     if (Cycle_HighByteWrongEffectiveAddress != Cycle_EffectiveAddress)
         Cycle_EffectiveAddress = endian_16(Cycle_Data, (uint8_t)Cycle_EffectiveAddress);
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
 }
 
-void MOS6510::tax_instr (void)
+void MOS6510::tax_instr()
 {
-    setFlagsNZ (Register_X = Register_Accumulator);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_X = Register_Accumulator);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::tay_instr (void)
+void MOS6510::tay_instr()
 {
-    setFlagsNZ (Register_Y = Register_Accumulator);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Y = Register_Accumulator);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::tsx_instr (void)
+void MOS6510::tsx_instr()
 {
-    setFlagsNZ (Register_X = Register_StackPointer);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_X = Register_StackPointer);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::txa_instr (void)
+void MOS6510::txa_instr()
 {
-    setFlagsNZ (Register_Accumulator = Register_X);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Accumulator = Register_X);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::txs_instr (void)
+void MOS6510::txs_instr()
 {
     Register_StackPointer = Register_X;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::tya_instr (void)
+void MOS6510::tya_instr()
 {
-    setFlagsNZ (Register_Accumulator = Register_Y);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Accumulator = Register_Y);
+    interruptsAndNextOpcode();
 }
 
-void MOS6510::illegal_instr (void)
+void MOS6510::illegal_instr()
 {
     cycleCount --;
 }
@@ -1352,30 +1353,36 @@ void MOS6510::illegal_instr (void)
 //-------------------------------------------------------------------------//
 //-------------------------------------------------------------------------//
 
-// Undocumented - This opcode ANDs the contents of the A register with an immediate value and
-// then LSRs the result.
-void MOS6510::alr_instr (void)
+/**
+* Undocumented - This opcode ANDs the contents of the A register with an immediate value and
+* then LSRs the result.
+*/
+void MOS6510::alr_instr()
 {
     Register_Accumulator &= Cycle_Data;
     flagC = Register_Accumulator & 0x01;
-    setFlagsNZ (Register_Accumulator >>= 1);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Accumulator >>= 1);
+    interruptsAndNextOpcode();
 }
 
-// Undocumented - ANC ANDs the contents of the A register with an immediate value and then
-// moves bit 7 of A into the Carry flag.  This opcode works basically
-// identically to AND #immed. except that the Carry flag is set to the same
-// state that the Negative flag is set to.
-void MOS6510::anc_instr (void)
+/**
+* Undocumented - ANC ANDs the contents of the A register with an immediate value and then
+* moves bit 7 of A into the Carry flag.  This opcode works basically
+* identically to AND #immed. except that the Carry flag is set to the same
+* state that the Negative flag is set to.
+*/
+void MOS6510::anc_instr()
 {
-    setFlagsNZ (Register_Accumulator &= Cycle_Data);
+    setFlagsNZ(Register_Accumulator &= Cycle_Data);
     flagC = flagN;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-// Undocumented - This opcode ANDs the contents of the A register with an immediate value and
-// then RORs the result (Implementation based on that of Frodo C64 Emulator)
-void MOS6510::arr_instr (void)
+/**
+* Undocumented - This opcode ANDs the contents of the A register with an immediate value and
+* then RORs the result (Implementation based on that of Frodo C64 Emulator)
+*/
+void MOS6510::arr_instr()
 {
     const uint8_t data = Cycle_Data & Register_Accumulator;
     Register_Accumulator = data >> 1;
@@ -1396,104 +1403,121 @@ void MOS6510::arr_instr (void)
     }
     else
     {
-        setFlagsNZ (Register_Accumulator);
+        setFlagsNZ(Register_Accumulator);
         flagC = Register_Accumulator & 0x40;
         flagV = (Register_Accumulator & 0x40) ^ ((Register_Accumulator & 0x20) << 1);
     }
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-// Undocumented - This opcode ASLs the contents of a memory location and then ORs the result
-// with the accumulator.
-void MOS6510::aso_instr (void)
+/**
+* Undocumented - This opcode ASLs the contents of a memory location and then ORs the result
+* with the accumulator.
+*/
+void MOS6510::aso_instr()
 {
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
     flagC = Cycle_Data & 0x80;
     Cycle_Data <<= 1;
-    setFlagsNZ (Register_Accumulator |= Cycle_Data);
+    setFlagsNZ(Register_Accumulator |= Cycle_Data);
 }
 
-// Undocumented - This opcode DECs the contents of a memory location and then CMPs the result
-// with the A register.
-void MOS6510::dcm_instr (void)
+/**
+* Undocumented - This opcode DECs the contents of a memory location and then CMPs the result
+* with the A register.
+*/
+void MOS6510::dcm_instr()
 {
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
     Cycle_Data--;
-    const uint_least16_t tmp = (uint_least16_t) Register_Accumulator - Cycle_Data;
-    setFlagsNZ (tmp);
+    const uint_least16_t tmp = (uint_least16_t)Register_Accumulator - Cycle_Data;
+    setFlagsNZ(tmp);
     flagC = tmp < 0x100;
 }
 
-// Undocumented - This opcode INCs the contents of a memory location and then SBCs the result
-// from the A register.
-void MOS6510::ins_instr (void)
+/**
+* Undocumented - This opcode INCs the contents of a memory location and then SBCs the result
+* from the A register.
+*/
+void MOS6510::ins_instr ()
 {
     PutEffAddrDataByte ();
     Cycle_Data++;
     doSBC ();
 }
 
-// Undocumented - This opcode ANDs the contents of a memory location with the contents of the
-// stack pointer register and stores the result in the accumulator, the X
-// register, and the stack pointer.  Affected flags: N Z.
-void MOS6510::las_instr (void)
+/**
+* Undocumented - This opcode ANDs the contents of a memory location with the contents of the
+* stack pointer register and stores the result in the accumulator, the X
+* register, and the stack pointer.  Affected flags: N Z.
+*/
+void MOS6510::las_instr()
 {
-    setFlagsNZ (Cycle_Data &= Register_StackPointer);
+    setFlagsNZ(Cycle_Data &= Register_StackPointer);
     Register_Accumulator  = Cycle_Data;
     Register_X            = Cycle_Data;
     Register_StackPointer = Cycle_Data;
-    interruptsAndNextOpcode ();
+    interruptsAndNextOpcode();
 }
 
-// Undocumented - This opcode loads both the accumulator and the X register with the contents
-// of a memory location.
-void MOS6510::lax_instr (void)
+/**
+* Undocumented - This opcode loads both the accumulator and the X register with the contents
+* of a memory location.
+*/
+void MOS6510::lax_instr()
 {
-    setFlagsNZ (Register_Accumulator = Register_X = Cycle_Data);
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_Accumulator = Register_X = Cycle_Data);
+    interruptsAndNextOpcode();
 }
 
-// Undocumented - LSE LSRs the contents of a memory location and then EORs the result with
-// the accumulator.
-void MOS6510::lse_instr (void)
+/**
+* Undocumented - LSE LSRs the contents of a memory location and then EORs the result with
+* the accumulator.
+*/
+void MOS6510::lse_instr()
 {
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
     flagC = Cycle_Data & 0x01;
     Cycle_Data >>= 1;
-    setFlagsNZ (Register_Accumulator ^= Cycle_Data);
+    setFlagsNZ(Register_Accumulator ^= Cycle_Data);
 }
 
-// Undocumented - This opcode ORs the A register with #xx, ANDs the result with an immediate
-// value, and then stores the result in both A and X.
-// xx may be EE,EF,FE, OR FF, but most emulators seem to use EE
-void MOS6510::oal_instr (void)
+/**
+* Undocumented - This opcode ORs the A register with #xx (the "magic" value),
+* ANDs the result with an immediate value, and then stores the result in both A and X.
+*/
+void MOS6510::oal_instr()
 {
-    setFlagsNZ (Register_X = (Register_Accumulator = (Cycle_Data & (Register_Accumulator | 0xee))));
-    interruptsAndNextOpcode ();
+    setFlagsNZ(Register_X = (Register_Accumulator = (Cycle_Data & (Register_Accumulator | magic))));
+    interruptsAndNextOpcode();
 }
 
-// Undocumented - RLA ROLs the contents of a memory location and then ANDs the result with
-// the accumulator.
-void MOS6510::rla_instr (void)
+/**
+* Undocumented - RLA ROLs the contents of a memory location and then ANDs the result with
+* the accumulator.
+*/
+void MOS6510::rla_instr()
 {
     const uint8_t newC = Cycle_Data & 0x80;
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
     Cycle_Data = Cycle_Data << 1;
     if (flagC) Cycle_Data |= 0x01;
     flagC = newC;
-    setFlagsNZ (Register_Accumulator &= Cycle_Data);
+    setFlagsNZ(Register_Accumulator &= Cycle_Data);
 }
 
-// Undocumented - RRA RORs the contents of a memory location and then ADCs the result with
-// the accumulator.
-void MOS6510::rra_instr (void)
+/**
+* Undocumented - RRA RORs the contents of a memory location and then ADCs the result with
+* the accumulator.
+*/
+void MOS6510::rra_instr()
 {
     const uint8_t newC = Cycle_Data & 0x01;
-    PutEffAddrDataByte ();
+    PutEffAddrDataByte();
     Cycle_Data >>= 1;
     if (flagC) Cycle_Data |= 0x80;
     flagC = newC;
-    doADC ();
+    doADC();
 }
 
 //-------------------------------------------------------------------------//
@@ -1504,20 +1528,20 @@ void MOS6510::rra_instr (void)
 * @param context
 *            The Event Context
 */
-MOS6510::MOS6510 (EventContext *context)
-:eventContext(*context),
+MOS6510::MOS6510 (EventContext *context) :
+    eventContext(*context),
 #ifdef DEBUG
- m_fdbg(stdout),
+    m_fdbg(stdout),
 #endif
- m_nosteal("CPU-nosteal", *this, &MOS6510::eventWithoutSteals),
- m_steal("CPU-steal", *this, &MOS6510::eventWithSteals)
+    m_nosteal("CPU-nosteal", *this, &MOS6510::eventWithoutSteals),
+    m_steal("CPU-steal", *this, &MOS6510::eventWithSteals)
 {
     //----------------------------------------------------------------------
     // Build up the processor instruction table
     for (int i = 0; i < 0x100; i++)
     {
 #if DEBUG > 1
-        printf ("Building Command %d[%02x]..", i, i);
+        printf("Building Command %d[%02x]... ", i, i);
 #endif
 
         /*
@@ -2147,11 +2171,7 @@ MOS6510::MOS6510 (EventContext *context)
         instrTable[buildCycle].func = &MOS6510::interruptsAndNextOpcode;
 
 #if DEBUG > 1
-        printf (".");
-#endif
-
-#if DEBUG > 1
-        printf ("Done [%d Cycles]\n", buildCycle - (i << 3));
+        printf("Done [%d Cycles]\n", buildCycle - (i << 3));
 #endif
     }
 
@@ -2165,13 +2185,13 @@ MOS6510::MOS6510 (EventContext *context)
 #ifdef DEBUG
     dodump = false;
 #endif
-    Initialise ();
+    Initialise();
 }
 
 /**
 * Initialise CPU Emulation (Registers)
 */
-void MOS6510::Initialise (void)
+void MOS6510::Initialise()
 {
     // Reset stack
     Register_StackPointer = 0xFF;
@@ -2195,15 +2215,15 @@ void MOS6510::Initialise (void)
     // Signals
     rdy = true;
 
-    eventContext.schedule (m_nosteal, 0, EVENT_CLOCK_PHI2);
+    eventContext.schedule(m_nosteal, 0, EVENT_CLOCK_PHI2);
 }
 
 /**
 * Reset CPU Emulation
 */
-void MOS6510::reset (void)
+void MOS6510::reset()
 {   // Internal Stuff
-    Initialise ();
+    Initialise();
 
     // Set processor port to the default values
     cpuWrite(0, 0x2F);
@@ -2211,8 +2231,8 @@ void MOS6510::reset (void)
 
     // Requires External Bits
     // Read from reset vector for program entry point
-    endian_16lo8 (Cycle_EffectiveAddress, cpuRead (0xFFFC));
-    endian_16hi8 (Cycle_EffectiveAddress, cpuRead (0xFFFD));
+    endian_16lo8 (Cycle_EffectiveAddress, cpuRead(0xFFFC));
+    endian_16hi8 (Cycle_EffectiveAddress, cpuRead(0xFFFD));
     Register_ProgramCounter = Cycle_EffectiveAddress;
 }
 
@@ -2226,7 +2246,7 @@ const char *MOS6510::credit =
     "\t(C) 2011-2012 Leandro Nini\n"
 };
 
-void MOS6510::debug (bool enable, FILE *out)
+void MOS6510::debug(bool enable, FILE *out)
 {
 #ifdef DEBUG
     dodump = enable;

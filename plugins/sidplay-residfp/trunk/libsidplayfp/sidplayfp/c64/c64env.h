@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2001 Simon White
  *
@@ -29,7 +29,7 @@
 #  include "config.h"
 #endif
 
-/** @internal
+/**
 * An implementation of of this class can be created to perform the C64
 * specifics.  A pointer to this child class can then be passed to
 * each of the components so they can interact with it.
@@ -40,24 +40,27 @@ private:
     EventContext &m_context;
 
 public:
-    c64env (EventContext *context)
-        :m_context (*context) {}
+    c64env (EventContext *context) :
+        m_context (*context) {}
 
-    EventContext &context (void) const { return m_context; }
+    EventContext &context() const { return m_context; }
 
     virtual uint8_t cpuRead(uint_least16_t addr) =0;
     virtual void cpuWrite(uint_least16_t addr, uint8_t data) =0;
 
 #ifdef PC64_TESTSUITE
-    virtual void   loadFile (const char *file) =0;
+    virtual void loadFile(const char *file) =0;
 #endif
 
-    virtual void interruptIRQ (bool state) = 0;
-    virtual void interruptNMI () = 0;
-    virtual void interruptRST () = 0;
+    virtual void interruptIRQ(bool state) = 0;
+    virtual void interruptNMI() = 0;
+    virtual void interruptRST() = 0;
 
-    virtual void setBA        (bool state) = 0;
-    virtual void lightpen     () = 0;
+    virtual void setBA (bool state) = 0;
+    virtual void lightpen() = 0;
+
+protected:
+    ~c64env() {}
 };
 
 #endif // C64ENV_H

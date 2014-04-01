@@ -1,32 +1,49 @@
-/* Pulseaudio support -- written by Antti S. Lankila
- * (c) 2008, licensed under the GPL. See COPYING for details. */
+/*
+ * This file is part of sidplayfp, a console SID player.
+ *
+ * Copyright 2013 Leandro Nini
+ * Copyright 2008 Antti Lankila
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
 #include "audiodrv.h"
-#ifdef   HAVE_PULSE
-#include <pulse/simple.h>
 
-#include <stdio.h>
-#ifdef HAVE_EXCEPTIONS
-#   include <new>
-#endif
+#ifdef HAVE_PULSE
 
-Audio_Pulse::Audio_Pulse()
+#include <new>
+#include <pulse/error.h>
+
+Audio_Pulse::Audio_Pulse() :
+    AudioBase("PULSE")
 {
     outOfOrder();
 }
 
-Audio_Pulse::~Audio_Pulse ()
+Audio_Pulse::~Audio_Pulse()
 {
     close ();
 }
 
-void Audio_Pulse::outOfOrder ()
+void Audio_Pulse::outOfOrder()
 {
     _sampleBuffer = NULL;
-    _errorString = "None";
+    clearError();
 }
 
-short *Audio_Pulse::open (AudioConfig &cfg, const char *)
+bool Audio_Pulse::open(AudioConfig &cfg)
 {
     pa_sample_spec pacfg = {};
 
@@ -35,75 +52,84 @@ short *Audio_Pulse::open (AudioConfig &cfg, const char *)
     pacfg.format = PA_SAMPLE_S16NE;
 
     // Set sample precision and type of encoding.
+    int err;
     _audioHandle = pa_simple_new(
         NULL,
-        "sidplay",
+        "sidplayfp",
         PA_STREAM_PLAYBACK,
         NULL,
-        "Music",
+        "sidplayfp",
         &pacfg,
         NULL,
         NULL,
-        NULL
+        &err
     );
 
-    if (! _audioHandle) {
-        _errorString = "Error acquiring pulseaudio stream";
-        goto open_error;
+    try
+    {
+        if (! _audioHandle) {
+            throw error(pa_strerror(err));
+        }
+
+        cfg.bufSize = 4096;
+
+        try
+        {
+            _sampleBuffer = new short[cfg.bufSize];
+        }
+        catch (std::bad_alloc const &ba)
+        {
+            throw error("Unable to allocate memory for sample buffers.");
+        }
+
+        _settings = cfg;
+
+        return true;
     }
+    catch(error const  &e)
+    {
+        setError(e.message());
 
-    cfg.bufSize = 4096;
+        if (_audioHandle)
+            pa_simple_free(_audioHandle);
+        _audioHandle = NULL;
 
-#ifdef HAVE_EXCEPTIONS
-    _sampleBuffer = new(std::nothrow) short[cfg.bufSize];
-#else
-    _sampleBuffer = new short[cfg.bufSize];
-#endif
-
-    if (!_sampleBuffer) {
-        _errorString = "AUDIO: Unable to allocate memory for sample buffers.";
-        goto open_error;
+        return false;
     }
-
-    _settings = cfg;
-
-    return _sampleBuffer;
-
-open_error:
-    if (_audioHandle)
-        pa_simple_free(_audioHandle);
-    _audioHandle = NULL;
-
-    return NULL;
 }
 
 // Close an opened audio device, free any allocated buffers and
 // reset any variables that reflect the current state.
-void Audio_Pulse::close ()
+void Audio_Pulse::close()
 {
-    if (_audioHandle != NULL) {
+    if (_audioHandle != NULL)
+    {
         pa_simple_free(_audioHandle);
         _audioHandle = NULL;
     }
 
-    if (_sampleBuffer != NULL) {
+    if (_sampleBuffer != NULL)
+    {
         delete [] _sampleBuffer;
         outOfOrder ();
     }
 }
 
-short *Audio_Pulse::write ()
+bool Audio_Pulse::write()
 {
     if (_audioHandle == NULL)
     {
-        _errorString = "ERROR: Device not open.";
-        return NULL;
+        setError("Device not open.");
+        return false;
     }
 
-    if (pa_simple_write(_audioHandle, _sampleBuffer, _settings.bufSize * 2, NULL) < 0) {
-        _errorString = "Error writing to PA.";
+    int err;
+    if (pa_simple_write(_audioHandle, _sampleBuffer, _settings.bufSize * 2, &err) < 0)
+    {
+        setError(pa_strerror(err));
+        // FIXME should we return false here?
     }
-    return _sampleBuffer;
+    return true;
 }
 
-#endif // HAVE_OSS
+#endif // HAVE_PULSE

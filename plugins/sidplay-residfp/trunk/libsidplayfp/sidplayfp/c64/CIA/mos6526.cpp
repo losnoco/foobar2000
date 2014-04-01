@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000 Simon White
  *
@@ -22,7 +22,7 @@
 
 #include "mos6526.h"
 
-#include <string.h>
+#include <cstring>
 
 #include "sidplayfp/sidendian.h"
 
@@ -58,188 +58,6 @@ enum
     CRB     = 15
 };
 
-void Timer::setControlRegister(uint8_t cr)
-{
-    state &= ~CIAT_CR_MASK;
-    state |= (cr & CIAT_CR_MASK) ^ CIAT_PHI2IN;
-    lastControlValue = cr;
-}
-
-void Timer::syncWithCpu()
-{
-    if (ciaEventPauseTime > 0)
-    {
-        event_context.cancel(m_cycleSkippingEvent);
-        const event_clock_t elapsed = event_context.getTime(EVENT_CLOCK_PHI2) - ciaEventPauseTime;
-        /* It's possible for CIA to determine that it wants to go to sleep starting from the next
-        * cycle, and then have its plans aborted by CPU. Thus, we must avoid modifying
-        * the CIA state if the first sleep clock was still in the future.
-        */
-        if (elapsed >= 0)
-        {
-            timer -= elapsed;
-            clock();
-        }
-    }
-    if (ciaEventPauseTime == 0)
-    {
-        event_context.cancel(*this);
-    }
-    ciaEventPauseTime = -1;
-}
-
-void Timer::wakeUpAfterSyncWithCpu()
-{
-    ciaEventPauseTime = 0;
-    event_context.schedule(*this, 0, EVENT_CLOCK_PHI1);
-}
-
-void Timer::event()
-{
-    clock();
-    reschedule();
-}
-
-void Timer::cycleSkippingEvent(void)
-{
-    const event_clock_t elapsed = event_context.getTime(EVENT_CLOCK_PHI1) - ciaEventPauseTime;
-    ciaEventPauseTime = 0;
-    timer -= elapsed;
-    event();
-}
-
-void Timer::clock()
-{
-    if (timer != 0 && (state & CIAT_COUNT3) != 0)
-    {
-        timer --;
-    }
-
-    /* ciatimer.c block start */
-    int_least32_t adj = state & (CIAT_CR_START | CIAT_CR_ONESHOT | CIAT_PHI2IN);
-    if ((state & (CIAT_CR_START | CIAT_PHI2IN)) == (CIAT_CR_START | CIAT_PHI2IN))
-    {
-        adj |= CIAT_COUNT2;
-    }
-    if ((state & CIAT_COUNT2) != 0
-            || (state & (CIAT_STEP | CIAT_CR_START)) == (CIAT_STEP | CIAT_CR_START))
-    {
-        adj |= CIAT_COUNT3;
-    }
-    /* CR_FLOAD -> LOAD1, CR_ONESHOT -> ONESHOT0, LOAD1 -> LOAD, ONESHOT0 -> ONESHOT */
-    adj |= (state & (CIAT_CR_FLOAD | CIAT_CR_ONESHOT | CIAT_LOAD1 | CIAT_ONESHOT0)) << 8;
-    state = adj;
-    /* ciatimer.c block end */
-
-    if (timer == 0 && (state & CIAT_COUNT3) != 0)
-    {
-        state |= CIAT_LOAD | CIAT_OUT;
-
-        if ((state & (CIAT_ONESHOT | CIAT_ONESHOT0)) != 0)
-        {
-            state &= ~(CIAT_CR_START | CIAT_COUNT2);
-        }
-
-        // By setting bits 2&3 of the control register,
-        // PB6/PB7 will be toggled between high and low at each underflow.
-        const bool toggle = (lastControlValue & 0x06) == 6;
-        pbToggle = toggle && !pbToggle;
-
-        // Implementation of the serial port
-        serialPort();
-
-        // Timer A signals underflow handling: IRQ/B-count
-        underFlow();
-    }
-
-    if ((state & CIAT_LOAD) != 0)
-    {
-        timer = latch;
-        state &= ~CIAT_COUNT3;
-    }
-}
-
-void Timer::reschedule()
-{
-    /* There are only two subcases to consider.
-    *
-    * - are we counting, and if so, are we going to
-    *   continue counting?
-    * - have we stopped, and are there no conditions to force a new beginning?
-    *
-    * Additionally, there are numerous flags that are present only in passing manner,
-    * but which we need to let cycle through the CIA state machine.
-    */
-    const int_least32_t unwanted = CIAT_OUT | CIAT_CR_FLOAD | CIAT_LOAD1 | CIAT_LOAD;
-    if ((state & unwanted) != 0)
-    {
-        event_context.schedule(*this, 1);
-        return;
-    }
-
-    if ((state & CIAT_COUNT3) != 0)
-    {
-        /* Test the conditions that keep COUNT2 and thus COUNT3 alive, and also
-        * ensure that all of them are set indicating steady state operation. */
-
-        const int_least32_t wanted = CIAT_CR_START | CIAT_PHI2IN | CIAT_COUNT2 | CIAT_COUNT3;
-        if (timer > 2 && (state & wanted) == wanted)
-        {
-            /* we executed this cycle, therefore the pauseTime is +1. If we are called
-            * to execute on the very next clock, we need to get 0 because there's
-            * another timer-- in it. */
-            ciaEventPauseTime = event_context.getTime(EVENT_CLOCK_PHI1) + 1;
-            /* execute event slightly before the next underflow. */
-            event_context.schedule(m_cycleSkippingEvent, timer - 1);
-            return;
-        }
-
-        /* play safe, keep on ticking. */
-        event_context.schedule(*this, 1);
-    }
-    else
-    {
-        /* Test conditions that result in CIA activity in next clocks.
-        * If none, stop. */
-        const int_least32_t unwanted1 = CIAT_CR_START | CIAT_PHI2IN;
-        const int_least32_t unwanted2 = CIAT_CR_START | CIAT_STEP;
-
-        if ((state & unwanted1) == unwanted1
-                || (state & unwanted2) == unwanted2)
-        {
-            event_context.schedule(*this, 1);
-            return;
-        }
-
-        ciaEventPauseTime = -1;
-    }
-}
-
-void Timer::reset()
-{
-    event_context.cancel(*this);
-    timer = latch = 0xffff;
-    pbToggle = false;
-    state = 0;
-    lastControlValue = 0;
-    ciaEventPauseTime = 0;
-    event_context.schedule(*this, 1, EVENT_CLOCK_PHI1);
-}
-
-void Timer::latchLo(uint8_t data)
-{
-    endian_16lo8(latch, data);
-    if (state & CIAT_LOAD)
-        endian_16lo8(timer, data);
-}
-
-void Timer::latchHi(uint8_t data)
-{
-    endian_16hi8 (latch, data);
-    if ((state & CIAT_LOAD) || !(state & CIAT_CR_START)) // Reload timer if stopped
-        timer = latch;
-}
-
 void TimerA::underFlow()
 {
     parent->underflowA();
@@ -264,20 +82,19 @@ const char *MOS6526::credit =
     "\tCopyright (C) 2011-2012 Leandro Nini\n"
 };
 
-
-MOS6526::MOS6526(EventContext *context)
-:pra(regs[PRA]),
- prb(regs[PRB]),
- ddra(regs[DDRA]),
- ddrb(regs[DDRB]),
- timerA(context, this),
- timerB(context, this),
- idr(0),
- event_context(*context),
- m_todPeriod(~0), // Dummy
- bTickEvent("CIA B counts A", *this, &MOS6526::bTick),
- todEvent("CIA Time of Day", *this, &MOS6526::tod),
- triggerEvent("Trigger Interrupt", *this, &MOS6526::trigger)
+MOS6526::MOS6526(EventContext *context) :
+    pra(regs[PRA]),
+    prb(regs[PRB]),
+    ddra(regs[DDRA]),
+    ddrb(regs[DDRB]),
+    timerA(context, this),
+    timerB(context, this),
+    idr(0),
+    event_context(*context),
+    m_todPeriod(~0), // Dummy
+    bTickEvent("CIA B counts A", *this, &MOS6526::bTick),
+    todEvent("CIA Time of Day", *this, &MOS6526::tod),
+    triggerEvent("Trigger Interrupt", *this, &MOS6526::trigger)
 {
     reset();
 }
@@ -303,7 +120,7 @@ void MOS6526::serialPort()
     }
 }
 
-void MOS6526::clear(void)
+void MOS6526::clear()
 {
     if (idr & INTERRUPT_REQUEST)
         interrupt(false);
@@ -311,12 +128,12 @@ void MOS6526::clear(void)
 }
 
 
-void MOS6526::setDayOfTimeRate(double clock)
+void MOS6526::setDayOfTimeRate(unsigned int clock)
 {
-    m_todPeriod = (event_clock_t) (clock * (double) (1 << 7));
+    m_todPeriod = (event_clock_t) clock * (1 << 7);
 }
 
-void MOS6526::reset(void)
+void MOS6526::reset()
 {
     sdr_out = 0;
     sdr_count = 0;
@@ -376,13 +193,13 @@ uint8_t MOS6526::read(uint_least8_t addr)
         }
         return data;}
     case TAL:
-        return endian_16lo8 (timerA.getTimer());
+        return endian_16lo8(timerA.getTimer());
     case TAH:
-        return endian_16hi8 (timerA.getTimer());
+        return endian_16hi8(timerA.getTimer());
     case TBL:
-        return endian_16lo8 (timerB.getTimer());
+        return endian_16lo8(timerB.getTimer());
     case TBH:
-        return endian_16hi8 (timerB.getTimer());
+        return endian_16hi8(timerB.getTimer());
 
     // TOD implementation taken from Vice
     // TOD clock is latched by reading Hours, and released
@@ -519,7 +336,7 @@ void MOS6526::write(uint_least8_t addr, uint8_t data)
     timerB.wakeUpAfterSyncWithCpu();
 }
 
-void MOS6526::trigger(void)
+void MOS6526::trigger()
 {
     idr |= INTERRUPT_REQUEST;
     interrupt(true);
@@ -540,12 +357,12 @@ void MOS6526::trigger(uint8_t interruptMask)
     }
 }
 
-void MOS6526::bTick(void)
+void MOS6526::bTick()
 {
     timerB.cascade();
 }
 
-void MOS6526::underflowA(void)
+void MOS6526::underflowA()
 {
     trigger(INTERRUPT_UNDERFLOW_A);
     if ((regs[CRB] & 0x41) == 0x41)
@@ -557,12 +374,12 @@ void MOS6526::underflowA(void)
     }
 }
 
-void MOS6526::underflowB(void)
+void MOS6526::underflowB()
 {
     trigger(INTERRUPT_UNDERFLOW_B);
 }
 
-void MOS6526::tod(void)
+void MOS6526::tod()
 {
     // Reload divider according to 50/60 Hz flag
     // Only performed on expiry according to Frodo

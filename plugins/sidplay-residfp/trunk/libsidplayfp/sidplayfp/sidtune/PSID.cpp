@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -22,14 +22,10 @@
 
 #include "PSID.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string>
 #include <memory>
 
-#include "SidTuneCfg.h"
-#include "SidTuneInfoImpl.h"
-#include "SidTuneBase.h"
+#include "sidplayfp/SidTuneInfo.h"
 #include "sidplayfp/sidendian.h"
 #include "sidplayfp/sidmd5.h"
 
@@ -111,15 +107,15 @@ const char ERR_INVALID[]      = "ERROR: File contains invalid data";
 static const int psid_maxStrLen = 32;
 
 
-SidTuneBase* PSID::load(Buffer_sidtt<const uint_least8_t>& dataBuf)
+SidTuneBase* PSID::load(buffer_t& dataBuf)
 {
     // File format check
-    if (dataBuf.len()<6)
+    if (dataBuf.size()<6)
         return 0;
 
-    const psidHeader* pHeader = (const psidHeader*)dataBuf.get();
-    if ( (endian_big32((const uint_least8_t*)pHeader->id)!=PSID_ID) &&
-         (endian_big32((const uint_least8_t*)pHeader->id)!=RSID_ID) )
+    const psidHeader* pHeader = reinterpret_cast<const psidHeader*>(&dataBuf[0]);
+    if ((endian_big32((const uint_least8_t*)pHeader->id)!=PSID_ID)
+        && (endian_big32((const uint_least8_t*)pHeader->id)!=RSID_ID))
          return 0;
 
     std::auto_ptr<PSID> tune(new PSID());
@@ -128,14 +124,14 @@ SidTuneBase* PSID::load(Buffer_sidtt<const uint_least8_t>& dataBuf)
     return tune.release();
 }
 
-void PSID::tryLoad(Buffer_sidtt<const uint_least8_t>& dataBuf)
+void PSID::tryLoad(buffer_t& dataBuf)
 {
     SidTuneInfo::clock_t clock = SidTuneInfo::CLOCK_UNKNOWN;
     SidTuneInfo::compatibility_t compatibility = SidTuneInfo::COMPATIBILITY_C64;
 
     // Require minimum size to allow access to the first few bytes.
     // Require a valid ID and version number.
-    const psidHeader* pHeader = (const psidHeader*)dataBuf.get();
+    const psidHeader* pHeader = reinterpret_cast<const psidHeader*>(&dataBuf[0]);
 
     if (endian_big32((const uint_least8_t*)pHeader->id)==PSID_ID)
     {
@@ -169,8 +165,8 @@ void PSID::tryLoad(Buffer_sidtt<const uint_least8_t>& dataBuf)
     // Due to security concerns, input must be at least as long as version 1
     // header plus 16-bit C64 load address. That is the area which will be
     // accessed.
-    const uint_least32_t bufLen = dataBuf.len();
-    if ( bufLen < (sizeof(psidHeader)+2) )
+    const buffer_t::size_type bufLen = dataBuf.size();
+    if (bufLen < (sizeof(psidHeader)+2))
     {
         throw loadError(ERR_TRUNCATED);
     }
@@ -198,7 +194,7 @@ void PSID::tryLoad(Buffer_sidtt<const uint_least8_t>& dataBuf)
     info->m_sidModel2      = SidTuneInfo::SIDMODEL_UNKNOWN;
     info->m_relocPages     = 0;
     info->m_relocStartPage = 0;
-    if ( endian_big16(pHeader->version) >= 2 )
+    if (endian_big16(pHeader->version) >= 2)
     {
         const uint_least16_t flags = endian_big16(pHeader->flags);
         if (flags & PSID_MUS)
@@ -239,7 +235,7 @@ void PSID::tryLoad(Buffer_sidtt<const uint_least8_t>& dataBuf)
         info->m_relocStartPage = pHeader->relocStartPage;
         info->m_relocPages     = pHeader->relocPages;
 
-        if ( endian_big16(pHeader->version) >= 3 )
+        if (endian_big16(pHeader->version) >= 3)
         {
             info->m_sidChipBase2 = 0xd000 | (pHeader->sidChipBase2<<4);
 
@@ -256,9 +252,9 @@ void PSID::tryLoad(Buffer_sidtt<const uint_least8_t>& dataBuf)
     // as required by the RSID specification
     if (compatibility == SidTuneInfo::COMPATIBILITY_R64)
     {
-        if ((info->m_loadAddr != 0) ||
-            (info->m_playAddr != 0) ||
-            (speed != 0))
+        if ((info->m_loadAddr != 0)
+            || (info->m_playAddr != 0)
+            || (speed != 0))
         {
             throw loadError(ERR_INVALID);
         }
@@ -273,7 +269,7 @@ void PSID::tryLoad(Buffer_sidtt<const uint_least8_t>& dataBuf)
     info->m_infoString.push_back(std::string(pHeader->author, psid_maxStrLen));
     info->m_infoString.push_back(std::string(pHeader->released, psid_maxStrLen));
 
-    if ( musPlayer )
+    if (musPlayer)
         throw loadError("Compute!'s Sidplayer MUS data is not supported yet"); // TODO
 }
 
@@ -285,16 +281,19 @@ const char *PSID::createMD5(char *md5)
 
     // Include C64 data.
     sidmd5 myMD5;
-    md5_byte_t tmp[2];
-    myMD5.append (cache.get()+fileOffset,info->m_c64dataLen);
+    uint8_t tmp[2];
+    myMD5.append(&cache[fileOffset], info->m_c64dataLen);
+
     // Include INIT and PLAY address.
-    endian_little16 (tmp,info->m_initAddr);
-    myMD5.append    (tmp,sizeof(tmp));
-    endian_little16 (tmp,info->m_playAddr);
-    myMD5.append    (tmp,sizeof(tmp));
+    endian_little16(tmp,info->m_initAddr);
+    myMD5.append(tmp,sizeof(tmp));
+    endian_little16(tmp,info->m_playAddr);
+    myMD5.append(tmp,sizeof(tmp));
+
     // Include number of songs.
-    endian_little16 (tmp,info->m_songs);
-    myMD5.append    (tmp,sizeof(tmp));
+    endian_little16(tmp,info->m_songs);
+    myMD5.append(tmp,sizeof(tmp));
+
     {   // Include song speed for each song.
         const unsigned int currentSong = info->m_currentSong;
         for (unsigned int s = 1; s <= info->m_songs; s++)
@@ -306,12 +305,17 @@ const char *PSID::createMD5(char *md5)
         // Restore old song
         selectSong (currentSong);
     }
+
     // Deal with PSID v2NG clock speed flags: Let only NTSC
     // clock speed change the MD5 fingerprint. That way the
     // fingerprint of a PAL-speed sidtune in PSID v1, v2, and
     // PSID v2NG format is the same.
     if (info->m_clockSpeed == SidTuneInfo::CLOCK_NTSC)
-        myMD5.append (&info->m_clockSpeed,sizeof(info->m_clockSpeed));
+    {
+        const uint_least8_t ntsc_val = 2;
+        myMD5.append (&ntsc_val,sizeof(ntsc_val));
+    }
+
     // NB! If the fingerprint is used as an index into a
     // song-lengths database or cache, modify above code to
     // allow for PSID v2NG files which have clock speed set to

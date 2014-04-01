@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2010 Antti Lankila
  *
  * This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@
 
 #include "Bank.h"
 
-/** @internal
+/**
  * IO region handler. 4k region, 16 chips, 256b banks.
  * located at $D000-$DFFF
  *
@@ -43,14 +43,19 @@ public:
         map[num] = bank;
     }
 
-    uint8_t read(uint_least16_t addr)
+    Bank *getBank(int num) const
     {
-        return map[addr >> 8 & 0xf]->read(addr);
+        return map[num];
     }
 
-    void write(uint_least16_t addr, uint8_t data)
+    uint8_t peek(uint_least16_t addr)
     {
-        map[addr >> 8 & 0xf]->write(addr, data);
+        return map[addr >> 8 & 0xf]->peek(addr);
+    }
+
+    void poke(uint_least16_t addr, uint8_t data)
+    {
+        map[addr >> 8 & 0xf]->poke(addr, data);
     }
 };
 

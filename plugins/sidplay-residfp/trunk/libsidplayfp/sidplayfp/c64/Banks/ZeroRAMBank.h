@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2010 Antti Lankila
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,12 +22,15 @@
 #ifndef ZERORAMBANK_H
 #define ZERORAMBANK_H
 
-#include <string.h>
 #include <stdint.h>
 
 #include "Bank.h"
+
 #include "sidplayfp/event.h"
 
+/**
+* Interface to PLA functions.
+*/
 class PLA
 {
 public:
@@ -36,7 +39,7 @@ public:
     virtual event_clock_t getPhi2Time() const =0;
 };
 
-/** @internal
+/**
 * Area backed by RAM, including cpu port addresses 0 and 1.
 *
 * This is bit of a fake. We know that the CPU port is an internal
@@ -46,13 +49,37 @@ public:
 * However, that would slow down all accesses, which is suboptimal. Therefore
 * we install this little hook to the 4k 0 region to deal with this.
 *
+* Implementation based on VICE code.
+*
 * @author Antti Lankila
 */
 class ZeroRAMBank : public Bank
 {
 private:
-    /** $01 bits 6 and 7 fall-off cycles (1->0), average is about 350 msec */
-    static const event_clock_t C64_CPU_DATA_PORT_FALL_OFF_CYCLES = 350000;
+/*
+    NOTE: fall-off cycles are heavily chip- and temperature dependent. as a
+          consequence it is very hard to find suitable realistic values that
+          always work and we can only tweak them based on testcases. (unless we
+          want to make it configurable or emulate temperature over time =))
+
+          it probably makes sense to tweak the values for a warmed up CPU, since
+          this is likely how (old) programs were coded and tested :)
+*/
+
+/* $01 bits 6 and 7 fall-off cycles (1->0), average is about 350 msec for a 6510
+   and about 1500 msec for a 8500 */
+/* NOTE: the unused bits of the 6510 seem to be much more temperature dependant
+         and the fall-off time decreases quicker and more drastically than on a
+         8500
+*/
+    static const event_clock_t C64_CPU6510_DATA_PORT_FALL_OFF_CYCLES = 350000;
+    //static const event_clock_t C64_CPU8500_DATA_PORT_FALL_OFF_CYCLES = 1500000;
+/*
+   cpuports.prg from the lorenz testsuite will fail when the falloff takes more
+   than 1373 cycles. this suggests that he tested on a well warmed up c64 :)
+   he explicitly delays by ~1280 cycles and mentions capacitance, so he probably 
+   even was aware of what happens.
+*/
 
     static const bool tape_sense = false;
 
@@ -69,18 +96,18 @@ private:
     //@}
 
     /**
-     * indicates if the unused bits of the data port are still
-     * valid or should be read as 0, 1 = unused bits valid,
-     * 0 = unused bits should be 0
+     * indicates if the unused bits of the data port are in the process of falling off
      */
     //@{
-    bool dataSetBit6;
-    bool dataSetBit7;
-    //@}
-
-    /** indicates if the unused bits are in the process of falling off. */
     bool dataFalloffBit6;
     bool dataFalloffBit7;
+    //@}
+
+    /** Value of the unused bit of the processor port.  */
+    //@{
+    uint8_t dataSetBit6;
+    uint8_t dataSetBit7;
+    //@}
 
     /** Value written to processor port.  */
     //@{
@@ -92,42 +119,31 @@ private:
     uint8_t dataRead;
 
     /** State of processor port pins.  */
-    uint8_t dataOut;
-
-    /** Tape motor status.  */
-    uint8_t oldPortDataOut;
-
-    /** Tape write line status.  */
-    uint8_t oldPortWriteBit;
+    uint8_t procPortPins;
 
 private:
     void updateCpuPort()
     {
-        dataOut = (dataOut & ~dir) | (data & dir);
-        dataRead = (data | ~dir) & (dataOut | 0x17);
-        pla->setCpuPort(dataRead);
+        // Update data pins for which direction is OUTPUT
+        procPortPins = (procPortPins & ~dir) | (data & dir);
+
+        dataRead = (data | ~dir) & (procPortPins | 0x17);
+
+        pla->setCpuPort((data | ~dir) & 0x07);
 
         if ((dir & 0x20) == 0)
         {
-            dataRead &= 0xdf;
+            dataRead &= ~0x20;
         }
-        if ((dir & 0x10) == 0 && tape_sense)
+        if (tape_sense && (dir & 0x10) == 0)
         {
-            dataRead &= 0xef;
-        }
-
-        if ((dir & data & 0x20) != oldPortDataOut)
-        {
-            oldPortDataOut = dir & data & 0x20;
-            //C64.this.setMotor(0 == oldPortDataOut);
-        }
-
-        if (((~dir | data) & 0x8) != oldPortWriteBit)
-        {
-            oldPortWriteBit = (~dir | data) & 0x8;
-            //C64.this.toggleWriteBit(((~dir | data) & 0x8) != 0);
+            dataRead &= ~0x10;
         }
     }
+
+private:    // prevent copying
+    ZeroRAMBank(const ZeroRAMBank&);
+    ZeroRAMBank& operator=(const ZeroRAMBank&);
 
 public:
     ZeroRAMBank(PLA* pla, Bank* ramBank) :
@@ -136,93 +152,146 @@ public:
 
     void reset()
     {
-        oldPortDataOut = 0xff;
-        oldPortWriteBit = 0xff;
-        data = 0x3f;
-        dataOut = 0x3f;
-        dataRead = 0x3f;
-        dir = 0;
-        dataSetBit6 = false;
-        dataSetBit7 = false;
         dataFalloffBit6 = false;
         dataFalloffBit7 = false;
+        dir = 0;
+        data = 0x3f;
+        dataRead = 0x3f;
+        procPortPins = 0x3f;
         updateCpuPort();
     }
 
-    uint8_t read(uint_least16_t address)
+/*
+    $00/$01 unused bits emulation, as investigated by groepaz:
+
+    - There are 2 different unused bits, 1) the output bits, 2) the input bits
+    - The output bits can be (re)set when the data-direction is set to output
+      for those bits and the output bits will not drop-off to 0.
+    - When the data-direction for the unused bits is set to output then the
+      unused input bits can be (re)set by writing to them, when set to 1 the
+      drop-off timer will start which will cause the unused input bits to drop
+      down to 0 in a certain amount of time.
+    - When an unused input bit already had the drop-off timer running, and is
+      set to 1 again, the drop-off timer will restart.
+    - when a an unused bit changes from output to input, and the current output
+      bit is 1, the drop-off timer will restart again
+*/
+
+    uint8_t peek(uint_least16_t address)
     {
-        if (address == 0)
+        switch (address)
         {
+        case 0:
             return dir;
-        }
-        else if (address == 1)
+        case 1:
         {
+            /* discharge the "capacitor" */
             if (dataFalloffBit6 || dataFalloffBit7)
             {
                 const event_clock_t phi2time = pla->getPhi2Time();
 
-                if (dataSetClkBit6 < phi2time)
+                /* set real value of read bit 6 */
+                if (dataFalloffBit6 && dataSetClkBit6 < phi2time)
                 {
                     dataFalloffBit6 = false;
-                    dataSetBit6 = false;
+                    dataSetBit6 = 0;
                 }
 
-                if (dataSetClkBit7 < phi2time)
+                /* set real value of read bit 7 */
+                if (dataFalloffBit7 && dataSetClkBit7 < phi2time)
                 {
                     dataFalloffBit7 = false;
-                    dataSetBit7 = false;
+                    dataSetBit7 = 0;
                 }
             }
-            return dataRead & (0xff - (((!dataSetBit6?1:0)<<6) + ((!dataSetBit7?1:0)<<7)));
+
+            uint8_t retval = dataRead;
+
+            /* for unused bits in input mode, the value comes from the "capacitor" */
+
+            /* set real value of bit 6 */
+            if (!(dir & 0x40))
+            {
+                retval &= ~0x40;
+                retval |= dataSetBit6;
+            }
+
+            /* set real value of bit 7 */
+            if (!(dir & 0x80))
+            {
+                retval &= ~0x80;
+                retval |= dataSetBit7;
+            }
+
+            return retval;
         }
-        else
-        {
-            return ramBank->read(address);
+        default:
+            return ramBank->peek(address);
         }
     }
 
-    void write(uint_least16_t address, uint8_t value)
+    void poke(uint_least16_t address, uint8_t value)
     {
-        if (address == 0)
+        switch (address)
         {
-            if (dataSetBit7 && (value & 0x80) == 0 && !dataFalloffBit7)
+        case 0:
+            /* when switching an unused bit from output (where it contained a
+             * stable value) to input mode (where the input is floating), some
+             * of the charge is transferred to the floating input */
+
+            /* check if bit 6 has flipped from 1 to 0 */
+            if ((dir & 0x40) && !(value & 0x40))
             {
-                dataFalloffBit7 = true;
-                dataSetClkBit7 = pla->getPhi2Time() + C64_CPU_DATA_PORT_FALL_OFF_CYCLES;
-            }
-            if (dataSetBit6 && (value & 0x40) == 0 && !dataFalloffBit6)
-            {
+                dataSetClkBit6 = pla->getPhi2Time() + C64_CPU6510_DATA_PORT_FALL_OFF_CYCLES;
+                dataSetBit6 = data & 0x40;
                 dataFalloffBit6 = true;
-                dataSetClkBit6 = pla->getPhi2Time() + C64_CPU_DATA_PORT_FALL_OFF_CYCLES;
             }
-            if (dataSetBit7 && (value & 0x80) != 0 && dataFalloffBit7)
+
+            /* check if bit 7 has flipped from 1 to 0 */
+            if ((dir & 0x80) && !(value & 0x80))
             {
-                dataFalloffBit7 = false;
+                dataSetClkBit7 = pla->getPhi2Time() + C64_CPU6510_DATA_PORT_FALL_OFF_CYCLES;
+                dataSetBit7 = data & 0x80;
+                dataFalloffBit7 = true;
             }
-            if (dataSetBit6 && (value & 0x40) != 0 && dataFalloffBit6)
+
+            if (dir != value)
             {
-                dataFalloffBit6 = false;
+                dir = value;
+                updateCpuPort();
             }
-            dir = value;
-            updateCpuPort();
             value = pla->getLastReadByte();
-        }
-        else if (address == 1)
-        {
-            if ((dir & 0x80) != 0 && (value & 0x80) != 0)
+            break;
+        case 1:
+            /* when writing to an unused bit that is output, charge the "capacitor",
+             * otherwise don't touch it */
+
+            if (dir & 0x40)
             {
-                dataSetBit7 = true;
+                dataSetBit6 = value & 0x40;
+                dataSetClkBit6 = pla->getPhi2Time() + C64_CPU6510_DATA_PORT_FALL_OFF_CYCLES;
+                dataFalloffBit6 = true;
             }
-            if ((dir & 0x40) != 0 && (value & 0x40) != 0)
+
+            if (dir & 0x80)
             {
-                dataSetBit6 = true;
+                dataSetBit7 = value & 0x80;
+                dataSetClkBit7 = pla->getPhi2Time() + C64_CPU6510_DATA_PORT_FALL_OFF_CYCLES;
+                dataFalloffBit7 = true;
             }
-            data = value;
-            updateCpuPort();
+
+            if (data != value)
+            {
+                data = value;
+                updateCpuPort();
+            }
             value = pla->getLastReadByte();
+            break;
+        default:
+            break;
         }
 
-        ramBank->write(address, value);
+        ramBank->poke(address, value);
     }
 };
 

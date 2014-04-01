@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2014 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2001 Simon White
  *
@@ -27,8 +27,6 @@
 // --------------------------------------------------------
 #include "psiddrv.h"
 
-#include <string.h>
-
 #include "sidendian.h"
 #include "sidmemory.h"
 #include "SidTuneInfo.h"
@@ -44,7 +42,7 @@ uint8_t psiddrv::psid_driver[] = {
 };
 
 
-uint8_t psiddrv::iomap (uint_least16_t addr)
+uint8_t psiddrv::iomap(uint_least16_t addr) const
 {
     // Force Real C64 Compatibility
     switch (m_tuneInfo->compatibility())
@@ -56,17 +54,15 @@ uint8_t psiddrv::iomap (uint_least16_t addr)
 
     if (addr == 0)
         return 0;     // Special case, converted to 0x37 later
-    if (addr < 0xa000)
-        return 0x37;  // Basic-ROM, Kernal-ROM, I/O
-    if (addr  < 0xd000)
-        return 0x36;  // Kernal-ROM, I/O
     if (addr >= 0xe000)
         return 0x35;  // I/O only
+    if (addr >= 0xd000)
+        return 0x34;  // RAM only
 
-    return 0x34;  // RAM only (special I/O in PlaySID mode)
+    return 0x36;  // Kernal-ROM, I/O
 }
 
-bool psiddrv::drvReloc (sidmemory *mem)
+bool psiddrv::drvReloc(sidmemory *mem)
 {
     const int startlp = m_tuneInfo->loadAddr() >> 8;
     const int endlp   = (m_tuneInfo->loadAddr() + (m_tuneInfo->c64dataLen() - 1)) >> 8;
@@ -115,7 +111,7 @@ bool psiddrv::drvReloc (sidmemory *mem)
     }
 
     // Place psid driver into ram
-    uint_least16_t relocAddr = relocStartPage << 8;
+    const uint_least16_t relocAddr = relocStartPage << 8;
 
     reloc_driver = psid_driver;
     reloc_size   = sizeof (psid_driver);
@@ -132,7 +128,7 @@ bool psiddrv::drvReloc (sidmemory *mem)
     // Adjust size to not included initialisation data.
     reloc_size -= 10;
     m_driverAddr   = relocAddr;
-    m_driverLength = (uint_least16_t) reloc_size;
+    m_driverLength = (uint_least16_t)reloc_size;
     // Round length to end of page
     m_driverLength += 0xff;
     m_driverLength &= 0xff00;
@@ -159,7 +155,7 @@ bool psiddrv::drvReloc (sidmemory *mem)
     return true;
 }
 
-void psiddrv::install (sidmemory *mem)
+void psiddrv::install(sidmemory *mem) const
 {
     int pos = m_driverAddr;
 
@@ -178,10 +174,10 @@ void psiddrv::install (sidmemory *mem)
     pos += 2;
     mem->writeMemWord(pos, m_powerOnDelay);
     pos += 2;
-    
-    mem->writeMemByte(pos, iomap (m_tuneInfo->initAddr()));
+
+    mem->writeMemByte(pos, iomap(m_tuneInfo->initAddr()));
     pos++;
-    mem->writeMemByte(pos, iomap (m_tuneInfo->playAddr()));
+    mem->writeMemByte(pos, iomap(m_tuneInfo->playAddr()));
     pos++;
     const uint8_t flag = mem->readMemByte(0x02a6); // PAL/NTSC flag
     mem->writeMemByte(pos, flag);

@@ -21,8 +21,10 @@ AM_CPPFLAGS = -I $(top_builddir)/builders/residfp-builder \
 
 #=========================================================
 EXTRA_DIST = \
+docs/mainpage.dox \
 sidplayfp/psiddrv.bin \
 sidplayfp/c64/poweron.bin \
+sidplayfp/sidtune/sidplayer.bin \
 builders/residfp-builder/residfp/AUTHORS \
 builders/residfp-builder/residfp/COPYING \
 builders/residfp-builder/residfp/README \
@@ -57,8 +59,18 @@ endif
 
 #=========================================================
 # libsidplayfp
+
+if LIBGCRYPT
+   MD5SRC = \
+utils/md5_gcrypt.h
+else
+   MD5SRC = \
+utils/MD5/MD5.cpp \
+utils/MD5/MD5.h \
+utils/MD5/MD5_Defs.h
+endif
+
 sidplayfp_libsidplayfp_la_SOURCES = \
-sidplayfp/Buffer.h \
 sidplayfp/component.h \
 sidplayfp/config.cpp \
 sidplayfp/EventScheduler.cpp \
@@ -78,16 +90,17 @@ sidplayfp/sidmemory.h \
 sidplayfp/sidplayfp.cpp \
 sidplayfp/SidInfoImpl.h \
 sidplayfp/SidTune.cpp \
-sidplayfp/SmartPtr.h \
 sidplayfp/psiddrv.a65 \
 sidplayfp/romCheck.h \
 sidplayfp/sidemu.h \
 sidplayfp/sidendian.h \
 sidplayfp/sidrandom.h \
+sidplayfp/stringutils.h \
 sidplayfp/c64/Banks/Bank.h \
 sidplayfp/c64/c64cpu.h \
 sidplayfp/c64/c64cia.h \
 sidplayfp/c64/c64env.h \
+sidplayfp/c64/c64sid.h \
 sidplayfp/c64/c64vic.h \
 sidplayfp/c64/c64.cpp \
 sidplayfp/c64/c64.h \
@@ -95,7 +108,9 @@ sidplayfp/c64/mmu.cpp \
 sidplayfp/c64/mmu.h \
 sidplayfp/c64/Banks/ColorRAMBank.h \
 sidplayfp/c64/Banks/DisconnectedBusBank.h \
+sidplayfp/c64/Banks/ExtraSidBank.h \
 sidplayfp/c64/Banks/IOBank.h \
+sidplayfp/c64/Banks/NullSid.h \
 sidplayfp/c64/Banks/SidBank.h \
 sidplayfp/c64/Banks/SystemRAMBank.h \
 sidplayfp/c64/Banks/SystemROMBanks.h \
@@ -109,6 +124,8 @@ sidplayfp/c64/CPU/mos6510debug.h \
 sidplayfp/c64/CPU/opcodes.h \
 sidplayfp/c64/CIA/mos6526.cpp \
 sidplayfp/c64/CIA/mos6526.h \
+sidplayfp/c64/CIA/timer.cpp \
+sidplayfp/c64/CIA/timer.h \
 sidplayfp/sidtune/MUS.cpp \
 sidplayfp/sidtune/MUS.h \
 sidplayfp/sidtune/p00.cpp \
@@ -123,12 +140,11 @@ sidplayfp/sidtune/SidTuneCfg.h \
 sidplayfp/sidtune/SidTuneInfoImpl.h \
 sidplayfp/sidtune/SidTuneTools.cpp \
 sidplayfp/sidtune/SidTuneTools.h \
+sidplayfp/sidtune/SmartPtr.h \
 utils/iniParser.cpp \
 utils/iniParser.h \
 utils/SidDatabase.cpp \
-utils/MD5/MD5.cpp \
-utils/MD5/MD5.h \
-utils/MD5/MD5_Defs.h
+$(MD5SRC)
 
 sidplayfp_libsidplayfp_la_LDFLAGS = -version-info $(LIBSIDPLAYVERSION) $(W32_LDFLAGS)
 
@@ -150,11 +166,14 @@ sidplayfp/sidversion.h
 
 sidplayfp_libsidplayfp_la_LIBADD = \
 builders/residfp-builder/libsidplayfp-residfp.la \
-builders/resid-builder/libsidplayfp-resid.la
+builders/resid-builder/libsidplayfp-resid.la \
+$(LIBGCRYPT_LIBS)
 
 if HARDSID
   sidplayfp_libsidplayfp_la_LIBADD += builders/hardsid-builder/libsidplayfp-hardsid.la
 endif
+
+sidplayfp_libsidplayfp_la_CPPFLAGS = $(LIBGCRYPT_CFLAGS) $(AM_CPPFLAGS)
 
 #=========================================================
 # residfp
@@ -163,6 +182,7 @@ builders_residfp_builder_residfp_libresidfp_la_SOURCES = \
 builders/residfp-builder/residfp/array.h \
 builders/residfp-builder/residfp/Dac.cpp \
 builders/residfp-builder/residfp/Dac.h \
+builders/residfp-builder/residfp/Integrator.cpp \
 builders/residfp-builder/residfp/Integrator.h \
 builders/residfp-builder/residfp/EnvelopeGenerator.cpp \
 builders/residfp-builder/residfp/EnvelopeGenerator.h \
@@ -172,6 +192,7 @@ builders/residfp-builder/residfp/FilterModelConfig.cpp \
 builders/residfp-builder/residfp/FilterModelConfig.h \
 builders/residfp-builder/residfp/Filter.cpp \
 builders/residfp-builder/residfp/Filter.h \
+builders/residfp-builder/residfp/Filter8580.cpp \
 builders/residfp-builder/residfp/Filter8580.h \
 builders/residfp-builder/residfp/Filter6581.cpp \
 builders/residfp-builder/residfp/Filter6581.h \
@@ -192,7 +213,6 @@ builders/residfp-builder/residfp/resample/ZeroOrderResampler.h \
 builders/residfp-builder/residfp/resample/SincResampler.cpp \
 builders/residfp-builder/residfp/resample/SincResampler.h \
 builders/residfp-builder/residfp/resample/TwoPassSincResampler.h \
-builders/residfp-builder/residfp/residfp-config.h \
 builders/residfp-builder/residfp/version.cc
 
 #=========================================================
@@ -301,18 +321,24 @@ doc:
 	$(DOXYGEN) Doxyfile
 
 clean-local:
-	rm -fr $(builddir)/docs
+	rm -fr $(builddir)/docs/html
 endif
 
 #=========================================================
 # test
 if TESTSUITE
-noinst_PROGRAMS = test/test
+noinst_PROGRAMS = \
+test/test \
+builders/residfp-builder/residfp/resample/test
 
-test_test_SOURCES = test/test.cpp
+test_test_SOURCES = test/test.cpp 
 
 test_test_LDADD = sidplayfp/libsidplayfp.la \
 builders/residfp-builder/libsidplayfp-residfp.la
+
+builders_residfp_builder_residfp_resample_test_SOURCES = builders/residfp-builder/residfp/resample/test.cpp
+
+builders_residfp_builder_residfp_resample_test_LDADD = builders/residfp-builder/residfp/resample/SincResampler.lo
 endif
 
 #=========================================================

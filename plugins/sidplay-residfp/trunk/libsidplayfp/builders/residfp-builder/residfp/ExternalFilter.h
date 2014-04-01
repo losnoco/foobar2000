@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2004 Dag Lem <resid@nimrod.no>
  *
@@ -28,13 +28,12 @@
 namespace reSIDfp
 {
 
-/** @internal
- *
+/**
  * The audio output stage in a Commodore 64 consists of two STC networks, a
  * low-pass filter with 3-dB frequency 16kHz followed by a high-pass filter with
  * 3-dB frequency 16Hz (the latter provided an audio equipment input impedance
  * of 1kOhm).
- * <P>
+ * <p>
  * The STC networks are connected with a BJT supposedly meant to act
  * as a unity gain buffer, which is not really how it works.
  * A more elaborate model would include the BJT, however DC circuit analysis
@@ -42,53 +41,44 @@ namespace reSIDfp
  * to produce additional low-pass and high-pass 3dB-frequencies
  * in the order of hundreds of kHz. This calls for a sampling frequency
  * of several MHz, which is far too high for practical use.
- *
- * @author Ken Händel
- * @author Dag Lem
- * @author Antti Lankila
- * @author Leandro Nini
  */
-class ExternalFilter {
-
+class ExternalFilter
+{
 private:
-	/**
-	 * lowpass
-	 */
-	int Vlp;
+    /// lowpass
+    int Vlp;
 
-	/**
-	 * highpass
-	 */
-	int Vhp;
+    /// highpass
+    int Vhp;
 
-	int w0lp_1_s7;
+    int w0lp_1_s7;
 
-	int w0hp_1_s17;
+    int w0hp_1_s17;
 
 public:
-	/**
-	 * SID clocking - 1 cycle.
-	 *
-	 * @param Vi
-	 */
-	int clock(const int Vi);
+    /**
+     * SID clocking.
+     *
+     * @param Vi
+     */
+    int clock(int Vi);
 
-	/**
-	 * Constructor.
-	 */
-	ExternalFilter();
+    /**
+     * Constructor.
+     */
+    ExternalFilter();
 
-	/**
-	 * Setup of the external filter sampling parameters.
-	 * 
-	 * @param frequency
-	 */
-	void setClockFrequency(const double frequency);
+    /**
+     * Setup of the external filter sampling parameters.
+     *
+     * @param frequency
+     */
+    void setClockFrequency(double frequency);
 
-	/**
-	 * SID reset.
-	 */
-	void reset();
+    /**
+     * SID reset.
+     */
+    void reset();
 };
 
 } // namespace reSIDfp
@@ -99,12 +89,13 @@ namespace reSIDfp
 {
 
 RESID_INLINE
-int ExternalFilter::clock(const int Vi) {
-	const int dVlp = (w0lp_1_s7*((Vi << 11) - Vlp) >> 7);
-	const int dVhp = (w0hp_1_s17*(Vlp - Vhp) >> 17);
-	Vlp += dVlp;
-	Vhp += dVhp;
-	return (Vlp - Vhp) >> 11;
+int ExternalFilter::clock(int Vi)
+{
+    const int dVlp = (w0lp_1_s7 * ((Vi << 11) - Vlp) >> 7);
+    const int dVhp = (w0hp_1_s17 * (Vlp - Vhp) >> 17);
+    Vlp += dVlp;
+    Vhp += dVhp;
+    return (Vlp - Vhp) >> 11;
 }
 
 } // namespace reSIDfp

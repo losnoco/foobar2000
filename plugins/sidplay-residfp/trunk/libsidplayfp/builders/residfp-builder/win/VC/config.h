@@ -1,12 +1,12 @@
-/* Setup for Microsoft Visual C++ Version 5 */
+/* Setup for Microsoft Visual C++ */
 #ifndef _config_h_
 #define _config_h_
 
 /* Define if your C++ compiler implements exception-handling.  */
-/* #define HAVE_EXCEPTIONS */
+#define HAVE_EXCEPTIONS
 
 /* Name of package */
-#define PACKAGE "resid-builder"
+#define PACKAGE "residfp-builder"
 
 /* Version number of package */
 #define VERSION "0.0.2"
@@ -22,5 +22,8 @@
 #define HAVE_LOCAL_RESID
 
 #define HAVE_MMINTRIN_H
+
+#define likely(a) a
+#define unlikely(a) a
 
 #endif // _config_h_

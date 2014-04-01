@@ -64,7 +64,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>.;../../../../sidplay/win/VC;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;../../residfp;../../../../sidplay/win/VC;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;HAVE_CONFIG_H;NDEBUG;_WINDOWS;HAVE_MSWINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -91,7 +91,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;../../include;../../include/sidplay/builders;../../../../libsidplay/include;../../../../libsidplay/win/VC;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;../../residfp;../../../../sidplay/win/VC;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;HAVE_CONFIG_H;_DEBUG;_WINDOWS;HAVE_MSWINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>
@@ -114,7 +114,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\residfp-builder.cpp" />
-    <ClCompile Include="..\..\residfp.cpp" />
+    <ClCompile Include="..\..\residfp-emu.cpp" />
     <ClCompile Include="..\..\residfp\Dac.cpp" />
     <ClCompile Include="..\..\residfp\EnvelopeGenerator.cpp" />
     <ClCompile Include="..\..\residfp\ExternalFilter.cpp" />

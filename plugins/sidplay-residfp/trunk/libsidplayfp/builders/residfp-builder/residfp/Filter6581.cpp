@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2004,2010 Dag Lem <resid@nimrod.no>
  *
@@ -27,63 +27,67 @@
 namespace reSIDfp
 {
 
-Filter6581::~Filter6581() {
-
-	delete hpIntegrator;
-	delete bpIntegrator;
-	delete [] f0_dac;
+Filter6581::~Filter6581()
+{
+    delete hpIntegrator;
+    delete bpIntegrator;
+    delete [] f0_dac;
 }
 
-void Filter6581::updatedCenterFrequency() {
-	const int Vw = f0_dac[fc];
-	hpIntegrator->setVw(Vw);
-	bpIntegrator->setVw(Vw);
+void Filter6581::updatedCenterFrequency()
+{
+    const unsigned short Vw = f0_dac[fc];
+    hpIntegrator->setVw(Vw);
+    bpIntegrator->setVw(Vw);
 }
 
-void Filter6581::updatedMixing() {
-	currentGain = gain[vol];
+void Filter6581::updatedMixing()
+{
+    currentGain = gain[vol];
 
-	int ni = 0;
-	int no = 0;
+    unsigned int ni = 0;
+    unsigned int no = 0;
 
-	if (filt1) {
-		ni++;
-	} else {
-		no++;
-	}
-	if (filt2) {
-		ni++;
-	} else {
-		no++;
-	}
-	if (filt3) {
-		ni++;
-	} else if (!voice3off) {
-		no++;
-	}
-	if (filtE) {
-		ni++;
-	} else {
-		no++;
-	}
-	currentSummer = summer[ni];
+    (filt1 ? ni : no)++;
 
-	if (lp) {
-		no++;
-	}
-	if (bp) {
-		no++;
-	}
-	if (hp) {
-		no++;
-	}
-	currentMixer = mixer[no];
+    (filt2 ? ni : no)++;
+
+    if (filt3)
+    {
+        ni++;
+    }
+    else if (!voice3off)
+    {
+        no++;
+    }
+
+    (filtE ? ni : no)++;
+
+    currentSummer = summer[ni];
+
+    if (lp)
+    {
+        no++;
+    }
+
+    if (bp)
+    {
+        no++;
+    }
+
+    if (hp)
+    {
+        no++;
+    }
+
+    currentMixer = mixer[no];
 }
 
-void Filter6581::setFilterCurve(const double curvePosition) {
-	delete [] f0_dac;
-	f0_dac = FilterModelConfig::getInstance()->getDAC(FilterModelConfig::getInstance()->getDacZero(curvePosition));
-	updatedCenterFrequency();
+void Filter6581::setFilterCurve(double curvePosition)
+{
+    delete [] f0_dac;
+    f0_dac = FilterModelConfig::getInstance()->getDAC(curvePosition);
+    updatedCenterFrequency();
 }
 
 } // namespace reSIDfp

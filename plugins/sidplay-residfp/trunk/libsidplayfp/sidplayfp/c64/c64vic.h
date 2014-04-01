@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2001 Simon White
  *
@@ -31,7 +31,7 @@
 #include "sidplayfp/sidendian.h"
 #include "VIC_II/mos656x.h"
 
-/** @internal
+/**
 * VIC-II
 * located at $D000-$D3FF
 */
@@ -41,32 +41,30 @@ private:
     c64env &m_env;
 
 protected:
-    void write(uint_least16_t address, uint8_t value)
-    {
-        MOS656X::write(endian_16lo8(address), value);
-    }
-
-    uint8_t read(uint_least16_t address)
-    {
-        return MOS656X::read(endian_16lo8(address));
-    }
-
-    void interrupt (bool state)
+    void interrupt(bool state)
     {
         m_env.interruptIRQ (state);
     }
 
-    void setBA (bool state)
+    void setBA(bool state)
     {
         m_env.setBA (state);
     }
 
 public:
-    c64vic (c64env *env)
-    :MOS656X(&(env->context ())),
-     m_env(*env) {}
+    c64vic(c64env *env) :
+        MOS656X(&(env->context ())),
+        m_env(*env) {}
 
-    const char *error (void) const {return "";}
+    void poke(uint_least16_t address, uint8_t value)
+    {
+        write(endian_16lo8(address), value);
+    }
+
+    uint8_t peek(uint_least16_t address)
+    {
+        return read(endian_16lo8(address));
+    }
 };
 
 #endif // C64VIC_H

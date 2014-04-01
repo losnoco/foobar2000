@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -26,24 +26,33 @@
 #include <set>
 #include <string>
 
-#include "SidConfig.h"
+#include "sidplayfp/SidConfig.h"
 
 class sidemu;
 class EventContext;
 
+/**
+* Base class for sid builders.
+*/ 
 class sidbuilder
 {
+protected:
+    typedef std::set<sidemu*> emuset_t;
+ 
 private:
     const char * const m_name;
 
 protected:
-    bool m_status;
-
     std::string m_errorBuffer;
 
-    std::set<sidemu *> sidobjs;
+    emuset_t sidobjs;
+
+    bool m_status;
 
 protected:
+    /**
+    * Utility class for setting emu parameters in builders.
+    */ 
     template<class Temu, typename Tparam>
     class applyParameter
     {
@@ -52,42 +61,95 @@ protected:
         void (Temu::*m_method)(Tparam);
 
     public:
-        applyParameter(void (Temu::*method)(Tparam), Tparam param)
-          : m_param(param),
+        applyParameter(void (Temu::*method)(Tparam), Tparam param) :
+            m_param(param),
             m_method(method) {}
         void operator() (sidemu *e) { (static_cast<Temu*>(e)->*m_method)(m_param); }
     };
 
 public:
-    sidbuilder(const char * const name)
-      : m_name(name),
-        m_status (true),
-        m_errorBuffer("N/A") {}
+    sidbuilder(const char * const name) :
+        m_name(name),
+        m_errorBuffer("N/A"),
+        m_status (true) {}
     virtual ~sidbuilder() {}
 
     /**
     * The number of used devices.
-    *    return values: 0 none, positive is used sids
+    *
+    * @return number of used sids, 0 if none.
     */
-    unsigned int usedDevices () const { return sidobjs.size (); }
+    unsigned int usedDevices() const { return sidobjs.size (); }
 
-    /// Find a free SID of the required specs
-    sidemu      *lock    (EventContext *env, SidConfig::model_t model);
+    /**
+    * Available devices.
+    *
+    * @return the number of available sids, 0 = endless.
+    */
+    virtual unsigned int availDevices() const = 0;
 
-    /// Release this SID
-    void         unlock  (sidemu *device);
+    /**
+    * Create the sid emu.
+    *
+    * @param sids the number of required sid emu
+    */
+    virtual unsigned int create(unsigned int sids) = 0;
 
-    /// Remove all SID emulations.
-    void         remove  (void);
+    /**
+    * Find a free SID of the required specs
+    *
+    * @param env the event context
+    * @param model the required sid model
+    * @return pointer to the locked sid emu
+    */
+    sidemu *lock(EventContext *env, SidConfig::sid_model_t model);
 
-    const    char        *name    (void) const { return m_name; }
-    const  char *error   (void) const { return m_errorBuffer.c_str(); }
+    /**
+    * Release this SID.
+    * 
+    * @param device the sid emu to unlock
+    */
+    void unlock(sidemu *device);
 
-    virtual  const  char *credits (void) const = 0;
-    virtual  void         filter  (bool enable) = 0;
+    /**
+    * Remove all SID emulations.
+    */
+    void remove();
 
-    // Determine current state of object (true = okay, false = error).
-    bool     getStatus() const { return m_status; }
+    /**
+    * Get the builder's name.
+    *
+    * @return the name
+    */ 
+    const char *name() const { return m_name; }
+
+    /**
+    * Error message.
+    *
+    * @return string error message.
+    */ 
+    const char *error() const { return m_errorBuffer.c_str(); }
+
+    /**
+    * Determine current state of object.
+    *
+    * @return true = okay, false = error
+    */
+    bool getStatus() const { return m_status; }
+
+    /**
+    * Get the builder's credits.
+    *
+    * @return credits
+    */
+    virtual const char *credits() const = 0;
+
+    /**
+    * Toggle sid filter emulation.
+    *
+    * @param enable true = enable, false = disable
+    */
+    virtual void filter(bool enable) = 0;
 };
 
 #endif // SIDBUILDER_H

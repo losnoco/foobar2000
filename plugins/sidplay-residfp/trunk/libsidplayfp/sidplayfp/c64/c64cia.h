@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2001 Simon White
  *
@@ -31,7 +31,7 @@
 #include "sidplayfp/sidendian.h"
 #include "CIA/mos6526.h"
 
-/** @internal
+/**
 * CIA 1
 * Generates IRQs
 * located at $DC00-$DCFF
@@ -40,35 +40,16 @@ class c64cia1: public MOS6526, public Bank
 {
 private:
     c64env &m_env;
-    uint_least16_t t1a;
+    uint_least16_t last_ta;
     uint8_t lp;
 
 protected:
-    void write(uint_least16_t address, uint8_t value)
-    {
-        // Save the value written to Timer A
-        if (address == 0xDC04)
-        {
-            endian_16lo8(t1a, value);
-        }
-        else if (address == 0xDC05)
-        {
-            endian_16hi8 (t1a, value);
-        }
-        MOS6526::write(endian_16lo8(address), value);
-    }
-
-    uint8_t read(uint_least16_t address)
-    {
-        return MOS6526::read(endian_16lo8(address));
-    }
-
-    void interrupt (bool state)
+    void interrupt(bool state)
     {
         m_env.interruptIRQ (state);
     }
 
-    void portB ()
+    void portB()
     {
         const uint8_t lp = (prb | ~ddrb) & 0x10;
         if (lp != this->lp)
@@ -79,22 +60,38 @@ protected:
     }
 
 public:
-    c64cia1 (c64env *env)
-    :MOS6526(&(env->context ())),
-     m_env(*env) {}
+    c64cia1(c64env *env) :
+        MOS6526(&(env->context ())),
+        m_env(*env) {}
 
-    const char *error (void) const {return "";}
-
-    void reset ()
+    void poke(uint_least16_t address, uint8_t value)
     {
+        write(endian_16lo8(address), value);
+
+        // Save the value written to Timer A
+        if (address == 0xDC04 || address == 0xDC05)
+        {
+            if (timerA.getTimer() != 0)
+                last_ta = timerA.getTimer();
+        }
+    }
+
+    uint8_t peek(uint_least16_t address)
+    {
+        return read(endian_16lo8(address));
+    }
+
+    void reset()
+    {
+        last_ta = 0;
         lp = 0x10;
         MOS6526::reset ();
     }
 
-    uint_least16_t getTimerA() const { return t1a; }
+    uint_least16_t getTimerA() const { return last_ta; }
 };
 
-/** @internal
+/**
 * CIA 2
 * Generates NMIs
 * located at $DD00-$DDFF
@@ -105,28 +102,26 @@ private:
     c64env &m_env;
 
 protected:
-    void write(uint_least16_t address, uint8_t value)
-    {
-        MOS6526::write(address, value);
-    }
-
-    uint8_t read(uint_least16_t address)
-    {
-        return MOS6526::read(address);
-    }
-
-    void interrupt (bool state)
+    void interrupt(bool state)
     {
         if (state)
             m_env.interruptNMI ();
     }
 
 public:
-    c64cia2 (c64env *env)
-    :MOS6526(&(env->context ())),
-     m_env(*env) {}
+    c64cia2(c64env *env) :
+        MOS6526(&(env->context ())),
+        m_env(*env) {}
 
-    const char *error (void) const {return "";}
+    void poke(uint_least16_t address, uint8_t value)
+    {
+        write(address, value);
+    }
+
+    uint8_t peek(uint_least16_t address)
+    {
+        return read(address);
+    }
 };
 
 #endif // C64CIA_H

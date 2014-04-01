@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2010 Antti Lankila
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,7 +24,9 @@
 
 #include <stdint.h>
 
-/** @internal
+#include "sidplayfp/siddefs.h"
+
+/**
 * Base interface for memory and I/O banks.
 */
 class Bank
@@ -40,7 +42,7 @@ public:
      * @param address address to write to
      * @param value value to write
      */
-    virtual void write(uint_least16_t address, uint8_t value) =0;
+    virtual void poke(uint_least16_t address, uint8_t value) =0;
 
     /**
      * Bank read. You probably
@@ -50,7 +52,10 @@ public:
      * @param address value to read from
      * @return value at address
      */
-    virtual uint8_t read(uint_least16_t address) =0;
+    virtual uint8_t peek(uint_least16_t address) =0;
+
+protected:
+    ~Bank() {}
 };
 
 #endif

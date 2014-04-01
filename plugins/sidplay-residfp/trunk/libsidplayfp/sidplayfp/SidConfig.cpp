@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -25,13 +25,13 @@
 #include "mixer.h"
 
 SidConfig::SidConfig() :
-    clockDefault(CLOCK_PAL),
-    clockForced(false),
-    forceDualSids(false),
-    frequency(DEFAULT_SAMPLING_FREQ),
+    defaultC64Model(PAL),
+    forceC64Model(false),
+    defaultSidModel(MOS6581),
+    forceSidModel(false),
     playback(MONO),
-    sidDefault(MOS6581),
-    forceModel(false),
+    frequency(DEFAULT_SAMPLING_FREQ),
+    secondSidAddress(0),
     sidEmulation(0),
     leftVolume(Mixer::VOLUME_MAX),
     rightVolume(Mixer::VOLUME_MAX),

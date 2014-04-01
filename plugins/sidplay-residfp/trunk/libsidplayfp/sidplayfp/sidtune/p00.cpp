@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -22,12 +22,14 @@
 
 #include "p00.h"
 
-#include <string.h>
+#include <stdint.h>
+#include <cstring>
+#include <cctype>
 #include <memory>
 
-#include "SidTuneCfg.h"
+#include "SmartPtr.h"
 #include "SidTuneTools.h"
-#include "SidTuneInfoImpl.h"
+#include "sidplayfp/SidTuneInfo.h"
 
 #define X00_ID_LEN   8
 #define X00_NAME_LEN 17
@@ -74,12 +76,12 @@ const char ERR_TRUNCATED[]  = "ERROR: File is most likely truncated";
 const char P00_ID[]         = "C64File";
 
 
-SidTuneBase* p00::load(const char *fileName, Buffer_sidtt<const uint_least8_t>& dataBuf)
+SidTuneBase* p00::load(const char *fileName, buffer_t& dataBuf)
 {
-    const char      *ext     = SidTuneTools::fileExtOfPath(const_cast<char *>(fileName));
+    const char      *ext     = SidTuneTools::fileExtOfPath(fileName);
     const char      *format  = 0;
-    const X00Header *pHeader = reinterpret_cast<const X00Header*>(dataBuf.get());
-    const uint_least32_t bufLen  = dataBuf.len ();
+    const X00Header *pHeader = reinterpret_cast<const X00Header*>(&dataBuf[0]);
+    const buffer_t::size_type bufLen = dataBuf.size();
 
     // Combined extension & magic field identification
     if (strlen (ext) != 4)

@@ -1,16 +1,15 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(sidplayfp,[1.0.0alpha3])
+AC_INIT([sidplayfp], [1.2.0alpha], [], [], [http://sourceforge.net/projects/sidplay-residfp/])
 AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
 
 
 AC_CANONICAL_HOST
 
-dnl Initialize libtool.
-LT_INIT
+AC_PROG_RANLIB
 
 dnl Checks for programs.
 AC_PROG_CXX
@@ -22,106 +21,57 @@ AC_LANG([C++])
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
 
-dnl Checks what version of Unix we have and soundcard support
-AC_CHECK_HEADERS([sys/ioctl.h linux/soundcard.h machine/soundcard.h  \
-soundcard.h sys/audio.h sun/audioio.h sun/dbriio.h sys/audioio.h  \
-audio.h dmedia/audio.h sys/soundcard.h sys/asoundlib.h alsa/asoundlib.h \
-pulse/simple.h dsound.h])
-
-AH_TOP(
-[/* Define supported audio driver */
-#undef HAVE_HARDSID
-#undef HAVE_ALSA
-#undef HAVE_DIRECTX
-#undef HAVE_MMSYSTEM
-#undef HAVE_OSS
-#undef HAVE_PULSE
-])
 
 dnl Audio subsystem
-AC_ARG_ENABLE(driver,
-    [AS_HELP_STRING(
-	    [--enable-driver=pulse|alsa|oss|directx|mmsystem|wav],
-	    [which audio driver to use (default is autodetect)])],
-    [
-    ],
-    [enable_driver=autodetect])
 
-if test "$enable_driver" == "autodetect"; then
-    AC_MSG_CHECKING([which audio subsystem to use])
-    case "$host" in
-	*netbsd*|*freebsd*)
-	    enable_driver=oss;;
-	*qnx*)
-	    enable_driver=alsa;;
-	*cygwin*)
-	    enable_driver=mmsystem;;
-	*linux*)
-	    if test "$ac_cv_header_pulse_simple_h" == "yes"; then
-		enable_driver=pulse
-            elif test "$ac_cv_header_sys_asoundlib_h" == "yes" ||
-                test "$ac_cv_header_alsa_asoundlib_h" == "yes"; then
-		enable_driver=alsa
-            else
-		enable_driver=oss
-	    fi
-	    ;;
-	*mingw*)
-	    if test "$ac_cv_header_dsound_h" == "yes"; then
-		enable_driver=directx
-            else
-		enable_driver=mmsystem
-            fi
-	    ;;
-	*)
-	    enable_driver="wav"
-	    ;;
-    esac
-    AC_MSG_RESULT($enable_driver (autodetected, use --enable-driver to override))
-fi
+audiodrv_libadd=""
+AUDIO_LDFLAGS=""
 
-case $enable_driver in
-    pulse)
-        AC_DEFINE(HAVE_PULSE)
-        audiodrv_libadd="./audio/pulse/libpulse.a"
-        AC_CHECK_LIB(pulse, main, [AUDIO_LDFLAGS=-lpulse-simple AC_SUBST(AUDIO_LDFLAGS)], [exit 1])
-	;;
-    alsa)
-        AC_DEFINE(HAVE_ALSA)
-        audiodrv_libadd="./audio/alsa/libalsa.a"
-        AC_CHECK_LIB(asound, main, [AUDIO_LDFLAGS=-lasound AC_SUBST(AUDIO_LDFLAGS)], [exit 1])
-	;;
-    oss)
-	AC_DEFINE(HAVE_OSS)
-        audiodrv_libadd="./audio/oss/liboss.a"
-	AC_CHECK_LIB(ossaudio, main, [AUDIO_LDFLAGS=-lossaudio AC_SUBST(AUDIO_LDFLAGS)], [exit 1])
-	;;
-    directx)
-        AC_DEFINE(HAVE_DIRECTX)
-        audiodrv_libadd="./audio/directx/libdirectx.a"
-        AC_MSG_RESULT(directx)
-        AUDIO_LDFLAGS="-ldsound -ldxguid"
-	;;
-    mmsystem)
-	AC_DEFINE(HAVE_MMSYSTEM)
-	audiodrv_libadd="./audio/mmsystem/libmmsystem.a"
-	AC_MSG_RESULT(mmsystem)
-	AUDIO_LDFLAGS=-lwinmm
-	;;
-esac
+PKG_CHECK_MODULES(ALSA,
+    [alsa >= 1.0],
+    [AC_DEFINE([HAVE_ALSA], 1, [Define to 1 if you have libasound (-lasound).])
+    audiodrv_libadd="$audiodrv_libadd ./audio/alsa/libalsa.a"],
+    [AC_MSG_WARN([$ALSA_PKG_ERRORS])]
+)
+
+PKG_CHECK_MODULES(PULSE,
+    [libpulse-simple >= 1.0],
+    [AC_DEFINE([HAVE_PULSE], 1, [Define to 1 if you have libpulse-simple (-lpulse-simple).])
+    audiodrv_libadd="$audiodrv_libadd ./audio/pulse/libpulse.a"],
+    [AC_MSG_WARN([$PULSE_PKG_ERRORS])]
+)
+
+
+dnl Checks what version of Unix we have and soundcard support
+AC_CHECK_HEADERS([sys/ioctl.h linux/soundcard.h machine/soundcard.h \
+sys/soundcard.h soundcard.h])
+
+AC_CHECK_HEADERS([dsound.h mmsystem.h], [], [], [#include <windows.h>])
+
+AS_IF([test "$ac_cv_header_dsound_h" = "yes"],
+    [audiodrv_libadd="$audiodrv_libadd ./audio/directx/libdirectx.a"
+    AUDIO_LDFLAGS="$AUDIO_LDFLAGS -ldsound -ldxguid"]
+)
+
+AS_IF([test "$ac_cv_header_mmsystem_h" = "yes"],
+    [audiodrv_libadd="$audiodrv_libadd ./audio/mmsystem/libmmsystem.a"
+    AUDIO_LDFLAGS="$AUDIO_LDFLAGS -lwinmm"]
+)
+
+# NetBSD/OpenBSD OSS audio emulation
+AS_IF([test "x$ac_cv_header_soundcard_h" = "xyes"],
+    [audiodrv_libadd="$audiodrv_libadd ./audio/oss/liboss.a"
+    AUDIO_LDFLAGS="$AUDIO_LDFLAGS -lossaudio"]
+)
+
+AS_IF([test "x$ac_cv_header_machine_soundcard_h" = "xyes" -o "x$ac_cv_header_linux_soundcard_h" = "xyes" -o "x$ac_cv_header_sys_soundcard_h" = "xyes"],
+    [audiodrv_libadd="$audiodrv_libadd ./audio/oss/liboss.a"]
+)
+
+AC_SUBST(AUDIO_LDFLAGS)
 
 AUDIO_DRV="$audiodrv_libadd"
 AC_SUBST(AUDIO_DRV)
-
-dnl Use C++ for tests.
-AC_LANG_CPLUSPLUS
-
-dnl Check for nothrow allocator.
-MY_CHECK_EXCEPTIONS
-
-dnl Check ANSI C++ ios features
-MY_CHECK_IOS_BIN
-MY_CHECK_IOS_OPENMODE
 
 AC_CHECK_FUNCS([strncasecmp strcasecmp])
 

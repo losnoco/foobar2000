@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -37,29 +37,30 @@ class iniParser;
 class SID_EXTERN SidDatabase
 {
 private:
+    class parseError {};
+
+    static const char *parseTime(const char *str, long &result);
+
+private:
     iniParser  *m_parser;
     const char *errorString;
 
-    class parseError {};
-
-    static const char* parseTime(const char* str, long &result);
-
 public:
-    SidDatabase  ();
-    ~SidDatabase ();
+    SidDatabase();
+    ~SidDatabase();
 
     /**
     * Open the songlength DataBase.
     *
     * @param filename songlengthDB file name with full path.
-    * @return -1 in case of errors, 0 otherwise.
+    * @return false in case of errors, true otherwise.
     */
-    int           open   (const char *filename);
+    bool open(const char *filename);
 
     /**
     * Close the songlength DataBase.
     */
-    void          close  ();
+    void close();
 
     /**
     * Get the length of the current subtune.
@@ -67,7 +68,7 @@ public:
     * @param tune
     * @return tune length in seconds, -1 in case of errors.
     */
-    int_least32_t length (SidTune &tune);
+    int_least32_t length(SidTune &tune);
 
     /**
     * Get the length of the selected subtune.
@@ -76,10 +77,10 @@ public:
     * @param song the subtune.
     * @return tune length in seconds, -1 in case of errors.
     */
-    int_least32_t length (const char *md5, unsigned int song);
+    int_least32_t length(const char *md5, unsigned int song);
 
     /// Get descriptive error message.
-    const char *  error  (void) const { return errorString; }
+    const char *error() const { return errorString; }
 };
 
 #endif // SIDDATABASE_H

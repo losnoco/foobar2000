@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000 Simon White
  *
@@ -25,214 +25,14 @@
 
 #include <stdint.h>
 
-#include "sidplayfp/component.h"
+#include "timer.h"
 #include "sidplayfp/EventScheduler.h"
+#include "sidplayfp/component.h"
 
+class EventContext;
 class MOS6526;
 
-/** @internal
-* This class implements a Timer A or B of a MOS6526 chip.
-*
-* @author Ken Händel
-*
-*/
-class Timer : private Event
-{
-protected:
-    static const int_least32_t CIAT_CR_START   = 0x01;
-    static const int_least32_t CIAT_STEP       = 0x04;
-    static const int_least32_t CIAT_CR_ONESHOT = 0x08;
-    static const int_least32_t CIAT_CR_FLOAD   = 0x10;
-    static const int_least32_t CIAT_PHI2IN     = 0x20;
-    static const int_least32_t CIAT_CR_MASK    = CIAT_CR_START | CIAT_CR_ONESHOT | CIAT_CR_FLOAD | CIAT_PHI2IN;
-
-    static const int_least32_t CIAT_COUNT2     = 0x100;
-    static const int_least32_t CIAT_COUNT3     = 0x200;
-
-    static const int_least32_t CIAT_ONESHOT0   = 0x08 << 8;
-    static const int_least32_t CIAT_ONESHOT    = 0x08 << 16;
-    static const int_least32_t CIAT_LOAD1      = 0x10 << 8;
-    static const int_least32_t CIAT_LOAD       = 0x10 << 16;
-
-    static const int_least32_t CIAT_OUT        = 0x80000000;
-
-private:
-    /**
-    * Event context.
-    */
-    EventContext &event_context;
-
-    /**
-    * This is a tri-state:
-    *
-    * when -1: cia is completely stopped
-    * when 0: cia 1-clock events are ticking.
-    * otherwise: cycleskipevent is ticking, and the value is the first
-    * phi1 clock of skipping.
-    */
-    event_clock_t ciaEventPauseTime;
-
-    /**
-    * Current timer value.
-    */
-    uint_least16_t timer;
-
-    /**
-    * Timer start value (Latch).
-    */
-    uint_least16_t latch;
-
-    /**
-    * PB6/PB7 Flipflop to signal underflows.
-    */
-    bool pbToggle;
-
-    /**
-    * Copy of regs[CRA/B]
-    */
-    uint8_t lastControlValue;
-
-    EventCallback<Timer> m_cycleSkippingEvent;
-
-protected:
-    /**
-    * Pointer to the MOS6526 which this Timer belongs to.
-    */
-    MOS6526* parent;
-
-    /**
-    * CRA/CRB control register / state.
-    */
-    int_least32_t state;
-
-private:
-    /**
-    * Perform scheduled cycle skipping, and resume.
-    */
-    void cycleSkippingEvent(void);
-
-    /**
-    * Execute one CIA state transition.
-    */
-    void clock();
-
-    /**
-    * Reschedule CIA event at the earliest interesting time.
-    * If CIA timer is stopped or is programmed to just count down,
-    * the events are paused.
-    */
-    inline void reschedule();
-
-    /**
-    * Timer ticking event.
-    */
-    void event();
-
-    /**
-    * Signal timer underflow.
-    */
-    virtual void underFlow() =0;
-
-    /**
-    * Handle the serial port.
-    */
-    virtual void serialPort() {};
-
-protected:
-    /**
-    * Create a new timer.
-    *
-    * @param name component name
-    * @param context event context
-    * @param parent the MOS6526 which this Timer belongs to
-    */
-    Timer(const char* name, EventContext *context, MOS6526* parent)
-    :Event(name),
-     event_context(*context),
-     timer(0),
-     latch(0),
-     pbToggle(false),
-     lastControlValue(0),
-     m_cycleSkippingEvent("Skip CIA clock decrement cycles", *this, &Timer::cycleSkippingEvent),
-     parent(parent),
-     state(0) {}
-
-public:
-    /**
-    * Set CRA/CRB control register.
-    *
-    * @param cr
-    *            control register value
-    */
-    void setControlRegister(uint8_t cr);
-
-    /**
-    * Perform cycle skipping manually.
-    *
-    * Clocks the CIA up to the state it should be in, and stops all events.
-    */
-    void syncWithCpu();
-
-    /**
-    * Counterpart of syncWithCpu(),
-    * starts the event ticking if it is needed.
-    * No clock() call or anything such is permissible here!
-    */
-    void wakeUpAfterSyncWithCpu();
-
-    /**
-    * Reset timer.
-    */
-    void reset();
-
-    /**
-    * Set low byte of Timer start value (Latch).
-    *
-    * @param data
-    *            low byte of latch
-    */
-    void latchLo(uint8_t data);
-
-    /**
-    * Set high byte of Timer start value (Latch).
-    *
-    * @param data
-    *            high byte of latch
-    */
-    void latchHi(uint8_t data);
-
-    /**
-    * Set PB6/PB7 Flipflop state.
-    *
-    * @param state
-    *            PB6/PB7 flipflop state
-    */
-    inline void setPbToggle(bool state) { pbToggle = state; }
-
-    /**
-    * Get current state value.
-    *
-    * @return current state value
-    */
-    inline int_least32_t getState() const { return state; }
-
-    /**
-    * Get current timer value.
-    *
-    * @return current timer value
-    */
-    inline uint_least16_t getTimer() const { return timer; }
-
-    /**
-    * Get PB6/PB7 Flipflop state.
-    *
-    * @param reg value of the control register
-    * @return PB6/PB7 flipflop state
-    */
-    inline bool getPb(uint8_t reg) const { return (reg & 0x04) ? pbToggle : (state & CIAT_OUT); }
-};
-
-/** @internal
+/**
 * This is the timer A of this CIA.
 *
 * @author Ken Händel
@@ -256,7 +56,7 @@ public:
         Timer("CIA Timer A", context, parent) {}
 };
 
-/** @internal
+/**
 * This is the timer B of this CIA.
 *
 * @author Ken Händel
@@ -293,7 +93,7 @@ public:
     bool started() const { return (state & CIAT_CR_START) != 0; }
 };
 
-/** @internal
+/**
  * This class is heavily based on the ciacore/ciatimer source code from VICE.
  * The CIA state machine is lifted as-is. Big thanks to VICE project!
  *
@@ -355,44 +155,45 @@ protected:
 protected:
     /**
     * Create a new CIA.
+    *
     * @param ctx the event context
     */
     MOS6526(EventContext *context);
+    ~MOS6526() {}
 
     /**
     * This event exists solely to break the ambiguity of what scheduling on
     * top of PHI1 causes, because there is no ordering between events on
     * same phase. Thus it is scheduled in PHI2 to ensure the b.event() is
     * run once before the value changes.
-    * <UL>
-    * <LI>PHI1 a.event() (which calls underFlow())
-    * <LI>PHI1 b.event()
-    * <LI>PHI2 bTick.event()
-    * <LI>PHI1 a.event()
-    * <LI>PHI1 b.event()
-    * </UL>
+    *
+    * - PHI1 a.event() (which calls underFlow())
+    * - PHI1 b.event()
+    * - PHI2 bTick.event()
+    * - PHI1 a.event()
+    * - PHI1 b.event()
     */
-    void bTick(void);
+    void bTick();
 
     /**
     * TOD event.
     */
-    void tod(void);
+    void tod();
 
     /**
     * Signal interrupt to CPU.
     */
-    void trigger(void);
+    void trigger();
 
     /**
     * Timer A underflow
     */
-    void underflowA(void);
+    void underflowA();
 
     /**
     * Timer B underflow.
     */
-    void underflowB(void);
+    void underflowB();
 
     /**
     * Trigger an interrupt.
@@ -404,7 +205,7 @@ protected:
     /**
     * Clear interrupt state.
     */
-    void clear(void);
+    void clear();
 
     /**
     * Handle the serial port.
@@ -421,17 +222,6 @@ protected:
 
     virtual void portA() {}
     virtual void portB() {}
-
-private:
-    // TOD implementation taken from Vice
-    static uint8_t byte2bcd(uint8_t byte) { return (((byte / 10) << 4) + (byte % 10)) & 0xff; }
-    static uint8_t bcd2byte(uint8_t bcd) { return ((10*((bcd & 0xf0) >> 4)) + (bcd & 0xf)) & 0xff; }
-
-public:
-    /**
-    * Reset CIA.
-    */
-    virtual void reset(void);
 
     /**
     * Read CIA register.
@@ -451,19 +241,30 @@ public:
     */
     void write(uint_least8_t addr, uint8_t data);
 
+private:
+    // TOD implementation taken from Vice
+    static uint8_t byte2bcd(uint8_t byte) { return (((byte / 10) << 4) + (byte % 10)) & 0xff; }
+    static uint8_t bcd2byte(uint8_t bcd) { return ((10*((bcd & 0xf0) >> 4)) + (bcd & 0xf)) & 0xff; }
+
+public:
+    /**
+    * Reset CIA.
+    */
+    virtual void reset();
+
     /**
     * Get the credits.
     *
     * @return the credits
     */
-    const char *credits(void) const { return credit; }
+    const char *credits() const { return credit; }
 
     /**
     * Set day-of-time event occurence of rate.
     *
     * @param clock
     */
-    void setDayOfTimeRate(double clock);
+    void setDayOfTimeRate(unsigned int clock);
 };
 
 #endif // MOS6526_H

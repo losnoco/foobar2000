@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2011 Leandro Nini
+ *  Copyright (C) 2010-2013 Leandro Nini
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,34 +20,33 @@
 #define INIPARSER_H
 
 #include <string>
-#include <iostream>
-#include <fstream>
 #include <map>
+#include <utility>
 
 class iniParser
 {
-
 private:
     typedef std::map<std::string, std::string> keys_t;
+    typedef std::map<std::string, keys_t> sections_t;
 
-    std::map<std::string, keys_t> sections;
+    class parseError {};
 
-    class emptyPair {};
+private:
+    sections_t sections;
 
-    std::string parseSection(const char* buffer);
-    std::pair<std::string, std::string> parseKey(const char* buffer);
+    sections_t::const_iterator curSection;
 
-    std::map<std::string, keys_t>::const_iterator curSection;
+private:
+    std::string parseSection(const std::string &buffer);
+
+    std::pair<std::string, std::string> parseKey(const std::string &buffer);
 
 public:
-    iniParser() {};
-    ~iniParser() {};
-
-    bool open(const char* fName);
+    bool open(const char *fName);
     void close();
 
-    bool setSection(const char* section);
-    const char* getValue(const char* key);
+    bool setSection(const char *section);
+    const char *getValue(const char *key);
 };
 
 #endif // INIPARSER_H

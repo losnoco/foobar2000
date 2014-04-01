@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2001 Simon White
  *
@@ -22,13 +22,17 @@
 
 #include "residfp-emu.h"
 
-#include <stdio.h>
-#include <cstring>
 #include <sstream>
+#include <algorithm>
 
 #include "residfp/Filter6581.h"
 #include "residfp/Filter8580.h"
 #include "residfp/siddefs-fp.h"
+#include "sidplayfp/siddefs.h"
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
 
 std::string ReSIDfp::m_credit;
 
@@ -49,12 +53,12 @@ const char* ReSIDfp::getCredits()
     return m_credit.c_str();
 }
 
-ReSIDfp::ReSIDfp (sidbuilder *builder)
-:sidemu(builder),
- m_context(0),
- m_sid(*(new RESID_NAMESPACE::SID)),
- m_status(true),
- m_locked(false)
+ReSIDfp::ReSIDfp(sidbuilder *builder) :
+    sidemu(builder),
+    m_context(0),
+    m_sid(*(new RESID_NAMESPACE::SID)),
+    m_status(true),
+    m_locked(false)
 {
     m_error = "N/A";
 
@@ -63,57 +67,57 @@ ReSIDfp::ReSIDfp (sidbuilder *builder)
     reset (0);
 }
 
-ReSIDfp::~ReSIDfp ()
+ReSIDfp::~ReSIDfp()
 {
     delete &m_sid;
     delete[] m_buffer;
 }
 
-void ReSIDfp::filter6581Curve (double filterCurve)
+void ReSIDfp::filter6581Curve(double filterCurve)
 {
    m_sid.getFilter6581()->setFilterCurve(filterCurve);
 }
 
-void ReSIDfp::filter8580Curve (double filterCurve)
+void ReSIDfp::filter8580Curve(double filterCurve)
 {
    m_sid.getFilter8580()->setFilterCurve(filterCurve);
 }
 
 // Standard component options
-void ReSIDfp::reset (uint8_t volume)
+void ReSIDfp::reset(uint8_t volume)
 {
     m_accessClk = 0;
-    m_sid.reset ();
-    m_sid.write (0x18, volume);
+    m_sid.reset();
+    m_sid.write(0x18, volume);
 }
 
-uint8_t ReSIDfp::read (uint_least8_t addr)
+uint8_t ReSIDfp::read(uint_least8_t addr)
 {
     clock();
-    return m_sid.read (addr);
+    return m_sid.read(addr);
 }
 
-void ReSIDfp::write (uint_least8_t addr, uint8_t data)
+void ReSIDfp::write(uint_least8_t addr, uint8_t data)
 {
     clock();
-    m_sid.write (addr, data);
+    m_sid.write(addr, data);
 }
 
 void ReSIDfp::clock()
 {
-    const int cycles = m_context->getTime(m_accessClk, EVENT_CLOCK_PHI1);
+    const event_clock_t cycles = m_context->getTime(m_accessClk, EVENT_CLOCK_PHI1);
     m_accessClk += cycles;
     m_bufferpos += m_sid.clock(cycles, m_buffer+m_bufferpos);
 }
 
-void ReSIDfp::filter (bool enable)
+void ReSIDfp::filter(bool enable)
 {
       m_sid.getFilter6581()->enable(enable);
       m_sid.getFilter8580()->enable(enable);
 }
 
-void ReSIDfp::sampling (float systemclock, float freq,
-        SidConfig::sampling_method_t method, bool fast)
+void ReSIDfp::sampling(float systemclock, float freq,
+        SidConfig::sampling_method_t method, bool fast SID_UNUSED)
 {
     reSIDfp::SamplingMethod sampleMethod;
     switch (method)
@@ -132,18 +136,22 @@ void ReSIDfp::sampling (float systemclock, float freq,
 
     try
     {
-      const int halfFreq = 5000*((int)freq/10000);
-      m_sid.setSamplingParameters (systemclock, sampleMethod, freq, halfFreq>20000?20000:halfFreq);
+        // Round half frequency to the nearest multiple of 5000
+        const int halfFreq = 5000*(((int)freq+5000)/10000);
+        m_sid.setSamplingParameters (systemclock, sampleMethod, freq, std::min(halfFreq, 20000));
     }
-    catch (RESID_NAMESPACE::SIDError& e)
+    catch (RESID_NAMESPACE::SIDError const &e)
     {
         m_status = false;
         m_error = "Unable to set desired output frequency.";
+        return;
     }
+
+    m_status = true;
 }
 
 // Set execution environment and lock sid to it
-bool ReSIDfp::lock (EventContext *env)
+bool ReSIDfp::lock(EventContext *env)
 {
     if (m_locked)
         return false;
@@ -155,17 +163,30 @@ bool ReSIDfp::lock (EventContext *env)
 }
 
 // Unlock sid
-void ReSIDfp::unlock ()
+void ReSIDfp::unlock()
 {
     m_locked  = false;
     m_context = 0;
 }
 
 // Set the emulated SID model
-void ReSIDfp::model (SidConfig::model_t model)
+void ReSIDfp::model(SidConfig::sid_model_t model)
 {
-    if (model == SidConfig::MOS8580)
-        m_sid.setChipModel (reSIDfp::MOS8580);
-    else
-        m_sid.setChipModel (reSIDfp::MOS6581);
+    reSIDfp::ChipModel chipModel;
+    switch (model)
+    {
+        case SidConfig::MOS6581:
+            chipModel = reSIDfp::MOS6581;
+            break;
+        case SidConfig::MOS8580:
+            chipModel = reSIDfp::MOS8580;
+            break;
+        default:
+            m_status = false;
+            m_error = "Invalid chip model.";
+            return;
+    }
+
+    m_sid.setChipModel (chipModel);
+    m_status = true;
 }

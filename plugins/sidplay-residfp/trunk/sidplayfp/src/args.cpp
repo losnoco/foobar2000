@@ -1,49 +1,55 @@
-/***************************************************************************
-                          args.cpp  -  Command Line Parameters
-                             -------------------
-    begin                : Sun Oct 7 2001
-    copyright            : (C) 2001 by Simon White
-    email                : s_a_white@email.com
- ***************************************************************************/
+/*
+ * This file is part of sidplayfp, a console SID player.
+ *
+ * Copyright 2011-2013 Leandro Nini
+ * Copyright 2000-2001 Simon White
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+#include "player.h"
 
-#include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+#endif
+
+#include <cstdlib>
 #include <iostream>
+
 using std::cout;
 using std::cerr;
 using std::endl;
-#include "player.h"
 
 #ifdef HAVE_SIDPLAYFP_BUILDERS_HARDSID_H
-#   include <sidplayfp/builders/hardsid.h>
-#endif
-
-#if defined(HAVE_SGI)
-#   define DISALLOW_16BIT_SOUND
-#   define DISALLOW_STEREO_SOUND
+#  include <sidplayfp/builders/hardsid.h>
 #endif
 
 
 // Convert time from integer
 bool ConsolePlayer::parseTime (const char *str, uint_least32_t &time)
 {
-    char *sep;
-    uint_least32_t _time;
-
     // Check for empty string
     if (*str == '\0')
         return false;
 
-    sep = (char *) strstr (str, ":");
+    uint_least32_t _time;
+
+    char *sep = (char *) strstr (str, ":");
     if (!sep)
     {   // User gave seconds
         _time = atoi (str);
@@ -66,13 +72,20 @@ bool ConsolePlayer::parseTime (const char *str, uint_least32_t &time)
     return true;
 }
 
+bool ConsolePlayer::parseAddress (const char *str, uint_least16_t &address)
+{
+    if (*str == '\0')
+        return false;
+
+    long x = strtol(str, 0, 0);
+
+    address = x;
+    return true;
+}
+
 // Parse command line arguments
 int ConsolePlayer::args (int argc, const char *argv[])
 {
-    int  infile = 0;
-    int  i      = 0;
-    bool err    = false;
-
     if (argc == 0) // at least one argument required
     {
         displayArgs ();
@@ -82,10 +95,13 @@ int ConsolePlayer::args (int argc, const char *argv[])
     // default arg options
     m_driver.output = OUT_SOUNDCARD;
     m_driver.file   = false;
-    m_driver.sid    = EMU_RESIDFP;
 
     v1mute = v2mute = v3mute = false;
     v4mute = v5mute = v6mute = false;
+
+    int  infile = 0;
+    int  i      = 0;
+    bool err    = false;
 
     // parse command line arguments
     while ((i < argc) && (argv[i] != NULL))
@@ -109,9 +125,10 @@ int ConsolePlayer::args (int argc, const char *argv[])
                 if (!parseTime (&argv[i][2], m_timer.start))
                     err = true;
             }
-            else if (strcmp (&argv[i][1], "fd") == 0)
+            else if (strncmp (&argv[i][1], "ds", 2) == 0)
             {   // Override sidTune and enable the second sid
-                m_engCfg.forceDualSids = true;
+                if (!parseAddress (&argv[i][3], m_engCfg.secondSidAddress))
+                    err = true;
             }
             else if (argv[i][1] == 'f')
             {
@@ -227,45 +244,45 @@ int ConsolePlayer::args (int argc, const char *argv[])
             // SID model options
             else if (strcmp (&argv[i][1], "mof") == 0)
             {
-                m_engCfg.sidDefault = SidConfig::MOS6581;
-                m_engCfg.forceModel = true;
+                m_engCfg.defaultSidModel = SidConfig::MOS6581;
+                m_engCfg.forceSidModel = true;
             }
             else if (strcmp (&argv[i][1], "mnf") == 0)
             {
-                m_engCfg.sidDefault = SidConfig::MOS8580;
-                m_engCfg.forceModel = true;
+                m_engCfg.defaultSidModel = SidConfig::MOS8580;
+                m_engCfg.forceSidModel = true;
             }
             else if (strcmp (&argv[i][1], "mo") == 0)
             {
-                m_engCfg.sidDefault = SidConfig::MOS6581;
+                m_engCfg.defaultSidModel = SidConfig::MOS6581;
             }
             else if (strcmp (&argv[i][1], "mn") == 0)
             {
-                m_engCfg.sidDefault = SidConfig::MOS8580;
+                m_engCfg.defaultSidModel = SidConfig::MOS8580;
             }
 
             // Video/Verbose Options
             else if (strcmp (&argv[i][1], "vnf") == 0)
             {
-                m_engCfg.clockForced = true;
-                m_engCfg.clockDefault  = SidConfig::CLOCK_NTSC;
+                m_engCfg.forceC64Model = true;
+                m_engCfg.defaultC64Model  = SidConfig::NTSC;
             }
             else if (strcmp (&argv[i][1], "vpf") == 0)
             {
-                m_engCfg.clockForced = true;
-                m_engCfg.clockDefault  = SidConfig::CLOCK_PAL;
+                m_engCfg.forceC64Model = true;
+                m_engCfg.defaultC64Model  = SidConfig::PAL;
             }
             else if (strcmp (&argv[i][1], "vf") == 0)
             {
-                m_engCfg.clockForced = true;
+                m_engCfg.forceC64Model = true;
             }
             else if (strcmp (&argv[i][1], "vn") == 0)
             {
-                m_engCfg.clockDefault  = SidConfig::CLOCK_NTSC;
+                m_engCfg.defaultC64Model  = SidConfig::NTSC;
             }
             else if (strcmp (&argv[i][1], "vp") == 0)
             {
-                m_engCfg.clockDefault  = SidConfig::CLOCK_PAL;
+                m_engCfg.defaultC64Model  = SidConfig::PAL;
             }
             else if (argv[i][1] == 'v')
             {
@@ -334,6 +351,10 @@ int ConsolePlayer::args (int argc, const char *argv[])
             else if (strcmp (&argv[i][1], "-nosid") == 0)
             {
                 m_driver.sid = EMU_NONE;
+            }
+            else if (strcmp (&argv[i][1], "-noaudio") == 0)
+            {
+                m_driver.output = OUT_NULL;
             }
             else if (strcmp (&argv[i][1], "-cpu-debug") == 0)
             {
@@ -404,13 +425,24 @@ int ConsolePlayer::args (int argc, const char *argv[])
         }
         if (!m_timer.valid)
         {
+#if !defined _WIN32 && defined HAVE_UNISTD_H
+            char buffer[PATH_MAX];
+#endif
             const char *database = (m_iniCfg.sidplay2()).database;
             m_timer.length = (m_iniCfg.sidplay2()).playLength;
             if (m_driver.file)
                 m_timer.length = (m_iniCfg.sidplay2()).recordLength;
+#if !defined _WIN32 && defined HAVE_UNISTD_H
+            if (!database || *database == '\0')
+            {
+                snprintf(buffer, PATH_MAX, "%sSonglengths.txt", PKGDATADIR);
+                if (::access(buffer, R_OK) == 0)
+                    database = buffer;
+            }
+#endif
             if (database && (*database != '\0'))
             {   // Try loading the database specificed by the user
-                if (m_database.open (database) < 0)
+                if (!m_database.open (database))
                 {
                     displayError (m_database.error ());
                     return -1;
@@ -454,9 +486,9 @@ void ConsolePlayer::displayArgs (const char *arg)
 
         << " -f<num>      set frequency in Hz (default: "
         << SidConfig::DEFAULT_SAMPLING_FREQ << ")" << endl
-        << " -fd          force dual sid environment" << endl
+        << " -ds<addr>    set second sid address (e.g. -ds0xd420)" << endl
 
-        << "-u<num>       mute voice <num> (e.g. -u1 -u2)" << endl
+        << " -u<num>      mute voice <num> (e.g. -u1 -u2)" << endl
 
         << " -nf          no SID filter emulation" << endl
 
@@ -500,9 +532,7 @@ void ConsolePlayer::displayArgs (const char *arg)
     }
 #endif
     out << endl
-        // Changed to new homepage address
-        << "Home Page: http://sourceforge.net/projects/sidplay-residfp/" << endl;
-//        << "Mail comments, bug reports, or contributions to <sidplay2@email.com>." << endl;
+        << "Home Page: " PACKAGE_URL << endl;
 }
 
 
@@ -514,6 +544,7 @@ void ConsolePlayer::displayDebugArgs ()
         << " --cpu-debug   display cpu register and assembly dumps" << endl
         << " --delay=<num> simulate c64 power on delay" << endl
 
-        << " --none        no audio output device" << endl
-        << " --nosid       no sid emulation" << endl;
+        << " --noaudio     no audio output device" << endl
+        << " --nosid       no sid emulation" << endl
+        << " --none        no audio output device and no sid emulation" << endl;
 }

@@ -72,9 +72,9 @@ WaveformGenerator::WaveformGenerator()
 
       // Noise mask, triangle, sawtooth, pulse mask.
       // The triangle calculation is made branch-free, just for the hell of it.
-      model_wave[0][0][i] = model_wave[1][0][i] = 0xffe;
+      model_wave[0][0][i] = model_wave[1][0][i] = 0xfff;
       model_wave[0][1][i] = model_wave[1][1][i] =
-	((accumulator ^ -!!msb) >> 11) & 0xfff;
+	((accumulator ^ -!!msb) >> 11) & 0xffe;
       model_wave[0][2][i] = model_wave[1][2][i] = accumulator >> 12;
       model_wave[0][4][i] = model_wave[1][4][i] = 0xfff;
 
@@ -176,9 +176,6 @@ void WaveformGenerator::writeCONTROL_REG(reg8 control)
     // Reset accumulator.
     accumulator = 0;
 
-    // The test bit sets pulse high.
-    pulse_output = 0xfff;
-
     // Flush shift pipeline.
     shift_pipeline = 0;
 
@@ -207,7 +204,13 @@ void WaveformGenerator::writeCONTROL_REG(reg8 control)
   else if (waveform_prev) {
     // Change to floating DAC input.
     // Reset fading time for floating DAC input.
-    floating_output_ttl = 0x4000;
+    //
+    // We have two SOAS/C samplings showing that floating DAC
+    // keeps its state for at least 0x14000 cycles.
+    //
+    // This can't be found via sampling OSC3, it seems that
+    // the actual analog output must be sampled and timed.
+    floating_output_ttl = 0x14000;
   }
 
   // The gate bit is handled by the EnvelopeGenerator.

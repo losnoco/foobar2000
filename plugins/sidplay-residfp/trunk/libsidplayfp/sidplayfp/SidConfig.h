@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -25,27 +25,30 @@
 
 #include <stdint.h>
 
-#include "siddefs.h"
+#include "sidplayfp/siddefs.h"
 
 
 class sidbuilder;
 
 /**
 * SidConfig
+*
+* An instance of this class is used to transport emulator settings
+* to and from the interface class.
 */
 class SID_EXTERN SidConfig
 {
 public:  
     typedef enum {MONO = 1,  STEREO} playback_t;
-    typedef enum {MOS6581, MOS8580} model_t;
-    typedef enum {CLOCK_PAL, CLOCK_NTSC} clock_t;
+    typedef enum {MOS6581, MOS8580} sid_model_t;
+    typedef enum {PAL, NTSC, OLD_NTSC, DREAN} c64_model_t;
     typedef enum {INTERPOLATE, RESAMPLE_INTERPOLATE} sampling_method_t;
 
 public:
     /**
     * Maximum power on delay
-    * Delays <= MAX produce constant results.
-    * Delays >  MAX produce random results
+    * - Delays <= MAX produce constant results
+    * - Delays >  MAX produce random results
     */
     static const uint_least16_t MAX_POWER_ON_DELAY = 0x1FFF;
     static const uint_least16_t DEFAULT_POWER_ON_DELAY = MAX_POWER_ON_DELAY + 1;
@@ -54,73 +57,81 @@ public:
 
 public:
     /**
-    * Intended tune speed when unknown or forced
-    * - SID2_CLOCK_PAL
-    * - SID2_CLOCK_NTSC
+    * Intended c64 model when unknown or forced
+    * - PAL
+    * - NTSC
+    * - OLD_NTSC
+    * - DREAN
     */
-    clock_t             clockDefault;
+    c64_model_t defaultC64Model;
 
     /**
-    * Force the clock to clockDefault
+    * Force the model to #defaultC64Model ignoring tune's clock setting
     */
-    bool                clockForced;
-
-    /**
-    * Force an environment with two SID chips installed
-    */
-    bool                forceDualSids;
-
-    /// Sampling frequency
-    uint_least32_t      frequency;
-
-    /**
-    * Playbak mode
-    * - sid2_mono
-    * - sid2_stereo
-    */
-    playback_t          playback;
+    bool forceC64Model;
 
     /**
     * Intended sid model when unknown or forced
-    * - SID2_MOS6581
-    * - SID2_MOS8580
+    * - MOS6581
+    * - MOS8580
     */
-    model_t             sidDefault;
+    sid_model_t defaultSidModel;
 
     /**
-    * Force the sid model to sidDefault
+    * Force the sid model to #defaultSidModel
     */
-    bool                forceModel;
+    bool forceSidModel;
 
-    sidbuilder         *sidEmulation;
+    /**
+    * Playbak mode
+    * - MONO
+    * - STEREO
+    */
+    playback_t playback;
+
+    /**
+    * Sampling frequency
+    */
+    uint_least32_t frequency;
+
+    /**
+    * Install a second SID chip at this address
+    */
+    uint_least16_t secondSidAddress;
+
+    /**
+    * Pointer to selected emulation,
+    * reSIDfp, reSID or hardSID
+    */
+    sidbuilder *sidEmulation;
 
     /**
     * Left channel volume
     */
-    uint_least32_t      leftVolume;
+    uint_least32_t leftVolume;
 
     /**
     * Right channel volume
     */
-    uint_least32_t      rightVolume;
+    uint_least32_t rightVolume;
 
     /**
     * Power on delay cycles
     */
-    uint_least16_t      powerOnDelay;
+    uint_least16_t powerOnDelay;
 
     /**
     * Sampling method
-    * - SID2_INTERPOLATE
-    * - SID2_RESAMPLE_INTERPOLATE
+    * - INTERPOLATE
+    * - RESAMPLE_INTERPOLATE
     */
-    sampling_method_t   samplingMethod;
+    sampling_method_t samplingMethod;
 
     /**
-    * Faster low-quality emulation
+    * Faster low-quality emulation,
     * available only for reSID
     */
-    bool                fastSampling;
+    bool fastSampling;
 
 public:
     SidConfig();

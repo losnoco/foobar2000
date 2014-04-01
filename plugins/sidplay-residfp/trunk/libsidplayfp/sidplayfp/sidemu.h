@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -23,52 +23,64 @@
 #ifndef SIDEMU_H
 #define SIDEMU_H
 
-#include "SidConfig.h"
 #include "component.h"
-
+#include "SidConfig.h"
+#include "siddefs.h"
+#include "c64/c64sid.h"
 
 class sidbuilder;
 class EventContext;
 
-/** @internal
+/**
+* Buffer size. 5000 is roughly 5 ms at 96 kHz
+*/
+enum
+{
+    OUTPUTBUFFERSIZE = 5000
+};
+
+/**
 * Inherit this class to create a new SID emulation.
 */
-class sidemu: public component
+class sidemu : public c64sid, public component
 {
 private:
     sidbuilder *m_builder;
 
 protected:
-    int         m_bufferpos;
-    short      *m_buffer;
+    short *m_buffer;
+    int m_bufferpos;
 
 public:
-    sidemu (sidbuilder *builder)
-        : m_builder (builder), m_buffer(0) {;}
-    virtual ~sidemu () {;}
+    sidemu(sidbuilder *builder) :
+        m_builder (builder), m_buffer(0) {}
+    virtual ~sidemu() {}
 
     // Standard component functions
-    void            reset () { reset (0); }
-    virtual void    reset (uint8_t volume) = 0;
-    virtual uint8_t read  (uint_least8_t addr) = 0;
-    virtual void    write (uint_least8_t addr, uint8_t data) = 0;
-    virtual void    clock () = 0;
-    virtual const   char *credits (void) const = 0;
+    void reset() { reset(0); }
 
-    virtual bool lock     (EventContext *env) = 0;
-    virtual void unlock   () = 0;
+    virtual void reset(uint8_t volume) = 0;
+
+    virtual void clock() = 0;
+
+    virtual bool lock(EventContext *env) = 0;
+    virtual void unlock() = 0;
 
     // Standard SID functions
-    virtual void    voice   (unsigned int num, bool mute) = 0;
-    virtual void    model    (SidConfig::model_t model) = 0;
-    sidbuilder     *builder (void) const { return m_builder; }
+    virtual void voice(unsigned int num, bool mute) = 0;
+    virtual void model(SidConfig::sid_model_t model) = 0;
 
-    virtual int bufferpos() const { return m_bufferpos; }
-    virtual void bufferpos(int pos) { m_bufferpos = pos; }
-    virtual short *buffer() const { return m_buffer; }
+    sidbuilder *builder() const { return m_builder; }
 
-    virtual void sampling(float systemfreq, float outputfreq,
-        SidConfig::sampling_method_t method, bool fast) { return; }
+    virtual void sampling(float systemfreq SID_UNUSED, float outputfreq SID_UNUSED,
+        SidConfig::sampling_method_t method SID_UNUSED, bool fast SID_UNUSED) {}
+
+    int bufferpos() const { return m_bufferpos; }
+    void bufferpos(int pos) { m_bufferpos = pos; }
+    short *buffer() const { return m_buffer; }
+
+    void poke(uint_least16_t address, uint8_t value) { write(address & 0x1f, value); }
+    uint8_t peek(uint_least16_t address) { return read(address & 0x1f); }
 };
 
 #endif // SIDEMU_H

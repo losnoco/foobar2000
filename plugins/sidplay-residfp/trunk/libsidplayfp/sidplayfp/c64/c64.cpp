@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2014 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000 Simon White
  *
@@ -22,31 +22,73 @@
 
 #include "c64.h"
 
-const double c64::CLOCK_FREQ_NTSC = 1022727.14;
-const double c64::CLOCK_FREQ_PAL  = 985248.4;
+#include "sidplayfp/c64/VIC_II/mos656x.h"
 
-const double c64::VIC_FREQ_PAL    = 50.0;
-const double c64::VIC_FREQ_NTSC   = 60.0;
-
-c64::c64()
-:c64env  (&m_scheduler),
- m_cpuFreq(CLOCK_FREQ_PAL),
- cpu     (this),
- cia1    (this),
- cia2    (this),
- vic     (this),
- mmu     (&m_scheduler, &ioBank)
+typedef struct
 {
-    ioBank.setBank(0, &vic);
-    ioBank.setBank(1, &vic);
-    ioBank.setBank(2, &vic);
-    ioBank.setBank(3, &vic);
-    ioBank.setBank(4, &sidBank);
-    ioBank.setBank(5, &sidBank);
-    ioBank.setBank(6, &sidBank);
-    ioBank.setBank(7, &sidBank);
-    ioBank.setBank(8, &colorRAMBank);
-    ioBank.setBank(9, &colorRAMBank);
+    double colorBurst;         ///< Colorburst frequency in Herz
+    double divider;            ///< Clock frequency divider
+    double powerFreq;          ///< Power line frequency in Herz
+    MOS656X::model_t vicModel; ///< Video chip model
+} model_data_t;
+
+/*
+ * Color burst frequencies:
+ *
+ * NTSC  - 3.579545455 MHz = 315/88 MHz
+ * PAL-B - 4.43361875 MHz = 283.75 * 15625 Hz + 25 Hz.
+ * PAL-M - 3.57561149 MHz
+ * PAL-N - 3.58205625 MHz
+ */
+
+const model_data_t modelData[] =
+{
+    {4433618.75,  18., 50., MOS656X::MOS6569},      // PAL-B
+    {3579545.455, 14., 60., MOS656X::MOS6567R8},    // NTSC-M
+    {3579545.455, 14., 60., MOS656X::MOS6567R56A},  // Old NTSC-M
+    {3582056.25,  14., 60., MOS656X::MOS6572},      // PAL-N
+};
+
+double c64::getCpuFreq(model_t model)
+{
+    /*
+     * The crystal clock that drives the VIC II chip is four times
+     * the color burst frequency
+     */
+    const double crystalFreq = modelData[model].colorBurst * 4.;
+
+    /*
+     * The VIC II produces the two-phase system clock
+     * by running the input clock through a divider
+     */
+    return crystalFreq/modelData[model].divider;
+}
+
+c64::c64() :
+    c64env(&m_scheduler),
+    m_cpuFreq(getCpuFreq(PAL_B)),
+    cpu(this),
+    cia1(this),
+    cia2(this),
+    vic(this),
+    mmu(&m_scheduler, &ioBank)
+{
+    resetIoBank();
+}
+
+
+void c64::resetIoBank()
+{
+    ioBank.setBank(0x0, &vic);
+    ioBank.setBank(0x1, &vic);
+    ioBank.setBank(0x2, &vic);
+    ioBank.setBank(0x3, &vic);
+    ioBank.setBank(0x4, &sidBank);
+    ioBank.setBank(0x5, &sidBank);
+    ioBank.setBank(0x6, &sidBank);
+    ioBank.setBank(0x7, &sidBank);
+    ioBank.setBank(0x8, &colorRAMBank);
+    ioBank.setBank(0x9, &colorRAMBank);
     ioBank.setBank(0xa, &colorRAMBank);
     ioBank.setBank(0xb, &colorRAMBank);
     ioBank.setBank(0xc, &cia1);
@@ -60,9 +102,9 @@ void c64::reset()
     m_scheduler.reset();
 
     //cpu.reset  ();
-    cia1.reset ();
-    cia2.reset ();
-    vic.reset  ();
+    cia1.reset();
+    cia2.reset();
+    vic.reset();
     sidBank.reset();
     colorRAMBank.reset();
     mmu.reset();
@@ -71,21 +113,48 @@ void c64::reset()
     oldBAState = true;
 }
 
-void c64::setMainCpuSpeed(double cpuFreq)
+void c64::setModel(model_t model)
 {
-    m_cpuFreq = cpuFreq;
-    if (m_cpuFreq == CLOCK_FREQ_PAL)
+    m_cpuFreq = getCpuFreq(model);
+    vic.chip(modelData[model].vicModel);
+
+    const unsigned int rate = m_cpuFreq / modelData[model].powerFreq;
+    cia1.setDayOfTimeRate(rate);
+    cia2.setDayOfTimeRate(rate);
+}
+
+void c64::setSid(unsigned int i, c64sid *s)
+{
+    switch (i)
     {
-        const double clockPAL = m_cpuFreq / VIC_FREQ_PAL;
-        cia1.setDayOfTimeRate (clockPAL);
-        cia2.setDayOfTimeRate (clockPAL);
-        vic.chip   (MOS6569);
+    case 0:
+        sidBank.setSID(s);
+        break;
+    case 1:
+        extraSidBank.setSID(s);
+        break;
+    default:
+        break;
     }
-    else
-    {
-        const double clockNTSC = m_cpuFreq / VIC_FREQ_NTSC;
-        cia1.setDayOfTimeRate (clockNTSC);
-        cia2.setDayOfTimeRate (clockNTSC);
-        vic.chip   (MOS6567R8);
-    }
+}
+
+void c64::setSecondSIDAddress(int sidChipBase2)
+{
+    resetIoBank();
+
+    // Check for valid address in the IO area range ($dxxx)
+    if (sidChipBase2 == 0 || ((sidChipBase2 & 0xf000) != 0xd000))
+        return;
+
+    const int idx = (sidChipBase2 >> 8) & 0xf;
+    /*
+    * Only allow second SID chip in SID area ($d400-$d7ff)
+    * or IO Area ($de00-$dfff)
+    */
+    if (idx < 0x4 || (idx > 0x7 && idx < 0xe))
+        return;
+
+    extraSidBank.resetSIDMapper(ioBank.getBank(idx));
+    ioBank.setBank(idx, &extraSidBank);
+    extraSidBank.setSIDMapping(sidChipBase2);
 }

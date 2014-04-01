@@ -25,21 +25,25 @@ No filter emulation.  This will reduce CPU overhead at the cost of reduced sound
 Select track number (default: preset).
 .TP
 \fB\-s\fR
-Stereo Hardware support.  For Sidplay the channels for the sid will be split into left and right creating a stereo effect.  The same effect is present for Sidplayfp unless the tune is identified as stereo.  If this is the case then sid 1 and 2 become the left and right channels respectively.  For Sidplay other options are provided to produce special effects when in stereo mode, but Sidplayfp does not as yet support these.
+Stereo playback.  If the tune is identified as stereo then sid 1 and 2 become the left and right channels respectively.
 .TP
-\fB\-v\fR
+\fB\-v[num]\fR
 Verbose output while playing.
 .TP
 \fB\-b<num>\fR
 Set start time in [mins:]secs format (compatible with sid2wav).
 .TP
-\fB\-fd\fR
-Force dual sid environment.
+\fB\-ds<addr>\fR
+Force dual sid environment by adding a second chip at specified address.
 This forces emulation of  2 sid-chips for stereo playback
 even if datafile is identified as only being mono.  This occurs
 in the case of the stereo prg format as currently there is no way
-to identify them.  Stereo MUS files are however automatically
-detected.  The second sid appears in the 0xD420-0xD7FF address range.
+to identify them.  Stereo MUS and SID files are however automatically
+detected.
+The second sid may be installed in the 0xD420-0xD7FF or 0xDE00-0xDFFF
+address range.
+Address may be specified in exadecimal (e.g -ds0xd420) or decimal
+(e.g. -ds54304) format.
 .TP
 \fB\-u<num>\fR
 Mute a channel.  May be used more than one time.  Channel 1 to 3 are for the first SID chip while channels from 4 to 6 are for the second one on stereo tunes.
@@ -87,7 +91,7 @@ sidplayfp.ini(5)
 
 .RS
 .SH NOTES
-ROM dumps are no longer embedded but must be supplied by the user. By default <command>sidplayfp</command> will look for the files under $XDG_DATA_HOME (or $HOME/.local/share/sidplayfp/ if not defined) on Linux and C:\\Documents and Settings\\username\\Application Data\\sidplayfp\\ on Windows. You can override the defaults by changing the settings in sidplayfp.ini(5). The only mandatory ROM is the kernal, basic and chargen are optional and most tune should work fine without.
+ROM dumps are no longer embedded but must be supplied by the user. The ROM are optional and most tune should work fine without. Check the sidplayfp.ini(5) documentation for configuration details and default search paths.
 .SH OTHER INFORMATION
 Sidplayfp Homepage:
     http://sourceforge.net/projects/sidplay-residfp/

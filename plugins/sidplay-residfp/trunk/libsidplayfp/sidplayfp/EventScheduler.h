@@ -23,8 +23,6 @@
 #ifndef EVENTSCHEDULER_H
 #define EVENTSCHEDULER_H
 
-#include <stdint.h>
-
 #include "event.h"
 
 
@@ -33,18 +31,23 @@ class EventCallback: public Event
 {
 private:
     typedef void (This::*Callback) ();
-    This          &m_this;
+
+private:
+    This &m_this;
     Callback const m_callback;
-    void event(void) { (m_this.*m_callback) (); }
+
+private:
+    void event() { (m_this.*m_callback)(); }
 
 public:
-    EventCallback (const char * const name, This &_this, Callback callback)
-      : Event(name), m_this(_this),
+    EventCallback(const char * const name, This &_this, Callback callback) :
+        Event(name),
+        m_this(_this),
         m_callback(callback) {}
 };
 
 
-/** @internal
+/**
 * Fast EventScheduler implementation
 *
 * @author Antti S. Lankila
@@ -64,12 +67,14 @@ private:
     *
     * @param event The event to add
     */
-    void schedule(Event &event) {
-
+    void schedule(Event &event)
+    {
         /* find the right spot where to tuck this new event */
         Event **scan = &firstEvent;
-        for (;;) {
-            if (*scan == 0 || (*scan)->triggerTime > event.triggerTime) {
+        for (;;)
+        {
+            if (*scan == 0 || (*scan)->triggerTime > event.triggerTime)
+            {
                  event.next = *scan;
                  *scan = &event;
                  break;
@@ -79,30 +84,32 @@ private:
     }
 
 protected:
-    void schedule (Event &event, event_clock_t cycles,
-                   event_phase_t phase) {
+    void schedule(Event &event, event_clock_t cycles,
+                   event_phase_t phase)
+    {
         // this strange formulation always selects the next available slot regardless of specified phase.
         event.triggerTime = (cycles << 1) + currentTime + ((currentTime & 1) ^ phase);
         schedule(event);
     }
 
-    void schedule(Event &event, event_clock_t cycles) {
+    void schedule(Event &event, event_clock_t cycles)
+    {
         event.triggerTime = (cycles << 1) + currentTime;
         schedule(event);
     }
 
-    void cancel (Event &event);
+    void cancel(Event &event);
 
 public:
-    EventScheduler ()
-        : currentTime(0),
+    EventScheduler () :
+          currentTime(0),
           firstEvent(0) {}
 
     /** Cancel all pending events and reset time. */
-    void reset     (void);
+    void reset();
 
-    /** Fire next event, advance system time to that event */
-    void clock (void)
+    /** Fire next event, advance system time to that event. */
+    void clock()
     {
         Event &event = *firstEvent;
         firstEvent = firstEvent->next;
@@ -112,13 +119,17 @@ public:
 
     bool isPending(Event &event) const;
 
-    event_clock_t getTime (event_phase_t phase) const
-    {   return (currentTime + (phase ^ 1)) >> 1; }
+    event_clock_t getTime(event_phase_t phase) const
+    {
+        return (currentTime + (phase ^ 1)) >> 1;
+    }
 
-    event_clock_t getTime (event_clock_t clock, event_phase_t phase) const
-    {   return getTime (phase) - clock; }
+    event_clock_t getTime(event_clock_t clock, event_phase_t phase) const
+    {
+        return getTime (phase) - clock;
+    }
 
-    event_phase_t phase () const { return (event_phase_t) (currentTime & 1); }
+    event_phase_t phase() const { return (event_phase_t) (currentTime & 1); }
 };
 
 #endif // EVENTSCHEDULER_H

@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  *
  * This program is free software; you can redistribute it and/or modify
@@ -25,45 +25,45 @@
 namespace reSIDfp
 {
 
-/** @internal
+/**
  * Abstraction of a resampling process. Given enough input, produces output.
  * Constructors take additional arguments that configure these objects.
- *
- * @author Antti Lankila
  */
-class Resampler {
-
+class Resampler
+{
 protected:
-	virtual int output() const =0;
+    virtual int output() const = 0;
 
-	Resampler() {}
+    Resampler() {}
 
 public:
-	virtual ~Resampler() {}
+    virtual ~Resampler() {}
 
-	/**
-	 * Input a sample into resampler. Output "true" when resampler is ready with new sample.
-	 *
-	 * @param sample input sample
-	 * @return true when a sample is ready
-	 */
-	virtual bool input(const int sample)=0;
+    /**
+     * Input a sample into resampler. Output "true" when resampler is ready with new sample.
+     *
+     * @param sample input sample
+     * @return true when a sample is ready
+     */
+    virtual bool input(int sample) = 0;
 
-	/**
-	 * Output a sample from resampler.
-	 *
-	 * @return resampled sample
-	 */
-	short getOutput() const {
-		const int value = output();
-		// Clip signed integer value into the -32768,32767 range.
-		if ((value+0x8000) & ~0xFFFF)
-			return (value>>31) ^ 0x7FFF;
-		else
-			return value;
-	}
+    /**
+     * Output a sample from resampler.
+     *
+     * @return resampled sample
+     */
+    short getOutput() const
+    {
+        int value = output();
 
-	virtual void reset()=0;
+        // Clip signed integer value into the -32768,32767 range.
+        if (value < -32768) value = -32768;
+        if (value > 32767) value = 32767;
+
+        return value;
+    }
+
+    virtual void reset() = 0;
 };
 
 } // namespace reSIDfp

@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2002 Simon White
  *
@@ -29,7 +29,7 @@
 /**
 * HardSID Builder Class
 */
-class SID_EXTERN HardSIDBuilder: public sidbuilder
+class SID_EXTERN HardSIDBuilder : public sidbuilder
 {
 private:
     static bool m_initialised;
@@ -38,22 +38,32 @@ private:
     static unsigned int m_count;
 #endif
 
-    int init (void);
+    int init ();
 
 public:
-    HardSIDBuilder  (const char * const name);
-    ~HardSIDBuilder (void);
+    HardSIDBuilder(const char * const name);
+    ~HardSIDBuilder();
 
-    /** All available sids.
-    *    return values: 0 endless, positive is available sids.
+    /**
+    * Available sids.
+    *
+    * @return the number of available sids, 0 = endless.
     */
-    unsigned int        availDevices ();
+    unsigned int availDevices() const;
 
-    const char *credits (void) const;
-    void        flush   (void);
-    void        filter  (bool enable);
+    const char *credits() const;
 
-    unsigned int        create  (unsigned int sids);
+    void flush();
+
+    /// enable/disable filter.
+    void filter(bool enable);
+
+    /**
+    * Create the sid emu.
+    *
+    * @param sids the number of required sid emu
+    */
+    unsigned int create(unsigned int sids);
 };
 
 #endif // HARDSID_H

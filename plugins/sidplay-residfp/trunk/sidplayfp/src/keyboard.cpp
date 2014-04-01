@@ -1,33 +1,37 @@
-/***************************************************************************
-                          keyboard.cpp  -  Keyboard decoding
-                             -------------------
-    begin                : Thur Dec 7 2000
-    copyright            : (C) 2000 by Simon White
-    email                : s_a_white@email.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/*
+ * This file is part of sidplayfp, a console SID player.
+ *
+ * Copyright 2012 Leandro Nini
+ * Copyright 2000 Simon White
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
 #include "keyboard.h"
 
 #ifndef _WIN32
 // Unix console headers
-#   include <ctype.h>
+#  include <ctype.h>
 // bzero requires memset on some platforms
-#   include <string.h>
-#   include <termios.h>
-#   include <sys/time.h>
-#   include <sys/types.h>
-#   include <sys/stat.h>
-#   include <fcntl.h>
-#   include <unistd.h>
+#  include <string.h>
+#  include <termios.h>
+#  include <sys/time.h>
+#  include <sys/types.h>
+#  include <sys/stat.h>
+#  include <fcntl.h>
+#  include <unistd.h>
 int _getch (void);
 #endif
 
@@ -133,7 +137,8 @@ static int keyboard_search (char *cmd)
                 }
                 return (a);
             }
-        } else if (*q == '\0')
+        }
+        else if (*q == '\0')
         {
             /*
              * Hit the end of the user's command,
@@ -141,7 +146,8 @@ static int keyboard_search (char *cmd)
              * The user's command is incomplete.
              */
             return (A_PREFIX);
-        } else
+        }
+        else
         {
             /*
              * Not a match.
@@ -173,7 +179,6 @@ static int keyboard_search (char *cmd)
 int keyboard_decode ()
 {
     char cmd[MAX_CMDLEN+1];
-    int c;
     int  nch = 0;
     int  action = A_NONE;
 
@@ -181,7 +186,7 @@ int keyboard_decode ()
      * Collect characters in a buffer.
      * Start with the one we have, and get more if we need them.
      */
-    c = _getch();
+    int c = _getch();
     if (c == '\0')
         c = '\340'; // 224
     else if (c == ESC)

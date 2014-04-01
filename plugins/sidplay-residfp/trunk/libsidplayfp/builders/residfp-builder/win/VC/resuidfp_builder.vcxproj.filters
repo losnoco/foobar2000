@@ -41,7 +41,7 @@
     <ClCompile Include="..\..\residfp\resample\SincResampler.cpp">
       <Filter>ReSIDfp\resample</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\residfp.cpp" />
+    <ClCompile Include="..\..\residfp-emu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\residfp\array.h">
@@ -95,7 +95,6 @@
     <ClInclude Include="..\..\residfp\WaveformGenerator.h">
       <Filter>ReSIDfp</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\residfp.h" />
     <ClInclude Include="..\..\residfp-emu.h" />
     <ClInclude Include="..\..\residfp\resample\Resampler.h">
       <Filter>ReSIDfp\resample</Filter>
@@ -113,6 +112,7 @@
     <ClInclude Include="..\..\residfp\siddefs-fp.h">
       <Filter>ReSIDfp</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\residfp.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ReSIDfp">

@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,31 +21,32 @@
 #ifndef MUS_H
 #define MUS_H
 
+#include <stdint.h>
+
 #include "SidTuneBase.h"
+
+class sidmemory;
+template <class T> class SmartPtr_sidtt;
 
 class MUS : public SidTuneBase
 {
- private:
+private:
     /// Needed for MUS/STR player installation.
     uint_least16_t musDataLen;
 
- private:
-    bool resolveAddrs(const uint_least8_t *c64data);
-    bool checkRelocInfo(void);
-
+private:
     static bool detect(const uint_least8_t* buffer, uint_least32_t bufLen,
                          uint_least32_t& voice3Index);
 
-    bool mergeParts(Buffer_sidtt<const uint_least8_t>& musBuf,
-                             Buffer_sidtt<const uint_least8_t>& strBuf);
+    bool mergeParts(buffer_t& musBuf, buffer_t& strBuf);
 
-    void tryLoad(Buffer_sidtt<const uint_least8_t>& musBuf,
-                                       Buffer_sidtt<const uint_least8_t>& strBuf,
-                                       SmartPtr_sidtt<const uint8_t> &spPet,
-                                       uint_least32_t voice3Index,
-                                       bool init);
+    void tryLoad(buffer_t& musBuf,
+                    buffer_t& strBuf,
+                    SmartPtr_sidtt<const uint8_t> &spPet,
+                    uint_least32_t voice3Index,
+                    bool init);
 
- protected:
+protected:
     MUS() {}
 
     void installPlayer(sidmemory *mem);
@@ -53,18 +54,22 @@ class MUS : public SidTuneBase
     void setPlayerAddress();
 
     virtual void acceptSidTune(const char* dataFileName, const char* infoFileName,
-                       Buffer_sidtt<const uint_least8_t>& buf, bool isSlashedFileName);
+                                buffer_t& buf, bool isSlashedFileName);
 
- public:
+public:
     virtual ~MUS() {}
 
-    static SidTuneBase* load(Buffer_sidtt<const uint_least8_t>& dataBuf, bool init = false);
-    static SidTuneBase* load(Buffer_sidtt<const uint_least8_t>& musBuf,
-                                       Buffer_sidtt<const uint_least8_t>& strBuf,
-                                       uint_least32_t fileOffset,
-                                       bool init = false);
+    static SidTuneBase* load(buffer_t& dataBuf, bool init = false);
+    static SidTuneBase* load(buffer_t& musBuf,
+                                buffer_t& strBuf,
+                                uint_least32_t fileOffset,
+                                bool init = false);
 
     virtual bool placeSidTuneInC64mem(sidmemory* mem);
+
+private:    // prevent copying
+    MUS(const MUS&);
+    MUS& operator=(MUS&);
 };
 
 #endif // MUS_H

@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -24,25 +24,25 @@
 
 #include <memory>
 
-#include "SidTuneCfg.h"
 #include "SidTuneTools.h"
-#include "SidTuneInfoImpl.h"
+#include "sidplayfp/SidTuneInfo.h"
+#include "sidplayfp/stringutils.h"
 
 const char TXT_FORMAT_PRG[] = "Tape image file (PRG)";
 
 const char ERR_TRUNCATED[]  = "ERROR: File is most likely truncated";
 
 
-SidTuneBase* prg::load(const char *fileName, Buffer_sidtt<const uint_least8_t>& dataBuf)
+SidTuneBase* prg::load(const char *fileName, buffer_t& dataBuf)
 {
-    const char *ext = SidTuneTools::fileExtOfPath(const_cast<char *>(fileName));
-    if ( (MYSTRICMP(ext,".prg")!=0) &&
-         (MYSTRICMP(ext,".c64")!=0) )
+    const char *ext = SidTuneTools::fileExtOfPath(fileName);
+    if ( (!stringutils::equal(ext, ".prg")) &&
+         (!stringutils::equal(ext, ".c64")) )
     {
         return 0;
     }
 
-    if (dataBuf.len() < 2)
+    if (dataBuf.size() < 2)
     {
         throw loadError(ERR_TRUNCATED);
     }

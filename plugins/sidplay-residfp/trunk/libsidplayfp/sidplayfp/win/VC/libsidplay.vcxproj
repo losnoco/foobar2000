@@ -100,6 +100,7 @@
     <ClInclude Include="..\..\c64\c64cpu.h" />
     <ClInclude Include="..\..\c64\c64env.h" />
     <ClInclude Include="..\..\c64\CIA\mos6526.h" />
+    <ClInclude Include="..\..\c64\CIA\timer.h" />
     <ClInclude Include="..\..\c64\ColorRAMBank.h" />
     <ClInclude Include="..\..\c64\CPU\mos6510.h" />
     <ClInclude Include="..\..\c64\CPU\mos6510debug.h" />
@@ -150,6 +151,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\c64\c64.cpp" />
     <ClCompile Include="..\..\c64\CIA\mos6526.cpp" />
+    <ClCompile Include="..\..\c64\CIA\timer.cpp" />
     <ClCompile Include="..\..\c64\CPU\mos6510.cpp" />
     <ClCompile Include="..\..\c64\CPU\mos6510debug.cpp" />
     <ClCompile Include="..\..\c64\mmu.cpp" />

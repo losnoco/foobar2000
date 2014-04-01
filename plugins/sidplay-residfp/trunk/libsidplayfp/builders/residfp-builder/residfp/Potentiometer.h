@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright (C) 2004  Dag Lem <resid@nimrod.no>
  *
@@ -26,7 +26,7 @@
 namespace reSIDfp
 {
 
-/** @internal
+/**
  * Potentiometer representation.
  *
  * This class will probably never be implemented in any real way.
@@ -34,15 +34,15 @@ namespace reSIDfp
  * @author Ken Händel
  * @author Dag Lem
  */
-class Potentiometer {
-
+class Potentiometer
+{
 public:
-	/**
-	 * Read paddle value. Not modeled.
-	 *
-	 * @return paddle value (always 0xff)
-	 */
-	unsigned char readPOT() const { return (unsigned char) 0xff; }
+    /**
+     * Read paddle value. Not modeled.
+     *
+     * @return paddle value (always 0xff)
+     */
+    unsigned char readPOT() const { return (unsigned char) 0xff; }
 };
 
 } // namespace reSIDfp

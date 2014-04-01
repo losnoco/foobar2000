@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,23 +32,32 @@
 #include "sidplayfp/SidTune.h"
 #include <sidplayfp/SidInfo.h>
 #include "sidplayfp/builders/residfp.h"
-#include "sidplayfp/sidemu.h"
 
 
 /*
 * Adjust these paths to point to existing ROM dumps
 */
-#define KERNAL_PATH "/usr/local/lib/vice/C64/kernal"
-#define BASIC_PATH "/usr/local/lib/vice/C64/basic"
-#define CHARGEN_PATH "/usr/local/lib/vice/C64/chargen"
+#define KERNAL_PATH  ""
+#define BASIC_PATH   ""
+#define CHARGEN_PATH ""
 
 #define SAMPLERATE 48000
 
-void loadRom(const char* path, char* buffer)
+/*
+* Load ROM dump from file.
+* Allocate the buffer if file exists, otherwise return 0.
+*/
+char* loadRom(const char* path, size_t romSize)
 {
+    char* buffer = 0;
     std::ifstream is(path, std::ios::binary);
-    is.read(buffer, 8192);
+    if (is.good())
+    {
+        buffer = new char[romSize];
+        is.read(buffer, romSize);
+    }
     is.close();
+    return buffer;
 }
 
 /*
@@ -61,24 +70,27 @@ int main(int argc, char* argv[])
     sidplayfp m_engine;
 
     { // Load ROM files
-    char kernal[8192];
-    char basic[8192];
-    char chargen[4096];
-
-    loadRom(KERNAL_PATH, kernal);
-    loadRom(BASIC_PATH, basic);
-    loadRom(CHARGEN_PATH, chargen);
+    char *kernal = loadRom(KERNAL_PATH, 8192);
+    char *basic = loadRom(BASIC_PATH, 8192);
+    char *chargen = loadRom(CHARGEN_PATH, 4096);
 
     m_engine.setRoms((const uint8_t*)kernal, (const uint8_t*)basic, (const uint8_t*)chargen);
+
+    delete [] kernal;
+    delete [] basic;
+    delete [] chargen;
     }
 
     // Set up a SID builder
     std::auto_ptr<ReSIDfpBuilder> rs(new ReSIDfpBuilder("Demo"));
+
     // Get the number of SIDs supported by the engine
-    unsigned int maxsids=(m_engine.info ()).maxsids();
+    unsigned int maxsids = (m_engine.info ()).maxsids();
+
     // Create SID emulators
     rs->create(maxsids);
 
+    // Check if builder is ok
     if (!rs->getStatus())
     {
         std::cerr << rs->error() << std::endl;
@@ -88,6 +100,7 @@ int main(int argc, char* argv[])
     // Load tune from file
     std::auto_ptr<SidTune> tune(new SidTune(argv[1]));
 
+    // CHeck if the tune is valid
     if (!tune->getStatus())
     {
         std::cerr << tune->statusString() << std::endl;
@@ -99,14 +112,16 @@ int main(int argc, char* argv[])
 
     // Configure the engine
     SidConfig cfg;
-    cfg.clockForced = false;
     cfg.frequency = SAMPLERATE;
     cfg.samplingMethod = SidConfig::INTERPOLATE;
     cfg.fastSampling = false;
     cfg.playback = SidConfig::MONO;
     cfg.sidEmulation = rs.get();
-    cfg.sidDefault = SidConfig::MOS6581;
-    m_engine.config(cfg);
+    if (!m_engine.config(cfg))
+    {
+        std::cerr <<  m_engine.error() << std::endl;
+        return -1;
+    }
 
     // Load tune into engine
     if (!m_engine.load(tune.get()))

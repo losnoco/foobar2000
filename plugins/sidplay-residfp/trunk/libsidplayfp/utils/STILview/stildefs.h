@@ -2,7 +2,7 @@
  * This file is part of libsidplayfp, a SID player engine.
  *
  * Copyright 1998, 2002 by LaLa <LaLa@C64.org>
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,10 +25,6 @@
 
 #ifndef STILDEFS_H
 #define STILDEFS_H
-
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
 
 /* DLL building support on win32 hosts */
 #ifndef STIL_EXTERN
@@ -86,37 +82,10 @@
 #  define SLASH '\\'
 #endif
 
-// Define which one of the following two is supported on your system.
-//#define HAVE_STRCASECMP 1
-// #define HAVE_STRICMP 1
-
-// Define which one of the following two is supported on your system.
-//#define HAVE_STRNCASECMP 1
-// #define HAVE_STRNICMP 1
-
-// Now let's do the actual definitions.
-
-#ifdef HAVE_STRCASECMP
-#  define MYSTRICMP strcasecmp
-#elif HAVE_STRICMP
-#  define MYSTRICMP stricmp
-#else
-#  error Neither strcasecmp nor stricmp is available.
-#endif
-
-#ifdef HAVE_STRNCASECMP
-#  define MYSTRNICMP strncasecmp
-#elif HAVE_STRNICMP
-#  define MYSTRNICMP strnicmp
-#else
-#  error Neither strncasecmp nor strnicmp is available.
-#endif
-
-// Maximum size of a single line in STIL - also accounts for some extra
-// padding, just in case.
+// Unused, will be removed in future version
 #define STIL_MAX_LINE_SIZE 91
 
-// Maximum size of a single STIL entry (in bytes).
+// Unused, will be removed in future version
 #define STIL_MAX_ENTRY_SIZE STIL_MAX_LINE_SIZE*100
 
 // HVSC path to STIL.

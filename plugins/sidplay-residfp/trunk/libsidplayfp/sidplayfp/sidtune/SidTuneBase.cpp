@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000 Simon White
  *
@@ -22,31 +22,25 @@
 
 #include "SidTuneBase.h"
 
-#include <string.h>
-#include <limits.h>
+#include <cstring>
+#include <climits>
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
+#include <iterator>
+#include <fstream>
 
-#include "SidTuneCfg.h"
-#include "SidTuneInfoImpl.h"
+#include "SmartPtr.h"
 #include "SidTuneTools.h"
+#include "SidTuneInfoImpl.h"
 #include "sidplayfp/sidendian.h"
 #include "sidplayfp/sidmemory.h"
+#include "sidplayfp/stringutils.h"
 
 #include "MUS.h"
 #include "p00.h"
 #include "prg.h"
 #include "PSID.h"
-
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
-
-#ifdef HAVE_IOS_OPENMODE
-    typedef std::ios::openmode openmode;
-#else
-    typedef int openmode;
-#endif
 
 // Error and status message strings.
 const char ERR_EMPTY[]               = "SIDTUNE ERROR: No data to load";
@@ -94,8 +88,8 @@ SidTuneBase* SidTuneBase::load(const char* fileName, const char **fileNameExt,
         return 0;
 
 #if !defined(SIDTUNE_NO_STDIN_LOADER)
-    // Filename ``-'' is used as a synonym for standard input.
-    if ( strcmp(fileName,"-")==0 )
+    // Filename "-" is used as a synonym for standard input.
+    if (strcmp(fileName, "-") == 0)
         return getFromStdIn();
 #endif
     return getFromFiles(fileName, fileNameExt, separatorIsSlash);
@@ -117,32 +111,40 @@ const SidTuneInfo* SidTuneBase::getInfo(unsigned int songNum)
     return info.get();
 }
 
-// First check, whether a song is valid. Then copy any song-specific
-// variable information such a speed/clock setting to the info structure.
 unsigned int SidTuneBase::selectSong(unsigned int selectedSong)
 {
-    unsigned int song = selectedSong;
-    // Determine and set starting song number.
-    if (selectedSong == 0)
-        song = info->m_startSong;
-    if (selectedSong>info->m_songs || selectedSong>MAX_SONGS)
+    // First, check whether selected song is valid.
+    if (selectedSong > info->m_songs || selectedSong > MAX_SONGS)
     {
         return info->m_currentSong;
     }
+
+    // Determine and set starting song number.
+    const unsigned int song = (selectedSong == 0) ? info->m_startSong : selectedSong;
+
+    // Copy any song-specific variable information
+    // such a speed/clock setting to the info structure.
     info->m_currentSong = song;
+
     // Retrieve song speed definition.
-    if (info->m_compatibility == SidTuneInfo::COMPATIBILITY_R64)
+    switch (info->m_compatibility)
+    {
+    case SidTuneInfo::COMPATIBILITY_R64:
         info->m_songSpeed = SidTuneInfo::SPEED_CIA_1A;
-    else if (info->m_compatibility == SidTuneInfo::COMPATIBILITY_PSID)
-    {   // This does not take into account the PlaySID bug upon evaluating the
+        break;
+    case SidTuneInfo::COMPATIBILITY_PSID:
+        // This does not take into account the PlaySID bug upon evaluating the
         // SPEED field. It would most likely break compatibility to lots of
         // sidtunes, which have been converted from .SID format and vice versa.
         // The .SID format does the bit-wise/song-wise evaluation of the SPEED
         // value correctly, like it is described in the PlaySID documentation.
         info->m_songSpeed = songSpeed[(song-1)&31];
-    }
-    else
+        break;
+    default:
         info->m_songSpeed = songSpeed[song-1];
+        break;
+    }
+
     info->m_clockSpeed = clockSpeed[song-1];
 
     return info->m_currentSong;
@@ -165,7 +167,7 @@ bool SidTuneBase::placeSidTuneInC64mem(sidmemory* mem)
         mem->writeMemWord(0xae, end);
 
         // Copy data from cache to the correct destination.
-        mem->fillRam(info->m_loadAddr, cache.get()+fileOffset, info->m_c64dataLen);
+        mem->fillRam(info->m_loadAddr, &cache[fileOffset], info->m_c64dataLen);
 
         return true;
     }
@@ -173,58 +175,38 @@ bool SidTuneBase::placeSidTuneInC64mem(sidmemory* mem)
 }
 
 #if 0
-void SidTuneBase::loadFile(const char* fileName, Buffer_sidtt<const uint_least8_t>& bufferRef)
+void SidTuneBase::loadFile(const char* fileName, buffer_t& bufferRef)
 {
-    // This sucks big time
-    openmode createAttr = std::ios::in;
-#ifdef HAVE_IOS_NOCREATE
-    createAttr |= std::ios::nocreate;
-#endif
-    // Open binary input file stream at end of file.
-#if defined(HAVE_IOS_BIN)
-    createAttr |= std::ios::bin;
-#else
-    createAttr |= std::ios::binary;
-#endif
-
-    std::fstream myIn(fileName, createAttr);
-
-    if ( !myIn.is_open() )
+    std::ifstream inFile(fileName, std::ifstream::binary);
+    
+    if (!inFile.is_open())
     {
         throw loadError(ERR_CANT_OPEN_FILE);
     }
-
-    myIn.seekg(0, std::ios::end);
-    const uint_least32_t fileLen = (uint_least32_t)myIn.tellg();
-
-    if ( fileLen == 0 )
+    
+    inFile.seekg(0, inFile.end);
+    const size_t fileLen = (size_t)inFile.tellg();
+    
+    if (fileLen == 0)
     {
          throw loadError(ERR_EMPTY);
     }
-
-    Buffer_sidtt<const uint_least8_t> fileBuf;
-
-    try
-    {
-        fileBuf.assign(new uint_least8_t[fileLen], fileLen);
-    }
-    catch (std::bad_alloc &e)
-    {
-        throw loadError(ERR_NOT_ENOUGH_MEMORY);
-    }
-
-    myIn.seekg(0, std::ios::beg);
-
-    myIn.read((char*)fileBuf.get(), fileLen);
-
-    if ( myIn.bad() )
+    
+    inFile.seekg(0, inFile.beg);
+    
+    buffer_t fileBuf;
+    fileBuf.reserve(fileLen);
+    
+    fileBuf.assign(std::istreambuf_iterator<char>(inFile), std::istreambuf_iterator<char>());
+    
+    if (inFile.bad())
     {
         throw loadError(ERR_CANT_LOAD_FILE);
     }
-
-    myIn.close();
-
-    bufferRef.assign(fileBuf.xferPtr(), fileBuf.xferLen());
+    
+    inFile.close();
+    
+    bufferRef.swap(fileBuf);
 }
 #endif
 
@@ -233,7 +215,7 @@ SidTuneBase::SidTuneBase() :
     fileOffset(0)
 {
     // Initialize the object with some safe defaults.
-    for ( unsigned int si = 0; si < MAX_SONGS; si++ )
+    for (unsigned int si = 0; si < MAX_SONGS; si++)
     {
         songSpeed[si] = info->m_songSpeed;
         clockSpeed[si] = info->m_clockSpeed;
@@ -244,14 +226,14 @@ SidTuneBase::SidTuneBase() :
 
 SidTuneBase* SidTuneBase::getFromStdIn()
 {
-    std::vector<uint_least8_t> fileBuf;
+    buffer_t fileBuf;
 
     // We only read as much as fits in the buffer.
     // This way we avoid choking on huge data.
     char datb;
-    while (std::cin.get(datb) && fileBuf.size()<MAX_FILELEN)
+    while (std::cin.get(datb) && fileBuf.size() < MAX_FILELEN)
     {
-        fileBuf.push_back((uint_least8_t) datb);
+        fileBuf.push_back((uint_least8_t)datb);
     }
 
     return getFromBuffer(&fileBuf.front(), fileBuf.size());
@@ -261,7 +243,7 @@ SidTuneBase* SidTuneBase::getFromStdIn()
 
 SidTuneBase* SidTuneBase::getFromBuffer(const uint_least8_t* const buffer, uint_least32_t bufferLen)
 {
-    if (buffer==0 || bufferLen==0)
+    if (buffer == 0 || bufferLen == 0)
     {
         throw loadError(ERR_EMPTY);
     }
@@ -271,24 +253,13 @@ SidTuneBase* SidTuneBase::getFromBuffer(const uint_least8_t* const buffer, uint_
         throw loadError(ERR_FILE_TOO_LONG);
     }
 
-    uint_least8_t* tmpBuf;
-    try
-    {
-        tmpBuf = new uint_least8_t[bufferLen];
-    }
-    catch (std::bad_alloc &e)
-    {
-        throw loadError(ERR_NOT_ENOUGH_MEMORY);
-    }
-    memcpy(tmpBuf, buffer, bufferLen);
+    buffer_t buf1(buffer, buffer+bufferLen);
 
-    Buffer_sidtt<const uint_least8_t> buf1(tmpBuf, bufferLen);
-
-    // Here test for the possible single file formats. --------------
+    // Here test for the possible single file formats.
     std::auto_ptr<SidTuneBase> s(PSID::load(buf1));
     if (!s.get())
     {
-        Buffer_sidtt<const uint_least8_t> buf2;  // empty
+        buffer_t buf2;  // empty
         s.reset(MUS::load(buf1, buf2, 0, true));
     }
 
@@ -303,10 +274,10 @@ SidTuneBase* SidTuneBase::getFromBuffer(const uint_least8_t* const buffer, uint_
 }
 
 void SidTuneBase::acceptSidTune(const char* dataFileName, const char* infoFileName,
-                            Buffer_sidtt<const uint_least8_t>& buf, bool isSlashedFileName)
+                            buffer_t& buf, bool isSlashedFileName)
 {
     // Make a copy of the data file name and path, if available.
-    if ( dataFileName != 0 )
+    if (dataFileName != 0)
     {
         const size_t fileNamePos = isSlashedFileName ?
             SidTuneTools::slashedFileNameWithoutPath(dataFileName) :
@@ -316,7 +287,7 @@ void SidTuneBase::acceptSidTune(const char* dataFileName, const char* infoFileNa
     }
 
     // Make a copy of the info file name, if available.
-    if ( infoFileName != 0 )
+    if (infoFileName != 0)
     {
         const size_t fileNamePos = isSlashedFileName ?
             SidTuneTools::slashedFileNameWithoutPath(infoFileName) :
@@ -326,26 +297,35 @@ void SidTuneBase::acceptSidTune(const char* dataFileName, const char* infoFileNa
 
     // Fix bad sidtune set up.
     if (info->m_songs > MAX_SONGS)
+    {
         info->m_songs = MAX_SONGS;
+    }
     else if (info->m_songs == 0)
+    {
         info->m_songs++;
-    if (info->m_startSong > info->m_songs)
-        info->m_startSong = 1;
-    else if (info->m_startSong == 0)
-        info->m_startSong++;
+    }
 
-    info->m_dataFileLen = buf.len();
-    info->m_c64dataLen = buf.len() - fileOffset;
+    if (info->m_startSong > info->m_songs)
+    {
+        info->m_startSong = 1;
+    }
+    else if (info->m_startSong == 0)
+    {
+        info->m_startSong++;
+    }
+
+    info->m_dataFileLen = buf.size();
+    info->m_c64dataLen = buf.size() - fileOffset;
 
     // Calculate any remaining addresses and then
     // confirm all the file details are correct
-    resolveAddrs(buf.get() + fileOffset);
+    resolveAddrs(&buf[fileOffset]);
 
-    if ( checkRelocInfo() == false )
+    if (checkRelocInfo() == false)
     {
         throw loadError(ERR_BAD_RELOC);
     }
-    if ( checkCompatibility() == false )
+    if (checkCompatibility() == false)
     {
          throw loadError(ERR_BAD_ADDR);
     }
@@ -355,21 +335,20 @@ void SidTuneBase::acceptSidTune(const char* dataFileName, const char* infoFileNa
         // We only detect an offset of two. Some position independent
         // sidtunes contain a load address of 0xE000, but are loaded
         // to 0x0FFE and call player at 0x1000.
-        info->m_fixLoad = (endian_little16(buf.get()+fileOffset)==(info->m_loadAddr+2));
+        info->m_fixLoad = (endian_little16(&buf[fileOffset])==(info->m_loadAddr+2));
     }
 
     // Check the size of the data.
-
-    if ( info->m_c64dataLen > MAX_MEMORY )
+    if (info->m_c64dataLen > MAX_MEMORY)
     {
         throw loadError(ERR_DATA_TOO_LONG);
     }
-    else if ( info->m_c64dataLen == 0 )
+    else if (info->m_c64dataLen == 0)
     {
         throw loadError(ERR_EMPTY);
     }
 
-    cache.assign(buf.xferPtr(),buf.xferLen());
+    cache.swap(buf);
 }
 
 void SidTuneBase::createNewFileName(std::string& destString,
@@ -385,7 +364,7 @@ void SidTuneBase::createNewFileName(std::string& destString,
 
 SidTuneBase* SidTuneBase::getFromFiles(const char* fileName, const char **fileNameExtensions, bool separatorIsSlash)
 {
-    Buffer_sidtt<const uint_least8_t> fileBuf1;
+    buffer_t fileBuf1;
 
     loadFile(fileName, fileBuf1);
 
@@ -393,7 +372,7 @@ SidTuneBase* SidTuneBase::getFromFiles(const char* fileName, const char **fileNa
     std::auto_ptr<SidTuneBase> s(PSID::load(fileBuf1));
     if (!s.get())
     {
-        Buffer_sidtt<const uint_least8_t> fileBuf2;
+        buffer_t fileBuf2;
 
         // Try some native C64 file formats
         s.reset(MUS::load(fileBuf1, fileBuf2, 0, true));
@@ -405,16 +384,16 @@ SidTuneBase* SidTuneBase::getFromFiles(const char* fileName, const char **fileNa
             while (fileNameExtensions[n] != 0)
             {
                 createNewFileName(fileName2, fileName, fileNameExtensions[n]);
-                // 1st data file was loaded into ``fileBuf1'',
-                // so we load the 2nd one into ``fileBuf2''.
+                // 1st data file was loaded into "fileBuf1",
+                // so we load the 2nd one into "fileBuf2".
                 // Do not load the first file again if names are equal.
-                if (MYSTRICMP(fileName, fileName2.c_str()) != 0)
+                if (!stringutils::equal(fileName, fileName2.data(), fileName2.size()))
                 {
                     try
                     {
                         loadFile(fileName2.c_str(), fileBuf2);
                         // Check if tunes in wrong order and therefore swap them here
-                        if (MYSTRICMP (fileNameExtensions[n], ".mus") == 0)
+                        if (stringutils::equal(fileNameExtensions[n], ".mus"))
                         {
                             std::auto_ptr<SidTuneBase> s2(MUS::load(fileBuf2, fileBuf1, 0, true));
                             if (s2.get())
@@ -435,7 +414,7 @@ SidTuneBase* SidTuneBase::getFromFiles(const char* fileName, const char **fileNa
                     // The first tune loaded ok, so ignore errors on the
                     // second tune, may find an ok one later
                     }
-                    catch (loadError& e) {}
+                    catch (loadError const &e) {}
                 }
                 n++;
             }
@@ -462,20 +441,20 @@ void SidTuneBase::convertOldStyleSpeedToTables(uint_least32_t speed, SidTuneInfo
     //
     // This routine implements the PSIDv2NG compliant speed conversion.  All tunes
     // above 32 use the same song speed as tune 32
-    const unsigned int toDo = ((info->m_songs <= MAX_SONGS) ? info->m_songs : MAX_SONGS);
+    const unsigned int toDo = std::min(info->m_songs, (unsigned int)MAX_SONGS);
     for (unsigned int s = 0; s < toDo; s++)
     {
         clockSpeed[s] = clock;
-        if (speed & 1)
-            songSpeed[s] = SidTuneInfo::SPEED_CIA_1A;
-        else
-            songSpeed[s] = SidTuneInfo::SPEED_VBI;
+        songSpeed[s] = (speed & 1) ? SidTuneInfo::SPEED_CIA_1A : SidTuneInfo::SPEED_VBI;
+
         if (s < 31)
+        {
             speed >>= 1;
+        }
     }
 }
 
-bool SidTuneBase::checkRelocInfo (void)
+bool SidTuneBase::checkRelocInfo()
 {
     // Fix relocation information
     if (info->m_relocStartPage == 0xFF)
@@ -501,8 +480,8 @@ bool SidTuneBase::checkRelocInfo (void)
         const uint_least8_t startlp = (uint_least8_t) (info->m_loadAddr >> 8);
         const uint_least8_t endlp   = startlp + (uint_least8_t) ((info->m_c64dataLen - 1) >> 8);
 
-        if ( ((startp <= startlp) && (endp >= startlp)) ||
-             ((startp <= endlp)   && (endp >= endlp)) )
+        if (((startp <= startlp) && (endp >= startlp))
+            || ((startp <= endlp)   && (endp >= endlp)))
         {
             return false;
         }
@@ -522,39 +501,44 @@ bool SidTuneBase::checkRelocInfo (void)
     return true;
 }
 
-void SidTuneBase::resolveAddrs (const uint_least8_t *c64data)
-{   // Originally used as a first attempt at an RSID
+void SidTuneBase::resolveAddrs(const uint_least8_t *c64data)
+{
+    // Originally used as a first attempt at an RSID
     // style format. Now reserved for future use
-    if ( info->m_playAddr == 0xffff )
-        info->m_playAddr  = 0;
+    if (info->m_playAddr == 0xffff)
+    {
+        info->m_playAddr = 0;
+    }
 
     // loadAddr = 0 means, the address is stored in front of the C64 data.
-    if ( info->m_loadAddr == 0 )
+    if (info->m_loadAddr == 0)
     {
-        if ( info->m_c64dataLen < 2 )
+        if (info->m_c64dataLen < 2)
         {
             throw loadError(ERR_CORRUPT);
         }
-        info->m_loadAddr = endian_16( *(c64data+1), *c64data );
+
+        info->m_loadAddr = endian_16(*(c64data+1), *c64data);
         fileOffset += 2;
-        c64data += 2;
         info->m_c64dataLen -= 2;
     }
 
-    if ( info->m_compatibility == SidTuneInfo::COMPATIBILITY_BASIC )
+    if (info->m_compatibility == SidTuneInfo::COMPATIBILITY_BASIC)
     {
-        if ( info->m_initAddr != 0 )
+        if (info->m_initAddr != 0)
         {
             throw loadError(ERR_BAD_ADDR);
         }
     }
-    else if ( info->m_initAddr == 0 )
+    else if (info->m_initAddr == 0)
+    {
         info->m_initAddr = info->m_loadAddr;
+    }
 }
 
-bool SidTuneBase::checkCompatibility (void)
+bool SidTuneBase::checkCompatibility()
 {
-    switch ( info->m_compatibility )
+    switch (info->m_compatibility)
     {
     case SidTuneInfo::COMPATIBILITY_R64:
         // Check valid init address
@@ -567,8 +551,8 @@ bool SidTuneBase::checkCompatibility (void)
         case 0x0A:
             return false;
         default:
-            if ( (info->m_initAddr < info->m_loadAddr) ||
-                 (info->m_initAddr > (info->m_loadAddr + info->m_c64dataLen - 1)) )
+            if ((info->m_initAddr < info->m_loadAddr)
+                || (info->m_initAddr > (info->m_loadAddr + info->m_c64dataLen - 1)))
             {
                 return false;
             }
@@ -576,8 +560,12 @@ bool SidTuneBase::checkCompatibility (void)
         // deliberate run on
 
     case SidTuneInfo::COMPATIBILITY_BASIC:
+        /*
+         * FIXME: Hellbound from Shining 8 (http://csdb.dk/release/?id=3574)
+         * loads at $608, should this check be performed only for PSID files?
+         */
         // Check tune is loadable on a real C64
-        if ( info->m_loadAddr < SIDTUNE_R64_MIN_LOAD_ADDR )
+        if (info->m_loadAddr < SIDTUNE_R64_MIN_LOAD_ADDR)
         {
             return false;
         }
@@ -593,16 +581,18 @@ const char* SidTuneBase::PetsciiToAscii::convert(SmartPtr_sidtt<const uint8_t>& 
     do
     {
         c = CHR_tab[*spPet];  // ASCII CHR$ conversion
-        if ((c>=0x20) && (buffer.length()<=31))
+        if ((c >= 0x20) && (buffer.length() <= 31))
             buffer.push_back(c);  // copy to info string
 
         // If character is 0x9d (left arrow key) then move back.
-        if ((*spPet==0x9d) && (!buffer.empty()))
+        if ((*spPet == 0x9d) && (!buffer.empty()))
+        {
             buffer.resize(buffer.size() - 1);
+        }
 
         spPet++;
     }
-    while ( !((c==0x0D)||(c==0x00)||spPet.fail()) );
+    while (!((c == 0x0D) || (c == 0x00) || spPet.fail()));
 
     return buffer.c_str();
 }

@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2014 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -23,35 +23,32 @@
 
 #include "player.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <ctime>
 
+#include "SidTune.h"
+#include "sidemu.h"
 #include "psiddrv.h"
 #include "romCheck.h"
 
 SIDPLAYFP_NAMESPACE_START
 
 
-const char  TXT_NA[]             = "NA";
-
-// Error Strings
-const char  ERR_MISSING_ROM[]    = "SIDPLAYER ERROR: Roms have not been loaded.";
+const char TXT_NA[]             = "NA";
 
 
-Player::Player (void)
-// Set default settings for system
-:m_mixer (m_c64.getEventScheduler()),
- m_tune (0),
- m_errorString(ERR_MISSING_ROM),
- m_status(false),
- m_isPlaying(false),
- m_rand((int)::time(0))
+Player::Player () :
+    // Set default settings for system
+    m_tune(0),
+    m_errorString(TXT_NA),
+    m_isPlaying(false),
+    m_rand((unsigned int)::time(0))
 {
 #ifdef PC64_TESTSUITE
     m_c64.setTestEnv(this);
 #endif
-    config (m_cfg);
+
+    m_c64.setRoms(0, 0, 0);
+    config(m_cfg);
 
     // Get component credits
     m_info.m_credits.push_back(m_c64.cpuCredits());
@@ -79,14 +76,13 @@ void Player::setRoms(const uint8_t* kernal, const uint8_t* basic, const uint8_t*
         m_info.m_chargenDesc = c.info();
     }
 
-    m_c64.getMmu()->setRoms(kernal, basic, character);
-    m_errorString = TXT_NA;
-    m_status = true;
+    m_c64.setRoms(kernal, basic, character);
 }
 
-bool Player::fastForward (const unsigned int percent)
+bool Player::fastForward(unsigned int percent)
 {
-    if (!m_mixer.setFastForward(percent / 100)) {
+    if (!m_mixer.setFastForward(percent / 100))
+    {
         m_errorString = "SIDPLAYER ERROR: Percentage value out of range.";
         return false;
     }
@@ -94,23 +90,19 @@ bool Player::fastForward (const unsigned int percent)
     return true;
 }
 
-bool Player::initialise ()
+void Player::initialise()
 {
-    if (!m_status)
-        return false;
+    m_isPlaying = false;
 
-    m_isPlaying  = false;
-
-    m_c64.reset ();
+    m_c64.reset();
 
     const SidTuneInfo* tuneInfo = m_tune->getInfo();
 
     {
-        const uint_least32_t size = (uint_least32_t) tuneInfo->loadAddr() + tuneInfo->c64dataLen() - 1;
+        const uint_least32_t size = (uint_least32_t)tuneInfo->loadAddr() + tuneInfo->c64dataLen() - 1;
         if (size > 0xffff)
         {
-            m_errorString = "SIDPLAYER ERROR: Size of music data exceeds C64 memory.";
-            return false;
+            throw new configError("SIDPLAYER ERROR: Size of music data exceeds C64 memory.");
         }
     }
 
@@ -118,37 +110,31 @@ bool Player::initialise ()
     // Delays above MAX result in random delays
     if (powerOnDelay > SidConfig::MAX_POWER_ON_DELAY)
     {   // Limit the delay to something sensible.
-        powerOnDelay = (uint_least16_t) ((m_rand.next() >> 3) & SidConfig::MAX_POWER_ON_DELAY);
+        powerOnDelay = (uint_least16_t)((m_rand.next() >> 3) & SidConfig::MAX_POWER_ON_DELAY);
     }
 
     psiddrv driver(m_tune->getInfo());
     driver.powerOnDelay(powerOnDelay);
-    if (!driver.drvReloc (m_c64.getMmu()))
+    if (!driver.drvReloc(m_c64.getMemInterface()))
     {
-        m_errorString = driver.errorString();
-        return false;
+        throw new configError(driver.errorString());
     }
 
     m_info.m_driverAddr = driver.driverAddr();
     m_info.m_driverLength = driver.driverLength();
     m_info.m_powerOnDelay = powerOnDelay;
 
-    if (!m_tune->placeSidTuneInC64mem (m_c64.getMmu()))
+    if (!m_tune->placeSidTuneInC64mem(m_c64.getMemInterface()))
     {
-        m_errorString = m_tune->statusString();
-        return false;
+        throw new configError(m_tune->statusString());
     }
 
-    driver.install (m_c64.getMmu());
+    driver.install(m_c64.getMemInterface());
 
     m_c64.resetCpu();
-
-    m_mixer.reset ();
-
-    return true;
 }
 
-bool Player::load (SidTune *tune)
+bool Player::load(SidTune *tune)
 {
     m_tune = tune;
     if (!tune)
@@ -157,7 +143,7 @@ bool Player::load (SidTune *tune)
     }
 
     {   // Must re-configure on fly for stereo support!
-        if (!config (m_cfg))
+        if (!config(m_cfg))
         {
             // Failed configuration with new tune, reject it
             m_tune = 0;
@@ -167,15 +153,16 @@ bool Player::load (SidTune *tune)
     return true;
 }
 
-void Player::mute(const unsigned int sidNum, const unsigned int voice, const bool enable) {
-    sidemu *s = m_c64.getSid(sidNum);
+void Player::mute(unsigned int sidNum, unsigned int voice, bool enable)
+{
+    sidemu *s = m_mixer.getSid(sidNum);
     if (s)
         s->voice(voice, enable);
 }
 
-uint_least32_t Player::play (short *buffer, uint_least32_t count)
+uint_least32_t Player::play(short *buffer, uint_least32_t count)
 {
-    // Make sure a _tune is loaded
+    // Make sure a tune is loaded
     if (!m_tune)
         return 0;
 
@@ -184,20 +171,70 @@ uint_least32_t Player::play (short *buffer, uint_least32_t count)
     // Start the player loop
     m_isPlaying = true;
 
-    while (m_isPlaying && m_mixer.notFinished())
-        m_c64.getEventScheduler()->clock();
+    if (count && m_mixer.getSid(0))
+    {
+        while (m_isPlaying && m_mixer.notFinished())
+        {
+            for (int i=0; i<OUTPUTBUFFERSIZE; i++)
+                m_c64.getEventScheduler()->clock();
+
+            m_mixer.clockChips();
+            m_mixer.doMix();
+        }
+        count = m_mixer.samplesGenerated();
+    }
+    else if (m_mixer.getSid(0))
+    {
+        int size = m_c64.getMainCpuSpeed() / m_cfg.frequency;
+        while (m_isPlaying && --size)
+        {
+            for (int i=0; i<OUTPUTBUFFERSIZE; i++)
+                m_c64.getEventScheduler()->clock();
+
+            m_mixer.clockChips();
+            m_mixer.resetBufs();
+        }
+    }
+    else
+    {
+        int size = m_c64.getMainCpuSpeed() / m_cfg.frequency;
+        while (m_isPlaying && --size)
+        {
+            for (int i=0; i<OUTPUTBUFFERSIZE; i++)
+                m_c64.getEventScheduler()->clock();
+
+            m_mixer.resetBufs();
+        }
+    }
 
     if (!m_isPlaying)
-        initialise ();
+    {
+        try
+        {
+            initialise();
+        }
+        catch (configError const &e) {}
+    }
 
-    return m_mixer.samplesGenerated();
+    return count;
 }
 
-void Player::stop (void)
+void Player::stop()
 {   // Re-start song
     if (m_tune && m_isPlaying)
     {
-        m_isPlaying = false;
+        if (m_mixer.notFinished())
+        {
+            m_isPlaying = false;
+        }
+        else
+        {
+            try
+            {
+                initialise();
+            }
+            catch (configError const &e) {}
+        }
     }
 }
 

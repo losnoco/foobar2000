@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000 Simon White
  *
@@ -22,18 +22,20 @@
 
 #include "mmu.h"
 
+class Bank;
+
 static const uint8_t POWERON[] =
 {
 #include "poweron.bin"
 };
 
-MMU::MMU(EventContext *context, Bank* ioBank)
-:context(*context),
- loram(false),
- hiram(false),
- charen(false),
- ioBank(ioBank),
- zeroRAMBank(this, &ramBank)
+MMU::MMU(EventContext *context, Bank* ioBank) :
+    context(*context),
+    loram(false),
+    hiram(false),
+    charen(false),
+    ioBank(ioBank),
+    zeroRAMBank(this, &ramBank)
 {
     cpuReadMap[0] = &zeroRAMBank;
     cpuWriteMap[0] = &zeroRAMBank;
@@ -98,13 +100,15 @@ void MMU::reset()
 
             // Determine data count/compression
             if (off & 0x80)
-            {   // fixup offset
+            {
+                // fixup offset
                 off  &= 0x7f;
                 count = POWERON[i++];
                 if (count & 0x80)
-                {   // fixup count
-                count &= 0x7f;
-                compressed = true;
+                {
+                    // fixup count
+                    count &= 0x7f;
+                    compressed = true;
                 }
             }
 
@@ -117,13 +121,17 @@ void MMU::reset()
             {
                 const uint8_t data = POWERON[i++];
                 while (count-- > 0)
-                    ramBank.write(addr++, data);
+                {
+                    ramBank.poke(addr++, data);
+                }
             }
             // Extract uncompressed data
             else
             {
                 while (count-- > 0)
-                    ramBank.write(addr++, POWERON[i++]);
+                {
+                    ramBank.poke(addr++, POWERON[i++]);
+                }
             }
         }
     }

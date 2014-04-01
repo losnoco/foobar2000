@@ -179,6 +179,9 @@
     <ClInclude Include="..\..\SidTuneInfo.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\c64\CIA\timer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\config.cpp">
@@ -245,6 +248,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\SidTune.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\c64\CIA\timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

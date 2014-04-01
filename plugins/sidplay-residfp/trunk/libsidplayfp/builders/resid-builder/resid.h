@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2001 Simon White
  *
@@ -29,33 +29,35 @@
 /**
 * ReSID Builder Class
 */
-class SID_EXTERN ReSIDBuilder: public sidbuilder
+class SID_EXTERN ReSIDBuilder : public sidbuilder
 {
 public:
-    ReSIDBuilder  (const char * const name)
-      : sidbuilder (name) {}
-    ~ReSIDBuilder (void);
+    ReSIDBuilder(const char * const name) :
+        sidbuilder(name) {}
+    ~ReSIDBuilder();
 
-    /** All available sids.
-    *    return values: 0 endless, positive is available sids.
+    /**
+    * Available sids.
+    *
+    * @return the number of available sids, 0 = endless.
     */
-    unsigned int        availDevices () const { return 0; }
+    unsigned int availDevices() const { return 0; }
 
-    unsigned int        create  (unsigned int sids);
+    unsigned int create(unsigned int sids);
 
-    const char *credits (void) const;
+    const char *credits() const;
 
     /// @name global settings
     /// Settings that affect all SIDs
     //@{
     /// enable/disable filter
-    void filter (bool enable);
+    void filter(bool enable);
 
     /**
     * The bias is given in millivolts, and a maximum reasonable
     * control range is approximately -500 to 500.
     */
-    void bias (double dac_bias);
+    void bias(double dac_bias);
     //@}
 };
 

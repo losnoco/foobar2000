@@ -23,34 +23,34 @@
 #include "EventScheduler.h"
 
 
-void EventScheduler::reset (void)
+void EventScheduler::reset()
 {
     currentTime = 0;
     firstEvent = 0;
 }
 
-void EventScheduler::cancel (Event &event)
+void EventScheduler::cancel(Event &event)
 {
-    Event *scan = firstEvent;
-    Event *prev = 0;
-    while (scan) {
-        if (&event == scan) {
-            if (prev)
-                prev->next = scan->next;
-            else
-                firstEvent = scan->next;
+    Event **scan = &firstEvent;
+
+    while (*scan)
+    {
+        if (&event == *scan)
+        {
+            *scan = (*scan)->next;
             break;
         }
-        prev = scan;
-        scan = scan->next;
+        scan = &((*scan)->next);
     }
 }
 
 bool EventScheduler::isPending(Event &event) const
 {
     Event *scan = firstEvent;
-    while (scan) {
-        if (&event == scan) {
+    while (scan)
+    {
+        if (&event == scan)
+        {
             return true;
         }
         scan = scan->next;

@@ -1,42 +1,52 @@
-/***************************************************************************
-                          IniConfig.cpp  -  Sidplay2 config file reader.
-                             -------------------
-    begin                : Sun Mar 25 2001
-    copyright            : (C) 2000 by Simon White
-    email                : s_a_white@email.com
- ***************************************************************************/
+/*
+ * This file is part of sidplayfp, a console SID player.
+ *
+ * Copyright 2011-2013 Leandro Nini
+ * Copyright 2000-2001 Simon White
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
 
-#include <string>
-#include <stdlib.h>
-#include <string.h>
-
-#include "config.h"
 #include "IniConfig.h"
 
+#include <string>
+
+#include <string.h>
+#include <stdlib.h>
+
 #ifndef _WIN32
-#   include <sys/types.h>
-#   include <sys/stat.h>  /* mkdir */
-#   include <dirent.h>    /* opendir */
+#  include <sys/types.h>
+#  include <sys/stat.h>  /* mkdir */
+#  include <dirent.h>    /* opendir */
 #else
-#   include <windows.h>
-#   include <shlobj.h>
+#  include <windows.h>
 #endif
+
+#include "utils.h"
+
 const char *IniConfig::DIR_NAME  = "sidplayfp";
 const char *IniConfig::FILE_NAME = "sidplayfp.ini";
 
 #define SAFE_FREE(p) { if(p) { free (p); (p)=NULL; } }
 
-IniConfig::IniConfig ()
-:status(true)
+IniConfig::IniConfig () :
+    status(true)
 {   // Initialise everything else
     sidplay2_s.database    = NULL;
     sidplay2_s.kernalRom   = NULL;
@@ -76,8 +86,8 @@ void IniConfig::clear ()
     audio_s.playback  = SidConfig::MONO;
     audio_s.precision = 16;
 
-    emulation_s.clockSpeed    = SidConfig::CLOCK_PAL;
-    emulation_s.clockForced   = false;
+    emulation_s.modelDefault  = SidConfig::PAL;
+    emulation_s.modelForced   = false;
     emulation_s.sidModel      = SidConfig::MOS6581;
     emulation_s.forceModel    = false;
     emulation_s.filter        = true;
@@ -92,7 +102,7 @@ bool  IniConfig::readDouble (ini_fd_t ini, const char *key, double &value)
 {
     double d = value;
     if (ini_locateKey (ini, key) < 0)
-    {   // Dosen't exist, add it
+    {   // Doesn't exist, add it
         (void) ini_writeString (ini, "");
     }
     if (ini_readDouble (ini, &d) < 0)
@@ -106,7 +116,7 @@ bool IniConfig::readInt (ini_fd_t ini, const char *key, int &value)
 {
     int i = value;
     if (ini_locateKey (ini, key) < 0)
-    {   // Dosen't exist, add it
+    {   // Doesn't exist, add it
         (void) ini_writeString (ini, "");
     }
     if (ini_readInt (ini, &i) < 0)
@@ -118,19 +128,16 @@ bool IniConfig::readInt (ini_fd_t ini, const char *key, int &value)
 
 bool IniConfig::readString (ini_fd_t ini, const char *key, char *&str)
 {
-    char  *ret;
-    size_t length;
-
     if (ini_locateKey (ini, key) < 0)
-    {   // Dosen't exist, add it
+    {   // Doesn't exist, add it
         (void) ini_writeString (ini, "");
     }
 
-    length = (size_t) ini_dataLength (ini);
+    size_t length = (size_t) ini_dataLength (ini);
     if (!length)
-        return 0;
+        return false;
 
-    ret = (char *) malloc (++length);
+    char *ret = (char *) malloc (++length);
     if (!ret)
         return false;
 
@@ -141,7 +148,7 @@ bool IniConfig::readString (ini_fd_t ini, const char *key, char *&str)
     }
 
     str = ret;
-return true;
+    return true;
 }
 
 
@@ -149,7 +156,7 @@ bool IniConfig::readBool (ini_fd_t ini, const char *key, bool &boolean)
 {
     int b = boolean;
     if (ini_locateKey (ini, key) < 0)
-    {   // Dosen't exist, add it
+    {   // Doesn't exist, add it
         (void) ini_writeString (ini, "");
     }
     if (ini_readBool (ini, &b) < 0)
@@ -188,8 +195,7 @@ bool IniConfig::readChar (ini_fd_t ini, const char *key, char &ch)
 
 bool IniConfig::readTime (ini_fd_t ini, const char *key, int &value)
 {
-    char *str, *sep;
-    int   time;
+    char *str;
     bool  ret = readString (ini, key, str);
     if (!ret)
         return false;
@@ -197,16 +203,16 @@ bool IniConfig::readTime (ini_fd_t ini, const char *key, int &value)
     if (!*str)
         return false;
 
-    sep = strstr (str, ":");
+    int time;
+    char *sep = strstr (str, ":");
     if (!sep)
     {   // User gave seconds
         time = atoi (str);
     }
     else
     {   // Read in MM:SS format
-        int val;
         *sep = '\0';
-        val  = atoi (str);
+        int val = atoi (str);
         if (val < 0 || val > 99)
             goto IniCofig_readTime_error;
         time = val * 60;
@@ -218,7 +224,7 @@ bool IniConfig::readTime (ini_fd_t ini, const char *key, int &value)
 
     value = time;
     free (str);
-return ret;
+    return ret;
 
 IniCofig_readTime_error:
     free (str);
@@ -229,14 +235,17 @@ IniCofig_readTime_error:
 bool IniConfig::readSidplay2 (ini_fd_t ini)
 {
     bool ret = true;
-    int  time, version = sidplay2_s.version;
 
-    (void) ini_locateHeading (ini, "SIDPlay2");
+    (void) ini_locateHeading (ini, "SIDPlayfp");
+
+    int version = sidplay2_s.version;
     ret &= readInt (ini, "Version", version);
     if (version > 0)
         sidplay2_s.version = version;
 
     ret &= readString (ini, "Songlength Database", sidplay2_s.database);
+
+    int time;
     if (readTime (ini, "Default Play Length", time))
         sidplay2_s.playLength   = (uint_least32_t) time;
     if (readTime (ini, "Default Record Length", time))
@@ -283,9 +292,7 @@ bool IniConfig::readAudio (ini_fd_t ini)
         ret &= readInt (ini, "Channels",  channels);
         if (channels)
         {
-            audio_s.playback = SidConfig::MONO;
-            if (channels != 1)
-                audio_s.playback = SidConfig::STEREO;
+            audio_s.playback = (channels == 1) ? SidConfig::MONO : SidConfig::STEREO;
         }
     }
 
@@ -299,33 +306,41 @@ bool IniConfig::readEmulation (ini_fd_t ini)
     bool ret = true;
     (void) ini_locateHeading (ini, "Emulation");
 
+    ret &= readString (ini, "Engine", emulation_s.engine);
+
     {
-        int clockSpeed = -1;
-        ret &= readInt (ini, "ClockSpeed", clockSpeed);
-        if (clockSpeed != -1)
+        char *str;
+        const bool res = readString (ini, "C64Model", str);
+        if (res)
         {
-            if (clockSpeed < 0 || clockSpeed > 1)
-                ret = false;
-            emulation_s.clockSpeed = SidConfig::CLOCK_PAL;
-            if (clockSpeed)
-                emulation_s.clockSpeed = SidConfig::CLOCK_NTSC;
+            if (strcmp(str, "PAL") == 0)
+                emulation_s.modelDefault = SidConfig::PAL;
+            else if (strcmp(str, "NTSC") == 0)
+                emulation_s.modelDefault = SidConfig::NTSC;
+            else if (strcmp(str, "OLD_NTSC") == 0)
+                emulation_s.modelDefault = SidConfig::OLD_NTSC;
+            else if (strcmp(str, "DREAN") == 0)
+                emulation_s.modelDefault = SidConfig::DREAN;
         }
+        ret &= res;
     }
 
-    ret &= readBool (ini, "ForceSongSpeed", emulation_s.clockForced);
+    ret &= readBool (ini, "ForceC64Model", emulation_s.modelForced);
 
     {
-        int mos8580 = -1;
-        ret &= readInt (ini, "MOS8580", mos8580);
-        if (mos8580 != -1)
+        char *str;
+        const bool res = readString (ini, "SidModel", str);
+        if (res)
         {
-            if (mos8580 < 0 || mos8580 > 1)
-                ret = false;
-            emulation_s.sidModel = SidConfig::MOS6581;
-            if (mos8580)
+            if (strcmp(str, "MOS6581") == 0)
+                emulation_s.sidModel = SidConfig::MOS6581;
+            else if (strcmp(str, "MOS8580") == 0)
                 emulation_s.sidModel = SidConfig::MOS8580;
         }
+        ret &= res;
     }
+
+    ret &= readBool (ini, "ForceSidModel", emulation_s.forceModel);
 
     ret &= readBool (ini, "UseFilter", emulation_s.filter);
 
@@ -338,34 +353,18 @@ bool IniConfig::readEmulation (ini_fd_t ini)
 
 void IniConfig::read ()
 {
-    char *path = NULL;
-    ini_fd_t ini  = 0;
+    ini_fd_t ini = 0;
+
     std::string configPath;
 
-#ifdef _WIN32
-    char szPath[MAX_PATH];
-
-    if (SHGetFolderPathA(NULL, CSIDL_APPDATA, NULL, 0, szPath)!=S_OK)
+    try
     {
-        path = getenv("USERPROFILE");
-        if (!path)
-            goto IniConfig_read_error;
-        configPath.append(path).append("\\Application Data");
+        configPath = utils::getConfigPath();
     }
-    else
-        configPath.append(szPath);
-#else
-    path = getenv("XDG_CONFIG_HOME");
-    if (!path)
+    catch (utils::error const &e)
     {
-        path = getenv("HOME");
-        if (!path)
-            goto IniConfig_read_error;
-        configPath.append(path).append("/.config");
+        goto IniConfig_read_error;
     }
-    else
-        configPath.append(path);
-#endif
 
     configPath.append("/").append(DIR_NAME);
 
@@ -377,7 +376,6 @@ void IniConfig::read ()
     CreateDirectoryA(configPath.c_str(), NULL);
 #endif
 
-    /* sprintf on top of itself fails nowadays. */
     configPath.append("/").append(FILE_NAME);
 
     // Opens an existing file or creates a new one

@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,28 +21,33 @@
 #ifndef PSID_H
 #define PSID_H
 
+#include <stdint.h>
+
 #include "SidTuneBase.h"
+
+#include "sidplayfp/SidTune.h"
 
 class PSID : public SidTuneBase
 {
- private:
+private:
     char m_md5[SidTune::MD5_LENGTH+1];
 
- private:
-    bool resolveAddrs(const uint_least8_t *c64data);
-    bool checkRelocInfo(void);
+private:
+    void tryLoad(buffer_t& dataBuf);
 
-    void tryLoad(Buffer_sidtt<const uint_least8_t>& dataBuf);
-
- protected:
+protected:
     PSID() {}
 
- public:
+public:
     virtual ~PSID() {}
 
-    static SidTuneBase* load(Buffer_sidtt<const uint_least8_t>& dataBuf);
+    static SidTuneBase* load(buffer_t& dataBuf);
 
     virtual const char *createMD5(char *md5);
+
+private:    // prevent copying
+    PSID(const PSID&);
+    PSID& operator=(PSID&);
 };
 
 #endif // PSID_H

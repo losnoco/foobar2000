@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,8 +32,7 @@ private:
     void load();
 
 public:
-    static SidTuneBase* load(const char *fileName,
-                             Buffer_sidtt<const uint_least8_t>& dataBuf);
+    static SidTuneBase* load(const char *fileName, buffer_t& dataBuf);
 
     virtual ~prg() {}
 

@@ -61,4 +61,9 @@ const char* residfp_version_string = "0.0.2";
 #define RESID_INLINING 1
 #define RESID_INLINE inline
 
+#ifdef _MSC_VER
+#define likely(a) a
+#define unlikely(a) a
+#endif
+
 #endif // not __SIDDEFS_H__

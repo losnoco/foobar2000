@@ -1,26 +1,34 @@
-/***************************************************************************
-                          main.cpp  -  description
-                             -------------------
-    begin                : Fri Jun 2 2000
-    copyright            : (C) 2000 by Simon White
-    email                : s_a_white@email.com
- ***************************************************************************/
+/*
+ * This file is part of sidplayfp, a console SID player.
+ *
+ * Copyright 2012 Leandro Nini
+ * Copyright 2000 Simon White
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+#include "player.h"
 
 #include <stdlib.h>
+#include <signal.h>
+
 #include <iostream>
+
 using std::cerr;
 using std::endl;
-#include <signal.h>
-#include "player.h"
+
 #include "keyboard.h"
 
 
@@ -34,7 +42,7 @@ int main(int argc, char *argv[])
     g_player = &player;
 
     {// Decode the command line args
-        int ret = player.args (argc - 1, const_cast<const char**>(argv + 1));
+        const int ret = player.args (argc - 1, const_cast<const char**>(argv + 1));
         if (ret < 0)
             goto main_error;
         else if (!ret)
@@ -60,7 +68,8 @@ main_restart:
 #endif
 
     // Play loop
-    for (;;) {
+    for (;;)
+    {
         if (!player.play ())
             break;
     }
@@ -99,7 +108,7 @@ void sighandler (int signum)
     case SIGTERM:
         // Exit now!
         g_player->stop ();
-    break;
+        break;
     default: break;
     }
 }
@@ -114,19 +123,19 @@ void displayError (const char *arg0, unsigned int num)
     case ERR_SYNTAX:
         cerr << "command line syntax error" << endl
              << "Try `" << arg0 << " --help' for more information." << endl;
-    break;
+        break;
 
     case ERR_NOT_ENOUGH_MEMORY:
         cerr << "ERROR: Not enough memory." << endl;
-    break;
+        break;
 
     case ERR_SIGHANDLER:
         cerr << "ERROR: Could not install signal handler." << endl;
-    break;
+        break;
 
     case ERR_FILE_OPEN:
         cerr << "ERROR: Could not open file for binary input." << endl;
-    break;
+        break;
 
     default: break;
     }

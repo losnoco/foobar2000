@@ -1,3 +1,69 @@
+1.2.2 2014-01-12
+* Extend the waveform TTL to about one second to fix /MUSICIANS/P/PVCF/Thomkat_with_Strange_End.sid
+* Fix 'invalid use of incomplete type' warnings on android
+* Reduce oversized array in reSIDfp
+
+
+
+1.2.1 2013-12-31
+* Fix a bug in VIC-II that broke DEMOS/S-Z/Still_Got_the_Booze_tune_5.sid
+* Fix some wrong values printed by the cpu debugger
+
+
+
+1.2.0 2013-12-24
+* Clean up includes with the help of IWYU (http://code.google.com/p/include-what-you-use/)
+* Improve checks for non-standard functions
+* Expand SidTuneInfo interface with parametrized methods. Mark the old ones as deprecated
+* Enable use of graphviz for doxygen documentation
+* Refactor mixer to be more clean and flexible
+* Improve the clock frequency calculation. Should fix the slightly off PAL-B clock
+* Some internal refactoring
+
+
+
+1.1.0 2013-09-28
+* Rework mixer to fix bug #7
+* Rework VIC emulation to be more faithful to PAL-NTSC models difference
+* Sync reSID codebase to fix a couple of regressions (See VICE bug #290)
+
+
+
+1.0.3 2013-07-06
+* Fix missing constructor in ExtraSidBank.h
+* Fix a regression in resid's external filter
+
+
+
+1.0.2 2013-04-25
+* Fix saving the last CIA 1 Timer A value
+* Fix a crash with stereo prg files
+
+
+
+1.0.1 2013-03-23
+* Fix compiling on debian/stable
+* Make sure that song is reinitialized after stop
+
+
+
+1.0.0 2013-01-27
+* Dropped support for ancient formats
+* Removed unused functionalities
+* Removed embedded roms
+* Improved emulation
+* Reworked and cleaned up codebase
+* Merged builders in the main library
+* Added libstilview
+
+
+
+0.3.8 2012-11-25
+* Bail out at configure time if stdint.h is not found
+* Fix a fixed point overflow introduced in r702, reported to break /MUSICIANS/S/Surgeon/Dual_Mind.sid (bug ID: 3588984)
+
+
+
 0.3.7 2012-08-28
 * Actually use the fastSampling parameter
 * Increase the waveform TTL even more to fix games/s-z/Scruples.sid#2

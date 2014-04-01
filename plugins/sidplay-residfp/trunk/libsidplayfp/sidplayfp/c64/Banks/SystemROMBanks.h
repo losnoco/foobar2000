@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2010 Antti Lankila
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,13 +22,13 @@
 #ifndef SYSTEMROMBANKS_H
 #define SYSTEMROMBANKS_H
 
-#include <string.h>
 #include <stdint.h>
+#include <cstring>
 
 #include "Bank.h"
 #include "sidplayfp/c64/CPU/opcodes.h"
 
-/** @internal
+/**
  * ROM bank base class
  * N must be a power of two
  */
@@ -54,12 +54,12 @@ public:
     void set(const uint8_t* source) { if (source) memcpy(rom, source, N); }
 
     /// Writing to ROM is a no-op
-    void write(uint_least16_t address, uint8_t value) {}
+    void poke(uint_least16_t address SID_UNUSED, uint8_t value SID_UNUSED) {}
 
-    uint8_t read(uint_least16_t address) { return rom[address & (N-1)]; }
+    uint8_t peek(uint_least16_t address) { return rom[address & (N-1)]; }
 };
 
-/** @internal
+/**
  * Kernal ROM
  */
 class KernalRomBank : public romBank<0x2000>
@@ -71,11 +71,13 @@ private:
 public:
     void set(const uint8_t* kernal)
     {
-        romBank::set(kernal);
+        romBank<0x2000>::set(kernal);
 
         if (kernal)
         {
             // Apply Kernal hacks
+            // FIXME these are tailored to the original kernals
+            //       may not work as intended on other roms
             setVal(0xfd69, 0x9f); // Bypass memory check
             setVal(0xe55f, 0x00); // Bypass screen clear
             setVal(0xfdc4, 0xea); // Ignore sid volume reset to avoid DC
@@ -167,7 +169,7 @@ public:
     }
 };
 
-/** @internal
+/**
  * BASIC ROM
  */
 class BasicRomBank : public romBank<0x2000>
@@ -179,7 +181,7 @@ private:
 public:
     void set(const uint8_t* basic)
     {
-        romBank::set(basic);
+        romBank<0x2000>::set(basic);
 
         // Backup BASIC Warm Start
         memcpy(trap, getPtr(0xa7ae), 3);
@@ -223,7 +225,7 @@ public:
     }
 };
 
-/** @internal
+/**
  * Character ROM
  */
 class CharacterRomBank : public romBank<0x1000> {};

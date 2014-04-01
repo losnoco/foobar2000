@@ -1,9 +1,9 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2014 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
- * Copyright 2004 Dag Lem <resid@nimrod.no>
+ * Copyright 2004,2010 Dag Lem <resid@nimrod.no>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,11 @@
 #ifndef FILTER8580_H
 #define FILTER8580_H
 
+#include <cmath>
+#include <cstring>
+
+#include <stdint.h>
+
 #include "siddefs-fp.h"
 
 #include "Filter.h"
@@ -30,107 +35,152 @@
 namespace reSIDfp
 {
 
-/** @internal
- * Filter for 8580 chip based on simple linear approximation
- * of the FC control.
+/**
+ * Simple white noise generator.
+ * Generates small low quality pseudo random numbers
+ * useful to prevent float denormals.
  *
- * This is like the original reSID filter except the phase
- * of BP output has been inverted. I saw samplings on the internet
- * that indicated it would genuinely happen like this.
- *
- * @author Ken Händel
- * @author Dag Lem
- * @author Antti Lankila
- * @author Leandro Nini
+ * Based on the paper "Denormal numbers in floating point signal
+ * processing applications" from Laurent de Soras
+ * http://ldesoras.free.fr/prod.html#doc_denormal
  */
-class Filter8580 : public Filter {
-
+class antiDenormalNoise
+{
 private:
-	double highFreq;
-	float Vlp, Vbp, Vhp;
-	float ve, w0, _1_div_Q;
+    uint32_t rand_state;
 
 public:
-	Filter8580() :
-		highFreq(12500.),
-		Vlp(0.f),
-		Vbp(0.f),
-		Vhp(0.f),
-		ve(0.f),
-		w0(0.f),
-		_1_div_Q(0.f) {}
+    antiDenormalNoise() :
+        rand_state(1) {}
 
-	int clock(const int voice1, const int voice2, const int voice3);
+    inline float get()
+    {
+        // FIXME
+        // This code assumes IEEE-754 floating point representation
+        // and same endianness for integers and floats
+        rand_state = rand_state * 1234567UL + 890123UL;
+        const uint32_t mantissa = rand_state & 0x807F0000; // Keep only most significant bits
+        const uint32_t flt_rnd = mantissa | 0x1E000000; // Set exponent
+        float temp;
+        memcpy(&temp, &flt_rnd, sizeof(float));
+        return temp;
+    }
+};
 
-	void updatedCenterFrequency() { w0 = (float) (2.*M_PI*highFreq*fc/2047/1e6); }
+/**
+ * Filter for 8580 chip based on simple linear approximation
+ * of the FC control.
+ */
+class Filter8580 : public Filter
+{
+private:
+    double highFreq;
+    float Vlp, Vbp, Vhp;
+    float w0, _1_div_Q;
+    int ve;
 
-	void updatedResonance() { _1_div_Q = 1.f / (0.707f + res/15.f); }
+    antiDenormalNoise noise;
 
-	void input(const int input) { ve = input << 4; }
+public:
+    Filter8580() :
+        highFreq(12500.),
+        Vlp(0.f),
+        Vbp(0.f),
+        Vhp(0.f),
+        w0(0.f),
+        _1_div_Q(0.f),
+        ve(0) {}
 
-	void updatedMixing() {}
+    int clock(int voice1, int voice2, int voice3);
 
-	void setFilterCurve(const double curvePosition) { highFreq = curvePosition; }
+    /**
+     * Set filter cutoff frequency.
+     */
+    void updatedCenterFrequency() { w0 = (float)(2. * M_PI * highFreq * fc / 2047. / 1e6); }
+
+    /**
+     * Set filter resonance.
+     *
+     * The following function for 1/Q has been modeled in the MOS 8580:
+     *
+     * 1/Q = 2^(1/2)*2^(-x/8) = 2^(1/2 - x/8) = 2^((4 - x)/8)
+     */
+    void updatedResonance() { _1_div_Q = (float)pow(2., (4 - res) / 8.); }
+
+    void input(int input) { ve = input << 4; }
+
+    void updatedMixing() {}
+
+    /**
+     * Set filter curve type based on single parameter.
+     *
+     * @param curvePosition filter's center frequency expressed in Hertz, default is 12500
+     */
+    void setFilterCurve(double curvePosition) { highFreq = curvePosition; }
 };
 
 } // namespace reSIDfp
 
 #if RESID_INLINING || defined(FILTER8580_CPP)
 
-#include <stdlib.h>
-#include <math.h>
+#include <cassert>
 
 namespace reSIDfp
 {
 
 RESID_INLINE
-int Filter8580::clock(const int v1, const int v2, const int v3) {
-	const int voice1 = v1 >> 7;
-	const int voice2 = v2 >> 7;
-	const int voice3 = v3 >> 7;
+int Filter8580::clock(int voice1, int voice2, int voice3)
+{
+    voice1 >>= 7;
+    voice2 >>= 7;
+    voice3 >>= 7;
 
-	int Vi = 0;
-	float Vo = 0.f;
-	if (filt1) {
-		Vi += voice1;
-	} else {
-		Vo += voice1;
-	}
-	if (filt2) {
-		Vi += voice2;
-	} else {
-		Vo += voice2;
-	}
-	// NB! Voice 3 is not silenced by voice3off if it is routed
-	// through the filter.
-	if (filt3) {
-		Vi += voice3;
-	} else if (!voice3off) {
-		Vo += voice3;
-	}
-	if (filtE) {
-		Vi += (int)ve;
-	} else {
-		Vo += ve;
-	}
+    int Vi = 0;
+    int Vo = 0;
 
-	const float dVbp = w0 * Vhp;
-	const float dVlp = w0 * Vbp;
-	Vbp -= dVbp;
-	Vlp -= dVlp;
-	Vhp = (Vbp*_1_div_Q) - Vlp - Vi + float(rand())/float(RAND_MAX);
+    (filt1 ? Vi : Vo) += voice1;
 
-	if (lp) {
-		Vo += Vlp;
-	}
-	if (bp) {
-		Vo += Vbp;
-	}
-	if (hp) {
-		Vo += Vhp;
-	}
+    (filt2 ? Vi : Vo) += voice2;
 
-	return (int) Vo * vol >> 4;
+    // NB! Voice 3 is not silenced by voice3off if it is routed
+    // through the filter.
+    if (filt3)
+    {
+        Vi += voice3;
+    }
+    else if (!voice3off)
+    {
+        Vo += voice3;
+    }
+
+    (filtE ? Vi : Vo) += ve;
+
+    Vlp -= w0 * Vbp;
+    Vbp -= w0 * Vhp;
+    Vhp = (Vbp * _1_div_Q) - Vlp - Vi + noise.get();
+
+    assert(std::fpclassify(Vlp) != FP_SUBNORMAL);
+    assert(std::fpclassify(Vbp) != FP_SUBNORMAL);
+    assert(std::fpclassify(Vhp) != FP_SUBNORMAL);
+
+    float Vof = (float)Vo;
+
+    if (lp)
+    {
+        Vof += Vlp;
+    }
+
+    if (bp)
+    {
+        Vof += Vbp;
+    }
+
+    if (hp)
+    {
+        Vof += Vhp;
+    }
+
+    return (int) Vof * vol >> 4;
 }
 
 } // namespace reSIDfp

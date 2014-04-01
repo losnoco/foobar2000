@@ -1,44 +1,36 @@
-// --------------------------------------------------------------------------
-// Advanced Linux Sound Architecture (ALSA) specific audio driver interface.
-// --------------------------------------------------------------------------
-/***************************************************************************
- *  $Log: audiodrv.h,v $
- *  Revision 1.6  2005/07/18 19:46:44  s_a_white
- *  Switch from obsolete alsa interface (patch by shd).
+/*
+ * This file is part of sidplayfp, a console SID player.
  *
- *  Revision 1.5  2002/01/10 19:04:00  s_a_white
- *  Interface changes for audio drivers.
+ * Copyright 2000-2005 Simon White
  *
- *  Revision 1.4  2001/10/30 23:35:35  s_a_white
- *  Added pause support.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *  Revision 1.3  2001/01/23 17:50:57  s_a_white
- *  Removed duplicate #endif.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *  Revision 1.2  2001/01/18 18:35:41  s_a_white
- *  Support for multiple drivers added.  C standard update applied (There
- *  should be no spaces before #)
- *
- *  Revision 1.1  2001/01/08 16:41:43  s_a_white
- *  App and Library Seperation
- *
- ***************************************************************************/
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-#ifndef audio_alsa_h_
-#define audio_alsa_h_
+#ifndef AUDIO_ALSA_H
+#define AUDIO_ALSA_H
 
-#include "config.h"
-#ifdef   HAVE_ALSA
-
-#ifndef AudioDriver
-#define AudioDriver Audio_ALSA
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
 #endif
 
-#include <stdio.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
+#ifdef HAVE_ALSA
+
+#ifndef AudioDriver
+#  define AudioDriver Audio_ALSA
+#endif
+
 #include <alsa/asoundlib.h>
 #include "../AudioBase.h"
 
@@ -46,22 +38,23 @@
 class Audio_ALSA: public AudioBase
 {
 private:  // ------------------------------------------------------- private
-    snd_pcm_t * _audioHandle;
+    snd_pcm_t *_audioHandle;
     int _alsa_to_frames_divisor;
 
-    void outOfOrder ();
+private:
+    void outOfOrder();
+    static void checkResult(int err);
 
 public:  // --------------------------------------------------------- public
     Audio_ALSA();
     ~Audio_ALSA();
 
-    short *open  (AudioConfig &cfg, const char *name);
-    void  close ();
-    // Rev 1.2 (saw) - Changed, see AudioBase.h
-    short *reset ();
-    short *write ();
-    void  pause () {;}
+    bool open  (AudioConfig &cfg);
+    void close ();
+    void reset () {}
+    bool write ();
+    void pause () {}
 };
 
 #endif // HAVE_ALSA
-#endif // audio_alsa_h_
+#endif // AUDIO_ALSA_H

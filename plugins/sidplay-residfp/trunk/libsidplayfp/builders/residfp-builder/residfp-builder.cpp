@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2012 Leando Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2013 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2001 Simon White
  *
@@ -23,22 +23,22 @@
 #include "residfp.h"
 
 #include <algorithm>
-#include <functional>
+#include <new>
 
 #include "residfp-emu.h"
 
-ReSIDfpBuilder::~ReSIDfpBuilder (void)
-{   // Remove all are SID emulations
-    remove ();
+ReSIDfpBuilder::~ReSIDfpBuilder()
+{   // Remove all SID emulations
+    remove();
 }
 
 // Create a new sid emulation.
-unsigned int ReSIDfpBuilder::create (unsigned int sids)
+unsigned int ReSIDfpBuilder::create(unsigned int sids)
 {
     m_status = true;
 
     // Check available devices
-    unsigned int count = availDevices ();
+    unsigned int count = availDevices();
 
     if (count && (count < sids))
         sids = count;
@@ -47,12 +47,12 @@ unsigned int ReSIDfpBuilder::create (unsigned int sids)
     {
         try
         {
-            sidobjs.insert (new ReSIDfp(this));
+            sidobjs.insert(new ReSIDfp(this));
         }
         // Memory alloc failed?
-        catch (std::bad_alloc&)
+        catch (std::bad_alloc const &)
         {
-            m_errorBuffer.assign(name ()).append(" ERROR: Unable to create ReSIDfp object");
+            m_errorBuffer.assign(name()).append(" ERROR: Unable to create ReSIDfp object");
             m_status = false;
             break;
         }
@@ -61,22 +61,22 @@ unsigned int ReSIDfpBuilder::create (unsigned int sids)
 
 }
 
-const char *ReSIDfpBuilder::credits () const
+const char *ReSIDfpBuilder::credits() const
 {
-    return ReSIDfp::getCredits ();
+    return ReSIDfp::getCredits();
 }
 
-void ReSIDfpBuilder::filter (bool enable)
+void ReSIDfpBuilder::filter(bool enable)
 {
     std::for_each(sidobjs.begin(), sidobjs.end(), applyParameter<ReSIDfp, bool>(&ReSIDfp::filter, enable));
 }
 
-void ReSIDfpBuilder::filter6581Curve (double filterCurve)
+void ReSIDfpBuilder::filter6581Curve(double filterCurve)
 {
     std::for_each(sidobjs.begin(), sidobjs.end(), applyParameter<ReSIDfp, double>(&ReSIDfp::filter6581Curve, filterCurve));
 }
 
-void ReSIDfpBuilder::filter8580Curve (double filterCurve)
+void ReSIDfpBuilder::filter8580Curve(double filterCurve)
 {
     std::for_each(sidobjs.begin(), sidobjs.end(), applyParameter<ReSIDfp, double>(&ReSIDfp::filter8580Curve, filterCurve));
 }

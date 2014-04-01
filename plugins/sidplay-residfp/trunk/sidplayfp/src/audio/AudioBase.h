@@ -1,75 +1,81 @@
-/***************************************************************************
-                          AudioBase.h  -  description
-                             -------------------
-    begin                : Sat Jul 8 2000
-    copyright            : (C) 2000 by Simon White
-    email                : s_a_white@email.com
- ***************************************************************************/
+/*
+ * This file is part of sidplayfp, a console SID player.
+ *
+ * Copyright 2013 Leandro Nini
+ * Copyright 2000 Simon White
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-/***************************************************************************
- *  $Log: AudioBase.h,v $
- *  Revision 1.4  2001/11/16 19:34:29  s_a_white
- *  Added extension to be used for file audio devices.
- *
- *  Revision 1.3  2001/10/30 23:34:45  s_a_white
- *  Added pause.
- *
- *  Revision 1.2  2001/07/03 17:53:29  s_a_white
- *  Added call to get pointer to current music buffer.
- *
- *  Revision 1.1  2001/01/08 16:41:43  s_a_white
- *  App and Library Seperation
- *
- *  Revision 1.4  2000/12/11 19:07:14  s_a_white
- *  AC99 Update.
- *
- ***************************************************************************/
+#ifndef AUDIOBASE_H
+#define AUDIOBASE_H
 
-#ifndef _AudioBase_h_
-#define _AudioBase_h_
+#include <string>
 
-#include <string.h>
+#include "IAudio.h"
 #include "AudioConfig.h"
 
-class AudioBase
+class AudioBase : public IAudio
 {
 protected:
+    class error
+    {
+    private:
+        const char* m_msg;
+
+    public:
+        error(const char* msg) : m_msg(msg) {}
+        const char* message() const { return m_msg; }
+    };
+
+private:
+    const char *_backendName;
+    std::string _errorString;
+
+protected:
     AudioConfig _settings;
-    const char *_errorString;
     short      *_sampleBuffer;
 
-public:
-    AudioBase ()
+protected:
+    void setError(const char* msg)
     {
-        _errorString  = "None";
-        _sampleBuffer = NULL;
+        _errorString.assign(_backendName).append(" ERROR: ").append(msg);
     }
-    virtual ~AudioBase () {;}
 
-    // All drivers must support these
-    virtual short *open(AudioConfig &cfg, const char *name) = 0;
-    virtual short *reset() = 0;
-    virtual short *write() = 0;
-    virtual void  close () = 0;
-    virtual void  pause () = 0;
-    virtual const char *extension () const { return ""; }
-    short *buffer () { return _sampleBuffer; }
+    void clearError()
+    {
+        _errorString.clear();
+    }
 
-    void getConfig (AudioConfig &cfg) const {
+public:
+    AudioBase(const char* name) :
+        _backendName(name),
+        _sampleBuffer(NULL) {}
+    virtual ~AudioBase() {}
+
+    short *buffer() const { return _sampleBuffer; }
+
+    void getConfig(AudioConfig &cfg) const
+    {
         cfg = _settings;
     }
 
-    const char *getErrorString () const {
-        return _errorString;
+    const char *getErrorString() const
+    {
+        return _errorString.c_str();
     }
 };
 
-#endif // _AudioBase_h_
+#endif // AUDIOBASE_H
