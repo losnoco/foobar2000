@@ -141,7 +141,7 @@
     <ClCompile Include="..\..\src\u6m.cpp" />
     <ClCompile Include="..\..\src\xad.cpp" />
     <ClCompile Include="..\..\src\xsm.cpp" />
-    <ClCompile Include="..\..\src\ymf262.cpp" />
+    <ClCompile Include="..\..\src\ymf262.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\a2m.h" />

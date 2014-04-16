@@ -43,7 +43,7 @@ class CEmuopl: public Copl
  private:
   bool		use16bit, stereo;
   void		*opl[2];		// OPL2 emulator data
-  YMF262::Class *opl3;			// OPL3 emulator
+  void      *opl3;			// OPL3 emulator
   short		*mixbuf0, *mixbuf1;
   int		mixbufSamples;
 };
