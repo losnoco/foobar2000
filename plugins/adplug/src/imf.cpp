@@ -138,6 +138,8 @@ bool CimfPlayer::update()
 	if(pos >= size) {
 		pos = 0;
 		songend = true;
+		if (del) timer = rate / (float)del;
+		else timer = rate;
 	}
 	else timer = rate / (float)del;
 
