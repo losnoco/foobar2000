@@ -15,16 +15,6 @@
 #include <termios.h>
 #include <string.h>
 
-typedef struct {
-	WORD wFormatTag;
-	WORD nChannels;
-	DWORD nSamplesPerSec;
-	DWORD nAvgBytesPerSec;
-	WORD nBlockAlign;
-	WORD wBitsPerSample;
-	WORD cbSize;
-} WAVEFORMATEX;
-
 int _kbhit()
 {
 	int r;

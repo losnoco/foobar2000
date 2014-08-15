@@ -1,5 +1,5 @@
 ; BASS 2.4 MASM include file
-; Copyright (c) 1999-2012 Un4seen Developments Ltd.
+; Copyright (c) 1999-2013 Un4seen Developments Ltd.
 ;
 ; See the BASS.CHM file for more complete documentation
 
@@ -93,19 +93,23 @@ BASS_CONFIG_HANDLES     equ 41
 BASS_CONFIG_UNICODE     equ 42
 BASS_CONFIG_SRC         equ 43
 BASS_CONFIG_SRC_SAMPLE  equ 44
+BASS_CONFIG_ASYNCFILE_BUFFER equ 45
+BASS_CONFIG_OGG_PRESCAN equ 47
 
 ; BASS_SetConfigPtr options
 BASS_CONFIG_NET_AGENT   equ 16
 BASS_CONFIG_NET_PROXY   equ 17
 
-; BASS_ASIO_Init flags
+; BASS_Init flags
 BASS_DEVICE_8BITS       equ 1   ; 8 bit resolution, else 16 bit
 BASS_DEVICE_MONO        equ 2   ; mono, else stereo
 BASS_DEVICE_3D          equ 4   ; enable 3D functionality
-BASS_DEVICE_LATENCY     equ 256 ; calculate device latency (BASS_INFO struct)
-BASS_DEVICE_CPSPEAKERS  equ 1024; detect speakers via Windows control panel
-BASS_DEVICE_SPEAKERS    equ 2048; force enabling of speaker assignment
-BASS_DEVICE_NOSPEAKER   equ 4096; ignore speaker arrangement
+BASS_DEVICE_LATENCY     equ 100h; calculate device latency (BASS_INFO struct)
+BASS_DEVICE_CPSPEAKERS  equ 400h; detect speakers via Windows control panel
+BASS_DEVICE_SPEAKERS    equ 800h; force enabling of speaker assignment
+BASS_DEVICE_NOSPEAKER   equ 1000h; ignore speaker arrangement
+BASS_DEVICE_DMIX        equ 2000h; use ALSA "dmix" plugin
+BASS_DEVICE_FREQ		equ 4000h; set device sample rate
 
 ; DirectSound interfaces (for use with BASS_GetDSoundObject)
 BASS_OBJECT_DS          equ 1   ; IDirectSound
@@ -245,6 +249,7 @@ BASS_SPEAKER_LFE        equ BASS_SPEAKER_CENLFE or BASS_SPEAKER_RIGHT
 BASS_SPEAKER_REAR2LEFT  equ BASS_SPEAKER_REAR2 or BASS_SPEAKER_LEFT
 BASS_SPEAKER_REAR2RIGHT equ BASS_SPEAKER_REAR2 or BASS_SPEAKER_RIGHT
 
+BASS_ASYNCFILE          equ 40000000h
 BASS_UNICODE            equ 80000000h
 
 BASS_RECORD_PAUSE       equ 8000h ; start recording paused
@@ -481,14 +486,14 @@ BASS_ATTRIB_EAXMIX      equ 4
 BASS_ATTRIB_NOBUFFER    equ 5
 BASS_ATTRIB_CPU         equ 7
 BASS_ATTRIB_SRC         equ 8
-BASS_ATTRIB_MUSIC_AMPLIFY equ 0x100
-BASS_ATTRIB_MUSIC_PANSEP equ 0x101
-BASS_ATTRIB_MUSIC_PSCALER equ 0x102
-BASS_ATTRIB_MUSIC_BPM   equ 0x103
-BASS_ATTRIB_MUSIC_SPEED equ 0x104
-BASS_ATTRIB_MUSIC_VOL_GLOBAL equ 0x105
-BASS_ATTRIB_MUSIC_VOL_CHAN equ 0x200 ; + channel #
-BASS_ATTRIB_MUSIC_VOL_INST equ 0x300 ; + instrument #
+BASS_ATTRIB_MUSIC_AMPLIFY equ 100h
+BASS_ATTRIB_MUSIC_PANSEP equ 101h
+BASS_ATTRIB_MUSIC_PSCALER equ 102h
+BASS_ATTRIB_MUSIC_BPM   equ 103h
+BASS_ATTRIB_MUSIC_SPEED equ 104h
+BASS_ATTRIB_MUSIC_VOL_GLOBAL equ 105h
+BASS_ATTRIB_MUSIC_VOL_CHAN equ 200h ; + channel #
+BASS_ATTRIB_MUSIC_VOL_INST equ 300h ; + instrument #
 
 ; BASS_ChannelGetData flags
 BASS_DATA_AVAILABLE     equ 0           ; query how much data is buffered
@@ -503,6 +508,7 @@ BASS_DATA_FFT16384      equ 80000006h   ; 16384 FFT
 BASS_DATA_FFT_INDIVIDUAL equ 10h        ; FFT flag: FFT for each channel, else all combined
 BASS_DATA_FFT_NOWINDOW  equ 20h         ; FFT flag: no Hanning window
 BASS_DATA_FFT_REMOVEDC  equ 40h         ; FFT flag: pre-remove DC bias
+BASS_DATA_FFT_COMPLEX   equ 80h         ; FFT flag: return complex data
 
 ; BASS_StreamGetTags types : what's returned
 BASS_TAG_ID3            equ 0            ; ID3v1 tags : TAG_ID3 structure
@@ -531,6 +537,7 @@ BASS_TAG_MUSIC_SAMPLE   equ 10300h       ; + sample #, MOD sample name : ANSI st
 ; BASS_ChannelGetLength/GetPosition/SetPosition modes
 BASS_POS_BYTE           equ 0       ; byte position
 BASS_POS_MUSIC_ORDER    equ 1       ; order.row position, MAKELONG(order,row)
+BASS_POS_OGG            equ 3       ; OGG bitstream number
 BASS_POS_DECODE         equ 10000000h ; flag: get the decoding (not playing) position
 BASS_POS_DECODETO       equ 20000000h ; flag: decode to the position instead of seeking
 

@@ -1,6 +1,6 @@
 {
   BASS 2.4 Delphi unit
-  Copyright (c) 1999-2012 Un4seen Developments Ltd.
+  Copyright (c) 1999-2013 Un4seen Developments Ltd.
 
   See the BASS.CHM file for more detailed documentation
 
@@ -8,7 +8,7 @@
   --------------
   Copy BASS.PAS to the \LIB subdirectory of your Delphi path or your project dir
 
-  NOTE: Delphi 2009 users should use the BASS_UNICODE flag where possible
+  NOTE: Delphi users should use the BASS_UNICODE flag where possible
 }
 
 unit BASS;
@@ -97,6 +97,8 @@ const
   BASS_CONFIG_UNICODE       = 42;
   BASS_CONFIG_SRC           = 43;
   BASS_CONFIG_SRC_SAMPLE    = 44;
+  BASS_CONFIG_ASYNCFILE_BUFFER = 45;
+  BASS_CONFIG_OGG_PRESCAN   = 47;
 
   // BASS_SetConfigPtr options
   BASS_CONFIG_NET_AGENT     = 16;
@@ -208,6 +210,7 @@ const
   BASS_SPEAKER_REAR2LEFT  = BASS_SPEAKER_REAR2 or BASS_SPEAKER_LEFT;
   BASS_SPEAKER_REAR2RIGHT = BASS_SPEAKER_REAR2 or BASS_SPEAKER_RIGHT;
 
+  BASS_ASYNCFILE          = $40000000;
   BASS_UNICODE            = $80000000;
 
   BASS_RECORD_PAUSE       = $8000; // start recording paused
@@ -350,6 +353,7 @@ const
   BASS_DATA_FFT_INDIVIDUAL = $10; // FFT flag: FFT for each channel, else all combined
   BASS_DATA_FFT_NOWINDOW = $20;   // FFT flag: no Hanning window
   BASS_DATA_FFT_REMOVEDC = $40;   // FFT flag: pre-remove DC bias
+  BASS_DATA_FFT_COMPLEX = $80;    // FFT flag: return complex data
 
   // BASS_ChannelGetTags types : what's returned
   BASS_TAG_ID3        = 0; // ID3v1 tags : TAG_ID3 structure
@@ -379,6 +383,7 @@ const
   // BASS_ChannelGetLength/GetPosition/SetPosition modes
   BASS_POS_BYTE           = 0; // byte position
   BASS_POS_MUSIC_ORDER    = 1; // order.row position, MAKELONG(order,row)
+  BASS_POS_OGG            = 3; // OGG bitstream number
   BASS_POS_DECODE         = $10000000; // flag: get the decoding (not playing) position
   BASS_POS_DECODETO       = $20000000; // flag: decode to the position instead of seeking
 

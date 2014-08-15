@@ -1,6 +1,6 @@
 /*
 	BASS multi-speaker example
-	Copyright (c) 2003-2008 Un4seen Developments Ltd.
+	Copyright (c) 2003-2014 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -21,6 +21,13 @@ void Error(const char *es)
 }
 
 #define MESS(id,m,w,l) SendDlgItemMessage(win,id,m,(WPARAM)(w),(LPARAM)(l))
+#define ITEM(id) GetDlgItem(win,id)
+
+void UpdateSpeakerFlags(DWORD speaker)
+{
+	int mono=MESS(30+speaker*2,BM_GETCHECK,0,0)|(MESS(30+speaker*2+1,BM_GETCHECK,0,0)<<1); // get mono switch states
+	BASS_ChannelFlags(chan[speaker],flags[speaker]|(mono==1?BASS_SPEAKER_LEFT:mono==2?BASS_SPEAKER_RIGHT:0),BASS_SPEAKER_FRONT); // update speaker flags
+}
 
 BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 {
@@ -48,6 +55,14 @@ BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 								return 1;
 							}
 							MESS(10+speaker,WM_SETTEXT,0,file);
+							{ // reset mono speaker switches
+								BASS_CHANNELINFO ci;
+								BASS_ChannelGetInfo(chan[speaker],&ci);
+								MESS(30+speaker*2,BM_SETCHECK,0,0);
+								MESS(30+speaker*2+1,BM_SETCHECK,0,0);
+								EnableWindow(ITEM(30+speaker*2),ci.chans==1);
+								EnableWindow(ITEM(30+speaker*2+1),ci.chans==1);
+							}
 							BASS_ChannelPlay(chan[speaker],FALSE);
 						}
 					}
@@ -69,9 +84,36 @@ BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 							MESS(10+speaker,WM_SETTEXT,0,temp2);
 							MESS(10+speaker+1,WM_SETTEXT,0,temp1);
 						}
+						{ // swap mono switch states
+							int temp=MESS(30+speaker*2,BM_GETCHECK,0,0);
+							MESS(30+speaker*2,BM_SETCHECK,MESS(32+speaker*2,BM_GETCHECK,0,0),0);
+							MESS(32+speaker*2,BM_SETCHECK,temp,0);
+							temp=MESS(31+speaker*2,BM_GETCHECK,0,0);
+							MESS(31+speaker*2,BM_SETCHECK,MESS(33+speaker*2,BM_GETCHECK,0,0),0);
+							MESS(33+speaker*2,BM_SETCHECK,temp,0);
+							temp=IsWindowEnabled(ITEM(30+speaker*2));
+							EnableWindow(ITEM(30+speaker*2),IsWindowEnabled(ITEM(32+speaker*2)));
+							EnableWindow(ITEM(32+speaker*2),temp);
+							temp=IsWindowEnabled(ITEM(31+speaker*2));
+							EnableWindow(ITEM(31+speaker*2),IsWindowEnabled(ITEM(33+speaker*2)));
+							EnableWindow(ITEM(33+speaker*2),temp);
+						}
 						// update speaker flags
-						BASS_ChannelFlags(chan[speaker],flags[speaker],BASS_SPEAKER_FRONT);
-						BASS_ChannelFlags(chan[speaker+1],flags[speaker+1],BASS_SPEAKER_FRONT);
+						UpdateSpeakerFlags(speaker);
+						UpdateSpeakerFlags(speaker+1);
+					}
+					return 1;
+				case 30: // left #1
+				case 31: // right #1
+				case 32: // left #2
+				case 33: // right #2
+				case 34: // left #3
+				case 35: // right #3
+				case 36: // right #4
+				case 37: // right #4
+					{
+						int speaker=(LOWORD(w)-30)/2;
+						UpdateSpeakerFlags(speaker);
 					}
 					return 1;
 			}
@@ -94,7 +136,7 @@ BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 			{ // check how many speakers the device supports
 				BASS_INFO i;
 				BASS_GetInfo(&i);
-				if (i.speakers<4) { // no extra speakers detected, enable them anyway?
+				if (i.speakers<4 && LOBYTE(GetVersion())<6) { // no extra speakers detected, enable them anyway? (on older Windows than Vista)
 					if (MessageBox(0,"Do you wish to enable \"speaker assignment\" anyway?","No extra speakers detected",MB_ICONQUESTION|MB_YESNO)==IDYES) {
 						// reinitialize BASS - forcing speaker assignment
 						BASS_Free();

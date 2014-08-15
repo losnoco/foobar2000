@@ -413,7 +413,7 @@ begin
         biWidth		:= SPECWIDTH;
         biHeight	:= SPECHEIGHT; // upside down (line 0=bottom)
         biPlanes	:= 1;
-	biBitCount	:= 8;
+        biBitCount	:= 8;
         biClrImportant	:= 256;
         biClrUsed	:= 256;
       end;
@@ -421,21 +421,21 @@ begin
       // setup palette
       for I := 0 to 127 do
       begin
-	pal[I].rgbGreen := 255 - 2 * I;
-	pal[I].rgbRed   := 2 * I;
+        pal[I].rgbGreen := 255 - 2 * I;
+        pal[I].rgbRed   := 2 * I;
       end;
 
-      for I := 0 to 32 do
+      for I := 0 to 31 do
       begin
-	pal[128 + I].rgbBlue       := 8 * I;
-	pal[128 + 32 + I].rgbBlue  := 255;
-	pal[128 + 32 + I].rgbRed   := 8 * I;
-	pal[128 + 64 + I].rgbRed   := 255;
-	pal[128 + 64 + I].rgbBlue  := 8 * (31 - I);
-	pal[128 + 64 + I].rgbGreen := 8 * I;
-	pal[128 + 96 + I].rgbRed   := 255;
-	pal[128 + 96 + I].rgbGreen := 255;
-	pal[128 + 96 + I].rgbBlue  := 8 * I;
+        pal[128 + I].rgbBlue       := 8 * I;
+        pal[128 + 32 + I].rgbBlue  := 255;
+        pal[128 + 32 + I].rgbRed   := 8 * I;
+        pal[128 + 64 + I].rgbRed   := 255;
+        pal[128 + 64 + I].rgbBlue  := 8 * (31 - I);
+        pal[128 + 64 + I].rgbGreen := 8 * I;
+        pal[128 + 96 + I].rgbRed   := 255;
+        pal[128 + 96 + I].rgbGreen := 255;
+        pal[128 + 96 + I].rgbBlue  := 8 * I;
       end;
 
       // create the bitmap

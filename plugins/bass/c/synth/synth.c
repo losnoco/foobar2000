@@ -1,302 +1,156 @@
 /*
-	BASSMIDI synth
-	Copyright (c) 2011-2012 Un4seen Developments Ltd.
+	BASS simple synth
+	Copyright (c) 2001-2012 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
-#include <commctrl.h>
 #include <stdio.h>
+#include <conio.h>
 #include <math.h>
 #include "bass.h"
-#include "bassmidi.h"
-
-HWND win=NULL;
 
 BASS_INFO info;
-DWORD input;		// MIDI input device
-HSTREAM stream;		// output stream
-HSOUNDFONT font;	// soundfont
-DWORD preset=0;		// current preset
-BOOL drums=0;		// drums enabled?
-BOOL activity=0;
+HSTREAM stream; // the stream
 
-const DWORD fxtype[5]={BASS_FX_DX8_REVERB,BASS_FX_DX8_ECHO,BASS_FX_DX8_CHORUS,BASS_FX_DX8_FLANGER,BASS_FX_DX8_DISTORTION};
-HFX fx[5]={0};		// effect handles
+// display error messages
+void Error(const char *text) 
+{
+	printf("Error(%d): %s\n",BASS_ErrorGetCode(),text);
+	BASS_Free();
+	ExitProcess(0);
+}
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 #define KEYS 20
 const WORD keys[KEYS]={
 	'Q','2','W','3','E','R','5','T','6','Y','7','U',
 	'I','9','O','0','P',219,187,221
 };
+#define MAXVOL (0.22*32768)
+#define DECAY (MAXVOL/4000)
+float vol[KEYS]={0},pos[KEYS]; // keys' volume and pos
 
-HBRUSH brush[2];
-
-// display error messages
-void Error(const char *es)
+DWORD CALLBACK WriteStream(HSTREAM handle, short *buffer, DWORD length, void *user)
 {
-	char mes[200];
-	sprintf(mes,"%s\n(error code: %d)",es,BASS_ErrorGetCode());
-	MessageBox(win,mes,0,0);
-}
-
-#define MESS(id,m,w,l) SendDlgItemMessage(win,id,m,(WPARAM)(w),(LPARAM)(l))
-#define DLGITEM(id) GetDlgItem(win,id)
-
-VOID CALLBACK ActivityTimerProc(HWND h, UINT msg, UINT id, DWORD time)
-{
-	KillTimer(h,id);
-	activity=0;
-	InvalidateRect(DLGITEM(11),0,1);
-}
-
-// MIDI input function
-void CALLBACK MidiInProc(DWORD handle, double time, const void *buffer, DWORD length, void *user)
-{
-	BASS_MIDI_StreamEvents(stream,(BASS_MIDI_EVENTS_RAW+1)|BASS_MIDI_EVENTS_SYNC,buffer,length); // send MIDI data to channel 1 on the output stream
-	activity=1;
-	InvalidateRect(DLGITEM(11),0,1);
-	SetTimer(win,1,100,ActivityTimerProc);
-}
-
-// program/preset event sync function
-void CALLBACK ProgramEventSync(HSYNC handle, DWORD channel, DWORD data, void *user)
-{
-	preset=data;
-	MESS(42,CB_SETCURSEL,preset,0); // update the preset selector
-	BASS_MIDI_FontCompact(0); // unload unused samples
-}
-
-void UpdatePresetList()
-{
-	int a;
-	MESS(42,CB_RESETCONTENT,0,0);
-	for (a=0;a<128;a++) {
-		char text[60];
-		const char *name=BASS_MIDI_FontGetPreset(font,a,drums?128:0); // get preset name
-		_snprintf(text,sizeof(text),"%03d: %s",a,name?name:"");
-		MESS(42,CB_ADDSTRING,0,text);
+	int k,c,s;
+	float omega;
+	memset(buffer,0,length);
+	for (k=0;k<KEYS;k++) {
+		if (!vol[k]) continue;
+		omega=2*M_PI*pow(2.0,(k+3)/12.0)*440.0/info.freq;
+		for (c=0;c<length/sizeof(short);c+=2) {
+			s=buffer[c]+sin(pos[k])*vol[k];
+			if (s>32767) s=32767;
+			else if (s<-32768) s=-32768;
+			buffer[c+1]=buffer[c]=s; // left and right channels are the same
+			pos[k]+=omega;
+			if (vol[k]<MAXVOL) {
+				vol[k]-=DECAY;
+				if (vol[k]<=0) { // faded-out
+					vol[k]=0;
+					break;
+				}
+			}
+		}
+		pos[k]=fmod(pos[k],2*M_PI);
 	}
-	MESS(42,CB_SETCURSEL,preset,0);
+	return length;
 }
 
-BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
+void main(int argc, char **argv)
 {
-	switch (m) {
-		case WM_COMMAND:
-			switch (LOWORD(w)) {
-				case IDCANCEL:
-					DestroyWindow(h);
-					PostQuitMessage(0);
-					break;
-				case 10:
-					if (HIWORD(w)==CBN_SELCHANGE) {
-						BASS_MIDI_InFree(input); // free current input device
-						input=MESS(10,CB_GETCURSEL,0,0); // get new input device selection
-						if (BASS_MIDI_InInit(input,MidiInProc,0)) // successfully initialized...
-							BASS_MIDI_InStart(input); // start it
-						else
-							Error("couldn't initialize MIDI device");
-					}
-					break;
-				case 35:
-				case 36:
-				case 37:
-				case 38:
-				case 39:
-					{ // toggle effects
-						int n=LOWORD(w)-35;
-						if (fx[n]) {
-							BASS_ChannelRemoveFX(stream,fx[n]);
-							fx[n]=0;
-						} else
-							fx[n]=BASS_ChannelSetFX(stream,fxtype[n],n);
-					}
-					break;
-				case 40:
-					{
-						char file[MAX_PATH]="";
-						OPENFILENAME ofn={0};
-						ofn.lStructSize=sizeof(ofn);
-						ofn.hwndOwner=h;
-						ofn.nMaxFile=MAX_PATH;
-						ofn.Flags=OFN_HIDEREADONLY|OFN_EXPLORER;
-						ofn.lpstrFilter="Soundfonts (sf2/sf2pack)\0*.sf2;*.sf2pack\0All files\0*.*\0\0";
-						ofn.lpstrFile=file;
-						if (GetOpenFileName(&ofn)) {
-							HSOUNDFONT newfont=BASS_MIDI_FontInit(file,0);
-							if (newfont) {
-								BASS_MIDI_FONT sf;
-								sf.font=newfont;
-								sf.preset=-1; // use all presets
-								sf.bank=0; // use default bank(s)
-								BASS_MIDI_StreamSetFonts(0,&sf,1); // set default soundfont
-								BASS_MIDI_StreamSetFonts(stream,&sf,1); // apply to output stream too
-								BASS_MIDI_FontFree(font); // free old soundfont
-								font=newfont;
-								{
-									BASS_MIDI_FONTINFO i;
-									BASS_MIDI_FontGetInfo(font,&i);
-									MESS(40,WM_SETTEXT,0,i.name);
-								}
-								UpdatePresetList();
-							}
-						}
-					}
-					break;
-				case 42:
-					if (HIWORD(w)==CBN_SELCHANGE) {
-						preset=MESS(42,CB_GETCURSEL,0,0);
-						BASS_MIDI_StreamEvent(stream,0,MIDI_EVENT_PROGRAM,preset); // send program/preset event to output stream
-						BASS_MIDI_FontCompact(0); // unload unused samples
-					}
-					break;
-				case 44:
-					drums=MESS(44,BM_GETCHECK,0,0);
-					BASS_MIDI_StreamEvent(stream,0,MIDI_EVENT_DRUMS,drums); // send drum switch event to output stream
-					preset=BASS_MIDI_StreamGetEvent(stream,0,MIDI_EVENT_PROGRAM); // preset is reset in drum switch
-					UpdatePresetList();
-					BASS_MIDI_FontCompact(0); // unload unused samples
-					break;
-			}
-			break;
+	const char *fxname[9]={"CHORUS","COMPRESSOR","DISTORTION","ECHO",
+		"FLANGER","GARGLE","I3DL2REVERB","PARAMEQ","REVERB"};
+	HFX fx[9]={0}; // effect handles
+	INPUT_RECORD keyin;
+	DWORD r,buflen;
 
-		case WM_HSCROLL:
-			if (l) {
-				DWORD p=SendMessage((HWND)l,TBM_GETPOS,0,0);
-				// update buffer length
-				BASS_SetConfig(BASS_CONFIG_BUFFER,10+info.minbuf+p);
-				// recreate stream with new buffer length
-				BASS_StreamFree(stream);
-				stream=BASS_MIDI_StreamCreate(1,0,1);
-				BASS_ChannelSetSync(stream,BASS_SYNC_MIDI_EVENT|BASS_SYNC_MIXTIME,MIDI_EVENT_PROGRAM,ProgramEventSync,0);
-				BASS_MIDI_StreamEvent(stream,0,MIDI_EVENT_DRUMS,drums); // set drum switch
-				BASS_MIDI_StreamEvent(stream,0,MIDI_EVENT_PROGRAM,preset); // set program/preset
-				{ // re-apply effects
-					int a;
-					for (a=0;a<5;a++)
-						if (fx[a]) fx[a]=BASS_ChannelSetFX(stream,fxtype[a],a);
-				}
-				BASS_ChannelPlay(stream,0);
-				{
-					char text[20];
-					sprintf(text,"%dms",BASS_GetConfig(BASS_CONFIG_BUFFER));
-					MESS(31,WM_SETTEXT,0,text);
-				}
-			}
-			break;
+	printf("BASS Simple Sinewave Synth\n"
+			"--------------------------\n");
 
-		case WM_CTLCOLORSTATIC:
-			{
-				int id=GetDlgCtrlID((HWND)l);
-				if (id==11) {
-					SetBkMode((HDC)w,TRANSPARENT);
-					return (BOOL)brush[activity?1:0];
-				}
-			}
-			return 0;
-
-		case WM_INITDIALOG:
-			win=h;
-			// 10ms update period
-			BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD,10);
-			// setup output - default device
-			if (!BASS_Init(-1,44100,BASS_DEVICE_LATENCY,win,NULL)) {
-				Error("Can't initialize output device");
-				DestroyWindow(win);
-				break;
-			}
-			BASS_GetInfo(&info);
-			// default buffer size = update period + 'minbuf'
-			BASS_SetConfig(BASS_CONFIG_BUFFER,10+info.minbuf);
-			// create and start the output MIDI stream (with 1 MIDI channel)
-			stream=BASS_MIDI_StreamCreate(1,0,1);
-			BASS_ChannelSetSync(stream,BASS_SYNC_MIDI_EVENT|BASS_SYNC_MIXTIME,MIDI_EVENT_PROGRAM,ProgramEventSync,0); // catch program/preset changes
-			BASS_ChannelPlay(stream,0);
-			{
-				char text[20];
-				sprintf(text,"%dms",BASS_GetConfig(BASS_CONFIG_BUFFER));
-				MESS(31,WM_SETTEXT,0,text);
-			}
-			{ // enumerate available input devices
-				BASS_MIDI_DEVICEINFO di;
-				int dev;
-				for (dev=0;BASS_MIDI_InGetDeviceInfo(dev,&di);dev++)
-					MESS(10,CB_ADDSTRING,0,di.name);
-				if (dev) { // got sone, try to initialize one
-					int a;
-					for (a=0;a<dev;a++) {
-						if (BASS_MIDI_InInit(a,MidiInProc,0)) { // succeeded, start it
-							input=a;
-							BASS_MIDI_InStart(input);
-							MESS(10,CB_SETCURSEL,input,0);
-							break;
-						}
-					}
-					if (a==dev) Error("couldn't initialize MIDI device");
-				} else {
-					MESS(10,CB_ADDSTRING,0,"no devices");
-					MESS(10,CB_SETCURSEL,0,0);
-					EnableWindow(DLGITEM(10),FALSE);
-				}
-			}
-			{ // get default font (28mbgm.sf2/ct8mgm.sf2/ct4mgm.sf2/ct2mgm.sf2 if available)
-				BASS_MIDI_FONT sf;
-				BASS_MIDI_FONTINFO i;
-				if (BASS_MIDI_StreamGetFonts(0,&sf,1)) {
-					font=sf.font;
-					BASS_MIDI_FontGetInfo(font,&i);
-					MESS(40,WM_SETTEXT,0,i.name);
-				}
-			}
-			UpdatePresetList();
-			{
-				HFONT font=CreateFont(20,0,0,0,FW_BOLD,0,0,0,0,0,0,0,FIXED_PITCH,"Courier New");
-				MESS(20,WM_SETFONT,font,0);
-			}
-			MESS(30,TBM_SETRANGE,FALSE,MAKELONG(0,100));
-			brush[0]=CreateSolidBrush(0xffffff);
-			brush[1]=CreateSolidBrush(0x00ff00);
-			// load optional plugins for packed soundfonts (others may be used too)
-			BASS_PluginLoad("bassflac.dll",0);
-			BASS_PluginLoad("basswv.dll",0);
-			return 1;
-
-		case WM_DESTROY:
-			// release everything
-			BASS_MIDI_InFree(input);
-			BASS_Free();
-			BASS_PluginFree(0);
-			break;
-	}
-	return 0;
-}
-
-int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine, int nCmdShow)
-{
 	// check the correct BASS was loaded
 	if (HIWORD(BASS_GetVersion())!=BASSVERSION) {
-		MessageBox(0,"An incorrect version of BASS.DLL was loaded",0,MB_ICONERROR);
-		return 0;
+		printf("An incorrect version of BASS.DLL was loaded");
+		return;
 	}
 
-	win=CreateDialog(hInstance,(char*)1000,0,&dialogproc);
-	ShowWindow(win,SW_SHOW);
-	{
-		MSG msg;
-		while (GetMessage(&msg,NULL,0,0)>0) {
-			if ((msg.message==WM_KEYDOWN && !(msg.lParam&0x40000000)) || msg.message==WM_KEYUP) {
-				int key;
-				for (key=0;key<KEYS;key++) {
-					if (msg.wParam==keys[key]) {
-						BASS_MIDI_StreamEvent(stream,0,MIDI_EVENT_NOTE,MAKEWORD((drums?36:60)+key,msg.message==WM_KEYDOWN?100:0)); // send note on/off event to output stream
-						break;
-					}
+	// 10ms update period
+	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD,10);
+
+	// setup output - get latency
+	if (!BASS_Init(-1,44100,BASS_DEVICE_LATENCY,0,NULL))
+		Error("Can't initialize device");
+
+	BASS_GetInfo(&info);
+	// default buffer size = update period + 'minbuf' + 1ms extra margin
+	BASS_SetConfig(BASS_CONFIG_BUFFER,10+info.minbuf+1);
+	buflen=BASS_GetConfig(BASS_CONFIG_BUFFER);
+	// if the device's output rate is unknown default to 44100 Hz
+	if (!info.freq) info.freq=44100;
+	// create a stream, stereo so that effects sound nice
+	stream=BASS_StreamCreate(info.freq,2,0,(STREAMPROC*)WriteStream,0);
+
+	printf("device latency: %dms\n",info.latency);
+	printf("device minbuf: %dms\n",info.minbuf);
+	printf("ds version: %d (effects %s)\n",info.dsver,info.dsver<8?"disabled":"enabled");
+	printf("press these keys to play:\n\n"
+		"  2 3  5 6 7  9 0  =\n"
+		" Q W ER T Y UI O P[ ]\n\n"
+		"press -/+ to de/increase the buffer\n"
+		"press spacebar to quit\n\n");
+	if (info.dsver>=8) // DX8 effects available
+		printf("press F1-F9 to toggle effects\n\n");
+	printf("using a %dms buffer\r",buflen);
+
+	BASS_ChannelPlay(stream,FALSE);
+
+	while (ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE),&keyin,1,&r)) {
+		int key;
+		if (keyin.EventType!=KEY_EVENT) continue;
+		if (keyin.Event.KeyEvent.wVirtualKeyCode==VK_SPACE) break;
+		if (keyin.Event.KeyEvent.bKeyDown) {
+			if (keyin.Event.KeyEvent.wVirtualKeyCode==VK_SUBTRACT
+				|| keyin.Event.KeyEvent.wVirtualKeyCode==VK_ADD) {
+				// recreate stream with smaller/larger buffer
+				BASS_StreamFree(stream);
+				if (keyin.Event.KeyEvent.wVirtualKeyCode==VK_SUBTRACT)
+					BASS_SetConfig(BASS_CONFIG_BUFFER,buflen-1); // smaller buffer
+				else 
+					BASS_SetConfig(BASS_CONFIG_BUFFER,buflen+1); // larger buffer
+				buflen=BASS_GetConfig(BASS_CONFIG_BUFFER);
+				printf("using a %dms buffer\t\t\r",buflen);
+				stream=BASS_StreamCreate(info.freq,2,0,(STREAMPROC*)WriteStream,0);
+				// set effects on the new stream
+				for (r=0;r<9;r++) if (fx[r]) fx[r]=BASS_ChannelSetFX(stream,BASS_FX_DX8_CHORUS+r,0);
+				BASS_ChannelPlay(stream,FALSE);
+			}
+			if (keyin.Event.KeyEvent.wVirtualKeyCode>=VK_F1
+				&& keyin.Event.KeyEvent.wVirtualKeyCode<=VK_F9) {
+				r=keyin.Event.KeyEvent.wVirtualKeyCode-VK_F1;
+				if (fx[r]) {
+					BASS_ChannelRemoveFX(stream,fx[r]);
+					fx[r]=0;
+					printf("effect %s = OFF\t\t\r",fxname[r]);
+				} else {
+					// set the effect, not bothering with parameters (use defaults)
+					if (fx[r]=BASS_ChannelSetFX(stream,BASS_FX_DX8_CHORUS+r,0))
+						printf("effect %s = ON\t\t\r",fxname[r]);
 				}
 			}
-			if (!IsDialogMessage(win,&msg))
-				DispatchMessage(&msg);
 		}
+		for (key=0;key<KEYS;key++)
+			if (keyin.Event.KeyEvent.wVirtualKeyCode==keys[key]) {
+				if (keyin.Event.KeyEvent.bKeyDown && vol[key]<MAXVOL) {
+					pos[key]=0;
+					vol[key]=MAXVOL+DECAY/2; // start key (setting "vol" slightly higher than MAXVOL to cover any rounding-down)
+				} else if (!keyin.Event.KeyEvent.bKeyDown && vol[key])
+					vol[key]-=DECAY; // trigger key fadeout
+				break;
+			}
 	}
 
-	return 0;
+	BASS_Free();
 }

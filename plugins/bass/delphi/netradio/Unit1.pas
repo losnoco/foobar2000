@@ -94,12 +94,12 @@ begin
   end;
 end;
 
-procedure MetaSync(handle: HSYNC; channel, data, user: Pointer); stdcall;
+procedure MetaSync(handle: HSYNC; channel, data: DWORD; user: Pointer); stdcall;
 begin
   DoMeta();
 end;
 
-procedure StatusProc(buffer: Pointer; len, user: Pointer); stdcall;
+procedure StatusProc(buffer: Pointer; len: DWORD; user: Pointer); stdcall;
 begin
   if (buffer <> nil) and (len = 0) then
     SendMessage(win, WM_INFO_UPDATE, 8, DWORD(PAnsiChar(buffer)));
@@ -115,7 +115,7 @@ begin
   progress := 0;
   SendMessage(win, WM_INFO_UPDATE, 0, 0); // reset the Labels and trying connecting
 
-  chan := BASS_StreamCreateURL(url, 0, BASS_STREAM_BLOCK or BASS_STREAM_STATUS or BASS_STREAM_AUTOFREE, @StatusProc, 0);
+  chan := BASS_StreamCreateURL(url, 0, BASS_STREAM_BLOCK or BASS_STREAM_STATUS or BASS_STREAM_AUTOFREE, @StatusProc, nil);
   if (chan = 0) then
   begin
     //lets catch the error here inside the Thread
@@ -133,7 +133,7 @@ begin
       // percentage of buffer filled
       SendMessage(win, WM_INFO_UPDATE, 2, progress); // show the Progess value in the label
     until
-      progress > 75 or BASS_StreamGetFilePosition(chan, BASS_FILEPOS_CONNECTED) = 0; // over 75% full (or end of download)
+      (progress > 75) or (BASS_StreamGetFilePosition(chan, BASS_FILEPOS_CONNECTED) = 0); // over 75% full (or end of download)
 
     // get the broadcast name and bitrate
     icy := BASS_ChannelGetTags(chan, BASS_TAG_ICY);
@@ -150,7 +150,7 @@ begin
       end;
     // get the stream title and set sync for subsequent titles
     DoMeta();
-    BASS_ChannelSetSync(chan, BASS_SYNC_META, 0, @MetaSync, 0);
+    BASS_ChannelSetSync(chan, BASS_SYNC_META, 0, @MetaSync, nil);
     // play it!
     BASS_ChannelPlay(chan, FALSE);
   end;

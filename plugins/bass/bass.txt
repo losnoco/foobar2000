@@ -1,94 +1,119 @@
 BASS 2.4
-Copyright (c) 1999-2012 Un4seen Developments Ltd. All rights reserved.
+Copyright (c) 1999-2013 Un4seen Developments Ltd. All rights reserved.
 
 Files that you should have found in the BASS package
 ====================================================
 Win32 version
 -------------
 BASS.TXT        This file
-BASS.DLL        The BASS module
+BASS.DLL        BASS module
 BASS.CHM        BASS documentation
-MP3-FREE
+MP3-FREE\
   BASS.DLL        BASS module using the OS's MP3 decoder
+X64\
+  BASS.DLL        64-bit BASS module
+  MP3-FREE
+    BASS.DLL        64-bit BASS module using the OS's MP3 decoder
 C\              C/C++ API and examples...
   BASS.H          BASS C/C++ header file
   BASS.LIB        BASS import library
-  BASS.DSW        Visual C++ workspace for examples
+  BASS.DSW        Visual C++ 6 workspace for examples
+  BASS.SLN        Visual C++ 2005 (and above) solution for examples
   MAKEFILE        Makefile for all examples
   MAKEFILE.IN     Makefile helper macros
+  X64\
+    BASS.LIB        64-bit BASS import library
+  SAFESEH\
+    BASS.LIB        SAFESEH compatible BASS import library
   3DTEST\         3D/EAX example
     3DTEST.C
     3DTEST.RC
     3DTEST.DSP
+    3DTEST.VCPROJ
     MAKEFILE
   BASSTEST\       Simple playback example
     BASSTEST.C
     BASSTEST.RC
     BASSTEST.DSP
+    BASSTEST.VCPROJ
     MAKEFILE
   CONTEST\        Console example
     CONTEST.C
     CONTEST.DSP
+    CONTEST.VCPROJ
     MAKEFILE
   CUSTLOOP\       Custom looping example
     CUSTLOOP.C
     CUSTLOOP.DSP
+    CUSTLOOP.VCPROJ
     MAKEFILE
   DSPTEST\        DSP example
     DSPTEST.C
     DSPTEST.RC
     DSPTEST.DSP
+    DSPTEST.VCPROJ
     MAKEFILE
   FXTEST\         DX8 effect example
     FXTEST.C
     FXTEST.RC
     FXTEST.DSP
+    FXTEST.VCPROJ
     MAKEFILE
   LIVEFX\         Full-duplex example
     LIVEFX.C
     LIVEFX.RC
     LIVEFX.DSP
+    LIVEFX.VCPROJ
     MAKEFILE
   LIVESPEC\       "Live" version of spectrum analyser example
     LIVESPEC.C
     LIVESPEC.DSP
+    LIVESPEC.VCPROJ
     MAKEFILE
   MULTI\          Multiple device example
     MULTI.C
     MULTI.RC
     MULTI.DSP
+    MULTI.VCPROJ
     MAKEFILE
   NETRADIO\       Internet streaming example
     NETRADIO.C
     NETRADIO.RC
     NETRADIO.DSP
+    NETRADIO.VCPROJ
     MAKEFILE
   PLUGINS\        Plugins example
     PLUGINS.C
     PLUGINS.RC
     PLUGINS.DSP
+    PLUGINS.VCPROJ
     MAKEFILE
   RECTEST\        Recording example
     RECTEST.C
     RECTEST.RC
     RECTEST.DSP
+    RECTEST.VCPROJ
     MAKEFILE
   SPEAKERS\       Multi-speaker example
     SPEAKERS.C
     SPEAKERS.RC
     SPEAKERS.DSP
+    SPEAKERS.VCPROJ
     MAKEFILE
   SPECTRUM\       Spectrum analyser example
     SPECTRUM.C
     SPECTRUM.DSP
+    SPECTRUM.VCPROJ
     MAKEFILE
   SYNTH\          Low latency custom streaming example
     SYNTH.C
     SYNTH.DSP
+    SYNTH.VCPROJ
     MAKEFILE
   WRITEWAV\       WAVE writer example
     WRITEWAV.C
     WRITEWAV.DSP
+    WRITEWAV.VCPROJ
     MAKEFILE
   BIN\            Precompiled examples
     3DTEST.EXE
@@ -285,14 +310,14 @@ NOTE: To run the example EXEs, first you will need to copy BASS.DLL into the
 MacOSX version
 --------------
 BASS.TXT        This file
-LIBBASS.DYLIB   The BASS module
+LIBBASS.DYLIB   BASS module
 BASS.CHM        BASS documentation
 CHMOX.APP       CHM file viewer
 BASS.H          BASS C/C++ header file
 MAKEFILE        Makefile for all examples
 MAKEFILE.IN     Makefile helper macros
 BASS.XCODEPROJ  Xcode project for examples
-MP3-FREE
+MP3-FREE\
   LIBBASS.DYLIB   BASS module using the OS's MP3 decoder
 3DTEST\         3D example
   3DTEST.C
@@ -357,17 +382,17 @@ NOTE: To view the documentation, you will need a CHM viewer, such as the
 Linux version
 -------------
 BASS.TXT        This file
-LIBBASS.SO      The BASS module
+LIBBASS.SO      BASS module
 BASS.CHM        BASS documentation
 BASS.H          BASS C/C++ header file
 MAKEFILE        Makefile for all examples
 MAKEFILE.IN     Makefile helper macros
-MP3-FREE
+MP3-FREE\
   LIBBASS.SO      BASS module using the OS's MP3 decoder
-X64
-  LIBBASS.SO      64-bit version of BASS module
+X64\
+  LIBBASS.SO      64-bit BASS module
   MP3-FREE
-    LIBBASS.SO      64-bit version of BASS module using the OS's MP3 decoder
+    LIBBASS.SO      64-bit BASS module using the OS's MP3 decoder
 3DTEST\         3D example
   3DTEST.C
   MAKEFILE
@@ -446,7 +471,7 @@ Win32 version
 -------------
 BASS requires DirectX for playback/recording, but decoding is still
 possible without it. DirectX has been included with all Windows versions
-since Windows 98.
+since Windows 98. 32-bit and 64-bit Windows are supported.
 
 MacOSX version
 --------------
@@ -705,6 +730,34 @@ There are of course bug fixes and other little improvements made along
 the way too! To make upgrading simpler, all functions affected by a
 change to the BASS interface are listed.
 
+2.4.10 - 16/2/2013
+------------------
+* Asynchronous file reading/buffering
+	BASS_ASYNCFILE (BASS_StreamCreateFile/User flag)
+	BASS_CONFIG_ASYNCFILE_BUFFER (BASS_SetConfig option)
+* Support for chained OGG files (multiple logical bitstreams)
+	BASS_StreamCreateFile/User
+	BASS_CONFIG_OGG_PRESCAN (BASS_SetConfig option)
+	BASS_POS_OGG (BASS_ChannelSetPosition/ChannelGetLength mode)
+* OGG logical bitstream syncs are no longer automatically "mixtime"
+	BASS_SYNC_OGG_CHANGE (BASS_ChannelSetSync type)
+* Support for Soundtracker MOD files
+	BASS_MusicLoad
+* Complex FFT data
+	BASS_DATA_FFT_COMPLEX (BASS_ChannelGetData flag)
+* Volume levels above 1.0 for decoding channels
+	BASS_ATTRIB_VOL (BASS_ChannelSetAttribute option)
+* Recording device channel count retrieval on Windows/OSX/iOS
+	BASS_RECORDINFO (formats member)
+* Minimum recording period reduced to 5ms
+	BASS_RecordStart
+* Recording device period adjustment on OSX
+	BASS_RecordStart
+* Device UID retrieval on OSX
+	BASS_DEVICEINFO (driver member)
+* The desktop window handle is used when none is provided
+	BASS_Init
+
 2.4.9 - 3/5/2012
 ----------------
 * Improved and adjustable sample rate conversion quality
@@ -782,7 +835,7 @@ change to the BASS interface are listed.
 * 16384 sample FFT
 	BASS_DATA_FFT16384 (BASS_ChannelGetData flag)
 * Support for AIFF files larger than 4GB
-	BASS_StreamCreateFile/User/Url
+	BASS_StreamCreateFile/User/URL
 * Acceptance of self-signed and invalid certificates
 	BASS_StreamCreateURL
 * Internet stream reading timeout
@@ -807,7 +860,7 @@ change to the BASS interface are listed.
 * Decoding position retrieval
 	BASS_POS_DECODE (BASS_ChannelGetPosition flag)
 * Support for OGG 6/7.1 channel configs
-	BASS_StreamCreateFile/User/Url
+	BASS_StreamCreateFile/User/URL
 * Support for setting syncs within mixtime SYNCPROCs
 	BASS_ChannelSetSync
 * Support for setting additional DSP/FX within DSPPROCs
@@ -822,10 +875,10 @@ change to the BASS interface are listed.
 2.4.5 - 18/12/2009
 ------------------
 * Support for little-endian AIFF files
-	BASS_StreamCreateFile/User/Url
+	BASS_StreamCreateFile/User/URL
 	BASS_SampleLoad
 * Support for 64-bit floating-point WAVE/AIFF files
-	BASS_StreamCreateFile/User/Url
+	BASS_StreamCreateFile/User/URL
 	BASS_SampleLoad
 * Input volume retrieval failure results in a reading of -1 instead of 1
 	BASS_RecordGetInput
@@ -837,7 +890,7 @@ change to the BASS interface are listed.
 * Fix for deferred input settings on Vista
 	BASS_RecordSetInput
 * Windows MP3 codec given preference over other installed MP3 codecs (MP3-FREE version)
-	BASS_StreamCreateFile/User/Url
+	BASS_StreamCreateFile/User/URL
 	BASS_SampleLoad
 
 2.4.4 - 13/10/2009
@@ -1034,7 +1087,7 @@ change to the BASS interface are listed.
 * Improved stall handling
 	BASS_SYNC_STALL
 * Invalid decoding channel flags produce an error instead of being ignored
-	BASS_StreamCreate/File/User/Url
+	BASS_StreamCreate/File/User/URL
 	BASS_MusicLoad
 
 2.3.0.2 - 22/1/2007
@@ -1117,7 +1170,7 @@ change to the BASS interface are listed.
 * Add-on plugin system
 	BASS_PluginLoad
 	BASS_PluginFree
-	BASS_StreamCreateFile/User/Url
+	BASS_StreamCreateFile/User/URL
 	BASS_SampleLoad
 	PLUGINS example added
 * MOD position & syncing in bytes
@@ -1133,13 +1186,13 @@ change to the BASS interface are listed.
 	BASS_StreamGetLength *removed*
 	BASS_MusicGetLength *removed*
 * Support for AIFF files
-	BASS_StreamCreateFile/User/Url
+	BASS_StreamCreateFile/User/URL
 	BASS_SampleLoad
 * Support for 24 and 32-bit (integer) WAV files
-	BASS_StreamCreateFile/User/Url
+	BASS_StreamCreateFile/User/URL
 	BASS_SampleLoad
 * WAV files are no longer converted to the "device" resolution
-	BASS_StreamCreateFile/User/Url
+	BASS_StreamCreateFile/User/URL
 * Recording master control
 	BASS_RecordGetInput
 	BASS_RecordSetInput
@@ -1289,7 +1342,7 @@ change to the BASS interface are listed.
 	BASS_RECORD_PAUSE (BASS_RecordStart flag)
 * Multi-channel streams, inc. support for multichannel OGG & WAV files
 	BASS_StreamCreate
-	BASS_StreamCreateFile/User/Url
+	BASS_StreamCreateFile/User/URL
 * FFT for individual channels, inc. multi-channel streams
 	BASS_DATA_FFT_INDIVIDUAL (BASS_ChannelGetData flag)
 	BASS_DATA_FFT512S/1024S/2048S/4096S *removed*
@@ -1399,7 +1452,7 @@ change to the BASS interface are listed.
 1.8 - 9/3/2003
 --------------
 * 32-bit floating-point channels
-	BASS_SAMPLE_FLOAT (BASS_StreamCreate/URL/File flag)
+	BASS_SAMPLE_FLOAT (BASS_StreamCreate/File/URL flag)
 	BASS_MUSIC_FLOAT (BASS_MusicLoad flag)
 	BASS_SAMPLE_FLOAT (BASS_RecordStart flag)
 	BASS_DEVICE_FLOATDSP (BASS_Init flag)

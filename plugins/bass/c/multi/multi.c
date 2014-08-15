@@ -31,7 +31,7 @@ void CALLBACK CloneDSP(HDSP handle, DWORD channel, void *buffer, DWORD length, v
 
 #define MESS(id,m,w,l) SendDlgItemMessage(win,id,m,(WPARAM)(w),(LPARAM)(l))
 
-BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
+INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 {
 	static OPENFILENAME ofn;
 
@@ -158,7 +158,7 @@ BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 
 
 // Simple device selector dialog stuff begins here
-BOOL CALLBACK devicedialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
+INT_PTR CALLBACK devicedialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 {
 	switch (m) {
 		case WM_COMMAND:

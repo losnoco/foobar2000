@@ -34,7 +34,7 @@ void Error(const char *es)
 #define GETMOD() MLM(LB_GETCURSEL,0,0)
 #define GETSAM() SLM(LB_GETCURSEL,0,0)
 
-BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
+INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 {
 	static OPENFILENAME ofn;
 

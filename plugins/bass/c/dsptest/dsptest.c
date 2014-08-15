@@ -109,7 +109,7 @@ void CALLBACK Flange(HDSP handle, DWORD channel, void *buffer, DWORD length, voi
 
 #define MESS(id,m,w,l) SendDlgItemMessage(win,id,m,(WPARAM)(w),(LPARAM)(l))
 
-BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
+INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 {
 	switch (m) {
 		case WM_COMMAND:

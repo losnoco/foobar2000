@@ -1,4 +1,5 @@
-EXAMPLES = miditest sf2pack synth
+EXAMPLES = 3dtest basstest contest custloop dsptest fxtest livefx livespec \
+	multi netradio plugins rectest speakers spectrum synth writewav
 
 .PHONY: all clean $(EXAMPLES)
 

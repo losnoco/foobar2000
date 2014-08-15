@@ -1,6 +1,6 @@
 Attribute VB_Name = "modBass"
 ' BASS 2.4 Visual Basic module
-' Copyright (c) 1999-2012 Un4seen Developments Ltd.
+' Copyright (c) 1999-2013 Un4seen Developments Ltd.
 '
 ' See the BASS.CHM file for more detailed documentation
 
@@ -46,7 +46,7 @@ Global Const BASS_ERROR_NONET = 32     'no internet connection could be opened
 Global Const BASS_ERROR_CREATE = 33    'couldn't create the file
 Global Const BASS_ERROR_NOFX = 34      'effects are not available
 Global Const BASS_ERROR_NOTAVAIL = 37  'requested data is not available
-Global Const BASS_ERROR_DECODE = 38    'the channel is a "decoding channel"
+Global Const BASS_ERROR_DECODE = 38    'the channel is/isn't a "decoding channel"
 Global Const BASS_ERROR_DX = 39        'a sufficient DirectX version is not installed
 Global Const BASS_ERROR_TIMEOUT = 40   'connection timedout
 Global Const BASS_ERROR_FILEFORM = 41  'unsupported file format
@@ -86,6 +86,8 @@ Global Const BASS_CONFIG_HANDLES = 41
 Global Const BASS_CONFIG_UNICODE = 42
 Global Const BASS_CONFIG_SRC = 43
 Global Const BASS_CONFIG_SRC_SAMPLE = 44
+Global Const BASS_CONFIG_ASYNCFILE_BUFFER = 45
+Global Const BASS_CONFIG_OGG_PRESCAN = 47
 
 ' BASS_SetConfigPtr options
 Global Const BASS_CONFIG_NET_AGENT = 16
@@ -249,6 +251,7 @@ Global Const BASS_SPEAKER_LFE = BASS_SPEAKER_CENLFE Or BASS_SPEAKER_RIGHT
 Global Const BASS_SPEAKER_REAR2LEFT = BASS_SPEAKER_REAR2 Or BASS_SPEAKER_LEFT
 Global Const BASS_SPEAKER_REAR2RIGHT = BASS_SPEAKER_REAR2 Or BASS_SPEAKER_RIGHT
 
+Global Const BASS_ASYNCFILE = &H40000000
 Global Const BASS_UNICODE = &H80000000
 
 Global Const BASS_RECORD_PAUSE = 32768 ' start recording paused
@@ -432,6 +435,7 @@ Global Const BASS_DATA_FFT16384 = &H80000006 ' 16384 FFT
 Global Const BASS_DATA_FFT_INDIVIDUAL = &H10 ' FFT flag: FFT for each channel, else all combined
 Global Const BASS_DATA_FFT_NOWINDOW = &H20   ' FFT flag: no Hanning window
 Global Const BASS_DATA_FFT_REMOVEDC = &H40   ' FFT flag: pre-remove DC bias
+Global Const BASS_DATA_FFT_COMPLEX = &H80    ' FFT flag: return complex data
 
 ' BASS_ChannelGetTags types : what's returned
 Global Const BASS_TAG_ID3 = 0                ' ID3v1 tags : TAG_ID3 structure
@@ -494,6 +498,7 @@ End Type
 ' BASS_ChannelGetLength/GetPosition/SetPosition modes
 Global Const BASS_POS_BYTE = 0          ' byte position
 Global Const BASS_POS_MUSIC_ORDER = 1   ' order.row position, MAKELONG(order,row)
+Global Const BASS_POS_OGG = 3           ' OGG bitstream number
 Global Const BASS_POS_DECODE = &H10000000 ' flag: get the decoding (not playing) position
 Global Const BASS_POS_DECODETO = &H20000000 ' flag: decode to the position instead of seeking
 
@@ -661,7 +666,7 @@ Declare Function BASS_SampleGetData Lib "bass.dll" (ByVal handle As Long, ByRef 
 Declare Function BASS_SampleGetInfo Lib "bass.dll" (ByVal handle As Long, ByRef info As BASS_SAMPLE) As Long
 Declare Function BASS_SampleSetInfo Lib "bass.dll" (ByVal handle As Long, ByRef info As BASS_SAMPLE) As Long
 Declare Function BASS_SampleGetChannel Lib "bass.dll" (ByVal handle As Long, ByVal onlynew As Long) As Long
-Declare Function BASS_SampleGetChannels Lib "bass.dll" (ByVal handle As Long, ByRef CHANNELS As Long) As Long
+Declare Function BASS_SampleGetChannels Lib "bass.dll" (ByVal handle As Long, ByRef channels As Long) As Long
 Declare Function BASS_SampleStop Lib "bass.dll" (ByVal handle As Long) As Long
 
 Declare Function BASS_StreamCreate Lib "bass.dll" (ByVal freq As Long, ByVal chans As Long, ByVal flags As Long, ByVal proc As Long, ByVal user As Long) As Long

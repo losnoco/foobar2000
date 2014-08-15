@@ -149,7 +149,7 @@ void DrawTimeLine(HDC dc, QWORD pos, DWORD col, DWORD y)
 }
 
 // window procedure
-long FAR PASCAL SpectrumWindowProc(HWND h, UINT m, WPARAM w, LPARAM l)
+LRESULT CALLBACK SpectrumWindowProc(HWND h, UINT m, WPARAM w, LPARAM l)
 {
 	switch (m) {
 		case WM_LBUTTONDOWN: // set loop start

@@ -56,7 +56,7 @@ begin
     ')'), nil, 0);
 end;
 
-function RecordingCallback(Handle: HRECORD; buffer: Pointer; length, user: Pointer): boolean; stdcall;
+function RecordingCallback(Handle: HRECORD; buffer: Pointer; length: DWORD; user: Pointer): boolean; stdcall;
 begin
   BASS_StreamPutData(pchan, buffer, length); // feed recorded data to output stream
   Result := True; // continue recording

@@ -72,7 +72,7 @@ implementation
 
 
 (* This is called while recording audio *)
-function RecordingCallback(Handle: HRECORD; buffer: Pointer; length, user: Pointer): boolean; stdcall;
+function RecordingCallback(Handle: HRECORD; buffer: Pointer; length: DWORD; user: Pointer): boolean; stdcall;
 begin
     // Copy new buffer contents to the memory buffer
 	Form1.WaveStream.Write(buffer^, length);

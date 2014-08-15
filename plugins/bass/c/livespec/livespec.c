@@ -1,6 +1,6 @@
 /*
 	BASS "live" spectrum analyser example
-	Copyright (c) 2002-2010 Un4seen Developments Ltd.
+	Copyright (c) 2002-2014 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -20,7 +20,7 @@ HDC specdc=0;
 HBITMAP specbmp=0;
 BYTE *specbuf;
 
-int specmode=0,specpos=0; // spectrum mode (and marker pos for 2nd mode)
+int specmode=0,specpos=0; // spectrum mode (and marker pos for 3D mode)
 
 // display error messages
 void Error(const char *es)
@@ -68,21 +68,21 @@ void CALLBACK UpdateSpectrum(UINT uTimerID, UINT uMsg, DWORD dwUser, DWORD dw1, 
 				y1=y;
 				while (--y>=0) specbuf[y*SPECWIDTH+x*2]=y+1; // draw level
 			}
-		} else if (specmode==1) { // logarithmic, acumulate & average bins
+		} else if (specmode==1) { // logarithmic, combine bins
 			int b0=0;
 			memset(specbuf,0,SPECWIDTH*SPECHEIGHT);
 #define BANDS 28
 			for (x=0;x<BANDS;x++) {
 				float peak=0;
 				int b1=pow(2,x*10.0/(BANDS-1));
-				if (b1>1023) b1=1023;
 				if (b1<=b0) b1=b0+1; // make sure it uses at least 1 FFT bin
+				if (b1>1023) b1=1023;
 				for (;b0<b1;b0++)
 					if (peak<fft[1+b0]) peak=fft[1+b0];
 				y=sqrt(peak)*3*SPECHEIGHT-4; // scale it (sqrt to make low values more visible)
 				if (y>SPECHEIGHT) y=SPECHEIGHT; // cap it
 				while (--y>=0)
-					memset(specbuf+y*SPECWIDTH+x*(SPECWIDTH/BANDS),y+1,0.9*(SPECWIDTH/BANDS)); // draw bar
+					memset(specbuf+y*SPECWIDTH+x*(SPECWIDTH/BANDS),y+1,SPECWIDTH/BANDS-2); // draw bar
 			}
 		} else { // "3D"
 			for (x=0;x<SPECHEIGHT;x++) {
@@ -99,7 +99,7 @@ void CALLBACK UpdateSpectrum(UINT uTimerID, UINT uMsg, DWORD dwUser, DWORD dw1, 
 	// update the display
 	dc=GetDC(win);
 	BitBlt(dc,0,0,SPECWIDTH,SPECHEIGHT,specdc,0,0,SRCCOPY);
-	if (LOWORD(BASS_ChannelGetLevel(chan))<500) { // check if it's quiet
+	if (LOWORD(BASS_ChannelGetLevel(chan))<1000) { // check if it's quiet
 		quietcount++;
 		if (quietcount>40 && (quietcount&16)) { // it's been quiet for over a second
 			RECT r={0,0,SPECWIDTH,SPECHEIGHT};
@@ -119,7 +119,7 @@ BOOL CALLBACK DuffRecording(HRECORD handle, const void *buffer, DWORD length, vo
 }
 
 // window procedure
-long FAR PASCAL SpectrumWindowProc(HWND h, UINT m, WPARAM w, LPARAM l)
+LRESULT CALLBACK SpectrumWindowProc(HWND h, UINT m, WPARAM w, LPARAM l)
 {
 	switch (m) {
 		case WM_PAINT:
@@ -133,13 +133,13 @@ long FAR PASCAL SpectrumWindowProc(HWND h, UINT m, WPARAM w, LPARAM l)
 			return 0;
 
 		case WM_LBUTTONUP:
-			specmode=(specmode+1)%4; // swap spectrum mode
+			specmode=(specmode+1)%4; // change spectrum mode
 			memset(specbuf,0,SPECWIDTH*SPECHEIGHT);	// clear display
 			return 0;
 
 		case WM_CREATE:
 			win=h;
-			// initialize BASS recording (default device)
+			// initialize default recording device
 			if (!BASS_RecordInit(-1)) {
 				Error("Can't initialize device");
 				return -1;
@@ -182,7 +182,7 @@ long FAR PASCAL SpectrumWindowProc(HWND h, UINT m, WPARAM w, LPARAM l)
 				specdc=CreateCompatibleDC(0);
 				SelectObject(specdc,specbmp);
 			}
-			// setup update timer (40hz)
+			// start update timer (40hz)
 			timer=timeSetEvent(25,25,(LPTIMECALLBACK)&UpdateSpectrum,0,TIME_PERIODIC);
 			break;
 
@@ -214,7 +214,7 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine,
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.lpszClassName = "BASS-Spectrum";
 	if (!RegisterClass(&wc) || !CreateWindow("BASS-Spectrum",
-			"BASS \"live\" spectrum (click to toggle mode)",
+			"BASS \"live\" spectrum (click to switch mode)",
 			WS_POPUPWINDOW|WS_CAPTION|WS_VISIBLE, 200, 200,
 			SPECWIDTH+2*GetSystemMetrics(SM_CXDLGFRAME),
 			SPECHEIGHT+GetSystemMetrics(SM_CYCAPTION)+2*GetSystemMetrics(SM_CYDLGFRAME),

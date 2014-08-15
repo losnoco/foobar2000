@@ -116,7 +116,7 @@ void __cdecl OpenURL(char *url)
 		SetTimer(win,0,50,0); // start prebuffer monitoring
 }
 
-BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
+INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 {
 	switch (m) {
 		case WM_TIMER:
