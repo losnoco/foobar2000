@@ -139,3 +139,6 @@
 [submodule "plugins/modplay"]
 	path = plugins/modplay
 	url = git@bitbucket.org:kode54/modplay.git
+[submodule "plugins/foobar/foobar2000/foo_dsp_multiresampler"]
+	path = plugins/foobar/foobar2000/foo_dsp_multiresampler
+	url = git@bitbucket.org:kode54/foo_dsp_multiresampler.git
