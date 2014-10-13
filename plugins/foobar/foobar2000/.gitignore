@@ -6,6 +6,7 @@ plugins.sdf
 plugins.opensdf
 plugins.suo
 plugins.v11.suo
+plugins.v12.suo
 
 # output directories
 Debug
