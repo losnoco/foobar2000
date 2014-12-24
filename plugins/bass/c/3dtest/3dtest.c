@@ -41,7 +41,7 @@ void Error(const char *es)
 void UpdateDisplay()
 {
 	HDC dc;
-    RECT r;
+	RECT r;
 	int c,x,y,cx,cy;
 	HBRUSH red=CreateSolidBrush(0xff);
 
@@ -52,7 +52,7 @@ void UpdateDisplay()
 	cy=r.bottom/2;
 
 	// clear the display
-	FillRect(dc,&r,GetStockObject(WHITE_BRUSH));
+	FillRect(dc,&r,(HBRUSH)GetStockObject(WHITE_BRUSH));
 
 	// Draw the listener
 	SelectObject(dc,GetStockObject(GRAY_BRUSH));

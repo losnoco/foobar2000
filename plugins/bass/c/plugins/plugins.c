@@ -86,7 +86,7 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 								sprintf(file,"channel type = %x (%s)\nlength = %I64u (%u:%02u)",
 									info.ctype,GetCTypeString(info.ctype,info.plugin),bytes,time/60,time%60);
 								MESS(11,WM_SETTEXT,0,file);
-								MESS(12,TBM_SETRANGE,1,MAKELONG(0,time)); // update scroller range
+								MESS(12,TBM_SETRANGEMAX,1,time); // update scroller range
 							}
 							BASS_ChannelPlay(chan,FALSE);
 						}

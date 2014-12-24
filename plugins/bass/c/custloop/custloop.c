@@ -1,6 +1,6 @@
 /*
 	BASS custom looping example
-	Copyright (c) 2004-2012 Un4seen Developments Ltd.
+	Copyright (c) 2004-2014 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -54,23 +54,42 @@ void SetLoopEnd(QWORD pos)
 void __cdecl ScanPeaks(void *p)
 {
 	DWORD decoder=(DWORD)p;
-	DWORD cpos=0,peak[2]={0};
+	DWORD pos=0;
+	float spp=BASS_ChannelBytes2Seconds(decoder,bpp); // seconds per pixel
 	while (!killscan) {
-		DWORD level=BASS_ChannelGetLevel(decoder); // scan peaks
-		DWORD pos;
-		if (peak[0]<LOWORD(level)) peak[0]=LOWORD(level); // set left peak
-		if (peak[1]<HIWORD(level)) peak[1]=HIWORD(level); // set right peak
-		if (!BASS_ChannelIsActive(decoder)) pos=-1; // reached the end
-		else pos=BASS_ChannelGetPosition(decoder,BASS_POS_BYTE)/bpp;
-		if (pos>cpos) {
+		float peak[2];
+		if (spp>1) { // more than 1 second per pixel, break it down...
+			float todo=spp;
+			peak[1]=peak[0]=0;
+			do {
+				float level[2],step=(todo<1?todo:1);
+				BASS_ChannelGetLevelEx(decoder,level,step,BASS_LEVEL_STEREO); // scan peaks
+				if (peak[0]<level[0]) peak[0]=level[0];
+				if (peak[1]<level[1]) peak[1]=level[1];
+				todo-=step;
+			} while (todo>0);
+		} else
+			BASS_ChannelGetLevelEx(decoder,peak,spp,BASS_LEVEL_STEREO); // scan peaks
+		{
 			DWORD a;
-			for (a=0;a<peak[0]*(HEIGHT/2)/32768;a++)
-				wavebuf[(HEIGHT/2-1-a)*WIDTH+cpos]=1+a; // draw left peak
-			for (a=0;a<peak[1]*(HEIGHT/2)/32768;a++)
-				wavebuf[(HEIGHT/2+1+a)*WIDTH+cpos]=1+a; // draw right peak
-			if (pos>=WIDTH) break; // gone off end of display
-			cpos=pos;
-			peak[0]=peak[1]=0;
+			for (a=0;a<peak[0]*(HEIGHT/2);a++)
+				wavebuf[(HEIGHT/2-1-a)*WIDTH+pos]=1+a; // draw left peak
+			for (a=0;a<peak[1]*(HEIGHT/2);a++)
+				wavebuf[(HEIGHT/2+1+a)*WIDTH+pos]=1+a; // draw right peak
+		}
+		pos++;
+		if (pos>=WIDTH) break; // reached end of display
+		if (!BASS_ChannelIsActive(decoder)) break; // reached end of channel
+	}
+	if (!killscan) {
+		DWORD size;
+		BASS_ChannelSetPosition(decoder,(QWORD)-1,BASS_POS_BYTE|BASS_POS_SCAN); // build seek table (scan to end)
+		size=BASS_ChannelGetAttributeEx(decoder,BASS_ATTRIB_SCANINFO,0,0); // get seek table size
+		if (size) { // got it
+			void *info=malloc(size); // allocate a buffer
+			BASS_ChannelGetAttributeEx(decoder,BASS_ATTRIB_SCANINFO,info,size); // get the seek table
+			BASS_ChannelSetAttributeEx(chan,BASS_ATTRIB_SCANINFO,info,size); // apply it to the playback channel
+			free(info);
 		}
 	}
 	BASS_StreamFree(decoder); // free the decoder
@@ -118,14 +137,16 @@ BOOL PlayFile()
 		SelectObject(wavedc,wavebmp);
 	}
 	bpp=BASS_ChannelGetLength(chan,BASS_POS_BYTE)/WIDTH; // bytes per pixel
-	if (bpp<BASS_ChannelSeconds2Bytes(chan,0.02)) // minimum 20ms per pixel (BASS_ChannelGetLevel scans 20ms)
-		bpp=BASS_ChannelSeconds2Bytes(chan,0.02);
+	{
+		DWORD bpp1=BASS_ChannelSeconds2Bytes(chan,0.001); // minimum 1ms per pixel
+		if (bpp<bpp1) bpp=bpp1;
+	}
 	BASS_ChannelSetSync(chan,BASS_SYNC_END|BASS_SYNC_MIXTIME,0,LoopSyncProc,0); // set sync to loop at end
 	BASS_ChannelPlay(chan,FALSE); // start playing
-	{ // start scanning peaks in a new thread
+	{ // create another channel to scan
 		DWORD chan2=BASS_StreamCreateFile(FALSE,file,0,0,BASS_STREAM_DECODE);
 		if (!chan2) chan2=BASS_MusicLoad(FALSE,file,0,0,BASS_MUSIC_DECODE,1);
-		scanthread=_beginthread(ScanPeaks,0,(void*)chan2);
+		scanthread=_beginthread(ScanPeaks,0,(void*)chan2); // start scanning in a new thread
 	}
 	return TRUE;
 }
@@ -134,10 +155,10 @@ void DrawTimeLine(HDC dc, QWORD pos, DWORD col, DWORD y)
 {
 	HPEN pen=CreatePen(PS_SOLID,0,col),oldpen;
 	DWORD wpos=pos/bpp;
-	DWORD time=BASS_ChannelBytes2Seconds(chan,pos);
-	char text[10];
-	sprintf(text,"%u:%02u",time/60,time%60);
-	oldpen=SelectObject(dc,pen);
+	DWORD time=BASS_ChannelBytes2Seconds(chan,pos)*1000; // position in milliseconds
+	char text[16];
+	sprintf(text,"%u:%02u.%03u",time/60000,(time/1000)%60,time%1000);
+	oldpen=(HPEN)SelectObject(dc,pen);
 	MoveToEx(dc,wpos,0,NULL);
 	LineTo(dc,wpos,HEIGHT);
 	SetTextColor(dc,col);
@@ -152,20 +173,21 @@ void DrawTimeLine(HDC dc, QWORD pos, DWORD col, DWORD y)
 LRESULT CALLBACK SpectrumWindowProc(HWND h, UINT m, WPARAM w, LPARAM l)
 {
 	switch (m) {
-		case WM_LBUTTONDOWN: // set loop start
-			SetLoopStart(LOWORD(l)*bpp);
-			return 0;
-		case WM_RBUTTONDOWN: // set loop end
-			SetLoopEnd(LOWORD(l)*bpp);
-			return 0;
+		case WM_LBUTTONDOWN:
+		case WM_RBUTTONDOWN:
 		case WM_MOUSEMOVE:
-			if (w&MK_LBUTTON) SetLoopStart(LOWORD(l)*bpp);
-			if (w&MK_RBUTTON) SetLoopEnd(LOWORD(l)*bpp);
+			if (w&MK_LBUTTON) SetLoopStart(LOWORD(l)*bpp); // set loop start
+			if (w&MK_RBUTTON) SetLoopEnd(LOWORD(l)*bpp); // set loop end
+			return 0;
+
+		case WM_MBUTTONDOWN:
+			BASS_ChannelSetPosition(chan,LOWORD(l)*bpp,BASS_POS_BYTE); // set current pos
 			return 0;
 
 		case WM_TIMER:
 			InvalidateRect(h,0,0); // refresh window
 			return 0;
+
 		case WM_PAINT:
 			if (GetUpdateRect(h,0,0)) {
 				PAINTSTRUCT p;
@@ -208,10 +230,10 @@ LRESULT CALLBACK SpectrumWindowProc(HWND h, UINT m, WPARAM w, LPARAM l)
 	return DefWindowProc(h, m, w, l);
 }
 
-int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine, int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine, int nCmdShow)
 {
 	WNDCLASS wc;
-    MSG msg;
+	MSG msg;
 
 	// check the correct BASS was loaded
 	if (HIWORD(BASS_GetVersion())!=BASSVERSION) {

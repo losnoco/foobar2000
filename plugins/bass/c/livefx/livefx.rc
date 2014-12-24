@@ -2,7 +2,7 @@
 
 1000 DIALOG DISCARDABLE  200, 100, 220, 31
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "BASS full-duplex recording test with effects"
+CAPTION "BASS full-duplex test with effects"
 FONT 8, "MS Sans Serif"
 BEGIN
     COMBOBOX        10,5,5,65,72,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP

@@ -1,6 +1,6 @@
 /*
 	BASS simple synth
-	Copyright (c) 2001-2012 Un4seen Developments Ltd.
+	Copyright (c) 2001-2014 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -77,21 +77,19 @@ void main(int argc, char **argv)
 		return;
 	}
 
-	// 10ms update period
-	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD,10);
+	BASS_SetConfig(BASS_CONFIG_VISTA_TRUEPOS,0); // allows lower latency on Vista and newer
+	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD,10); // 10ms update period
 
-	// setup output - get latency
+	// initialize default output device (and measure latency)
 	if (!BASS_Init(-1,44100,BASS_DEVICE_LATENCY,0,NULL))
 		Error("Can't initialize device");
 
 	BASS_GetInfo(&info);
-	// default buffer size = update period + 'minbuf' + 1ms extra margin
-	BASS_SetConfig(BASS_CONFIG_BUFFER,10+info.minbuf+1);
+	BASS_SetConfig(BASS_CONFIG_BUFFER,10+info.minbuf+1); // default buffer size = update period + 'minbuf' + 1ms extra margin
 	buflen=BASS_GetConfig(BASS_CONFIG_BUFFER);
-	// if the device's output rate is unknown default to 44100 Hz
-	if (!info.freq) info.freq=44100;
-	// create a stream, stereo so that effects sound nice
-	stream=BASS_StreamCreate(info.freq,2,0,(STREAMPROC*)WriteStream,0);
+	if (!info.freq) info.freq=44100; // if the device's output rate is unknown default to 44100 Hz
+	stream=BASS_StreamCreate(info.freq,2,0,(STREAMPROC*)WriteStream,0); // create a stream (stereo for effects)
+	BASS_ChannelPlay(stream,FALSE); // start it
 
 	printf("device latency: %dms\n",info.latency);
 	printf("device minbuf: %dms\n",info.minbuf);
@@ -104,8 +102,6 @@ void main(int argc, char **argv)
 	if (info.dsver>=8) // DX8 effects available
 		printf("press F1-F9 to toggle effects\n\n");
 	printf("using a %dms buffer\r",buflen);
-
-	BASS_ChannelPlay(stream,FALSE);
 
 	while (ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE),&keyin,1,&r)) {
 		int key;

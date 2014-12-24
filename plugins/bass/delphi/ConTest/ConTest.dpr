@@ -58,7 +58,7 @@ begin
   if (chn <> 0) then
   begin
     pos := BASS_ChannelGetLength(chn, BASS_POS_BYTE);
-    if (BASS_StreamGetFilePosition(chn, BASS_FILEPOS_DOWNLOAD) <> DWORD(-1)) then
+    if (BASS_StreamGetFilePosition(chn, BASS_FILEPOS_DOWNLOAD) <> QW_ERROR) then
     begin
       // streaming from the internet
       if (pos <> QW_ERROR) then

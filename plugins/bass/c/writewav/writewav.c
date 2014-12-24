@@ -79,10 +79,7 @@ void main(int argc, char **argv)
 		return;
 	}
 
-	// not playing anything, so don't need an update thread
-	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD,0);
-
-	// setup output - "no sound" device, 44100hz, stereo, 16 bits
+	// initalize "no sound" device
 	if (!BASS_Init(0,44100,0,0,NULL))
 		Error("Can't initialize device");
 
@@ -119,7 +116,7 @@ void main(int argc, char **argv)
 	} else // no time length available
 		printf("\n");
 
-	if (!(fp=fopen("BASS.WAV","wb"))) Error("Can't create file");
+	if (!(fp=fopen("bass.wav","wb"))) Error("Can't create file");
 	printf("writing to BASS.WAV file... press a key to stop\n");
 	// write WAV header
 	BASS_ChannelGetInfo(chan,&info);

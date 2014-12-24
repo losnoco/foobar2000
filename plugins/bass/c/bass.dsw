@@ -75,6 +75,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "list"=.\list\list.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "livefx"=.\livefx\livefx.dsp - Package Owner=<4>
 
 Package=<5>
@@ -88,6 +100,18 @@ Package=<4>
 ###############################################################################
 
 Project: "livespec"=.\livespec\livespec.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "modtest"=.\modtest\modtest.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

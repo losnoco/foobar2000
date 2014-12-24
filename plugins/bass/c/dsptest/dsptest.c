@@ -153,7 +153,7 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 					break;
 				case 11: // toggle "rotate"
 					if (MESS(11,BM_GETCHECK,0,0)) {
-						rotpos=0.7853981f;
+						rotpos=M_PI/4;
 						rotdsp=BASS_ChannelSetDSP(chan,&Rotate,0,2);
 					} else
 						BASS_ChannelRemoveDSP(chan,rotdsp);
@@ -188,7 +188,7 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 			ofn.Flags=OFN_HIDEREADONLY|OFN_EXPLORER;
 			// enable floating-point DSP
 			BASS_SetConfig(BASS_CONFIG_FLOATDSP,TRUE);
-			// initialize - default device
+			// initialize default output device
 			if (!BASS_Init(-1,44100,0,win,NULL)) {
 				Error("Can't initialize device");
 				DestroyWindow(win);

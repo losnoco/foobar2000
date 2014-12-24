@@ -1,6 +1,6 @@
 /*
 	BASS full-duplex test
-	Copyright (c) 2002-2012 Un4seen Developments Ltd.
+	Copyright (c) 2002-2014 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -70,7 +70,10 @@ BOOL CALLBACK RecordingCallback(HRECORD handle, const void *buffer, DWORD length
 BOOL Initialize()
 {
 	BASS_INFO bi;
-	// initialize output, get latency
+
+	BASS_SetConfig(BASS_CONFIG_VISTA_TRUEPOS,0); // allows lower latency on Vista and newer
+
+	// initialize default output device (and measure latency)
 	if (!BASS_Init(-1,SAMPLERATE,BASS_DEVICE_LATENCY,win,NULL)) {
 		Error("Can't initialize output");
 		return FALSE;

@@ -88,7 +88,7 @@ void CALLBACK StatusProc(const void *buffer, DWORD length, void *user)
 		MESS(32,WM_SETTEXT,0,buffer); // display status
 }
 
-void __cdecl OpenURL(char *url)
+void __cdecl OpenURL(void *url)
 {
 	DWORD c,r;
 	EnterCriticalSection(&lock); // make sure only 1 thread at a time can do the following
@@ -125,6 +125,7 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 					*100/BASS_StreamGetFilePosition(chan,BASS_FILEPOS_END); // percentage of buffer filled
 				if (progress>75 || !BASS_StreamGetFilePosition(chan,BASS_FILEPOS_CONNECTED)) { // over 75% full (or end of download)
 					KillTimer(win,0); // finished prebuffering, stop monitoring
+					MESS(31,WM_SETTEXT,0,"playing");
 					{ // get the broadcast name and URL
 						const char *icy=BASS_ChannelGetTags(chan,BASS_TAG_ICY);
 						if (!icy) icy=BASS_ChannelGetTags(chan,BASS_TAG_HTTP); // no ICY tags, try HTTP
@@ -135,8 +136,7 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 								if (!strnicmp(icy,"icy-url:",8))
 									MESS(32,WM_SETTEXT,0,icy+8);
 							}
-						} else
-							MESS(31,WM_SETTEXT,0,"");
+						}
 					}
 					// get the stream title and set sync for subsequent titles
 					DoMeta();
