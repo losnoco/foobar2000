@@ -1,32 +1,40 @@
 BASSMIDI 2.4
-Copyright (c) 2006-2013 Un4seen Developments Ltd. All rights reserved.
+Copyright (c) 2006-2014 Un4seen Developments Ltd. All rights reserved.
 
 Files that you should have found in the BASSMIDI package
 ========================================================
 Win32 version
 -------------
 BASSMIDI.TXT    This file
-BASSMIDI.DLL    The BASSMIDI module
+BASSMIDI.DLL    BASSMIDI module
 BASSMIDI.CHM    BASSMIDI documentation
+X64\
+  BASSMIDI.DLL    64-bit BASSMIDI module
 C\              C/C++ API and examples...
   BASSMIDI.H      BASSMIDI C/C++ header file
   BASSMIDI.LIB    BASSMIDI import library
-  BASSMIDI.DSW    Visual C++ workspace for examples
+  BASSMIDI.DSW    Visual C++ 6 workspace for examples
+  BASSMIDI.SLN    Visual C++ 2005 (and above) solution for examples
   MAKEFILE        Makefile for all examples
   MAKEFILE.IN     Makefile helper macros
+  X64\
+    BASSMIDI.LIB    64-bit BASSMIDI import library
   MIDITEST\       MIDI playback example
     MIDITEST.C
     MIDITEST.RC
     MIDITEST.DSP
+    MIDITEST.VCPROJ
     MAKEFILE
   SF2PACK\        Soundfont packer
     SF2PACK.C
     SF2PACK.DSP
+    SF2PACK.VCPROJ
     MAKEFILE
   SYNTH\          Real-time MIDI example
     SYNTH.C
     SYNTH.RC
     SYNTH.DSP
+    SYNTH.VCPROJ
     MAKEFILE
   BIN\            Precompiled examples
     MIDITEST.EXE
@@ -58,7 +66,7 @@ NOTE: To build the examples, you will need to copy the BASS API into the
 MacOSX version
 --------------
 BASSMIDI.TXT    This file
-LIBBASSMIDI.DYLIB  The BASSMIDI module
+LIBBASSMIDI.DYLIB  BASSMIDI module
 BASSMIDI.CHM    BASSMIDI documentation
 BASSMIDI.H      BASSMIDI C/C++ header file
 MAKEFILE        Makefile for all examples
@@ -82,13 +90,13 @@ NOTE: To build the examples, you will need to copy the BASS API into the
 Linux version
 -------------
 BASSMIDI.TXT    This file
-LIBBASSMIDI.SO  The BASSMIDI module
+LIBBASSMIDI.SO  BASSMIDI module
 BASSMIDI.CHM    BASSMIDI documentation
 BASSMIDI.H      BASSMIDI C/C++ header file
 MAKEFILE        Makefile for all examples
 MAKEFILE.IN     Makefile helper macros
-X64
-  LIBBASSMIDI.SO  64-bit version of BASSMIDI module
+X64\
+  LIBBASSMIDI.SO  64-bit BASSMIDI module
 MIDITEST\       MIDI playback example
   MIDITEST.C
   MIDITEST.GLADE
@@ -108,8 +116,8 @@ NOTE: To build the examples, you will need to copy the BASS API into the
 What's the point?
 =================
 BASSMIDI is an extension to the BASS audio library, enabling the playing of
-MIDI files and custom event sequences, using SF2 soundfonts to provide the
-sounds. MIDI input is also supported.
+MIDI files and custom event sequences, using SF2 and/or SFZ soundfonts to
+provide the sounds. MIDI input is also supported.
 
 
 Requirements
@@ -126,9 +134,9 @@ supported.
 
 SF2 soundfonts are used to provide the sounds. There are several soundfonts
 available on the internet. One example (Chorium) is available from the BASS
-webpage. On Win32, the Creative 28MB (28MBGM.SF2), 8MB (CT8MGM.SF2), 4MB
+webpage. On Windows, the Creative 28MB (28MBGM.SF2), 8MB (CT8MGM.SF2), 4MB
 (CT4MGM.SF2), or 2MB (CT2MGM.SF2) soundfont will be used by default when
-present in the Windows system directory.
+present in the Windows system directory. SFZ soundfonts are also supported.
 
 The usage information in the BASS.TXT file (from the BASS package) is also
 applicable to BASSMIDI and other add-ons.
@@ -169,6 +177,52 @@ There are of course bug fixes and other little improvements made along
 the way too! To make upgrading simpler, all functions affected by a
 change to the BASSMIDI interface are listed.
 
+2.4.9 - 4/12/2014
+-----------------
+* SFZ soundfont support
+	BASS_MIDI_FontInit/Ex
+* Support for XG drums in bank 127 of SF2 soundfonts
+	BASS_MIDI_FONT_XGDRUMS (BASS_MIDI_FontInit/Ex flag)
+* Key pressure/aftertouch support
+	MIDI_EVENT_KEYPRES (BASS_MIDI_StreamEvent/s)
+	MIDI_EVENT_KEYPRES_VIBRATO/PITCH/FILTER/VOLUME (BASS_MIDI_StreamEvent/s)
+* 3rd effect path for custom processing
+	BASS_MIDI_CHAN_USERFX (BASS_MIDI_StreamGetChannel option)
+	MIDI_EVENT_USERFX (BASS_MIDI_StreamEvent/s)
+	MIDI_EVENT_USERFX_LEVEL (BASS_MIDI_StreamEvent/s)
+	MIDI_EVENT_USERFX_REVERB (BASS_MIDI_StreamEvent/s)
+	MIDI_EVENT_USERFX_CHORUS (BASS_MIDI_StreamEvent/s)
+* Custom reverb/chorus effect processing
+	BASS_MIDI_CHAN_CHORUS/REVERB (BASS_MIDI_StreamGetChannel options)
+* Custom channel processing output routed to reverb/chorus/custom effects
+	BASS_MIDI_StreamGetChannel
+* Default drum reverb/chorus levels set to XG spec in XG mode (GS/GM modes too)
+	MIDI_EVENT_DRUM_REVERB/CHORUS (BASS_MIDI_StreamEvent/s)
+* Decay time event
+	MIDI_EVENT_DECAY (BASS_MIDI_StreamEvent/s)
+* Support for up to 65536 presets per bank
+	BASS_MIDI_StreamSetFonts
+	MIDI_EVENT_PROGRAM (BASS_MIDI_StreamEvent/s)
+* Input ports to receive MIDI data from other software on Linux
+	BASS_MIDI_InInit
+	BASS_CONFIG_MIDI_IN_PORTS (BASS_SetConfig option)
+	SYNTH example updated
+* Single note releasing when there are overlapping instances of the same note
+	BASS_MIDI_NOTEOFF1 (BASS_MIDI_StreamCreateFile/User/URL flag)
+* Ignoring of system resets with unchanged mode
+	BASS_MIDI_NOSYSRESET (BASS_MIDI_StreamCreateFile/User/URL flag)
+	MIDI_EVENT_SYSTEM (BASS_MIDI_StreamEvent/s)
+* Disabling of running status
+	BASS_MIDI_EVENTS_NORSTATUS (BASS_MIDI_StreamEvents flag)
+* Maximum voice limit increased to 1000
+	BASS_CONFIG_MIDI_VOICES (BASS_SetConfig option)
+	BASS_ATTRIB_MIDI_VOICES (BASS_ChannelSetAttribute option)
+* Reduction of 24-bit data to 16-bit when packing soundfont samples
+	BASS_MIDI_PACK_16BIT (BASS_MIDI_FontPack flag)
+* Support for remaining SF2 generators: fixed key, fixed velocity, key to vol/mod envelope hold/decay
+* Fix for multi-track custom event sequence stream creation
+	BASS_MIDI_StreamCreateEvents
+
 2.4.8 - 2/5/2013
 ----------------
 * User file soundfont loading
@@ -188,7 +242,7 @@ change to the BASSMIDI interface are listed.
 * Unhandled controller event
 	MIDI_EVENT_CONTROL (BASS_MIDI_StreamEvent/s)
 * Reverb send level default changed to 40 (was 0)
-	MIDI_EVENT_REVERB
+	MIDI_EVENT_REVERB (BASS_MIDI_StreamEvent/s)
 * Retrieval of events from all tracks at once
 	BASS_MIDI_StreamGetEvents
 * Copyright/instrument/track name markers
@@ -200,7 +254,7 @@ change to the BASSMIDI interface are listed.
 * New sync type that supports all marker types
 	BASS_SYNC_MIDI_MARK (BASS_ChannelSetSync type)
 * Non-removal of empty space at the end of a MIDI file
-	BASS_MIDI_NOCROP (BASS_MIDI_StreamCreateFile flag)
+	BASS_MIDI_NOCROP (BASS_MIDI_StreamCreateFile/User/URL flag)
 * Omission of a WAVE header when packing soundfont samples
 	BASS_MIDI_PACK_NOHEAD (BASS_MIDI_FontPack flag)
 * Streams created via the plugin system use the output device's sample rate

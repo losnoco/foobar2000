@@ -237,14 +237,13 @@ begin
     UpdatePresetList;
   end;
 
-//Init BASS
-	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 10); //Set update period
+	BASS_SetConfig(BASS_CONFIG_VISTA_TRUEPOS, 0); // allows lower latency on Vista and newer
+	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 10); // 10ms update period
 
-//Setup output - get latency
+	// initialize default output device (and measure latency)
 	if not BASS_Init(-1, 44100, BASS_DEVICE_LATENCY, 0, nil) then
 		FatalError('Can''t initialize device,');
 
-//Get info, set latency, effects etc.
 	BASS_GetInfo(BASSInfo);
   //Default buffer size = update period + 'minbuf'
 	BASS_SetConfig(BASS_CONFIG_BUFFER, 10 + BASSInfo.minbuf);

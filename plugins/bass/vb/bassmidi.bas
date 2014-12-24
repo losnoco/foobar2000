@@ -1,6 +1,6 @@
 Attribute VB_Name = "BASSMIDI"
 ' BASSMIDI 2.4 Visual Basic module
-' Copyright (c) 2006-2013 Un4seen Developments Ltd.
+' Copyright (c) 2006-2014 Un4seen Developments Ltd.
 '
 ' See the BASSMIDI.CHM file for more detailed documentation
 
@@ -8,6 +8,7 @@ Attribute VB_Name = "BASSMIDI"
 Global Const BASS_CONFIG_MIDI_COMPACT = &H10400
 Global Const BASS_CONFIG_MIDI_VOICES = &H10401
 Global Const BASS_CONFIG_MIDI_AUTOFONT = &H10402
+Global Const BASS_CONFIG_MIDI_IN_PORTS = &H10404
 
 ' Additional BASS_SetConfigPtr options
 Global Const BASS_CONFIG_MIDI_DEFFONT = &H10403
@@ -24,15 +25,18 @@ Global Const BASS_SYNC_MIDI_TIMESIG = &H10006
 Global Const BASS_SYNC_MIDI_KEYSIG = &H10007
 
 ' Additional BASS_MIDI_StreamCreateFile/etc flags
+Global Const BASS_MIDI_NOSYSRESET = &H800
 Global Const BASS_MIDI_DECAYEND = &H1000
 Global Const BASS_MIDI_NOFX = &H2000
 Global Const BASS_MIDI_DECAYSEEK = &H4000
 Global Const BASS_MIDI_NOCROP = &H8000
+Global Const BASS_MIDI_NOTEOFF1 = &H10000
 Global Const BASS_MIDI_SINCINTER = &H800000
 
 ' BASS_MIDI_FontInit flags
 Global Const BASS_MIDI_FONT_MEM = &H10000
 Global Const BASS_MIDI_FONT_MMAP = &H20000
+Global Const BASS_MIDI_FONT_XGDRUMS = &H40000
 
 Type BASS_MIDI_FONT
     font As Long            ' soundfont
@@ -109,6 +113,7 @@ Global Const MIDI_EVENT_CUTOFF = 25
 Global Const MIDI_EVENT_RESONANCE = 26
 Global Const MIDI_EVENT_RELEASE = 27
 Global Const MIDI_EVENT_ATTACK = 28
+Global Const MIDI_EVENT_DECAY = 29
 Global Const MIDI_EVENT_REVERB_MACRO = 30
 Global Const MIDI_EVENT_CHORUS_MACRO = 31
 Global Const MIDI_EVENT_REVERB_TIME = 32
@@ -122,6 +127,10 @@ Global Const MIDI_EVENT_CHORUS_RATE = 39
 Global Const MIDI_EVENT_CHORUS_FEEDBACK = 40
 Global Const MIDI_EVENT_CHORUS_LEVEL = 41
 Global Const MIDI_EVENT_CHORUS_REVERB = 42
+Global Const MIDI_EVENT_USERFX = 43
+Global Const MIDI_EVENT_USERFX_LEVEL = 44
+Global Const MIDI_EVENT_USERFX_REVERB = 45
+Global Const MIDI_EVENT_USERFX_CHORUS = 46
 Global Const MIDI_EVENT_DRUM_FINETUNE = 50
 Global Const MIDI_EVENT_DRUM_COARSETUNE = 51
 Global Const MIDI_EVENT_DRUM_PAN = 52
@@ -130,6 +139,7 @@ Global Const MIDI_EVENT_DRUM_CHORUS = 54
 Global Const MIDI_EVENT_DRUM_CUTOFF = 55
 Global Const MIDI_EVENT_DRUM_RESONANCE = 56
 Global Const MIDI_EVENT_DRUM_LEVEL = 57
+Global Const MIDI_EVENT_DRUM_USERFX = 58
 Global Const MIDI_EVENT_SOFT = 60
 Global Const MIDI_EVENT_SYSTEM = 61
 Global Const MIDI_EVENT_TEMPO = 62
@@ -141,6 +151,11 @@ Global Const MIDI_EVENT_CHANPRES_FILTER = 67
 Global Const MIDI_EVENT_CHANPRES_VOLUME = 68
 Global Const MIDI_EVENT_MODRANGE = 69
 Global Const MIDI_EVENT_BANK_LSB = 70
+Global Const MIDI_EVENT_KEYPRES = 71
+Global Const MIDI_EVENT_KEYPRES_VIBRATO = 72
+Global Const MIDI_EVENT_KEYPRES_PITCH = 73
+Global Const MIDI_EVENT_KEYPRES_FILTER = 74
+Global Const MIDI_EVENT_KEYPRES_VOLUME = 75
 Global Const MIDI_EVENT_MIXLEVEL = &H10000
 Global Const MIDI_EVENT_TRANSPOSE = &H10001
 Global Const MIDI_EVENT_SYSTEMEX = &H10002
@@ -166,6 +181,12 @@ End Type
 Global Const BASS_MIDI_EVENTS_STRUCT = 0     ' BASS_MIDI_EVENT structures
 Global Const BASS_MIDI_EVENTS_RAW = &H10000  ' raw MIDI event data
 Global Const BASS_MIDI_EVENTS_SYNC = &H1000000 ' FLAG: trigger event syncs
+Global Const BASS_MIDI_EVENTS_NORSTATUS = &H2000000 ' FLAG: no running status
+
+' BASS_MIDI_StreamGetChannel special channels
+Global Const BASS_MIDI_CHAN_CHORUS = -1
+Global Const BASS_MIDI_CHAN_REVERB = -2
+Global Const BASS_MIDI_CHAN_USERFX = -3
 
 ' BASS_CHANNELINFO type
 Global Const BASS_CTYPE_STREAM_MIDI = &H10D00
@@ -186,6 +207,7 @@ Global Const BASS_POS_MIDI_TICK = 2 ' tick position
 
 ' BASS_MIDI_FontPack flags
 Global Const BASS_MIDI_PACK_NOHEAD = 1 ' don't send a WAV header to the encoder
+Global Const BASS_MIDI_PACK_16BIT = 2 ' discard low 8 bits of 24-bit sample data
 
 Type BASS_MIDI_DEVICEINFO
 	name As Long	' description
