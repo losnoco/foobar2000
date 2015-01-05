@@ -1,9 +1,0 @@
-* add an optional VIC II cycle exact emulation
-* add SIDid support
-
-* improve documentation
-* fix Visual Studio build files (or purge them)
-
-* remove the fastForward support (?)
-* move mixer into resid specific class (?)
-* share resampling code between resid emulations (?)
