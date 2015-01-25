@@ -145,3 +145,9 @@
 [submodule "plugins/sidplay-residfp"]
 	path = plugins/sidplay-residfp
 	url = git@bitbucket.org:kode54/sidplay-residfp.git
+[submodule "plugins/libg7221_decode"]
+	path = plugins/libg7221_decode
+	url = git@github.com:kode54/libg7221_decode.git
+[submodule "plugins/libg719_decode"]
+	path = plugins/libg719_decode
+	url = git@github.com:kode54/libg719_decode.git
