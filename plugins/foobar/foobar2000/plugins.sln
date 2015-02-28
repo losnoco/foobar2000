@@ -186,6 +186,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_multiresampler", "f
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsidplayfp", "..\..\sidplay-residfp\projects\win\VC\libsidplayfp\libsidplayfp.vcxproj", "{62EB3E65-1E51-44EB-B407-FE1C7B3AFB5C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lazyusf2", "..\..\lazyusf2\prj\msvc\lazyusf2.vcxproj", "{8B2864CE-54E0-472D-A938-D942B5E835CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -762,6 +764,12 @@ Global
 		{62EB3E65-1E51-44EB-B407-FE1C7B3AFB5C}.Release|Win32.ActiveCfg = Release|Win32
 		{62EB3E65-1E51-44EB-B407-FE1C7B3AFB5C}.Release|Win32.Build.0 = Release|Win32
 		{62EB3E65-1E51-44EB-B407-FE1C7B3AFB5C}.Release|x64.ActiveCfg = Release|Win32
+		{8B2864CE-54E0-472D-A938-D942B5E835CC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8B2864CE-54E0-472D-A938-D942B5E835CC}.Debug|Win32.Build.0 = Debug|Win32
+		{8B2864CE-54E0-472D-A938-D942B5E835CC}.Debug|x64.ActiveCfg = Debug|Win32
+		{8B2864CE-54E0-472D-A938-D942B5E835CC}.Release|Win32.ActiveCfg = Release|Win32
+		{8B2864CE-54E0-472D-A938-D942B5E835CC}.Release|Win32.Build.0 = Release|Win32
+		{8B2864CE-54E0-472D-A938-D942B5E835CC}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

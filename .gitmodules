@@ -151,3 +151,6 @@
 [submodule "plugins/libg719_decode"]
 	path = plugins/libg719_decode
 	url = git@github.com:kode54/libg719_decode.git
+[submodule "plugins/lazyusf2"]
+	path = plugins/lazyusf2
+	url = git@bitbucket.org:kode54/lazyusf2.git
