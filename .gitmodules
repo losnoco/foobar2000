@@ -142,6 +142,7 @@
 [submodule "plugins/foobar/foobar2000/foo_dsp_multiresampler"]
 	path = plugins/foobar/foobar2000/foo_dsp_multiresampler
 	url = git@bitbucket.org:kode54/foo_dsp_multiresampler.git
+
 [submodule "plugins/sidplay-residfp"]
 	path = plugins/sidplay-residfp
 	url = git@bitbucket.org:kode54/sidplay-residfp.git
@@ -154,3 +155,6 @@
 [submodule "plugins/lazyusf2"]
 	path = plugins/lazyusf2
 	url = git@bitbucket.org:kode54/lazyusf2.git
+[submodule "plugins/dcadec"]
+	path = plugins/dcadec
+	url = git@github.com:kode54/dcadec.git

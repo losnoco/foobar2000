@@ -188,6 +188,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsidplayfp", "..\..\sidpl
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lazyusf2", "..\..\lazyusf2\prj\msvc\lazyusf2.vcxproj", "{8B2864CE-54E0-472D-A938-D942B5E835CC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdcadec", "..\..\dcadec\libdcadec\msvc\libdcadec.vcxproj", "{797ACF95-C9CE-4409-8F5D-16E2E67F3507}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -770,6 +772,12 @@ Global
 		{8B2864CE-54E0-472D-A938-D942B5E835CC}.Release|Win32.ActiveCfg = Release|Win32
 		{8B2864CE-54E0-472D-A938-D942B5E835CC}.Release|Win32.Build.0 = Release|Win32
 		{8B2864CE-54E0-472D-A938-D942B5E835CC}.Release|x64.ActiveCfg = Release|Win32
+		{797ACF95-C9CE-4409-8F5D-16E2E67F3507}.Debug|Win32.ActiveCfg = Debug|Win32
+		{797ACF95-C9CE-4409-8F5D-16E2E67F3507}.Debug|Win32.Build.0 = Debug|Win32
+		{797ACF95-C9CE-4409-8F5D-16E2E67F3507}.Debug|x64.ActiveCfg = Debug|Win32
+		{797ACF95-C9CE-4409-8F5D-16E2E67F3507}.Release|Win32.ActiveCfg = Release|Win32
+		{797ACF95-C9CE-4409-8F5D-16E2E67F3507}.Release|Win32.Build.0 = Release|Win32
+		{797ACF95-C9CE-4409-8F5D-16E2E67F3507}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
