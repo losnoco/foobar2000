@@ -57,6 +57,7 @@ typedef DWORD HSOUNDFONT;	// soundfont handle
 #define BASS_MIDI_FONT_MEM		0x10000
 #define BASS_MIDI_FONT_MMAP		0x20000
 #define BASS_MIDI_FONT_XGDRUMS	0x40000
+#define BASS_MIDI_FONT_NOFX		0x80000
 
 typedef struct {
 	HSOUNDFONT font;	// soundfont
@@ -102,6 +103,7 @@ typedef struct {
 #define BASS_MIDI_MARK_COPY		6	// copyright notice
 #define BASS_MIDI_MARK_TRACK	7	// track name
 #define BASS_MIDI_MARK_INST		8	// instrument name
+#define BASS_MIDI_MARK_TRACKSTART	9	// track start (SMF2)
 #define BASS_MIDI_MARK_TICK		0x10000 // FLAG: get position in ticks (otherwise bytes)
 
 // MIDI events
@@ -176,6 +178,7 @@ typedef struct {
 #define MIDI_EVENT_KEYPRES_PITCH	73
 #define MIDI_EVENT_KEYPRES_FILTER	74
 #define MIDI_EVENT_KEYPRES_VOLUME	75
+#define MIDI_EVENT_SOSTENUTO		76
 #define MIDI_EVENT_MIXLEVEL			0x10000
 #define MIDI_EVENT_TRANSPOSE		0x10001
 #define MIDI_EVENT_SYSTEMEX			0x10002
@@ -202,6 +205,7 @@ typedef struct {
 #define BASS_MIDI_EVENTS_RAW		0x10000 // raw MIDI event data
 #define BASS_MIDI_EVENTS_SYNC		0x1000000 // FLAG: trigger event syncs
 #define BASS_MIDI_EVENTS_NORSTATUS	0x2000000 // FLAG: no running status
+#define BASS_MIDI_EVENTS_CANCEL		0x4000000 // FLAG: cancel pending events
 
 // BASS_MIDI_StreamGetChannel special channels
 #define BASS_MIDI_CHAN_CHORUS		(DWORD)-1
@@ -257,6 +261,7 @@ BOOL BASSMIDIDEF(BASS_MIDI_StreamEvent)(HSTREAM handle, DWORD chan, DWORD event,
 DWORD BASSMIDIDEF(BASS_MIDI_StreamEvents)(HSTREAM handle, DWORD mode, const void *events, DWORD length);
 DWORD BASSMIDIDEF(BASS_MIDI_StreamGetEvent)(HSTREAM handle, DWORD chan, DWORD event);
 DWORD BASSMIDIDEF(BASS_MIDI_StreamGetEvents)(HSTREAM handle, int track, DWORD filter, BASS_MIDI_EVENT *events);
+DWORD BASSMIDIDEF(BASS_MIDI_StreamGetEventsEx)(HSTREAM handle, int track, DWORD filter, BASS_MIDI_EVENT *events, DWORD start, DWORD count);
 HSTREAM BASSMIDIDEF(BASS_MIDI_StreamGetChannel)(HSTREAM handle, DWORD chan);
 
 HSOUNDFONT BASSMIDIDEF(BASS_MIDI_FontInit)(const void *file, DWORD flags);
