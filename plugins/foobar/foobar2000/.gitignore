@@ -19,3 +19,6 @@ Release Good
 
 # and some debugging symbol crap
 *.pdb
+
+# new for Visual Studio 2015
+.vs

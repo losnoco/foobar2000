@@ -163,3 +163,6 @@
 [submodule "plugins/foobar/foobar2000/foo_adpcm"]
 	path = plugins/foobar/foobar2000/foo_adpcm
 	url = ssh://git@kode54.net:2264/kode54/foo_adpcm.git
+[submodule "plugins/foobar/foobar2000/foo_lunar2"]
+	path = plugins/foobar/foobar2000/foo_lunar2
+	url = ssh://git@kode54.net:2264/kode54/foo_lunar2.git

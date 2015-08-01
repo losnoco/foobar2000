@@ -21,6 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E8091321-D79D-4575-86EF-064EA1A4A20D}</ProjectGuid>
     <RootNamespace>foobar2000_SDK</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -28,13 +29,13 @@
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v120_xp</PlatformToolset>
+    <PlatformToolset>v140_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v120_xp</PlatformToolset>
+    <PlatformToolset>v140_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -81,12 +82,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_WIN32_WINNT=0x501;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>foobar2000.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -111,6 +113,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -118,6 +121,7 @@
     </ResourceCompile>
     <Lib>
       <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalDependencies>../shared/shared.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -158,6 +162,7 @@
       <PrecompiledHeaderFile>foobar2000.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
+      <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -165,12 +170,14 @@
     </ResourceCompile>
     <Lib>
       <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalDependencies>../shared/shared.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="abort_callback.h" />
     <ClInclude Include="advconfig.h" />
     <ClInclude Include="album_art.h" />
+    <ClInclude Include="album_art_helpers.h" />
     <ClInclude Include="app_close_blocker.h" />
     <ClInclude Include="audio_chunk.h" />
     <ClInclude Include="audio_postprocessor.h" />
@@ -220,6 +227,7 @@
     <ClInclude Include="metadb_handle.h" />
     <ClInclude Include="modeless_dialog.h" />
     <ClInclude Include="ole_interaction.h" />
+    <ClInclude Include="output.h" />
     <ClInclude Include="packet_decoder.h" />
     <ClInclude Include="play_callback.h" />
     <ClInclude Include="playable_location.h" />
@@ -258,6 +266,7 @@
     <ClCompile Include="chapterizer.cpp" />
     <ClCompile Include="commandline.cpp" />
     <ClCompile Include="completion_notify.cpp" />
+    <ClCompile Include="componentversion.cpp" />
     <ClCompile Include="config_object.cpp" />
     <ClCompile Include="console.cpp">
     </ClCompile>
@@ -265,6 +274,7 @@
     </ClCompile>
     <ClCompile Include="dsp_manager.cpp">
     </ClCompile>
+    <ClCompile Include="file_cached_impl.cpp" />
     <ClCompile Include="file_info.cpp">
     </ClCompile>
     <ClCompile Include="file_info_impl.cpp">
@@ -286,6 +296,7 @@
     <ClCompile Include="input_file_type.cpp" />
     <ClCompile Include="link_resolver.cpp" />
     <ClCompile Include="mainmenu.cpp" />
+    <ClCompile Include="main_thread_callback.cpp" />
     <ClCompile Include="mem_block_container.cpp" />
     <ClCompile Include="menu_helpers.cpp">
     </ClCompile>
@@ -299,6 +310,7 @@
     </ClCompile>
     <ClCompile Include="metadb_handle_list.cpp">
     </ClCompile>
+    <ClCompile Include="output.cpp" />
     <ClCompile Include="packet_decoder.cpp">
     </ClCompile>
     <ClCompile Include="playable_location.cpp">
@@ -316,6 +328,7 @@
     </ClCompile>
     <ClCompile Include="replaygain_info.cpp">
     </ClCompile>
+    <ClCompile Include="search_tools.cpp" />
     <ClCompile Include="service.cpp">
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
