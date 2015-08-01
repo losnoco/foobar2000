@@ -54,7 +54,7 @@
 	url = ssh://git@kode54.net:2264/kode54/foo_midi.git
 [submodule "plugins/ESP/Sega"]
 	path = plugins/ESP/Sega
-	url = ssh://git@kode54.net:2264/kode54/highly-theoretical.git
+	url = ssh://git@kode54.net:2264/kode54/Highly_Theoretical.git
 [submodule "plugins/foobar/foobar2000/foo_input_ht"]
 	path = plugins/foobar/foobar2000/foo_input_ht
 	url = ssh://git@kode54.net:2264/kode54/foo_input_ht.git
