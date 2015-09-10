@@ -166,3 +166,6 @@
 [submodule "plugins/foobar/foobar2000/foo_lunar2"]
 	path = plugins/foobar/foobar2000/foo_lunar2
 	url = ssh://git@kode54.net:2264/kode54/foo_lunar2.git
+[submodule "plugins/aopsf"]
+	path = plugins/aopsf
+	url = ssh://git@kode54.net:2264/kode54/aopsf.git
