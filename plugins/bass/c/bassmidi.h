@@ -1,6 +1,6 @@
 /*
 	BASSMIDI 2.4 C/C++ header file
-	Copyright (c) 2006-2014 Un4seen Developments Ltd.
+	Copyright (c) 2006-2015 Un4seen Developments Ltd.
 
 	See the BASSMIDI.CHM file for more detailed documentation
 */
@@ -206,6 +206,7 @@ typedef struct {
 #define BASS_MIDI_EVENTS_SYNC		0x1000000 // FLAG: trigger event syncs
 #define BASS_MIDI_EVENTS_NORSTATUS	0x2000000 // FLAG: no running status
 #define BASS_MIDI_EVENTS_CANCEL		0x4000000 // FLAG: cancel pending events
+#define BASS_MIDI_EVENTS_TIME		0x8000000 // FLAG: delta-time/tick info is present
 
 // BASS_MIDI_StreamGetChannel special channels
 #define BASS_MIDI_CHAN_CHORUS		(DWORD)-1
@@ -221,6 +222,7 @@ typedef struct {
 #define BASS_ATTRIB_MIDI_CHANS		0x12002
 #define BASS_ATTRIB_MIDI_VOICES		0x12003
 #define BASS_ATTRIB_MIDI_VOICES_ACTIVE 0x12004
+#define BASS_ATTRIB_MIDI_STATE		0x12005
 #define BASS_ATTRIB_MIDI_TRACK_VOL	0x12100 // + track #
 
 // Additional tag type
