@@ -129,7 +129,7 @@
 	url = ssh://git@kode54.net:2264/kode54/foo_input_dts.git
 [submodule "plugins/DFC"]
 	path = plugins/DFC
-	url = ssh://git@kode54.net:2264/kode54/dfc.git
+	url = ssh://git@kode54.net:2264/kode54/DFC.git
 [submodule "plugins/lazyusf"]
 	path = plugins/lazyusf
 	url = ssh://git@kode54.net:2264/kode54/lazyusf.git
