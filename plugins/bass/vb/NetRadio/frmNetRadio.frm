@@ -266,11 +266,11 @@ Private Sub Form_Load()
     Call BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY, VarPtr(proxy(0)))  ' setup proxy server location
 
     ' preset stream URLs
-    url = Array("http://www.radioparadise.com/musiclinks/rp_128-9.m3u", "http://www.radioparadise.com/musiclinks/rp_32.m3u", _
-                "http://www.sky.fm/mp3/classical.pls", "http://www.sky.fm/mp3/classical_low.pls", _
-                "http://www.sky.fm/mp3/the80s.pls", "http://www.sky.fm/mp3/the80s_low.pls", _
-                "http://somafm.com/tags.pls", "http://somafm.com/tags32.pls", _
-                "http://somafm.com/secretagent.pls", "http://somafm.com/secretagent24.pls")
+    url = Array("http://www.radioparadise.com/m3u/mp3-128.m3u", "http://www.radioparadise.com/m3u/mp3-32.m3u", _
+		"http://icecast.timlradio.co.uk/vr160.ogg", "http://icecast.timlradio.co.uk/vr32.ogg", _
+		"http://icecast.timlradio.co.uk/a8160.ogg", "http://icecast.timlradio.co.uk/a832.ogg", _
+		"http://somafm.com/secretagent.pls", "http://somafm.com/secretagent24.pls", _
+		"http://somafm.com/suburbsofgoa.pls", "http://somafm.com/suburbsofgoa24.pls")
 
     Set WriteFile = New clsFileIo
     cthread = 0

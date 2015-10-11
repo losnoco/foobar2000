@@ -385,6 +385,11 @@ const
   BASS_DATA_FFT_REMOVEDC = $40;   // FFT flag: pre-remove DC bias
   BASS_DATA_FFT_COMPLEX = $80;    // FFT flag: return complex data
 
+  // BASS_ChannelGetLevelEx flags
+  BASS_LEVEL_MONO     = 1;
+  BASS_LEVEL_STEREO   = 2;
+  BASS_LEVEL_RMS      = 4;
+
   // BASS_ChannelGetTags types : what's returned
   BASS_TAG_ID3        = 0; // ID3v1 tags : TAG_ID3 structure
   BASS_TAG_ID3V2      = 1; // ID3v2 tags : variable length block

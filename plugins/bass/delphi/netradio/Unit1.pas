@@ -59,9 +59,9 @@ implementation
 
 const
   urls: array[0..9] of AnsiString = ( // preset stream URLs
-	'http://www.radioparadise.com/musiclinks/rp_128-9.m3u','http://www.radioparadise.com/musiclinks/rp_32.m3u',
-	'http://ogg2.as34763.net/vr160.ogg', 'http://ogg2.as34763.net/vr32.ogg',
-	'http://ogg2.as34763.net/a8160.ogg', 'http://ogg2.as34763.net/a832.ogg',
+	'http://www.radioparadise.com/m3u/mp3-128.m3u', 'http://www.radioparadise.com/m3u/mp3-32.m3u',
+	'http://icecast.timlradio.co.uk/vr160.ogg', 'http://icecast.timlradio.co.uk/vr32.ogg',
+	'http://icecast.timlradio.co.uk/a8160.ogg', 'http://icecast.timlradio.co.uk/a832.ogg',
 	'http://somafm.com/secretagent.pls', 'http://somafm.com/secretagent24.pls',
 	'http://somafm.com/suburbsofgoa.pls', 'http://somafm.com/suburbsofgoa24.pls'
     );

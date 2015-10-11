@@ -10,8 +10,8 @@ DCC = $(ROOT)\bin\dcc32.exe $**
 BRCC = $(ROOT)\bin\brcc32.exe $**
 #------------------------------------------------------------------------------
 PROJECTS = D3Test.exe BassTest.exe ConTest.exe custloop.exe DspTest.exe \
-  FXtest.exe livefx.exe Multi.exe netradio.exe plugins.exe RecordTest.exe \
-  samplevis.exe Speakers.exe StreamTest.exe writewav.exe
+  FXtest.exe list.exe livefx.exe modtest.exe Multi.exe netradio.exe plugins.exe \
+  RecordTest.exe samplevis.exe Speakers.exe StreamTest.exe synth.exe writewav.exe
 #------------------------------------------------------------------------------
 default: $(PROJECTS)
 #------------------------------------------------------------------------------
@@ -34,10 +34,16 @@ DspTest.exe: DspTest\DspTest.dpr
 FXtest.exe: fxtest\FXtest.dpr
   $(DCC)
 
+list.exe: list\list.dpr
+  $(DCC)
+
 livefx.exe: livefx\livefx.dpr
   $(DCC)
 
 livespec.exe: livespec\livespec.dpr
+  $(DCC)
+
+modtest.exe: modtest\modtest.dpr
   $(DCC)
 
 Multi.exe: multi\Multi.dpr

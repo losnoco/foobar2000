@@ -14,9 +14,9 @@ DWORD req=0;	// request number/counter
 HSTREAM chan;	// stream handle
 
 const char *urls[10]={ // preset stream URLs
-	"http://www.radioparadise.com/musiclinks/rp_128-9.m3u", "http://www.radioparadise.com/musiclinks/rp_32.m3u",
-	"http://ogg2.as34763.net/vr160.ogg", "http://ogg2.as34763.net/vr32.ogg",
-	"http://ogg2.as34763.net/a8160.ogg", "http://ogg2.as34763.net/a832.ogg",
+	"http://www.radioparadise.com/m3u/mp3-128.m3u", "http://www.radioparadise.com/m3u/mp3-32.m3u",
+	"http://icecast.timlradio.co.uk/vr160.ogg", "http://icecast.timlradio.co.uk/vr32.ogg",
+	"http://icecast.timlradio.co.uk/a8160.ogg", "http://icecast.timlradio.co.uk/a832.ogg",
 	"http://somafm.com/secretagent.pls", "http://somafm.com/secretagent24.pls",
 	"http://somafm.com/suburbsofgoa.pls", "http://somafm.com/suburbsofgoa24.pls"
 };
@@ -192,6 +192,7 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 			BASS_SetConfig(BASS_CONFIG_NET_PREBUF,0); // minimize automatic pre-buffering, so we can do it (and display it) instead
 			BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY,proxy); // setup proxy server location
 			InitializeCriticalSection(&lock);
+			MESS(20,WM_SETTEXT,0,"http://");
 			return 1;
 
 		case WM_DESTROY:
