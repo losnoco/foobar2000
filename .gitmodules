@@ -1,171 +1,171 @@
 [submodule "plugins/dumb"]
 	path = plugins/dumb
-	url = ssh://git@kode54.net:2264/kode54/dumb.git
+	url = git@gitlab.kode54.net:kode54/dumb.git
 [submodule "plugins/Game_Music_Emu"]
 	path = plugins/Game_Music_Emu
-	url = ssh://git@kode54.net:2264/kode54/Game_Music_Emu.git
+	url = git@gitlab.kode54.net:kode54/Game_Music_Emu.git
 [submodule "plugins/foobar/foobar2000/foo_input_hvl"]
 	path = plugins/foobar/foobar2000/foo_input_hvl
-	url = ssh://git@kode54.net:2264/kode54/foo_input_hvl.git
+	url = git@gitlab.kode54.net:kode54/foo_input_hvl.git
 [submodule "plugins/foobar/foobar2000/foo_dumb"]
 	path = plugins/foobar/foobar2000/foo_dumb
-	url = ssh://git@kode54.net:2264/kode54/foo_dumb.git
+	url = git@gitlab.kode54.net:kode54/foo_dumb.git
 [submodule "plugins/foobar/foobar2000/foo_gep"]
 	path = plugins/foobar/foobar2000/foo_gep
-	url = ssh://git@kode54.net:2264/kode54/foo_gep.git
+	url = git@gitlab.kode54.net:kode54/foo_gep.git
 [submodule "plugins/foobar/foobar2000/foo_input_org"]
 	path = plugins/foobar/foobar2000/foo_input_org
-	url = ssh://git@kode54.net:2264/kode54/foo_input_org.git
+	url = git@gitlab.kode54.net:kode54/foo_input_org.git
 [submodule "plugins/foobar/foobar2000/foo_osd"]
 	path = plugins/foobar/foobar2000/foo_osd
-	url = ssh://git@kode54.net:2264/kode54/foo_osd.git
+	url = git@gitlab.kode54.net:kode54/foo_osd.git
 [submodule "plugins/File_Extractor"]
 	path = plugins/File_Extractor
-	url = ssh://git@kode54.net:2264/kode54/file_extractor.git
+	url = git@gitlab.kode54.net:kode54/file_extractor.git
 [submodule "plugins/foobar/foobar2000/foo_unpack_7z"]
 	path = plugins/foobar/foobar2000/foo_unpack_7z
-	url = ssh://git@kode54.net:2264/kode54/foo_unpack_7z.git
+	url = git@gitlab.kode54.net:kode54/foo_unpack_7z.git
 [submodule "plugins/foobar/foobar2000/foo_unpack_jma"]
 	path = plugins/foobar/foobar2000/foo_unpack_jma
-	url = ssh://git@kode54.net:2264/kode54/foo_unpack_jma.git
+	url = git@gitlab.kode54.net:kode54/foo_unpack_jma.git
 [submodule "plugins/foobar/foobar2000/foo_unpack_lha"]
 	path = plugins/foobar/foobar2000/foo_unpack_lha
-	url = ssh://git@kode54.net:2264/kode54/foo_unpack_lha.git
+	url = git@gitlab.kode54.net:kode54/foo_unpack_lha.git
 [submodule "plugins/foobar/foobar2000/foo_unpack_unix"]
 	path = plugins/foobar/foobar2000/foo_unpack_unix
-	url = ssh://git@kode54.net:2264/kode54/foo_unpack_unix.git
+	url = git@gitlab.kode54.net:kode54/foo_unpack_unix.git
 [submodule "plugins/libupse"]
 	path = plugins/libupse
-	url = ssh://git@kode54.net:2264/kode54/libupse.git
+	url = git@gitlab.kode54.net:kode54/libupse.git
 [submodule "plugins/foobar/foobar2000/foo_input_upse"]
 	path = plugins/foobar/foobar2000/foo_input_upse
-	url = ssh://git@kode54.net:2264/kode54/foo_input_upse.git
+	url = git@gitlab.kode54.net:kode54/foo_input_upse.git
 [submodule "plugins/foobar/foobar2000/foo_hdcd"]
 	path = plugins/foobar/foobar2000/foo_hdcd
-	url = ssh://git@kode54.net:2264/kode54/foo_hdcd.git
+	url = git@gitlab.kode54.net:kode54/foo_hdcd.git
 [submodule "plugins/scc"]
 	path = plugins/scc
-	url = ssh://git@kode54.net:2264/kode54/scc.git
+	url = git@gitlab.kode54.net:kode54/scc.git
 [submodule "plugins/munt"]
 	path = plugins/munt
-	url = ssh://git@kode54.net:2264/kode54/munt.git
+	url = git@gitlab.kode54.net:kode54/munt.git
 [submodule "plugins/foobar/foobar2000/foo_midi"]
 	path = plugins/foobar/foobar2000/foo_midi
-	url = ssh://git@kode54.net:2264/kode54/foo_midi.git
+	url = git@gitlab.kode54.net:kode54/foo_midi.git
 [submodule "plugins/ESP/Sega"]
 	path = plugins/ESP/Sega
-	url = ssh://git@kode54.net:2264/kode54/Highly_Theoretical.git
+	url = git@gitlab.kode54.net:kode54/Highly_Theoretical.git
 [submodule "plugins/foobar/foobar2000/foo_input_ht"]
 	path = plugins/foobar/foobar2000/foo_input_ht
-	url = ssh://git@kode54.net:2264/kode54/foo_input_ht.git
+	url = git@gitlab.kode54.net:kode54/foo_input_ht.git
 [submodule "plugins/foobar/foobar2000/foo_dsp_prvb"]
 	path = plugins/foobar/foobar2000/foo_dsp_prvb
-	url = ssh://git@kode54.net:2264/kode54/foo_dsp_prvb.git
+	url = git@gitlab.kode54.net:kode54/foo_dsp_prvb.git
 [submodule "plugins/qaac"]
 	path = plugins/qaac
-	url = ssh://git@kode54.net:2264/kode54/qaac.git
+	url = git@gitlab.kode54.net:kode54/qaac.git
 [submodule "plugins/fdk-aac"]
 	path = plugins/fdk-aac
-	url = ssh://git@kode54.net:2264/kode54/fdk-aac.git
+	url = git@gitlab.kode54.net:kode54/fdk-aac.git
 [submodule "plugins/vgmstream"]
 	path = plugins/vgmstream
-	url = ssh://git@kode54.net:2264/kode54/vgmstream.git
+	url = git@gitlab.kode54.net:kode54/vgmstream.git
 [submodule "plugins/foobar/foobar2000/foo_input_tak"]
 	path = plugins/foobar/foobar2000/foo_input_tak
-	url = ssh://git@kode54.net:2264/kode54/foo_input_tak.git
+	url = git@gitlab.kode54.net:kode54/foo_input_tak.git
 [submodule "plugins/playptmod"]
 	path = plugins/playptmod
-	url = ssh://git@kode54.net:2264/kode54/playptmod.git
+	url = git@gitlab.kode54.net:kode54/playptmod.git
 [submodule "plugins/ESP/PSX"]
 	path = plugins/ESP/PSX
-	url = ssh://git@kode54.net:2264/kode54/Highly_Experimental.git
+	url = git@gitlab.kode54.net:kode54/Highly_Experimental.git
 [submodule "plugins/foobar/foobar2000/foo_psf"]
 	path = plugins/foobar/foobar2000/foo_psf
-	url = ssh://git@kode54.net:2264/kode54/foo_psf.git
+	url = git@gitlab.kode54.net:kode54/foo_psf.git
 [submodule "plugins/psflib"]
 	path = plugins/psflib
-	url = ssh://git@kode54.net:2264/kode54/psflib.git
+	url = git@gitlab.kode54.net:kode54/psflib.git
 [submodule "plugins/ESP/QSound"]
 	path = plugins/ESP/QSound
-	url = ssh://git@kode54.net:2264/kode54/Highly_Quixotic.git
+	url = git@gitlab.kode54.net:kode54/Highly_Quixotic.git
 [submodule "plugins/foobar/foobar2000/foo_input_qsf"]
 	path = plugins/foobar/foobar2000/foo_input_qsf
-	url = ssh://git@kode54.net:2264/kode54/foo_input_qsf.git
+	url = git@gitlab.kode54.net:kode54/foo_input_qsf.git
 [submodule "plugins/viogsf"]
 	path = plugins/viogsf
-	url = ssh://git@kode54.net:2264/kode54/viogsf.git
+	url = git@gitlab.kode54.net:kode54/viogsf.git
 [submodule "plugins/foobar/foobar2000/foo_input_gsf"]
 	path = plugins/foobar/foobar2000/foo_input_gsf
-	url = ssh://git@kode54.net:2264/kode54/foo_input_gsf.git
+	url = git@gitlab.kode54.net:kode54/foo_input_gsf.git
 [submodule "plugins/SSEQPlayer"]
 	path = plugins/SSEQPlayer
-	url = ssh://git@kode54.net:2264/kode54/SSEQPlayer.git
+	url = git@gitlab.kode54.net:kode54/SSEQPlayer.git
 [submodule "plugins/foobar/foobar2000/foo_input_ncsf"]
 	path = plugins/foobar/foobar2000/foo_input_ncsf
-	url = ssh://git@kode54.net:2264/kode54/foo_input_ncsf.git
+	url = git@gitlab.kode54.net:kode54/foo_input_ncsf.git
 [submodule "plugins/foobar/foobar2000/foo_input_adplug"]
 	path = plugins/foobar/foobar2000/foo_input_adplug
-	url = ssh://git@kode54.net:2264/kode54/foo_input_adplug.git
+	url = git@gitlab.kode54.net:kode54/foo_input_adplug.git
 [submodule "plugins/foobar/foobar2000/foo_sid"]
 	path = plugins/foobar/foobar2000/foo_sid
-	url = ssh://git@kode54.net:2264/kode54/foo_sid.git
+	url = git@gitlab.kode54.net:kode54/foo_sid.git
 [submodule "plugins/midi_processing"]
 	path = plugins/midi_processing
-	url = ssh://git@kode54.net:2264/kode54/midi_processing.git
+	url = git@gitlab.kode54.net:kode54/midi_processing.git
 [submodule "plugins/midisynth"]
 	path = plugins/midisynth
-	url = ssh://git@kode54.net:2264/kode54/midisynth.git
+	url = git@gitlab.kode54.net:kode54/midisynth.git
 [submodule "plugins/foobar/foobar2000/foo_input_vio2sf"]
 	path = plugins/foobar/foobar2000/foo_input_vio2sf
-	url = ssh://git@kode54.net:2264/kode54/foo_input_vio2sf.git
+	url = git@gitlab.kode54.net:kode54/foo_input_vio2sf.git
 [submodule "plugins/vio2sf"]
 	path = plugins/vio2sf
-	url = ssh://git@kode54.net:2264/kode54/vio2sf.git
+	url = git@gitlab.kode54.net:kode54/vio2sf.git
 [submodule "plugins/foobar/foobar2000/foo_snesapu"]
 	path = plugins/foobar/foobar2000/foo_snesapu
-	url = ssh://git@kode54.net:2264/kode54/foo_snesapu.git
+	url = git@gitlab.kode54.net:kode54/foo_snesapu.git
 [submodule "plugins/foobar/foobar2000/foo_input_dts"]
 	path = plugins/foobar/foobar2000/foo_input_dts
-	url = ssh://git@kode54.net:2264/kode54/foo_input_dts.git
+	url = git@gitlab.kode54.net:kode54/foo_input_dts.git
 [submodule "plugins/DFC"]
 	path = plugins/DFC
-	url = ssh://git@kode54.net:2264/kode54/DFC.git
+	url = git@gitlab.kode54.net:kode54/DFC.git
 [submodule "plugins/lazyusf"]
 	path = plugins/lazyusf
-	url = ssh://git@kode54.net:2264/kode54/lazyusf.git
+	url = git@gitlab.kode54.net:kode54/lazyusf.git
 [submodule "plugins/foobar/foobar2000/foo_input_usf"]
 	path = plugins/foobar/foobar2000/foo_input_usf
-	url = ssh://git@kode54.net:2264/kode54/foo_input_usf.git
+	url = git@gitlab.kode54.net:kode54/foo_input_usf.git
 [submodule "plugins/modplay"]
 	path = plugins/modplay
-	url = ssh://git@kode54.net:2264/kode54/modplay.git
+	url = git@gitlab.kode54.net:kode54/modplay.git
 [submodule "plugins/foobar/foobar2000/foo_dsp_multiresampler"]
 	path = plugins/foobar/foobar2000/foo_dsp_multiresampler
-	url = ssh://git@kode54.net:2264/kode54/foo_dsp_multiresampler.git
+	url = git@gitlab.kode54.net:kode54/foo_dsp_multiresampler.git
 [submodule "plugins/sidplay-residfp"]
 	path = plugins/sidplay-residfp
-	url = ssh://git@kode54.net:2264/kode54/sidplay-residfp.git
+	url = git@gitlab.kode54.net:kode54/sidplay-residfp.git
 [submodule "plugins/libg7221_decode"]
 	path = plugins/libg7221_decode
-	url = ssh://git@kode54.net:2264/kode54/libg7221_decode.git
+	url = git@gitlab.kode54.net:kode54/libg7221_decode.git
 [submodule "plugins/libg719_decode"]
 	path = plugins/libg719_decode
-	url = ssh://git@kode54.net:2264/kode54/libg719_decode.git
+	url = git@gitlab.kode54.net:kode54/libg719_decode.git
 [submodule "plugins/lazyusf2"]
 	path = plugins/lazyusf2
-	url = ssh://git@kode54.net:2264/kode54/lazyusf2.git
+	url = git@gitlab.kode54.net:kode54/lazyusf2.git
 [submodule "plugins/dcadec"]
 	path = plugins/dcadec
-	url = ssh://git@kode54.net:2264/kode54/dcadec.git
+	url = git@gitlab.kode54.net:kode54/dcadec.git
 [submodule "plugins/foobar/foobar2000/foo_cdda/akrip"]
 	path = plugins/foobar/foobar2000/foo_cdda/akrip
-	url = ssh://git@kode54.net:2264/kode54/akrip.git
+	url = git@gitlab.kode54.net:kode54/akrip.git
 [submodule "plugins/foobar/foobar2000/foo_adpcm"]
 	path = plugins/foobar/foobar2000/foo_adpcm
-	url = ssh://git@kode54.net:2264/kode54/foo_adpcm.git
+	url = git@gitlab.kode54.net:kode54/foo_adpcm.git
 [submodule "plugins/foobar/foobar2000/foo_lunar2"]
 	path = plugins/foobar/foobar2000/foo_lunar2
-	url = ssh://git@kode54.net:2264/kode54/foo_lunar2.git
+	url = git@gitlab.kode54.net:kode54/foo_lunar2.git
 [submodule "plugins/aopsf"]
 	path = plugins/aopsf
-	url = ssh://git@kode54.net:2264/kode54/aopsf.git
+	url = git@gitlab.kode54.net:kode54/aopsf.git
