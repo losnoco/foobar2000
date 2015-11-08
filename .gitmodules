@@ -169,3 +169,6 @@
 [submodule "plugins/aopsf"]
 	path = plugins/aopsf
 	url = git@gitlab.kode54.net:kode54/aopsf.git
+[submodule "plugins/foobar/foobar2000/foo_qpsf"]
+	path = plugins/foobar/foobar2000/foo_qpsf
+	url = git@gitlab.kode54.net:kode54/foo_qpsf.git
