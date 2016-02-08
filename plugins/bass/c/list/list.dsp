@@ -36,8 +36,8 @@ RSC=rc.exe
 # ADD CPP /nologo /MD /GX /I ".." /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /FD /c
 BSC32=bscmake.exe
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib /nologo /subsystem:console /pdb:none /machine:I386
-# ADD LINK32 kernel32.lib user32.lib /nologo /subsystem:console /pdb:none /machine:I386
+# ADD BASE LINK32 kernel32.lib /nologo /subsystem:console /pdb:none /machine:I386
+# ADD LINK32 kernel32.lib /nologo /subsystem:console /pdb:none /machine:I386
 # Begin Target
 
 # Name "list - Win32 Release"
@@ -47,7 +47,7 @@ SOURCE=list.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\bass.lib
+SOURCE=..\basswasapi.lib
 # End Source File
 # End Target
 # End Project

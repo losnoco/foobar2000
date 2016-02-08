@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="contest"
-	ProjectGUID="{1151BD42-BAB0-4C67-A3CA-D23457250C41}"
+	ProjectGUID="{FD058A43-7822-4954-AA29-5188E47825A9}"
 	>
 	<Platforms>
 		<Platform
@@ -30,7 +30,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bass.lib"
+				AdditionalDependencies="bass.lib bassmix.lib basswasapi.lib"
 				AdditionalLibraryDirectories=".."
 				SubSystem="1"
 			/>
@@ -49,7 +49,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bass.lib"
+				AdditionalDependencies="bass.lib bassmix.lib basswasapi.lib"
 				AdditionalLibraryDirectories="..\x64"
 				SubSystem="1"
 				TargetMachine="17"
