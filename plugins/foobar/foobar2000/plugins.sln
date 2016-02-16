@@ -186,7 +186,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsidplayfp", "..\..\sidpl
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lazyusf2", "..\..\lazyusf2\prj\msvc\lazyusf2.vcxproj", "{8B2864CE-54E0-472D-A938-D942B5E835CC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdcadec", "..\..\dcadec\libdcadec\msvc\libdcadec.vcxproj", "{797ACF95-C9CE-4409-8F5D-16E2E67F3507}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdcadec", "..\..\dcadec\msvc\libdcadec_static\libdcadec.vcxproj", "{797ACF95-C9CE-4409-8F5D-16E2E67F3507}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aopsf", "..\..\aopsf\aopsf.vcxproj", "{373A32A5-38B3-4E0D-AC69-7606CFD390F5}"
 EndProject
