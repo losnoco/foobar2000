@@ -194,6 +194,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "g719", "..\..\libg719_decod
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_qpsf", "foo_qpsf\foo_qpsf.vcxproj", "{A7C7E756-C04B-4AAB-BE56-42C38081EF63}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "syntrax-c", "..\..\syntrax-c\prj\syntrax-c\syntrax-c.vcxproj", "{F66764E0-B136-4EDB-8F6A-8D2C4E984CBC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_syntrax", "foo_input_syntrax\foo_input_syntrax.vcxproj", "{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -802,6 +806,18 @@ Global
 		{A7C7E756-C04B-4AAB-BE56-42C38081EF63}.Release|Win32.ActiveCfg = Release|Win32
 		{A7C7E756-C04B-4AAB-BE56-42C38081EF63}.Release|Win32.Build.0 = Release|Win32
 		{A7C7E756-C04B-4AAB-BE56-42C38081EF63}.Release|x64.ActiveCfg = Release|Win32
+		{F66764E0-B136-4EDB-8F6A-8D2C4E984CBC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F66764E0-B136-4EDB-8F6A-8D2C4E984CBC}.Debug|Win32.Build.0 = Debug|Win32
+		{F66764E0-B136-4EDB-8F6A-8D2C4E984CBC}.Debug|x64.ActiveCfg = Debug|Win32
+		{F66764E0-B136-4EDB-8F6A-8D2C4E984CBC}.Release|Win32.ActiveCfg = Release|Win32
+		{F66764E0-B136-4EDB-8F6A-8D2C4E984CBC}.Release|Win32.Build.0 = Release|Win32
+		{F66764E0-B136-4EDB-8F6A-8D2C4E984CBC}.Release|x64.ActiveCfg = Release|Win32
+		{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}.Debug|Win32.Build.0 = Debug|Win32
+		{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}.Debug|x64.ActiveCfg = Debug|Win32
+		{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}.Release|Win32.ActiveCfg = Release|Win32
+		{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}.Release|Win32.Build.0 = Release|Win32
+		{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
