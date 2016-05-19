@@ -22,3 +22,7 @@ Release Good
 
 # new for Visual Studio 2015
 .vs
+
+# new for Visual Studio 2015 Update 2?
+plugins.VC.VC.opendb
+plugins.VC.db
