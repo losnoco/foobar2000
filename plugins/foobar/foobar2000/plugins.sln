@@ -24,7 +24,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "emidi", "..\..\scc\emidi_al
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_adpcm", "foo_adpcm\foo_adpcm.vcxproj", "{E4CA8D7E-1AEE-431F-A5CD-D4AB2FAA7E3E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dumb", "..\..\dumb\dumb\vc6\dumb\dumb.vcxproj", "{612D360C-A51B-4B34-8F49-33F42A2957F5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dumb", "..\..\dumb\vc6\dumb\dumb.vcxproj", "{612D360C-A51B-4B34-8F49-33F42A2957F5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dumb", "foo_dumb\foo_dumb.vcxproj", "{2BD708F1-158B-4153-ABB6-FE0D6ECE1F9F}"
 EndProject
