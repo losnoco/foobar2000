@@ -30,7 +30,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dumb", "foo_dumb\foo_du
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_gep", "foo_gep\foo_gep.vcxproj", "{2C183F8B-F1A8-42E6-9EC8-43E92FCC4C96}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_psf", "foo_psf\foo_psf.vcxproj", "{58CA6EA2-756C-4987-9DAE-280556BD46B2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_aopsf", "foo_input_aopsf\foo_input_aopsf.vcxproj", "{58CA6EA2-756C-4987-9DAE-280556BD46B2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpcm", "foo_adpcm\foo_oki\source\libpcm\libpcm.vcxproj", "{25D9AEB0-7558-4832-9723-89841C6B0AD0}"
 EndProject
@@ -192,7 +192,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aopsf", "..\..\aopsf\aopsf.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "g719", "..\..\libg719_decode\g719.vcxproj", "{82F4986A-B8DA-4AD3-981A-4D26CC94A88E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_qpsf", "foo_qpsf\foo_qpsf.vcxproj", "{A7C7E756-C04B-4AAB-BE56-42C38081EF63}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_psf", "foo_psf\foo_psf.vcxproj", "{A7C7E756-C04B-4AAB-BE56-42C38081EF63}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "syntrax-c", "..\..\syntrax-c\prj\syntrax-c\syntrax-c.vcxproj", "{F66764E0-B136-4EDB-8F6A-8D2C4E984CBC}"
 EndProject
