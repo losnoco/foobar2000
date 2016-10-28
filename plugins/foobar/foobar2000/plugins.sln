@@ -1,5 +1,7 @@
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DFC", "..\..\DFC\DFC.vcxproj", "{253B2C35-5420-4773-87DA-54BD5B175B05}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "akrip_static", "foo_cdda\akrip\akrip_static.vcxproj", "{9A7D9008-0770-4116-AC82-9F73964E329E}"
@@ -197,6 +199,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "syntrax-c", "..\..\syntrax-c\prj\syntrax-c\syntrax-c.vcxproj", "{F66764E0-B136-4EDB-8F6A-8D2C4E984CBC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_syntrax", "foo_input_syntrax\foo_input_syntrax.vcxproj", "{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "g7221", "..\..\libg7221_decode\g7221.vcxproj", "{5CB91C47-225E-4D3B-A6A7-1E13A99A5290}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -818,6 +822,12 @@ Global
 		{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}.Release|Win32.ActiveCfg = Release|Win32
 		{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}.Release|Win32.Build.0 = Release|Win32
 		{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}.Release|x64.ActiveCfg = Release|Win32
+		{5CB91C47-225E-4D3B-A6A7-1E13A99A5290}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5CB91C47-225E-4D3B-A6A7-1E13A99A5290}.Debug|Win32.Build.0 = Debug|Win32
+		{5CB91C47-225E-4D3B-A6A7-1E13A99A5290}.Debug|x64.ActiveCfg = Debug|Win32
+		{5CB91C47-225E-4D3B-A6A7-1E13A99A5290}.Release|Win32.ActiveCfg = Release|Win32
+		{5CB91C47-225E-4D3B-A6A7-1E13A99A5290}.Release|Win32.Build.0 = Release|Win32
+		{5CB91C47-225E-4D3B-A6A7-1E13A99A5290}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
