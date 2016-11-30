@@ -178,3 +178,6 @@
 [submodule "plugins/foobar/foobar2000/foo_input_syntrax"]
 	path = plugins/foobar/foobar2000/foo_input_syntrax
 	url = git@gitlab.kode54.net:kode54/foo_input_syntrax.git
+[submodule "plugins/mgba/mgba"]
+	path = plugins/mgba/mgba
+	url = git@github.com:kode54/mgba.git
