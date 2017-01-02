@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_tta", "foo_input_tta.vcxproj", "{2D346426-D4CB-4CC0-8E84-479C82FEE378}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2D346426-D4CB-4CC0-8E84-479C82FEE378}.Debug|Win32.ActiveCfg = Release|Win32
+		{2D346426-D4CB-4CC0-8E84-479C82FEE378}.Debug|Win32.Build.0 = Release|Win32
+		{2D346426-D4CB-4CC0-8E84-479C82FEE378}.Release|Win32.ActiveCfg = Release|Win32
+		{2D346426-D4CB-4CC0-8E84-479C82FEE378}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

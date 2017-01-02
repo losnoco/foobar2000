@@ -1,0 +1,67 @@
+//////////////// TTA Input Plug-In v3.3 for foobar2000 v1.3.9 ///////////////
+/////////////////////////////////////////////////////////////////////////////
+
+(c) 2004-2015 Aleksander Djuric. All rights reserved.
+
+//////////////////////////// About Foobar2000 ///////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
+Foobar2000 is an audio player for Windows.
+Foobar2000 is Copyright (c) 2001-2015, Peter Pawlowski
+For more information please visit a Foobar2000 homepage
+http://www.foobar2000.org/
+
+////////////////////////////// Introduction /////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
+This Foobar2000 plug-in is a part of the TTA audio compressor which performs
+lossless compression on multichannel wav audio files. Being "lossless" means
+that no data/quality is lost in the compression - when uncompressed, the data
+will be identical to the original. This plugin supports up to 8 channels TTA
+files, with audio resolution 16 or 24 bits per sample. TTA format supports of
+ID3v1/v2 and APEv2 tags. Detailed format description is available at
+http://www.true-audio.com
+
+////////////////////////////// Configuration ////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
+1. Copy the file foo_input_tta.dll out of your Foobar2000
+   components directory (usually C:\Program Files\foobar2000\components).
+2. Start Foobar2000.
+3. Play TTA files and enjoy highest quality sound.
+
+* Requirements
+
+Nice sound card and good speakers.
+
+////////////////////////// Project Contributors /////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
+Listed in chronological order:
+
+Aleksander Djuric, Pavel Zhilin, Tamir Barak, Noam Koenigstein, Kazuki Oikawa,
+Christophe Paris, Eugene Okhotsky, Yoshihisa Uchida, LM Poh, Artem Moroz
+
+//////////////////////////////// Copying ////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the Free
+Software Foundation; either version 2.1 of the License, or (at your option)
+any later version.
+
+This library is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+
+Please see the file COPYING in this directory for full copyright information.
+
+* See also
+
+Please visit the TTA homepage at http://www.true-audio.com for the latest in
+news and downloads.
