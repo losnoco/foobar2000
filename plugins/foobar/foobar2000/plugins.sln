@@ -217,6 +217,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtta", "..\..\libtta\libt
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_tta", "foo_input_tta\foo_input_tta.vcxproj", "{2D346426-D4CB-4CC0-8E84-479C82FEE378}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psftest", "..\..\psftest\psftest.vcxproj", "{7E18F4F4-95FC-4A3B-89FE-DE06DB4424BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -870,6 +872,14 @@ Global
 		{2D346426-D4CB-4CC0-8E84-479C82FEE378}.Release|Win32.ActiveCfg = Release|Win32
 		{2D346426-D4CB-4CC0-8E84-479C82FEE378}.Release|Win32.Build.0 = Release|Win32
 		{2D346426-D4CB-4CC0-8E84-479C82FEE378}.Release|x64.ActiveCfg = Release|Win32
+		{7E18F4F4-95FC-4A3B-89FE-DE06DB4424BA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7E18F4F4-95FC-4A3B-89FE-DE06DB4424BA}.Debug|Win32.Build.0 = Debug|Win32
+		{7E18F4F4-95FC-4A3B-89FE-DE06DB4424BA}.Debug|x64.ActiveCfg = Debug|x64
+		{7E18F4F4-95FC-4A3B-89FE-DE06DB4424BA}.Debug|x64.Build.0 = Debug|x64
+		{7E18F4F4-95FC-4A3B-89FE-DE06DB4424BA}.Release|Win32.ActiveCfg = Release|Win32
+		{7E18F4F4-95FC-4A3B-89FE-DE06DB4424BA}.Release|Win32.Build.0 = Release|Win32
+		{7E18F4F4-95FC-4A3B-89FE-DE06DB4424BA}.Release|x64.ActiveCfg = Release|x64
+		{7E18F4F4-95FC-4A3B-89FE-DE06DB4424BA}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
