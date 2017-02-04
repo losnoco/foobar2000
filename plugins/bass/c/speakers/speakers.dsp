@@ -53,13 +53,5 @@ SOURCE=speakers.rc
 
 SOURCE=..\bass.lib
 # End Source File
-# Begin Source File
-
-SOURCE=..\basswasapi.lib
-# End Source File
-# Begin Source File
-
-SOURCE=..\bassmix.lib
-# End Source File
 # End Target
 # End Project

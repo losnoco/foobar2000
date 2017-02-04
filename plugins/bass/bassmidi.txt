@@ -1,5 +1,5 @@
 BASSMIDI 2.4
-Copyright (c) 2006-2014 Un4seen Developments Ltd. All rights reserved.
+Copyright (c) 2006-2016 Un4seen Developments Ltd. All rights reserved.
 
 Files that you should have found in the BASSMIDI package
 ========================================================
@@ -177,10 +177,49 @@ There are of course bug fixes and other little improvements made along
 the way too! To make upgrading simpler, all functions affected by a
 change to the BASSMIDI interface are listed.
 
+2.4.10 - 8/12/2016
+------------------
+* 16 point sinc interpolation option
+	BASS_ATTRIB_MIDI_SRC (BASS_ChannelSetAttribute option)
+* Support for lorand/hirand/locc1/hicc1/locc64/hicc64/off_mode/default_path SFZ opcodes
+	BASS_MIDI_FontInit/User
+* Support for Key On Velocity to initialFilterFc/attackVolEnv SF2 modulators
+	BASS_MIDI_FontInit/User
+* Conversion of raw MIDI data to BASS_MIDI_EVENT
+	BASS_MIDI_ConvertEvents
+* Modulation (CC#1) destination control
+	MIDI_EVENT_MOD_VIBRATO/PITCH/FILTER/VOLUME (BASS_MIDI_StreamEvent/s)
+	MIDI_EVENT_MODRANGE superseded by MIDI_EVENT_MOD_VIBRATO
+* Sostenuto
+	MIDI_EVENT_SOSTENUTO (BASS_MIDI_StreamEvent/s)
+* Partial retrieval of events
+	BASS_MIDI_StreamGetEventsEx
+* Bulk MIDI state retrieval/setting
+	BASS_ATTRIB_MIDI_STATE (BASS_ChannelGet/SetAttributeEx option)
+* Support for delaying custom events, including delta-time info in raw MIDI data
+	BASS_MIDI_EVENTS_TIME (BASS_MIDI_StreamEvents flag)
+* Cancellation of pending custom events
+	BASS_MIDI_EVENTS_CANCEL (BASS_MIDI_StreamEvents flag)
+* Marker for the start of each track in SMF2 files
+	BASS_MIDI_MARK_TRACKSTART (BASS_MIDI_StreamGetMark type)
+* Ignoring of soundfont effect levels
+	BASS_MIDI_FONT_NOFX (BASS_MIDI_FontInit/Ex flag)
+* Maximum voice limit increased to 100000
+	BASS_CONFIG_MIDI_VOICES (BASS_SetConfig option)
+	BASS_ATTRIB_MIDI_VOICES (BASS_ChannelSetAttribute option)
+* Unicode support for default soundfont option on Windows
+	BASS_CONFIG_MIDI_DEFFONT
+* BASS_CONFIG_UNICODE option support for input device names
+	BASS_MIDI_InGetDeviceInfo
+* Improved seeking with MIDI files that have events for a channel in multiple tracks
+	BASS_ChannelSetPosition
+* Fix for 2GB size limit when unpacking a soundfont on Windows
+	BASS_MIDI_FontUnpack
+
 2.4.9 - 4/12/2014
 -----------------
 * SFZ soundfont support
-	BASS_MIDI_FontInit/Ex
+	BASS_MIDI_FontInit/User
 * Support for XG drums in bank 127 of SF2 soundfonts
 	BASS_MIDI_FONT_XGDRUMS (BASS_MIDI_FontInit/Ex flag)
 * Key pressure/aftertouch support

@@ -1,6 +1,6 @@
 /*
 	BASSMIDI test player
-	Copyright (c) 2006-2013 Un4seen Developments Ltd.
+	Copyright (c) 2006-2016 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -117,6 +117,7 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 								// it ain't a MIDI
 								MESS(10,WM_SETTEXT,0,"click here to open a file...");
 								MESS(11,WM_SETTEXT,0,"");
+								MESS(24,WM_SETTEXT,0,"-");
 								Error("Can't play the file");
 								break;
 							}
@@ -155,6 +156,8 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 								BASS_MIDI_StreamGetFonts(chan,&sf,1);
 								font=sf.font;
 							}
+							// limit CPU usage to 70% (also enables async sample loading) and start playing
+							BASS_ChannelSetAttribute(chan,BASS_ATTRIB_MIDI_CPU,70);
 							BASS_ChannelPlay(chan,FALSE);
 						}
 					}
@@ -193,10 +196,18 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 		case WM_HSCROLL:
 			if (l && LOWORD(w)!=SB_THUMBPOSITION && LOWORD(w)!=SB_ENDSCROLL) { // set the position
 				int pos=SendMessage((HWND)l,TBM_GETPOS,0,0);
-				BASS_ChannelSetPosition(chan,pos*120,BASS_POS_MIDI_TICK);
-				// clear lyrics
-				lyrics[0]=0;
-				MESS(30,WM_SETTEXT,0,"");
+				switch (GetDlgCtrlID((HWND)l)) {
+					case 21:
+						BASS_ChannelSetPosition(chan,pos*120,BASS_POS_MIDI_TICK);
+						// clear lyrics
+						lyrics[0]=0;
+						MESS(30,WM_SETTEXT,0,"");
+						break;
+					case 50:
+						BASS_SetConfig(BASS_CONFIG_MIDI_VOICES,pos); // set default voice limit
+						if (chan) BASS_ChannelSetAttribute(chan,BASS_ATTRIB_MIDI_VOICES,pos); // apply to current MIDI file too
+						break;
+				}
 			}
 			break;
 
@@ -209,20 +220,31 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 			break;
 
 		case WM_TIMER:
-			if (chan) {
-				char text[10];
-				MESS(21,TBM_SETPOS,1,(DWORD)BASS_ChannelGetPosition(chan,BASS_POS_MIDI_TICK)/120); // update position
-				sprintf(text,"%.1f",60000000/(miditempo*temposcale)); // calculate bpm
-				MESS(23,WM_SETTEXT,0,text); // display it
-			}
 			{
-				static int updatefont=0;
-				if (++updatefont&1) { // only updating font info once a second
-					char text[80]="no soundfont";
-					BASS_MIDI_FONTINFO i;
-					if (BASS_MIDI_FontGetInfo(font,&i))
-						_snprintf(text,sizeof(text),"name: %s\nloaded: %d / %d",i.name,i.samload,i.samsize);
-					MESS(41,WM_SETTEXT,0,text);
+				char text[16];
+				float active=0;
+				if (chan) {
+					DWORD tick=BASS_ChannelGetPosition(chan,BASS_POS_MIDI_TICK); // get position in ticks
+					sprintf(text,"%u",tick);
+					MESS(24,WM_SETTEXT,0,text); // display position
+					MESS(21,TBM_SETPOS,1,tick/120); // update position bar
+					sprintf(text,"%.1f",60000000/(miditempo*temposcale)); // calculate bpm
+					MESS(23,WM_SETTEXT,0,text); // display it
+					BASS_ChannelGetAttribute(chan,BASS_ATTRIB_MIDI_VOICES_ACTIVE,&active); // get active voices
+				}
+				sprintf(text,"%u / %u",(int)active,BASS_GetConfig(BASS_CONFIG_MIDI_VOICES));
+				MESS(51,WM_SETTEXT,0,text); // display voices
+				sprintf(text,"CPU: %d%%",(int)BASS_GetCPU());
+				MESS(52,WM_SETTEXT,0,text); // display CPU usage
+				{
+					static int updatefont=0;
+					if (++updatefont&1) { // only updating font info once a second
+						char text[80]="no soundfont";
+						BASS_MIDI_FONTINFO i;
+						if (BASS_MIDI_FontGetInfo(font,&i))
+							_snprintf(text,sizeof(text),"name: %s\nloaded: %d / %d",i.name,i.samload,i.samsize);
+						MESS(41,WM_SETTEXT,0,text);
+					}
 				}
 			}
 			break;
@@ -249,6 +271,8 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 			MESS(22,TBM_SETRANGE,0,MAKELONG(0,20)); // set tempo slider range
 			MESS(22,TBM_SETTIC,0,10); // add tick at default pos
 			MESS(22,TBM_SETPOS,1,10); // set slider to centre (default)
+			MESS(50,TBM_SETRANGE,0,MAKELONG(20,500)); // set voices slider range
+			MESS(50,TBM_SETPOS,1,BASS_GetConfig(BASS_CONFIG_MIDI_VOICES)); // get default voice limit
 			SetTimer(h,0,500,0); // timer to update the position
 			// load optional plugins for packed soundfonts (others may be used too)
 			BASS_PluginLoad("bassflac.dll",0);

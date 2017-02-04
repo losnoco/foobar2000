@@ -1,6 +1,6 @@
 Attribute VB_Name = "BASSFLAC"
 ' BASSFLAC 2.4 Visual Basic module
-' Copyright (c) 2004-2009 Un4seen Developments Ltd.
+' Copyright (c) 2004-2017 Un4seen Developments Ltd.
 '
 ' See the BASSFLAC.CHM file for more detailed documentation
 
@@ -11,6 +11,7 @@ Global Const BASS_CHANNEL_STREAM_FLAC_OGG = &H10901
 ' Additional tag types
 Global Const BASS_TAG_FLAC_CUE = 12 ' cuesheet : TAG_FLAC_CUE structure
 Global Const BASS_TAG_FLAC_PICTURE = &H12000 ' + index #, picture : TAG_FLAC_PICTURE structure
+Global Const BASS_TAG_FLAC_METADATA = &H12400 ' + index #, application metadata : TAG_FLAC_METADATA structure
 
 Type TAG_FLAC_PICTURE
 	apic As Long        ' ID3v2 "APIC" picture type
@@ -51,6 +52,12 @@ End Type
 ' TAG_FLAC_CUE_TRACK flags
 Global Const TAG_FLAC_CUE_TRACK_DATA    1 ' data track
 Global Const TAG_FLAC_CUE_TRACK_PRE     2 ' pre-emphasis
+
+Type TAG_FLAC_METADATA
+    id As String * 4
+	length As Long      ' data length
+	data As Long
+End Type
 
 Declare Function BASS_FLAC_StreamCreateFile64 Lib "bassflac.dll" Alias "BASS_FLAC_StreamCreateFile" (ByVal mem As Long, ByVal file As Any, ByVal offset As Long, ByVal offsethigh As Long, ByVal length As Long, ByVal lengthhigh As Long, ByVal flags As Long) As Long
 Declare Function BASS_FLAC_StreamCreateURL Lib "bassflac.dll" (ByVal url As String, ByVal offset As Long, ByVal flags As Long, ByVal proc As Long, ByVal user As Long) As Long

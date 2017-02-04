@@ -1,6 +1,6 @@
 Attribute VB_Name = "BASSMIDI"
 ' BASSMIDI 2.4 Visual Basic module
-' Copyright (c) 2006-2014 Un4seen Developments Ltd.
+' Copyright (c) 2006-2016 Un4seen Developments Ltd.
 '
 ' See the BASSMIDI.CHM file for more detailed documentation
 
@@ -37,6 +37,7 @@ Global Const BASS_MIDI_SINCINTER = &H800000
 Global Const BASS_MIDI_FONT_MEM = &H10000
 Global Const BASS_MIDI_FONT_MMAP = &H20000
 Global Const BASS_MIDI_FONT_XGDRUMS = &H40000
+Global Const BASS_MIDI_FONT_NOFX = &H80000
 
 Type BASS_MIDI_FONT
     font As Long            ' soundfont
@@ -82,6 +83,7 @@ Global Const BASS_MIDI_MARK_KEYSIG = 5  ' key signature
 Global Const BASS_MIDI_MARK_COPY = 6    ' copyright notice
 Global Const BASS_MIDI_MARK_TRACK = 7   ' track name
 Global Const BASS_MIDI_MARK_INST = 8    ' instrument name
+Global Const BASS_MIDI_MARK_TRACKSTART = 9 ' track start (SMF2)
 Global Const BASS_MIDI_MARK_TICK = &H10000 ' FLAG: get position in ticks (otherwise bytes)
 
 ' MIDI events
@@ -149,6 +151,7 @@ Global Const MIDI_EVENT_CHANPRES_VIBRATO = 65
 Global Const MIDI_EVENT_CHANPRES_PITCH = 66
 Global Const MIDI_EVENT_CHANPRES_FILTER = 67
 Global Const MIDI_EVENT_CHANPRES_VOLUME = 68
+Global Const MIDI_EVENT_MOD_VIBRATO = 69
 Global Const MIDI_EVENT_MODRANGE = 69
 Global Const MIDI_EVENT_BANK_LSB = 70
 Global Const MIDI_EVENT_KEYPRES = 71
@@ -156,6 +159,10 @@ Global Const MIDI_EVENT_KEYPRES_VIBRATO = 72
 Global Const MIDI_EVENT_KEYPRES_PITCH = 73
 Global Const MIDI_EVENT_KEYPRES_FILTER = 74
 Global Const MIDI_EVENT_KEYPRES_VOLUME = 75
+Global Const MIDI_EVENT_SOSTENUTO = 76
+Global Const MIDI_EVENT_MOD_PITCH = 77
+Global Const MIDI_EVENT_MOD_FILTER = 78
+Global Const MIDI_EVENT_MOD_VOLUME = 79
 Global Const MIDI_EVENT_MIXLEVEL = &H10000
 Global Const MIDI_EVENT_TRANSPOSE = &H10001
 Global Const MIDI_EVENT_SYSTEMEX = &H10002
@@ -182,6 +189,8 @@ Global Const BASS_MIDI_EVENTS_STRUCT = 0     ' BASS_MIDI_EVENT structures
 Global Const BASS_MIDI_EVENTS_RAW = &H10000  ' raw MIDI event data
 Global Const BASS_MIDI_EVENTS_SYNC = &H1000000 ' FLAG: trigger event syncs
 Global Const BASS_MIDI_EVENTS_NORSTATUS = &H2000000 ' FLAG: no running status
+Global Const BASS_MIDI_EVENTS_CANCEL = &H4000000 ' flag: cancel pending events
+Global Const BASS_MIDI_EVENTS_TIME = &H8000000 ' flag: delta-time info is present
 
 ' BASS_MIDI_StreamGetChannel special channels
 Global Const BASS_MIDI_CHAN_CHORUS = -1
@@ -197,6 +206,8 @@ Global Const BASS_ATTRIB_MIDI_CPU = &H12001
 Global Const BASS_ATTRIB_MIDI_CHANS = &H12002
 Global Const BASS_ATTRIB_MIDI_VOICES = &H12003
 Global Const BASS_ATTRIB_MIDI_VOICES_ACTIVE = &H12004
+Global Const BASS_ATTRIB_MIDI_STATE = &H12005
+Global Const BASS_ATTRIB_MIDI_SRC = &H12006
 Global Const BASS_ATTRIB_MIDI_TRACK_VOL = &H12100 ' + track #
 
 ' Additional BASS_ChannelGetTags type
@@ -229,6 +240,7 @@ Declare Function BASS_MIDI_StreamEvent Lib "bassmidi.dll" (ByVal handle As Long,
 Declare Function BASS_MIDI_StreamEvents Lib "bassmidi.dll" (ByVal handle As Long, ByVal mode As Long, ByVal events As Long, ByVal length As Long) As Long
 Declare Function BASS_MIDI_StreamGetEvent Lib "bassmidi.dll" (ByVal handle As Long, ByVal chan As Long, ByVal event_ As Long) As Long
 Declare Function BASS_MIDI_StreamGetEvents Lib "bassmidi.dll" (ByVal handle As Long, ByVal track As Long, ByVal filter As Long, events As Any) As Long
+Declare Function BASS_MIDI_StreamGetEventsEx Lib "bassmidi.dll" (ByVal handle As Long, ByVal track As Long, ByVal filter As Long, ByVal events As Any, ByVal start As Long, ByVal count As Long) As Long
 Declare Function BASS_MIDI_StreamGetChannel Lib "bassmidi.dll" (ByVal handle As Long, ByVal chan As Long) As Long
 
 Declare Function BASS_MIDI_FontInit Lib "bassmidi.dll" (ByVal file As Any, ByVal flags As Long) As Long
@@ -244,6 +256,8 @@ Declare Function BASS_MIDI_FontPack Lib "bassmidi.dll" (ByVal handle As Long, By
 Declare Function BASS_MIDI_FontUnpack Lib "bassmidi.dll" (ByVal handle As Long, ByVal outfile As String, ByVal flags As Long) As Long
 Declare Function BASS_MIDI_FontSetVolume Lib "bassmidi.dll" (ByVal handle As Long, ByVal handle As Single) As Long
 Declare Function BASS_MIDI_FontGetVolume Lib "bassmidi.dll" (ByVal handle As Long) As Single
+
+Declare Function BASS_MIDI_ConvertEvents Lib "bassmidi.dll" (ByVal data As Long, ByVal length As Long, events As Any, ByVal count As Long, ByVal flags As Long) As Long
 
 Declare Function BASS_MIDI_InGetDeviceInfo Lib "bassmidi.dll" (ByVal device As Long, ByRef info As BASS_MIDI_DEVICEINFO) As Long
 Declare Function BASS_MIDI_InInit Lib "bassmidi.dll" (ByVal device As Long, ByVal proc As Long, ByVal user As Long) As Long

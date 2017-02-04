@@ -8,11 +8,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "contest", "contest\contest.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "custloop", "custloop\custloop.vcproj", "{BC8FF451-F01D-404B-B39A-D7C59A567D95}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "devlist", "devlist\devlist.vcproj", "{1151BD42-BAB0-4C67-A3CA-D23457250C42}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dsptest", "dsptest\dsptest.vcproj", "{89104783-85C4-4E31-9EDC-FAF7D6792BF0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fxtest", "fxtest\fxtest.vcproj", "{46119084-C4AA-4240-A2D6-A6AFC1A82106}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "list", "list\list.vcproj", "{1151BD42-BAB0-4C67-A3CA-D23457250C42}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "livefx", "livefx\livefx.vcproj", "{0C580261-3DF5-4160-BE1A-17BCC66BEE8C}"
 EndProject
@@ -58,6 +58,10 @@ Global
 		{BC8FF451-F01D-404B-B39A-D7C59A567D95}.Release|Win32.Build.0 = Release|Win32
 		{BC8FF451-F01D-404B-B39A-D7C59A567D95}.Release|x64.ActiveCfg = Release|x64
 		{BC8FF451-F01D-404B-B39A-D7C59A567D95}.Release|x64.Build.0 = Release|x64
+		{1151BD42-BAB0-4C67-A3CA-D23457250C42}.Release|Win32.ActiveCfg = Release|Win32
+		{1151BD42-BAB0-4C67-A3CA-D23457250C42}.Release|Win32.Build.0 = Release|Win32
+		{1151BD42-BAB0-4C67-A3CA-D23457250C42}.Release|x64.ActiveCfg = Release|x64
+		{1151BD42-BAB0-4C67-A3CA-D23457250C42}.Release|x64.Build.0 = Release|x64
 		{89104783-85C4-4E31-9EDC-FAF7D6792BF0}.Release|Win32.ActiveCfg = Release|Win32
 		{89104783-85C4-4E31-9EDC-FAF7D6792BF0}.Release|Win32.Build.0 = Release|Win32
 		{89104783-85C4-4E31-9EDC-FAF7D6792BF0}.Release|x64.ActiveCfg = Release|x64
@@ -66,10 +70,6 @@ Global
 		{46119084-C4AA-4240-A2D6-A6AFC1A82106}.Release|Win32.Build.0 = Release|Win32
 		{46119084-C4AA-4240-A2D6-A6AFC1A82106}.Release|x64.ActiveCfg = Release|x64
 		{46119084-C4AA-4240-A2D6-A6AFC1A82106}.Release|x64.Build.0 = Release|x64
-		{1151BD42-BAB0-4C67-A3CA-D23457250C42}.Release|Win32.ActiveCfg = Release|Win32
-		{1151BD42-BAB0-4C67-A3CA-D23457250C42}.Release|Win32.Build.0 = Release|Win32
-		{1151BD42-BAB0-4C67-A3CA-D23457250C42}.Release|x64.ActiveCfg = Release|x64
-		{1151BD42-BAB0-4C67-A3CA-D23457250C42}.Release|x64.Build.0 = Release|x64
 		{0C580261-3DF5-4160-BE1A-17BCC66BEE8C}.Release|Win32.ActiveCfg = Release|Win32
 		{0C580261-3DF5-4160-BE1A-17BCC66BEE8C}.Release|Win32.Build.0 = Release|Win32
 		{0C580261-3DF5-4160-BE1A-17BCC66BEE8C}.Release|x64.ActiveCfg = Release|x64

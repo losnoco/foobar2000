@@ -5,7 +5,7 @@
   See the BASSOPUS.CHM file for more detailed documentation
 }
 
-unit BassOPUS;
+unit BASSOPUS;
 
 interface
 
@@ -35,7 +35,7 @@ const
 {$ENDIF}
 
 function BASS_OPUS_StreamCreateFile(mem:BOOL; fl:pointer; offset,length:QWORD; flags:DWORD): HSTREAM; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassopusdll;
-function BASS_OPUS_StreamCreateURL(url: PAnsiChar; offset: DWORD; flags: DWORD; proc: DOWNLOADPROC; user: Pointer): HSTREAM; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassopusdll;
+function BASS_OPUS_StreamCreateURL(url:PAnsiChar; offset,flags:DWORD; proc:DOWNLOADPROC; user:Pointer): HSTREAM; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassopusdll;
 function BASS_OPUS_StreamCreateFileUser(system,flags:DWORD; var procs:BASS_FILEPROCS; user:Pointer): HSTREAM; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassopusdll;
 
 implementation

@@ -1,5 +1,5 @@
 BASSWV 2.4
-Copyright (c) 2007-2014 Un4seen Developments Ltd. All rights reserved.
+Copyright (c) 2007-2017 Un4seen Developments Ltd. All rights reserved.
 
 Files that you should have found in the BASSWV package
 ======================================================
@@ -26,7 +26,6 @@ BASSWV.TXT      This file
 LIBBASSWV.DYLIB BASSWV module
 BASSWV.CHM      BASSWV documentation
 BASSWV.H        BASSWV C/C++ header file
-MAKEFILE
 
 Linux version
 -------------
@@ -46,7 +45,8 @@ WavPack encoded files.
 
 Requirements
 ============
-BASS 2.4 is required.
+BASS 2.4 is required. The BASSDSD add-on can also be used to add support for
+WavPack DSD files.
 
 
 Using BASSWV
@@ -94,6 +94,11 @@ There are ofcourse bug fixes and other little improvements made along
 the way too! To make upgrading simpler, all functions affected by a
 change to the BASSWV interface are listed.
 
+2.4.6 - 13/1/2017
+-----------------
+* Updated for WavPack 5.0.0
+* Support for WavPack DSD files together with the BASSDSD add-on
+
 2.4.5 - 22/7/2014
 -----------------
 * Updated for WavPack 4.70.0
@@ -129,9 +134,6 @@ Credits
 =======
 WavPack decoding is based on the WavPack library,
 Copyright (c) 1998-2007 Conifer Software
-
-Thanks also to Sebastian Andersson, who created the original WavPack
-add-on for BASS.
 
 
 Bug reports, Suggestions, Comments, Enquiries, etc...

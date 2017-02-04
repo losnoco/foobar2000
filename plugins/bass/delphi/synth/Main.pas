@@ -337,6 +337,7 @@ begin
   //Recreate stream with different buffer
   BASS_SetConfig(BASS_CONFIG_BUFFER, buflen);
   BufLen     := BASS_GetConfig(BASS_CONFIG_BUFFER);
+  BASS_StreamFree(MidiStream);
   MidiStream := BASS_MIDI_StreamCreate(1, 0, 1);
 
   //Set preset/drums/effects on the new stream

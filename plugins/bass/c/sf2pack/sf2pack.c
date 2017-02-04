@@ -1,6 +1,6 @@
 /*
 	BASSMIDI simple soundfont packer
-	Copyright (c) 2006-2008 Un4seen Developments Ltd.
+	Copyright (c) 2006-2015 Un4seen Developments Ltd.
 */
 
 #include <stdlib.h>
@@ -24,7 +24,7 @@ void main(int argc, char **argv)
 {
 	HSOUNDFONT sf2;
 	char outfile[300],*ext;
-	int arg,encoder=0,unpack=0;
+	int arg,encoder=0,b16=0,unpack=0;
 
 	printf("SF2Pack - Soundfont Packer\n"
 			"--------------------------\n");
@@ -40,6 +40,9 @@ void main(int argc, char **argv)
 					return;
 				}
 				break;
+			case 'r':
+				b16=1;
+				break;
 			case 'u':
 				unpack=1;
 				break;
@@ -50,6 +53,7 @@ void main(int argc, char **argv)
 			"\t-e<0-4>\tencoder: 0=FLAC lossless (default), 1=WavPack lossless\n"
 			"\t\t2=WavPack Lossy (high quality), 3=WavPack Lossy (average)\n"
 			"\t\t4=WavPack Lossy (low)\n"
+			"\t-r\treduce 24-bit data to 16-bit\n"
 			"\t-u\tunpack file\n");
 		return;
 	}
@@ -73,12 +77,12 @@ void main(int argc, char **argv)
 		BASS_PluginLoad("bassflac.dll",0);
 		BASS_PluginLoad("basswv.dll",0);
 		// not playing anything, so don't need an update thread
-		BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD,0);
+		BASS_SetConfig(BASS_CONFIG_UPDATETHREADS,0);
 		// initialize BASS for decoding ("no sound" device)
 		BASS_Init(0,44100,0,0,NULL);
 		if (!BASS_MIDI_FontUnpack(sf2,outfile,0)) {
-			BASS_Free();
 			printf("Unpacking failed (error: %d)\n",BASS_ErrorGetCode());
+			BASS_Free();
 			return;
 		}
 		BASS_Free();
@@ -92,7 +96,7 @@ void main(int argc, char **argv)
 			if (ext && !strpbrk(ext,"\\/")) strcat(ext,"pack");
 			else strcat(outfile,".sf2pack");
 		}
-		if (!BASS_MIDI_FontPack(sf2,outfile,commands[encoder],0)) {
+		if (!BASS_MIDI_FontPack(sf2,outfile,commands[encoder],b16?BASS_MIDI_PACK_16BIT:0)) {
 			printf("Packing failed (error: %d)\n",BASS_ErrorGetCode());
 			return;
 		}
@@ -102,6 +106,6 @@ void main(int argc, char **argv)
 		struct stat si,so;
 		stat(argv[arg],&si);
 		stat(outfile,&so);
-		printf("done: %d -> %d (%.1f%%)\n",(int)si.st_size,(int)so.st_size,100.f*so.st_size/si.st_size);
+		printf("done: %u -> %u (%.1f%%)\n",(DWORD)si.st_size,(DWORD)so.st_size,100.f*(DWORD)so.st_size/(DWORD)si.st_size);
 	}
 }

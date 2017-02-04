@@ -1,6 +1,6 @@
 {
   BASSFLAC 2.4 Delphi unit
-  Copyright (c) 2004-2014 Un4seen Developments Ltd.
+  Copyright (c) 2004-2017 Un4seen Developments Ltd.
 
   See the BASSFLAC.CHM file for more detailed documentation
 }
@@ -23,6 +23,7 @@ const
   // Additional tag type
   BASS_TAG_FLAC_CUE             = 12; // cuesheet : TAG_FLAC_CUE structure
   BASS_TAG_FLAC_PICTURE         = $12000; // + index #, picture : TAG_FLAC_PICTURE structure
+  BASS_TAG_FLAC_METADATA        = $12400; // + index #, application metadata : TAG_FLAC_METADATA structure
 
 type
   TAG_FLAC_PICTURE = record
@@ -34,6 +35,12 @@ type
     depth: DWORD;
     colors: DWORD;
     length: DWORD;		// data length
+    data: Pointer;
+  end;
+
+  TAG_FLAC_METADATA = record
+    id: Array[0..3] of AnsiChar;
+	length: DWORD;		// data length
     data: Pointer;
   end;
 

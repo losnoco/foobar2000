@@ -1,6 +1,6 @@
 {
   BASSMIDI 2.4 Delphi unit
-  Copyright (c) 2006-2014 Un4seen Developments Ltd.
+  Copyright (c) 2006-2016 Un4seen Developments Ltd.
 
   See the BASSMIDI.CHM file for more detailed documentation
 }
@@ -48,6 +48,7 @@ const
   BASS_MIDI_FONT_MEM         = $10000;
   BASS_MIDI_FONT_MMAP        = $20000;
   BASS_MIDI_FONT_XGDRUMS     = $40000;
+  BASS_MIDI_FONT_NOFX        = $80000;
 
   // BASS_MIDI_StreamSet/GetFonts flag
   BASS_MIDI_FONT_EX          = $1000000; // BASS_MIDI_FONTEX
@@ -62,7 +63,8 @@ const
   BASS_MIDI_MARK_COPY        = 6; // copyright notice
   BASS_MIDI_MARK_TRACK       = 7; // track name
   BASS_MIDI_MARK_INST        = 8; // instrument name
-  BASS_MIDI_MARK_TICK        = $10000; // FLAG: get position in ticks (otherwise bytes)
+  BASS_MIDI_MARK_TRACKSTART  = 9; // track start (SMF2)
+  BASS_MIDI_MARK_TICK        = $10000; // flag: get position in ticks (otherwise bytes)
 
   // MIDI events
   MIDI_EVENT_NOTE            = 1;
@@ -129,6 +131,7 @@ const
   MIDI_EVENT_CHANPRES_PITCH  = 66;
   MIDI_EVENT_CHANPRES_FILTER = 67;
   MIDI_EVENT_CHANPRES_VOLUME = 68;
+  MIDI_EVENT_MOD_VIBRATO     = 69;
   MIDI_EVENT_MODRANGE        = 69;
   MIDI_EVENT_BANK_LSB        = 70;
   MIDI_EVENT_KEYPRES         = 71;
@@ -136,6 +139,10 @@ const
   MIDI_EVENT_KEYPRES_PITCH   = 73;
   MIDI_EVENT_KEYPRES_FILTER  = 74;
   MIDI_EVENT_KEYPRES_VOLUME  = 75;
+  MIDI_EVENT_SOSTENUTO       = 76;
+  MIDI_EVENT_MOD_PITCH       = 77;
+  MIDI_EVENT_MOD_FILTER      = 78;
+  MIDI_EVENT_MOD_VOLUME      = 79;
   MIDI_EVENT_MIXLEVEL        = $10000;
   MIDI_EVENT_TRANSPOSE       = $10001;
   MIDI_EVENT_SYSTEMEX        = $10002;
@@ -152,8 +159,10 @@ const
   // BASS_MIDI_StreamEvents modes
   BASS_MIDI_EVENTS_STRUCT    = 0; // BASS_MIDI_EVENT structures
   BASS_MIDI_EVENTS_RAW       = $10000; // raw MIDI event data
-  BASS_MIDI_EVENTS_SYNC      = $1000000; // FLAG: trigger event syncs
-  BASS_MIDI_EVENTS_NORSTATUS = $2000000; // FLAG: no running status
+  BASS_MIDI_EVENTS_SYNC      = $1000000; // flag: trigger event syncs
+  BASS_MIDI_EVENTS_NORSTATUS = $2000000; // flag: no running status
+  BASS_MIDI_EVENTS_CANCEL    = $4000000; // flag: cancel pending events
+  BASS_MIDI_EVENTS_TIME      = $8000000; // flag: delta-time info is present
 
   // BASS_MIDI_StreamGetChannel special channels
   BASS_MIDI_CHAN_CHORUS      = LongWord(-1);
@@ -169,6 +178,8 @@ const
   BASS_ATTRIB_MIDI_CHANS     = $12002;
   BASS_ATTRIB_MIDI_VOICES    = $12003;
   BASS_ATTRIB_MIDI_VOICES_ACTIVE = $12004;
+  BASS_ATTRIB_MIDI_STATE     = $12005;
+  BASS_ATTRIB_MIDI_SRC       = $12006;
   BASS_ATTRIB_MIDI_TRACK_VOL = $12100; // + track #
 
   // Additional tag type
@@ -273,6 +284,7 @@ function BASS_MIDI_StreamEvent(handle:HSTREAM; chan,event,param:DWORD): BOOL; {$
 function BASS_MIDI_StreamEvents(handle:HSTREAM; mode:DWORD; events:Pointer; length:DWORD): DWORD; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 function BASS_MIDI_StreamGetEvent(handle:HSTREAM; chan,event:DWORD): DWORD; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 function BASS_MIDI_StreamGetEvents(handle:HSTREAM; track:LongInt; filter:DWORD; events:PBASS_MIDI_EVENT): DWORD; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
+function BASS_MIDI_StreamGetEventsEx(handle:HSTREAM; track:LongInt; filter:DWORD; events:PBASS_MIDI_EVENT; start,count:DWORD): DWORD; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 function BASS_MIDI_StreamGetChannel(handle:HSTREAM; chan:DWORD): HSTREAM; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 
 function BASS_MIDI_FontInit(fname:PChar; flags:DWORD): HSOUNDFONT; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
@@ -288,6 +300,8 @@ function BASS_MIDI_FontPack(handle:HSOUNDFONT; outfile,encoder:PChar; flags:DWOR
 function BASS_MIDI_FontUnpack(handle:HSOUNDFONT; outfile:PChar; flags:DWORD): BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 function BASS_MIDI_FontSetVolume(handle:HSOUNDFONT; volume:Single): BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 function BASS_MIDI_FontGetVolume(handle:HSOUNDFONT): Single; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
+
+function BASS_MIDI_ConvertEvents(data:Pointer; length:DWORD; events:PBASS_MIDI_EVENT; count:DWORD; flags:DWORD): DWORD; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 
 function BASS_MIDI_InGetDeviceInfo(device:DWORD; var info: BASS_MIDI_DEVICEINFO): BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 function BASS_MIDI_InInit(device:DWORD; proc:MIDIINPROC; user:Pointer): BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
