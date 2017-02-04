@@ -27,7 +27,7 @@
 
 #define RESAMPLER_MAJOR_VERSION  0 /* Major version number */
 #define RESAMPLER_MINOR_VERSION  1 /* Minor version number */
-#define RESAMPLER_PATCH_VERSION  0/* Patch level */
+#define RESAMPLER_PATCH_VERSION  1 /* Patch level */
 #define RESAMPLER_BUILD_VERSION  0 /* Build number */
 
 #define RESAMPLER_VERSION (RESAMPLER_MAJOR_VERSION*0x10000 + RESAMPLER_MINOR_VERSION*0x100 + RESAMPLER_PATCH_VERSION)

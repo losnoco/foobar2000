@@ -1,7 +1,11 @@
-#define MYVERSION "1.1"
+#define MYVERSION "1.2"
 
 /*
 	changelog
+
+2017-02-04 03:54 UTC - kode54
+- Add link to about string
+- Version is now 1.2
 
 2012-02-19 19:52 UTC - kode54
 - Added abort check to decoder
@@ -308,6 +312,6 @@ static preferences_page_factory_t <preferences_page_myimpl> g_config_dsdiff_fact
 
 DECLARE_FILE_TYPE("KDM Files", "*.kdm");
 
-DECLARE_COMPONENT_VERSION("KDM Decoder", MYVERSION, "Decodes Ken Silverman's KDM music files.");
+DECLARE_COMPONENT_VERSION("KDM Decoder", MYVERSION, "Decodes Ken Silverman's KDM music files.\n\nhttps://www.patreon.com/kode54");
 
 VALIDATE_COMPONENT_FILENAME("foo_input_kdm.dll");

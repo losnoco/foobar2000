@@ -1,9 +1,13 @@
 #include "stdafx.h"
 
-#define MY_VERSION "1.11"
+#define MY_VERSION "1.12"
 
 /*
 	change log
+
+2017-02-04 05:00 UTC - kode54
+- Add link to about string
+- Version is now 1.12
 
 2011-12-19 03:09 UTC - kode54
 - Changed a number of constants to local variables in preparation for adding a
@@ -306,7 +310,10 @@ static dsp_factory_nopreset_t<dsp_r128> g_dsp_r128_factory;
 DECLARE_COMPONENT_VERSION("EBU R128 Normalizer", MY_VERSION,
 	"EBU R128 Normalizer.\n"
 	"\n"
-	"Copyright (C) 2011 Chris Moeller\n"
+	"Copyright (C) 2011-2017 Christopher Snowhill\n"
+	"\n"
+	"https://www.patreon.com/kode54""\n"
+	"\n"
 	"\n"
 	"Portions copyright (c) 2011 Jan Kokemüller\n"
 	"\n"

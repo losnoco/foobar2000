@@ -1,7 +1,11 @@
-#define MY_VERSION "0.9.7"
+#define MY_VERSION "0.9.8"
 
 /*
 	changelog
+
+2017-02-04 01:41 UTC - kode54
+- Add link to about string
+- Version is now 0.9.8
 
 2012-08-30 00:56 UTC - kode54
 - Added channel info reporting
@@ -812,6 +816,6 @@ static input_singletrack_factory_t< input_ac3 >              g_input_factory_ac3
 static packet_decoder_factory_t< packet_decoder_ac3 >        g_packet_decoder_factory_ac3;
 static preferences_page_factory_t< preferences_page_myimpl > g_preferences_page_factory_ac3;
 
-DECLARE_COMPONENT_VERSION("AC3 decoder", MY_VERSION, "Based on liba52 v0.7.4");
+DECLARE_COMPONENT_VERSION("AC3 decoder", MY_VERSION, "Based on liba52 v0.7.4\n\nhttps://www.patreon.com/kode54");
 
 VALIDATE_COMPONENT_FILENAME("foo_ac3.dll");

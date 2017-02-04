@@ -2,10 +2,28 @@
      © 2004 Kreisquadratur
      icq#56165405
 
-    2009-07-22 00:55 UTC - kode54
+	 © 2004-2017 Christopher Snowhill
+
+	2017-02-04 04:45 UTC - kode54
+	- Add link to about string
+	- Version is now 0.6
+
+	2010-01-11 20:17 UTC - kode54
+	- Added filename validator
+	- Version is now 0.5
+	
+	2009-07-22 00:55 UTC - kode54
 	- Removed Win9x detection since it's been a long time since foobar2000 supported Win9x
 	- Changed capitalization of menu command name
 	- Updated component version description notice and copyright
+
+	2004-02-24 21:44 UTC - kode54
+	- Disable function is now a little saner
+	- Version is now 0.4
+
+	2004-02-09 18:15 UTC - kode54
+	- Fixed multi-user session monitoring ... see large comment block below :)
+	- Version is now 0.3
 
 	2004-02-09 15:59 UTC - kode54
 	- Added new WTSAPI32-based window class for session monitoring in Windows XP and 2003 Server
@@ -13,18 +31,6 @@
 	- Safeguarded enable/disable functions with win_ver, set by initial call to GetVersion()
 	- Changed cfg_waslocked/cfg_resume to static BOOL ... not sure these should persist across sessions
 	- Version is now 0.2
-
-	2004-02-09 18:15 UTC - kode54
-	- Fixed multi-user session monitoring ... see large comment block below :)
-	- Version is now 0.3
-
-	2004-02-24 21:44 UTC - kode54
-	- Disable function is now a little saner
-	- Version is now 0.4
-
-	2010-01-11 20:17 UTC - kode54
-	- Added filename validator
-	- Version is now 0.5
 */
 
 #define _WIN32_WINNT 0x501
@@ -42,11 +48,12 @@
 
 DECLARE_COMPONENT_VERSION(
 	"Pause on Lock",
-	"0.5",
+	"0.6",
 	"Pause/Resume when Workstation is Locked/Unlocked\n\n"
 	"for foobar2000 v0.9\n\n"
 	"(c) Kreisquadratur 2004\n"
-	"(c) Chris Moeller 2010");
+	"(c) Christopher Snowhill 2004-2017\n\n"
+	"https://www.patreon.com/kode54");
 
 VALIDATE_COMPONENT_FILENAME("foo_lock.dll");
 

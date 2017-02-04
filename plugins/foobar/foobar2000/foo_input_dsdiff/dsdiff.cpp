@@ -1,7 +1,11 @@
-#define MYVERSION "1.4"
+#define MYVERSION "1.5"
 
 /*
 	changelog
+
+2017-02-04 02:31 UTC - kode54
+- Add link to about string
+- Version is now 1.5
 
 2011-05-19 03:00 UTC - kode54
 - Fixed MLFT/MRGT channel ordering
@@ -1293,6 +1297,6 @@ static preferences_page_factory_t <preferences_page_myimpl> g_config_dsdiff_fact
 
 DECLARE_FILE_TYPE("DSDIFF Files", "*.dff");
 
-DECLARE_COMPONENT_VERSION("DSDIFF Decoder", MYVERSION, "Decodes DSDIFF streams.");
+DECLARE_COMPONENT_VERSION("DSDIFF Decoder", MYVERSION, "Decodes DSDIFF streams.\n\nhttps://www.patreon.com/kode54");
 
 VALIDATE_COMPONENT_FILENAME("foo_input_dsdiff.dll");

@@ -86,7 +86,8 @@ DECLARE_COMPONENT_VERSION(
 	"Windows XP Resampler",
 	RESAMPLER_VERSION_STR,
 	"Uses Windows XP \"best\" resampling algorithm, helpfully ripped off by the Wine team.\n\n"
-	"DSP plug-in for foobar2000;  written by Chris Moeller, loosely based on code by lvqcl."
+	"DSP plug-in for foobar2000;  written by Chris Moeller, loosely based on code by lvqcl.\n\n"
+	"https://www.patreon.com/kode54"
 );
 
 static service_factory_t<dsp_rate_entry>	foo_dsp_rate;
