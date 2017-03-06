@@ -1,7 +1,11 @@
-#define MY_VERSION "0.4"
+#define MY_VERSION "0.5"
 
 /*
 	changelog
+
+2017-03-06 05:26 UTC - kode54
+- Added direct support for floating point samples, rather than forcing conversion to 24 bit integer
+- Version is now 0.5
 
 2012-02-19 19:49 UTC - kode54
 - Added abort check to decoder
@@ -27,18 +31,6 @@
 
 const char tag_script[] = "AviSynth script";
 
-/*
-enum {
-	raw_bits_per_sample = 16,
-	raw_channels = 2,
-	raw_sample_rate = 44100,
-
-	raw_bytes_per_sample = raw_bits_per_sample / 8,
-	raw_total_sample_width = raw_bytes_per_sample * raw_channels,
-};
-*/
-
-// No inheritance. Our methods get called over input framework templates. See input_singletrack_impl for descriptions of what each method does.
 class input_avs
 {
 	service_ptr_t<file> m_file;
@@ -46,6 +38,7 @@ class input_avs
 	t_input_open_reason m_reason;
 	pfc::string8 m_path, m_local_path, m_script;
 	pfc::array_t<t_uint8> m_buffer;
+	bool m_float;
 
 	PClip m_clip;
 	AVSValue* m_res;
@@ -97,18 +90,13 @@ class input_avs
 			m_inf = m_clip->GetVideoInfo();
 			if( !m_inf.HasAudio() )
 				throw exception_io_unsupported_format( "AviSynth script does not return any audio" );
-
-			if( m_inf.sample_type == SAMPLE_FLOAT )
-			{
-				res = m_env->Invoke( "ConvertAudioTo24Bit", AVSValue( &res, 1 ) );
-				m_clip = res.AsClip();
-				m_inf = m_clip->GetVideoInfo();
-			}
 		}
 		catch( AvisynthError err )
 		{
 			throw exception_io_data( err.msg );
 		}
+
+		m_float = m_inf.sample_type == SAMPLE_FLOAT;
 
 		m_pos = 0;
 
@@ -204,7 +192,10 @@ public:
 			throw exception_io_data( err.msg );
 		}
 
-		p_chunk.set_data_fixedpoint( m_buffer.get_ptr(), bytes, m_inf.audio_samples_per_second, m_inf.nchannels, m_inf.BytesPerChannelSample() * 8, audio_chunk::g_guess_channel_config( m_inf.nchannels ) );
+		if (m_float)
+			p_chunk.set_data_floatingpoint_ex(m_buffer.get_ptr(), bytes, m_inf.audio_samples_per_second, m_inf.nchannels, m_inf.BytesPerChannelSample() * 8, 0, audio_chunk::g_guess_channel_config(m_inf.nchannels));
+		else
+			p_chunk.set_data_fixedpoint( m_buffer.get_ptr(), bytes, m_inf.audio_samples_per_second, m_inf.nchannels, m_inf.BytesPerChannelSample() * 8, audio_chunk::g_guess_channel_config( m_inf.nchannels ) );
 
 		return true;
 	}
@@ -238,7 +229,10 @@ public:
 
 static input_singletrack_factory_t<input_avs> g_input_avs_factory;
 
+#include "../patrons.h"
 
-DECLARE_COMPONENT_VERSION("AVS input",MY_VERSION,"written by Dmitry Alexandrov aka dimzon\ndimzon541@gmail.com");
+DECLARE_COMPONENT_VERSION("AVS input",MY_VERSION,"originally written by Dmitry Alexandrov aka dimzon\ndimzon541@gmail.com\n\nForked and currently maintained by Christopher Snowhill\nhttps://gitlab.kode54.net/kode54/foo_input_avs\n\n"
+"https://patreon.com/kode54\n\n"
+MY_PATRONS);
 DECLARE_FILE_TYPE("AviSynth files","*.AVS");
 VALIDATE_COMPONENT_FILENAME("foo_input_avs.dll");
