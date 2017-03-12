@@ -1,16 +1,18 @@
 /*
-	BASS multi-speaker example
-	Copyright (c) 2003-2014 Un4seen Developments Ltd.
+	WASAPI + BASSmix multi-speaker example
+	Copyright (c) 2009-2012 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
 #include <stdio.h>
+#include "basswasapi.h"
 #include "bass.h"
+#include "bassmix.h"
 
 HWND win=NULL;
 
+HSTREAM mixer,chan[4]; // mixer and source channels
 DWORD flags[4]={BASS_SPEAKER_FRONT,BASS_SPEAKER_REAR,BASS_SPEAKER_CENLFE,BASS_SPEAKER_REAR2};
-HSTREAM chan[4];
 
 // display error messages
 void Error(const char *es)
@@ -21,15 +23,16 @@ void Error(const char *es)
 }
 
 #define MESS(id,m,w,l) SendDlgItemMessage(win,id,m,(WPARAM)(w),(LPARAM)(l))
-#define ITEM(id) GetDlgItem(win,id)
 
-void UpdateSpeakerFlags(DWORD speaker)
+// WASAPI function
+DWORD CALLBACK WasapiProc(void *buffer, DWORD length, void *user)
 {
-	int mono=MESS(30+speaker*2,BM_GETCHECK,0,0)|(MESS(30+speaker*2+1,BM_GETCHECK,0,0)<<1); // get mono switch states
-	BASS_ChannelFlags(chan[speaker],flags[speaker]|(mono==1?BASS_SPEAKER_LEFT:mono==2?BASS_SPEAKER_RIGHT:0),BASS_SPEAKER_FRONT); // update speaker flags
+	DWORD c=BASS_ChannelGetData(mixer,buffer,length);
+	if (c==-1) c=0; // an error, no data
+	return c;
 }
 
-BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
+INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 {
 	static OPENFILENAME ofn;
 
@@ -49,21 +52,13 @@ BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 						ofn.lpstrFile=file;
 						if (GetOpenFileName(&ofn)) {
 							BASS_StreamFree(chan[speaker]); // free old stream before opening new
-							if (!(chan[speaker]=BASS_StreamCreateFile(FALSE,file,0,0,flags[speaker]|BASS_SAMPLE_LOOP))) {
+							if (!(chan[speaker]=BASS_StreamCreateFile(FALSE,file,0,0,BASS_SAMPLE_LOOP|BASS_SAMPLE_FLOAT|BASS_STREAM_DECODE))) {
 								MESS(10+speaker,WM_SETTEXT,0,"click here to open a file...");
 								Error("Can't play the file");
 								return 1;
 							}
 							MESS(10+speaker,WM_SETTEXT,0,file);
-							{ // reset mono speaker switches
-								BASS_CHANNELINFO ci;
-								BASS_ChannelGetInfo(chan[speaker],&ci);
-								MESS(30+speaker*2,BM_SETCHECK,0,0);
-								MESS(30+speaker*2+1,BM_SETCHECK,0,0);
-								EnableWindow(ITEM(30+speaker*2),ci.chans==1);
-								EnableWindow(ITEM(30+speaker*2+1),ci.chans==1);
-							}
-							BASS_ChannelPlay(chan[speaker],FALSE);
+							BASS_Mixer_StreamAddChannel(mixer,chan[speaker],flags[speaker]); // add it to the mixer
 						}
 					}
 					return 1;
@@ -84,36 +79,9 @@ BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 							MESS(10+speaker,WM_SETTEXT,0,temp2);
 							MESS(10+speaker+1,WM_SETTEXT,0,temp1);
 						}
-						{ // swap mono switch states
-							int temp=MESS(30+speaker*2,BM_GETCHECK,0,0);
-							MESS(30+speaker*2,BM_SETCHECK,MESS(32+speaker*2,BM_GETCHECK,0,0),0);
-							MESS(32+speaker*2,BM_SETCHECK,temp,0);
-							temp=MESS(31+speaker*2,BM_GETCHECK,0,0);
-							MESS(31+speaker*2,BM_SETCHECK,MESS(33+speaker*2,BM_GETCHECK,0,0),0);
-							MESS(33+speaker*2,BM_SETCHECK,temp,0);
-							temp=IsWindowEnabled(ITEM(30+speaker*2));
-							EnableWindow(ITEM(30+speaker*2),IsWindowEnabled(ITEM(32+speaker*2)));
-							EnableWindow(ITEM(32+speaker*2),temp);
-							temp=IsWindowEnabled(ITEM(31+speaker*2));
-							EnableWindow(ITEM(31+speaker*2),IsWindowEnabled(ITEM(33+speaker*2)));
-							EnableWindow(ITEM(33+speaker*2),temp);
-						}
 						// update speaker flags
-						UpdateSpeakerFlags(speaker);
-						UpdateSpeakerFlags(speaker+1);
-					}
-					return 1;
-				case 30: // left #1
-				case 31: // right #1
-				case 32: // left #2
-				case 33: // right #2
-				case 34: // left #3
-				case 35: // right #3
-				case 36: // right #4
-				case 37: // right #4
-					{
-						int speaker=(LOWORD(w)-30)/2;
-						UpdateSpeakerFlags(speaker);
+						BASS_Mixer_ChannelFlags(chan[speaker],flags[speaker],BASS_SPEAKER_FRONT);
+						BASS_Mixer_ChannelFlags(chan[speaker+1],flags[speaker+1],BASS_SPEAKER_FRONT);
 					}
 					return 1;
 			}
@@ -127,43 +95,48 @@ BOOL CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 			ofn.nMaxFile=MAX_PATH;
 			ofn.Flags=OFN_HIDEREADONLY|OFN_EXPLORER;
 			ofn.lpstrFilter="Streamable files\0*.mp3;*.mp2;*.mp1;*.ogg;*.wav;*.aif\0All files\0*.*\0\0";
-			// initialize BASS - default device
-			if (!BASS_Init(-1,44100,0,win,NULL)) {
-				Error("Can't initialize device");
-				DestroyWindow(win);
-				break;
-			}
-			{ // check how many speakers the device supports
-				BASS_INFO i;
-				BASS_GetInfo(&i);
-				if (i.speakers<4 && LOBYTE(GetVersion())<6) { // no extra speakers detected, enable them anyway? (on older Windows than Vista)
-					if (MessageBox(0,"Do you wish to enable \"speaker assignment\" anyway?","No extra speakers detected",MB_ICONQUESTION|MB_YESNO)==IDYES) {
-						// reinitialize BASS - forcing speaker assignment
-						BASS_Free();
-						if (!BASS_Init(-1,44100,BASS_DEVICE_SPEAKERS,win,NULL)) {
-							Error("Can't initialize device");
-							DestroyWindow(win);
-							break;
-						}
-						BASS_GetInfo(&i); // get info again
+			// not playing anything via BASS, so don't need an update thread
+			BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD,0);
+			// setup BASS - "no sound" device
+			BASS_Init(0,48000,0,0,NULL);
+			{ // initialize the default WASAPI device (400ms buffer, 50ms update period, auto-select format)
+				if (!BASS_WASAPI_Init(-1,0,0,BASS_WASAPI_AUTOFORMAT|BASS_WASAPI_EXCLUSIVE,0.4,0.05,WasapiProc,NULL)) {
+					// exclusive mode failed, try shared mode
+					if (!BASS_WASAPI_Init(-1,0,0,BASS_WASAPI_AUTOFORMAT,0.4,0.05,WasapiProc,NULL)) {
+						Error("Can't initialize device");
+						DestroyWindow(win);
+						break;
 					}
 				}
-				if (i.speakers<8) {
-					EnableWindow(GetDlgItem(h,13),FALSE);
-					EnableWindow(GetDlgItem(h,22),FALSE);
-				}
-				if (i.speakers<6) {
-					EnableWindow(GetDlgItem(h,12),FALSE);
-					EnableWindow(GetDlgItem(h,21),FALSE);
-				}
-				if (i.speakers<4) {
-					EnableWindow(GetDlgItem(h,11),FALSE);
-					EnableWindow(GetDlgItem(h,20),FALSE);
+				{
+					BASS_WASAPI_INFO wi;
+					BASS_WASAPI_GetInfo(&wi);
+					// create a mixer with same format as the output
+					mixer=BASS_Mixer_StreamCreate(wi.freq,wi.chans,BASS_SAMPLE_FLOAT|BASS_STREAM_DECODE);
+					// start the output
+					BASS_WASAPI_Start();
+					if (wi.chans<8) {
+						EnableWindow(GetDlgItem(h,13),FALSE);
+						EnableWindow(GetDlgItem(h,22),FALSE);
+					}
+					if (wi.chans<6) {
+						EnableWindow(GetDlgItem(h,12),FALSE);
+						EnableWindow(GetDlgItem(h,21),FALSE);
+					}
+					if (wi.chans<4) {
+						EnableWindow(GetDlgItem(h,11),FALSE);
+						EnableWindow(GetDlgItem(h,20),FALSE);
+					}
 				}
 			}
+			MESS(11,BM_SETCHECK,BST_CHECKED,0);
+			MESS(12,BM_SETCHECK,BST_CHECKED,0);
+			MESS(13,BM_SETCHECK,BST_CHECKED,0);
+			MESS(14,BM_SETCHECK,BST_CHECKED,0);
 			return 1;
 
 		case WM_DESTROY:
+			BASS_WASAPI_Free();
 			BASS_Free();
 			break;
 	}
@@ -178,7 +151,6 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine,
 		return 0;
 	}
 
-	// main dialog
 	DialogBox(hInstance,(char*)1000,0,&dialogproc);
 
 	return 0;

@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="synth"
-	ProjectGUID="{8C2DEFD3-84FC-4409-B4AE-D2638DA72134}"
+	ProjectGUID="{38BC6FC6-8540-4990-A493-E1124D2670F4}"
 	>
 	<Platforms>
 		<Platform
@@ -25,14 +25,14 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=".."
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bass.lib bassmidi.lib comctl32.lib"
+				AdditionalDependencies="bass.lib basswasapi.lib"
 				AdditionalLibraryDirectories=".."
-				SubSystem="2"
+				SubSystem="1"
 			/>
 		</Configuration>
 		<Configuration
@@ -44,14 +44,14 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=".."
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bass.lib bassmidi.lib comctl32.lib"
+				AdditionalDependencies="bass.lib basswasapi.lib"
 				AdditionalLibraryDirectories="..\x64"
-				SubSystem="2"
+				SubSystem="1"
 				TargetMachine="17"
 			/>
 		</Configuration>
@@ -61,10 +61,6 @@
 	<Files>
 		<File
 			RelativePath="synth.c"
-			>
-		</File>
-		<File
-			RelativePath="synth.rc"
 			>
 		</File>
 	</Files>
