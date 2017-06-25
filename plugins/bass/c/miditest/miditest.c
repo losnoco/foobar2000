@@ -1,6 +1,6 @@
 /*
 	BASSMIDI test player
-	Copyright (c) 2006-2016 Un4seen Developments Ltd.
+	Copyright (c) 2006-2017 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -15,8 +15,7 @@ HWND win=NULL;
 HSTREAM chan;		// channel handle
 HSOUNDFONT font;	// soundfont
 
-int miditempo;		// MIDI file tempo
-float temposcale=1;	// tempo adjustment
+float speed=1;	// tempo adjustment
 
 OPENFILENAME ofn;
 
@@ -65,17 +64,6 @@ void CALLBACK EndSync(HSYNC handle, DWORD channel, DWORD data, void *user)
 {
 	lyrics[0]=0; // clear lyrics
 	MESS(30,WM_SETTEXT,0,lyrics);
-}
-
-void SetTempo(BOOL reset)
-{
-	if (reset) miditempo=BASS_MIDI_StreamGetEvent(chan,0,MIDI_EVENT_TEMPO); // get the file's tempo
-	BASS_MIDI_StreamEvent(chan,0,MIDI_EVENT_TEMPO,miditempo*temposcale); // set tempo
-}
-
-void CALLBACK TempoSync(HSYNC handle, DWORD channel, DWORD data, void *user)
-{
-	SetTempo(TRUE); // override the tempo
 }
 
 // look for a marker (eg. loop points)
@@ -130,7 +118,7 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 									MESS(11,WM_SETTEXT,0,"");
 							}
 							// update pos scroller range (using tick length)
-							MESS(21,TBM_SETRANGE,1,MAKELONG(0,BASS_ChannelGetLength(chan,BASS_POS_MIDI_TICK)/120));
+							MESS(21,TBM_SETRANGE,1,MAKELONG(0,(BASS_ChannelGetLength(chan,BASS_POS_MIDI_TICK)-1)/120));
 							{ // set looping syncs
 								BASS_MIDI_MARK mark;
 								if (FindMarker(chan,"loopend",&mark)) // found a loop end point
@@ -146,17 +134,13 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 									BASS_ChannelSetSync(chan,BASS_SYNC_MIDI_MARK,BASS_MIDI_MARK_TEXT,LyricSync,(void*)BASS_MIDI_MARK_TEXT);
 								BASS_ChannelSetSync(chan,BASS_SYNC_END,0,EndSync,0);
 							}
-							{ // override the initial tempo, and set a sync to override tempo events and another to override after seeking
-								SetTempo(TRUE);
-								BASS_ChannelSetSync(chan,BASS_SYNC_MIDI_EVENT|BASS_SYNC_MIXTIME,MIDI_EVENT_TEMPO,TempoSync,0);
-								BASS_ChannelSetSync(chan,BASS_SYNC_SETPOS|BASS_SYNC_MIXTIME,0,TempoSync,0);
-							}
+							BASS_MIDI_StreamEvent(chan,0,MIDI_EVENT_SPEED,speed*10000); // apply tempo adjustment
 							{ // get default soundfont in case of matching soundfont being used
 								BASS_MIDI_FONT sf;
 								BASS_MIDI_StreamGetFonts(chan,&sf,1);
 								font=sf.font;
 							}
-							// limit CPU usage to 70% (also enables async sample loading) and start playing
+							// limit CPU usage to 70% and start playing
 							BASS_ChannelSetAttribute(chan,BASS_ATTRIB_MIDI_CPU,70);
 							BASS_ChannelPlay(chan,FALSE);
 						}
@@ -214,8 +198,8 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 		case WM_VSCROLL:
 			if (l && LOWORD(w)!=SB_THUMBPOSITION && LOWORD(w)!=SB_ENDSCROLL) {
 				int p=SendMessage((HWND)l,TBM_GETPOS,0,0); // get tempo slider pos
-				temposcale=1/((30-p)/20.f); // up to +/- 50% bpm
-				SetTempo(FALSE); // apply the tempo adjustment
+				speed=(30-p)/20.f; // up to +/- 50% bpm
+				BASS_MIDI_StreamEvent(chan,0,MIDI_EVENT_SPEED,speed*10000); // apply tempo adjustment
 			}
 			break;
 
@@ -225,10 +209,11 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 				float active=0;
 				if (chan) {
 					DWORD tick=BASS_ChannelGetPosition(chan,BASS_POS_MIDI_TICK); // get position in ticks
+					int tempo=BASS_MIDI_StreamGetEvent(chan,0,MIDI_EVENT_TEMPO); // get the file's tempo
 					sprintf(text,"%u",tick);
 					MESS(24,WM_SETTEXT,0,text); // display position
 					MESS(21,TBM_SETPOS,1,tick/120); // update position bar
-					sprintf(text,"%.1f",60000000/(miditempo*temposcale)); // calculate bpm
+					sprintf(text,"%.1f",speed*60000000.0/tempo); // calculate bpm
 					MESS(23,WM_SETTEXT,0,text); // display it
 					BASS_ChannelGetAttribute(chan,BASS_ATTRIB_MIDI_VOICES_ACTIVE,&active); // get active voices
 				}

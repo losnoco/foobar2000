@@ -1,6 +1,6 @@
 Attribute VB_Name = "BASSMIDI"
 ' BASSMIDI 2.4 Visual Basic module
-' Copyright (c) 2006-2016 Un4seen Developments Ltd.
+' Copyright (c) 2006-2017 Un4seen Developments Ltd.
 '
 ' See the BASSMIDI.CHM file for more detailed documentation
 
@@ -166,9 +166,13 @@ Global Const MIDI_EVENT_MOD_VOLUME = 79
 Global Const MIDI_EVENT_MIXLEVEL = &H10000
 Global Const MIDI_EVENT_TRANSPOSE = &H10001
 Global Const MIDI_EVENT_SYSTEMEX = &H10002
+Global Const MIDI_EVENT_SPEED = &H10004
 
 Global Const MIDI_EVENT_END = 0
 Global Const MIDI_EVENT_END_TRACK = &H10003
+
+Global Const MIDI_EVENT_NOTES = &H20000
+Global Const MIDI_EVENT_VOICES = &H20001
 
 Global Const MIDI_SYSTEM_DEFAULT = 0
 Global Const MIDI_SYSTEM_GM1 = 1
@@ -208,6 +212,7 @@ Global Const BASS_ATTRIB_MIDI_VOICES = &H12003
 Global Const BASS_ATTRIB_MIDI_VOICES_ACTIVE = &H12004
 Global Const BASS_ATTRIB_MIDI_STATE = &H12005
 Global Const BASS_ATTRIB_MIDI_SRC = &H12006
+Global Const BASS_ATTRIB_MIDI_KILL = &H12007
 Global Const BASS_ATTRIB_MIDI_TRACK_VOL = &H12100 ' + track #
 
 ' Additional BASS_ChannelGetTags type
@@ -241,7 +246,9 @@ Declare Function BASS_MIDI_StreamEvents Lib "bassmidi.dll" (ByVal handle As Long
 Declare Function BASS_MIDI_StreamGetEvent Lib "bassmidi.dll" (ByVal handle As Long, ByVal chan As Long, ByVal event_ As Long) As Long
 Declare Function BASS_MIDI_StreamGetEvents Lib "bassmidi.dll" (ByVal handle As Long, ByVal track As Long, ByVal filter As Long, events As Any) As Long
 Declare Function BASS_MIDI_StreamGetEventsEx Lib "bassmidi.dll" (ByVal handle As Long, ByVal track As Long, ByVal filter As Long, ByVal events As Any, ByVal start As Long, ByVal count As Long) As Long
+Declare Function BASS_MIDI_StreamGetPreset Lib "bassmidi.dll" (ByVal handle As Long, ByVal chan As Long, ByRef font As BASS_MIDI_FONT) As Long
 Declare Function BASS_MIDI_StreamGetChannel Lib "bassmidi.dll" (ByVal handle As Long, ByVal chan As Long) As Long
+Declare Function BASS_MIDI_StreamSetFilter Lib "bassmidi.dll" (ByVal handle As Long, ByVal seeking As Long, ByVal proc As Long, ByVal user As Long) As Long
 
 Declare Function BASS_MIDI_FontInit Lib "bassmidi.dll" (ByVal file As Any, ByVal flags As Long) As Long
 Declare Function BASS_MIDI_FontInitUser Lib "bassmidi.dll" (ByVal procs As Long, ByVal user As Long, ByVal flags As Long) As Long
@@ -271,11 +278,25 @@ BASS_MIDI_StreamCreateFile = BASS_MIDI_StreamCreateFile64(mem, file, offset, 0, 
 End Function
 
 ' callback functions
+Function MIDIFILTERPROC(ByVal handle As Long, ByVal track As Long, ByRef event_ As BASS_MIDI_EVENT, ByVal seeking As Long, ByVal user As Long) As Long
+
+    'CALLBACK FUNCTION !!!
+    
+    ' Event filtering callback function.
+    ' handle : MIDI stream handle
+    ' track  : Track containing the event
+    ' event_ : The event
+    ' seeking: BASSTRUE = the event is being processed while seeking, BASSFALSE = it is being played
+    ' user   : The 'user' parameter value given when calling BASS_MIDI_StreamSetFilter
+    ' RETURN : BASSTRUE = process the event, BASSFALSE = drop the event
+
+End Function
+
 Sub MIDIINPROC(ByVal device As Long, ByVal time As Double, ByVal buffer As Long, ByVal length As Long, ByVal user As Long)
     
     'CALLBACK FUNCTION !!!
     
-    ' User MIDI input callback function
+    ' MIDI input callback function
     ' device : MIDI input device
     ' time   : Timestamp
     ' buffer : Buffer containing MIDI data

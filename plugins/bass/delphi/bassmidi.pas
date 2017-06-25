@@ -1,6 +1,6 @@
 {
   BASSMIDI 2.4 Delphi unit
-  Copyright (c) 2006-2016 Un4seen Developments Ltd.
+  Copyright (c) 2006-2017 Un4seen Developments Ltd.
 
   See the BASSMIDI.CHM file for more detailed documentation
 }
@@ -146,9 +146,13 @@ const
   MIDI_EVENT_MIXLEVEL        = $10000;
   MIDI_EVENT_TRANSPOSE       = $10001;
   MIDI_EVENT_SYSTEMEX        = $10002;
+  MIDI_EVENT_SPEED           = $10004;
 
   MIDI_EVENT_END             = 0;
   MIDI_EVENT_END_TRACK       = $10003;
+
+  MIDI_EVENT_NOTES           = $20000;
+  MIDI_EVENT_VOICES          = $20001;
 
   MIDI_SYSTEM_DEFAULT        = 0;
   MIDI_SYSTEM_GM1            = 1;
@@ -180,6 +184,7 @@ const
   BASS_ATTRIB_MIDI_VOICES_ACTIVE = $12004;
   BASS_ATTRIB_MIDI_STATE     = $12005;
   BASS_ATTRIB_MIDI_SRC       = $12006;
+  BASS_ATTRIB_MIDI_KILL      = $12007;
   BASS_ATTRIB_MIDI_TRACK_VOL = $12100; // + track #
 
   // Additional tag type
@@ -246,9 +251,20 @@ type
   end;
 
   // callback function types
+  MIDIFILTERPROC = function(handle: HSTREAM; track: DWORD; event: PBASS_MIDI_EVENT; seeking: BOOL; user: Pointer): BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
+  {
+    Event filtering callback function.
+    handle : MIDI stream handle
+    track  : Track containing the event
+    event  : The event
+    seeking: TRUE = the event is being processed while seeking, FALSE = it is being played
+    user   : The 'user' parameter value given when calling BASS_MIDI_StreamSetFilter
+    RETURN : TRUE = process the event, FALSE = drop the event
+  }
+
   MIDIINPROC = procedure(device: DWORD; time: Double; buffer: PByte; length: DWORD; user: Pointer); {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
   {
-    User MIDI input callback function.
+    MIDI input callback function.
     device : MIDI input device
     time   : Timestamp
     buffer : Buffer containing MIDI data
@@ -285,7 +301,9 @@ function BASS_MIDI_StreamEvents(handle:HSTREAM; mode:DWORD; events:Pointer; leng
 function BASS_MIDI_StreamGetEvent(handle:HSTREAM; chan,event:DWORD): DWORD; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 function BASS_MIDI_StreamGetEvents(handle:HSTREAM; track:LongInt; filter:DWORD; events:PBASS_MIDI_EVENT): DWORD; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 function BASS_MIDI_StreamGetEventsEx(handle:HSTREAM; track:LongInt; filter:DWORD; events:PBASS_MIDI_EVENT; start,count:DWORD): DWORD; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
+function BASS_MIDI_StreamGetPreset(handle:HSTREAM; chan:DWORD; font:PBASS_MIDI_FONT): BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 function BASS_MIDI_StreamGetChannel(handle:HSTREAM; chan:DWORD): HSTREAM; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
+function BASS_MIDI_StreamSetFilter(handle:HSTREAM; seeking:BOOL; proc:MIDIFILTERPROC; user:Pointer): BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 
 function BASS_MIDI_FontInit(fname:PChar; flags:DWORD): HSOUNDFONT; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;
 function BASS_MIDI_FontInitUser(var procs:BASS_FILEPROCS; user:Pointer; flags:DWORD): HSOUNDFONT; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassmididll;

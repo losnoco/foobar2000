@@ -1,5 +1,5 @@
 BASSPATH = ..
-BASSLIB = $(BASSPATH)\basswasapi.lib $(BASSPATH)\bass.lib $(BASSPATH)\bassmix.lib
+BASSLIB = $(BASSPATH)\bass.lib $(BASSPATH)\bassmidi.lib
 OUTDIR = ..\bin
 FLAGS = -Os -I$(BASSPATH)
 

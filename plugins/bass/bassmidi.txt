@@ -1,5 +1,5 @@
 BASSMIDI 2.4
-Copyright (c) 2006-2016 Un4seen Developments Ltd. All rights reserved.
+Copyright (c) 2006-2017 Un4seen Developments Ltd. All rights reserved.
 
 Files that you should have found in the BASSMIDI package
 ========================================================
@@ -176,6 +176,37 @@ These are the major (and not so major) changes at each version stage.
 There are of course bug fixes and other little improvements made along
 the way too! To make upgrading simpler, all functions affected by a
 change to the BASSMIDI interface are listed.
+
+2.4.11 - 30/3/2017
+------------------
+* Event modification/filtering
+	BASS_MIDI_StreamSetFilter
+	MIDIFILTERPROC
+* Simpler tempo modification
+	MIDI_EVENT_SPEED (BASS_MIDI_StreamEvent)
+	MIDITEST example updated
+* Checking whether individual notes are playing
+	MIDI_EVENT_NOTE (BASS_MIDI_StreamGetEvent)
+* Retrieval of total number of notes playing in a channel
+	MIDI_EVENT_NOTES (BASS_MIDI_StreamGetEvent)
+* Retrieval of currently active voices in a channel
+	MIDI_EVENT_VOICES (BASS_MIDI_StreamGetEvent)
+* Retrieval of currently in use presets
+	BASS_MIDI_StreamGetPreset
+* SFZ filenames are used as preset names
+	BASS_MIDI_FontGetPreset
+* Support for loop info in FLAC samples used with SFZ (requires BASSFLAC 2.4.3)
+* Faster loading of very large MIDI files
+	BASS_MIDI_StreamCreateFile/User/URL
+* Faster unfiltered event counting
+	BASS_MIDI_StreamGetEvents/Ex
+	BASS_MIDI_ConvertEvents
+* 24-bit paramater passed to MIDI_EVENT_TEMPO event sync callbacks
+	BASS_SYNC_MIDI_EVENT (BASS_ChannelSetSync type)
+* When getting the number of events, only those in the specified range are counted
+	BASS_MIDI_StreamGetEventsEx
+* Invalid event types in custom sequences will give an error instead of being ignored
+	BASS_MIDI_StreamCreateEvents
 
 2.4.10 - 8/12/2016
 ------------------
