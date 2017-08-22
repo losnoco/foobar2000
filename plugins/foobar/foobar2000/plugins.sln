@@ -152,8 +152,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_pd_aac", "foo_pd_aac\fo
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_tak", "foo_input_tak\foo_input_tak.vcxproj", "{2E197B85-CE17-4452-85F3-A651E232E5B0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "playptmod", "..\..\playptmod\prj\msvc\playptmod\playptmod.vcxproj", "{44F9C02F-B2B5-475B-BA24-BC4032E18B44}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psflib", "..\..\psflib\psflib.vcxproj", "{62F60227-4608-4B3B-A59D-C83267F7C669}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "viogsf", "..\..\viogsf\viogsf.vcxproj", "{5F58F9C0-7066-48BC-8D51-CAD4FB12A389}"
@@ -180,8 +178,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lazyusf", "..\..\lazyusf\pr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_usf", "foo_input_usf\foo_input_usf.vcxproj", "{AC89187E-8BA8-44F0-A408-E3E9F8B5BC9B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "modplay", "..\..\modplay\prj\modplay\modplay.vcxproj", "{02FEE32E-344E-4C7D-B6DB-E06D86E496D3}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_dsp_multiresampler", "foo_dsp_multiresampler\foo_dsp_multiresampler.vcxproj", "{4D942A60-5D26-4DD9-8F9D-03C3E9EADCD6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsidplayfp", "..\..\sidplay-residfp\projects\win\VC\libsidplayfp\libsidplayfp.vcxproj", "{62EB3E65-1E51-44EB-B407-FE1C7B3AFB5C}"
@@ -195,10 +191,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "g719", "..\..\libg719_decode\g719.vcxproj", "{82F4986A-B8DA-4AD3-981A-4D26CC94A88E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_psf", "foo_psf\foo_psf.vcxproj", "{A7C7E756-C04B-4AAB-BE56-42C38081EF63}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "syntrax-c", "..\..\syntrax-c\prj\syntrax-c\syntrax-c.vcxproj", "{F66764E0-B136-4EDB-8F6A-8D2C4E984CBC}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_syntrax", "foo_input_syntrax\foo_input_syntrax.vcxproj", "{6C566E95-6F6B-41F8-B4DC-5FF07B1448D2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "g7221", "..\..\libg7221_decode\g7221.vcxproj", "{5CB91C47-225E-4D3B-A6A7-1E13A99A5290}"
 EndProject
