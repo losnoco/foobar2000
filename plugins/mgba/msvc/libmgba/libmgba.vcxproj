@@ -30,26 +30,26 @@
     <ProjectGuid>{894AD99E-0236-4D81-9F1A-E64F8BAB4885}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>libmgba</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>7.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v141_xp</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v141_xp</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release2015|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v141_xp</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
@@ -108,7 +108,6 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>.;../../mgba/include;../../mgba/src</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
-      <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -145,7 +144,6 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <AdditionalIncludeDirectories>.;../../mgba/include;../../mgba/src</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
-      <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -167,7 +165,6 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <AdditionalIncludeDirectories>.;../../mgba/include;../../mgba/src</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
-      <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -237,7 +234,9 @@
       <ObjectFileName>$(IntDir)coreinput.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\mgba\src\core\interface.c" />
-    <ClCompile Include="..\..\mgba\src\core\lockstep.c" />
+    <ClCompile Include="..\..\mgba\src\core\lockstep.c">
+      <ObjectFileName>$(IntDir)corelockstep.obj</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\mgba\src\core\log.c" />
     <ClCompile Include="..\..\mgba\src\core\rewind.c" />
     <ClCompile Include="..\..\mgba\src\core\serialize.c">
@@ -280,7 +279,9 @@
     </ClCompile>
     <ClCompile Include="..\..\mgba\src\gba\sharkport.c" />
     <ClCompile Include="..\..\mgba\src\gba\sio.c" />
-    <ClCompile Include="..\..\mgba\src\gba\sio\lockstep.c" />
+    <ClCompile Include="..\..\mgba\src\gba\sio\lockstep.c">
+      <ObjectFileName>$(IntDir)siolockstep.obj</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\mgba\src\gba\timer.c" />
     <ClCompile Include="..\..\mgba\src\gba\vfame.c" />
     <ClCompile Include="..\..\mgba\src\gba\video.c" />
