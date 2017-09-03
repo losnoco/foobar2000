@@ -280,7 +280,7 @@
     <ClCompile Include="..\..\mgba\src\gba\sharkport.c" />
     <ClCompile Include="..\..\mgba\src\gba\sio.c" />
     <ClCompile Include="..\..\mgba\src\gba\sio\lockstep.c">
-      <ObjectFileName>$(IntDir)siolockstep.obj</ObjectFileName>
+      <ObjectFileName>$(IntDir)gbasiolockstep.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\mgba\src\gba\timer.c" />
     <ClCompile Include="..\..\mgba\src\gba\vfame.c" />
