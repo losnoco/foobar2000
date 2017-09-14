@@ -169,3 +169,9 @@
 [submodule "plugins/mgba/mgba"]
 	path = plugins/mgba/mgba
 	url = git@github.com:kode54/mgba.git
+[submodule "plugins/playptmod"]
+	path = plugins/playptmod
+	url = https://gitlab.kode54.net/kode54/playptmod.git
+[submodule "plugins/modplay"]
+	path = plugins/modplay
+	url = https://gitlab.kode54.net/kode54/modplay.git
