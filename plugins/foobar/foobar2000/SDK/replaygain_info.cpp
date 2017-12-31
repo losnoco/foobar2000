@@ -95,6 +95,16 @@ t_size replaygain_info::get_value_count()
 	return ret;
 }
 
+float replaygain_info::anyGain(bool bPreferAlbum) const {
+	if ( bPreferAlbum ) {
+		if ( this->is_album_gain_present() ) return this->m_album_gain;
+		return this->m_track_gain;
+	} else {
+		if ( this->is_track_gain_present() ) return this->m_track_gain;
+		return this->m_album_gain;
+	}
+}
+
 void replaygain_info::set_album_gain_text(const char * p_text,t_size p_text_len)
 {
 	RG_FPU();

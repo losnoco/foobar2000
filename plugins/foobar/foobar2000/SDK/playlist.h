@@ -232,7 +232,7 @@ public:
 
 	
 	//! Helper; removes all items from the playback queue.
-	void queue_flush() {queue_remove_mask(bit_array_true());}
+	void queue_flush() {queue_remove_mask(pfc::bit_array_true());}
 	//! Helper; returns whether there are items in the playback queue.
 	bool queue_is_active() {return queue_get_count() > 0;}
 
@@ -370,7 +370,12 @@ public:
 
 	static void g_make_selection_move_permutation(t_size * p_output,t_size p_count,const bit_array & p_selection,int p_delta);
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playlist_manager);
+	//! Helper to update playlists after rechaptering a file. \n
+	//! You typically want to call metadb_io_v2::on_file_rechaptered() instead, as it will forcibly reload info first.
+	void on_file_rechaptered(const char * path, metadb_handle_list_cref items);
+	void on_files_rechaptered( metadb_handle_list_cref newHandles );
+
+	FB2K_MAKE_SERVICE_COREAPI(playlist_manager);
 };
 
 //! Extension of the playlist_manager service that manages playlist properties.

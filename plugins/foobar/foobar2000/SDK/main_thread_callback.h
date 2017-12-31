@@ -20,7 +20,7 @@ public:
 	//! Queues a callback object. This can be called from any thread, implementation ensures multithread safety. Implementation will call p_callback->callback_run() once later. To get it called repeatedly, you would need to add your callback again.
 	virtual void add_callback(service_ptr_t<main_thread_callback> p_callback) = 0;
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(main_thread_callback_manager);
+	FB2K_MAKE_SERVICE_COREAPI(main_thread_callback_manager);
 };
 
 
@@ -160,5 +160,8 @@ private:
 
 // Modern helper
 namespace fb2k {
+	// Queue call in main thread
     void inMainThread( std::function<void () > f );
+	// Call f synchronously if called from main thread, queue call if called from another
+	void inMainThread2( std::function<void () > f );
 }

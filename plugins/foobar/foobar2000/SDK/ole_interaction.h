@@ -103,7 +103,7 @@ private:
 //! Provides various methods for interaction between foobar2000 and OLE IDataObjects, Windows Clipboard, drag&drop and such.
 //! To instantiate, use static_api_ptr_t<ole_interaction>.
 class NOVTABLE ole_interaction : public service_base {
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(ole_interaction)
+	FB2K_MAKE_SERVICE_COREAPI(ole_interaction)
 public:
 	enum {
 		KClipboardFormatSimpleLocations,

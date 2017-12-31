@@ -61,6 +61,14 @@ public:
 	//! See: input_entry::is_our_path().
 	static bool g_is_our_path(const char * p_path,const char * p_extension);
 
+	//! See: input_entry::get_guid().
+	static GUID g_get_guid();
+	//! See: input_entry::get_name().
+	static const char * g_get_name();
+	//! See: input_entry::get_preferences_guid().
+	static GUID g_get_preferences_guid();
+	//! See: input_entry::is_low_merit().
+	static bool g_is_low_merit();
 
 	//! See: input_decoder_v2::run_raw(). Relevant only when implementing input_decoder_v2. Valid after decode_initialize().
 	bool decode_run_raw(audio_chunk & p_chunk, mem_block_container & p_raw, abort_callback & p_abort);
@@ -70,6 +78,19 @@ public:
 protected:
 	input_impl() {}
 	~input_impl() {}
+};
+
+//! A base class that provides stub implementations of all optional input methods. \n
+//! Inherit from this and you implement input_decoder_v4 without having to provide all the methods you don't actually need.
+class input_stubs {
+public:
+	bool decode_run_raw(audio_chunk & p_chunk, mem_block_container & p_raw, abort_callback & p_abort) { throw pfc::exception_not_implemented(); }
+	void set_logger(event_logger::ptr ptr) {}
+	void set_pause(bool paused) {}
+	bool flush_on_pause() { return false; }
+	size_t extended_param(const GUID & type, size_t arg1, void * arg2, size_t arg2size) { return 0; }
+	static GUID g_get_preferences_guid() {return pfc::guid_null;}
+	static bool g_is_low_merit() { return false; }
 };
 
 //! This is a class that just declares prototypes of functions that each non-multitrack-enabled input needs to implement. See input_decoder / input_info_reader / input_info_writer interfaces for full descriptions of member functions. Since input implementation class is instantiated using a template, you don't need to derive from input_singletrack_impl as virtual functions are not used on implementation class level. Use input_singletrack_factory_t template to register input class based on input_singletrack_impl.
@@ -124,8 +145,8 @@ protected:
 
 
 //! Used internally by standard input_entry implementation; do not use directly. Translates input_decoder / input_info_reader / input_info_writer calls to input_impl calls.
-template<typename I, typename t_base>
-class input_impl_interface_wrapper_t : public t_base
+template<typename I, typename interface_t>
+class input_impl_interface_wrapper_t : public interface_t
 {
 public:
 	void open(service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort) {
@@ -155,18 +176,40 @@ public:
 
 	void initialize(t_uint32 p_subsong,unsigned p_flags,abort_callback & p_abort) {
 		m_instance.decode_initialize(p_subsong,p_flags,p_abort);
+#if PFC_DEBUG
+		m_eof = false;
+#endif
 	}
 
 	bool run(audio_chunk & p_chunk,abort_callback & p_abort) {
-		return m_instance.decode_run(p_chunk,p_abort);
+#if PFC_DEBUG
+		PFC_ASSERT( !m_eof );
+		// Complain if run()/run_raw() gets called again after having returned EOF, this means a logic error on caller's side
+#endif
+		bool ret = m_instance.decode_run(p_chunk,p_abort);
+#if PFC_DEBUG
+		if ( !ret ) m_eof = true;
+#endif
+		return ret;
 	}
 
 	bool run_raw(audio_chunk & p_chunk, mem_block_container & p_raw, abort_callback & p_abort) {
-		return m_instance.decode_run_raw(p_chunk, p_raw, p_abort);
+#if PFC_DEBUG
+		// Complain if run()/run_raw() gets called again after having returned EOF, this means a logic error on caller's side
+		PFC_ASSERT(!m_eof);
+#endif
+		bool ret = m_instance.decode_run_raw(p_chunk, p_raw, p_abort);
+#if PFC_DEBUG
+		if ( !ret ) m_eof = true;
+#endif
+		return ret;
 	}
 
 	void seek(double p_seconds,abort_callback & p_abort) {
 		m_instance.decode_seek(p_seconds,p_abort);
+#if PFC_DEBUG
+		m_eof = false;
+#endif
 	}
 	
 	bool can_seek() {
@@ -190,12 +233,17 @@ public:
 	}
 
 	void set_pause(bool paused) {
-		m_instance.set_pause(paused);
+		// obsolete
+		// m_instance.set_pause(paused);
 	}
+
 	bool flush_on_pause() {
 		return m_instance.flush_on_pause();
 	}
 
+	size_t extended_param(const GUID & type, size_t arg1, void * arg2, size_t arg2size) {
+		return m_instance.extended_param(type, arg1, arg2, arg2size);
+	}
 
 	// input_info_writer methods
 
@@ -212,11 +260,27 @@ public:
 
 private:
 	I m_instance;
+
+#if PFC_DEBUG
+	// Report illegal API calls in debug build
+	bool m_eof = false;
+#endif
+};
+
+template<typename input_t>
+class input_forward_static_methods : public input_stubs {
+public:
+	static bool g_is_our_content_type(const char * p_content_type) { return input_t::g_is_our_content_type(p_content_type); }
+	static bool g_is_our_path(const char * p_path, const char * p_extension) { return input_t::g_is_our_path(p_path, p_extension); }
+	static GUID g_get_preferences_guid() { return input_t::g_get_preferences_guid(); }
+	static GUID g_get_guid() { return input_t::g_get_guid(); }
+	static const char * g_get_name() { return input_t::g_get_name(); }
+	static bool g_is_low_merit() { return input_t::g_is_low_merit(); }
 };
 
 //! Helper used by input_singletrack_factory_t, do not use directly. Translates input_impl calls to input_singletrack_impl calls. 
 template<typename I>
-class input_wrapper_singletrack_t
+class input_wrapper_singletrack_t : public input_forward_static_methods<I>
 {
 public:
 	input_wrapper_singletrack_t() {}
@@ -235,7 +299,7 @@ public:
 	}
 	
 	t_uint32 get_subsong(t_uint32 p_index) {
-		assert(p_index == 0);
+		PFC_ASSERT(p_index == 0);
 		return 0;
 	}
 
@@ -267,29 +331,26 @@ public:
 	void set_logger(event_logger::ptr ptr) {m_instance.set_logger(ptr);}
 
 	void set_pause(bool paused) {
-		m_instance.set_pause(paused);
+		// m_instance.set_pause(paused);
 	}
 	bool flush_on_pause() {
 		return m_instance.flush_on_pause();
 	}
-
+	size_t extended_param(const GUID & type, size_t arg1, void * arg2, size_t arg2size) { 
+		return m_instance.extended_param(type, arg1, arg2, arg2size);
+	}
 	void retag_commit(abort_callback & p_abort) {}
 
 	void remove_tags(abort_callback & p_abort) {
 		m_instance.remove_tags(p_abort);
 	}
-
-	static bool g_is_our_content_type(const char * p_content_type) {return I::g_is_our_content_type(p_content_type);}
-	static bool g_is_our_path(const char * p_path,const char * p_extension) {return I::g_is_our_path(p_path,p_extension);}
-
-	
 private:
 	I m_instance;
 };
 
 //! Helper; standard input_entry implementation. Do not instantiate this directly, use input_factory_t or one of other input_*_factory_t helpers instead.
-template<typename I,unsigned t_flags, typename t_decoder = input_decoder, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
-class input_entry_impl_t : public input_entry
+template<typename I,unsigned t_flags, typename t_decoder = input_decoder_v4, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
+class input_entry_impl_t : public input_entry_v2
 {
 private:
 	
@@ -322,6 +383,20 @@ public:
 	}
 
 	unsigned get_flags() {return t_flags;}
+
+	GUID get_guid() {
+		return I::g_get_guid();
+	}
+	const char * get_name() {
+		return I::g_get_name();
+	}
+
+	GUID get_preferences_guid() {
+		return I::g_get_preferences_guid();
+	}
+	bool is_low_merit() {
+		return I::g_is_low_merit();
+	}
 };
 
 
@@ -334,9 +409,9 @@ template<typename T>
 class input_singletrack_factory_t : public service_factory_single_t<input_entry_impl_t<input_wrapper_singletrack_t<T>,0> > {};
 
 //! Extended version of input_factory_t, with non-default flags and supported interfaces. See: input_factory_t, input_entry::get_flags().
-template<typename T,unsigned t_flags = 0, typename t_decoder = input_decoder, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
-class input_factory_ex_t : public service_factory_single_t<input_entry_impl_t<T,t_flags, t_decoder, t_inforeader, t_infowriter> > {};
+template<typename T, unsigned t_flags = 0, typename t_decoder = input_decoder_v4, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
+class input_factory_ex_t : public service_factory_single_t<input_entry_impl_t<T, t_flags, t_decoder, t_inforeader, t_infowriter> > {};
 
 //! Extended version of input_singletrack_factory_t, with non-default flags and supported interfaces. See: input_singletrack_factory_t, input_entry::get_flags().
-template<typename T,unsigned t_flags = 0, typename t_decoder = input_decoder, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
-class input_singletrack_factory_ex_t : public service_factory_single_t<input_entry_impl_t<input_wrapper_singletrack_t<T>,t_flags, t_decoder, t_inforeader, t_infowriter> > {};
+template<typename T, unsigned t_flags = 0, typename t_decoder = input_decoder_v4, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
+class input_singletrack_factory_ex_t : public service_factory_single_t<input_entry_impl_t<input_wrapper_singletrack_t<T>, t_flags, t_decoder, t_inforeader, t_infowriter> > {};

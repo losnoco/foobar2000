@@ -11,7 +11,7 @@ public:
 
 //! Entrypoint interface for instantiating progress_meter_instance objects.
 class NOVTABLE progress_meter : public service_base {
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(progress_meter);
+	FB2K_MAKE_SERVICE_COREAPI(progress_meter);
 public:
 	//! Creates a progress_meter_instance object.
 	virtual progress_meter_instance::ptr acquire() = 0;

@@ -24,3 +24,8 @@ This component demonstrates:
   * Use of playback control.
 * ui_element.cpp : 
   * Simple UI Element implementation.
+* rating.cpp
+  * Minimal rating implementation using metadb_index_client
+  * Present your data via title formatting using metadb_display_field_provider
+  * Present your data in the properties dialog using track_property_provider
+  * Utility menu items

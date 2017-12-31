@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "cue_creator.h"
 
 
 namespace {

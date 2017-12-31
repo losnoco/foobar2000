@@ -50,7 +50,7 @@ public:
 
 	void show_manual();
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(search_filter_manager);
+	FB2K_MAKE_SERVICE_COREAPI(search_filter_manager);
 };
 
 //! New in 0.9.5.3.

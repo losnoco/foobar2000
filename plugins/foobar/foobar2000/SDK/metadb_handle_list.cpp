@@ -196,7 +196,7 @@ void metadb_handle_list_helper::remove_duplicates(metadb_handle_list_ref p_list)
 	t_size count = p_list.get_count();
 	if (count>0)
 	{
-		bit_array_bittable mask(count);
+		pfc::bit_array_bittable mask(count);
 		pfc::array_t<t_size> order; order.set_size(count);
 		order_helper::g_fill(order);
 
@@ -236,7 +236,7 @@ void metadb_handle_list_helper::sort_by_pointer_remove_duplicates(metadb_handle_
 
 		if (b_found)
 		{
-			bit_array_bittable mask(count);
+			pfc::bit_array_bittable mask(count);
 			t_size n;
 			for(n=0;n<count-1;n++)
 			{
@@ -388,6 +388,20 @@ t_filesize metadb_handle_list_helper::calc_total_size_ex(metadb_handle_list_cref
 	return ret;
 }
 
+bool metadb_handle_list_helper::extract_folder_path(metadb_handle_list_cref list, pfc::string_base & folderOut) {
+	const t_size total = list.get_count();
+	if (total == 0) return false;
+	pfc::string_formatter temp, folder;
+	folder = list[0]->get_path();
+	folder.truncate_to_parent_path();
+	for(size_t walk = 1; walk < total; ++walk) {
+		temp = list[walk]->get_path();
+		temp.truncate_to_parent_path();
+		if (metadb::path_compare(folder, temp) != 0) return false;
+	}
+	folderOut = folder;
+	return true;
+}
 bool metadb_handle_list_helper::extract_single_path(metadb_handle_list_cref list, const char * &pathOut) {
 	const t_size total = list.get_count();
 	if (total == 0) return false;

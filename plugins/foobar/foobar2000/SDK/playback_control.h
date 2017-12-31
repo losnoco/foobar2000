@@ -3,7 +3,7 @@
 //! Do not call playback_control methods from inside any kind of global callback (e.g. playlist callback), otherwise race conditions may occur.
 //! Use static_api_ptr_t to instantiate. See static_api_ptr_t documentation for more info.
 class NOVTABLE playback_control : public service_base {
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(playback_control);
+	FB2K_MAKE_SERVICE_COREAPI(playback_control);
 public:
 
 	// Playback stop reason enum.

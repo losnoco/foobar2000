@@ -3,19 +3,25 @@
 #ifndef _FOOBAR2000_H_
 #define _FOOBAR2000_H_
 
-#ifndef UNICODE
-#error Only UNICODE environment supported.
-#endif
+#include "foobar2000-winver.h"
 
 // #define FOOBAR2000_TARGET_VERSION 75 // 0.9.6
 // #define FOOBAR2000_TARGET_VERSION 76 // 1.0
-//#define FOOBAR2000_TARGET_VERSION 77 // 1.1
+// #define FOOBAR2000_TARGET_VERSION 77 // 1.1
 #define FOOBAR2000_TARGET_VERSION 78 // 1.3
+// #define FOOBAR2000_TARGET_VERSION 79 // 1.4
 
-#define FOOBAR2000_DESKTOP
-#define FOOBAR2000_DESKTOP_WINDOWS
 
 #include "../../pfc/pfc.h"
+
+using pfc::bit_array;
+using pfc::bit_array_var;
+using pfc::bit_array_true;
+using pfc::bit_array_false;
+using pfc::bit_array_val;
+using pfc::bit_array_bittable;
+using pfc::bit_array_one;
+using pfc::bit_array_range;
 
 #include "../shared/shared.h"
 
@@ -112,5 +118,9 @@ typedef const char * pcchar;
 #include "progress_meter.h"
 
 #include "output.h"
+
+#include "file_format_sanitizer.h"
+
+#include "commonObjects.h"
 
 #endif //_FOOBAR2000_H_

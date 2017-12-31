@@ -29,6 +29,8 @@
 #define _NO_SYS_GUID_OPERATOR_EQ_	//fix retarded warning with operator== on GUID returning int
 #endif
 
+// WinSock2.h *before* Windows.h or else VS2017 15.3 breaks
+#include <WinSock2.h>
 #include <windows.h>
 
 #if !defined(PFC_WINDOWS_STORE_APP) && !defined(PFC_WINDOWS_DESKTOP_APP)
@@ -140,7 +142,7 @@ namespace pfc { void myassert (const char * _Message, const char *_File, unsigne
 #define ASSUME(X) __assume(X)
 #endif
 
-#define PFC_DEPRECATE(X) __declspec(deprecated(X))
+#define PFC_DEPRECATE(X) // __declspec(deprecated(X))   don't do this since VS2015 defaults to erroring these
 #define PFC_NORETURN __declspec(noreturn)
 #define PFC_NOINLINE __declspec(noinline)
 #else
@@ -173,6 +175,7 @@ namespace pfc {
 #include "ptr_list.h"
 #include "string_base.h"
 #include "string_list.h"
+#include "lockless.h"
 #include "ref_counter.h"
 #include "iterators.h"
 #include "avltree.h"

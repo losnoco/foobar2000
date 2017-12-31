@@ -6,6 +6,7 @@ struct hasher_md5_result {
 	char m_data[16];
 
 	t_uint64 xorHalve() const;
+	GUID asGUID() const;
 
 	static hasher_md5_result null() {hasher_md5_result h = {}; return h;}
 };
@@ -43,7 +44,7 @@ public:
 	//! Helper
 	void process_string(hasher_md5_state & p_state,const char * p_string,t_size p_length = ~0) {return process(p_state,p_string,pfc::strlen_max(p_string,p_length));}
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(hasher_md5);
+	FB2K_MAKE_SERVICE_COREAPI(hasher_md5);
 };
 
 

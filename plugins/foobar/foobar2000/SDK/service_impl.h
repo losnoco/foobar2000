@@ -1,3 +1,7 @@
+#pragma once
+
+#include <utility>
+
 //! Template implementing reference-counting features of service_base. Intended for dynamic instantiation: "new service_impl_t<someclass>(param1,param2);"; should not be instantiated otherwise (no local/static/member objects) because it does a "delete this;" when reference count reaches zero.\n
 //! Note that some constructor parameters such as NULL will need explicit typecasts to ensure correctly guessed types for constructor function template (null string needs to be (const char*)NULL rather than just NULL, etc).
 template<typename T>
@@ -13,7 +17,7 @@ public:
 	}
 	int service_add_ref() throw() {return (int) ++m_counter;}
 
-	TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(service_impl_t,T)
+	template<typename ... arg_t> service_impl_t( arg_t && ... arg ) : T( std::forward<arg_t>(arg) ... ) {}
 private:
 	pfc::refcounter m_counter;
 };
@@ -33,7 +37,7 @@ public:
 	}
 	int service_add_ref() throw() {return ++m_counter;}
 
-	TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(service_impl_explicitshutdown_t,class_t)
+	template<typename ... arg_t> service_impl_explicitshutdown_t(arg_t && ... arg) : class_t(std::forward<arg_t>(arg) ...) {}
 private:
 	pfc::refcounter m_counter;
 };
@@ -47,7 +51,7 @@ public:
 	int service_release() throw() {return 1;}
 	int service_add_ref() throw() {return 1;}
 
-	TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(service_impl_single_t,T)
+	template<typename ... arg_t> service_impl_single_t(arg_t && ... arg) : T(std::forward<arg_t>(arg) ...) {}
 };
 
 
@@ -55,3 +59,8 @@ namespace service_impl_helper {
 	void release_object_delayed(service_ptr obj);
 };
 
+namespace fb2k {
+	template<typename obj_t, typename ... arg_t> service_ptr_t<obj_t> service_new(arg_t && ... arg) {
+		return new service_impl_t< obj_t > ( std::forward<arg_t> (arg) ... );
+	}
+}

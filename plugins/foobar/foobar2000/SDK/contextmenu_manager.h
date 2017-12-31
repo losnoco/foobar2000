@@ -34,7 +34,7 @@ public:
 	static bool is_typing_message(HWND editbox, const MSG * msg);
 	static bool is_typing_message(const MSG * msg);
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(keyboard_shortcut_manager);
+	FB2K_MAKE_SERVICE_COREAPI(keyboard_shortcut_manager);
 };
 
 
@@ -116,12 +116,12 @@ public:
 	bool get_description_by_id(unsigned id,pfc::string_base & out);
 
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(contextmenu_manager);
+	FB2K_MAKE_SERVICE_COREAPI(contextmenu_manager);
 };
 
 //! \since 1.0
 class NOVTABLE contextmenu_group_manager : public service_base {
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(contextmenu_group_manager)
+	FB2K_MAKE_SERVICE_COREAPI(contextmenu_group_manager)
 public:
 	virtual GUID path_to_group(const char * path) = 0;
 	virtual void group_to_path(const GUID & group, pfc::string_base & path) = 0;

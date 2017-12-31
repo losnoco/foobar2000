@@ -32,7 +32,7 @@ public:
 	virtual void unregister_task(app_close_blocking_task * task) = 0;
 	
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(app_close_blocking_task_manager);
+	FB2K_MAKE_SERVICE_COREAPI(app_close_blocking_task_manager);
 };
 
 //! Helper; implements standard functionality required by app_close_blocking_task implementations - registers/unregisters the task on construction/destruction.

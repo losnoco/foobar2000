@@ -44,3 +44,45 @@ bool threaded_process::g_query_preventStandby() {
 		return false;
 	}
 }
+
+enum {
+	set_items_max_characters = 80
+};
+
+void threaded_process_status::set_items(pfc::list_base_const_t<const char*> const & items) {
+	const size_t count = items.get_count();
+	if (count == 0) return;
+	if (count == 1) { set_item_path(items[0]); }
+	pfc::string8 acc;
+
+	for (size_t w = 0; w < count; ++w) {
+		pfc::string8 name = pfc::string_filename_ext(items[w]);
+		if (w > 0 && acc.length() + name.length() > set_items_max_characters) {
+			acc << " and " << (count - w) << " more";
+			break;
+		}
+		if (w > 0) acc << ", ";
+		acc << name;
+	}
+
+	set_item(acc);
+}
+
+void threaded_process_status::set_items(metadb_handle_list_cref items) {
+	const size_t count = items.get_count();
+	if ( count == 0 ) return;
+	if ( count == 1 ) { set_item_path(items[0]->get_path()); }
+	pfc::string8 acc;
+	
+	for( size_t w = 0; w < count; ++w ) {
+		pfc::string8 name = pfc::string_filename_ext(items[w]->get_path());
+		if ( w > 0 && acc.length() + name.length() > set_items_max_characters) {
+			acc << " and " << (count-w) << " more";
+			break;
+		}
+		if (w > 0) acc << ", ";
+		acc << name;
+	}
+
+	set_item(acc);
+}

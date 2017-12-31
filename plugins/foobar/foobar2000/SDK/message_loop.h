@@ -18,7 +18,7 @@ public:
     virtual void add_idle_handler(idle_handler * ptr) = 0;
     virtual void remove_idle_handler(idle_handler * ptr) = 0;
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(message_loop);
+	FB2K_MAKE_SERVICE_COREAPI(message_loop);
 };
 
 class NOVTABLE message_loop_v2 : public message_loop {

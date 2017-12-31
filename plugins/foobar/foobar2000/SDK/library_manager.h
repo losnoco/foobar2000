@@ -5,7 +5,7 @@ Usage: Use static_api_ptr_t<library_manager> to instantiate.
 */
 
 class NOVTABLE library_manager : public service_base {
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(library_manager);
+	FB2K_MAKE_SERVICE_COREAPI(library_manager);
 public:
 	//! Interface for use with library_manager::enum_items().
 	class NOVTABLE enum_callback {
@@ -159,7 +159,7 @@ class NOVTABLE library_search_ui : public service_base {
 public:
 	virtual void show(const char * query) = 0;
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(library_search_ui)
+	FB2K_MAKE_SERVICE_COREAPI(library_search_ui)
 };
 
 //! \since 0.9.6
@@ -170,7 +170,7 @@ public:
 
 //! \since 0.9.6
 class NOVTABLE library_file_move_manager : public service_base {
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(library_file_move_manager)
+	FB2K_MAKE_SERVICE_COREAPI(library_file_move_manager)
 public:
 	virtual library_file_move_scope::ptr acquire_scope() = 0;
 	virtual bool is_move_in_progress() = 0;
@@ -191,7 +191,7 @@ public:
 
 //! \since 0.9.6.1
 class NOVTABLE library_meta_autocomplete : public service_base {
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(library_meta_autocomplete)
+	FB2K_MAKE_SERVICE_COREAPI(library_meta_autocomplete)
 public:
 	virtual bool get_value_list(const char * metaName, pfc::com_ptr_t<IUnknown> & out) = 0;
 };

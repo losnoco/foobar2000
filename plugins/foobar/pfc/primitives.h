@@ -1,3 +1,7 @@
+#pragma once
+
+#include <functional>
+
 #define tabsize(x) ((size_t)(sizeof(x)/sizeof(*x)))
 #define PFC_TABSIZE(x) ((size_t)(sizeof(x)/sizeof(*x)))
 
@@ -871,6 +875,20 @@ namespace pfc {
 
 	template<typename t_array,typename t_value>
 	void fill_array_t(t_array & p_array,const t_value & p_value);
+
+	class onLeaving {
+	public:
+		onLeaving() {}
+		onLeaving( std::function<void () > f_ ) : f(f_) {}
+		~onLeaving() {
+			if (f) f();
+		}
+		std::function<void () > f;
+	private:
+		void operator=( onLeaving const & );
+		onLeaving( const onLeaving & );
+	};
+
 };
 
 

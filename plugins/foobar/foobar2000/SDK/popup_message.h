@@ -29,7 +29,7 @@ public:
 	static void g_complain(const char * p_whatFailed, const std::exception & p_exception);
 	static void g_complain(const char * p_whatFailed, const char * msg);
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(popup_message);
+	FB2K_MAKE_SERVICE_COREAPI(popup_message);
 };
 
 #define EXCEPTION_TO_POPUP_MESSAGE(CODE,LABEL) try { CODE; } catch(std::exception const & e) {popup_message::g_complain(LABEL,e);}

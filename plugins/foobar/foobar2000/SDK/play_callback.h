@@ -63,7 +63,7 @@ public:
 	//! @p_callback Previously registered interface to unregister.
 	virtual void FB2KAPI unregister_callback(play_callback * p_callback) = 0;
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(play_callback_manager);
+	FB2K_MAKE_SERVICE_COREAPI(play_callback_manager);
 };
 
 //! Implementation helper.

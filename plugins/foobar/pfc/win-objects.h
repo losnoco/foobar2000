@@ -1,3 +1,5 @@
+#pragma once
+
 namespace pfc {
 	BOOL winFormatSystemErrorMessage(pfc::string_base & p_out,DWORD p_code);
 
@@ -249,7 +251,8 @@ WORD GetWindowsVersionCode() throw();
 //! Simple implementation of a COM reference counter. The initial reference count is zero, so it can be used with pfc::com_ptr_t<> with plain operator=/constructor rather than attach().
 template<typename TBase> class ImplementCOMRefCounter : public TBase {
 public:
-	TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(ImplementCOMRefCounter,TBase)
+    template<typename ... arg_t> ImplementCOMRefCounter(arg_t && ... arg) : TBase(std::forward<arg_t>(arg) ...) {}
+
 	ULONG STDMETHODCALLTYPE AddRef() {
 		return ++m_refcounter;
 	}
@@ -291,7 +294,7 @@ namespace pfc {
 		winHandle(HANDLE h_ = INVALID_HANDLE_VALUE) : h(h_) {}
 		~winHandle() { Close(); }
 		void Close() {
-			if (h != INVALID_HANDLE_VALUE) { CloseHandle(h); h = INVALID_HANDLE_VALUE; }
+			if (h != INVALID_HANDLE_VALUE && h != NULL ) { CloseHandle(h); h = INVALID_HANDLE_VALUE; }
 		}
 
 		void Attach(HANDLE h_) { Close(); h = h_; }
@@ -305,5 +308,9 @@ namespace pfc {
 		winHandle(const winHandle&);
 		void operator=(const winHandle&);
 	};
+    
+    void winSleep( double seconds );
+    void sleepSeconds(double seconds);
+    void yield();
 }
 

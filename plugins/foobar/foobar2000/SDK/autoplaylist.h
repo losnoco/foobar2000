@@ -84,7 +84,7 @@ public:
 	//! @param p_flags See autoplaylist_flag_* constants.
 	virtual void add_client_simple(const char * p_query,const char * p_sort,t_size p_playlist,t_uint32 p_flags) = 0;
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(autoplaylist_manager)
+	FB2K_MAKE_SERVICE_COREAPI(autoplaylist_manager)
 };
 
 //! \since 0.9.5.4

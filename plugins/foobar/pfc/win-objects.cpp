@@ -53,6 +53,11 @@ BOOL pfc::winFormatSystemErrorMessage(pfc::string_base & p_out,DWORD p_code) {
 	}
 }
 void pfc::winPrefixPath(pfc::string_base & out, const char * p_path) {
+	if (pfc::string_has_prefix(p_path, "..\\") || strstr(p_path, "\\..\\") ) {
+		// do not touch relative paths if we somehow got them here
+		out = p_path;
+		return;
+	}
 	const char * prepend_header = "\\\\?\\";
 	const char * prepend_header_net = "\\\\?\\UNC\\";
 	if (pfc::strcmp_partial( p_path, prepend_header ) == 0) { out = p_path; return; }
@@ -327,4 +332,23 @@ namespace pfc {
 
 #endif // #ifdef PFC_WINDOWS_DESKTOP_APP
 
-#endif
+namespace pfc {
+    void winSleep( double seconds ) {
+        DWORD ms = INFINITE;
+        if (seconds > 0) {
+            ms = rint32(seconds * 1000);
+            if (ms < 1) ms = 1;
+        } else if (seconds == 0) {
+            ms = 0;
+        }
+        Sleep(ms);
+    }
+    void sleepSeconds(double seconds) {
+        winSleep(seconds);
+    }
+    void yield() {
+        Sleep(1);
+    }
+}
+
+#endif // _WIN32

@@ -74,5 +74,5 @@ public:
 		if (!temp->service_query_t(out)) throw exception_service_extension_not_found();
 	}
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(visualisation_manager);
+	FB2K_MAKE_SERVICE_COREAPI(visualisation_manager);
 };

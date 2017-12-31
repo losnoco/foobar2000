@@ -141,6 +141,14 @@ void tag_processor::read_id3v2_trailing(const service_ptr_t<file> & p_file,file_
 	} catch(exception_io_data) {
 		have_id3v2 = false;
 	}
+
+	if (have_id3v2) {
+		// Disregard empty ID3v2
+		if (id3v2.meta_get_count() == 0 && id3v2.get_replaygain().get_value_count() == 0) {
+			have_id3v2 = false;
+		}
+	}
+
 	if (!have_id3v2 || !p_file->is_remote()) try {
 		read_trailing(p_file,trailing,p_abort);
 	} catch(exception_io_data) {

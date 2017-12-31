@@ -17,7 +17,7 @@ public:
 
 	virtual void unregister_callback(system_time_callback * callback) = 0;
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(system_time_keeper)
+	FB2K_MAKE_SERVICE_COREAPI(system_time_keeper)
 };
 
 class system_time_callback_impl : public system_time_callback {

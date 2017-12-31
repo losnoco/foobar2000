@@ -1,5 +1,6 @@
-#ifndef _foobar2000_sdk_service_h_included_
-#define _foobar2000_sdk_service_h_included_
+#pragma once
+
+#include <utility> // std::forward
 
 typedef const void* service_class_ref;
 
@@ -165,17 +166,27 @@ public:
     //! Forced cast operator - obtains a valid service pointer to the expected class or crashes the app if such pointer cannot be obtained.
     template<typename otherPtr_t>
     void operator ^= ( otherPtr_t other ) {
-        PFC_ASSERT( other.is_valid() );
-        if (!other->cast(*this)) uBugCheck();
+        if (other.is_empty()) release(); // allow null ptr, get upset only on type mismatch
+        else if (!other->cast(*this)) uBugCheck();
     }
-        
-    //! Conditional cast operator - attempts to obtain a vaild service pointer to the expected class; returns true on success, false on failure.
+    template<typename otherObj_t>
+    void operator ^= ( otherObj_t * other ) {
+        if (other == nullptr) release();
+        else forcedCastFrom( other );
+    }
+
+	//! Conditional cast operator - attempts to obtain a vaild service pointer to the expected class; returns true on success, false on failure.
     template<typename otherPtr_t>
     bool operator &= ( otherPtr_t other ) {
         PFC_ASSERT( other.is_valid() );
         return other->cast(*this);
     }
-    
+    template<typename otherObj_t>
+    bool operator &= ( otherObj_t * other ) {
+        if (other == nullptr) return false;
+        return other->cast( *this );
+    }
+ 
 };
 
 //! Autopointer class to be used with all services. Manages reference counter calls behind-the-scenes. \n
@@ -313,7 +324,11 @@ class service_list_t : public pfc::list_t<service_ptr_t<T>, t_alloc >
 		typedef THISCLASS t_interface_entrypoint;	\
 	FB2K_MAKE_SERVICE_INTERFACE(THISCLASS,service_base)
 		
-	
+#define FB2K_MAKE_SERVICE_COREAPI(THISCLASS) \
+	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT( THISCLASS ) \
+	public: static ptr get() { return standard_api_create_t<THISCLASS>(); }
+
+
 #define FB2K_DECLARE_SERVICE_BEGIN(THISCLASS,BASECLASS) \
 	class NOVTABLE THISCLASS : public BASECLASS	{	\
 		FB2K_MAKE_SERVICE_INTERFACE(THISCLASS,BASECLASS);	\
@@ -381,9 +396,6 @@ inline void __validate_service_class_helper<service_base>() {}
 #include "service_impl.h"
 
 class NOVTABLE service_factory_base {
-protected:
-	inline service_factory_base(const GUID & p_guid, service_factory_base * & factoryList) : m_guid(p_guid) {PFC_ASSERT(!core_api::are_services_available());__internal__next=factoryList;factoryList=this;}
-	inline ~service_factory_base() {PFC_ASSERT(!core_api::are_services_available());}
 public:
 	inline const GUID & get_class_guid() const {return m_guid;}
 
@@ -402,6 +414,11 @@ public:
 	service_factory_base * __internal__next;
 private:
 	const GUID & m_guid;
+
+protected:
+	inline service_factory_base(const GUID & p_guid, service_factory_base * & factoryList = __internal__list) : m_guid(p_guid) { PFC_ASSERT(!core_api::are_services_available()); __internal__next = factoryList; factoryList = this; }
+	inline ~service_factory_base() { PFC_ASSERT(!core_api::are_services_available()); }
+
 };
 
 template<typename B>
@@ -620,7 +637,7 @@ template<typename T>
 class service_factory_single_t : public service_factory_base_t<typename T::t_interface_entrypoint> {
     service_impl_single_t<T> g_instance;
 public:
-    TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(service_factory_single_t,g_instance)
+	template<typename ... arg_t> service_factory_single_t( arg_t && ... arg ) : g_instance(std::forward<arg_t>(arg) ... ) {}
     
     void instance_create(service_ptr_t<service_base> & p_out) {
         p_out = pfc::implicit_cast<service_base*>(pfc::implicit_cast<typename T::t_interface_entrypoint*>(pfc::implicit_cast<T*>(&g_instance)));
@@ -650,8 +667,8 @@ template<typename T>
 class service_factory_single_transparent_t : public service_factory_base_t<typename T::t_interface_entrypoint>, public service_impl_single_t<T>
 {
 public:
-    TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(service_factory_single_transparent_t,service_impl_single_t<T>)
-    
+	template<typename ... arg_t> service_factory_single_transparent_t( arg_t && ... arg ) : service_impl_single_t<T>( std::forward<arg_t>(arg) ... ) {}
+
     void instance_create(service_ptr_t<service_base> & p_out) {
         p_out = pfc::implicit_cast<service_base*>(pfc::implicit_cast<typename T::t_interface_entrypoint*>(pfc::implicit_cast<T*>(this)));
     }
@@ -765,6 +782,3 @@ class comparator_service_guid {
 public:
 	template<typename what> static int compare(const what & v1, const what & v2) { return pfc::compare_t(v1->get_guid(), v2->get_guid()); }
 };
-
-
-#endif //_foobar2000_sdk_service_h_included_

@@ -73,7 +73,7 @@ public:
 	static void remove_forbidden_chars_string_append(pfc::string_receiver & p_out,const char * p_source,t_size p_source_len,const char * p_forbidden_chars);
 	static void remove_forbidden_chars_string(pfc::string_base & p_out,const char * p_source,t_size p_source_len,const char * p_forbidden_chars);
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(titleformat_compiler);
+	FB2K_MAKE_SERVICE_COREAPI(titleformat_compiler);
 };
 
 
@@ -118,7 +118,7 @@ public:
 	virtual bool process_function(const file_info & p_info,const playable_location & p_location,titleformat_text_out * p_out,const char * p_name,t_size p_name_length,titleformat_hook_function_params * p_params,bool & p_found_flag) = 0;
 	virtual bool remap_meta(const file_info & p_info,t_size & p_index, const char * p_name, t_size p_name_length) = 0;
 	
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(titleformat_common_methods);
+	FB2K_MAKE_SERVICE_COREAPI(titleformat_common_methods);
 };
 
 class titleformat_hook_impl_file_info : public titleformat_hook

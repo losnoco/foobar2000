@@ -78,7 +78,7 @@ public:
 	//! @returns true on success, false on failure (out of memory / no GUI loaded / etc)
 	virtual bool override_status_text_create(service_ptr_t<ui_status_text_override> & p_out) = 0;
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(ui_control);
+	FB2K_MAKE_SERVICE_COREAPI(ui_control);
 };
 
 //! Service called from the UI when some object is dropped into the UI. Usable for modifying drag&drop behaviors such as adding custom handlers for object types other than supported media files.\n
@@ -155,7 +155,7 @@ public:
 	//! Retrieves type of the active selection holder. Values same as contextmenu_item caller IDs.
 	virtual GUID get_selection_type() = 0;
 	
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(ui_selection_manager);
+	FB2K_MAKE_SERVICE_COREAPI(ui_selection_manager);
 };
 
 //! \since 1.0
