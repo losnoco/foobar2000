@@ -1,7 +1,11 @@
-#define MY_VERSION "0.5"
+#define MY_VERSION "0.6"
 
 /*
 	changelog
+
+2018-01-14 02:01 UTC - kode54
+- Update to version 1.4 SDK
+- Version is now 0.6
 
 2017-03-06 05:26 UTC - kode54
 - Added direct support for floating point samples, rather than forcing conversion to 24 bit integer
@@ -31,7 +35,7 @@
 
 const char tag_script[] = "AviSynth script";
 
-class input_avs
+class input_avs : public input_stubs
 {
 	service_ptr_t<file> m_file;
 	t_filestats m_stats;
@@ -225,6 +229,17 @@ public:
 	
 	static bool g_is_our_content_type( const char * p_content_type ) { return stricmp_utf8( p_content_type, "text/avisynth" ) == 0; }
 	static bool g_is_our_path( const char * p_path, const char * p_extension ) { return stricmp_utf8_partial( p_path, "file://" ) == 0 && stricmp_utf8( p_extension, "avs" ) == 0; }
+
+	static GUID g_get_guid()
+	{
+		static const GUID guid = { 0x775c978f, 0xabe4, 0x4106,{ 0x95, 0x4a, 0x3f, 0x9b, 0xce, 0xe3, 0xe8, 0x97 } };
+		return guid;
+	}
+
+	static const char * g_get_name()
+	{
+		return "AVS input";
+	}
 };
 
 static input_singletrack_factory_t<input_avs> g_input_avs_factory;

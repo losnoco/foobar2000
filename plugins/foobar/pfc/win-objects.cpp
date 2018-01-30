@@ -4,7 +4,14 @@
 
 #ifdef _WIN32
 
-BOOL pfc::winFormatSystemErrorMessage(pfc::string_base & p_out,DWORD p_code) {
+
+namespace pfc {
+#ifdef PFC_FOOBAR2000_CLASSIC
+	BOOL winFormatSystemErrorMessageHook(pfc::string_base & p_out, DWORD p_code);
+#endif
+
+
+BOOL winFormatSystemErrorMessageImpl(pfc::string_base & p_out,DWORD p_code) {
 	switch(p_code) {
 	case ERROR_CHILD_NOT_COMPLETE:
 		p_out = "Application cannot be run in Win32 mode.";
@@ -52,7 +59,7 @@ BOOL pfc::winFormatSystemErrorMessage(pfc::string_base & p_out,DWORD p_code) {
 		break;
 	}
 }
-void pfc::winPrefixPath(pfc::string_base & out, const char * p_path) {
+void winPrefixPath(pfc::string_base & out, const char * p_path) {
 	if (pfc::string_has_prefix(p_path, "..\\") || strstr(p_path, "\\..\\") ) {
 		// do not touch relative paths if we somehow got them here
 		out = p_path;
@@ -69,7 +76,14 @@ void pfc::winPrefixPath(pfc::string_base & out, const char * p_path) {
 	}
 };
 
-void pfc::winUnPrefixPath(pfc::string_base & out, const char * p_path) {
+BOOL winFormatSystemErrorMessage(pfc::string_base & p_out, DWORD p_code) {
+#ifdef PFC_FOOBAR2000_CLASSIC
+	return winFormatSystemErrorMessageHook( p_out, p_code );
+#else
+	return winFormatSystemErrorMessageImpl( p_out, p_code );
+#endif
+}
+void winUnPrefixPath(pfc::string_base & out, const char * p_path) {
 	const char * prepend_header = "\\\\?\\";
 	const char * prepend_header_net = "\\\\?\\UNC\\";
 	if (pfc::strcmp_partial(p_path, prepend_header_net) == 0) {
@@ -83,8 +97,10 @@ void pfc::winUnPrefixPath(pfc::string_base & out, const char * p_path) {
 	out = p_path;
 }
 
+} // namespace pfc
+
 format_win32_error::format_win32_error(DWORD p_code) {
-	LastErrorRevertScope revert;
+	pfc::LastErrorRevertScope revert;
 	if (p_code == 0) m_buffer = "Undefined error";
 	else if (!pfc::winFormatSystemErrorMessage(m_buffer,p_code)) m_buffer << "Unknown error code (" << (unsigned)p_code << ")";
 }
@@ -232,12 +248,12 @@ bool win32_event::g_wait_for(HANDLE p_event,double p_timeout_seconds) {
 	switch(status) {
 	case WAIT_FAILED:
 		throw exception_win32(GetLastError());
-	default:
-		throw pfc::exception_bug_check();
 	case WAIT_OBJECT_0:
 		return true;
 	case WAIT_TIMEOUT:
 		return false;
+	default:
+		pfc::crash();
 	}
 }
 

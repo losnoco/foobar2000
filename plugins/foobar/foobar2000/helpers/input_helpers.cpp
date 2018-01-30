@@ -82,7 +82,7 @@ TRACK_CODE("input_entry::g_open_for_decoding",
 #ifndef FOOBAR2000_MODERN
 if (!other.m_skip_hints) {
 	try {
-		static_api_ptr_t<metadb_io>()->hint_reader(m_input.get_ptr(), path, abort);
+		metadb_io::get()->hint_reader(m_input.get_ptr(), path, abort);
 	}
 	catch (exception_io_data) {
 		//Don't fail to decode when this barfs, might be barfing when reading info from another subsong than the one we're trying to decode etc.
@@ -231,7 +231,7 @@ bool dead_item_filter::run(const pfc::list_base_const_t<metadb_handle_ptr> & p_l
 	file_list_helper::file_list_from_metadb_handle_list path_list;
 	path_list.init_from_list(p_list);
 	metadb_handle_list valid_handles;
-	static_api_ptr_t<metadb> l_metadb;
+	auto l_metadb = metadb::get();
 	for(t_size pathidx=0;pathidx<path_list.get_count();pathidx++)
 	{
 		if (is_aborting()) return false;

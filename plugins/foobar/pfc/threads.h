@@ -14,7 +14,10 @@ namespace pfc {
 	//! IMPORTANT: all classes derived from thread must call waitTillDone() in their destructor, to avoid object destruction during a virtual function call!
 	class thread {
 	public:
-		PFC_DECLARE_EXCEPTION(exception_creation, exception, "Could not create thread");
+
+		//! Critical error handler function, never returns
+		PFC_NORETURN static void couldNotCreateThread();
+
 		thread();
 		~thread() {PFC_ASSERT(!isActive()); waitTillDone();}
 		void startWithPriority(int priority);

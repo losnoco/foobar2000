@@ -91,6 +91,11 @@ public:
 	size_t extended_param(const GUID & type, size_t arg1, void * arg2, size_t arg2size) { return 0; }
 	static GUID g_get_preferences_guid() {return pfc::guid_null;}
 	static bool g_is_low_merit() { return false; }
+
+	//! These typedefs indicate which interfaces your class actually supports. You can override them to support non default input API interfaces without specifying input_factory parameters.
+	typedef input_decoder_v4 interface_decoder_t;
+	typedef input_info_reader interface_info_reader_t;
+	typedef input_info_writer interface_info_writer_t;
 };
 
 //! This is a class that just declares prototypes of functions that each non-multitrack-enabled input needs to implement. See input_decoder / input_info_reader / input_info_writer interfaces for full descriptions of member functions. Since input implementation class is instantiated using a template, you don't need to derive from input_singletrack_impl as virtual functions are not used on implementation class level. Use input_singletrack_factory_t template to register input class based on input_singletrack_impl.
@@ -276,6 +281,11 @@ public:
 	static GUID g_get_guid() { return input_t::g_get_guid(); }
 	static const char * g_get_name() { return input_t::g_get_name(); }
 	static bool g_is_low_merit() { return input_t::g_is_low_merit(); }
+
+	typedef typename input_t::interface_decoder_t interface_decoder_t;
+	typedef typename input_t::interface_info_reader_t interface_info_reader_t;
+	typedef typename input_t::interface_info_writer_t interface_info_writer_t;
+
 };
 
 //! Helper used by input_singletrack_factory_t, do not use directly. Translates input_impl calls to input_singletrack_impl calls. 
@@ -349,7 +359,7 @@ private:
 };
 
 //! Helper; standard input_entry implementation. Do not instantiate this directly, use input_factory_t or one of other input_*_factory_t helpers instead.
-template<typename I,unsigned t_flags, typename t_decoder = input_decoder_v4, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
+template<typename I,unsigned t_flags, typename t_decoder = typename I::interface_decoder_t, typename t_inforeader = typename I::interface_info_reader_t, typename t_infowriter = typename I::interface_info_writer_t>
 class input_entry_impl_t : public input_entry_v2
 {
 private:
@@ -401,17 +411,19 @@ public:
 
 
 //! Stardard input factory. For reference of functions that must be supported by registered class, see input_impl.\n Usage: static input_factory_t<myinputclass> g_myinputclass_factory;\n Note that input classes can't be registered through service_factory_t template directly.
-template<typename T>
-class input_factory_t : public service_factory_single_t<input_entry_impl_t<T,0> > {};
+template<typename T, unsigned t_flags = 0>
+class input_factory_t : public service_factory_single_t<input_entry_impl_t<T, t_flags> > {};
 
 //! Non-multitrack-enabled input factory (helper) - hides multitrack management functions from input implementation; use this for inputs that handle file types where each physical file can contain only one user-visible playable track. For reference of functions that must be supported by registered class, see input_singletrack_impl.\n Usage: static input_singletrack_factory_t<myinputclass> g_myinputclass_factory;\n Note that input classes can't be registered through service_factory_t template directly.template<class T>
-template<typename T>
-class input_singletrack_factory_t : public service_factory_single_t<input_entry_impl_t<input_wrapper_singletrack_t<T>,0> > {};
+template<typename T, unsigned t_flags = 0>
+class input_singletrack_factory_t : public service_factory_single_t<input_entry_impl_t<input_wrapper_singletrack_t<T>,t_flags> > {};
 
-//! Extended version of input_factory_t, with non-default flags and supported interfaces. See: input_factory_t, input_entry::get_flags().
-template<typename T, unsigned t_flags = 0, typename t_decoder = input_decoder_v4, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
+//! Extended version of input_factory_t, with non-default flags and supported interfaces. See: input_factory_t, input_entry::get_flags(). \n
+//! This is obsolete and provided for backwards compatibility. Use interface_decoder_t + interface_info_reader_t + interface_info_writer_t typedefs in your input class to specify supported interfaces.
+template<typename T, unsigned t_flags = 0, typename t_decoder = typename T::interface_decoder_t, typename t_inforeader = typename T::interface_info_reader_t, typename t_infowriter = typename T::interface_info_writer_t>
 class input_factory_ex_t : public service_factory_single_t<input_entry_impl_t<T, t_flags, t_decoder, t_inforeader, t_infowriter> > {};
 
 //! Extended version of input_singletrack_factory_t, with non-default flags and supported interfaces. See: input_singletrack_factory_t, input_entry::get_flags().
-template<typename T, unsigned t_flags = 0, typename t_decoder = input_decoder_v4, typename t_inforeader = input_info_reader, typename t_infowriter = input_info_writer>
+//! This is obsolete and provided for backwards compatibility. Use interface_decoder_t + interface_info_reader_t + interface_info_writer_t typedefs in your input class to specify supported interfaces.
+template<typename T, unsigned t_flags = 0, typename t_decoder = typename T::interface_decoder_t, typename t_inforeader = typename T::interface_info_reader_t, typename t_infowriter = typename T::interface_info_writer_t>
 class input_singletrack_factory_ex_t : public service_factory_single_t<input_entry_impl_t<input_wrapper_singletrack_t<T>, t_flags, t_decoder, t_inforeader, t_infowriter> > {};

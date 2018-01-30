@@ -458,8 +458,9 @@ public:
 	virtual void allow_element_specified_title(bool allow) = 0;
 };
 
-//! For use with static_api_ptr_t<>
+//! Shared implementation of common UI Element methods. Use ui_element_common_methods::get() to obtain an instance.
 class NOVTABLE ui_element_common_methods : public service_base {
+	FB2K_MAKE_SERVICE_COREAPI(ui_element_common_methods);
 public:
 	virtual void copy(ui_element_config::ptr cfg) = 0;
 	virtual void cut(ui_element_instance_ptr & p_instance,HWND p_parent,ui_element_instance_callback_ptr p_callback) = 0;
@@ -478,11 +479,12 @@ public:
 
 	void copy(ui_element_instance_ptr p_instance) {copy(p_instance->get_configuration());}
 
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(ui_element_common_methods);
+	
 };
 
-//! For use with static_api_ptr_t<>
+//! Shared implementation of common UI Element methods. Use ui_element_common_methods_v2::get() to obtain an instance.
 class NOVTABLE ui_element_common_methods_v2 : public ui_element_common_methods {
+	FB2K_MAKE_SERVICE_COREAPI_EXTENSION(ui_element_common_methods_v2, ui_element_common_methods);
 public:
 	virtual void spawn_host_simple(HWND parent, ui_element::ptr elem, bool fullScreenMode) = 0;
 
@@ -495,17 +497,14 @@ public:
 	void toggle_fullscreen(const GUID & elem, HWND parent) {
 		toggle_fullscreen(service_by_guid<ui_element>(elem), parent);
 	}
-
-	FB2K_MAKE_SERVICE_INTERFACE(ui_element_common_methods_v2, ui_element_common_methods);
 };
 
 class NOVTABLE ui_element_typable_window_manager : public service_base {
+	FB2K_MAKE_SERVICE_COREAPI(ui_element_typable_window_manager)
 public:
 	virtual void add(HWND wnd) = 0;
 	virtual void remove(HWND wnd) = 0;
 	virtual bool is_registered(HWND wnd) = 0;
-
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(ui_element_typable_window_manager)
 };
 
 //! Dispatched through ui_element_instance::notify() when host changes color settings. Other parameters are not used and should be set to zero.

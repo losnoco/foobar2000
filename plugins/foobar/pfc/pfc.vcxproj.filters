@@ -82,6 +82,7 @@
     <ClInclude Include="wait_queue.h" />
     <ClInclude Include="pool.h" />
     <ClInclude Include="pocket_char_ops.h" />
+    <ClInclude Include="suppress_fb2k_hooks.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="pfc-license.txt">

@@ -1,7 +1,15 @@
-#define MY_VERSION "0.9.8"
+#define MY_VERSION "0.9.10"
 
 /*
 	changelog
+
+2018-01-26 02:57 UTC - kode54
+- Hopefully fix the SSE2 compiler issue with some workaround switch
+- Version is now 0.9.10
+
+2018-01-13 03:58 UTC - kode54
+- Updated to v1.4 SDK
+- Version is now 0.9.9
 
 2017-02-04 01:41 UTC - kode54
 - Add link to about string
@@ -88,8 +96,6 @@
 - Version is now 0.2
 
 */
-
-#define _WIN32_WINNT 0x0501
 
 #include <foobar2000.h>
 
@@ -340,7 +346,7 @@ void prepare_chunk( const sample_t * p_src, audio_sample * p_dst, unsigned sampl
 	}
 }
 
-class input_ac3
+class input_ac3 : public input_stubs
 {
 private:
 	int srate, flags, bitrate; //, remain;
@@ -579,6 +585,23 @@ public:
 	{
 		return !stricmp( p_extension, "ac3" );
 	}
+
+	static GUID g_get_guid()
+	{
+		static const GUID guid = { 0xd11f990, 0xf41b, 0x4e45,{ 0x83, 0x89, 0x2f, 0x22, 0xa, 0x1e, 0x55, 0x33 } };
+		return guid;
+	}
+
+	static const char * g_get_name()
+	{
+		return "AC3 decoder";
+	}
+
+	static GUID g_get_preferences_guid()
+	{
+		static const GUID guid = { 0x69c304f0, 0xb305, 0x40d8,{ 0x9c, 0xf6, 0x19, 0x1e, 0x92, 0x10, 0xa7, 0x4c } };
+		return guid;
+	}
 };
 
 class packet_decoder_ac3 : public packet_decoder_streamparse
@@ -801,12 +824,8 @@ void CMyPreferences::OnChanged() {
 class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
 	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
 public:
-	const char * get_name() {return "AC3 decoder";}
-	GUID get_guid() {
-		// {69C304F0-B305-40d8-9CF6-191E9210A74C}
-		static const GUID guid = { 0x69c304f0, 0xb305, 0x40d8, { 0x9c, 0xf6, 0x19, 0x1e, 0x92, 0x10, 0xa7, 0x4c } };
-		return guid;
-	}
+	const char * get_name() {return input_ac3::g_get_name();}
+	GUID get_guid() {return input_ac3::g_get_preferences_guid();}
 	GUID get_parent_guid() {return guid_input;}
 };
 

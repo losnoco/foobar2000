@@ -1,7 +1,11 @@
-#define MYVERSION "1.5"
+#define MYVERSION "1.6"
 
 /*
 	changelog
+
+2018-01-14 02:07 UTC - kode54
+- Updated to version 1.4 SDK
+- Version is now 1.6
 
 2017-02-04 02:31 UTC - kode54
 - Add link to about string
@@ -524,7 +528,7 @@ private:
 	iff_packet_container m_container;
 };
 
-class input_dsdiff
+class input_dsdiff : public input_stubs
 {
 	iff_stream m_stream;
 
@@ -1177,6 +1181,23 @@ public:
 	{
 		return !stricmp( p_extension, "dff" );
 	}
+
+	static GUID g_get_guid()
+	{
+		static const GUID guid = { 0x81013931, 0xf5c9, 0x461c,{ 0xb4, 0xbd, 0x9d, 0x1c, 0xc9, 0xd4, 0xf1, 0x48 } };
+		return guid;
+	}
+
+	static const char * g_get_name()
+	{
+		return "DSDIFF Decoder";
+	}
+
+	static GUID g_get_preferences_guid()
+	{
+		static const GUID guid = { 0x1a6a112a, 0xda07, 0x46c8,{ 0xa4, 0xff, 0xf, 0xb7, 0x46, 0x9d, 0x42, 0xe2 } };
+		return guid;
+	}
 };
 
 static cfg_dropdown_history cfg_history_rate(guid_cfg_history_rate,16);
@@ -1283,12 +1304,8 @@ void CMyPreferences::OnChanged() {
 class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
 	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
 public:
-	const char * get_name() {return "DSDIFF Decoder";}
-	GUID get_guid() {
-		// {1A6A112A-DA07-46c8-A4FF-0FB7469D42E2}
-		static const GUID guid = { 0x1a6a112a, 0xda07, 0x46c8, { 0xa4, 0xff, 0xf, 0xb7, 0x46, 0x9d, 0x42, 0xe2 } };
-		return guid;
-	}
+	const char * get_name() {return input_dsdiff::g_get_name();}
+	GUID get_guid() {return input_dsdiff::g_get_preferences_guid();}
 	GUID get_parent_guid() {return guid_input;}
 };
 

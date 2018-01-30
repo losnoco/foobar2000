@@ -65,8 +65,9 @@ public:
 	}
 private:
 	hasher_md5_state m_state;
-	static_api_ptr_t<hasher_md5> m_hasher;	
+	const hasher_md5::ptr m_hasher = hasher_md5::get();
 };
+
 template<bool isBigEndian = false>
 class stream_formatter_hasher_md5 : public stream_writer_formatter<isBigEndian> {
 public:

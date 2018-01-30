@@ -111,6 +111,7 @@ namespace cue_parser
 	template<typename t_base>
 	class input_wrapper_cue_t : public input_forward_static_methods<t_base> {
 	public:
+		typedef input_info_writer_v2 interface_info_writer_t; // remove_tags supplied
 		void open(service_ptr_t<file> p_filehint,const char * p_path,t_input_open_reason p_reason,abort_callback & p_abort) {
 			m_impl.open( p_filehint, p_path, p_reason, p_abort );
 			file_info_impl info;
@@ -328,7 +329,7 @@ namespace cue_parser
 template<typename t_input_impl, unsigned t_flags = 0>
 class input_cuesheet_factory_t {
 public:
-	input_factory_ex_t<cue_parser::input_wrapper_cue_t<t_input_impl>,t_flags,input_decoder_v4, input_info_reader, input_info_writer_v2 > m_input_factory;
+	input_factory_t<cue_parser::input_wrapper_cue_t<t_input_impl>,t_flags > m_input_factory;
 #ifdef FOOBAR2000_HAVE_CHAPTERIZER
 	service_factory_single_t<cue_parser::chapterizer_impl_t<t_input_impl> > m_chapterizer_factory;	
 #endif

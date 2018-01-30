@@ -299,6 +299,10 @@ void input_tta::retag(const file_info & p_info, abort_callback & p_abort) {
 	}
 }
 
+void input_tta::remove_tags(abort_callback & p_abort) {
+	tag_processor::remove_id3v2_trailing(infile, p_abort);
+}
+
 bool input_tta::g_is_our_content_type (const char * p_content_type) {
 		return !_stricmp(p_content_type, "audio/x-tta")
 			|| !_stricmp(p_content_type, "audio/tta");
@@ -306,6 +310,18 @@ bool input_tta::g_is_our_content_type (const char * p_content_type) {
 
 bool input_tta::g_is_our_path(const char * p_path, const char * p_extension) {
 	return (stricmp_utf8(p_extension, "TTA") == 0);
+}
+
+GUID input_tta::g_get_guid() {
+	return { 0x1f4cd0f7, 0x473b, 0x4d69,{ 0x9e, 0xcf, 0xa1, 0x4d, 0xd8, 0xcd, 0xa3, 0xc6 } };
+}
+
+const char * input_tta::g_get_name() {
+	return "TTA input";
+}
+
+GUID input_tta::g_get_preferences_guid() {
+	return input_tta_preferences_guid;
 }
 
 static input_cuesheet_factory_t<input_tta> g_input_tta_factory;

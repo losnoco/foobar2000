@@ -31,14 +31,14 @@ static int _cdecl _custom_sort_compare(const void * v1, const void * v2) {
 void metadb_handle_list_helper::sort_by_format(metadb_handle_list_ref p_list,const char * spec,titleformat_hook * p_hook)
 {
 	service_ptr_t<titleformat_object> script;
-	if (static_api_ptr_t<titleformat_compiler>()->compile(script,spec))
+	if (titleformat_compiler::get()->compile(script,spec))
 		sort_by_format(p_list,script,p_hook);
 }
 
 void metadb_handle_list_helper::sort_by_format_get_order(metadb_handle_list_cref p_list,t_size* order,const char * spec,titleformat_hook * p_hook)
 {
 	service_ptr_t<titleformat_object> script;
-	if (static_api_ptr_t<titleformat_compiler>()->compile(script,spec))
+	if (titleformat_compiler::get()->compile(script,spec))
 		sort_by_format_get_order(p_list,order,script,p_hook);
 }
 
@@ -82,7 +82,7 @@ namespace {
 			}
 		}
 	private:
-		static_api_ptr_t<genrand_service> m_API;
+		genrand_service::ptr m_API = genrand_service::get();
 	};
 
 	class tfthread : public pfc::thread {
@@ -167,7 +167,7 @@ void metadb_handle_list_helper::sort_by_relative_path_get_order(metadb_handle_li
 	t_size n;
 	pfc::array_t<custom_sort_data> data;
 	data.set_size(count);
-	static_api_ptr_t<library_manager> api;
+	auto api = library_manager::get();
 	
 	pfc::string8_fastalloc temp;
 	temp.prealloc(512);

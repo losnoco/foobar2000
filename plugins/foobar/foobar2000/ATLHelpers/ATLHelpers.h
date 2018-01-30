@@ -2,7 +2,7 @@
 
 #include "ATLHelpersLean.h"
 
-#pragma message("Avoid using this header. #include ATLHelpersLean.h then individual helpers instead")
+// #pragma message("Avoid using this header. #include ATLHelpersLean.h then individual helpers instead")
 
 #include "../helpers/helpers.h"
 

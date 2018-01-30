@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2010
+VisualStudioVersion = 15.0.27130.2020
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_sample", "foo_sample.vcxproj", "{85FBFD09-0099-4FE9-9DB6-78DB6F60F817}"
 EndProject
@@ -64,6 +64,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {879B2282-2839-4250-A2F6-B1D41141A8BF}
+		SolutionGuid = {9043E1D4-2AF2-4B11-9A8B-44EE2C9A356C}
 	EndGlobalSection
 EndGlobal

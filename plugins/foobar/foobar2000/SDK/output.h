@@ -306,7 +306,7 @@ public:
 
 //! \since 1.4
 class NOVTABLE output_manager_v2 : public output_manager {
-	FB2K_MAKE_SERVICE_INTERFACE(output_manager_v2, output_manager);
+	FB2K_MAKE_SERVICE_COREAPI_EXTENSION(output_manager_v2, output_manager);
 public:
 	virtual void setCoreConfig( const void * in, size_t inSize, bool bSuppressPlaybackRestart = false ) = 0;
 	void setCoreConfig( const outputCoreConfig_t & in ) { setCoreConfig(&in, sizeof(in) ); }

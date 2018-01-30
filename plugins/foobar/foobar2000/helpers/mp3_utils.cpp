@@ -34,13 +34,6 @@ namespace {
 
 typedef t_uint16 uint16;
 
-static const uint16 bitrate_table_l1v1[16]  = {  0, 32, 64, 96,128,160,192,224,256,288,320,352,384,416,448,  0};
-static const uint16 bitrate_table_l2v1[16]  = {  0, 32, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,384,  0};
-static const uint16 bitrate_table_l3v1[16]  = {  0, 32, 40, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,  0};
-static const uint16 bitrate_table_l1v2[16]  = {  0, 32, 48, 56, 64, 80, 96,112,128,144,160,176,192,224,256,  0};
-static const uint16 bitrate_table_l23v2[16] = {  0,  8, 16, 24, 32, 40, 48, 56, 64, 80, 96,112,128,144,160,  0};
-static const uint16 sample_rate_table[] = {11025,12000,8000};
-
 unsigned mp3_utils::QueryMPEGFrameSize(const t_uint8 p_header[4])
 {
 	TMPEGFrameInfo info;
@@ -52,6 +45,12 @@ bool mp3_utils::ParseMPEGFrameHeader(TMPEGFrameInfo & p_info,const t_uint8 p_hea
 {
 	enum {MPEG_LAYER_1 = 3, MPEG_LAYER_2 = 2, MPEG_LAYER_3 = 1};
 	enum {_MPEG_1 = 3, _MPEG_2 = 2, _MPEG_25 = 0};
+	static const uint16 bitrate_table_l1v1[16] = { 0, 32, 64, 96,128,160,192,224,256,288,320,352,384,416,448,  0 };
+	static const uint16 bitrate_table_l2v1[16] = { 0, 32, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,384,  0 };
+	static const uint16 bitrate_table_l3v1[16] = { 0, 32, 40, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,  0 };
+	static const uint16 bitrate_table_l1v2[16] = { 0, 32, 48, 56, 64, 80, 96,112,128,144,160,176,192,224,256,  0 };
+	static const uint16 bitrate_table_l23v2[16] = { 0,  8, 16, 24, 32, 40, 48, 56, 64, 80, 96,112,128,144,160,  0 };
+	static const uint16 sample_rate_table[] = { 11025,12000,8000 };
 
 	header_parser parser(p_header);
 	if (parser.read(11) != 0x7FF) return false;

@@ -1,4 +1,4 @@
-//! Interface for setting current operation progress state to be visible on Windows 7 taskbar. Use static_api_ptr_t<progress_meter>()->acquire() to instantiate.
+//! Interface for setting current operation progress state to be visible on Windows 7 taskbar. Use progress_meter::get()->acquire() to instantiate.
 class NOVTABLE progress_meter_instance : public service_base {
 	FB2K_MAKE_SERVICE_INTERFACE(progress_meter_instance, service_base);
 public:

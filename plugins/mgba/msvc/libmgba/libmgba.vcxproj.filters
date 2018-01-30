@@ -481,9 +481,6 @@
     <ClInclude Include="..\..\mgba\include\mgba-util\vfs.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="stdbool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="libmgba.def">

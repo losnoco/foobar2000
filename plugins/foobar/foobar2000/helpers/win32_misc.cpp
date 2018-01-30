@@ -269,7 +269,7 @@ bool SetClipboardDataBlock(UINT p_format, const void * p_block, t_size p_block_s
 }
 
 void CModelessDialogEntry::Set(HWND p_new) {
-	static_api_ptr_t<modeless_dialog_manager> api;
+	auto api = modeless_dialog_manager::get();
 	if (m_wnd) api->remove(m_wnd);
 	m_wnd = p_new;
 	if (m_wnd) api->add(m_wnd);

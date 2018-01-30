@@ -175,3 +175,9 @@
 [submodule "plugins/modplay"]
 	path = plugins/modplay
 	url = https://gitlab.kode54.net/kode54/modplay.git
+[submodule "plugins/LibAtrac9"]
+	path = plugins/LibAtrac9
+	url = https://github.com/Thealexbarney/LibAtrac9.git
+[submodule "plugins/foobar/foobar2000/foo_openmpt"]
+	path = plugins/foobar/foobar2000/foo_openmpt
+	url = https://gitlab.kode54.net/kode54/foo_openmpt.git

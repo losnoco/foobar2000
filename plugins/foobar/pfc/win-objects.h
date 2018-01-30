@@ -7,17 +7,18 @@ namespace pfc {
 	void winPrefixPath(pfc::string_base & out, const char * p_path);
 	// Reverse winPrefixPath
 	void winUnPrefixPath(pfc::string_base & out, const char * p_path);
+
+	class LastErrorRevertScope {
+	public:
+		LastErrorRevertScope() : m_val(GetLastError()) {}
+		~LastErrorRevertScope() { SetLastError(m_val); }
+
+	private:
+		const DWORD m_val;
+	};
 }
 
 
-class LastErrorRevertScope {
-public:
-	LastErrorRevertScope() : m_val(GetLastError()) {}
-	~LastErrorRevertScope() {SetLastError(m_val);}
-
-private:
-	const DWORD m_val;
-};
 
 class format_win32_error {
 public:
@@ -114,8 +115,8 @@ public:
 	
 	bool is_valid() const {return m_menu != NULL;}
 private:
-	win32_menu(const win32_menu &);
-	const win32_menu & operator=(const win32_menu &);
+	win32_menu(const win32_menu &) = delete;
+	void operator=(const win32_menu &) = delete;
 
 	HMENU m_menu;
 };
@@ -151,8 +152,8 @@ public:
     static int g_twoEventWait( win32_event & ev1, win32_event & ev2, double timeout );
     static int g_twoEventWait( HANDLE ev1, HANDLE ev2, double timeout );
 private:
-	win32_event(const win32_event&);
-	const win32_event & operator=(const win32_event &);
+	win32_event(const win32_event&) = delete;
+	void operator=(const win32_event &) = delete;
 
 	HANDLE m_handle;
 };
@@ -305,8 +306,8 @@ namespace pfc {
 
 		HANDLE h;
 	private:
-		winHandle(const winHandle&);
-		void operator=(const winHandle&);
+		winHandle(const winHandle&) = delete;
+		void operator=(const winHandle&) = delete;
 	};
     
     void winSleep( double seconds );

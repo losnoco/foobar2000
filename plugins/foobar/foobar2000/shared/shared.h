@@ -542,8 +542,8 @@ public:
 	
 
 private:
-	modal_dialog_scope(const modal_dialog_scope & p_scope) {assert(0);}
-	const modal_dialog_scope & operator=(const modal_dialog_scope &) {assert(0); return *this;}
+	modal_dialog_scope(const modal_dialog_scope & p_scope) = delete;
+	const modal_dialog_scope & operator=(const modal_dialog_scope &) = delete;
 
 	t_modal_dialog_entry m_entry;
 

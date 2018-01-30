@@ -1,7 +1,11 @@
-#define MYVERSION "1.1"
+#define MYVERSION "1.2"
 
 /*
 	changelog
+
+2018-01-30 04:46 UTC - kode54
+- Updated to version 1.4 SDK
+- Version is now 1.2
 
 2012-02-19 19:54 UTC - kode54
 - Added abort check to decoder
@@ -104,7 +108,7 @@ struct WriteRegLog
 
 static struct initializer { initializer() { spu_init(); spucore_init(); } } dostuff;
 
-class input_spu
+class input_spu : public input_stubs
 {
 	pfc::array_t<signed short> samplebuffer;
 	pfc::array_t<t_uint8> spu_state;
@@ -465,6 +469,16 @@ public:
 	static bool g_is_our_path( const char * p_full_path, const char * p_extension )
 	{
 		return !stricmp( p_extension, "spu" );
+	}
+
+	static GUID g_get_guid()
+	{
+		return { 0x71710c3f, 0x36f3, 0x476e,{ 0xbb, 0xc5, 0x14, 0x14, 0x9d, 0x60, 0x3d, 0xaa } };
+	}
+
+	static const char * g_get_name()
+	{
+		return "SPU log decoder";
 	}
 };
 

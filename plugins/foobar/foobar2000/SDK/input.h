@@ -254,7 +254,7 @@ public:
 #ifdef FOOBAR2000_DESKTOP
 //! \since 1.4
 class input_manager : public service_base {
-	FB2K_MAKE_SERVICE_INTERFACE_ENTRYPOINT(input_manager);
+	FB2K_MAKE_SERVICE_COREAPI(input_manager);
 public:
 	virtual service_ptr open(const GUID & whatFor, file::ptr hint, const char * path, bool fromRedirect, abort_callback & aborter, GUID * outUsedEntry = nullptr) = 0;
 };

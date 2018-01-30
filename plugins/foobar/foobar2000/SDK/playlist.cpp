@@ -350,8 +350,7 @@ bool playlist_manager::activeplaylist_add_items(const pfc::list_base_const_t<met
 bool playlist_manager::playlist_insert_items_filter(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<metadb_handle_ptr> & p_data,bool p_select)
 {
 	metadb_handle_list temp;
-	static_api_ptr_t<playlist_incoming_item_filter> api;
-	if (!api->filter_items(p_data,temp))
+	if (!playlist_incoming_item_filter::get()->filter_items(p_data,temp))
 		return false;
 	return playlist_insert_items(p_playlist,p_base,temp, pfc::bit_array_val(p_select)) != pfc_infinite;
 }
@@ -366,8 +365,7 @@ bool playlist_manager::activeplaylist_insert_items_filter(t_size p_base,const pf
 bool playlist_manager::playlist_insert_locations(t_size p_playlist,t_size p_base,const pfc::list_base_const_t<const char*> & p_urls,bool p_select,HWND p_parentwnd)
 {
 	metadb_handle_list temp;
-	static_api_ptr_t<playlist_incoming_item_filter> api;
-	if (!api->process_locations(p_urls,temp,true,0,0,p_parentwnd)) return false;
+	if (!playlist_incoming_item_filter::get()->process_locations(p_urls,temp,true,0,0,p_parentwnd)) return false;
 	return playlist_insert_items(p_playlist,p_base,temp, pfc::bit_array_val(p_select)) != pfc_infinite;
 }
 
@@ -710,7 +708,7 @@ namespace {
 
 void dropped_files_data_impl::to_handles_async_ex(t_uint32 p_op_flags,HWND p_parentwnd,service_ptr_t<process_locations_notify> p_notify) {
 	if (m_is_paths) {
-		static_api_ptr_t<playlist_incoming_item_filter_v2>()->process_locations_async(
+		playlist_incoming_item_filter_v2::get()->process_locations_async(
 			m_paths,
 			p_op_flags,
 			NULL,
@@ -721,7 +719,7 @@ void dropped_files_data_impl::to_handles_async_ex(t_uint32 p_op_flags,HWND p_par
 		t_uint32 flags = 0;
 		if (p_op_flags & playlist_incoming_item_filter_v2::op_flag_background) flags |= metadb_io_v2::op_flag_background;
 		if (p_op_flags & playlist_incoming_item_filter_v2::op_flag_delay_ui) flags |= metadb_io_v2::op_flag_delay_ui;
-		static_api_ptr_t<metadb_io_v2>()->load_info_async(m_handles,metadb_io::load_info_default,p_parentwnd,flags,new service_impl_t<completion_notify_dfd>(m_handles,p_notify));
+		metadb_io_v2::get()->load_info_async(m_handles,metadb_io::load_info_default,p_parentwnd,flags,new service_impl_t<completion_notify_dfd>(m_handles,p_notify));
 	}
 }
 void dropped_files_data_impl::to_handles_async(bool p_filter,HWND p_parentwnd,service_ptr_t<process_locations_notify> p_notify) {
@@ -730,9 +728,9 @@ void dropped_files_data_impl::to_handles_async(bool p_filter,HWND p_parentwnd,se
 
 bool dropped_files_data_impl::to_handles(pfc::list_base_t<metadb_handle_ptr> & p_out,bool p_filter,HWND p_parentwnd) {
 	if (m_is_paths) {
-		return static_api_ptr_t<playlist_incoming_item_filter>()->process_locations(m_paths,p_out,p_filter,NULL,NULL,p_parentwnd);
+		return playlist_incoming_item_filter::get()->process_locations(m_paths,p_out,p_filter,NULL,NULL,p_parentwnd);
 	} else {
-		if (static_api_ptr_t<metadb_io>()->load_info_multi(m_handles,metadb_io::load_info_default,p_parentwnd,true) == metadb_io::load_info_aborted) return false;
+		if (metadb_io::get()->load_info_multi(m_handles,metadb_io::load_info_default,p_parentwnd,true) == metadb_io::load_info_aborted) return false;
 		p_out = m_handles;
 		return true;
 	}

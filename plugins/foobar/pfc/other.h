@@ -149,7 +149,7 @@ namespace pfc {
 		T* m_ptr;
 	};
 
-	void crash();
+	PFC_NORETURN void crash();
 	void outputDebugLine(const char * msg);
 
 	class debugLog : public string_formatter {

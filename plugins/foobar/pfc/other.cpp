@@ -124,18 +124,31 @@ void order_helper::g_reverse(t_size * order,t_size base,t_size count)
 }
 
 
-void pfc::crash() {
-#ifdef _MSC_VER
-	__debugbreak();
+namespace pfc {
+#ifdef PFC_FOOBAR2000_CLASSIC
+	void crashHook();
+#endif
+
+	void crashImpl() {
+#if defined(_MSC_VER)
+		__debugbreak();
 #else
-
 #if defined(__ANDROID__) && PFC_DEBUG
-	nixSleep(1);
+		nixSleep(1);
 #endif
+		raise(SIGINT);
+#endif
+	}
 
-    raise(SIGINT);
+	void crash() {
+#ifdef PFC_FOOBAR2000_CLASSIC
+		crashHook();
+#else
+		crashImpl();
 #endif
-}
+	}
+} // namespace pfc
+
 
 
 void pfc::byteswap_raw(void * p_buffer,const t_size p_bytes) {

@@ -27,14 +27,14 @@ public:
 
 	void stop_timer() {
 		if (m_registered) {
-			static_api_ptr_t<system_time_keeper>()->unregister_callback(this);
+			system_time_keeper::get()->unregister_callback(this);
 			m_registered = false;
 		}
 	}
 	//! You get a on_changed() call inside the initialize_timer() call.
 	void initialize_timer(t_filetimestamp period) {
 		stop_timer();
-		static_api_ptr_t<system_time_keeper>()->register_callback(this, period);
+		system_time_keeper::get()->register_callback(this, period);
 		m_registered = true;
 	}
 

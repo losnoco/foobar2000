@@ -81,7 +81,7 @@ void ui_edit_context::sort_by_format(const char * spec, bool onlySelection) {
 		if (spec != NULL) {
 			temp.sort_by_format_get_order(onlySelection ? order_temp.get_ptr() : order.get_ptr(), spec, 0);
 		} else {
-			static_api_ptr_t<genrand_service> api; api->seed((unsigned)__rdtsc());
+			auto api = genrand_service::get(); api->seed((unsigned)__rdtsc());
 			api->generate_random_order(onlySelection ? order_temp.get_ptr() : order.get_ptr(), temp.get_count());
 		}
 

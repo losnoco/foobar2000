@@ -1,7 +1,11 @@
-#define MYVERSION "1.2"
+#define MYVERSION "1.3"
 
 /*
 	changelog
+
+2018-01-14 03:04 UTC - kode54
+- Updated to version 1.4 SDK
+- Version is now 1.3
 
 2017-02-04 03:54 UTC - kode54
 - Add link to about string
@@ -17,11 +21,11 @@
 
 */
 
-#define _WIN32_WINNT 0x0501
 #include <foobar2000.h>
 
 #include "../helpers/dropdown_helper.h"
-#include "../ATLHelpers/ATLHelpers.h"
+#include "../ATLHelpers/ATLHelpersLean.h"
+#include "../ATLHelpers/misc.h"
 
 #include "kdmeng.h"
 
@@ -48,7 +52,7 @@ enum
 static cfg_int cfg_loop_count( guid_cfg_loop_count, default_cfg_loop_count );
 static cfg_int cfg_sample_rate( guid_cfg_sample_rate, default_cfg_sample_rate );
 
-class input_kdm
+class input_kdm : public input_stubs
 {
 	kdmeng * m_player;
 
@@ -179,6 +183,23 @@ public:
 	{
 		return !stricmp( p_extension, "kdm" );
 	}
+
+	static GUID g_get_guid()
+	{
+		static const GUID guid = { 0xeec47436, 0xc23c, 0x48fe,{ 0x94, 0xa0, 0x89, 0x26, 0xe8, 0x20, 0x8d, 0x95 } };
+		return guid;
+	}
+
+	static const char * g_get_name()
+	{
+		return "KDM Decoder";
+	}
+
+	static GUID g_get_preferences_guid()
+	{
+		static const GUID guid = { 0x518b5be8, 0x34dd, 0x4adf,{ 0x82, 0x2c, 0xeb, 0x36, 0x8, 0x55, 0x37, 0xf6 } };
+		return guid;
+	}
 };
 
 static cfg_dropdown_history cfg_history_rate( guid_cfg_history_rate, 16 );
@@ -298,12 +319,8 @@ void CMyPreferences::OnChanged() {
 class preferences_page_myimpl : public preferences_page_impl<CMyPreferences> {
 	// preferences_page_impl<> helper deals with instantiation of our dialog; inherits from preferences_page_v3.
 public:
-	const char * get_name() {return "KDM Decoder";}
-	GUID get_guid() {
-		// {518B5BE8-34DD-4ADF-822C-EB36085537F6}
-		static const GUID guid = { 0x518b5be8, 0x34dd, 0x4adf, { 0x82, 0x2c, 0xeb, 0x36, 0x8, 0x55, 0x37, 0xf6 } };
-		return guid;
-	}
+	const char * get_name() {return input_kdm::g_get_name();}
+	GUID get_guid() {return input_kdm::g_get_preferences_guid();}
 	GUID get_parent_guid() {return guid_input;}
 };
 

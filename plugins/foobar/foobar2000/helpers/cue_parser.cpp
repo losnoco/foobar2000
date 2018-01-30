@@ -2,7 +2,7 @@
 #include "cue_parser.h"
 
 
-static const unsigned maximumCueTrackNumber = 999;
+#define maximumCueTrackNumber 999
 
 namespace {
 	PFC_DECLARE_EXCEPTION(exception_cue,pfc::exception,"Invalid cuesheet");

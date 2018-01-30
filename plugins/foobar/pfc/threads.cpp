@@ -27,6 +27,11 @@ namespace pfc {
             threadProc();
         } catch(...) {}
     }
+
+	void thread::couldNotCreateThread() {
+		// Something terminally wrong, better crash leaving a good debug trace
+		crash();
+	}
     
 #ifdef _WIN32
     thread::thread() : m_thread(INVALID_HANDLE_VALUE)
@@ -39,7 +44,7 @@ namespace pfc {
 			int ctxPriority = GetThreadPriority( GetCurrentThread() );
 			if (ctxPriority > GetThreadPriority( m_thread ) ) SetThreadPriority( m_thread, ctxPriority );
             
-            if (WaitForSingleObject(m_thread,INFINITE) != WAIT_OBJECT_0) crash();
+            if (WaitForSingleObject(m_thread,INFINITE) != WAIT_OBJECT_0) couldNotCreateThread();
             CloseHandle(m_thread); m_thread = INVALID_HANDLE_VALUE;
         }
     }
@@ -54,7 +59,7 @@ namespace pfc {
 #else
 		thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)proc, arg, CREATE_SUSPENDED, outThreadID);
 #endif
-		if (thread == NULL) throw thread::exception_creation();
+		if (thread == NULL) thread::couldNotCreateThread();
 		SetThreadPriority(thread, priority);
 		ResumeThread(thread);
 		return thread;
@@ -108,7 +113,7 @@ namespace pfc {
         
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
         
-        if (pthread_create(&thread, &attr, g_entry, reinterpret_cast<void*>(this)) < 0) throw exception_creation();
+        if (pthread_create(&thread, &attr, g_entry, reinterpret_cast<void*>(this)) < 0) couldNotCreateThread();
         
         pthread_attr_destroy(&attr);
         m_threadValid = true;
@@ -176,7 +181,7 @@ namespace pfc {
 #endif
 		pthread_t thread;
 		
-        if (pthread_create(&thread, NULL, nixSplitThreadProc, arg.get_ptr()) < 0) {throw thread::exception_creation();}
+        if (pthread_create(&thread, NULL, nixSplitThreadProc, arg.get_ptr()) < 0) thread::couldNotCreateThread();
 
 		pthread_detach(thread);
 #endif

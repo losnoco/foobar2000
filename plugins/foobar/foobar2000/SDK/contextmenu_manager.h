@@ -47,7 +47,7 @@ public:
 	//! Helper for use with message filters.
 	bool pretranslate_message(const MSG * msg, HWND thisPopupWnd);
 
-	FB2K_MAKE_SERVICE_INTERFACE(keyboard_shortcut_manager_v2,keyboard_shortcut_manager);
+	FB2K_MAKE_SERVICE_COREAPI_EXTENSION(keyboard_shortcut_manager_v2,keyboard_shortcut_manager);
 };
 
 class NOVTABLE contextmenu_node {

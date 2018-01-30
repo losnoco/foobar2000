@@ -172,6 +172,11 @@ service_ptr input_entry::g_open_from_list(input_entry_list_t const & p_list, con
 service_ptr input_entry::g_open(const GUID & whatFor, file::ptr p_filehint, const char * p_path, abort_callback & p_abort, bool p_from_redirect) {
 
 #ifdef FOOBAR2000_DESKTOP
+
+#if FOOBAR2000_TARGET_VERSION >= 79
+	return input_manager::get()->open(whatFor, p_filehint, p_path, p_from_redirect, p_abort);
+#endif
+
 	{
 		input_manager::ptr m;
 		service_enum_t<input_manager> e;

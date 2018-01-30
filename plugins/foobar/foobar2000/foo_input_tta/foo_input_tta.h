@@ -39,9 +39,9 @@
 
 using namespace tta;
 
-#define  PLUGIN_VERSION	"3.4"
+#define  PLUGIN_VERSION	"3.5"
 #define  TTA_FORMAT_VERSION "1"
-#define  COPYRIGHT "Copyright (c) 2015 Aleksander Djuric. All rights reserved.\nCopyright (c) 2016 Christopher Snowhill. All rights reserved."
+#define  COPYRIGHT "Copyright (c) 2015 Aleksander Djuric. All rights reserved.\nCopyright (c) 2018 Christopher Snowhill. All rights reserved."
 #define  PROJECT_URL "http://www.true-audio.com"
 
 typedef struct {
@@ -56,7 +56,7 @@ typedef struct {
 	unsigned int size;
 } TTA_mem_callback_wrapper;
 
-class input_tta {
+class input_tta : public input_stubs {
 public:
 	input_tta() {
 		TTA = NULL;
@@ -78,10 +78,14 @@ public:
 	bool decode_get_dynamic_info_track(file_info &p_out, double &p_timestamp_delta);
 	void decode_on_idle(abort_callback &p_abort);
 	void retag(const file_info &p_info, abort_callback &p_abort);
+	void remove_tags(abort_callback &p_abort);
 	static bool g_is_our_content_type(const char *p_content_type);
 	static bool g_is_our_path(const char *p_path, const char *p_extension);
 	void set_logger(event_logger::ptr) {}
 	static void tta_error(TTA_CODEC_STATUS m_error);
+	static GUID g_get_guid();
+	static const char * g_get_name();
+	static GUID g_get_preferences_guid();
 
 private:
 	tta_decoder *TTA;

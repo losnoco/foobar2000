@@ -25,7 +25,7 @@ public:
 private:
 	void init() {
 		if ( m_hints.is_empty() ) {
-			m_hints = static_api_ptr_t<metadb_io_v2>()->create_hint_list();
+			m_hints = metadb_io_v2::get()->create_hint_list();
 		}
 	}
 	metadb_hint_list::ptr m_hints;

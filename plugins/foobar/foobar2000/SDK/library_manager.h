@@ -1,7 +1,7 @@
 /*!
 This service implements methods allowing you to interact with the Media Library.\n
 All methods are valid from main thread only, unless noted otherwise.\n
-Usage: Use static_api_ptr_t<library_manager> to instantiate.
+Usage: Use library_manager::get() to instantiate.
 */
 
 class NOVTABLE library_manager : public service_base {
@@ -57,7 +57,7 @@ public:
 
 //! \since 0.9.3
 class NOVTABLE library_manager_v2 : public library_manager {
-	FB2K_MAKE_SERVICE_INTERFACE(library_manager_v2,library_manager);
+	FB2K_MAKE_SERVICE_COREAPI_EXTENSION(library_manager_v2,library_manager);
 protected:
 	//! OBSOLETE, do not call, does nothing.
 	__declspec(deprecated) virtual bool is_rescan_running() = 0;
@@ -95,13 +95,13 @@ public:
 	virtual void register_callback(library_callback_dynamic * p_callback) = 0;
 	virtual void unregister_callback(library_callback_dynamic * p_callback) = 0;
 
-	FB2K_MAKE_SERVICE_INTERFACE(library_manager_v3,library_manager_v2);
+	FB2K_MAKE_SERVICE_COREAPI_EXTENSION(library_manager_v3,library_manager_v2);
 };
 
 class library_callback_dynamic_impl_base : public library_callback_dynamic {
 public:
-	library_callback_dynamic_impl_base() {static_api_ptr_t<library_manager_v3>()->register_callback(this);}
-	~library_callback_dynamic_impl_base() {static_api_ptr_t<library_manager_v3>()->unregister_callback(this);}
+	library_callback_dynamic_impl_base() {library_manager_v3::get()->register_callback(this);}
+	~library_callback_dynamic_impl_base() {library_manager_v3::get()->unregister_callback(this);}
 
 	//stub implementations - avoid pure virtual function call issues
 	void on_items_added(metadb_handle_list_cref p_data) {}
@@ -154,7 +154,7 @@ class library_viewer_factory_t : public service_factory_single_t<T> {};
 
 //! \since 0.9.5.4
 //! Allows you to spawn a popup Media Library Search window with any query string that you specify. \n
-//! Usage: static_api_ptr_t<library_search_ui>()->show("querygoeshere");
+//! Usage: library_search_ui::get()->show("querygoeshere");
 class NOVTABLE library_search_ui : public service_base {
 public:
 	virtual void show(const char * query) = 0;

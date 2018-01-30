@@ -19,6 +19,10 @@
 
 #define PFC_DLL_EXPORT
 
+// Suppress this line when using PFC outside classic foobar2000
+// When enabled, certain shared.dll methods are referenced
+#define PFC_FOOBAR2000_CLASSIC
+
 #ifdef _WINDOWS
 
 #ifndef STRICT

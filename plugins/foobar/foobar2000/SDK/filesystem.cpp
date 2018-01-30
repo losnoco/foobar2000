@@ -1,7 +1,16 @@
 #include "foobar2000.h"
 
+
+// For reasons unknown, MS linker will not throw these global constants out if the code using them is not referenced
+// To verify, flip the #if and search your DLL for "unpack://"
+// Using #defines instead fixes it
+#if 1
+#define unpack_prefix "unpack://"
+#define unpack_prefix_len 9
+#else
 static const char unpack_prefix[] = "unpack://";
 static const unsigned unpack_prefix_len = 9;
+#endif
 
 void unpacker::g_open(service_ptr_t<file> & p_out,const service_ptr_t<file> & p,abort_callback & p_abort)
 {
@@ -899,7 +908,7 @@ void file::g_transfer_object(service_ptr_t<file> p_src,service_ptr_t<file> p_dst
 void foobar2000_io::generate_temp_location_for_file(pfc::string_base & p_out, const char * p_origpath,const char * p_extension,const char * p_magic) {
 	hasher_md5_result hash;
 	{
-		static_api_ptr_t<hasher_md5> hasher;
+		auto hasher = hasher_md5::get();
 		hasher_md5_state state;
 		hasher->initialize(state);
 		hasher->process(state,p_origpath,strlen(p_origpath));
@@ -1151,3 +1160,4 @@ void foobar2000_io::substituteProtocol(pfc::string_base & out, const char * full
         out = fullString;
     }
 }
+

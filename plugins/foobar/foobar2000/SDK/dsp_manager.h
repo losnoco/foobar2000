@@ -36,12 +36,12 @@ private:
 	
 	void dsp_run(t_dsp_chain::const_iterator p_iter,dsp_chunk_list * list,const metadb_handle_ptr & cur_file,unsigned flags,double & latency,abort_callback&);
 
-	dsp_manager(const dsp_manager &) {throw pfc::exception_not_implemented();}
-	const dsp_manager & operator=(const dsp_manager&) {throw pfc::exception_not_implemented();}
+	dsp_manager(const dsp_manager &) = delete;
+	const dsp_manager & operator=(const dsp_manager&) = delete;
 };
 
 //! Core API for accessing core playback DSP settings as well as spawning DSP configuration dialogs. \n
-//! Use static_api_ptr_t<dsp_config_manager>() to instantiate.
+//! Use dsp_config_manager::get() to obtain an instance.
 class dsp_config_manager : public service_base {
 	FB2K_MAKE_SERVICE_COREAPI(dsp_config_manager);
 public:

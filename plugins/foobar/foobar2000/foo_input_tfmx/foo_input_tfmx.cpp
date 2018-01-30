@@ -3,11 +3,15 @@
 
 #include <stdafx.h>
 
-#define MYVERSION "0.10"
+#define MYVERSION "0.11"
 
 /*
 
 	change log
+
+2018-01-30 08:37 UTC - kode54
+- Updated to version 1.4 SDK
+- Version is now 0.11
 
 2012-12-14 00:24 UTC - kode54
 - Added more extensions to the shell integration list
@@ -73,7 +77,7 @@ static bool tfmx_test_filename(const char * full_path,const char * extension)
 	return !stricmp(extension,"MDAT") || !stricmp(extension,"TFM") || !stricmp(extension,"TFMX") || !stricmp(extension,"TFX");
 }
 
-class input_tfmx
+class input_tfmx : public input_stubs
 {
 	CTFMXSource * p_src;
 
@@ -265,6 +269,16 @@ public:
 	static bool g_is_our_path( const char * p_path, const char * p_extension )
 	{
 		return tfmx_test_filename( p_path, p_extension );
+	}
+
+	static GUID g_get_guid()
+	{
+		return { 0x6906c288, 0x2813, 0x4b61,{ 0x89, 0x7a, 0xf8, 0x19, 0xc1, 0xee, 0x44, 0x6d } };
+	}
+
+	static const char * g_get_name()
+	{
+		return "TFMX decoder";
 	}
 };
 

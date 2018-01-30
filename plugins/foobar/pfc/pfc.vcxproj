@@ -87,6 +87,7 @@
       <AdditionalOptions>/d2notypeopt %(AdditionalOptions)</AdditionalOptions>
       <TreatSpecificWarningsAsErrors>4715</TreatSpecificWarningsAsErrors>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -144,6 +145,7 @@
     <ClInclude Include="string_conv.h" />
     <ClInclude Include="string_list.h" />
     <ClInclude Include="stringNew.h" />
+    <ClInclude Include="suppress_fb2k_hooks.h" />
     <ClInclude Include="syncd_storage.h" />
     <ClInclude Include="synchro.h" />
     <ClInclude Include="synchro_win.h" />

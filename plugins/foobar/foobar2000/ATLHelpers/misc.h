@@ -199,10 +199,10 @@ static bool window_service_trait_defer_destruction(const service_base *) {return
 
 //! Special service_impl_t replacement for service classes that also implement ATL/WTL windows.
 template<typename _t_base>
-class window_service_impl_t : public CWindowFixSEH<_t_base> {
+class window_service_impl_t : public implement_service_query< CWindowFixSEH<_t_base> > {
 private:
 	typedef window_service_impl_t<_t_base> t_self;
-	typedef CWindowFixSEH<_t_base> t_base;
+	typedef implement_service_query< CWindowFixSEH<_t_base> > t_base;
 public:
 	BEGIN_MSG_MAP_EX(window_service_impl_t)
 		MSG_WM_DESTROY(OnDestroyPassThru)

@@ -26,3 +26,13 @@ namespace fb2k {
         });
     }
 }
+
+namespace pfc {
+	// Redirect PFC methods to shared.dll
+	BOOL winFormatSystemErrorMessageHook(pfc::string_base & p_out, DWORD p_code) {
+		return uFormatSystemErrorMessage(p_out, p_code);
+	}
+	void crashHook() {
+		uBugCheck();
+	}
+}

@@ -45,7 +45,10 @@ void replaygain_info::reset()
 	m_track_peak = peak_invalid;
 }
 
-static const char meta_album_gain[] = "replaygain_album_gain", meta_album_peak[] = "replaygain_album_peak", meta_track_gain[] = "replaygain_track_gain", meta_track_peak[] = "replaygain_track_peak";
+#define meta_album_gain "replaygain_album_gain"
+#define meta_album_peak "replaygain_album_peak"
+#define meta_track_gain "replaygain_track_gain"
+#define meta_track_peak "replaygain_track_peak"
 
 bool replaygain_info::g_is_meta_replaygain(const char * p_name,t_size p_name_len)
 {

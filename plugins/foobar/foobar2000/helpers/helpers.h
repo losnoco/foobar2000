@@ -1,5 +1,5 @@
 #pragma once
-#pragma message("Avoid using this header. #include individual ones instead.")
+// #pragma message("Avoid using this header. #include individual ones instead.")
 
 #include "duration_counter.h"
 #include "input_helpers.h"

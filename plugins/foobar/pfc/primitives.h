@@ -885,8 +885,8 @@ namespace pfc {
 		}
 		std::function<void () > f;
 	private:
-		void operator=( onLeaving const & );
-		onLeaving( const onLeaving & );
+		void operator=( onLeaving const & ) = delete;
+		onLeaving( const onLeaving & ) = delete;
 	};
 
 };
@@ -894,7 +894,7 @@ namespace pfc {
 
 #define PFC_CLASS_NOT_COPYABLE(THISCLASSNAME,THISTYPE) \
 	private:	\
-	THISCLASSNAME(const THISTYPE&); \
-	const THISTYPE & operator=(const THISTYPE &);
+	THISCLASSNAME(const THISTYPE&) = delete; \
+	const THISTYPE & operator=(const THISTYPE &) = delete;
 
 #define PFC_CLASS_NOT_COPYABLE_EX(THISTYPE) PFC_CLASS_NOT_COPYABLE(THISTYPE,THISTYPE)

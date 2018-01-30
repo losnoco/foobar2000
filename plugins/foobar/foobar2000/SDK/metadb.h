@@ -164,7 +164,7 @@ public:
 	void on_file_rechaptered( const char * path, metadb_handle_list_cref newItems );
 	void on_files_rechaptered( metadb_handle_list_cref newHandles );
 
-	FB2K_MAKE_SERVICE_INTERFACE(metadb_io_v2,metadb_io);
+	FB2K_MAKE_SERVICE_COREAPI_EXTENSION(metadb_io_v2,metadb_io);
 };
 
 
@@ -180,7 +180,7 @@ public:
 	virtual void register_callback(metadb_io_callback_dynamic * p_callback) = 0;
 	virtual void unregister_callback(metadb_io_callback_dynamic * p_callback) = 0;
 
-	FB2K_MAKE_SERVICE_INTERFACE(metadb_io_v3,metadb_io_v2);
+	FB2K_MAKE_SERVICE_COREAPI_EXTENSION(metadb_io_v3,metadb_io_v2);
 };
 
 //! metadb_io_callback_dynamic implementation helper.
@@ -217,7 +217,7 @@ public:
 
 //! Entrypoint service for metadb_handle related operations.\n
 //! Implemented only by core, do not reimplement.\n
-//! Use static_api_ptr_t template to access it, e.g. static_api_ptr_t<metadb>()->handle_create(myhandle,mylocation);
+//! Use metadb::get() to obtain an instance.
 class NOVTABLE metadb : public service_base
 {
 protected:	

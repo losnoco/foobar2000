@@ -37,10 +37,10 @@ void metadb_io::hint_async(metadb_handle_ptr p_item,const file_info & p_info,con
 
 
 bool metadb::g_get_random_handle(metadb_handle_ptr & p_out) {
-	if (static_api_ptr_t<playback_control>()->get_now_playing(p_out)) return true;
+	if (playback_control::get()->get_now_playing(p_out)) return true;
 
 	{
-		static_api_ptr_t<playlist_manager> api;	
+		auto api = playlist_manager::get();
 
 		t_size playlist_count = api->get_playlist_count();
 		t_size active_playlist = api->get_active_playlist();
@@ -79,7 +79,7 @@ void metadb_io_v2::on_file_rechaptered( const char * path, metadb_handle_list_cr
 	metadb_handle_list handles( newItems );
 	pfc::string8 pathLocal( path );
 	auto notify = fb2k::makeCompletionNotify( [handles, pathLocal] (unsigned) {
-		static_api_ptr_t<playlist_manager>()->on_file_rechaptered( pathLocal, handles );
+		playlist_manager::get()->on_file_rechaptered( pathLocal, handles );
 	} );
 
 	load_info_async( handles, metadb_io::load_info_force, core_api::get_main_window(), metadb_io_v3::op_flag_delay_ui, notify );
@@ -88,7 +88,7 @@ void metadb_io_v2::on_file_rechaptered( const char * path, metadb_handle_list_cr
 void metadb_io_v2::on_files_rechaptered( metadb_handle_list_cref newHandles ) {
 	metadb_handle_list local ( newHandles );
 	auto notify = fb2k::makeCompletionNotify( [local] (unsigned) {
-		static_api_ptr_t<playlist_manager>()->on_files_rechaptered(local);
+		playlist_manager::get()->on_files_rechaptered(local);
 	} );
 
 	load_info_async( newHandles, metadb_io::load_info_force, core_api::get_main_window(), metadb_io_v3::op_flag_delay_ui, notify );
