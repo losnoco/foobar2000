@@ -3,6 +3,7 @@
 
 #define MY_PATRONS \
 "Thanks to my patrons:\n" \
-"Joseph DeVore, Hongfei Gu, Alexander Pecheny, Ceeb, Electric Keet"
+"Joseph DeVore, Hongfei Gu, Alexander Pecheny, Ceeb, Electric Keet,\n" \
+"Miles Rotaru"
 
 #endif
