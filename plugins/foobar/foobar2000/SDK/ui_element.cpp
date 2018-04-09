@@ -66,6 +66,8 @@ bool ui_element_subclass_description(const GUID & id, pfc::string_base & p_out) 
 		p_out = "Utility"; return true;
 	} else if (id == ui_element_subclass_containers) {
 		p_out = "Containers"; return true;
+	} else if ( id == ui_element_subclass_dsp ) {
+		p_out = "DSP"; return true;
 	} else {
 		return false;
 	}
@@ -168,4 +170,23 @@ ui_element_min_max_info ui_element_instance::get_min_max_info() {
 	if (temp.ptMinTrackSize.y >= 0) ret.m_min_height = temp.ptMinTrackSize.y;
 	if (temp.ptMaxTrackSize.y > 0) ret.m_max_height = temp.ptMaxTrackSize.y;
 	return ret;
+}
+
+
+namespace {
+	class ui_element_replace_dialog_notify_impl : public ui_element_replace_dialog_notify {
+	public:
+		void on_cancelled() {
+			reply(pfc::guid_null);
+		}
+		void on_ok(const GUID & guid) {
+			reply(guid);
+		}
+		std::function<void(GUID)> reply;
+	};
+}
+ui_element_replace_dialog_notify::ptr ui_element_replace_dialog_notify::create(std::function<void(GUID)> reply) {
+	auto obj = fb2k::service_new<ui_element_replace_dialog_notify_impl>();
+	obj->reply = reply;
+	return obj;
 }

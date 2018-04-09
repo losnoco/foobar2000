@@ -1,4 +1,6 @@
-//! Configuration of a UI element.
+#pragma once
+
+//! Configuration of a UI element instance.
 class NOVTABLE ui_element_config : public service_base {
 public:
 	//! Returns GUID of the UI element this configuration data belongs to.
@@ -29,7 +31,7 @@ public:
 	FB2K_MAKE_SERVICE_INTERFACE(ui_element_config,service_base);
 };
 
-//! Helper.
+//! Helper for reading data from ui_element_config.
 class ui_element_config_parser : public stream_reader_formatter<> {
 public:
 	ui_element_config_parser(ui_element_config::ptr in) : m_data(in), _m_stream(in->get_data(),in->get_data_size()), stream_reader_formatter(_m_stream,_m_abort) {}
@@ -45,7 +47,7 @@ private:
 	stream_reader_memblock_ref _m_stream;
 };
 
-//! Helper.
+//! Helper creating ui_element_config from your data.
 class ui_element_config_builder : public stream_writer_formatter<> {
 public:
 	ui_element_config_builder() : stream_writer_formatter(_m_stream,_m_abort) {}
@@ -499,6 +501,34 @@ public:
 	}
 };
 
+//! \since 1.4
+//! Callback class for "Replace UI Element" dialog.
+class NOVTABLE ui_element_replace_dialog_notify : public service_base {
+	FB2K_MAKE_SERVICE_INTERFACE(ui_element_replace_dialog_notify, service_base);
+public:
+	virtual void on_cancelled() = 0;
+	virtual void on_ok( const GUID & guid ) = 0;
+
+	//! Helper; reply is called with new elem GUID on OK and with a null GUID on cancel.
+	static ui_element_replace_dialog_notify::ptr create( std::function<void (GUID)> reply );
+};
+
+//! \since 1.4
+class NOVTABLE ui_element_common_methods_v3 : public ui_element_common_methods_v2 {
+public:
+	FB2K_MAKE_SERVICE_COREAPI_EXTENSION(ui_element_common_methods_v3, ui_element_common_methods_v2);
+public:
+	//! Creates a "Replace UI Element" or "Add New UI Element" dialog.
+	//! @param parent Parent *element* window handle, the dialog will be a child of its parent popup window but centered on top of the specified window.
+	//! @param elemReplacing GUID of element being replaced; specify null to show "Add UI Element" dialog.
+	//! @param notify Callback object receiving OK/Cancel notifications.
+	//! @returns Handle to the newly created dialog. You can just destroy this window if you need to abort the dialog programatically.
+	virtual HWND replace_element_dialog_start(HWND wndElem, const GUID & elemReplacing, ui_element_replace_dialog_notify::ptr notify) = 0;
+	
+	//! Highlights the element, creating an overlay window above it. Caller is responsible for destroying the overlay.
+	virtual HWND highlight_element( HWND wndElem ) = 0;
+};
+
 class NOVTABLE ui_element_typable_window_manager : public service_base {
 	FB2K_MAKE_SERVICE_COREAPI(ui_element_typable_window_manager)
 public:
@@ -545,6 +575,8 @@ static const GUID ui_element_subclass_selection_information = { 0x68084e43, 0x73
 static const GUID ui_element_subclass_playback_visualisation = { 0x1f3c62f2, 0x8bb5, 0x4700, { 0x9e, 0x82, 0x8c, 0x48, 0x22, 0xf0, 0x18, 0x35 } };
 static const GUID ui_element_subclass_playback_information = { 0x84859f2d, 0xbb9c, 0x4e70, { 0x9d, 0x4, 0x14, 0x71, 0xb5, 0x63, 0x1f, 0x7f } };
 static const GUID ui_element_subclass_utility = { 0xffa4f4fc, 0xc169, 0x4766, { 0x9c, 0x94, 0xfa, 0xef, 0xae, 0xb2, 0x7e, 0xf } };
+static const GUID ui_element_subclass_dsp = { 0xa6a93251, 0xf0f8, 0x4bed,{ 0xb9, 0x5a, 0xf9, 0xe, 0x7e, 0x4f, 0xf2, 0xd0 } };
+
 
 bool ui_element_subclass_description(const GUID & id, pfc::string_base & out);
 
