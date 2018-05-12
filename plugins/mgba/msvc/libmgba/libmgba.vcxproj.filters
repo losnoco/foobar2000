@@ -272,6 +272,9 @@
     <ClCompile Include="..\..\mgba\src\core\lockstep.c">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mgba\src\gba\matrix.c">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\mgba\include\mgba\core\cheats.h">

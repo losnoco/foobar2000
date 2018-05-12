@@ -202,6 +202,7 @@
       <ObjectFileName>$(IntDir)gbainput.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\mgba\src\gba\io.c" />
+    <ClCompile Include="..\..\mgba\src\gba\matrix.c" />
     <ClCompile Include="..\..\mgba\src\gba\memory.c">
       <ObjectFileName>$(IntDir)gbamemory.obj</ObjectFileName>
     </ClCompile>
