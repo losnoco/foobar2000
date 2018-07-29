@@ -5,6 +5,14 @@ Changelog {#changelog}
 For fully detailed change log, please see the source repository directly. This
 is just a high-level summary.
 
+### libopenmpt 0.3.11 (2018-07-28)
+
+ *  [**Sec**] Crash with some malformed custom tunings in MPTM files (r10615).
+
+ *  Channels whose volume envelope was playing at volume 0 while being moved to
+    a NNA background channel were cut off completely since libopenmpt 0.3.8.
+ *  AMF (ASYLUM): Convert 7-bit panning to 8-bit panning for playback.
+
 ### libopenmpt 0.3.10 (2018-06-17)
 
  *  [**Bug**] Internal mixer state was not initialized properly when initially

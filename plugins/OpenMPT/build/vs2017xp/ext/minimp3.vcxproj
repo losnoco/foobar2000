@@ -55,11 +55,10 @@
     <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>minimp3</RootNamespace>
-    <WindowsTargetPlatformVersion>7.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v141_xp</PlatformToolset>
@@ -71,7 +70,7 @@
     <PlatformToolset>v141_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v141_xp</PlatformToolset>
@@ -177,6 +176,7 @@
     <OutDir>..\..\..\bin\debug\vs2017-static\x86-32-winxp\</OutDir>
     <IntDir>..\..\obj\vs2017xp\minimp3\x86\Debug\</IntDir>
     <TargetName>openmpt-minimp3</TargetName>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -190,6 +190,7 @@
     <OutDir>..\..\..\bin\release\vs2017-static\x86-32-winxp\</OutDir>
     <IntDir>..\..\obj\vs2017xp\minimp3\x86\Release\</IntDir>
     <TargetName>openmpt-minimp3</TargetName>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -203,6 +204,7 @@
     <OutDir>..\..\..\bin\debug-MDd\vs2017-static\x86-32-winxp\</OutDir>
     <IntDir>..\..\obj\vs2017xp\minimp3\x86\DebugMDd\</IntDir>
     <TargetName>openmpt-minimp3</TargetName>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugMDd|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -216,6 +218,7 @@
     <OutDir>..\..\..\bin\release-LTCG\vs2017-static\x86-32-winxp\</OutDir>
     <IntDir>..\..\obj\vs2017xp\minimp3\x86\ReleaseLTCG\</IntDir>
     <TargetName>openmpt-minimp3</TargetName>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLTCG|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -229,6 +232,7 @@
     <OutDir>..\..\..\bin\debug\vs2017-shared\x86-32-winxp\</OutDir>
     <IntDir>..\..\obj\vs2017xp\minimp3\x86\DebugShared\</IntDir>
     <TargetName>openmpt-minimp3</TargetName>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugShared|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -242,6 +246,7 @@
     <OutDir>..\..\..\bin\release\vs2017-shared\x86-32-winxp\</OutDir>
     <IntDir>..\..\obj\vs2017xp\minimp3\x86\ReleaseShared\</IntDir>
     <TargetName>openmpt-minimp3</TargetName>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseShared|x64'">
     <LinkIncremental>false</LinkIncremental>

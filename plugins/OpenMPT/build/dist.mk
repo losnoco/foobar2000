@@ -1,4 +1,4 @@
 
-MPT_SVNVERSION=10492
-MPT_SVNURL=https://source.openmpt.org/svn/openmpt/tags/libopenmpt-0.3.10
-MPT_SVNDATE=2018-06-17T05:53:11.604200Z
+MPT_SVNVERSION=10633
+MPT_SVNURL=https://source.openmpt.org/svn/openmpt/tags/libopenmpt-0.3.11
+MPT_SVNDATE=2018-07-28T11:50:00.062292Z
