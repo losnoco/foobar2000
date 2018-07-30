@@ -182,3 +182,6 @@
 	path = plugins/foobar/foobar2000/foo_openmpt
 	url = https://gitlab.kode54.net/kode54/foo_openmpt.git
 	
+[submodule "plugins/libADLMIDI"]
+	path = plugins/libADLMIDI
+	url = https://github.com/Wohlstand/libADLMIDI.git
