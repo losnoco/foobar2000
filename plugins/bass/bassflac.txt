@@ -40,7 +40,7 @@ X64\
 What's the point?
 =================
 BASSFLAC is an extension to the BASS audio library, enabling the playing of
-FLAC (Free Lossless Audio Codec) encoded files.
+FLAC (Free Lossless Audio Codec) encoded files and streams.
 
 
 Requirements
@@ -92,6 +92,11 @@ These are the major (and not so major) changes at each version stage.
 There are of course bug fixes and other little improvements made along
 the way too! To make upgrading simpler, all functions affected by a
 change to the BASSFLAC interface are listed.
+
+2.4.4 - 28/10/2017
+------------------
+* Support for chained Ogg FLAC streams
+	BASS_FLAC_StreamCreateFile/User/URL
 
 2.4.3 - 24/1/2017
 -----------------

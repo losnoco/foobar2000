@@ -1,6 +1,6 @@
 Attribute VB_Name = "modBass"
 ' BASS 2.4 Visual Basic module
-' Copyright (c) 1999-2016 Un4seen Developments Ltd.
+' Copyright (c) 1999-2018 Un4seen Developments Ltd.
 '
 ' See the BASS.CHM file for more detailed documentation
 
@@ -45,7 +45,7 @@ Global Const BASS_ERROR_EMPTY = 31     'the MOD music has no sequence data
 Global Const BASS_ERROR_NONET = 32     'no internet connection could be opened
 Global Const BASS_ERROR_CREATE = 33    'couldn't create the file
 Global Const BASS_ERROR_NOFX = 34      'effects are not available
-Global Const BASS_ERROR_NOTAVAIL = 37  'requested data is not available
+Global Const BASS_ERROR_NOTAVAIL = 37  'requested data/action is not available
 Global Const BASS_ERROR_DECODE = 38    'the channel is/isn't a "decoding channel"
 Global Const BASS_ERROR_DX = 39        'a sufficient DirectX version is not installed
 Global Const BASS_ERROR_TIMEOUT = 40   'connection timedout
@@ -93,6 +93,9 @@ Global Const BASS_CONFIG_MF_VIDEO = 48
 Global Const BASS_CONFIG_VERIFY_NET = 52
 Global Const BASS_CONFIG_DEV_PERIOD = 53
 Global Const BASS_CONFIG_FLOAT = 54
+Global Const BASS_CONFIG_NET_SEEK = 56
+Global Const BASS_CONFIG_NET_PLAYLIST_DEPTH = 59
+Global Const BASS_CONFIG_NET_PREBUF_WAIT = 60
 
 ' BASS_SetConfigPtr options
 Global Const BASS_CONFIG_NET_AGENT = 16
@@ -106,6 +109,7 @@ Global Const BASS_DEVICE_LATENCY = &H100 'calculate device latency (BASS_INFO st
 Global Const BASS_DEVICE_CPSPEAKERS = &H400 'detect speakers via Windows control panel
 Global Const BASS_DEVICE_SPEAKERS = &H800 'force enabling of speaker assignment
 Global Const BASS_DEVICE_NOSPEAKER = &H1000 'ignore speaker arrangement
+Global Const BASS_DEVICE_DSOUND = &H40000 ' use DirectSound output
 
 ' DirectSound interfaces (for use with BASS_GetDSoundObject)
 Global Const BASS_OBJECT_DS = 1                     ' DirectSound
@@ -223,13 +227,15 @@ Global Const BASS_SAMPLE_OVER_VOL = &H10000 ' override lowest volume
 Global Const BASS_SAMPLE_OVER_POS = &H20000 ' override longest playing
 Global Const BASS_SAMPLE_OVER_DIST = &H30000 ' override furthest from listener (3D only)
 
-Global Const BASS_STREAM_PRESCAN = &H20000   ' enable pin-point seeking/length (MP3/MP2/MP1)
-Global Const BASS_MP3_SETPOS = BASS_STREAM_PRESCAN
+Global Const BASS_STREAM_PRESCAN = &H20000  ' enable pin-point seeking/length (MP3/MP2/MP1)
 Global Const BASS_STREAM_AUTOFREE = &H40000 ' automatically free the stream when it stop/ends
 Global Const BASS_STREAM_RESTRATE = &H80000 ' restrict the download rate of internet file streams
 Global Const BASS_STREAM_BLOCK = &H100000   ' download/play internet file stream in small blocks
 Global Const BASS_STREAM_DECODE = &H200000  ' don't play the stream, only decode (BASS_ChannelGetData)
 Global Const BASS_STREAM_STATUS = &H800000  ' give server status info (HTTP/ICY tags) in DOWNLOADPROC
+
+Global Const BASS_MP3_IGNOREDELAY = &H200   ' ignore LAME/Xing/VBRI/iTunes delay & padding info
+Global Const BASS_MP3_SETPOS = BASS_STREAM_PRESCAN
 
 Global Const BASS_MUSIC_FLOAT = BASS_SAMPLE_FLOAT
 Global Const BASS_MUSIC_MONO = BASS_SAMPLE_MONO
@@ -294,6 +300,8 @@ Type BASS_CHANNELINFO
     filename As Long      ' filename
 End Type
 
+Global Const BASS_ORIGRES_FLOAT = &H10000
+
 ' BASS_CHANNELINFO types
 Global Const BASS_CTYPE_SAMPLE = 1
 Global Const BASS_CTYPE_RECORD = 2
@@ -303,6 +311,9 @@ Global Const BASS_CTYPE_STREAM_MP1 = &H10003
 Global Const BASS_CTYPE_STREAM_MP2 = &H10004
 Global Const BASS_CTYPE_STREAM_MP3 = &H10005
 Global Const BASS_CTYPE_STREAM_AIFF = &H10006
+Global Const BASS_CTYPE_STREAM_MF = &H10008
+Global Const BASS_CTYPE_STREAM_DUMMY = &H18000
+Global Const BASS_CTYPE_STREAM_DEVICE = &H18001
 Global Const BASS_CTYPE_STREAM_WAV = &H40000 ' WAVE flag, LOWORD=codec
 Global Const BASS_CTYPE_STREAM_WAV_PCM = &H50001
 Global Const BASS_CTYPE_STREAM_WAV_FLOAT = &H50003
@@ -377,6 +388,7 @@ Global Const BASS_STREAMPROC_END = &H80000000 ' end of user stream flag
 ' special STREAMPROCs
 Global Const STREAMPROC_DUMMY = 0 ' "dummy" stream
 Global Const STREAMPROC_PUSH = -1 ' push stream
+Global Const STREAMPROC_DEVICE = -2 ' device mix stream
 
 ' BASS_StreamCreateFileUser file systems
 Global Const STREAMFILE_NOBUFFER = 0
@@ -404,6 +416,7 @@ Global Const BASS_FILEPOS_BUFFER = 5
 Global Const BASS_FILEPOS_SOCKET = 6
 Global Const BASS_FILEPOS_ASYNCBUF = 7
 Global Const BASS_FILEPOS_SIZE = 8
+Global Const BASS_FILEPOS_BUFFERING = 9
 
 ' BASS_ChannelSetSync types
 Global Const BASS_SYNC_POS = 0
@@ -440,6 +453,7 @@ Global Const BASS_ATTRIB_NET_RESUME = 9
 Global Const BASS_ATTRIB_SCANINFO = 10
 Global Const BASS_ATTRIB_NORAMP = 11
 Global Const BASS_ATTRIB_BITRATE = 12
+Global Const BASS_ATTRIB_BUFFER = 13
 Global Const BASS_ATTRIB_MUSIC_AMPLIFY = &H100
 Global Const BASS_ATTRIB_MUSIC_PANSEP = &H101
 Global Const BASS_ATTRIB_MUSIC_PSCALER = &H102
@@ -449,6 +463,9 @@ Global Const BASS_ATTRIB_MUSIC_VOL_GLOBAL = &H105
 Global Const BASS_ATTRIB_MUSIC_ACTIVE = &H106
 Global Const BASS_ATTRIB_MUSIC_VOL_CHAN = &H200 ' + channel #
 Global Const BASS_ATTRIB_MUSIC_VOL_INST = &H300 ' + instrument #
+
+' BASS_ChannelSlideAttribute flags
+Global Const BASS_SLIDE_LOG = &H1000000
 
 ' BASS_ChannelGetData flags
 Global Const BASS_DATA_AVAILABLE = 0         ' query how much data is buffered
@@ -466,6 +483,12 @@ Global Const BASS_DATA_FFT_INDIVIDUAL = &H10 ' FFT flag: FFT for each channel, e
 Global Const BASS_DATA_FFT_NOWINDOW = &H20   ' FFT flag: no Hanning window
 Global Const BASS_DATA_FFT_REMOVEDC = &H40   ' FFT flag: pre-remove DC bias
 Global Const BASS_DATA_FFT_COMPLEX = &H80    ' FFT flag: return complex data
+
+' BASS_ChannelGetLevelEx flags
+Global Const BASS_LEVEL_MONO = 1
+Global Const BASS_LEVEL_STEREO = 2
+Global Const BASS_LEVEL_RMS = 4
+Global Const BASS_LEVEL_VOLPAN = 8
 
 ' BASS_ChannelGetTags types : what's returned
 Global Const BASS_TAG_ID3 = 0                ' ID3v1 tags : TAG_ID3 structure
@@ -486,6 +509,8 @@ Global Const BASS_TAG_RIFF_INFO = &H100      ' RIFF "INFO" tags : series of null
 Global Const BASS_TAG_RIFF_BEXT = &H101      ' RIFF/BWF "bext" tags : TAG_BEXT structure
 Global Const BASS_TAG_RIFF_CART = &H102      ' RIFF/BWF "cart" tags : TAG_CART structure
 Global Const BASS_TAG_RIFF_DISP = &H103      ' RIFF "DISP" text tag : ANSI string
+Global Const BASS_TAG_RIFF_CUE = &H104       ' RIFF "cue " chunk : TAG_CUE structure
+Global Const BASS_TAG_RIFF_SMPL = &H105      ' RIFF "smpl" chunk : TAG_SMPL structure
 Global Const BASS_TAG_APE_BINARY = &H1000    ' + index #, binary APEv2 tag : TAG_APE_BINARY structure
 Global Const BASS_TAG_MUSIC_NAME = &H10000   ' MOD music name : ANSI string
 Global Const BASS_TAG_MUSIC_ORDERS = &H10002 ' MOD order list : BYTE array of pattern numbers
@@ -493,11 +518,6 @@ Global Const BASS_TAG_MUSIC_MESSAGE = &H10001 ' MOD message : ANSI string
 Global Const BASS_TAG_MUSIC_AUTH = &H10003   ' MOD author : UTF-8 string
 Global Const BASS_TAG_MUSIC_INST = &H10100   ' + instrument #, MOD instrument name : ANSI string
 Global Const BASS_TAG_MUSIC_SAMPLE = &H10300 ' + sample #, MOD sample name : ANSI string
-
-' BASS_ChannelGetLevelEx flags
-Global Const BASS_LEVEL_MONO = 1
-Global Const BASS_LEVEL_STEREO = 2
-Global Const BASS_LEVEL_RMS = 4
 
 ' ID3v1 tag structure
 Type TAG_ID3
@@ -536,10 +556,15 @@ End Type
 Global Const BASS_POS_BYTE = 0          ' byte position
 Global Const BASS_POS_MUSIC_ORDER = 1   ' order.row position, MAKELONG(order,row)
 Global Const BASS_POS_OGG = 3           ' OGG bitstream number
+Global Const BASS_POS_RESET = &H2000000 ' flag: reset user file buffers
+Global Const BASS_POS_RELATIVE = &H4000000 ' flag: seek relative to the current position
 Global Const BASS_POS_INEXACT = &H8000000 ' flag: allow seeking to inexact position
 Global Const BASS_POS_DECODE = &H10000000 ' flag: get the decoding (not playing) position
 Global Const BASS_POS_DECODETO = &H20000000 ' flag: decode to the position instead of seeking
 Global Const BASS_POS_SCAN = &H40000000 ' flag: scan to the position
+
+' BASS_ChannelSetDevice/GetDevice option
+Global Const BASS_NODEVICE = &H20000
 
 ' BASS_RecordSetInput flags
 Global Const BASS_INPUT_OFF = &H10000
@@ -558,7 +583,7 @@ Global Const BASS_INPUT_TYPE_WAVE = &H8000000
 Global Const BASS_INPUT_TYPE_AUX = &H9000000
 Global Const BASS_INPUT_TYPE_ANALOG = &HA000000
 
-' DX8 effect types, use with BASS_ChannelSetFX
+' BASS_ChannelSetFX effect types
 Global Const BASS_FX_DX8_CHORUS = 0
 Global Const BASS_FX_DX8_COMPRESSOR = 1
 Global Const BASS_FX_DX8_DISTORTION = 2
@@ -568,6 +593,7 @@ Global Const BASS_FX_DX8_GARGLE = 5
 Global Const BASS_FX_DX8_I3DL2REVERB = 6
 Global Const BASS_FX_DX8_PARAMEQ = 7
 Global Const BASS_FX_DX8_REVERB = 8
+Global Const BASS_FX_VOLUME = 9
 
 Type BASS_DX8_CHORUS
     fWetDryMix As Single
@@ -652,6 +678,13 @@ Global Const BASS_DX8_PHASE_NEG_90 = 1
 Global Const BASS_DX8_PHASE_ZERO = 2
 Global Const BASS_DX8_PHASE_90 = 3
 Global Const BASS_DX8_PHASE_180 = 4
+
+Type BASS_FX_VOLUME_PARAM
+    fTarget As Single
+    fCurrent As Single
+    fTime As Single
+    lCurve As Long
+End Type
 
 Type GUID       ' used with BASS_Init - use VarPtr(guid) in clsid parameter
     Data1 As Long

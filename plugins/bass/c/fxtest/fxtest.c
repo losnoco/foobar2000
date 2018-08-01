@@ -1,6 +1,6 @@
 /*
 	BASS DX8 effects test
-	Copyright (c) 2001-2012 Un4seen Developments Ltd.
+	Copyright (c) 2001-2017 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -12,6 +12,8 @@
 HWND win=NULL;
 
 DWORD chan;			// channel handle
+DWORD fxchan=0;		// output stream handle
+DWORD fxchansync;	// output stream FREE sync
 HFX fx[4];			// 3 eq bands + reverb
 
 OPENFILENAME ofn;
@@ -23,7 +25,6 @@ void Error(const char *es)
 	sprintf(mes,"%s\n(error code: %d)",es,BASS_ErrorGetCode());
 	MessageBox(win,mes,0,0);
 }
-
 
 #define MESS(id,m,w,l) SendDlgItemMessage(win,id,m,(WPARAM)(w),(LPARAM)(l))
 
@@ -43,6 +44,38 @@ void UpdateFX(int b)
 	}
 }
 
+void SetupFX()
+{
+	// setup the effects
+	BASS_DX8_PARAMEQ p;
+	DWORD ch=fxchan?fxchan:chan; // set on output stream if enabled, else file stream
+	fx[0]=BASS_ChannelSetFX(ch,BASS_FX_DX8_PARAMEQ,0);
+	fx[1]=BASS_ChannelSetFX(ch,BASS_FX_DX8_PARAMEQ,0);
+	fx[2]=BASS_ChannelSetFX(ch,BASS_FX_DX8_PARAMEQ,0);
+	fx[3]=BASS_ChannelSetFX(ch,BASS_FX_DX8_REVERB,0);
+	p.fGain=0;
+	p.fBandwidth=18;
+	p.fCenter=125;
+	BASS_FXSetParameters(fx[0],&p);
+	p.fCenter=1000;
+	BASS_FXSetParameters(fx[1],&p);
+	p.fCenter=8000;
+	BASS_FXSetParameters(fx[2],&p);
+	UpdateFX(0);
+	UpdateFX(1);
+	UpdateFX(2);
+	UpdateFX(3);
+}
+
+void CALLBACK DeviceFreeSync(HSYNC handle, DWORD channel, DWORD data, void *user)
+{
+	// the device output stream has been freed due to format change, get a new one with new format
+	if (!fxchan) return;
+	fxchan=BASS_StreamCreate(0,0,0,STREAMPROC_DEVICE,0);
+	fxchansync=BASS_ChannelSetSync(fxchan,BASS_SYNC_FREE,0,DeviceFreeSync,0);
+	SetupFX();
+}
+
 INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 {
 	switch (m) {
@@ -60,40 +93,35 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 							// free both MOD and stream, it must be one of them! :)
 							BASS_MusicFree(chan);
 							BASS_StreamFree(chan);
-#if 1 // with FX flag
-							if (!(chan=BASS_StreamCreateFile(FALSE,file,0,0,BASS_SAMPLE_LOOP|BASS_SAMPLE_FX))
-								&& !(chan=BASS_MusicLoad(FALSE,file,0,0,BASS_SAMPLE_LOOP|BASS_MUSIC_RAMP|BASS_SAMPLE_FX,1))) {
-#else // without FX flag
-							if (!(chan=BASS_StreamCreateFile(FALSE,file,0,0,BASS_SAMPLE_LOOP))
-								&& !(chan=BASS_MusicLoad(FALSE,file,0,0,BASS_SAMPLE_LOOP|BASS_MUSIC_RAMP,1))) {
-#endif
+							if (!(chan=BASS_StreamCreateFile(FALSE,file,0,0,BASS_SAMPLE_LOOP|BASS_SAMPLE_FLOAT))
+								&& !(chan=BASS_MusicLoad(FALSE,file,0,0,BASS_SAMPLE_LOOP|BASS_MUSIC_RAMP|BASS_SAMPLE_FLOAT,1))) {
 								// whatever it is, it ain't playable
 								MESS(10,WM_SETTEXT,0,"click here to open a file...");
 								Error("Can't play the file");
 								break;
 							}
 							MESS(10,WM_SETTEXT,0,file);
-							{ // setup the effects
-								BASS_DX8_PARAMEQ p;
-								fx[0]=BASS_ChannelSetFX(chan,BASS_FX_DX8_PARAMEQ,0);
-								fx[1]=BASS_ChannelSetFX(chan,BASS_FX_DX8_PARAMEQ,0);
-								fx[2]=BASS_ChannelSetFX(chan,BASS_FX_DX8_PARAMEQ,0);
-								fx[3]=BASS_ChannelSetFX(chan,BASS_FX_DX8_REVERB,0);
-								p.fGain=0;
-								p.fBandwidth=18;
-								p.fCenter=125;
-								BASS_FXSetParameters(fx[0],&p);
-								p.fCenter=1000;
-								BASS_FXSetParameters(fx[1],&p);
-								p.fCenter=8000;
-								BASS_FXSetParameters(fx[2],&p);
-								UpdateFX(0);
-								UpdateFX(1);
-								UpdateFX(2);
-								UpdateFX(3);
-							}
+							if (!fxchan) SetupFX(); // set effects on file if not using output stream
 							BASS_ChannelPlay(chan,FALSE);
 						}
+					}
+					break;
+				case 30:
+					{
+						// remove current effects
+						DWORD ch=fxchan?fxchan:chan;
+						BASS_ChannelRemoveFX(ch,fx[0]);
+						BASS_ChannelRemoveFX(ch,fx[1]);
+						BASS_ChannelRemoveFX(ch,fx[2]);
+						BASS_ChannelRemoveFX(ch,fx[3]);
+						if (MESS(30,BM_GETCHECK,0,0)) {
+							fxchan=BASS_StreamCreate(0,0,0,STREAMPROC_DEVICE,0); // get device output stream
+							fxchansync=BASS_ChannelSetSync(fxchan,BASS_SYNC_FREE,0,DeviceFreeSync,0); // sync when device output stream is freed (format change)
+						} else {
+							BASS_ChannelRemoveSync(fxchan,fxchansync); // remove sync from device output stream
+							fxchan=0; // stop using device output stream
+						}
+						SetupFX();
 					}
 					break;
 			}
@@ -112,11 +140,11 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 			ofn.hwndOwner=h;
 			ofn.nMaxFile=MAX_PATH;
 			ofn.Flags=OFN_HIDEREADONLY|OFN_EXPLORER;
-			// setup output - default device
+			// initialize default device
 			if (!BASS_Init(-1,44100,0,win,NULL)) {
 				Error("Can't initialize device");
-				DestroyWindow(win);
-				break;
+				EndDialog(win,0);
+				return 0;
 			}
 			{
 				// check that DX8 features are available
@@ -125,8 +153,12 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 				if (bi.dsver<8) {
 					BASS_Free();
 					Error("DirectX 8 is not installed");
-					DestroyWindow(win);
+					EndDialog(win,0);
+					return 0;
 				}
+				// disable output stream option if using DirectSound output
+				if (bi.initflags&BASS_DEVICE_DSOUND)
+					EnableWindow(GetDlgItem(win,30),FALSE);
 			}
 			// initialize eq/reverb sliders
 			MESS(20,TBM_SETRANGE,FALSE,MAKELONG(0,20));
@@ -140,6 +172,7 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 			return 1;
 
 		case WM_DESTROY:
+			if (fxchan) BASS_ChannelRemoveSync(fxchan,fxchansync); // remove sync from device output stream
 			BASS_Free();
 			break;
 	}

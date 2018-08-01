@@ -1,6 +1,6 @@
 /*
 	BASS 3D test
-	Copyright (c) 1999-2012 Un4seen Developments Ltd.
+	Copyright (c) 1999-2017 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -170,15 +170,6 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 					memset(&chans[chan].vel,0,sizeof(chans[chan].vel));
 					UpdateButtons();
 					break;
-				case 22: // change the EAX environment
-					if (HIWORD(w)==CBN_SELCHANGE) {
-						int s=EM(CB_GETCURSEL,0,0);
-						if (!s)
-							BASS_SetEAXParameters(-1,0,-1,-1); // off (volume=0)
-						else
-							BASS_SetEAXParameters(s-1,-1,-1,-1);
-					}
-					break;
 				case IDCANCEL:
 					DestroyWindow(h);
 					break;
@@ -271,7 +262,7 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine,
 	}
 
 	// Create the main window
-	if (!CreateDialog(hInstance,MAKEINTRESOURCE(1000),NULL,&dialogproc)) {
+	if (!CreateDialog(hInstance,MAKEINTRESOURCE(1000),NULL,dialogproc)) {
 		Error("Can't create window");
 		return 0;
 	}
@@ -285,9 +276,6 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine,
 
 	// Use meters as distance unit, real world rolloff, real doppler effect
 	BASS_Set3DFactors(1,1,1);
-	// Turn EAX off (volume=0), if error then EAX is not supported
-	if (BASS_SetEAXParameters(-1,0,-1,-1))
-		EnableWindow(GetDlgItem(win,22),TRUE);
 
 	while (GetMessage(&msg,NULL,0,0)>0) {
 		if (!IsDialogMessage(win,&msg)) {

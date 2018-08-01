@@ -1,6 +1,6 @@
 /*
 	BASS internet radio example
-	Copyright (c) 2002-2015 Un4seen Developments Ltd.
+	Copyright (c) 2002-2017 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -8,17 +8,21 @@
 #include <stdio.h>
 #include "bass.h"
 
+// HLS definitions (copied from BASSHLS.H)
+#define BASS_SYNC_HLS_SEGMENT	0x10300
+#define BASS_TAG_HLS_EXTINF		0x14000
+
 HWND win=NULL;
 CRITICAL_SECTION lock;
 DWORD req=0;	// request number/counter
 HSTREAM chan;	// stream handle
 
 const char *urls[10]={ // preset stream URLs
-	"http://www.radioparadise.com/m3u/mp3-128.m3u", "http://www.radioparadise.com/m3u/mp3-32.m3u",
-	"http://icecast.timlradio.co.uk/vr160.ogg", "http://icecast.timlradio.co.uk/vr32.ogg",
-	"http://icecast.timlradio.co.uk/a8160.ogg", "http://icecast.timlradio.co.uk/a832.ogg",
-	"http://somafm.com/secretagent.pls", "http://somafm.com/secretagent24.pls",
-	"http://somafm.com/suburbsofgoa.pls", "http://somafm.com/suburbsofgoa24.pls"
+	"http://stream-dc1.radioparadise.com/rp_192m.ogg", "http://www.radioparadise.com/m3u/mp3-32.m3u",
+	"http://network.absoluteradio.co.uk/core/audio/mp3/live.pls?service=a8bb", "http://network.absoluteradio.co.uk/core/audio/aacplus/live.pls?service=a8",
+	"http://somafm.com/secretagent.pls", "http://somafm.com/secretagent32.pls",
+	"http://somafm.com/suburbsofgoa.pls", "http://somafm.com/suburbsofgoa32.pls",
+	"http://ai-radio.org/256.ogg", "http://ai-radio.org/48.aacp"
 };
 
 // display error messages
@@ -64,6 +68,12 @@ void DoMeta()
 				} else
 					MESS(30,WM_SETTEXT,0,title);
 			}
+		} else {
+			meta=BASS_ChannelGetTags(chan,BASS_TAG_HLS_EXTINF);
+			if (meta) { // got HLS segment info
+				const char *p=strchr(meta,',');
+				if (p) MESS(30,WM_SETTEXT,0,p+1);
+			}
 		}
 	}
 }
@@ -73,8 +83,15 @@ void CALLBACK MetaSync(HSYNC handle, DWORD channel, DWORD data, void *user)
 	DoMeta();
 }
 
+void CALLBACK StallSync(HSYNC handle, DWORD channel, DWORD data, void *user)
+{
+	if (!data) // stalled
+		SetTimer(win,0,50,0); // start buffer monitoring
+}
+
 void CALLBACK EndSync(HSYNC handle, DWORD channel, DWORD data, void *user)
 {
+	KillTimer(win,0); // stop buffer monitoring
 	MESS(31,WM_SETTEXT,0,"not playing");
 	MESS(30,WM_SETTEXT,0,"");
 	MESS(32,WM_SETTEXT,0,"");
@@ -92,7 +109,7 @@ void __cdecl OpenURL(void *url)
 	EnterCriticalSection(&lock); // make sure only 1 thread at a time can do the following
 	r=++req; // increment the request counter for this request
 	LeaveCriticalSection(&lock);
-	KillTimer(win,0); // stop prebuffer monitoring
+	KillTimer(win,0); // stop buffer monitoring
 	BASS_StreamFree(chan); // close old stream
 	MESS(31,WM_SETTEXT,0,"connecting...");
 	MESS(30,WM_SETTEXT,0,"");
@@ -110,19 +127,29 @@ void __cdecl OpenURL(void *url)
 	if (!chan) { // failed to open
 		MESS(31,WM_SETTEXT,0,"not playing");
 		Error("Can't play the stream");
-	} else
-		SetTimer(win,0,50,0); // start prebuffer monitoring
+	} else {
+		// start buffer monitoring
+		SetTimer(win,0,50,0);
+		// set syncs for stream title updates
+		BASS_ChannelSetSync(chan,BASS_SYNC_META,0,MetaSync,0); // Shoutcast
+		BASS_ChannelSetSync(chan,BASS_SYNC_OGG_CHANGE,0,MetaSync,0); // Icecast/OGG
+		BASS_ChannelSetSync(chan,BASS_SYNC_HLS_SEGMENT,0,MetaSync,0); // HLS
+		// set sync for stalling/buffering
+		BASS_ChannelSetSync(chan,BASS_SYNC_STALL,0,StallSync,0);
+		// set sync for end of stream
+		BASS_ChannelSetSync(chan,BASS_SYNC_END,0,EndSync,0);
+		// play it!
+		BASS_ChannelPlay(chan,FALSE);
+	}
 }
 
 INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 {
 	switch (m) {
 		case WM_TIMER:
-			{ // monitor prebuffering progress
-				DWORD progress=BASS_StreamGetFilePosition(chan,BASS_FILEPOS_BUFFER)
-					*100/BASS_StreamGetFilePosition(chan,BASS_FILEPOS_END); // percentage of buffer filled
-				if (progress>75 || !BASS_StreamGetFilePosition(chan,BASS_FILEPOS_CONNECTED)) { // over 75% full (or end of download)
-					KillTimer(win,0); // finished prebuffering, stop monitoring
+			{ // monitor buffering progress
+				if (BASS_ChannelIsActive(chan)==BASS_ACTIVE_PLAYING) {
+					KillTimer(win,0); // finished buffering, stop monitoring
 					MESS(31,WM_SETTEXT,0,"playing");
 					{ // get the broadcast name and URL
 						const char *icy=BASS_ChannelGetTags(chan,BASS_TAG_ICY);
@@ -136,17 +163,11 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 							}
 						}
 					}
-					// get the stream title and set sync for subsequent titles
+					// get the stream title
 					DoMeta();
-					BASS_ChannelSetSync(chan,BASS_SYNC_META,0,&MetaSync,0); // Shoutcast
-					BASS_ChannelSetSync(chan,BASS_SYNC_OGG_CHANGE,0,&MetaSync,0); // Icecast/OGG
-					// set sync for end of stream
-					BASS_ChannelSetSync(chan,BASS_SYNC_END,0,&EndSync,0);
-					// play it!
-					BASS_ChannelPlay(chan,FALSE);
 				} else {
-					char text[20];
-					sprintf(text,"buffering... %d%%",progress);
+					char text[32];
+					sprintf(text,"buffering... %d%%",100-BASS_StreamGetFilePosition(chan,BASS_FILEPOS_BUFFERING));
 					MESS(31,WM_SETTEXT,0,text);
 				}
 			}
@@ -185,10 +206,9 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 			// initialize default output device
 			if (!BASS_Init(-1,44100,0,win,NULL)) {
 				Error("Can't initialize device");
-				DestroyWindow(win);
+				EndDialog(win,0);
+				break;
 			}
-			BASS_SetConfig(BASS_CONFIG_NET_PLAYLIST,1); // enable playlist processing
-			BASS_SetConfig(BASS_CONFIG_NET_PREBUF,0); // minimize automatic pre-buffering, so we can do it (and display it) instead
 			InitializeCriticalSection(&lock);
 			MESS(20,WM_SETTEXT,0,"http://");
 			return 1;
@@ -208,8 +228,14 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine,
 		return 0;
 	}
 
+	BASS_SetConfig(BASS_CONFIG_NET_PLAYLIST,1); // enable playlist processing
+	BASS_SetConfig(BASS_CONFIG_NET_PREBUF_WAIT,0); // disable BASS_StreamCreateURL pre-buffering
+
+	BASS_PluginLoad("bass_aac.dll",0); // load BASS_AAC (if present) for AAC support on older Windows
+	BASS_PluginLoad("basshls.dll",0); // load BASSHLS (if present) for HLS support
+
 	// display the window
-	DialogBox(hInstance,MAKEINTRESOURCE(1000),0,&dialogproc);
+	DialogBox(hInstance,MAKEINTRESOURCE(1000),0,dialogproc);
 
 	return 0;
 }

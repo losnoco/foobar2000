@@ -1,6 +1,6 @@
 /*
 	BASS recording example
-	Copyright (c) 2002-2011 Un4seen Developments Ltd.
+	Copyright (c) 2002-2017 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -17,11 +17,13 @@ HWND win=NULL;
 
 int device;				// current input source
 int input;				// current input source
-char *recbuf=NULL;		// recording buffer
+BYTE *recbuf=NULL;		// recording buffer
 DWORD reclen;			// recording length
 
 HRECORD rchan=0;		// recording channel
 HSTREAM chan=0;			// playback channel
+
+void StopRecording();
 
 // display error messages
 void Error(const char *es)
@@ -52,6 +54,11 @@ BOOL CALLBACK RecordingCallback(HRECORD handle, const void *buffer, DWORD length
 	memcpy(recbuf+reclen,buffer,length);
 	reclen+=length;
 	return TRUE; // continue recording
+}
+
+void CALLBACK FreeSyncProc(HSYNC handle, DWORD channel, DWORD data, void *user)
+{
+	StopRecording();
 }
 
 void StartRecording()
@@ -88,6 +95,8 @@ void StartRecording()
 		recbuf=0;
 		return;
 	}
+	// set a sync to detect the recording stopping by itself, eg. device unplugged
+	BASS_ChannelSetSync(rchan,BASS_SYNC_FREE,0,FreeSyncProc,0);
 	MESS(10,WM_SETTEXT,0,"Stop");
 }
 
@@ -265,8 +274,10 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 								HRECORD newrchan=BASS_RecordStart(FREQ,CHANS,0,RecordingCallback,0);
 								if (!newrchan)
 									Error("Couldn't start recording");
-								else
+								else {
 									rchan=newrchan;
+									BASS_ChannelSetSync(rchan,BASS_SYNC_FREE,0,FreeSyncProc,0);
+								}
 							}
 						}
 					}

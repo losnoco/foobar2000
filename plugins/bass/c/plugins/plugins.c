@@ -14,7 +14,7 @@ HWND win=NULL;
 DWORD chan;	// the channel
 
 OPENFILENAME ofn;
-char filter[1000];
+char filter[2000];
 
 // display error messages
 void Error(const char *es)
@@ -32,7 +32,7 @@ const char *GetCTypeString(DWORD ctype, HPLUGIN plugin)
 		int a;
 		for (a=0;a<pinfo->formatc;a++) {
 			if (pinfo->formats[a].ctype==ctype) // found a "ctype" match...
-				return pinfo->formats[a].name; // return it's name
+				return pinfo->formats[a].name; // return its name
 		}
 	}
 	// check built-in stream formats...
@@ -46,9 +46,9 @@ const char *GetCTypeString(DWORD ctype, HPLUGIN plugin)
 	if (ctype==BASS_CTYPE_STREAM_MF) { // a Media Foundation codec, check the format...
 		const WAVEFORMATEX *wf=(WAVEFORMATEX*)BASS_ChannelGetTags(chan,BASS_TAG_WAVEFORMAT);
 		if (wf->wFormatTag==0x1610) return "Advanced Audio Coding";
-		if (wf->wFormatTag==0x0161 || wf->wFormatTag==0x0162 || wf->wFormatTag==0x0163) return "Windows Media Audio";
+		if (wf->wFormatTag>=0x0160 && wf->wFormatTag<=0x0163) return "Windows Media Audio";
 	}
-	if (ctype&BASS_CTYPE_STREAM_WAV) // other WAVE codec, could use acmFormatTagDetails to get its name, but...
+	if (ctype&BASS_CTYPE_STREAM_WAV) // other WAVE codec, could use acmFormatTagDetails to get its name, but for now...
 		return "WAVE";
 	return "?";
 }
@@ -120,11 +120,11 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 			ofn.hwndOwner=h;
 			ofn.Flags=OFN_HIDEREADONLY|OFN_EXPLORER;
 			ofn.lpstrFilter=filter;
-			memcpy(filter,"BASS built-in (*.mp3;*.mp2;*.mp1;*.ogg;*.wav;*.aif)\0*.mp3;*.mp2;*.mp1;*.ogg;*.wav;*.aif\0",88);
+			memcpy(filter,"BASS built-in formats (*.mp3;*.mp2;*.mp1;*.ogg;*.wav;*.aif)\0*.mp3;*.mp2;*.mp1;*.ogg;*.wav;*.aif\0",96);
 			{ // look for plugins (in the executable's directory)
 				WIN32_FIND_DATA fd;
 				HANDLE fh;
-				char path[MAX_PATH],*fp=filter+88;
+				char path[MAX_PATH],*fp=filter+96;
 				GetModuleFileName(0,path,sizeof(path));
 				strcpy(strrchr(path,'\\')+1,"bass*.dll");
 				fh=FindFirstFile(path,&fd);
@@ -146,6 +146,11 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 				}
 				if (!MESS(20,LB_GETCOUNT,0,0)) // no plugins...
 					MESS(20,LB_ADDSTRING,0,"no plugins - visit the BASS webpage to get some");
+				// check if Media Foundation is available
+				if (!BASS_GetConfig(BASS_CONFIG_MF_DISABLE)) {
+					fp+=sprintf(fp,"Media Foundation formats (*.aac;*.m4a;*.mp4;*.wma)")+1;
+					fp+=sprintf(fp,"*.aac;*.m4a;*.mp4;*.wma")+1;
+				}
 				memcpy(fp,"All files\0*.*\0\0",15);
 			}
 			SetTimer(h,0,500,0); // timer to update the position

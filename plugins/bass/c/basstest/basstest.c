@@ -231,8 +231,11 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 		case WM_INITDIALOG:
 			win=h;
 			// initialize default output device
-			if (!BASS_Init(-1,44100,0,win,NULL))
+			if (!BASS_Init(-1,44100,0,win,NULL)) {
 				Error("Can't initialize device");
+				EndDialog(win,0);
+				return 0;
+			}
 			// initialize volume sliders
 			MESS(16,TBM_SETRANGE,1,MAKELONG(0,100));
 			MESS(16,TBM_SETPOS,1,100);

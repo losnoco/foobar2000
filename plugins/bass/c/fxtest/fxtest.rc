@@ -1,6 +1,6 @@
 #include <windows.h>
 
-1000 DIALOG DISCARDABLE  100, 100, 200, 83
+1000 DIALOG DISCARDABLE  100, 100, 200, 100
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "BASS DX8 effects test"
 FONT 8, "MS Sans Serif"
@@ -18,4 +18,6 @@ BEGIN
     CTEXT           "1 khz",-1,55,72,30,8
     CTEXT           "8 khz",-1,90,72,30,8
     CTEXT           "reverb",-1,150,72,30,8
+    CONTROL         "Apply effects to final output instead of file",30,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,5,87,150,10
 END
