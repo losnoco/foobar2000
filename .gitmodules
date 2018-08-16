@@ -1,187 +1,186 @@
 [submodule "plugins/dumb"]
 	path = plugins/dumb
-	url = https://gitlab.kode54.net/kode54/dumb.git
+	url = https://bitbucket.org/losnoco/dumb.git
 [submodule "plugins/Game_Music_Emu"]
 	path = plugins/Game_Music_Emu
-	url = https://gitlab.kode54.net/kode54/Game_Music_Emu.git
+	url = https://bitbucket.org/losnoco/Game_Music_Emu.git
 [submodule "plugins/foobar/foobar2000/foo_input_hvl"]
 	path = plugins/foobar/foobar2000/foo_input_hvl
-	url = https://gitlab.kode54.net/kode54/foo_input_hvl.git
+	url = https://bitbucket.org/losnoco/foo_input_hvl.git
 [submodule "plugins/foobar/foobar2000/foo_dumb"]
 	path = plugins/foobar/foobar2000/foo_dumb
-	url = https://gitlab.kode54.net/kode54/foo_dumb.git
+	url = https://bitbucket.org/losnoco/foo_dumb.git
 [submodule "plugins/foobar/foobar2000/foo_gep"]
 	path = plugins/foobar/foobar2000/foo_gep
-	url = https://gitlab.kode54.net/kode54/foo_gep.git
+	url = https://bitbucket.org/losnoco/foo_gep.git
 [submodule "plugins/foobar/foobar2000/foo_input_org"]
 	path = plugins/foobar/foobar2000/foo_input_org
-	url = https://gitlab.kode54.net/kode54/foo_input_org.git
+	url = https://bitbucket.org/losnoco/foo_input_org.git
 [submodule "plugins/foobar/foobar2000/foo_osd"]
 	path = plugins/foobar/foobar2000/foo_osd
-	url = https://gitlab.kode54.net/kode54/foo_osd.git
+	url = https://bitbucket.org/losnoco/foo_osd.git
 [submodule "plugins/File_Extractor"]
 	path = plugins/File_Extractor
-	url = https://gitlab.kode54.net/kode54/File_Extractor.git
+	url = https://bitbucket.org/losnoco/File_Extractor.git
 [submodule "plugins/foobar/foobar2000/foo_unpack_7z"]
 	path = plugins/foobar/foobar2000/foo_unpack_7z
-	url = https://gitlab.kode54.net/kode54/foo_unpack_7z.git
+	url = https://bitbucket.org/losnoco/foo_unpack_7z.git
 [submodule "plugins/foobar/foobar2000/foo_unpack_jma"]
 	path = plugins/foobar/foobar2000/foo_unpack_jma
-	url = https://gitlab.kode54.net/kode54/foo_unpack_jma.git
+	url = https://bitbucket.org/losnoco/foo_unpack_jma.git
 [submodule "plugins/foobar/foobar2000/foo_unpack_lha"]
 	path = plugins/foobar/foobar2000/foo_unpack_lha
-	url = https://gitlab.kode54.net/kode54/foo_unpack_lha.git
+	url = https://bitbucket.org/losnoco/foo_unpack_lha.git
 [submodule "plugins/foobar/foobar2000/foo_unpack_unix"]
 	path = plugins/foobar/foobar2000/foo_unpack_unix
-	url = https://gitlab.kode54.net/kode54/foo_unpack_unix.git
+	url = https://bitbucket.org/losnoco/foo_unpack_unix.git
 [submodule "plugins/libupse"]
 	path = plugins/libupse
-	url = https://gitlab.kode54.net/kode54/libupse.git
+	url = https://bitbucket.org/losnoco/libupse.git
 [submodule "plugins/foobar/foobar2000/foo_input_upse"]
 	path = plugins/foobar/foobar2000/foo_input_upse
-	url = https://gitlab.kode54.net/kode54/foo_input_upse.git
+	url = https://bitbucket.org/losnoco/foo_input_upse.git
 [submodule "plugins/foobar/foobar2000/foo_hdcd"]
 	path = plugins/foobar/foobar2000/foo_hdcd
-	url = https://gitlab.kode54.net/kode54/foo_hdcd.git
+	url = https://bitbucket.org/losnoco/foo_hdcd.git
 [submodule "plugins/scc"]
 	path = plugins/scc
-	url = https://gitlab.kode54.net/kode54/scc.git
+	url = https://bitbucket.org/losnoco/scc.git
 [submodule "plugins/munt"]
 	path = plugins/munt
-	url = https://gitlab.kode54.net/kode54/munt.git
+	url = https://bitbucket.org/losnoco/munt.git
 [submodule "plugins/foobar/foobar2000/foo_midi"]
 	path = plugins/foobar/foobar2000/foo_midi
-	url = https://gitlab.kode54.net/kode54/foo_midi.git
+	url = https://bitbucket.org/losnoco/foo_midi.git
 [submodule "plugins/ESP/Sega"]
 	path = plugins/ESP/Sega
-	url = https://gitlab.kode54.net/kode54/Highly_Theoretical.git
+	url = https://bitbucket.org/losnoco/Highly_Theoretical.git
 [submodule "plugins/foobar/foobar2000/foo_input_ht"]
 	path = plugins/foobar/foobar2000/foo_input_ht
-	url = https://gitlab.kode54.net/kode54/foo_input_ht.git
+	url = https://bitbucket.org/losnoco/foo_input_ht.git
 [submodule "plugins/foobar/foobar2000/foo_dsp_prvb"]
 	path = plugins/foobar/foobar2000/foo_dsp_prvb
-	url = https://gitlab.kode54.net/kode54/foo_dsp_prvb.git
+	url = https://bitbucket.org/losnoco/foo_dsp_prvb.git
 [submodule "plugins/qaac"]
 	path = plugins/qaac
-	url = https://gitlab.kode54.net/kode54/qaac.git
+	url = https://bitbucket.org/losnoco/qaac.git
 [submodule "plugins/fdk-aac"]
 	path = plugins/fdk-aac
-	url = https://gitlab.kode54.net/kode54/fdk-aac.git
+	url = https://bitbucket.org/losnoco/fdk-aac.git
 [submodule "plugins/vgmstream"]
 	path = plugins/vgmstream
 	url = https://github.com/kode54/vgmstream.git
 [submodule "plugins/foobar/foobar2000/foo_input_tak"]
 	path = plugins/foobar/foobar2000/foo_input_tak
-	url = https://gitlab.kode54.net/kode54/foo_input_tak.git
+	url = https://bitbucket.org/losnoco/foo_input_tak.git
 [submodule "plugins/ESP/PSX"]
 	path = plugins/ESP/PSX
-	url = https://gitlab.kode54.net/kode54/Highly_Experimental.git
+	url = https://bitbucket.org/losnoco/Highly_Experimental.git
 [submodule "plugins/foobar/foobar2000/foo_psf"]
 	path = plugins/foobar/foobar2000/foo_input_aopsf
-	url = https://gitlab.kode54.net/kode54/foo_psf.git
+	url = https://bitbucket.org/losnoco/foo_psf.git
 [submodule "plugins/psflib"]
 	path = plugins/psflib
-	url = https://gitlab.kode54.net/kode54/psflib.git
+	url = https://bitbucket.org/losnoco/psflib.git
 [submodule "plugins/ESP/QSound"]
 	path = plugins/ESP/QSound
-	url = https://gitlab.kode54.net/kode54/Highly_Quixotic.git
+	url = https://bitbucket.org/losnoco/Highly_Quixotic.git
 [submodule "plugins/foobar/foobar2000/foo_input_qsf"]
 	path = plugins/foobar/foobar2000/foo_input_qsf
-	url = https://gitlab.kode54.net/kode54/foo_input_qsf.git
+	url = https://bitbucket.org/losnoco/foo_input_qsf.git
 [submodule "plugins/viogsf"]
 	path = plugins/viogsf
-	url = https://gitlab.kode54.net/kode54/viogsf.git
+	url = https://bitbucket.org/losnoco/viogsf.git
 [submodule "plugins/foobar/foobar2000/foo_input_gsf"]
 	path = plugins/foobar/foobar2000/foo_input_gsf
-	url = https://gitlab.kode54.net/kode54/foo_input_gsf.git
+	url = https://bitbucket.org/losnoco/foo_input_gsf.git
 [submodule "plugins/SSEQPlayer"]
 	path = plugins/SSEQPlayer
-	url = https://gitlab.kode54.net/kode54/SSEQPlayer.git
+	url = https://bitbucket.org/losnoco/SSEQPlayer.git
 [submodule "plugins/foobar/foobar2000/foo_input_ncsf"]
 	path = plugins/foobar/foobar2000/foo_input_ncsf
-	url = https://gitlab.kode54.net/kode54/foo_input_ncsf.git
+	url = https://bitbucket.org/losnoco/foo_input_ncsf.git
 [submodule "plugins/foobar/foobar2000/foo_input_adplug"]
 	path = plugins/foobar/foobar2000/foo_input_adplug
-	url = https://gitlab.kode54.net/kode54/foo_input_adplug.git
+	url = https://bitbucket.org/losnoco/foo_input_adplug.git
 [submodule "plugins/foobar/foobar2000/foo_sid"]
 	path = plugins/foobar/foobar2000/foo_sid
-	url = https://gitlab.kode54.net/kode54/foo_sid.git
+	url = https://bitbucket.org/losnoco/foo_sid.git
 [submodule "plugins/midi_processing"]
 	path = plugins/midi_processing
-	url = https://gitlab.kode54.net/kode54/midi_processing.git
+	url = https://bitbucket.org/losnoco/midi_processing.git
 [submodule "plugins/midisynth"]
 	path = plugins/midisynth
-	url = https://gitlab.kode54.net/kode54/midisynth.git
+	url = https://bitbucket.org/losnoco/midisynth.git
 [submodule "plugins/foobar/foobar2000/foo_input_vio2sf"]
 	path = plugins/foobar/foobar2000/foo_input_vio2sf
-	url = https://gitlab.kode54.net/kode54/foo_input_vio2sf.git
+	url = https://bitbucket.org/losnoco/foo_input_vio2sf.git
 [submodule "plugins/vio2sf"]
 	path = plugins/vio2sf
-	url = https://gitlab.kode54.net/kode54/vio2sf.git
+	url = https://bitbucket.org/losnoco/vio2sf.git
 [submodule "plugins/foobar/foobar2000/foo_snesapu"]
 	path = plugins/foobar/foobar2000/foo_snesapu
-	url = https://gitlab.kode54.net/kode54/foo_snesapu.git
+	url = https://bitbucket.org/losnoco/foo_snesapu.git
 [submodule "plugins/foobar/foobar2000/foo_input_dts"]
 	path = plugins/foobar/foobar2000/foo_input_dts
-	url = https://gitlab.kode54.net/kode54/foo_input_dts.git
+	url = https://bitbucket.org/losnoco/foo_input_dts.git
 [submodule "plugins/DFC"]
 	path = plugins/DFC
-	url = https://gitlab.kode54.net/kode54/DFC.git
+	url = https://bitbucket.org/losnoco/DFC.git
 [submodule "plugins/lazyusf"]
 	path = plugins/lazyusf
-	url = https://gitlab.kode54.net/kode54/lazyusf.git
+	url = https://bitbucket.org/losnoco/lazyusf.git
 [submodule "plugins/foobar/foobar2000/foo_input_usf"]
 	path = plugins/foobar/foobar2000/foo_input_usf
-	url = https://gitlab.kode54.net/kode54/foo_input_usf.git
+	url = https://bitbucket.org/losnoco/foo_input_usf.git
 [submodule "plugins/foobar/foobar2000/foo_dsp_multiresampler"]
 	path = plugins/foobar/foobar2000/foo_dsp_multiresampler
-	url = https://gitlab.kode54.net/kode54/foo_dsp_multiresampler.git
+	url = https://bitbucket.org/losnoco/foo_dsp_multiresampler.git
 [submodule "plugins/sidplay-residfp"]
 	path = plugins/sidplay-residfp
-	url = https://gitlab.kode54.net/kode54/sidplay-residfp.git
+	url = https://bitbucket.org/losnoco/sidplay-residfp.git
 [submodule "plugins/libg7221_decode"]
 	path = plugins/libg7221_decode
-	url = https://gitlab.kode54.net/kode54/libg7221_decode.git
+	url = https://bitbucket.org/losnoco/libg7221_decode.git
 [submodule "plugins/libg719_decode"]
 	path = plugins/libg719_decode
-	url = https://gitlab.kode54.net/kode54/libg719_decode.git
+	url = https://bitbucket.org/losnoco/libg719_decode.git
 [submodule "plugins/lazyusf2"]
 	path = plugins/lazyusf2
-	url = https://gitlab.kode54.net/kode54/lazyusf2.git
+	url = https://bitbucket.org/losnoco/lazyusf2.git
 [submodule "plugins/dcadec"]
 	path = plugins/dcadec
-	url = https://gitlab.kode54.net/kode54/dcadec.git
+	url = https://bitbucket.org/losnoco/dcadec.git
 [submodule "plugins/foobar/foobar2000/foo_cdda/akrip"]
 	path = plugins/foobar/foobar2000/foo_cdda/akrip
-	url = https://gitlab.kode54.net/kode54/akrip.git
+	url = https://bitbucket.org/losnoco/akrip.git
 [submodule "plugins/foobar/foobar2000/foo_adpcm"]
 	path = plugins/foobar/foobar2000/foo_adpcm
-	url = https://gitlab.kode54.net/kode54/foo_adpcm.git
+	url = https://bitbucket.org/losnoco/foo_adpcm.git
 [submodule "plugins/foobar/foobar2000/foo_lunar2"]
 	path = plugins/foobar/foobar2000/foo_lunar2
-	url = https://gitlab.kode54.net/kode54/foo_lunar2.git
+	url = https://bitbucket.org/losnoco/foo_lunar2.git
 [submodule "plugins/aopsf"]
 	path = plugins/aopsf
-	url = https://gitlab.kode54.net/kode54/aopsf.git
+	url = https://bitbucket.org/losnoco/aopsf.git
 [submodule "plugins/foobar/foobar2000/foo_qpsf"]
 	path = plugins/foobar/foobar2000/foo_psf
-	url = https://gitlab.kode54.net/kode54/foo_qpsf.git
+	url = https://bitbucket.org/losnoco/foo_qpsf.git
 [submodule "plugins/mgba/mgba"]
 	path = plugins/mgba/mgba
 	url = https://github.com/kode54/mgba.git
 [submodule "plugins/playptmod"]
 	path = plugins/playptmod
-	url = https://gitlab.kode54.net/kode54/playptmod.git
+	url = https://bitbucket.org/losnoco/playptmod.git
 [submodule "plugins/modplay"]
 	path = plugins/modplay
-	url = https://gitlab.kode54.net/kode54/modplay.git
+	url = https://bitbucket.org/losnoco/modplay.git
 [submodule "plugins/LibAtrac9"]
 	path = plugins/LibAtrac9
 	url = https://github.com/Thealexbarney/LibAtrac9.git
 [submodule "plugins/foobar/foobar2000/foo_openmpt"]
 	path = plugins/foobar/foobar2000/foo_openmpt
-	url = https://gitlab.kode54.net/kode54/foo_openmpt.git
-	
+	url = https://bitbucket.org/losnoco/foo_openmpt.git
 [submodule "plugins/libADLMIDI"]
 	path = plugins/libADLMIDI
 	url = https://github.com/Wohlstand/libADLMIDI.git
