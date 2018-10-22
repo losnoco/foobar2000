@@ -5,6 +5,16 @@ Changelog {#changelog}
 For fully detailed change log, please see the source repository directly. This
 is just a high-level summary.
 
+### libopenmpt 0.3.13 (2018-10-21)
+
+ *  [**Sec**] Crash with malformed MED files (r10904).
+
+ *  Transposed samples in AMF ASYLUM modules were not played correctly.  
+ *  Notes triggered by libopenmpt_ext play_note could be played with a panbrello
+    effect if the same virtual channel was previously used with panbrello.
+ *  Clicks when stopping channels that didn't end at zero volume.
+ *  XM: Do not import non-standard commands N and M as channel volume commands.
+
 ### libopenmpt 0.3.12 (2018-09-24)
 
  *  [**Bug**] openmpt123: Prevent libsdl2 and libsdl from being enabled at the

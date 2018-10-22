@@ -22,6 +22,10 @@
 
 #include "Sndfile.h"
 
+#ifdef ENABLE_SSE2
+#include <emmintrin.h>
+#endif
+
 
 OPENMPT_NAMESPACE_BEGIN
 
@@ -162,7 +166,6 @@ mainloop:
 
 #ifdef ENABLE_SSE2
 
-#include <emmintrin.h>
 
 static void SSE2_StereoMixToFloat(const int32 *pSrc, float *pOut1, float *pOut2, uint32 nCount, const float _i2fc)
 {
@@ -733,8 +736,8 @@ static void C_StereoFill(mixsample_t *pBuffer, uint32 nSamples, mixsample_t &rof
 #endif
 		rofs -= x_r;
 		lofs -= x_l;
-		pBuffer[i*2] = x_r;
-		pBuffer[i*2+1] = x_l;
+		pBuffer[i*2] = rofs;
+		pBuffer[i*2+1] = lofs;
 	}
 
 #ifndef MPT_INTMIXER
@@ -821,8 +824,8 @@ static void C_EndChannelOfs(ModChannel &chn, mixsample_t *pBuffer, uint32 nSampl
 #endif
 		rofs -= x_r;
 		lofs -= x_l;
-		pBuffer[i*2] += x_r;
-		pBuffer[i*2+1] += x_l;
+		pBuffer[i*2] += rofs;
+		pBuffer[i*2+1] += lofs;
 	}
 #ifndef MPT_INTMIXER
 	if(mpt::abs(rofs) < OFSTHRESHOLD) rofs = 0;
