@@ -4,6 +4,8 @@ Project("{52F1DEB2-5C4C-4917-B0C4-EEA07D1BA372}") = "contest", "contest\contest.
 EndProject
 Project("{52F1DEB2-5C4C-4917-B0C4-EEA07D1BA372}") = "list", "list\list.vcproj", "{BEC61DFB-034C-4151-BB1A-6AA087A0BC4B}"
 EndProject
+Project("{52F1DEB2-5C4C-4917-B0C4-EEA07D1BA372}") = "livefx", "livefx\livefx.vcproj", "{83F08FB4-AD44-4166-8ED2-7624E28070DD}"
+EndProject
 Project("{52F1DEB2-5C4C-4917-B0C4-EEA07D1BA372}") = "livespec", "livespec\livespec.vcproj", "{1F178A2C-8655-496E-BFE7-99BF3BE9AB2D}"
 EndProject
 Project("{52F1DEB2-5C4C-4917-B0C4-EEA07D1BA372}") = "rectest", "rectest\rectest.vcproj", "{83F08FB4-AD44-4166-8ED2-7624E28070DC}"
@@ -26,6 +28,10 @@ Global
 		{BEC61DFB-034C-4151-BB1A-6AA087A0BC4B}.Release|Win32.Build.0 = Release|Win32
 		{BEC61DFB-034C-4151-BB1A-6AA087A0BC4B}.Release|x64.ActiveCfg = Release|x64
 		{BEC61DFB-034C-4151-BB1A-6AA087A0BC4B}.Release|x64.Build.0 = Release|x64
+		{83F08FB4-AD44-4166-8ED2-7624E28070DD}.Release|Win32.ActiveCfg = Release|Win32
+		{83F08FB4-AD44-4166-8ED2-7624E28070DD}.Release|Win32.Build.0 = Release|Win32
+		{83F08FB4-AD44-4166-8ED2-7624E28070DD}.Release|x64.ActiveCfg = Release|x64
+		{83F08FB4-AD44-4166-8ED2-7624E28070DD}.Release|x64.Build.0 = Release|x64
 		{1F178A2C-8655-496E-BFE7-99BF3BE9AB2D}.Release|Win32.ActiveCfg = Release|Win32
 		{1F178A2C-8655-496E-BFE7-99BF3BE9AB2D}.Release|Win32.Build.0 = Release|Win32
 		{1F178A2C-8655-496E-BFE7-99BF3BE9AB2D}.Release|x64.ActiveCfg = Release|x64

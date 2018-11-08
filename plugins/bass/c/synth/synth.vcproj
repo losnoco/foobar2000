@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="synth"
-	ProjectGUID="{F710CC47-BAAF-44DD-9F1B-D7F5AEEEDB56}"
+	ProjectGUID="{38BC6FC6-8540-4990-A493-E1124D2670F4}"
 	>
 	<Platforms>
 		<Platform
@@ -30,7 +30,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bass.lib"
+				AdditionalDependencies="bass.lib basswasapi.lib"
 				AdditionalLibraryDirectories=".."
 				SubSystem="1"
 			/>
@@ -49,7 +49,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bass.lib"
+				AdditionalDependencies="bass.lib basswasapi.lib"
 				AdditionalLibraryDirectories="..\x64"
 				SubSystem="1"
 				TargetMachine="17"

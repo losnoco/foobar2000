@@ -1,6 +1,6 @@
 {
   BASSWASAPI 2.4 Delphi unit
-  Copyright (c) 2009-2015 Un4seen Developments Ltd.
+  Copyright (c) 2009-2017 Un4seen Developments Ltd.
 
   See the BASSWASAPI.CHM file for more detailed documentation
 }
@@ -14,7 +14,7 @@ uses Windows, Bass;
 const
   // Additional error codes returned by BASS_ErrorGetCode
   BASS_ERROR_WASAPI           = 5000; // no WASAPI
-  BASS_ERROR_WASAPI_BUFFER    = 5001; // buffer is too large
+  BASS_ERROR_WASAPI_BUFFER    = 5001; // buffer size is invalid
 
   // BASS_WASAPI_DEVICEINFO "type"
   BASS_WASAPI_TYPE_NETWORKDEVICE   = 0;
@@ -43,6 +43,8 @@ const
   BASS_WASAPI_AUTOFORMAT           = 2;
   BASS_WASAPI_BUFFER               = 4;
   BASS_WASAPI_EVENT                = 16;
+  BASS_WASAPI_SAMPLES              = 32;
+  BASS_WASAPI_DITHER               = 64;
 
   // BASS_WASAPI_INFO "format"
   BASS_WASAPI_FORMAT_FLOAT         = 0;
@@ -62,7 +64,7 @@ const
   BASS_WASAPI_NOTIFY_DISABLED      = 1;
   BASS_WASAPI_NOTIFY_DEFOUTPUT     = 2;
   BASS_WASAPI_NOTIFY_DEFINPUT      = 3;
-
+  BASS_WASAPI_NOTIFY_FAIL          = $100;
 
 type
   // Device info structure

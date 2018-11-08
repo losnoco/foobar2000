@@ -1,12 +1,12 @@
 Attribute VB_Name = "BASSWASAPI"
 ' BASSWASAPI 2.4 Visual Basic module
-' Copyright (c) 2009-2015 Un4seen Developments Ltd.
+' Copyright (c) 2009-2017 Un4seen Developments Ltd.
 '
 ' See the BASSWASAPI.CHM file for more detailed documentation
 
 ' Additional error codes returned by BASS_ErrorGetCode
 Global Const BASS_ERROR_WASAPI = 5000    ' no WASAPI
-Global Const BASS_ERROR_WASAPI_BUFFER = 5001 ' buffer is too large
+Global Const BASS_ERROR_WASAPI_BUFFER = 5001 ' buffer size is invalid
 
 ' Device info structure
 Type BASS_WASAPI_DEVICEINFO
@@ -60,6 +60,8 @@ Global Const BASS_WASAPI_EXCLUSIVE = 1
 Global Const BASS_WASAPI_AUTOFORMAT = 2
 Global Const BASS_WASAPI_BUFFER = 4
 Global Const BASS_WASAPI_EVENT = 16
+Global Const BASS_WASAPI_SAMPLES = 32
+Global Const BASS_WASAPI_DITHER = 64
 
 ' BASS_WASAPI_INFO "format"
 Global Const BASS_WASAPI_FORMAT_FLOAT = 0
@@ -79,6 +81,7 @@ Global Const BASS_WASAPI_NOTIFY_ENABLED = 0
 Global Const BASS_WASAPI_NOTIFY_DISABLED = 1
 Global Const BASS_WASAPI_NOTIFY_DEFOUTPUT = 2
 Global Const BASS_WASAPI_NOTIFY_DEFINPUT = 3
+Global Const BASS_WASAPI_NOTIFY_FAIL = &H100
 
 
 Declare Function BASS_WASAPI_GetVersion Lib "basswasapi.dll" () As Long

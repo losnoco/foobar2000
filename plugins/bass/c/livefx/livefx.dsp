@@ -36,8 +36,8 @@ RSC=rc.exe
 # ADD CPP /nologo /MD /GX /I ".." /D "WIN32" /D "NDEBUG" /FD /c
 BSC32=bscmake.exe
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib comctl32.lib /nologo /subsystem:windows /pdb:none /machine:I386
-# ADD LINK32 kernel32.lib user32.lib comctl32.lib /nologo /subsystem:windows /pdb:none /machine:I386
+# ADD BASE LINK32 kernel32.lib user32.lib comctl32.lib gdi32.lib /nologo /subsystem:windows /pdb:none /machine:I386
+# ADD LINK32 kernel32.lib user32.lib comctl32.lib gdi32.lib /nologo /subsystem:windows /pdb:none /machine:I386
 # Begin Target
 
 # Name "livefx - Win32 Release"
@@ -52,6 +52,14 @@ SOURCE=livefx.rc
 # Begin Source File
 
 SOURCE=..\bass.lib
+# End Source File
+# Begin Source File
+
+SOURCE=..\basswasapi.lib
+# End Source File
+# Begin Source File
+
+SOURCE=..\bassmix.lib
 # End Source File
 # End Target
 # End Project

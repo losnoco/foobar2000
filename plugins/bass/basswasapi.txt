@@ -1,5 +1,5 @@
 BASSWASAPI 2.4
-Copyright (c) 2009-2015 Un4seen Developments Ltd. All rights reserved.
+Copyright (c) 2009-2017 Un4seen Developments Ltd. All rights reserved.
 
 Files that you should have found in the BASSWASAPI package
 ==========================================================
@@ -26,6 +26,12 @@ C\              C/C++ API and examples...
     LIST.C
     LIST.DSP
     LIST.VCPROJ
+    MAKEFILE
+  LIVEFX\        WASAPI version of the BASS full-duplex example
+    LIVEFX.C
+    LIVEFX.RC
+    LIVEFX.DSP
+    LIVEFX.VCPROJ
     MAKEFILE
   LIVESPEC\       WASAPI version of the BASS live spectrum example
     LIVESPEC.C
@@ -127,6 +133,26 @@ These are the major (and not so major) changes at each version stage.
 There are of course bug fixes and other little improvements made along
 the way too! To make upgrading simpler, all functions affected by a
 change to the BASSWASAPI interface are listed.
+
+2.4.2 - 15/11/2017
+------------------
+* Support for lower latency shared mode on Windows 10
+	BASS_WASAPI_Init
+* A buffer length can be requested with event-driven shared mode
+	BASS_WASAPI_Init
+* Buffer size specification in samples
+	BASS_WASAPI_SAMPLES (BASS_WASAPI_Init flag)
+* Dither in conversion from floating-point to device format
+	BASS_WASAPI_DITHER (BASS_WASAPI_Init flag)
+* More precise latency measurement
+	BASS_WASAPI_GetData
+	BASS_WASAPI_GetLevel/Ex
+* Notification of unexpected stoppages
+	BASS_WASAPI_NOTIFY_FAIL (WASAPINOTIFYPROC notification)
+* Negative return values from output callback functions are treated as 0
+	WASAPIPROC
+* Fix for a handle leak in BASS_WASAPI_Free
+* LIVEFX example added, LIST and SYNTH examples updated
 
 2.4.1 - 10/2/2015
 -----------------
