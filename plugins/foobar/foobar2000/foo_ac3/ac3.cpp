@@ -1,7 +1,11 @@
-#define MY_VERSION "0.9.10"
+#define MY_VERSION "0.9.11"
 
 /*
 	changelog
+
+2019-01-05 09:18 UTC - kode54
+- Improved the packet decoder, including support for MP4 container
+- Version is now 0.9.11
 
 2018-01-26 02:57 UTC - kode54
 - Hopefully fix the SSE2 compiler issue with some workaround switch
@@ -108,6 +112,8 @@
 #include "ac3_parser.h"
 
 #include "resource.h"
+
+static int mp4_ac3 = 165;
 
 enum
 {
@@ -647,6 +653,17 @@ public:
 				}
 			}
 		}
+		else if (p_owner == owner_MP4)
+		{
+			if (p_param1 == mp4_ac3)
+			{
+				return true;
+			}
+		}
+		else if (p_owner == owner_MP4_AC3)
+		{
+			return true;
+		}
 
 		return false;
 	}
@@ -660,9 +677,12 @@ public:
 		m_state = a52_init( /*MM_ACCEL_DJBFFT*/ );
 		if ( ! m_state ) throw std::bad_alloc();
 
-        const matroska_setup *setup = (const matroska_setup *)p_param2;
-		srate = setup->sample_rate;
-		nch = setup->channels;
+		if (p_owner == owner_matroska)
+		{
+			const matroska_setup *setup = (const matroska_setup *)p_param2;
+			srate = setup->sample_rate;
+			nch = setup->channels;
+		}
 
 		m_decode = p_decode;
 	}
@@ -701,9 +721,16 @@ public:
 	virtual bool analyze_first_frame_supported() { return true; }
 	virtual void analyze_first_frame( const void * p_buffer, t_size p_bytes, abort_callback & p_abort )
 	{
-		if ( p_bytes < 7 ) throw exception_io_data();
-		int frame_size = a52_syncinfo( ( uint8_t * ) p_buffer, &flags, &srate, &bitrate );
-		if ( !frame_size || frame_size != p_bytes ) throw exception_io_data();
+		t_size p_bytes_processed;
+		analyze_first_frame_ex(p_buffer, p_bytes, p_bytes_processed, p_abort);
+	}
+
+	virtual void analyze_first_frame_ex(const void * p_buffer, t_size p_bytes, t_size & p_bytes_processed, abort_callback & p_abort)
+	{
+		if (p_bytes < 7) throw exception_io_data();
+		int frame_size = a52_syncinfo((uint8_t *)p_buffer, &flags, &srate, &bitrate);
+		if (!frame_size) throw exception_io_data();
+		p_bytes_processed = frame_size;
 	}
 
 	virtual void decode_ex( const void * p_buffer, t_size p_bytes, t_size & p_bytes_processed, audio_chunk & p_chunk, abort_callback & p_abort )
@@ -751,8 +778,6 @@ public:
 			}
 		}
 	}
-
-	virtual void analyze_first_frame_ex( const void * p_buffer, t_size p_bytes, t_size & p_bytes_processed, abort_callback & p_abort ) {}
 };
 
 class CMyPreferences : public CDialogImpl<CMyPreferences>, public preferences_page_instance {
