@@ -111,6 +111,7 @@
     <ClInclude Include="bsearch_inline.h" />
     <ClInclude Include="byte_order_helper.h" />
     <ClInclude Include="chain_list_v2.h" />
+    <ClInclude Include="cmd_thread.h" />
     <ClInclude Include="com_ptr_t.h" />
     <ClInclude Include="cpuid.h" />
     <ClInclude Include="event.h" />
