@@ -178,13 +178,14 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/permissive- /Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>DEBUG;MPT_BUILD_MSVC_SHARED;WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0601;LIBOPENMPT_BUILD;LIBOPENMPT_BUILD_DLL;MPT_BUILD_VCPKG;MPT_WITH_MPG123;MPT_WITH_OGG;MPT_WITH_VORBIS;MPT_WITH_VORBISFILE;MPT_WITH_ZLIB;MPT_BUILD_VER_FILENAME=\"libopenmpt.dll\";MPT_BUILD_VER_FILEDESC=\"libopenmpt\";MPT_BUILD_VER_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\common;..\..\soundlib;$(IntDir)\svn_version;..\svn_version;$(IntDir)\svn_version;..\svn_version;$(ProjDir)\..\..\build\svn_version;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\common;..\..\soundlib;$(IntDir)\svn_version;..\svn_version;$(IntDir)\svn_version;..\svn_version;..\build\svn_version;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -204,12 +205,13 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/permissive- /Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>DEBUG;MPT_BUILD_MSVC_SHARED;WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0601;LIBOPENMPT_BUILD;LIBOPENMPT_BUILD_DLL;MPT_BUILD_VCPKG;MPT_WITH_MPG123;MPT_WITH_OGG;MPT_WITH_VORBIS;MPT_WITH_VORBISFILE;MPT_WITH_ZLIB;MPT_BUILD_VER_FILENAME=\"libopenmpt.dll\";MPT_BUILD_VER_FILEDESC=\"libopenmpt\";MPT_BUILD_VER_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\common;..\..\soundlib;$(IntDir)\svn_version;..\svn_version;$(IntDir)\svn_version;..\svn_version;$(ProjDir)\..\..\build\svn_version;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\common;..\..\soundlib;$(IntDir)\svn_version;..\svn_version;$(IntDir)\svn_version;..\svn_version;..\build\svn_version;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -232,6 +234,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -239,7 +242,7 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;MPT_BUILD_MSVC_SHARED;WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0601;LIBOPENMPT_BUILD;LIBOPENMPT_BUILD_DLL;MPT_BUILD_VCPKG;MPT_WITH_MPG123;MPT_WITH_OGG;MPT_WITH_VORBIS;MPT_WITH_VORBISFILE;MPT_WITH_ZLIB;MPT_BUILD_VER_FILENAME=\"libopenmpt.dll\";MPT_BUILD_VER_FILEDESC=\"libopenmpt\";MPT_BUILD_VER_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\common;..\..\soundlib;$(IntDir)\svn_version;..\svn_version;$(IntDir)\svn_version;..\svn_version;$(ProjDir)\..\..\build\svn_version;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\common;..\..\soundlib;$(IntDir)\svn_version;..\svn_version;$(IntDir)\svn_version;..\svn_version;..\build\svn_version;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -264,13 +267,14 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FloatingPointModel>Fast</FloatingPointModel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/permissive- /Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;MPT_BUILD_MSVC_SHARED;WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0601;LIBOPENMPT_BUILD;LIBOPENMPT_BUILD_DLL;MPT_BUILD_VCPKG;MPT_WITH_MPG123;MPT_WITH_OGG;MPT_WITH_VORBIS;MPT_WITH_VORBISFILE;MPT_WITH_ZLIB;MPT_BUILD_VER_FILENAME=\"libopenmpt.dll\";MPT_BUILD_VER_FILEDESC=\"libopenmpt\";MPT_BUILD_VER_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\common;..\..\soundlib;$(IntDir)\svn_version;..\svn_version;$(IntDir)\svn_version;..\svn_version;$(ProjDir)\..\..\build\svn_version;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\common;..\..\soundlib;$(IntDir)\svn_version;..\svn_version;$(IntDir)\svn_version;..\svn_version;..\build\svn_version;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -391,30 +395,36 @@
     <ClInclude Include="..\..\common\FlagSet.h" />
     <ClInclude Include="..\..\common\Logging.h" />
     <ClInclude Include="..\..\common\Profiler.h" />
-    <ClInclude Include="..\..\common\StringFixer.h" />
-    <ClInclude Include="..\..\common\WriteMemoryDump.h" />
     <ClInclude Include="..\..\common\misc_util.h" />
+    <ClInclude Include="..\..\common\mptAlloc.h" />
+    <ClInclude Include="..\..\common\mptAssert.h" />
+    <ClInclude Include="..\..\common\mptBaseMacros.h" />
+    <ClInclude Include="..\..\common\mptBaseTypes.h" />
+    <ClInclude Include="..\..\common\mptBaseUtils.h" />
     <ClInclude Include="..\..\common\mptBufferIO.h" />
     <ClInclude Include="..\..\common\mptCPU.h" />
     <ClInclude Include="..\..\common\mptCRC.h" />
+    <ClInclude Include="..\..\common\mptException.h" />
+    <ClInclude Include="..\..\common\mptExceptionText.h" />
     <ClInclude Include="..\..\common\mptFileIO.h" />
     <ClInclude Include="..\..\common\mptIO.h" />
     <ClInclude Include="..\..\common\mptLibrary.h" />
+    <ClInclude Include="..\..\common\mptMemory.h" />
     <ClInclude Include="..\..\common\mptMutex.h" />
     <ClInclude Include="..\..\common\mptOS.h" />
     <ClInclude Include="..\..\common\mptPathString.h" />
     <ClInclude Include="..\..\common\mptRandom.h" />
+    <ClInclude Include="..\..\common\mptSpan.h" />
     <ClInclude Include="..\..\common\mptString.h" />
+    <ClInclude Include="..\..\common\mptStringBuffer.h" />
     <ClInclude Include="..\..\common\mptStringFormat.h" />
     <ClInclude Include="..\..\common\mptStringParse.h" />
     <ClInclude Include="..\..\common\mptThread.h" />
     <ClInclude Include="..\..\common\mptTime.h" />
-    <ClInclude Include="..\..\common\mptTypeTraits.h" />
     <ClInclude Include="..\..\common\mptUUID.h" />
     <ClInclude Include="..\..\common\mptWine.h" />
     <ClInclude Include="..\..\common\serialization_utils.h" />
     <ClInclude Include="..\..\common\stdafx.h" />
-    <ClInclude Include="..\..\common\typedefs.h" />
     <ClInclude Include="..\..\common\version.h" />
     <ClInclude Include="..\..\common\versionNumber.h" />
     <ClInclude Include="..\..\libopenmpt\libopenmpt.h" />
@@ -438,6 +448,7 @@
     <ClInclude Include="..\..\sounddsp\Reverb.h" />
     <ClInclude Include="..\..\soundlib\AudioCriticalSection.h" />
     <ClInclude Include="..\..\soundlib\AudioReadTarget.h" />
+    <ClInclude Include="..\..\soundlib\BitReader.h" />
     <ClInclude Include="..\..\soundlib\ChunkReader.h" />
     <ClInclude Include="..\..\soundlib\Container.h" />
     <ClInclude Include="..\..\soundlib\Dither.h" />
@@ -461,6 +472,7 @@
     <ClInclude Include="..\..\soundlib\ModSample.h" />
     <ClInclude Include="..\..\soundlib\ModSampleCopy.h" />
     <ClInclude Include="..\..\soundlib\ModSequence.h" />
+    <ClInclude Include="..\..\soundlib\OPL.h" />
     <ClInclude Include="..\..\soundlib\OggStream.h" />
     <ClInclude Include="..\..\soundlib\Paula.h" />
     <ClInclude Include="..\..\soundlib\Resampler.h" />
@@ -479,13 +491,13 @@
     <ClInclude Include="..\..\soundlib\mod_specifications.h" />
     <ClInclude Include="..\..\soundlib\modcommand.h" />
     <ClInclude Include="..\..\soundlib\modsmp_ctrl.h" />
+    <ClInclude Include="..\..\soundlib\opal.h" />
     <ClInclude Include="..\..\soundlib\pattern.h" />
     <ClInclude Include="..\..\soundlib\patternContainer.h" />
     <ClInclude Include="..\..\soundlib\plugins\DigiBoosterEcho.h" />
     <ClInclude Include="..\..\soundlib\plugins\LFOPlugin.h" />
     <ClInclude Include="..\..\soundlib\plugins\OpCodes.h" />
     <ClInclude Include="..\..\soundlib\plugins\PlugInterface.h" />
-    <ClInclude Include="..\..\soundlib\plugins\PluginEventQueue.h" />
     <ClInclude Include="..\..\soundlib\plugins\PluginManager.h" />
     <ClInclude Include="..\..\soundlib\plugins\PluginMixBuffer.h" />
     <ClInclude Include="..\..\soundlib\plugins\PluginStructs.h" />
@@ -509,6 +521,7 @@
     <ClCompile Include="..\..\common\Logging.cpp" />
     <ClCompile Include="..\..\common\Profiler.cpp" />
     <ClCompile Include="..\..\common\misc_util.cpp" />
+    <ClCompile Include="..\..\common\mptAlloc.cpp" />
     <ClCompile Include="..\..\common\mptCPU.cpp" />
     <ClCompile Include="..\..\common\mptFileIO.cpp" />
     <ClCompile Include="..\..\common\mptIO.cpp" />
@@ -517,14 +530,13 @@
     <ClCompile Include="..\..\common\mptPathString.cpp" />
     <ClCompile Include="..\..\common\mptRandom.cpp" />
     <ClCompile Include="..\..\common\mptString.cpp" />
+    <ClCompile Include="..\..\common\mptStringBuffer.cpp" />
     <ClCompile Include="..\..\common\mptStringFormat.cpp" />
     <ClCompile Include="..\..\common\mptStringParse.cpp" />
     <ClCompile Include="..\..\common\mptTime.cpp" />
     <ClCompile Include="..\..\common\mptUUID.cpp" />
     <ClCompile Include="..\..\common\mptWine.cpp" />
     <ClCompile Include="..\..\common\serialization_utils.cpp" />
-    <ClCompile Include="..\..\common\stdafx.cpp" />
-    <ClCompile Include="..\..\common\typedefs.cpp" />
     <ClCompile Include="..\..\common\version.cpp" />
     <ClCompile Include="..\..\libopenmpt\libopenmpt_c.cpp" />
     <ClCompile Include="..\..\libopenmpt\libopenmpt_cxx.cpp" />
@@ -548,6 +560,7 @@
     <ClCompile Include="..\..\soundlib\Load_669.cpp" />
     <ClCompile Include="..\..\soundlib\Load_amf.cpp" />
     <ClCompile Include="..\..\soundlib\Load_ams.cpp" />
+    <ClCompile Include="..\..\soundlib\Load_c67.cpp" />
     <ClCompile Include="..\..\soundlib\Load_dbm.cpp" />
     <ClCompile Include="..\..\soundlib\Load_digi.cpp" />
     <ClCompile Include="..\..\soundlib\Load_dmf.cpp" />
@@ -588,6 +601,7 @@
     <ClCompile Include="..\..\soundlib\ModInstrument.cpp" />
     <ClCompile Include="..\..\soundlib\ModSample.cpp" />
     <ClCompile Include="..\..\soundlib\ModSequence.cpp" />
+    <ClCompile Include="..\..\soundlib\OPL.cpp" />
     <ClCompile Include="..\..\soundlib\OggStream.cpp" />
     <ClCompile Include="..\..\soundlib\Paula.cpp" />
     <ClCompile Include="..\..\soundlib\RowVisitor.cpp" />

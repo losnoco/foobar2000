@@ -4,6 +4,9 @@
     <Filter Include="build">
       <UniqueIdentifier>{D5562E0F-416B-56C0-0AED-F91F76C052F1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="build\pch">
+      <UniqueIdentifier>{BF689319-2BD3-4790-7411-F935E0BA25E5}</UniqueIdentifier>
+    </Filter>
     <Filter Include="build\vs">
       <UniqueIdentifier>{4D3A0C18-3907-6723-6220-55CB4E4C9CB1}</UniqueIdentifier>
     </Filter>
@@ -12,6 +15,9 @@
     </Filter>
     <Filter Include="common">
       <UniqueIdentifier>{AEFEE3F6-9AA0-0ECD-835B-22216F9C951D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc">
+      <UniqueIdentifier>{B1A29A7C-9DD9-9B0D-46C6-811032DC170F}</UniqueIdentifier>
     </Filter>
     <Filter Include="mptrack">
       <UniqueIdentifier>{778900D8-E368-7F73-EC80-0A4A58DFE5D4}</UniqueIdentifier>
@@ -78,13 +84,22 @@
     <ClInclude Include="..\..\common\Profiler.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\StringFixer.h">
-      <Filter>common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\WriteMemoryDump.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\misc_util.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptAlloc.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptAssert.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptBaseMacros.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptBaseTypes.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptBaseUtils.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\mptBufferIO.h">
@@ -96,6 +111,12 @@
     <ClInclude Include="..\..\common\mptCRC.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\mptException.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptExceptionText.h">
+      <Filter>common</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\common\mptFileIO.h">
       <Filter>common</Filter>
     </ClInclude>
@@ -103,6 +124,9 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\mptLibrary.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptMemory.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\mptMutex.h">
@@ -117,7 +141,13 @@
     <ClInclude Include="..\..\common\mptRandom.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\mptSpan.h">
+      <Filter>common</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\common\mptString.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptStringBuffer.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\mptStringFormat.h">
@@ -132,9 +162,6 @@
     <ClInclude Include="..\..\common\mptTime.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\mptTypeTraits.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\mptUUID.h">
       <Filter>common</Filter>
     </ClInclude>
@@ -147,14 +174,17 @@
     <ClInclude Include="..\..\common\stdafx.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\typedefs.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\version.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\versionNumber.h">
       <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\misc\JSON.h">
+      <Filter>misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\misc\WriteMemoryDump.h">
+      <Filter>misc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mptrack\AboutDialog.h">
       <Filter>mptrack</Filter>
@@ -183,9 +213,6 @@
     <ClInclude Include="..\..\mptrack\CListCtrl.h">
       <Filter>mptrack</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\mptrack\CTreeCtrl.h">
-      <Filter>mptrack</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\mptrack\ChannelManagerDlg.h">
       <Filter>mptrack</Filter>
     </ClInclude>
@@ -193,6 +220,9 @@
       <Filter>mptrack</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mptrack\CleanupSong.h">
+      <Filter>mptrack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mptrack\Clipboard.h">
       <Filter>mptrack</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mptrack\CloseMainDialog.h">
@@ -255,6 +285,15 @@
     <ClInclude Include="..\..\mptrack\Globals.h">
       <Filter>mptrack</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\mptrack\HTTP.h">
+      <Filter>mptrack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mptrack\IPCWindow.h">
+      <Filter>mptrack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mptrack\Image.h">
+      <Filter>mptrack</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\mptrack\ImageLists.h">
       <Filter>mptrack</Filter>
     </ClInclude>
@@ -291,6 +330,9 @@
     <ClInclude Include="..\..\mptrack\ModConvert.h">
       <Filter>mptrack</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\mptrack\ModDocTemplate.h">
+      <Filter>mptrack</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\mptrack\Moddoc.h">
       <Filter>mptrack</Filter>
     </ClInclude>
@@ -306,7 +348,7 @@
     <ClInclude Include="..\..\mptrack\Notification.h">
       <Filter>mptrack</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\mptrack\PNG.h">
+    <ClInclude Include="..\..\mptrack\OPLInstrDlg.h">
       <Filter>mptrack</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mptrack\PSRatioCalc.h">
@@ -336,10 +378,16 @@
     <ClInclude Include="..\..\mptrack\PatternGotoDialog.h">
       <Filter>mptrack</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\mptrack\PlugNotFoundDlg.h">
+      <Filter>mptrack</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\mptrack\ProgressDialog.h">
       <Filter>mptrack</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mptrack\Reporting.h">
+      <Filter>mptrack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mptrack\ResizableDialog.h">
       <Filter>mptrack</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mptrack\SampleConfigDlg.h">
@@ -361,6 +409,9 @@
       <Filter>mptrack</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mptrack\StreamEncoder.h">
+      <Filter>mptrack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mptrack\StreamEncoderAU.h">
       <Filter>mptrack</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mptrack\StreamEncoderFLAC.h">
@@ -444,6 +495,12 @@
     <ClInclude Include="..\..\mptrack\plugins\MidiInOutEditor.h">
       <Filter>mptrack\plugins</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\mptrack\plugins\VstDefinitions.h">
+      <Filter>mptrack\plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mptrack\plugins\VstEventQueue.h">
+      <Filter>mptrack\plugins</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\mptrack\resource.h">
       <Filter>mptrack</Filter>
     </ClInclude>
@@ -492,6 +549,9 @@
     <ClInclude Include="..\..\sounddev\SoundDevicePulseaudio.h">
       <Filter>sounddev</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\sounddev\SoundDeviceRtAudio.h">
+      <Filter>sounddev</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\sounddev\SoundDeviceStub.h">
       <Filter>sounddev</Filter>
     </ClInclude>
@@ -517,6 +577,9 @@
       <Filter>soundlib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\soundlib\AudioReadTarget.h">
+      <Filter>soundlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\soundlib\BitReader.h">
       <Filter>soundlib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\soundlib\ChunkReader.h">
@@ -588,6 +651,9 @@
     <ClInclude Include="..\..\soundlib\ModSequence.h">
       <Filter>soundlib</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\soundlib\OPL.h">
+      <Filter>soundlib</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\soundlib\OggStream.h">
       <Filter>soundlib</Filter>
     </ClInclude>
@@ -642,6 +708,9 @@
     <ClInclude Include="..\..\soundlib\modsmp_ctrl.h">
       <Filter>soundlib</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\soundlib\opal.h">
+      <Filter>soundlib</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\soundlib\pattern.h">
       <Filter>soundlib</Filter>
     </ClInclude>
@@ -658,9 +727,6 @@
       <Filter>soundlib\plugins</Filter>
     </ClInclude>
     <ClInclude Include="..\..\soundlib\plugins\PlugInterface.h">
-      <Filter>soundlib\plugins</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\soundlib\plugins\PluginEventQueue.h">
       <Filter>soundlib\plugins</Filter>
     </ClInclude>
     <ClInclude Include="..\..\soundlib\plugins\PluginManager.h">
@@ -741,6 +807,9 @@
     <ClInclude Include="..\..\unarchiver\unzip.h">
       <Filter>unarchiver</Filter>
     </ClInclude>
+    <ClInclude Include="..\pch\PCH.h">
+      <Filter>build\pch</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\ComponentManager.cpp">
@@ -756,6 +825,9 @@
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\misc_util.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\mptAlloc.cpp">
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\mptCPU.cpp">
@@ -782,6 +854,9 @@
     <ClCompile Include="..\..\common\mptString.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\mptStringBuffer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\common\mptStringFormat.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -798,12 +873,6 @@
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\serialization_utils.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\stdafx.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\typedefs.cpp">
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\version.cpp">
@@ -905,6 +974,15 @@
     <ClCompile Include="..\..\mptrack\Globals.cpp">
       <Filter>mptrack</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mptrack\HTTP.cpp">
+      <Filter>mptrack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mptrack\IPCWindow.cpp">
+      <Filter>mptrack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mptrack\Image.cpp">
+      <Filter>mptrack</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\mptrack\InputHandler.cpp">
       <Filter>mptrack</Filter>
     </ClCompile>
@@ -947,6 +1025,9 @@
     <ClCompile Include="..\..\mptrack\ModConvert.cpp">
       <Filter>mptrack</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mptrack\ModDocTemplate.cpp">
+      <Filter>mptrack</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\mptrack\Moddoc.cpp">
       <Filter>mptrack</Filter>
     </ClCompile>
@@ -965,7 +1046,7 @@
     <ClCompile Include="..\..\mptrack\Mptrack.cpp">
       <Filter>mptrack</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\mptrack\PNG.cpp">
+    <ClCompile Include="..\..\mptrack\OPLInstrDlg.cpp">
       <Filter>mptrack</Filter>
     </ClCompile>
     <ClCompile Include="..\..\mptrack\PSRatioCalc.cpp">
@@ -992,10 +1073,16 @@
     <ClCompile Include="..\..\mptrack\PatternGotoDialog.cpp">
       <Filter>mptrack</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mptrack\PlugNotFoundDlg.cpp">
+      <Filter>mptrack</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\mptrack\ProgressDialog.cpp">
       <Filter>mptrack</Filter>
     </ClCompile>
     <ClCompile Include="..\..\mptrack\Reporting.cpp">
+      <Filter>mptrack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mptrack\ResizableDialog.cpp">
       <Filter>mptrack</Filter>
     </ClCompile>
     <ClCompile Include="..\..\mptrack\SampleConfigDlg.cpp">
@@ -1005,6 +1092,9 @@
       <Filter>mptrack</Filter>
     </ClCompile>
     <ClCompile Include="..\..\mptrack\SampleGenerator.cpp">
+      <Filter>mptrack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mptrack\SampleTrimmer.cpp">
       <Filter>mptrack</Filter>
     </ClCompile>
     <ClCompile Include="..\..\mptrack\ScaleEnvPointsDlg.cpp">
@@ -1017,6 +1107,9 @@
       <Filter>mptrack</Filter>
     </ClCompile>
     <ClCompile Include="..\..\mptrack\StreamEncoder.cpp">
+      <Filter>mptrack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mptrack\StreamEncoderAU.cpp">
       <Filter>mptrack</Filter>
     </ClCompile>
     <ClCompile Include="..\..\mptrack\StreamEncoderFLAC.cpp">
@@ -1127,6 +1220,9 @@
     <ClCompile Include="..\..\sounddev\SoundDevicePulseaudio.cpp">
       <Filter>sounddev</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\sounddev\SoundDeviceRtAudio.cpp">
+      <Filter>sounddev</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\sounddev\SoundDeviceStub.cpp">
       <Filter>sounddev</Filter>
     </ClCompile>
@@ -1188,6 +1284,9 @@
       <Filter>soundlib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\soundlib\Load_ams.cpp">
+      <Filter>soundlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\soundlib\Load_c67.cpp">
       <Filter>soundlib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\soundlib\Load_dbm.cpp">
@@ -1308,6 +1407,9 @@
       <Filter>soundlib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\soundlib\ModSequence.cpp">
+      <Filter>soundlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\soundlib\OPL.cpp">
       <Filter>soundlib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\soundlib\OggStream.cpp">
@@ -1469,6 +1571,9 @@
     <ClCompile Include="..\..\unarchiver\unzip.cpp">
       <Filter>unarchiver</Filter>
     </ClCompile>
+    <ClCompile Include="..\pch\PCH.cpp">
+      <Filter>build\pch</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\mptrack\res\DRAGGING.CUR">
@@ -1495,9 +1600,6 @@
     <None Include="..\..\mptrack\res\nodrag.cur">
       <Filter>mptrack\res</Filter>
     </None>
-    <None Include="..\vs\debug\openmpt.natvis">
-      <Filter>build\vs\debug</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\mptrack\mptrack.rc">
@@ -1505,7 +1607,13 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\mptrack\res\About.png">
+      <Filter>mptrack\res</Filter>
+    </Image>
     <Image Include="..\..\mptrack\res\COLORS.BMP">
+      <Filter>mptrack\res</Filter>
+    </Image>
+    <Image Include="..\..\mptrack\res\Splash.png">
       <Filter>mptrack\res</Filter>
     </Image>
     <Image Include="..\..\mptrack\res\envelope_toolbar.png">
@@ -1517,16 +1625,10 @@
     <Image Include="..\..\mptrack\res\main_toolbar.png">
       <Filter>mptrack\res</Filter>
     </Image>
-    <Image Include="..\..\mptrack\res\mptrack.png">
-      <Filter>mptrack\res</Filter>
-    </Image>
     <Image Include="..\..\mptrack\res\pattern_toolbar.png">
       <Filter>mptrack\res</Filter>
     </Image>
     <Image Include="..\..\mptrack\res\sample_toolbar.png">
-      <Filter>mptrack\res</Filter>
-    </Image>
-    <Image Include="..\..\mptrack\res\splashno.png">
       <Filter>mptrack\res</Filter>
     </Image>
     <Image Include="..\..\mptrack\res\view_pat.bmp">
@@ -1535,5 +1637,10 @@
     <Image Include="..\..\mptrack\res\vumeters.bmp">
       <Filter>mptrack\res</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\vs\debug\openmpt.natvis">
+      <Filter>build\vs\debug</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

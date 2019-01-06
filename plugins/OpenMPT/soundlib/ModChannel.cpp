@@ -37,9 +37,10 @@ void ModChannel::Reset(ResetFlags resetMask, const CSoundFile &sndFile, CHANNELI
 		}
 		nTremorCount = 0;
 		nEFxSpeed = 0;
-		proTrackerOffset = 0;
+		prevNoteOffset = 0;
 		lastZxxParam = 0xFF;
 		isFirstTick = false;
+		isPreviewNote = false;
 		rowCommand.Clear();
 	}
 
@@ -64,13 +65,12 @@ void ModChannel::Reset(ResetFlags resetMask, const CSoundFile &sndFile, CHANNELI
 		nOldHiOffset = 0;
 		nLeftVU = nRightVU = 0;
 
-		//-->Custom tuning related
+		// Custom tuning related
 		m_ReCalculateFreqOnFirstTick = false;
 		m_CalculateFreq = false;
 		m_PortamentoFineSteps = 0;
 		m_PortamentoTickSlide = 0;
 		m_Freq = 0;
-		//<--Custom tuning related.
 	}
 
 	if(resetMask & resetChannelSettings)

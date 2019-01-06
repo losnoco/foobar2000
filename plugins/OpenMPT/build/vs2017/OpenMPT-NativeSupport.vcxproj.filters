@@ -4,6 +4,9 @@
     <Filter Include="common">
       <UniqueIdentifier>{AEFEE3F6-9AA0-0ECD-835B-22216F9C951D}</UniqueIdentifier>
     </Filter>
+    <Filter Include="misc">
+      <UniqueIdentifier>{B1A29A7C-9DD9-9B0D-46C6-811032DC170F}</UniqueIdentifier>
+    </Filter>
     <Filter Include="mptrack">
       <UniqueIdentifier>{778900D8-E368-7F73-EC80-0A4A58DFE5D4}</UniqueIdentifier>
     </Filter>
@@ -45,13 +48,22 @@
     <ClInclude Include="..\..\common\Profiler.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\StringFixer.h">
-      <Filter>common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\WriteMemoryDump.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\misc_util.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptAlloc.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptAssert.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptBaseMacros.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptBaseTypes.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptBaseUtils.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\mptBufferIO.h">
@@ -63,6 +75,12 @@
     <ClInclude Include="..\..\common\mptCRC.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\mptException.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptExceptionText.h">
+      <Filter>common</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\common\mptFileIO.h">
       <Filter>common</Filter>
     </ClInclude>
@@ -70,6 +88,9 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\mptLibrary.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptMemory.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\mptMutex.h">
@@ -84,7 +105,13 @@
     <ClInclude Include="..\..\common\mptRandom.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\mptSpan.h">
+      <Filter>common</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\common\mptString.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\mptStringBuffer.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\mptStringFormat.h">
@@ -99,9 +126,6 @@
     <ClInclude Include="..\..\common\mptTime.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\mptTypeTraits.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\mptUUID.h">
       <Filter>common</Filter>
     </ClInclude>
@@ -114,14 +138,17 @@
     <ClInclude Include="..\..\common\stdafx.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\typedefs.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\version.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\versionNumber.h">
       <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\misc\JSON.h">
+      <Filter>misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\misc\WriteMemoryDump.h">
+      <Filter>misc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mptrack\wine\Native.h">
       <Filter>mptrack\wine</Filter>
@@ -171,6 +198,9 @@
     <ClInclude Include="..\..\sounddev\SoundDevicePulseaudio.h">
       <Filter>sounddev</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\sounddev\SoundDeviceRtAudio.h">
+      <Filter>sounddev</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\sounddev\SoundDeviceStub.h">
       <Filter>sounddev</Filter>
     </ClInclude>
@@ -197,6 +227,9 @@
     <ClCompile Include="..\..\common\misc_util.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\mptAlloc.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\common\mptCPU.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -221,6 +254,9 @@
     <ClCompile Include="..\..\common\mptString.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\mptStringBuffer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\common\mptStringFormat.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -237,12 +273,6 @@
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\serialization_utils.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\stdafx.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\typedefs.cpp">
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\version.cpp">
@@ -279,6 +309,9 @@
       <Filter>sounddev</Filter>
     </ClCompile>
     <ClCompile Include="..\..\sounddev\SoundDevicePulseaudio.cpp">
+      <Filter>sounddev</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sounddev\SoundDeviceRtAudio.cpp">
       <Filter>sounddev</Filter>
     </ClCompile>
     <ClCompile Include="..\..\sounddev\SoundDeviceStub.cpp">
