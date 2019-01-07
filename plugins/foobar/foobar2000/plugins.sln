@@ -227,6 +227,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "stb_vorbis", "..\..\OpenMPT
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ADLMIDI_static", "..\..\libADLMIDI\build\ADLMIDI_static.vcxproj", "{02A5C6A9-549F-372A-8DEB-E895FA0BC9A2}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_input_dts-ffmpeg-libs", "foo_input_dts\ffmpeg\bin\foo_input_dts-ffmpeg-libs.vcxproj", "{B680D3D8-C5F5-4EE3-8450-00348849DB11}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -4352,6 +4354,36 @@ Global
 		{02A5C6A9-549F-372A-8DEB-E895FA0BC9A2}.RelWithDebInfo|Win32.ActiveCfg = RelWithDebInfo|Win32
 		{02A5C6A9-549F-372A-8DEB-E895FA0BC9A2}.RelWithDebInfo|Win32.Build.0 = RelWithDebInfo|Win32
 		{02A5C6A9-549F-372A-8DEB-E895FA0BC9A2}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.Debug|Win32.Build.0 = Debug|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.Debug|x64.ActiveCfg = Debug|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.DebugMDd|Win32.ActiveCfg = Debug|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.DebugMDd|Win32.Build.0 = Debug|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.DebugMDd|x64.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.DebugMDd|x64.Build.0 = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.DebugShared|Win32.ActiveCfg = Debug|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.DebugShared|Win32.Build.0 = Debug|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.DebugShared|x64.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.DebugShared|x64.Build.0 = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.MinSizeRel|Win32.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.MinSizeRel|Win32.Build.0 = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.MinSizeRel|x64.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.MinSizeRel|x64.Build.0 = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.Release|Win32.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.Release|Win32.Build.0 = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.Release|x64.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.ReleaseLTCG|Win32.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.ReleaseLTCG|Win32.Build.0 = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.ReleaseLTCG|x64.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.ReleaseLTCG|x64.Build.0 = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.ReleaseShared|Win32.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.ReleaseShared|Win32.Build.0 = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.ReleaseShared|x64.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.ReleaseShared|x64.Build.0 = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.RelWithDebInfo|Win32.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.RelWithDebInfo|Win32.Build.0 = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.RelWithDebInfo|x64.ActiveCfg = Release|Win32
+		{B680D3D8-C5F5-4EE3-8450-00348849DB11}.RelWithDebInfo|x64.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
