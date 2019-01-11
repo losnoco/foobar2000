@@ -1,7 +1,11 @@
-#define MY_VERSION "0.9.11"
+#define MY_VERSION "0.9.12"
 
 /*
 	changelog
+
+2019-01-11 03:48 UTC - kode54
+- Fixed the packet decoder for MP4
+- Version is now 0.9.12
 
 2019-01-05 09:18 UTC - kode54
 - Improved the packet decoder, including support for MP4 container
@@ -614,7 +618,7 @@ class packet_decoder_ac3 : public packet_decoder_streamparse
 {
 	a52_state_t * m_state;
 	bool m_dynrng, m_decode;
-	int srate, nch, flags, bitrate;
+	int srate, flags, bitrate;
 
 public:
     packet_decoder_ac3()
@@ -632,7 +636,6 @@ public:
 	void cleanup()
 	{
 		srate = 0;
-		nch = 0;
 		if ( m_state )
 		{
 			a52_free( m_state );
@@ -653,6 +656,7 @@ public:
 				}
 			}
 		}
+		// Maybe this block isn't necessary?
 		else if (p_owner == owner_MP4)
 		{
 			if (p_param1 == mp4_ac3)
@@ -660,6 +664,7 @@ public:
 				return true;
 			}
 		}
+		// This one seems to be correct
 		else if (p_owner == owner_MP4_AC3)
 		{
 			return true;
@@ -681,7 +686,6 @@ public:
 		{
 			const matroska_setup *setup = (const matroska_setup *)p_param2;
 			srate = setup->sample_rate;
-			nch = setup->channels;
 		}
 
 		m_decode = p_decode;
@@ -695,7 +699,6 @@ public:
 	virtual void get_info( file_info & p_info )
 	{
         p_info.info_set_int( "samplerate", srate );
-        p_info.info_set_int( "channels", nch );
 		p_info.info_set( "codec", "ATSC A/52" );
 		p_info.info_set( "encoding", "lossy" );
 
@@ -703,6 +706,7 @@ public:
 		{
 			pfc::string8 channel_mode;
 			get_mode_description( flags, channel_mode );
+			p_info.info_set_int("channels", get_channels(flags));
 			p_info.info_set( "channel_mode", channel_mode );
 		}
 	}
