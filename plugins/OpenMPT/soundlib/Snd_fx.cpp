@@ -1703,12 +1703,20 @@ void CSoundFile::NoteChange(ModChannel &chn, int note, bool bPorta, bool bResetE
 		// Note Cut
 		if (note == NOTE_NOTECUT)
 		{
-			chn.dwFlags.set(CHN_NOTEFADE | CHN_FASTVOLRAMP);
-			// IT compatibility: Stopping sample playback by setting sample increment to 0 rather than volume
-			// Test case: NoteOffInstr.it
-			if ((!(GetType() & (MOD_TYPE_IT | MOD_TYPE_MPT))) || (m_nInstruments != 0 && !m_playBehaviour[kITInstrWithNoteOff])) chn.nVolume = 0;
-			if(m_playBehaviour[kITInstrWithNoteOff]) chn.increment.Set(0);
-			chn.nFadeOutVol = 0;
+			if(chn.dwFlags[CHN_ADLIB] && GetType() == MOD_TYPE_S3M)
+			{
+				// OPL voices are not cut but enter the release portion of their envelope
+				// In S3M we can still modify the volume after note-off, in legacy MPTM mode we can't
+				chn.dwFlags.set(CHN_KEYOFF);
+			} else
+			{
+				chn.dwFlags.set(CHN_NOTEFADE | CHN_FASTVOLRAMP);
+				// IT compatibility: Stopping sample playback by setting sample increment to 0 rather than volume
+				// Test case: NoteOffInstr.it
+				if ((!(GetType() & (MOD_TYPE_IT | MOD_TYPE_MPT))) || (m_nInstruments != 0 && !m_playBehaviour[kITInstrWithNoteOff])) chn.nVolume = 0;
+				if (m_playBehaviour[kITInstrWithNoteOff]) chn.increment.Set(0);
+				chn.nFadeOutVol = 0;
+			}
 		}
 
 		// IT compatibility tentative fix: Clear channel note memory.
@@ -2852,9 +2860,9 @@ bool CSoundFile::ProcessEffects()
 				}
 			}
 			// New Note ?
-			if (note)
+			if (note != NOTE_NONE)
 			{
-				const bool instrChange = (!instr) && (chn.nNewIns) && (note < 0x80);
+				const bool instrChange = (!instr) && (chn.nNewIns) && ModCommand::IsNote(note);
 				if(instrChange)
 				{
 					InstrumentChange(chn, chn.nNewIns, bPorta, chn.pModSample == nullptr && chn.pModInstrument == nullptr, !(GetType() & (MOD_TYPE_XM|MOD_TYPE_MT2)));
@@ -2873,8 +2881,11 @@ bool CSoundFile::ProcessEffects()
 					chn.nAutoVibDepth = 0;
 					chn.nAutoVibPos = 0;
 				}
-				if(chn.dwFlags[CHN_ADLIB] && (note == NOTE_NOTECUT || note == NOTE_FADE || note == NOTE_KEYOFF) && m_opl)
+				if(chn.dwFlags[CHN_ADLIB] && m_opl
+					&& ((note == NOTE_NOTECUT || note == NOTE_KEYOFF) || (note == NOTE_FADE && !m_playBehaviour[kOPLFlexibleNoteOff])))
+				{
 					m_opl->NoteOff(nChn);
+				}
 			}
 			// Tick-0 only volume commands
 			if (volcmd == VOLCMD_VOLUME)

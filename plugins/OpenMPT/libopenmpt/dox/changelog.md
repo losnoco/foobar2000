@@ -5,12 +5,37 @@ Changelog {#changelog}
 For fully detailed change log, please see the source repository directly. This
 is just a high-level summary.
 
+### libopenmpt 0.4.2 (2019-01-22)
+
+ *  [**Sec**] DSM: Assertion failure during file parsing with debug STLs
+    (r11209).
+ *  [**Sec**] J2B: Assertion failure during file parsing with debug STLs
+    (r11216).
+
+ *  S3M: Allow volume change of OPL instruments after Note Cut.
+
+### libopenmpt 0.4.1 (2019-01-06)
+
+ *  [**Bug**] Binaries compiled for winold (Windows XP, Vista, 7, for CPUs
+    without SSE2 support) did not actually work on CPUs without SSE2 support.
+ *  [**Bug**] libmodplug: Public symbols of the C++ API had `visibility=hidden`
+    set on non-MSVC systems, which made them not publicly accessible.
+ *  [**Bug**] Project files for Windows 10 desktop builds on ARM and ARM64
+    (`build/vs2017win10`) were missing from Windows source package.
+ *  [**Bug**] MSVC project files in Windows source package lacked additional
+    files required to build DLLs.
+
+ *  MO3: Apply playback changes based on "ModPlug-made" header flag.
+
+ *  minimp3: Update to commit e9df0760e94044caded36a55d70ab4152134adc5
+    (2018-12-23).
+
 ### libopenmpt 0.4.0 (2018-12-23)
 
  *  [**New**] libopenmpt now includes emulation of the OPL chip and thus plays
     OPL instruments in S3M, C67 and MPTM files. OPL chip emulation volume can be
     changed with the new ctl `render.opl.volume_factor`.
- *  [**New**] libopenmpt now supports C67 (CDFM Composer) files.
+ *  [**New**] libopenmpt now supports CDFM / Composer 670 module files.
  *  [**New**] Autotools `configure` and plain `Makefile` now honor the variable
     `CXXSTDLIB_PCLIBSPRIVATE` which serves the sole purpose of listing the
     standard library (or libraries) required for static linking. The contents of
