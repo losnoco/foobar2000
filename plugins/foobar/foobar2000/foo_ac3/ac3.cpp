@@ -1,7 +1,12 @@
-#define MY_VERSION "0.9.12"
+#define MY_VERSION "0.9.13"
 
 /*
 	changelog
+
+2019-02-01 08:15 UTC - kode54
+- Implemented fast CRC algorithm from:
+  - https://freac.org/developer-blog-mainmenu-9/14-freac/277-fastcrc
+- Version is now 0.9.13
 
 2019-01-11 03:48 UTC - kode54
 - Fixed the packet decoder for MP4
