@@ -1,6 +1,6 @@
 {
   BASSMIDI 2.4 Delphi unit
-  Copyright (c) 2006-2017 Un4seen Developments Ltd.
+  Copyright (c) 2006-2018 Un4seen Developments Ltd.
 
   See the BASSMIDI.CHM file for more detailed documentation
 }
@@ -15,6 +15,9 @@ uses BASS;
 {$ENDIF}
 
 const
+  // Additional error codes returned by BASS_ErrorGetCode
+  BASS_ERROR_MIDI_INCLUDE    = 7000; // SFZ include file could not be opened
+
   // Additional config options
   BASS_CONFIG_MIDI_COMPACT   = $10400;
   BASS_CONFIG_MIDI_VOICES    = $10401;
@@ -49,6 +52,7 @@ const
   BASS_MIDI_FONT_MMAP        = $20000;
   BASS_MIDI_FONT_XGDRUMS     = $40000;
   BASS_MIDI_FONT_NOFX        = $80000;
+  BASS_MIDI_FONT_LINATTMOD   = $100000;
 
   // BASS_MIDI_StreamSet/GetFonts flag
   BASS_MIDI_FONT_EX          = $1000000; // BASS_MIDI_FONTEX
@@ -167,6 +171,7 @@ const
   BASS_MIDI_EVENTS_NORSTATUS = $2000000; // flag: no running status
   BASS_MIDI_EVENTS_CANCEL    = $4000000; // flag: cancel pending events
   BASS_MIDI_EVENTS_TIME      = $8000000; // flag: delta-time info is present
+  BASS_MIDI_EVENTS_ABSTIME   = $10000000; // flag: absolute time info is present
 
   // BASS_MIDI_StreamGetChannel special channels
   BASS_MIDI_CHAN_CHORUS      = LongWord(-1);

@@ -1,9 +1,11 @@
 Type=Exe
-Form=frmSynth.frm
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\Windows\system32\stdole2.tlb#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
 Module=modBass; ..\Bass.bas
+Object={F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0; ComDlg32.ocx
+Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0; MSCOMCTL.OCX
 Module=modSynth; modSynth.bas
-IconForm="frmSynth"
+Form=frmSynth.frm
+Module=BASSMIDI; ..\bassmidi.bas
 Startup="frmSynth"
 HelpFile=""
 Title="prjSynth"

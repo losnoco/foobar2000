@@ -1,18 +1,16 @@
 Attribute VB_Name = "modRecTest"
-'///////////////////////////////////////////////////////////////////////////
-' modRecTest.bas - Copyright (c) 2013 (: JOBnik! :) [Arthur Aminov, ISRAEL]
-'                                                   [http://www.jobnik.org]
-'                                                   [  jobnik@jobnik.org  ]
+'////////////////////////////////////////////////////////////////////////////////
+' modRecTest.bas - Copyright (c) 2002-2007 (: JOBnik! :) [Arthur Aminov, ISRAEL]
+'                                                        [http://www.jobnik.org]
+'                                                        [  jobnik@jobnik.org  ]
 '
 ' Other source: frmRecTest.frm
 '
-' BASSWASAPI Recording example
+' BASS Recording example
 ' Originally translated from - rectest.c - Example of Ian Luck
-'///////////////////////////////////////////////////////////////////////////
+'////////////////////////////////////////////////////////////////////////////////
 
 Option Explicit
-
-Public Declare Function MessageBox Lib "user32" Alias "MessageBoxA" (ByVal hwnd As Long, ByVal lpText As String, ByVal lpCaption As String, ByVal wType As Long) As Long
 
 ' MEMORY
 Public Const GMEM_FIXED = &H0
@@ -29,12 +27,12 @@ Const OF_READ = &H0
 Const OF_WRITE = &H1
 
 Private Type OFSTRUCT
-    cBytes As Byte
-    fFixedDisk As Byte
-    nErrCode As Integer
-    Reserved1 As Integer
-    Reserved2 As Integer
-    szPathName(OFS_MAXPATHNAME) As Byte
+        cBytes As Byte
+        fFixedDisk As Byte
+        nErrCode As Integer
+        Reserved1 As Integer
+        Reserved2 As Integer
+        szPathName(OFS_MAXPATHNAME) As Byte
 End Type
 
 Private Declare Function OpenFile Lib "kernel32" (ByVal lpFileName As String, lpReOpenBuff As OFSTRUCT, ByVal wStyle As Long) As Long
@@ -43,190 +41,138 @@ Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As L
 
 ' WAV Header
 Private Type WAVEHEADER_RIFF    ' == 12 bytes ==
-    wrBlockTypeRiff As Long     ' "RIFF", The characters "RIFF" indicate the start of the RIFF header
-    wrBlockSize As Long         ' FileSize – 8, This is the size of the entire file following this data, i.e., the size of the rest of the file
-    wrBlockTypeWave As Long     ' "WAVE", The characters "WAVE" indicate the format of the data
+    RIFF As Long                ' "RIFF" = &H46464952
+    riffBlockSize As Long       ' reclen - 8
+    riffBlockType As Long       ' "WAVE" = &H45564157
+End Type
+
+Private Type WAVEFORMAT         ' == 24 bytes ==
+    wfBlockType As Long         ' "fmt " = &H20746D66
+    wfBlockSize As Long
+    ' == block size begins from here = 16 bytes
+    wFormatTag As Integer
+    nChannels As Integer
+    nSamplesPerSec As Long
+    nAvgBytesPerSec As Long
+    nBlockAlign As Integer
+    wBitsPerSample As Integer
 End Type
 
 Private Type WAVEHEADER_data    ' == 8 bytes ==
-    wdBlockTypeData As Long     ' "data", The "data" characters specify that the audio data is next in the file
-    wdBlockSize As Long         ' The length of the data in bytes - WaveHeader (44)
+   dataBlockType As Long        ' "data" = &H61746164
+   dataBlockSize As Long        ' reclen - 44
 End Type
 
-Private Type WAVEFORMATEX       ' == 44 bytes ==
-    riff As WAVEHEADER_RIFF     ' "RIFF"
-    wfBlockTypeFmt As Long      ' "fmt ", The "fmt " characters specify that this is the section of the file describing the format specifically
-    wfBlockSize As Long         ' 16 bytes, The size of the WAVEFORMATEX data to follow below
-    wFormatTag As Integer       ' 2 bytes, Only PCM data is supported in this sample
-    nChannels As Integer        ' 2 bytes, Number of channels in (1 for mono, 2 for stereo)
-    nSamplesPerSec As Long      ' 4 bytes, Sample rate of the waveform in samples per second
-    nAvgBytesPerSec As Long     ' 4 bytes, Average bytes per second which can be used to determine the time-wise length of the audio
-    nBlockAlign As Integer      ' 2 bytes, Specifies how each audio block must be aligned in bytes
-    wBitsPerSample As Integer   ' 2 bytes, How many bits represent a single sample (typically 8 or 16)
-    data As WAVEHEADER_data     ' "data"
-End Type
+Dim wr As WAVEHEADER_RIFF
+Dim wf As WAVEFORMAT
+Dim wd As WAVEHEADER_data
 
-Dim wf As WAVEFORMATEX          ' wave format
+Public Declare Function MessageBox Lib "user32" Alias "MessageBoxA" (ByVal hwnd As Long, ByVal lpText As String, ByVal lpCaption As String, ByVal wType As Long) As Long
 
-Public BUFSTEP As Long          ' memory allocation unit
+Public BUFSTEP As Long        ' memory allocation unit
+Public input_ As Long         ' current input source
+Public recPtr As Long         ' a recording pointer to a memory location
+Public reclen As Long         ' buffer length
 
-Public indev As Long            ' current input device
-Public instream As Long         ' input stream
-Public inmixer As Long          ' mixer for resampling input
-
-Public outdev As Long           ' output device
-Public outstream As Long        ' playback stream
-Public outmixer As Long         ' mixer for resampling output
-
-Public recPtr As Long           ' a recording pointer to a memory location
-Public reclen As Long           ' buffer length
-
-Public inlevel As Single        ' input level
+Public rchan As Long          ' recording channel
+Public chan As Long           ' playback channel
 
 ' display error messages
 Public Sub Error_(ByVal es As String)
     Call MessageBox(frmRecTest.hwnd, es & vbCrLf & vbCrLf & "error code: " & BASS_ErrorGetCode, "Error", vbExclamation)
 End Sub
 
-' WASAPI input processing function
-Function InWasapiProc(ByVal buffer As Long, ByVal length As Long, ByVal user As Long) As Long
-    Dim temp(50000) As Byte, c As Long
-
-    ' give the data to the mixer feeder stream
-    Call BASS_StreamPutData(instream, ByVal buffer, length)
-
-    ' get back resampled data from the mixer
-    Do
-        c = BASS_ChannelGetData(inmixer, temp(0), UBound(temp) + 1)
-        If (c > 0) Then
-            ' increase buffer size if needed
-            If ((reclen Mod BUFSTEP) + c >= BUFSTEP) Then
-                recPtr = GlobalReAlloc(ByVal recPtr, ((reclen + c) / BUFSTEP + 1) * BUFSTEP, GMEM_MOVEABLE)
-                If (recPtr = 0) Then
-                    Call Error_("Out of memory!")
-                    frmRecTest.btnRecord.Caption = "Record"
-                    InWasapiProc = 0 ' stop recording
-                    Exit Function
-                End If
-            End If
-            ' buffer the data
-            Call CopyMemory(ByVal recPtr + reclen, temp(0), c)
-            reclen = reclen + c
+' buffer the recorded data
+Public Function RecordingCallback(ByVal handle As Long, ByVal buffer As Long, ByVal length As Long, ByVal user As Long) As Long
+    ' increase buffer size if needed
+    If ((reclen Mod BUFSTEP) + length >= BUFSTEP) Then
+        recPtr = GlobalReAlloc(ByVal recPtr, ((reclen + length) / BUFSTEP + 1) * BUFSTEP, GMEM_MOVEABLE)
+        If recPtr = 0 Then
+            rchan = 0
+            Call Error_("Out of memory!")
+            frmRecTest.btnRecord.Caption = "Record"
+            RecordingCallback = BASSFALSE ' stop recording
+            Exit Function
         End If
-    Loop While (c > 0)
-    InWasapiProc = 1 ' continue recording
-End Function
-
-' WASAPI output processing function
-Function OutWasapiProc(ByVal buffer As Long, ByVal length As Long, ByVal user As Long) As Long
-    Dim c As Long
-    c = BASS_ChannelGetData(outmixer, ByVal buffer, length)
-    If (c < 0) Then ' at the end
-        If (BASS_WASAPI_GetData(0, BASS_DATA_AVAILABLE) = 0) Then ' no buffered data remaining, so...
-            Call BASS_WASAPI_Stop(BASSFALSE) ' stop the output
-        End If
-        OutWasapiProc = 0
-        Exit Function
     End If
-    OutWasapiProc = c
+    ' buffer the data
+    Call CopyMemory(ByVal recPtr + reclen, ByVal buffer, length)
+    reclen = reclen + length
+    RecordingCallback = BASSTRUE ' continue recording
 End Function
 
 Public Sub StartRecording()
-    Dim rate As Long
-    If (recPtr) Then ' free old recording...
-        Call BASS_StreamFree(outstream)
-        outstream = 0
+    ' free old recording
+    If (recPtr) Then
+        Call BASS_StreamFree(chan)
         Call GlobalFree(ByVal recPtr)
         recPtr = 0
+        chan = 0
         frmRecTest.btnPlay.Enabled = False
         frmRecTest.btnSave.Enabled = False
     End If
-    ' get the sample rate choice
-    rate = frmRecTest.cmbRate.text
 
     ' allocate initial buffer and make space for WAVE header
     recPtr = GlobalAlloc(GMEM_FIXED, BUFSTEP)
-    reclen = LenB(wf)   ' 44
+    reclen = 44
 
     ' fill the WAVE header
-    With wf
-        .riff.wrBlockTypeRiff = &H46464952         ' "RIFF"
-        .riff.wrBlockSize = 0                      ' after recording
-        .riff.wrBlockTypeWave = &H45564157         ' "WAVE"
+    wf.wFormatTag = 1
+    wf.nChannels = 2
+    wf.wBitsPerSample = 16
+    wf.nSamplesPerSec = 44100
+    wf.nBlockAlign = wf.nChannels * wf.wBitsPerSample / 8
+    wf.nAvgBytesPerSec = wf.nSamplesPerSec * wf.nBlockAlign
 
-        .wfBlockTypeFmt = &H20746D66               ' "fmt "
-        .wfBlockSize = 16
-        .wFormatTag = 1
-        .nChannels = 2
-        .wBitsPerSample = 16
-        .nSamplesPerSec = rate
-        .nBlockAlign = .nChannels * .wBitsPerSample / 8
-        .nAvgBytesPerSec = .nSamplesPerSec * .nBlockAlign
+    ' Set WAV "fmt " header
+    wf.wfBlockType = &H20746D66      ' "fmt "
+    wf.wfBlockSize = 16
 
-        .data.wdBlockTypeData = &H61746164          ' "data"
-        .data.wdBlockSize = 0                       ' after recording
+    ' Set WAV "RIFF" header
+    wr.RIFF = &H46464952             ' "RIFF"
+    wr.riffBlockSize = 0             ' after recording
+    wr.riffBlockType = &H45564157    ' "WAVE"
 
-        ' copy header to memory
-        Call CopyMemory(ByVal recPtr, wf, reclen)   ' "RIFF" .. "WAVEfmt " .. "data"
-    End With
+    ' set WAV "data" header
+    wd.dataBlockType = &H61746164    ' "data"
+    wd.dataBlockSize = 0             ' after recording
 
-    ' create a mixer and add the device's feeder stream to it
-    inmixer = BASS_Mixer_StreamCreate(rate, 2, BASS_STREAM_DECODE)
-    Call BASS_Mixer_StreamAddChannel(inmixer, instream, 0)
+    ' copy WAV Header to Memory
+    Call CopyMemory(ByVal recPtr, wr, LenB(wr))        ' "RIFF"
+    Call CopyMemory(ByVal recPtr + 12, wf, LenB(wf))   ' "fmt "
+    Call CopyMemory(ByVal recPtr + 36, wd, LenB(wd))   ' "data"
 
-    ' start the input device
-    If (BASS_WASAPI_SetDevice(indev) = 0 Or BASS_WASAPI_Start() = 0) Then
-        Call Error_("Can't start recording")
-        Call BASS_StreamFree(inmixer)
-        inmixer = 0
+    ' start recording @ 44100hz 16-bit stereo
+    rchan = BASS_RecordStart(44100, 2, 0, AddressOf RecordingCallback, 0)
+
+    If (rchan = 0) Then
+        Call Error_("Couldn't start recording")
         Call GlobalFree(ByVal recPtr)
         recPtr = 0
         Exit Sub
     End If
-
     frmRecTest.btnRecord.Caption = "Stop"
-    frmRecTest.cmbRate.Enabled = False
 End Sub
 
 Public Sub StopRecording()
-    ' stop the device and free the mixer
-    Call BASS_WASAPI_SetDevice(indev)
-    Call BASS_WASAPI_Stop(BASSTRUE)
-    Call BASS_StreamFree(inmixer)
-    inmixer = 0
+    Call BASS_ChannelStop(rchan)
+    rchan = 0
     frmRecTest.btnRecord.Caption = "Record"
 
     ' complete the WAVE header
-    With wf
-        .riff.wrBlockSize = reclen - 8
-        .data.wdBlockSize = reclen - 44
+    wr.riffBlockSize = reclen - 8
+    wd.dataBlockSize = reclen - 44
 
-        Call CopyMemory(ByVal recPtr + 4, .riff.wrBlockSize, LenB(.riff.wrBlockSize))
-        Call CopyMemory(ByVal recPtr + 40, .data.wdBlockSize, LenB(.data.wdBlockSize))
-    End With
+    Call CopyMemory(ByVal recPtr + 4, wr.riffBlockSize, LenB(wr.riffBlockSize))
+    Call CopyMemory(ByVal recPtr + 40, wd.dataBlockSize, LenB(wd.dataBlockSize))
 
-    ' enable "save" button
-    frmRecTest.btnSave.Enabled = True
-
-    ' re-enable rate selection
-    frmRecTest.cmbRate.Enabled = True
-
-    If (outdev >= 0) Then
-        ' create a stream from the recording
-        outstream = BASS_StreamCreateFile(BASSTRUE, recPtr, 0, reclen, BASS_SAMPLE_FLOAT Or BASS_STREAM_DECODE)
-        If (outstream) Then
-            Call BASS_Mixer_StreamAddChannel(outmixer, outstream, 0)
-            frmRecTest.btnPlay.Enabled = True   ' enable "play" button
-        End If
+    ' create a stream from the recording
+    chan = BASS_StreamCreateFile(BASSTRUE, recPtr, 0, reclen, 0)
+    If (chan) Then
+        ' enable "play" & "save" buttons
+        frmRecTest.btnPlay.Enabled = True
+        frmRecTest.btnSave.Enabled = True
     End If
-End Sub
-
-Public Sub StartPlaying()
-    Call BASS_WASAPI_SetDevice(outdev)
-    Call BASS_WASAPI_Stop(BASSTRUE) ' flush the output device buffer (in case there is anything there)
-    Call BASS_Mixer_ChannelSetPosition(outstream, 0, BASS_POS_BYTE) ' rewind output stream
-    Call BASS_ChannelSetPosition(outmixer, 0, BASS_POS_BYTE) ' reset mixer
-    Call BASS_WASAPI_Start   ' start the device
 End Sub
 
 ' write the recorded data to disk
@@ -241,8 +187,8 @@ Public Sub WriteToDisk()
         .DefaultExt = "wav"
         .ShowSave
 
-        ' if cancel was pressed, exit sub
-        If (Err.Number = 32755) Then Exit Sub
+        ' if cancel was pressed, exit the procedure
+        If Err.Number = 32755 Then Exit Sub
 
         ' create a file .WAV, directly from Memory location
         Dim FileHandle As Long, ret As Long, OF As OFSTRUCT
@@ -259,62 +205,41 @@ Public Sub WriteToDisk()
     End With
 End Sub
 
-Public Sub InitInputDevice()
-    ' inialize the input device (shared mode, 1s buffer & 100ms update period)
-    If (BASS_WASAPI_Init(indev, 0, 0, 0, 1, 0.1, AddressOf InWasapiProc, 0)) Then
-        ' create a BASS push stream of same format to feed the mixer/resampler
-        Dim wi As BASS_WASAPI_INFO
-        Call BASS_WASAPI_GetInfo(wi)
-        instream = BASS_StreamCreate(wi.freq, wi.chans, BASS_SAMPLE_FLOAT Or BASS_STREAM_DECODE, STREAMPROC_PUSH, 0)
-        If (inmixer) Then ' already recording, start the new device...
-            Call BASS_Mixer_StreamAddChannel(inmixer, instream, 0)
-            Call BASS_WASAPI_Start
-        End If
-        ' update level slider
-        Dim level As Single
-        level = BASS_WASAPI_GetVolume(BASS_WASAPI_CURVE_WINDOWS)
-        If (level < 0) Then ' failed to get level
-            level = 1 ' just display 100%
-            frmRecTest.sldInputLevel.Enabled = False
-        Else
-            frmRecTest.sldInputLevel.Enabled = True
-        End If
-        frmRecTest.sldInputLevel.value = level * 100
-    Else ' failed, just set level slider to 0
-        frmRecTest.sldInputLevel.Enabled = False
-        frmRecTest.sldInputLevel.value = 0
+Public Sub UpdateInputInfo()
+    Dim it As Long
+    Dim level As Single
+    
+    it = BASS_RecordGetInput(input_, level) ' get info on the input
+    If (it = -1 Or level < 0) Then ' failed
+        Call BASS_RecordGetInput(-1, level) ' try master input instead
+        If (level < 0) Then level = 1 ' that failed too, just display 100%
     End If
-    ' update device type display
-    Dim type_ As String, di As BASS_WASAPI_DEVICEINFO
-    Call BASS_WASAPI_GetDeviceInfo(indev, di)
-
-    Select Case (di.type)
-        Case BASS_WASAPI_TYPE_NETWORKDEVICE:
-            type_ = "Remote Network Device"
-        Case BASS_WASAPI_TYPE_SPEAKERS:
-            type_ = "Speakers"
-        Case BASS_WASAPI_TYPE_LINELEVEL:
-            type_ = "Line In"
-        Case BASS_WASAPI_TYPE_HEADPHONES:
-            type_ = "Headphones"
-        Case BASS_WASAPI_TYPE_MICROPHONE:
-            type_ = "Microphone"
-        Case BASS_WASAPI_TYPE_HEADSET:
-            type_ = "Headset"
-        Case BASS_WASAPI_TYPE_HANDSET:
-            type_ = "Handset"
-        Case BASS_WASAPI_TYPE_DIGITAL:
-            type_ = "Digital"
-        Case BASS_WASAPI_TYPE_SPDIF:
-            type_ = "SPDIF"
-        Case BASS_WASAPI_TYPE_HDMI:
-            type_ = "HDMI"
+    frmRecTest.sldInputLevel.value = level * 100 ' set the level slider
+    
+    Dim type_ As String
+    Select Case (it And BASS_INPUT_TYPE_MASK)
+        Case BASS_INPUT_TYPE_DIGITAL:
+            type_ = "digital"
+        Case BASS_INPUT_TYPE_LINE:
+            type_ = "line-in"
+        Case BASS_INPUT_TYPE_MIC:
+            type_ = "microphone"
+        Case BASS_INPUT_TYPE_SYNTH:
+            type_ = "midi synth"
+        Case BASS_INPUT_TYPE_CD:
+            type_ = "analog cd"
+        Case BASS_INPUT_TYPE_PHONE:
+            type_ = "telephone"
+        Case BASS_INPUT_TYPE_SPEAKER:
+            type_ = "pc speaker"
+        Case BASS_INPUT_TYPE_WAVE:
+            type_ = "wave/pcm"
+        Case BASS_INPUT_TYPE_AUX:
+            type_ = "aux"
+        Case BASS_INPUT_TYPE_ANALOG:
+            type_ = "analog"
         Case Else:
             type_ = "undefined"
     End Select
-    If (di.flags And BASS_DEVICE_LOOPBACK) = BASS_DEVICE_LOOPBACK Then
-        type_ = type_ & " (loopback)"
-    End If
-    frmRecTest.lblInputType.Caption = "type: " & type_  ' display the type
+    frmRecTest.lblInputType.Caption = type_ ' display the type
 End Sub
-

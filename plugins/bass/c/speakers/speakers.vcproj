@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="speakers"
-	ProjectGUID="{32DB229B-EF58-4677-8D34-2BFD0F22AC8B}"
+	ProjectGUID="{FD419538-B54A-4472-8DA6-3BDE8DDBA1F1}"
 	>
 	<Platforms>
 		<Platform
@@ -30,7 +30,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bass.lib bassmix.lib basswasapi.lib"
+				AdditionalDependencies="bass.lib"
 				AdditionalLibraryDirectories=".."
 				SubSystem="2"
 			/>
@@ -49,7 +49,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bass.lib bassmix.lib basswasapi.lib"
+				AdditionalDependencies="bass.lib"
 				AdditionalLibraryDirectories="..\x64"
 				SubSystem="2"
 				TargetMachine="17"

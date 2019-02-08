@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="livespec"
-	ProjectGUID="{83F08FB4-AD44-4166-8ED2-7624E28070DC}"
+	ProjectGUID="{6AAE12B9-8731-4CDE-BD76-EC5B4EC5AE48}"
 	>
 	<Platforms>
 		<Platform
@@ -30,7 +30,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bass.lib basswasapi.lib gdi32.lib winmm.lib"
+				AdditionalDependencies="bass.lib winmm.lib"
 				AdditionalLibraryDirectories=".."
 				SubSystem="2"
 			/>
@@ -49,7 +49,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bass.lib basswasapi.lib gdi32.lib winmm.lib"
+				AdditionalDependencies="bass.lib winmm.lib"
 				AdditionalLibraryDirectories="..\x64"
 				SubSystem="2"
 				TargetMachine="17"

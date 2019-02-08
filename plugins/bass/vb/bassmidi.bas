@@ -1,8 +1,11 @@
 Attribute VB_Name = "BASSMIDI"
 ' BASSMIDI 2.4 Visual Basic module
-' Copyright (c) 2006-2017 Un4seen Developments Ltd.
+' Copyright (c) 2006-2018 Un4seen Developments Ltd.
 '
 ' See the BASSMIDI.CHM file for more detailed documentation
+
+' Additional error codes returned by BASS_ErrorGetCode
+Global Const BASS_ERROR_MIDI_INCLUDE = 7000 ' SFZ include file could not be opened
 
 ' Additional BASS_SetConfig options
 Global Const BASS_CONFIG_MIDI_COMPACT = &H10400
@@ -38,6 +41,7 @@ Global Const BASS_MIDI_FONT_MEM = &H10000
 Global Const BASS_MIDI_FONT_MMAP = &H20000
 Global Const BASS_MIDI_FONT_XGDRUMS = &H40000
 Global Const BASS_MIDI_FONT_NOFX = &H80000
+Global Const BASS_MIDI_FONT_LINATTMOD = &H100000
 
 Type BASS_MIDI_FONT
     font As Long            ' soundfont
@@ -195,6 +199,7 @@ Global Const BASS_MIDI_EVENTS_SYNC = &H1000000 ' FLAG: trigger event syncs
 Global Const BASS_MIDI_EVENTS_NORSTATUS = &H2000000 ' FLAG: no running status
 Global Const BASS_MIDI_EVENTS_CANCEL = &H4000000 ' flag: cancel pending events
 Global Const BASS_MIDI_EVENTS_TIME = &H8000000 ' flag: delta-time info is present
+Global Const BASS_MIDI_EVENTS_ABSTIME = &H10000000 ' flag: absolute time info is present
 
 ' BASS_MIDI_StreamGetChannel special channels
 Global Const BASS_MIDI_CHAN_CHORUS = -1

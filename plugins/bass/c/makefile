@@ -1,4 +1,4 @@
-EXAMPLES = contest list livefx livespec rectest speakers synth
+EXAMPLES = miditest sf2pack synth
 
 .PHONY: all clean $(EXAMPLES)
 

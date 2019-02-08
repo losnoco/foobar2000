@@ -1,6 +1,6 @@
 Attribute VB_Name = "modBass"
 ' BASS 2.4 Visual Basic module
-' Copyright (c) 1999-2018 Un4seen Developments Ltd.
+' Copyright (c) 1999-2019 Un4seen Developments Ltd.
 '
 ' See the BASS.CHM file for more detailed documentation
 
@@ -78,6 +78,7 @@ Global Const BASS_CONFIG_MUSIC_VIRTUAL = 22
 Global Const BASS_CONFIG_VERIFY = 23
 Global Const BASS_CONFIG_UPDATETHREADS = 24
 Global Const BASS_CONFIG_DEV_BUFFER = 27
+Global Const BASS_CONFIG_REC_LOOPBACK = 28
 Global Const BASS_CONFIG_VISTA_TRUEPOS = 30
 Global Const BASS_CONFIG_DEV_DEFAULT = 36
 Global Const BASS_CONFIG_NET_READTIMEOUT = 37
@@ -96,10 +97,13 @@ Global Const BASS_CONFIG_FLOAT = 54
 Global Const BASS_CONFIG_NET_SEEK = 56
 Global Const BASS_CONFIG_NET_PLAYLIST_DEPTH = 59
 Global Const BASS_CONFIG_NET_PREBUF_WAIT = 60
+Global Const BASS_CONFIG_WASAPI_PERSIST = 65
+Global Const BASS_CONFIG_REC_WASAPI = 66
 
 ' BASS_SetConfigPtr options
 Global Const BASS_CONFIG_NET_AGENT = 16
 Global Const BASS_CONFIG_NET_PROXY = 17
+Global Const BASS_CONFIG_LIBSSL = 64
 
 ' BASS_ASIO_Init flags
 Global Const BASS_DEVICE_8BITS = 1     '8 bit
@@ -389,6 +393,7 @@ Global Const BASS_STREAMPROC_END = &H80000000 ' end of user stream flag
 Global Const STREAMPROC_DUMMY = 0 ' "dummy" stream
 Global Const STREAMPROC_PUSH = -1 ' push stream
 Global Const STREAMPROC_DEVICE = -2 ' device mix stream
+Global Const STREAMPROC_DEVICE_3D = -3 ' device 3D mix stream
 
 ' BASS_StreamCreateFileUser file systems
 Global Const STREAMFILE_NOBUFFER = 0
@@ -431,6 +436,8 @@ Global Const BASS_SYNC_MUSICPOS = 10
 Global Const BASS_SYNC_MUSICINST = 1
 Global Const BASS_SYNC_MUSICFX = 3
 Global Const BASS_SYNC_OGG_CHANGE = 12
+Global Const BASS_SYNC_DEV_FAIL = 14
+Global Const BASS_SYNC_DEV_FORMAT = 15
 Global Const BASS_SYNC_MIXTIME = &H40000000 ' flag: sync at mixtime, else at playtime
 Global Const BASS_SYNC_ONETIME = &H80000000 ' flag: sync only once, else continuously
 
@@ -439,6 +446,7 @@ Global Const BASS_ACTIVE_STOPPED = 0
 Global Const BASS_ACTIVE_PLAYING = 1
 Global Const BASS_ACTIVE_STALLED = 2
 Global Const BASS_ACTIVE_PAUSED = 3
+Global Const BASS_ACTIVE_PAUSED_DEVICE = 4
 
 ' Channel attributes
 Global Const BASS_ATTRIB_FREQ = 1
@@ -483,6 +491,7 @@ Global Const BASS_DATA_FFT_INDIVIDUAL = &H10 ' FFT flag: FFT for each channel, e
 Global Const BASS_DATA_FFT_NOWINDOW = &H20   ' FFT flag: no Hanning window
 Global Const BASS_DATA_FFT_REMOVEDC = &H40   ' FFT flag: pre-remove DC bias
 Global Const BASS_DATA_FFT_COMPLEX = &H80    ' FFT flag: return complex data
+Global Const BASS_DATA_FFT_NYQUIST = &H100   ' FFT flag: return extra Nyquist value
 
 ' BASS_ChannelGetLevelEx flags
 Global Const BASS_LEVEL_MONO = 1
@@ -712,6 +721,7 @@ Declare Function BASS_GetCPU Lib "bass.dll" () As Single
 Declare Function BASS_Start Lib "bass.dll" () As Long
 Declare Function BASS_Stop Lib "bass.dll" () As Long
 Declare Function BASS_Pause Lib "bass.dll" () As Long
+Declare Function BASS_IsStarted Lib "bass.dll" () As Long
 Declare Function BASS_SetVolume Lib "bass.dll" (ByVal volume As Single) As Long
 Declare Function BASS_GetVolume Lib "bass.dll" () As Single
 

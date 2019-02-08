@@ -1,6 +1,6 @@
 /*
 	BASS simple playback test
-	Copyright (c) 1999-2012 Un4seen Developments Ltd.
+	Copyright (c) 1999-2019 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -40,10 +40,13 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 
 	switch (m) {
 		case WM_TIMER:
-			{ // update the CPU usage % display
+			{
+				// update the CPU usage display
 				char text[10];
 				sprintf(text,"%.2f",BASS_GetCPU());
 				MESS(40,WM_SETTEXT,0,text);
+				// update volume slider in case it's been changed outside of the app
+				MESS(43,TBM_SETPOS,1,BASS_GetVolume()*100);
 			}
 			break;
 
@@ -245,7 +248,7 @@ INT_PTR CALLBACK dialogproc(HWND h,UINT m,WPARAM w,LPARAM l)
 			MESS(34,TBM_SETPOS,1,100);
 			MESS(43,TBM_SETRANGE,1,MAKELONG(0,100));
 			MESS(43,TBM_SETPOS,1,BASS_GetVolume()*100);
-			SetTimer(h,1,250,NULL);
+			SetTimer(h,1,500,NULL);
 			memset(&ofn,0,sizeof(ofn));
 			ofn.lStructSize=sizeof(ofn);
 			ofn.hwndOwner=h;
@@ -268,6 +271,9 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine,
 		MessageBox(0,"An incorrect version of BASS.DLL was loaded",0,MB_ICONERROR);
 		return 0;
 	}
+
+	// enable "Default" device that follows default device changes
+	BASS_SetConfig(BASS_CONFIG_DEV_DEFAULT,1);
 
 	// display the window
 	DialogBox(hInstance,MAKEINTRESOURCE(1000),NULL,&dialogproc);

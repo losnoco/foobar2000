@@ -1,6 +1,6 @@
 /*
 	BASS internet radio example
-	Copyright (c) 2002-2017 Un4seen Developments Ltd.
+	Copyright (c) 2002-2019 Un4seen Developments Ltd.
 */
 
 #include <windows.h>
@@ -232,6 +232,7 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine,
 	BASS_SetConfig(BASS_CONFIG_NET_PREBUF_WAIT,0); // disable BASS_StreamCreateURL pre-buffering
 
 	BASS_PluginLoad("bass_aac.dll",0); // load BASS_AAC (if present) for AAC support on older Windows
+	BASS_PluginLoad("bassflac.dll",0); // load BASSFLAC (if present) for FLAC support
 	BASS_PluginLoad("basshls.dll",0); // load BASSHLS (if present) for HLS support
 
 	// display the window

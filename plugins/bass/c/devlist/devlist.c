@@ -1,6 +1,6 @@
 /*
 	BASS device list example
-	Copyright (c) 2014 Un4seen Developments Ltd.
+	Copyright (c) 2014-2019 Un4seen Developments Ltd.
 */
 
 #include <stdio.h>
@@ -8,6 +8,12 @@
 
 void DisplayDeviceInfo(BASS_DEVICEINFO *di)
 {
+#if 0//def _WIN32
+	const char *path=di->driver+strlen(di->driver)+1;
+	if (path[0])
+		printf("%s\n\tdriver: %s\n\tpath: %s\n\ttype: ",di->name,di->driver,path);
+	else
+#endif
 	printf("%s\n\tdriver: %s\n\ttype: ",di->name,di->driver);
 	switch (di->flags&BASS_DEVICE_TYPE_MASK) {
 		case BASS_DEVICE_TYPE_NETWORK:
@@ -47,6 +53,7 @@ void DisplayDeviceInfo(BASS_DEVICEINFO *di)
 			printf("Unknown");
 	}
 	printf("\n\tflags:");
+	if (di->flags&BASS_DEVICE_LOOPBACK) printf(" loopback");
 	if (di->flags&BASS_DEVICE_ENABLED) printf(" enabled");
 	if (di->flags&BASS_DEVICE_DEFAULT) printf(" default");
 	printf(" (%x)\n",di->flags);

@@ -1,6 +1,6 @@
 {
   BASS 2.4 Delphi unit
-  Copyright (c) 1999-2018 Un4seen Developments Ltd.
+  Copyright (c) 1999-2019 Un4seen Developments Ltd.
 
   See the BASS.CHM file for more detailed documentation
 
@@ -87,6 +87,7 @@ const
   BASS_CONFIG_VERIFY        = 23;
   BASS_CONFIG_UPDATETHREADS = 24;
   BASS_CONFIG_DEV_BUFFER    = 27;
+  BASS_CONFIG_REC_LOOPBACK  = 28;
   BASS_CONFIG_VISTA_TRUEPOS = 30;
   BASS_CONFIG_IOS_MIXAUDIO  = 34;
   BASS_CONFIG_DEV_DEFAULT   = 36;
@@ -111,10 +112,13 @@ const
   BASS_CONFIG_AM_DISABLE    = 58;
   BASS_CONFIG_NET_PLAYLIST_DEPTH = 59;
   BASS_CONFIG_NET_PREBUF_WAIT = 60;
+  BASS_CONFIG_WASAPI_PERSIST = 65;
+  BASS_CONFIG_REC_WASAPI    = 66;
 
   // BASS_SetConfigPtr options
   BASS_CONFIG_NET_AGENT     = 16;
   BASS_CONFIG_NET_PROXY     = 17;
+  BASS_CONFIG_LIBSSL        = 64;
 
   // BASS_Init flags
   BASS_DEVICE_8BITS       = 1;    // 8 bit
@@ -360,6 +364,8 @@ const
   BASS_SYNC_MUSICINST     = 1;
   BASS_SYNC_MUSICFX       = 3;
   BASS_SYNC_OGG_CHANGE    = 12;
+  BASS_SYNC_DEV_FAIL      = 14;
+  BASS_SYNC_DEV_FORMAT    = 15;
   BASS_SYNC_MIXTIME       = $40000000; // flag: sync at mixtime, else at playtime
   BASS_SYNC_ONETIME       = $80000000; // flag: sync only once, else continuously
 
@@ -368,6 +374,7 @@ const
   BASS_ACTIVE_PLAYING = 1;
   BASS_ACTIVE_STALLED = 2;
   BASS_ACTIVE_PAUSED  = 3;
+  BASS_ACTIVE_PAUSED_DEVICE = 4;
 
   // Channel attributes
   BASS_ATTRIB_FREQ                  = 1;
@@ -412,6 +419,7 @@ const
   BASS_DATA_FFT_NOWINDOW = $20;   // FFT flag: no Hanning window
   BASS_DATA_FFT_REMOVEDC = $40;   // FFT flag: pre-remove DC bias
   BASS_DATA_FFT_COMPLEX = $80;    // FFT flag: return complex data
+  BASS_DATA_FFT_NYQUIST = $100;   // FFT flag: return extra Nyquist value
 
   // BASS_ChannelGetLevelEx flags
   BASS_LEVEL_MONO     = 1;
@@ -760,6 +768,7 @@ const
   STREAMPROC_DUMMY = Pointer(0);   // "dummy" stream
   STREAMPROC_PUSH = Pointer(-1);   // push stream
   STREAMPROC_DEVICE = Pointer(-2); // device mix stream
+  STREAMPROC_DEVICE_3D = Pointer(-3); // device 3D mix stream
 
 type
   DOWNLOADPROC = procedure(buffer: Pointer; length: DWORD; user: Pointer); {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
@@ -841,6 +850,7 @@ function BASS_GetCPU: Single; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; ext
 function BASS_Start: BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassdll;
 function BASS_Stop: BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassdll;
 function BASS_Pause: BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassdll;
+function BASS_IsStarted: BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassdll;
 function BASS_SetVolume(volume: Single): BOOL; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassdll;
 function BASS_GetVolume: Single; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external bassdll;
 

@@ -2,7 +2,7 @@
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
-# TARGTYPE "Win32 (x86) Console Application" 0x0103
+# TARGTYPE "Win32 (x86) Application" 0x0101
 
 CFG=synth - Win32 Release
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
@@ -17,7 +17,7 @@ CFG=synth - Win32 Release
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "synth - Win32 Release" (based on "Win32 (x86) Console Application")
+!MESSAGE "synth - Win32 Release" (based on "Win32 (x86) Application")
 !MESSAGE 
 
 # Begin Project
@@ -26,18 +26,18 @@ MTL=midl.exe
 RSC=rc.exe
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "../bin"
+# PROP BASE Output_Dir "..\bin"
 # PROP BASE Intermediate_Dir "Release"
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "../bin"
+# PROP Output_Dir "..\bin"
 # PROP Intermediate_Dir "Release"
-# ADD BASE CPP /nologo /MD /GX /I ".." /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /FD /c
-# ADD CPP /nologo /MD /GX /I ".." /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /FD /c
+# ADD BASE CPP /nologo /MD /GX /I ".." /D "WIN32" /D "NDEBUG" /FD /c
+# ADD CPP /nologo /MD /GX /I ".." /D "WIN32" /D "NDEBUG" /FD /c
 BSC32=bscmake.exe
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib /nologo /subsystem:console /pdb:none /machine:I386
-# ADD LINK32 kernel32.lib user32.lib /nologo /subsystem:console /pdb:none /machine:I386
+# ADD BASE LINK32 kernel32.lib user32.lib comdlg32.lib comctl32.lib gdi32.lib /nologo /subsystem:windows /pdb:none /machine:I386
+# ADD LINK32 kernel32.lib user32.lib comdlg32.lib comctl32.lib gdi32.lib /nologo /subsystem:windows /pdb:none /machine:I386
 # Begin Target
 
 # Name "synth - Win32 Release"
@@ -47,11 +47,15 @@ SOURCE=synth.c
 # End Source File
 # Begin Source File
 
+SOURCE=synth.rc
+# End Source File
+# Begin Source File
+
 SOURCE=..\bass.lib
 # End Source File
 # Begin Source File
 
-SOURCE=..\basswasapi.lib
+SOURCE=..\bassmidi.lib
 # End Source File
 # End Target
 # End Project
