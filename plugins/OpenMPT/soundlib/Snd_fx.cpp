@@ -1025,7 +1025,8 @@ std::vector<GetLengthType> CSoundFile::GetLength(enmGetLengthResetMode adjustMod
 
 				if(m.note == NOTE_KEYOFF || m.note == NOTE_NOTECUT || (m.note == NOTE_FADE && GetNumInstruments())
 					|| ((m.command == CMD_MODCMDEX || m.command == CMD_S3MCMDEX) && (m.param & 0xF0) == 0xC0 && paramLo < numTicks)
-					|| (m.command == CMD_DELAYCUT && paramLo != 0 && startTick + paramLo < numTicks))
+					|| (m.command == CMD_DELAYCUT && paramLo != 0 && startTick + paramLo < numTicks)
+					|| m.command == CMD_KEYOFF)
 				{
 					stopNote = true;
 				}
@@ -5586,7 +5587,7 @@ void CSoundFile::KeyOff(ModChannel &chn) const
 			if(chn.position.GetUInt() > chn.nLength)
 			{
 				// Test case: SusAfterLoop.it
-				chn.position.Set(chn.position.GetInt() - chn.nLength + chn.nLoopStart);
+				chn.position.Set(chn.nLoopStart + ((chn.position.GetInt() - chn.nLoopStart) % (chn.nLoopEnd - chn.nLoopStart)));
 			}
 		} else
 		{
@@ -5665,7 +5666,7 @@ void CSoundFile::SetTempo(TEMPO param, bool setFromUI)
 		// ProTracker sets the tempo after the first tick.
 		// Note: The case of one tick per row is handled in ProcessRow() instead.
 		// Test case: TempoChange.mod
-#if MPT_MSVC_AT_LEAST(2017,8)
+#if MPT_MSVC_AT_LEAST(2017,8) && MPT_MSVC_BEFORE(2019,0)
 		// Work-around MSVC getting confused about deduced const input type in noexcept operator inside noexcept condition.
 		m_PlayState.m_nMusicTempo.SetRaw(std::min(param.GetRaw(), specs.GetTempoMax().GetRaw()));
 #else

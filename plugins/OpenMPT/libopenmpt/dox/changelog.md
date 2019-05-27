@@ -5,6 +5,15 @@ Changelog {#changelog}
 For fully detailed change log, please see the source repository directly. This
 is just a high-level summary.
 
+### libopenmpt 0.4.5 (2019-05-27)
+
+ *  [**Sec**] Possible crash during playback due out-of-bounds read in XM and
+    MT2 files (r11608).
+
+ *  Breaking out of a sustain loop through Note-Off sometimes didn't continue in
+    the regular sample loop.
+ *  Seeking did not stop notes playing with XM Key Off (Kxx) effect.
+
 ### libopenmpt 0.4.4 (2019-04-07)
 
  *  [**Bug**] Channel VU meters were swapped.
